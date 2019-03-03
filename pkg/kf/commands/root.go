@@ -8,6 +8,7 @@ import (
 
 	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/poy/kontext"
 	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
@@ -21,9 +22,12 @@ type KfParams struct {
 	Namespace      string
 }
 
-var kubeCfgFile string
+var (
+	cfgFile     string
+	kubeCfgFile string
+)
 
-func GetConfig() (serving.ServingV1alpha1Interface, error) {
+func getConfig() (serving.ServingV1alpha1Interface, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", kubeCfgFile)
 	if err != nil {
 		return nil, err
@@ -39,7 +43,7 @@ func GetConfig() (serving.ServingV1alpha1Interface, error) {
 func NewKfCommand() *cobra.Command {
 	p := &KfParams{
 		Output:         os.Stdout,
-		ServingFactory: GetConfig,
+		ServingFactory: getConfig,
 	}
 
 	var rootCmd = &cobra.Command{
@@ -63,9 +67,11 @@ func NewKfCommand() *cobra.Command {
 	// Model new commands after:
 	// https://github.com/knative/client/blob/master/pkg/kn/commands/service_list.go
 	// to take an idiomatic k8s like approach.
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kf.yaml)")
 	rootCmd.PersistentFlags().StringVar(&kubeCfgFile, "kubeconfig", "", "kubectl config file (default is $HOME/.kube/config)")
-	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "", "namespace")
-	rootCmd.AddCommand(NewPushCommand(p))
+	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "default", "namespace")
+
+	rootCmd.AddCommand(NewPushCommand(p, kontext.BuildImage))
 	rootCmd.AddCommand(NewAppsCommand(p))
 
 	return rootCmd

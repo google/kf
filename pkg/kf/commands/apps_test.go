@@ -20,12 +20,12 @@ import (
 func TestAppsCommand(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct {
-		name             string
-		namespace        string
-		wantErr          error
-		servingFactorErr error
-		serviceListErr   error
-		serviceNames     []string
+		name              string
+		namespace         string
+		wantErr           error
+		servingFactoryErr error
+		serviceListErr    error
+		serviceNames      []string
 	}{
 		{
 			name:      "configured namespace",
@@ -41,9 +41,9 @@ func TestAppsCommand(t *testing.T) {
 			wantErr:        errors.New("some-error"),
 		},
 		{
-			name:             "serving factor error, returns error",
-			servingFactorErr: errors.New("some-error"),
-			wantErr:          errors.New("some-error"),
+			name:              "serving factor error, returns error",
+			servingFactoryErr: errors.New("some-error"),
+			wantErr:           errors.New("some-error"),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -89,7 +89,7 @@ func TestAppsCommand(t *testing.T) {
 				Namespace: tc.namespace,
 				Output:    buffer,
 				ServingFactory: func() (serving.ServingV1alpha1Interface, error) {
-					return fake, tc.servingFactorErr
+					return fake, tc.servingFactoryErr
 				},
 			})
 
@@ -101,11 +101,9 @@ func TestAppsCommand(t *testing.T) {
 				return
 			}
 
-			defer func() {
-				if !called {
-					t.Fatal("Reactor was not invoked")
-				}
-			}()
+			if !called {
+				t.Fatal("Reactor was not invoked")
+			}
 
 			for _, service := range tc.serviceNames {
 				if strings.Index(buffer.String(), service) < 0 {
