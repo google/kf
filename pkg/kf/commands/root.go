@@ -73,6 +73,7 @@ func NewKfCommand() *cobra.Command {
 
 	rootCmd.AddCommand(NewPushCommand(p, kontext.BuildImage))
 	rootCmd.AddCommand(NewAppsCommand(p))
+	rootCmd.AddCommand(NewDeleteCommand(p))
 
 	return rootCmd
 }
