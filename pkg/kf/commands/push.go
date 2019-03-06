@@ -1,30 +1,20 @@
 package commands
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
-	"os"
-	"path"
-	"time"
 
-	build "github.com/knative/build/pkg/apis/build/v1alpha1"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/spf13/cobra"
-	corev1 "k8s.io/api/core/v1"
 )
 
-const (
-	buildAPIVersion = "build.knative.dev/v1alpha1"
-)
-
-// SrcImageBuilder creates and uploads a container image that contains the
-// contents of the argument 'dir'.
-type SrcImageBuilder func(dir, srcImage string) error
+// Pusher deploys applications.
+type Pusher interface {
+	// Push deploys an application.
+	Push(appName string, opts ...kf.PushOption) error
+}
 
 // NewPushCommand creates a push command.
-func NewPushCommand(p *KfParams, builder SrcImageBuilder) *cobra.Command {
+func NewPushCommand(p *KfParams, pusher Pusher) *cobra.Command {
 	var (
 		containerRegistry string
 		serviceAccount    string
@@ -46,31 +36,11 @@ func NewPushCommand(p *KfParams, builder SrcImageBuilder) *cobra.Command {
 			}
 
 			cmd.SilenceUsage = true
-			client, err := p.ServingFactory()
-			if err != nil {
-				return err
-			}
-
-			cwd, err := os.Getwd()
-			if err != nil {
-				return err
-			}
-
-			srcImage := path.Join(
-				containerRegistry,
-				imageName(appName, true),
-			)
-			if err := builder(cwd, srcImage); err != nil {
-				return err
-			}
-
-			return buildAndDeploy(
+			return pusher.Push(
 				appName,
-				srcImage,
-				containerRegistry,
-				serviceAccount,
-				p,
-				client,
+				kf.WithPushNamespace(p.Namespace),
+				kf.WithPushContainerRegistry(containerRegistry),
+				kf.WithPushServiceAccount(serviceAccount),
 			)
 		},
 	}
@@ -90,86 +60,4 @@ func NewPushCommand(p *KfParams, builder SrcImageBuilder) *cobra.Command {
 	)
 
 	return pushCmd
-}
-
-func imageName(appName string, srcCodeImage bool) string {
-	var prefix string
-	if srcCodeImage {
-		prefix = "src-"
-	}
-	return fmt.Sprintf("%s%s-%d:latest", prefix, appName, time.Now().UnixNano())
-}
-
-func buildAndDeploy(
-	appName string,
-	srcImage string,
-	containerRegistry string,
-	serviceAccount string,
-	p *KfParams,
-	client cserving.ServingV1alpha1Interface,
-) error {
-	imageName := path.Join(
-		containerRegistry,
-		imageName(appName, false),
-	)
-
-	// Knative Build wants a Build, but the RawExtension (used by the
-	// Configuration object) wants a BuildSpec. Therefore, we have to manually
-	// create the required JSON.
-	buildSpec := build.Build{
-		Spec: build.BuildSpec{
-			ServiceAccountName: serviceAccount,
-			Source: &build.SourceSpec{
-				Custom: &corev1.Container{
-					Image: srcImage,
-				},
-			},
-			Template: &build.TemplateInstantiationSpec{
-				Name: "buildpack",
-				Arguments: []build.ArgumentSpec{
-					{
-						Name:  "IMAGE",
-						Value: imageName,
-					},
-				},
-			},
-		},
-	}
-	buildSpec.Kind = "Build"
-	buildSpec.APIVersion = buildAPIVersion
-	buildSpecRaw, err := json.Marshal(buildSpec)
-	if err != nil {
-		return err
-	}
-
-	cfg := &serving.Service{
-		Spec: serving.ServiceSpec{
-			RunLatest: &serving.RunLatestType{
-				Configuration: serving.ConfigurationSpec{
-					Build: &serving.RawExtension{
-						Raw: buildSpecRaw,
-					},
-
-					RevisionTemplate: serving.RevisionTemplateSpec{
-						Spec: serving.RevisionSpec{
-							Container: corev1.Container{
-								Image:           imageName,
-								ImagePullPolicy: "Always",
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-	cfg.Name = appName
-	cfg.Kind = "Service"
-	cfg.APIVersion = "serving.knative.dev/v1alpha1"
-	cfg.Namespace = p.Namespace
-
-	if _, err = client.Services(p.Namespace).Create(cfg); err != nil {
-		return err
-	}
-
-	return nil
 }
