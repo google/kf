@@ -28,13 +28,18 @@ func NewLister(f ServingFactory) *Lister {
 }
 
 // List lists the deployed applications for the given namespace.
-func (l *Lister) List(namespace string) ([]App, error) {
+func (l *Lister) List(opts ...ListOption) ([]App, error) {
+	cfg := ListOptions(opts).toConfig()
+	if cfg.Namespace == "" {
+		cfg.Namespace = "default"
+	}
+
 	client, err := l.f()
 	if err != nil {
 		return nil, err
 	}
 
-	services, err := client.Services(namespace).List(v1.ListOptions{})
+	services, err := client.Services(cfg.Namespace).List(v1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}

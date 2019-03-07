@@ -7,7 +7,8 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/fakes"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
+	"github.com/golang/mock/gomock"
 )
 
 func TestPushCommand(t *testing.T) {
@@ -54,12 +55,14 @@ func TestPushCommand(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			buffer := &bytes.Buffer{}
-			var called bool
-			fakePusher := &fakes.FakePusher{
-				T: t,
-				Action: func(appName string, opts ...kf.PushOption) error {
-					called = true
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			fakePusher := fake.NewFakePusher(ctrl)
+
+			fakeRecorder := fakePusher.
+				EXPECT().
+				Push(gomock.Any(), gomock.Any()).
+				DoAndReturn(func(appName string, opts ...kf.PushOption) error {
 					if appName != tc.args[0] {
 						t.Fatalf("expected appName %s, got %s", tc.args[0], appName)
 					}
@@ -80,8 +83,9 @@ func TestPushCommand(t *testing.T) {
 						t.Fatalf("expected service account %s, got %s", tc.serviceAccount, sa)
 					}
 					return tc.pusherErr
-				},
-			}
+				})
+
+			buffer := &bytes.Buffer{}
 
 			c := NewPushCommand(&KfParams{
 				Namespace: tc.namespace,
@@ -92,6 +96,10 @@ func TestPushCommand(t *testing.T) {
 			c.Flags().Set("service-account", tc.serviceAccount)
 			gotErr := c.RunE(c, tc.args)
 			if tc.wantErr != nil || gotErr != nil {
+				// We don't really care if Push was invoked if we want an
+				// error.
+				fakeRecorder.AnyTimes()
+
 				if fmt.Sprint(tc.wantErr) != fmt.Sprint(gotErr) {
 					t.Fatalf("wanted err: %v, got: %v", tc.wantErr, gotErr)
 				}
@@ -101,10 +109,6 @@ func TestPushCommand(t *testing.T) {
 				}
 
 				return
-			}
-
-			if !called {
-				t.Fatal("Push was not invoked")
 			}
 		})
 	}

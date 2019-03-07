@@ -6,72 +6,64 @@ import (
 	"fmt"
 	"testing"
 
-	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
-	"github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1/fake"
-	"k8s.io/apimachinery/pkg/runtime"
-	ktesting "k8s.io/client-go/testing"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
+	"github.com/golang/mock/gomock"
 )
 
 func TestDeleteCommand(t *testing.T) {
 	t.Parallel()
 
 	for _, tc := range []struct {
-		name              string
-		namespace         string
-		wantErr           error
-		servingFactoryErr error
-		serviceDeleteErr  error
+		name      string
+		namespace string
+		appName   string
+		wantErr   error
+		deleteErr error
 	}{
 		{
 			name:      "deletes given app in namespace",
 			namespace: "some-namespace",
+			appName:   "some-app",
 		},
 		{
-			name:              "serving factory error",
-			wantErr:           errors.New("some error"),
-			servingFactoryErr: errors.New("some error"),
-		},
-		{
-			name:             "service delete error",
-			wantErr:          errors.New("some error"),
-			serviceDeleteErr: errors.New("some error"),
+			name:      "delete app error",
+			wantErr:   errors.New("some error"),
+			deleteErr: errors.New("some error"),
+			appName:   "some-app",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			fakeDeleter := fake.NewFakeDeleter(ctrl)
+
+			fakeRecorder := fakeDeleter.
+				EXPECT().
+				Delete(gomock.Any(), gomock.Any()).
+				DoAndReturn(func(appName string, opts ...kf.DeleteOption) error {
+					if appName != tc.appName {
+						t.Fatalf("wanted appName %s, got %s", tc.appName, appName)
+					}
+
+					if ns := kf.DeleteOptions(opts).Namespace(); ns != tc.namespace {
+						t.Fatalf("expected namespace %s, got %s", tc.namespace, ns)
+					}
+					return tc.deleteErr
+				})
+
 			buffer := &bytes.Buffer{}
-			fake := &fake.FakeServingV1alpha1{
-				Fake: &ktesting.Fake{},
-			}
-			const appName = "some-app"
-
-			called := false
-			fake.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
-				called = true
-				if action.GetNamespace() != tc.namespace {
-					t.Fatalf("wanted namespace: %s, got: %s", tc.namespace, action.GetNamespace())
-				}
-
-				if !action.Matches("delete", "services") {
-					t.Fatal("wrong action")
-				}
-
-				if gn := action.(ktesting.DeleteAction).GetName(); gn != appName {
-					t.Fatalf("wanted app name %s, got %s", appName, gn)
-				}
-
-				return tc.serviceDeleteErr != nil, nil, tc.serviceDeleteErr
-			}))
-
 			c := NewDeleteCommand(&KfParams{
 				Namespace: tc.namespace,
 				Output:    buffer,
-				ServingFactory: func() (cserving.ServingV1alpha1Interface, error) {
-					return fake, tc.servingFactoryErr
-				},
-			})
+			}, fakeDeleter)
 
-			gotErr := c.RunE(c, []string{appName})
+			gotErr := c.RunE(c, []string{tc.appName})
 			if tc.wantErr != nil || gotErr != nil {
+				// We don't really care if Push was invoked if we want an
+				// error.
+				fakeRecorder.AnyTimes()
+
 				if fmt.Sprint(tc.wantErr) != fmt.Sprint(gotErr) {
 					t.Fatalf("wanted err: %v, got: %v", tc.wantErr, gotErr)
 				}
@@ -81,10 +73,6 @@ func TestDeleteCommand(t *testing.T) {
 				}
 
 				return
-			}
-
-			if !called {
-				t.Fatal("Reactor was not invoked")
 			}
 		})
 	}

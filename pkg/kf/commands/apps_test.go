@@ -8,7 +8,8 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/fakes"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
+	"github.com/golang/mock/gomock"
 	"github.com/spf13/cobra"
 )
 
@@ -36,12 +37,16 @@ func TestAppsCommand(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			buffer := &bytes.Buffer{}
-			fakeLister := &fakes.FakeLister{
-				T: t,
-				Action: func(namespace string) ([]kf.App, error) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			fakeLister := fake.NewFakeLister(ctrl)
+
+			fakeRecorder := fakeLister.
+				EXPECT().
+				List(gomock.Any()).
+				DoAndReturn(func(opts ...kf.ListOption) ([]kf.App, error) {
 					t.Helper()
-					if namespace != tc.namespace {
+					if namespace := kf.ListOptions(opts).Namespace(); namespace != tc.namespace {
 						t.Fatalf("expected namespace %s, got %s", tc.namespace, namespace)
 					}
 
@@ -50,8 +55,9 @@ func TestAppsCommand(t *testing.T) {
 						apps = append(apps, kf.App{a})
 					}
 					return apps, tc.listErr
-				},
-			}
+				})
+
+			buffer := &bytes.Buffer{}
 
 			c := NewAppsCommand(&KfParams{
 				Namespace: tc.namespace,
@@ -60,6 +66,10 @@ func TestAppsCommand(t *testing.T) {
 
 			gotErr := c.RunE(&cobra.Command{}, nil)
 			if tc.wantErr != nil {
+				// We don't really care if Push was invoked if we want an
+				// error.
+				fakeRecorder.AnyTimes()
+
 				if fmt.Sprint(tc.wantErr) != fmt.Sprint(gotErr) {
 					t.Fatalf("wanted err: %v, got: %v", tc.wantErr, gotErr)
 				}

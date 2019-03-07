@@ -45,6 +45,11 @@ func TestList(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			expectedNamespace := tc.namespace
+			if tc.namespace == "" {
+				expectedNamespace = "default"
+			}
+
 			fake := &fake.FakeServingV1alpha1{
 				Fake: &ktesting.Fake{},
 			}
@@ -65,8 +70,8 @@ func TestList(t *testing.T) {
 			called := false
 			fake.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
 				called = true
-				if action.GetNamespace() != tc.namespace {
-					t.Fatalf("wanted namespace: %s, got: %s", tc.namespace, action.GetNamespace())
+				if action.GetNamespace() != expectedNamespace {
+					t.Fatalf("wanted namespace: %s, got: %s", expectedNamespace, action.GetNamespace())
 				}
 
 				return true, serviceList, tc.serviceListErr
@@ -76,7 +81,12 @@ func TestList(t *testing.T) {
 				return fake, tc.servingFactoryErr
 			})
 
-			apps, gotErr := lister.List(tc.namespace)
+			var opts []ListOption
+			if tc.namespace != "" {
+				opts = append(opts, WithListNamespace(tc.namespace))
+			}
+
+			apps, gotErr := lister.List(opts...)
 
 			if tc.wantErr != nil {
 				if fmt.Sprint(tc.wantErr) != fmt.Sprint(gotErr) {

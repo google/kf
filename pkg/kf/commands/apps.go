@@ -10,7 +10,7 @@ import (
 // AppLister lists deployed applications.
 type AppLister interface {
 	// List the deployed applications in a namespace.
-	List(namespace string) ([]kf.App, error)
+	List(...kf.ListOption) ([]kf.App, error)
 }
 
 // NewAppsCommand creates a apps command.
@@ -20,7 +20,7 @@ func NewAppsCommand(p *KfParams, l AppLister) *cobra.Command {
 		Short: "List pushed apps.",
 		Long:  ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			apps, err := l.List(p.Namespace)
+			apps, err := l.List(kf.WithListNamespace(p.Namespace))
 			if err != nil {
 				return err
 			}

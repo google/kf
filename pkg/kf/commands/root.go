@@ -74,7 +74,7 @@ func NewKfCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&kubeCfgFile, "kubeconfig", "", "kubectl config file (default is $HOME/.kube/config)")
 	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "default", "namespace")
 
-	rootCmd.AddCommand(NewDeleteCommand(p))
+	rootCmd.AddCommand(NewDeleteCommand(p, kf.NewDeleter(getConfig)))
 	rootCmd.AddCommand(NewPushCommand(p, kf.NewPusher(getConfig, kontext.BuildImage)))
 	rootCmd.AddCommand(NewAppsCommand(p, kf.NewLister(getConfig)))
 
