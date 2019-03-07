@@ -4,13 +4,14 @@ import (
 	"fmt"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"github.com/spf13/cobra"
 )
 
 // AppLister lists deployed applications.
 type AppLister interface {
 	// List the deployed applications in a namespace.
-	List(...kf.ListOption) ([]kf.App, error)
+	List(...kf.ListOption) ([]serving.Service, error)
 }
 
 // NewAppsCommand creates a apps command.

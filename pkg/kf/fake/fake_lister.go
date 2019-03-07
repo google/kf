@@ -7,6 +7,7 @@ package fake
 import (
 	kf "github.com/GoogleCloudPlatform/kf/pkg/kf"
 	gomock "github.com/golang/mock/gomock"
+	v1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	reflect "reflect"
 )
 
@@ -34,14 +35,14 @@ func (m *FakeLister) EXPECT() *FakeListerMockRecorder {
 }
 
 // List mocks base method
-func (m *FakeLister) List(arg0 ...kf.ListOption) ([]kf.App, error) {
+func (m *FakeLister) List(arg0 ...kf.ListOption) ([]v1alpha1.Service, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
 	for _, a := range arg0 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "List", varargs...)
-	ret0, _ := ret[0].([]kf.App)
+	ret0, _ := ret[0].([]v1alpha1.Service)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

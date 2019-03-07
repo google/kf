@@ -1,4 +1,4 @@
-package kf
+package kf_test
 
 import (
 	"encoding/json"
@@ -9,6 +9,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	kffake "github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
+	"github.com/golang/mock/gomock"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
@@ -27,9 +30,14 @@ func TestPush(t *testing.T) {
 		appName           string
 		path              string
 		serviceAccount    string
+		actionVerb        string
 		wantErr           error
 		servingFactoryErr error
 		serviceCreateErr  error
+
+		// AppLister
+		deployedApps []string
+		listerErr    error
 	}{
 		{
 			name:              "pushes app to a configured namespace",
@@ -43,6 +51,14 @@ func TestPush(t *testing.T) {
 			containerRegistry: "some-reg.io",
 			serviceAccount:    "some-service-account",
 			appName:           "some-app",
+		},
+		{
+			name:              "app already exists, update",
+			containerRegistry: "some-reg.io",
+			serviceAccount:    "some-service-account",
+			appName:           "some-app",
+			actionVerb:        "update",
+			deployedApps:      []string{"some-other-app", "some-app"},
 		},
 		{
 			name:              "empty app name, returns error",
@@ -63,7 +79,7 @@ func TestPush(t *testing.T) {
 			appName:           "some-app",
 		},
 		{
-			name:              "serving factory error",
+			name:              "serving factory error, returns error",
 			wantErr:           errors.New("some error"),
 			servingFactoryErr: errors.New("some error"),
 			containerRegistry: "some-reg.io",
@@ -71,15 +87,27 @@ func TestPush(t *testing.T) {
 			appName:           "some-app",
 		},
 		{
-			name:              "service create error",
+			name:              "service create error, returns error",
 			wantErr:           errors.New("some error"),
 			serviceCreateErr:  errors.New("some error"),
 			containerRegistry: "some-reg.io",
 			serviceAccount:    "some-service-account",
 			appName:           "some-app",
 		},
+		{
+			name:              "service list error, returns error",
+			wantErr:           errors.New("some error"),
+			listerErr:         errors.New("some error"),
+			containerRegistry: "some-reg.io",
+			serviceAccount:    "some-service-account",
+			appName:           "some-app",
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			if tc.actionVerb == "" {
+				tc.actionVerb = "create"
+			}
+
 			fake := &fake.FakeServingV1alpha1{
 				Fake: &ktesting.Fake{},
 			}
@@ -97,19 +125,42 @@ func TestPush(t *testing.T) {
 				expectedPath = cwd
 			}
 
-			called := false
+			var reactorCalled bool
 			fake.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
-				called = true
-				testPushReaction(t, action, expectedNamespace, tc.appName, tc.containerRegistry, tc.serviceAccount)
+				reactorCalled = true
+				testPushReaction(t, action, expectedNamespace, tc.appName, tc.containerRegistry, tc.serviceAccount, tc.actionVerb)
 				return tc.serviceCreateErr != nil, nil, tc.serviceCreateErr
 			}))
+
+			ctrl := gomock.NewController(t)
+			fakeAppLister := kffake.NewFakeLister(ctrl)
+
+			fakeRecorder := fakeAppLister.
+				EXPECT().
+				List(gomock.Any()).
+				DoAndReturn(func(opts ...kf.ListOption) ([]serving.Service, error) {
+					if namespace := kf.ListOptions(opts).Namespace(); namespace != expectedNamespace {
+						t.Fatalf("expected namespace %s, got %s", expectedNamespace, namespace)
+					}
+
+					var apps []serving.Service
+					for _, appName := range tc.deployedApps {
+						s := serving.Service{}
+						s.Name = appName
+						s.ResourceVersion = appName + "-version"
+						apps = append(apps, s)
+					}
+
+					return apps, tc.listerErr
+				})
 
 			var (
 				imageDir string
 				imageTag string
 			)
 
-			p := NewPusher(
+			p := kf.NewPusher(
+				fakeAppLister,
 				func() (cserving.ServingV1alpha1Interface, error) {
 					return fake, tc.servingFactoryErr
 				},
@@ -120,22 +171,26 @@ func TestPush(t *testing.T) {
 				},
 			)
 
-			var opts []PushOption
+			var opts []kf.PushOption
 			if tc.namespace != "" {
-				opts = append(opts, WithPushNamespace(tc.namespace))
+				opts = append(opts, kf.WithPushNamespace(tc.namespace))
 			}
 			if tc.containerRegistry != "" {
-				opts = append(opts, WithPushContainerRegistry(tc.containerRegistry))
+				opts = append(opts, kf.WithPushContainerRegistry(tc.containerRegistry))
 			}
 			if tc.serviceAccount != "" {
-				opts = append(opts, WithPushServiceAccount(tc.serviceAccount))
+				opts = append(opts, kf.WithPushServiceAccount(tc.serviceAccount))
 			}
 			if tc.path != "" {
-				opts = append(opts, WithPushPath(tc.path))
+				opts = append(opts, kf.WithPushPath(tc.path))
 			}
 
 			gotErr := p.Push(tc.appName, opts...)
 			if tc.wantErr != nil || gotErr != nil {
+				// We don't really care if Push was invoked if we want an
+				// error.
+				fakeRecorder.AnyTimes()
+
 				if fmt.Sprint(tc.wantErr) != fmt.Sprint(gotErr) {
 					t.Fatalf("wanted err: %v, got: %v", tc.wantErr, gotErr)
 				}
@@ -143,7 +198,7 @@ func TestPush(t *testing.T) {
 				return
 			}
 
-			if !called {
+			if !reactorCalled {
 				t.Fatal("Reactor was not invoked")
 			}
 
@@ -169,6 +224,7 @@ func testPushReaction(
 	appName string,
 	containerRegistry string,
 	serviceAccount string,
+	actionVerb string,
 ) {
 	t.Helper()
 
@@ -176,7 +232,7 @@ func testPushReaction(
 		t.Fatalf("wanted namespace: %s, got: %s", namespace, action.GetNamespace())
 	}
 
-	if !action.Matches("create", "services") {
+	if !action.Matches(actionVerb, "services") {
 		t.Fatal("wrong action")
 	}
 
@@ -198,6 +254,10 @@ func testPushReaction(
 
 	if service.Namespace != namespace {
 		t.Errorf("wanted service Namespace %s, got %s", namespace, service.Namespace)
+	}
+
+	if actionVerb == "update" && service.ResourceVersion != appName+"-version" {
+		t.Errorf("wanted service ResourceVersion (on update) %s, got %s", appName+"-version", service.ResourceVersion)
 	}
 }
 

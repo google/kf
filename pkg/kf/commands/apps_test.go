@@ -10,6 +10,7 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
 	"github.com/golang/mock/gomock"
+	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"github.com/spf13/cobra"
 )
 
@@ -44,15 +45,17 @@ func TestAppsCommand(t *testing.T) {
 			fakeRecorder := fakeLister.
 				EXPECT().
 				List(gomock.Any()).
-				DoAndReturn(func(opts ...kf.ListOption) ([]kf.App, error) {
+				DoAndReturn(func(opts ...kf.ListOption) ([]serving.Service, error) {
 					t.Helper()
 					if namespace := kf.ListOptions(opts).Namespace(); namespace != tc.namespace {
 						t.Fatalf("expected namespace %s, got %s", tc.namespace, namespace)
 					}
 
-					var apps []kf.App
+					var apps []serving.Service
 					for _, a := range tc.apps {
-						apps = append(apps, kf.App{a})
+						s := serving.Service{}
+						s.Name = a
+						apps = append(apps, s)
 					}
 					return apps, tc.listErr
 				})

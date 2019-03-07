@@ -1,10 +1,11 @@
-package kf
+package kf_test
 
 import (
 	"errors"
 	"fmt"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	"github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -76,13 +77,13 @@ func TestDeleteCommand(t *testing.T) {
 				return tc.serviceDeleteErr != nil, nil, tc.serviceDeleteErr
 			}))
 
-			d := NewDeleter(func() (cserving.ServingV1alpha1Interface, error) {
+			d := kf.NewDeleter(func() (cserving.ServingV1alpha1Interface, error) {
 				return fake, tc.servingFactoryErr
 			})
 
-			var opts []DeleteOption
+			var opts []kf.DeleteOption
 			if tc.namespace != "" {
-				opts = append(opts, WithDeleteNamespace(tc.namespace))
+				opts = append(opts, kf.WithDeleteNamespace(tc.namespace))
 			}
 
 			gotErr := d.Delete(tc.appName, opts...)

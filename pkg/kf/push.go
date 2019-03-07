@@ -10,6 +10,7 @@ import (
 
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	v1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -20,6 +21,13 @@ import (
 type Pusher struct {
 	f ServingFactory
 	b SrcImageBuilder
+	l AppLister
+}
+
+// AppLister lists the deployed apps.
+type AppLister interface {
+	// List lists the deployed apps.
+	List(opts ...ListOption) ([]serving.Service, error)
 }
 
 // SrcImageBuilder creates and uploads a container image that contains the
@@ -27,8 +35,9 @@ type Pusher struct {
 type SrcImageBuilder func(dir, srcImage string) error
 
 // NewPusher creates a new Pusher.
-func NewPusher(f ServingFactory, b SrcImageBuilder) *Pusher {
+func NewPusher(l AppLister, f ServingFactory, b SrcImageBuilder) *Pusher {
 	return &Pusher{
+		l: l,
 		f: f,
 		b: b,
 	}
@@ -70,14 +79,42 @@ func (p *Pusher) Push(appName string, opts ...PushOption) error {
 		return err
 	}
 
+	d, err := p.deployScheme(appName, cfg.Namespace, client)
+	if err != nil {
+		return err
+	}
+
 	return p.buildAndDeploy(
 		appName,
 		srcImage,
 		cfg.Namespace,
 		cfg.ContainerRegistry,
 		cfg.ServiceAccount,
-		client,
+		d,
 	)
+}
+
+type deployer func(*v1alpha1.Service) (*v1alpha1.Service, error)
+
+func (p *Pusher) deployScheme(appName, namespace string, client cserving.ServingV1alpha1Interface) (deployer, error) {
+	apps, err := p.l.List(WithListNamespace(namespace))
+	if err != nil {
+		return nil, err
+	}
+
+	// Look to see if an app with the same name exists in this namespace. If
+	// so, we want to update intead of create.
+	for _, app := range apps {
+		if app.Name == appName {
+			return func(cfg *v1alpha1.Service) (*v1alpha1.Service, error) {
+				// Modify the ResourceVersion. This is required for updates.
+				cfg.ResourceVersion = app.ResourceVersion
+				return client.Services(namespace).Update(cfg)
+			}, nil
+		}
+	}
+
+	return client.Services(namespace).Create, nil
 }
 
 func (p *Pusher) uploadSrc(appName string, cfg pushConfig) (string, error) {
@@ -110,7 +147,7 @@ func (p *Pusher) buildAndDeploy(
 	namespace string,
 	containerRegistry string,
 	serviceAccount string,
-	client cserving.ServingV1alpha1Interface,
+	d deployer,
 ) error {
 	imageName := path.Join(
 		containerRegistry,
@@ -171,7 +208,7 @@ func (p *Pusher) buildAndDeploy(
 	cfg.APIVersion = "serving.knative.dev/v1alpha1"
 	cfg.Namespace = namespace
 
-	if _, err = client.Services(namespace).Create(cfg); err != nil {
+	if _, err := d(cfg); err != nil {
 		return err
 	}
 

@@ -1,4 +1,4 @@
-package kf
+package kf_test
 
 import (
 	"errors"
@@ -8,6 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ktesting "k8s.io/client-go/testing"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	"github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1/fake"
@@ -77,13 +78,13 @@ func TestList(t *testing.T) {
 				return true, serviceList, tc.serviceListErr
 			}))
 
-			lister := NewLister(func() (serving.ServingV1alpha1Interface, error) {
+			lister := kf.NewLister(func() (serving.ServingV1alpha1Interface, error) {
 				return fake, tc.servingFactoryErr
 			})
 
-			var opts []ListOption
+			var opts []kf.ListOption
 			if tc.namespace != "" {
-				opts = append(opts, WithListNamespace(tc.namespace))
+				opts = append(opts, kf.WithListNamespace(tc.namespace))
 			}
 
 			apps, gotErr := lister.List(opts...)
