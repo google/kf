@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"log"
 	"os"
 	"path"
 	"time"
 
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	v1alpha1 "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -19,9 +20,11 @@ import (
 
 // Pusher deploys source code to Knative. It should be created via NewPusher.
 type Pusher struct {
-	f ServingFactory
-	b SrcImageBuilder
-	l AppLister
+	f   ServingFactory
+	b   SrcImageBuilder
+	l   AppLister
+	bl  Logs
+	out io.Writer
 }
 
 // AppLister lists the deployed apps.
@@ -30,43 +33,33 @@ type AppLister interface {
 	List(opts ...ListOption) ([]serving.Service, error)
 }
 
+// Logs handles build and deploy logs.
+type Logs interface {
+	// Tail writes the logs for the build and deploy stage to the given out.
+	// The method exits once the logs are done streaming.
+	Tail(out io.Writer, resourceVersion, namespace string) error
+}
+
 // SrcImageBuilder creates and uploads a container image that contains the
 // contents of the argument 'dir'.
 type SrcImageBuilder func(dir, srcImage string) error
 
 // NewPusher creates a new Pusher.
-func NewPusher(l AppLister, f ServingFactory, b SrcImageBuilder) *Pusher {
+func NewPusher(l AppLister, f ServingFactory, b SrcImageBuilder, bl Logs) *Pusher {
 	return &Pusher{
-		l: l,
-		f: f,
-		b: b,
+		l:  l,
+		f:  f,
+		b:  b,
+		bl: bl,
 	}
 }
 
 // Push deploys an application to Knative. It can be configured via
 // Options.
 func (p *Pusher) Push(appName string, opts ...PushOption) error {
-	cfg := PushOptions(opts).toConfig()
-
-	if cfg.Path == "" {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return err
-		}
-		cfg.Path = cwd
-	}
-	if cfg.Namespace == ""{
-		cfg.Namespace="default"
-	}
-
-	if appName == "" {
-		return errors.New("invalid app name")
-	}
-	if cfg.ContainerRegistry == "" {
-		return errors.New("container registry is not set")
-	}
-	if cfg.ServiceAccount == "" {
-		return errors.New("service account is not set")
+	cfg, err := p.setupConfig(appName, opts)
+	if err != nil {
+		return err
 	}
 
 	client, err := p.f()
@@ -74,7 +67,12 @@ func (p *Pusher) Push(appName string, opts ...PushOption) error {
 		return err
 	}
 
+	// Uploading source code writes to `log.Print`. Prefix this to indicate
+	// the corresponding logs are for uploading the source code.
+	log.SetPrefix("\033[32m[upload-source-code]\033[0m ")
 	srcImage, err := p.uploadSrc(appName, cfg)
+	// Remove the prefix.
+	log.SetPrefix("")
 	if err != nil {
 		return err
 	}
@@ -84,7 +82,7 @@ func (p *Pusher) Push(appName string, opts ...PushOption) error {
 		return err
 	}
 
-	return p.buildAndDeploy(
+	resourceVersion, err := p.buildAndDeploy(
 		appName,
 		srcImage,
 		cfg.Namespace,
@@ -92,9 +90,48 @@ func (p *Pusher) Push(appName string, opts ...PushOption) error {
 		cfg.ServiceAccount,
 		d,
 	)
+	if err != nil {
+		return err
+	}
+
+	if err := p.bl.Tail(cfg.Output, resourceVersion, cfg.Namespace); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-type deployer func(*v1alpha1.Service) (*v1alpha1.Service, error)
+func (p *Pusher) setupConfig(appName string, opts []PushOption) (pushConfig, error) {
+	cfg := PushOptions(opts).toConfig()
+
+	if cfg.Path == "" {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return pushConfig{}, err
+		}
+		cfg.Path = cwd
+	}
+	if cfg.Namespace == "" {
+		cfg.Namespace = "default"
+	}
+	if cfg.Output == nil {
+		cfg.Output = os.Stdout
+	}
+
+	if appName == "" {
+		return pushConfig{}, errors.New("invalid app name")
+	}
+	if cfg.ContainerRegistry == "" {
+		return pushConfig{}, errors.New("container registry is not set")
+	}
+	if cfg.ServiceAccount == "" {
+		return pushConfig{}, errors.New("service account is not set")
+	}
+
+	return cfg, nil
+}
+
+type deployer func(*serving.Service) (*serving.Service, error)
 
 func (p *Pusher) deployScheme(appName, namespace string, client cserving.ServingV1alpha1Interface) (deployer, error) {
 	apps, err := p.l.List(WithListNamespace(namespace))
@@ -106,7 +143,7 @@ func (p *Pusher) deployScheme(appName, namespace string, client cserving.Serving
 	// so, we want to update intead of create.
 	for _, app := range apps {
 		if app.Name == appName {
-			return func(cfg *v1alpha1.Service) (*v1alpha1.Service, error) {
+			return func(cfg *serving.Service) (*serving.Service, error) {
 				// Modify the ResourceVersion. This is required for updates.
 				cfg.ResourceVersion = app.ResourceVersion
 				return client.Services(namespace).Update(cfg)
@@ -148,7 +185,7 @@ func (p *Pusher) buildAndDeploy(
 	containerRegistry string,
 	serviceAccount string,
 	d deployer,
-) error {
+) (string, error) {
 	imageName := path.Join(
 		containerRegistry,
 		p.imageName(appName, false),
@@ -180,7 +217,7 @@ func (p *Pusher) buildAndDeploy(
 	buildSpec.APIVersion = buildAPIVersion
 	buildSpecRaw, err := json.Marshal(buildSpec)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	cfg := &serving.Service{
@@ -208,9 +245,10 @@ func (p *Pusher) buildAndDeploy(
 	cfg.APIVersion = "serving.knative.dev/v1alpha1"
 	cfg.Namespace = namespace
 
-	if _, err := d(cfg); err != nil {
-		return err
+	s, err := d(cfg)
+	if err != nil {
+		return "", err
 	}
 
-	return nil
+	return s.ResourceVersion, nil
 }

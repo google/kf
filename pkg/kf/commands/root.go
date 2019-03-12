@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	build "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
+	buildlogs "github.com/knative/build/pkg/logs"
 	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/poy/kontext"
@@ -36,6 +38,18 @@ func getConfig() (serving.ServingV1alpha1Interface, error) {
 		return nil, err
 	}
 	client, err := serving.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+	return client, nil
+}
+
+func getBuildConfig() (build.BuildV1alpha1Interface, error) {
+	config, err := clientcmd.BuildConfigFromFlags("", kubeCfgFile)
+	if err != nil {
+		return nil, err
+	}
+	client, err := build.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}
@@ -75,8 +89,12 @@ func NewKfCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "default", "namespace")
 
 	lister := kf.NewLister(getConfig)
+	buildLog := kf.NewLogTailer(getBuildConfig, getConfig, buildlogs.Tail)
 	rootCmd.AddCommand(NewDeleteCommand(p, kf.NewDeleter(getConfig)))
-	rootCmd.AddCommand(NewPushCommand(p, kf.NewPusher(lister, getConfig, kontext.BuildImage)))
+	rootCmd.AddCommand(NewPushCommand(
+		p,
+		kf.NewPusher(lister, getConfig, kontext.BuildImage, buildLog)),
+	)
 	rootCmd.AddCommand(NewAppsCommand(p, lister))
 
 	return rootCmd

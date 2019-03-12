@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"regexp"
 	"strings"
@@ -34,6 +35,7 @@ func TestPush(t *testing.T) {
 		wantErr           error
 		servingFactoryErr error
 		serviceCreateErr  error
+		logErr            error
 
 		// AppLister
 		deployedApps []string
@@ -102,6 +104,14 @@ func TestPush(t *testing.T) {
 			serviceAccount:    "some-service-account",
 			appName:           "some-app",
 		},
+		{
+			name:              "fetching logs returns an error, no error",
+			logErr:            errors.New("some error"),
+			containerRegistry: "some-reg.io",
+			serviceAccount:    "some-service-account",
+			appName:           "some-app",
+			wantErr:           errors.New("some error"),
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.actionVerb == "" {
@@ -129,13 +139,18 @@ func TestPush(t *testing.T) {
 			fake.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
 				reactorCalled = true
 				testPushReaction(t, action, expectedNamespace, tc.appName, tc.containerRegistry, tc.serviceAccount, tc.actionVerb)
-				return tc.serviceCreateErr != nil, nil, tc.serviceCreateErr
+
+				// Set the ResourceVersion
+				obj := action.(ktesting.CreateAction).GetObject()
+				obj.(*serving.Service).ResourceVersion = tc.appName + "-version"
+
+				return true, obj, tc.serviceCreateErr
 			}))
 
 			ctrl := gomock.NewController(t)
 			fakeAppLister := kffake.NewFakeLister(ctrl)
 
-			fakeRecorder := fakeAppLister.
+			fakeAppListerRecorder := fakeAppLister.
 				EXPECT().
 				List(gomock.Any()).
 				DoAndReturn(func(opts ...kf.ListOption) ([]serving.Service, error) {
@@ -154,6 +169,29 @@ func TestPush(t *testing.T) {
 					return apps, tc.listerErr
 				})
 
+			fakeLogs := kffake.NewFakeLogTailer(ctrl)
+
+			fakeLogTailerRecorder := fakeLogs.
+				EXPECT().
+				Tail(gomock.Any(), gomock.Any(), gomock.Any()).
+				DoAndReturn(func(out io.Writer, resourceVersion, namespace string) error {
+					if out == nil {
+						t.Fatal("expected out to not be nil")
+					}
+					if namespace != expectedNamespace {
+						t.Fatalf("expected namespace %s, got %s", expectedNamespace, namespace)
+					}
+
+					logResourceVersion := tc.appName + "-version"
+					if resourceVersion != logResourceVersion {
+						t.Fatalf("expected resourceVersion %s, got %s", logResourceVersion, resourceVersion)
+					}
+
+					logResourceVersion = resourceVersion
+
+					return tc.logErr
+				})
+
 			var (
 				imageDir string
 				imageTag string
@@ -169,6 +207,7 @@ func TestPush(t *testing.T) {
 					imageTag = tag
 					return nil
 				},
+				fakeLogs,
 			)
 
 			var opts []kf.PushOption
@@ -187,9 +226,10 @@ func TestPush(t *testing.T) {
 
 			gotErr := p.Push(tc.appName, opts...)
 			if tc.wantErr != nil || gotErr != nil {
-				// We don't really care if Push was invoked if we want an
+				// We don't really care if these were invoked if we want an
 				// error.
-				fakeRecorder.AnyTimes()
+				fakeAppListerRecorder.AnyTimes()
+				fakeLogTailerRecorder.AnyTimes()
 
 				if fmt.Sprint(tc.wantErr) != fmt.Sprint(gotErr) {
 					t.Fatalf("wanted err: %v, got: %v", tc.wantErr, gotErr)

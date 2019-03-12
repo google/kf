@@ -2,6 +2,10 @@
 
 package kf
 
+import (
+	"io"
+)
+
 type pushConfig struct { // Namespace is the Kubertes namespace to use
 	Namespace string
 	// Path is the path of the directory to push
@@ -10,6 +14,8 @@ type pushConfig struct { // Namespace is the Kubertes namespace to use
 	ContainerRegistry string
 	// ServiceAccount is the service account to authenticate with
 	ServiceAccount string
+	// Output is the io.Writer to write output such as build logs
+	Output io.Writer
 }
 
 // PushOption is a single option for configuring a pushConfig
@@ -53,6 +59,12 @@ func (opts PushOptions) ServiceAccount() string {
 	return opts.toConfig().ServiceAccount
 }
 
+// Output returns the last set value for Output or the empty value
+// if not set.
+func (opts PushOptions) Output() io.Writer {
+	return opts.toConfig().Output
+}
+
 // WithPushNamespace creates an Option that sets the Kubertes namespace to use
 func WithPushNamespace(val string) PushOption {
 	return func(cfg *pushConfig) {
@@ -78,5 +90,12 @@ func WithPushContainerRegistry(val string) PushOption {
 func WithPushServiceAccount(val string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.ServiceAccount = val
+	}
+}
+
+// WithPushOutput creates an Option that sets the io.Writer to write output such as build logs
+func WithPushOutput(val io.Writer) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.Output = val
 	}
 }

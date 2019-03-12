@@ -1,7 +1,5 @@
 package main
 
-//go:generate go run option-builder.go
-
 import (
 	"bytes"
 	"fmt"
@@ -20,6 +18,7 @@ type Option struct {
 type OptionsConfig struct {
 	Name    string
 	Options []Option
+	Imports []string
 
 	// ConfigName is set by Name. It is modified to ensure its not exported.
 	ConfigName string
@@ -32,11 +31,13 @@ func main() {
 
 	configs := []OptionsConfig{
 		{
-			Name: "Push",
+			Name:    "Push",
+			Imports: []string{"io"},
 			Options: append(common, []Option{
 				{Name: "Path", Type: "string", Description: "the path of the directory to push"},
 				{Name: "ContainerRegistry", Type: "string", Description: "the container registry's URL"},
 				{Name: "ServiceAccount", Type: "string", Description: "the service account to authenticate with"},
+				{Name: "Output", Type: "io.Writer", Description: "the io.Writer to write output such as build logs"},
 			}...),
 		},
 		{
@@ -53,6 +54,9 @@ func main() {
 // This file was generated with option-builder.go, DO NOT EDIT IT.
 
 package kf
+{{ if .Imports }}
+import ({{ range $index, $import := .Imports }}{{ printf "\n\t%q" $import }}{{ end }}{{printf "\n"}})
+{{ end }}
 
 {{ $typecfg := (printf "%sConfig" .ConfigName) }}
 type {{ $typecfg }} struct {

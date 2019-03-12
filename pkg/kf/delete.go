@@ -23,8 +23,8 @@ func NewDeleter(f ServingFactory) *Deleter {
 func (d *Deleter) Delete(appName string, opts ...DeleteOption) error {
 	cfg := DeleteOptions(opts).toConfig()
 
-	if cfg.Namespace == ""{
-		cfg.Namespace="default"
+	if cfg.Namespace == "" {
+		cfg.Namespace = "default"
 	}
 	if appName == "" {
 		return errors.New("invalid app name")
