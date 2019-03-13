@@ -2,6 +2,7 @@ package kf
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -56,11 +57,28 @@ func (t LogTailer) Tail(out io.Writer, resourceVersion, namespace string) error 
 	}
 	defer wb.Stop()
 
-	for e := range wb.ResultChan() {
-		if e.Type != watch.Added {
-			continue
+	buildNames, buildErrs := make(chan string), make(chan error, 1)
+	go func() {
+		defer close(buildErrs)
+
+		for e := range wb.ResultChan() {
+			obj := e.Object.(*build.Build)
+			if e.Type == watch.Added {
+				buildNames <- obj.Name
+			}
+
+			for _, condition := range obj.Status.Conditions {
+				if condition.Type == "Succeeded" && condition.Status == "False" {
+					// Build failed
+					buildErrs <- errors.New("build failed")
+					return
+				}
+			}
 		}
-		t.t(context.Background(), out, e.Object.(*build.Build).Name, namespace)
+	}()
+
+	if err := t.waitForBuild(out, namespace, buildNames, buildErrs); err != nil {
+		return err
 	}
 
 	ws, err := sclient.Services(namespace).Watch(k8smeta.ListOptions{
@@ -80,4 +98,22 @@ func (t LogTailer) Tail(out io.Writer, resourceVersion, namespace string) error 
 	}
 
 	return nil
+}
+
+func (t LogTailer) waitForBuild(out io.Writer, namespace string, buildNames <-chan string, buildErrs <-chan error) error {
+	for {
+		select {
+		case name := <-buildNames:
+			if err := t.t(context.Background(), out, name, namespace); err != nil {
+				return err
+			}
+		case err, closed := <-buildErrs:
+			if !closed {
+				return nil
+			}
+			// Build failed
+			return err
+		}
+	}
+
 }

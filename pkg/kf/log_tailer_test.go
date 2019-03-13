@@ -40,6 +40,7 @@ func TestLogTailer(t *testing.T) {
 		buildWatchErr     error
 		serviceWatchErr   error
 		buildTailErr      error
+		buildFailed       bool
 	}{
 		{
 			name:            "fetch logs for build",
@@ -59,6 +60,14 @@ func TestLogTailer(t *testing.T) {
 			resourceVersion: "some-version",
 			buildFactoryErr: errors.New("some-error"),
 			wantErr:         errors.New("some-error"),
+		},
+		{
+			name:            "build fails, returns error",
+			namespace:       "default",
+			resourceVersion: "some-version",
+			added:           true,
+			buildFailed:     true,
+			wantErr:         errors.New("build failed"),
 		},
 		{
 			name:            "watch build returns an error, return error",
@@ -87,7 +96,7 @@ func TestLogTailer(t *testing.T) {
 			fakeBuildWatcher := NewFakeWatcher(ctrl)
 			fakeServiceWatcher := NewFakeWatcher(ctrl)
 
-			buildEvents := make(chan watch.Event, 1)
+			buildEvents := make(chan watch.Event, 2)
 			eventType := watch.Modified
 			if tc.added {
 				eventType = watch.Added
@@ -98,6 +107,22 @@ func TestLogTailer(t *testing.T) {
 				Type:   eventType,
 				Object: b,
 			}
+
+			if tc.buildFailed {
+				buildEvents <- watch.Event{
+					Object: &build.Build{
+						Status: build.BuildStatus{
+							Conditions: duckv1alpha1.Conditions{
+								{
+									Type:   "Succeeded",
+									Status: "False",
+								},
+							},
+						},
+					},
+				}
+			}
+
 			close(buildEvents)
 
 			fakeBuildWatcher.
