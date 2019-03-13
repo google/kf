@@ -98,6 +98,7 @@ func (p *Pusher) Push(appName string, opts ...PushOption) error {
 		return err
 	}
 
+	fmt.Fprintf(cfg.Output, "%q successfully deployed\n", appName)
 	return nil
 }
 
