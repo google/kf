@@ -1,66 +1,85 @@
+// +build ignore
+
 package main
 
 import (
 	"bytes"
 	"fmt"
 	"go/format"
+	"io/ioutil"
 	"os"
+	"sort"
 	"strings"
 	"text/template"
+
+	"gopkg.in/yaml.v2"
 )
 
 type Option struct {
-	Name        string
-	Type        string
-	Description string
+	Name        string  `yaml:"name"`
+	Type        string  `yaml:"type"`
+	Description string  `yaml:"description"`
+	Default     *string `yaml:"default"`
 }
 
 type OptionsConfig struct {
-	Name    string
-	Options []Option
-	Imports []string
+	Name    string   `yaml:"name"`
+	Options []Option `yaml:"options"`
+	Imports []string `yaml:"imports"`
 
 	// ConfigName is set by Name. It is modified to ensure its not exported.
-	ConfigName string
+	ConfigName string `yaml:"-"`
+	Package    string `yaml:"-"`
+}
+
+type OptionsFile struct {
+	Package       string          `yaml:"package"`
+	CommonOptions []Option        `yaml:"common"`
+	Configs       []OptionsConfig `yaml:"configs"`
 }
 
 func main() {
-	common := []Option{
-		{Name: "Namespace", Type: "string", Description: "the Kubertes namespace to use"},
+	if len(os.Args) != 2 {
+		panic("use: option-builder.go /path/to/options.yml")
 	}
 
-	configs := []OptionsConfig{
-		{
-			Name:    "Push",
-			Imports: []string{"io"},
-			Options: append(common, []Option{
-				{Name: "Path", Type: "string", Description: "the path of the directory to push"},
-				{Name: "ContainerRegistry", Type: "string", Description: "the container registry's URL"},
-				{Name: "ServiceAccount", Type: "string", Description: "the service account to authenticate with"},
-				{Name: "Output", Type: "io.Writer", Description: "the io.Writer to write output such as build logs"},
-			}...),
-		},
-		{
-			Name:    "Delete",
-			Options: common,
-		},
-		{
-			Name:    "List",
-			Options: common,
-		},
+	optionsPath := os.Args[1]
+	contents, err := ioutil.ReadFile(optionsPath)
+	if err != nil {
+		panic(err)
+	}
+
+	of := &OptionsFile{}
+	if err := yaml.Unmarshal(contents, of); err != nil {
+		panic(err)
+	}
+
+	var configs []OptionsConfig
+	for _, cfg := range of.Configs {
+		// Mix in the common options and sort by name.
+		cfg.Options = append(of.CommonOptions, cfg.Options...)
+		sort.Slice(cfg.Options, func(i, j int) bool {
+			return cfg.Options[i].Name < cfg.Options[j].Name
+		})
+
+		// Don't export the config name.
+		cfg.ConfigName = strings.ToLower(string(cfg.Name[0])) + cfg.Name[1:]
+		cfg.Package = of.Package
+
+		configs = append(configs, cfg)
 	}
 
 	testTemplate := template.Must(template.New("").Funcs(template.FuncMap{}).Parse(`
 // This file was generated with option-builder.go, DO NOT EDIT IT.
 
-package kf
+package {{.Package}}
 {{ if .Imports }}
 import ({{ range $index, $import := .Imports }}{{ printf "\n\t%q" $import }}{{ end }}{{printf "\n"}})
 {{ end }}
 
 {{ $typecfg := (printf "%sConfig" .ConfigName) }}
 type {{ $typecfg }} struct {
-{{- range $i, $opt := .Options}}// {{ $opt.Name }} is {{ $opt.Description }}
+{{ range $i, $opt := .Options}}// {{ $opt.Name }} is {{ $opt.Description }}
 {{ $opt.Name }}  {{ $opt.Type }}
 {{ end }}
 }
@@ -84,6 +103,15 @@ func (opts {{ $typeoptarr }}) toConfig() {{ $typecfg }} {
   return cfg
 }
 
+// Extend creates a new {{ $typeoptarr }} with the contents of other overriding
+// the values set in this {{ $typeoptarr }}.
+func (opts {{ $typeoptarr }}) Extend(other {{ $typeoptarr }}) {{ $typeoptarr }} {
+	var out {{ $typeoptarr }}
+	out = append(out, opts...)
+	out = append(out, other...)
+	return out
+}
+
 {{ $globalName := .Name }}
 {{ range $i, $opt := .Options}}
 
@@ -105,12 +133,17 @@ func With{{$globalName}}{{$opt.Name}}(val {{ $opt.Type }}) {{ $typeopt }} {
 
 {{ end }}
 
+// {{$globalName}}OptionDefaults gets the default values for {{$globalName}}.
+func {{$globalName}}OptionDefaults() {{ $typeoptarr }} {
+	return {{ $typeoptarr }}{
+		{{ range $i, $opt := .Options}}{{ if $opt.Default }}With{{$globalName}}{{$opt.Name}}({{ $opt.Default }}),
+		{{ end }}{{ end }}
+	}
+}
+
 `))
 
 	for _, config := range configs {
-		// Don't export the config name.
-		config.ConfigName = strings.ToLower(string(config.Name[0])) + config.Name[1:]
-
 		if err := generateCode(config, testTemplate); err != nil {
 			panic(err)
 		}

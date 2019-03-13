@@ -16,7 +16,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-//go:generate go run internal/tools/option-builder/option-builder.go
+//go:generate go run internal/tools/option-builder/option-builder.go options.yml
 
 // Pusher deploys source code to Knative. It should be created via NewPusher.
 type Pusher struct {
@@ -102,7 +102,7 @@ func (p *Pusher) Push(appName string, opts ...PushOption) error {
 }
 
 func (p *Pusher) setupConfig(appName string, opts []PushOption) (pushConfig, error) {
-	cfg := PushOptions(opts).toConfig()
+	cfg := PushOptionDefaults().Extend(opts).toConfig()
 
 	if cfg.Path == "" {
 		cwd, err := os.Getwd()
@@ -110,12 +110,6 @@ func (p *Pusher) setupConfig(appName string, opts []PushOption) (pushConfig, err
 			return pushConfig{}, err
 		}
 		cfg.Path = cwd
-	}
-	if cfg.Namespace == "" {
-		cfg.Namespace = "default"
-	}
-	if cfg.Output == nil {
-		cfg.Output = os.Stdout
 	}
 
 	if appName == "" {

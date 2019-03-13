@@ -21,11 +21,8 @@ func NewDeleter(f ServingFactory) *Deleter {
 
 // Delete deletes a deployed application.
 func (d *Deleter) Delete(appName string, opts ...DeleteOption) error {
-	cfg := DeleteOptions(opts).toConfig()
+	cfg := DeleteOptionDefaults().Extend(opts).toConfig()
 
-	if cfg.Namespace == "" {
-		cfg.Namespace = "default"
-	}
 	if appName == "" {
 		return errors.New("invalid app name")
 	}
