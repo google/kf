@@ -79,6 +79,11 @@ func TestAppsCommand(t *testing.T) {
 				return
 			}
 
+			header := fmt.Sprintf("Getting apps in namespace: %s", tc.namespace)
+			if strings.Index(buffer.String(), header) < 0 {
+				t.Fatalf("wanted header: %s: got:\n%v", header, buffer.String())
+			}
+
 			for _, app := range tc.apps {
 				if strings.Index(buffer.String(), app) < 0 {
 					t.Fatalf("wanted output: %s: got:\n%v", app, buffer.String())
