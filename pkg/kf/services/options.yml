@@ -1,0 +1,15 @@
+package: services
+common:
+- name: Namespace
+  type: string
+  description: the Kubernetes namespace to use.
+  default: '"default"'
+configs:
+- name: CreateService
+  options:
+  - name: Params
+    type: 'map[string]interface{}'
+    description: service-specific configuration parameters.
+- name: DeleteService
+- name: GetService
+- name: ListServices

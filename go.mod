@@ -2,13 +2,13 @@ module github.com/GoogleCloudPlatform/kf
 
 require (
 	cloud.google.com/go v0.34.0
-	github.com/Azure/go-autorest v10.6.2+incompatible
+	github.com/Azure/go-autorest v11.1.0+incompatible
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/evanphx/json-patch v4.1.0+incompatible
 	github.com/ghodss/yaml v1.0.0
 	github.com/gobuffalo/envy v1.6.5
-	github.com/gogo/protobuf v0.0.0-20170330071051-c0656edd0d9e
+	github.com/gogo/protobuf v0.0.0-20171007142547-342cbe0a0415
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/mock v1.2.0
 	github.com/golang/protobuf v1.2.0
@@ -22,21 +22,24 @@ require (
 	github.com/hashicorp/golang-lru v0.0.0-20160207214719-a0d98a5f2880
 	github.com/imdario/mergo v0.3.6
 	github.com/joho/godotenv v1.3.0
-	github.com/json-iterator/go v0.0.0-20180612202835-f2b4162afba3
+	github.com/json-iterator/go v0.0.0-20180701071628-ab8a2e0c74be
 	github.com/knative/build v0.4.0
 	github.com/knative/caching v0.0.0-20190102190439-06e978715750
 	github.com/knative/pkg v0.0.0-20190214162945-0183bf9cdc73
 	github.com/knative/serving v0.4.0
 	github.com/knative/test-infra v0.0.0-20190219221246-c579616b211a
+	github.com/kubernetes-incubator/service-catalog v0.1.42 // indirect
 	github.com/markbates/inflect v1.0.4
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a
+	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
-	github.com/modern-go/reflect2 v0.0.0-20180701023420-4b7aa43c6742
+	github.com/modern-go/reflect2 v1.0.1
 	github.com/petar/GoLLRB v0.0.0-20130427215148-53be0d36a84c
 	github.com/peterbourgon/diskv v2.0.1+incompatible
 	github.com/pkg/errors v0.8.1
 	github.com/poy/kontext v0.0.0-20190301225754-e98ee2d26c57
+	github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c
 	github.com/sergi/go-diff v1.0.0
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3
@@ -44,8 +47,8 @@ require (
 	go.uber.org/atomic v1.3.2
 	go.uber.org/multierr v1.1.0
 	go.uber.org/zap v1.9.1
-	golang.org/x/crypto v0.0.0-20170825220121-81e90905daef
-	golang.org/x/net v0.0.0-20180906233101-161cd47e91fd
+	golang.org/x/crypto v0.0.0-20180808211826-de0752318171
+	golang.org/x/net v0.0.0-20181005035420-146acd28ed58
 	golang.org/x/oauth2 v0.0.0-20180104230036-30785a2c434e
 	golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6
 	golang.org/x/sys v0.0.0-20180909124046-d0be0721c37e
@@ -55,10 +58,10 @@ require (
 	google.golang.org/appengine v1.3.0
 	gopkg.in/inf.v0 v0.9.1
 	gopkg.in/yaml.v2 v2.2.1
-	k8s.io/api v0.0.0-20180904230853-4e7be11eab3f
-	k8s.io/apimachinery v0.0.0-20180904193909-def12e63c512
-	k8s.io/client-go v0.0.0-20180910083459-2cefa64ff137
-	k8s.io/code-generator v0.0.0-20180904193909-8c97d6ab64da
-	k8s.io/gengo v0.0.0-20180130054752-8394c995ab8f
-	k8s.io/kube-openapi v0.0.0-20171101183504-39a7bf85c140
+	k8s.io/api v0.0.0-20181121191454-a61488babbd6
+	k8s.io/apimachinery v0.0.0-20181127025237-2b1284ed4c93
+	k8s.io/client-go v2.0.0-alpha.0.0.20190226174127-78295b709ec6+incompatible
+	k8s.io/code-generator v0.0.0-20181117043124-c2090bec4d9b
+	k8s.io/gengo v0.0.0-20181106084056-51747d6e00da
+	k8s.io/kube-openapi v0.0.0-20181109181836-c59034cc13d5
 )
