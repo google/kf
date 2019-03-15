@@ -1,4 +1,4 @@
-package commands
+package apps
 
 import (
 	"bytes"
@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
 	"github.com/golang/mock/gomock"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
@@ -58,7 +59,7 @@ func TestAppsCommand(t *testing.T) {
 
 			buffer := &bytes.Buffer{}
 
-			c := NewAppsCommand(&KfParams{
+			c := NewAppsCommand(&config.KfParams{
 				Namespace: tc.namespace,
 				Output:    buffer,
 			}, fakeLister)

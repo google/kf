@@ -1,10 +1,11 @@
-package commands
+package apps
 
 import (
 	"fmt"
 	"text/tabwriter"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"github.com/spf13/cobra"
 )
@@ -16,7 +17,7 @@ type AppLister interface {
 }
 
 // NewAppsCommand creates a apps command.
-func NewAppsCommand(p *KfParams, l AppLister) *cobra.Command {
+func NewAppsCommand(p *config.KfParams, l AppLister) *cobra.Command {
 
 	var apps = &cobra.Command{
 		Use:   "apps",

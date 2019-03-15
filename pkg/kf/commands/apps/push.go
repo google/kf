@@ -1,9 +1,10 @@
-package commands
+package apps
 
 import (
 	"errors"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/spf13/cobra"
 )
 
@@ -14,7 +15,7 @@ type Pusher interface {
 }
 
 // NewPushCommand creates a push command.
-func NewPushCommand(p *KfParams, pusher Pusher) *cobra.Command {
+func NewPushCommand(p *config.KfParams, pusher Pusher) *cobra.Command {
 	var (
 		containerRegistry string
 		serviceAccount    string

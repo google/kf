@@ -1,9 +1,10 @@
-package commands
+package apps
 
 import (
 	"log"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/spf13/cobra"
 )
 
@@ -14,7 +15,7 @@ type Deleter interface {
 }
 
 // NewDeleteCommand creates a delete command.
-func NewDeleteCommand(p *KfParams, d Deleter) *cobra.Command {
+func NewDeleteCommand(p *config.KfParams, d Deleter) *cobra.Command {
 	var deleteCmd = &cobra.Command{
 		Use:   "delete",
 		Short: "Delete an existing app",

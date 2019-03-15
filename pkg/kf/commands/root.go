@@ -2,11 +2,12 @@ package commands
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/apps"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	build "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	buildlogs "github.com/knative/build/pkg/logs"
 	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
@@ -17,15 +18,6 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 	"k8s.io/client-go/tools/clientcmd"
 )
-
-// KfParams stores everything needed to interact with the user and Knative.
-type KfParams struct {
-	Output    io.Writer
-	Namespace string
-
-	// TODO: Delete once we remove all the references to it.
-	ServingFactory func() (serving.ServingV1alpha1Interface, error)
-}
 
 var (
 	cfgFile     string
@@ -58,9 +50,8 @@ func getBuildConfig() (build.BuildV1alpha1Interface, error) {
 
 // NewKfCommand creates the root kf command.
 func NewKfCommand() *cobra.Command {
-	p := &KfParams{
-		Output:         os.Stdout,
-		ServingFactory: getConfig,
+	p := &config.KfParams{
+		Output: os.Stdout,
 	}
 
 	var rootCmd = &cobra.Command{
@@ -90,12 +81,12 @@ func NewKfCommand() *cobra.Command {
 
 	lister := kf.NewLister(getConfig)
 	buildLog := kf.NewLogTailer(getBuildConfig, getConfig, buildlogs.Tail)
-	rootCmd.AddCommand(NewDeleteCommand(p, kf.NewDeleter(getConfig)))
-	rootCmd.AddCommand(NewPushCommand(
+	rootCmd.AddCommand(apps.NewDeleteCommand(p, kf.NewDeleter(getConfig)))
+	rootCmd.AddCommand(apps.NewPushCommand(
 		p,
 		kf.NewPusher(lister, getConfig, kontext.BuildImage, buildLog)),
 	)
-	rootCmd.AddCommand(NewAppsCommand(p, lister))
+	rootCmd.AddCommand(apps.NewAppsCommand(p, lister))
 
 	return rootCmd
 }

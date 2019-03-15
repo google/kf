@@ -1,4 +1,4 @@
-package commands
+package apps
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
 	"github.com/golang/mock/gomock"
 )
@@ -82,7 +83,7 @@ func TestPushCommand(t *testing.T) {
 
 			buffer := &bytes.Buffer{}
 
-			c := NewPushCommand(&KfParams{
+			c := NewPushCommand(&config.KfParams{
 				Namespace: tc.namespace,
 				Output:    buffer,
 			}, fakePusher)
