@@ -18,34 +18,29 @@ import (
 func TestList(t *testing.T) {
 	t.Parallel()
 
-	for _, tc := range []struct {
-		name              string
+	for tn, tc := range map[string]struct {
 		namespace         string
 		wantErr           error
 		servingFactoryErr error
 		serviceListErr    error
 		serviceNames      []string
 	}{
-		{
-			name:      "configured namespace",
+		"configured namespace": {
 			namespace: "somenamespace",
 		},
-		{
-			name:         "formats multiple services",
+		"formats multiple services": {
 			serviceNames: []string{"service-a", "service-b"},
 		},
-		{
-			name:           "list services error, returns error",
+		"list services error, returns error": {
 			serviceListErr: errors.New("some-error"),
 			wantErr:        errors.New("some-error"),
 		},
-		{
-			name:              "serving factor error, returns error",
+		"serving factor error, returns error": {
 			servingFactoryErr: errors.New("some-error"),
 			wantErr:           errors.New("some-error"),
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tn, func(t *testing.T) {
 			expectedNamespace := tc.namespace
 			if tc.namespace == "" {
 				expectedNamespace = "default"

@@ -14,26 +14,23 @@ import (
 func TestDeleteCommand(t *testing.T) {
 	t.Parallel()
 
-	for _, tc := range []struct {
-		name      string
+	for tn, tc := range map[string]struct {
 		namespace string
 		appName   string
 		wantErr   error
 		deleteErr error
 	}{
-		{
-			name:      "deletes given app in namespace",
+		"deletes given app in namespace": {
 			namespace: "some-namespace",
 			appName:   "some-app",
 		},
-		{
-			name:      "delete app error",
+		"delete app error": {
 			wantErr:   errors.New("some error"),
 			deleteErr: errors.New("some error"),
 			appName:   "some-app",
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			fakeDeleter := fake.NewFakeDeleter(ctrl)

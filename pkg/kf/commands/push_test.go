@@ -14,8 +14,7 @@ import (
 func TestPushCommand(t *testing.T) {
 	t.Parallel()
 
-	for _, tc := range []struct {
-		name              string
+	for tn, tc := range map[string]struct {
 		args              []string
 		namespace         string
 		containerRegistry string
@@ -24,29 +23,25 @@ func TestPushCommand(t *testing.T) {
 		wantUsageOnErr    bool
 		pusherErr         error
 	}{
-		{
-			name:              "uses configured namespace",
+		"uses configured namespace": {
 			namespace:         "some-namespace",
 			args:              []string{"app-name"},
 			containerRegistry: "some-reg.io",
 			serviceAccount:    "some-service-account",
 		},
-		{
-			name:           "container registry not configured, returns error",
+		"container registry not configured, returns error": {
 			args:           []string{"app-name"},
 			wantErr:        errors.New("container registry is not set"),
 			serviceAccount: "some-service-account",
 			wantUsageOnErr: true,
 		},
-		{
-			name:              "service account not configured, returns error",
+		"service account not configured, returns error": {
 			args:              []string{"app-name"},
 			wantErr:           errors.New("service account is not set"),
 			containerRegistry: "some-reg.io",
 			wantUsageOnErr:    true,
 		},
-		{
-			name:              "service create error",
+		"service create error": {
 			args:              []string{"app-name"},
 			wantErr:           errors.New("some error"),
 			pusherErr:         errors.New("some error"),
@@ -54,7 +49,7 @@ func TestPushCommand(t *testing.T) {
 			serviceAccount:    "some-service-account",
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			fakePusher := fake.NewFakePusher(ctrl)

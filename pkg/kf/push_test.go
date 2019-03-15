@@ -24,8 +24,7 @@ import (
 func TestPush(t *testing.T) {
 	t.Parallel()
 
-	for _, tc := range []struct {
-		name              string
+	for tn, tc := range map[string]struct {
 		namespace         string
 		containerRegistry string
 		appName           string
@@ -41,71 +40,61 @@ func TestPush(t *testing.T) {
 		deployedApps []string
 		listerErr    error
 	}{
-		{
-			name:              "pushes app to a configured namespace",
+		"pushes app to a configured namespace": {
 			namespace:         "some-namespace",
 			containerRegistry: "some-reg.io",
 			serviceAccount:    "some-service-account",
 			appName:           "some-app",
 		},
-		{
-			name:              "pushes app to default namespace",
+		"pushes app to default namespace": {
 			containerRegistry: "some-reg.io",
 			serviceAccount:    "some-service-account",
 			appName:           "some-app",
 		},
-		{
-			name:              "app already exists, update",
+		"app already exists, update": {
 			containerRegistry: "some-reg.io",
 			serviceAccount:    "some-service-account",
 			appName:           "some-app",
 			actionVerb:        "update",
 			deployedApps:      []string{"some-other-app", "some-app"},
 		},
-		{
-			name:              "empty app name, returns error",
+		"empty app name, returns error": {
 			wantErr:           errors.New("invalid app name"),
 			containerRegistry: "some-reg.io",
 			serviceAccount:    "some-service-account",
 		},
-		{
-			name:           "container registry not configured, returns error",
+		"container registry not configured, returns error": {
 			wantErr:        errors.New("container registry is not set"),
 			serviceAccount: "some-service-account",
 			appName:        "some-app",
 		},
-		{
-			name:              "service account not configured, returns error",
+		"service account not configured, returns error": {
 			wantErr:           errors.New("service account is not set"),
 			containerRegistry: "some-reg.io",
 			appName:           "some-app",
 		},
-		{
-			name:              "serving factory error, returns error",
+		"serving factory error, returns error": {
 			wantErr:           errors.New("some error"),
 			servingFactoryErr: errors.New("some error"),
 			containerRegistry: "some-reg.io",
 			serviceAccount:    "some-service-account",
 			appName:           "some-app",
 		},
-		{
-			name:              "service create error, returns error",
+		"service create error, returns error": {
 			wantErr:           errors.New("some error"),
 			serviceCreateErr:  errors.New("some error"),
 			containerRegistry: "some-reg.io",
 			serviceAccount:    "some-service-account",
 			appName:           "some-app",
 		},
-		{
-			name:              "service list error, returns error",
+		"service list error, returns error": {
 			wantErr:           errors.New("some error"),
 			listerErr:         errors.New("some error"),
 			containerRegistry: "some-reg.io",
 			serviceAccount:    "some-service-account",
 			appName:           "some-app",
 		},
-		{
-			name:              "fetching logs returns an error, no error",
+		"fetching logs returns an error, no error": {
 			logErr:            errors.New("some error"),
 			containerRegistry: "some-reg.io",
 			serviceAccount:    "some-service-account",
@@ -113,7 +102,7 @@ func TestPush(t *testing.T) {
 			wantErr:           errors.New("some error"),
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tn, func(t *testing.T) {
 			if tc.actionVerb == "" {
 				tc.actionVerb = "create"
 			}

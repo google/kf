@@ -29,8 +29,7 @@ import (
 func TestLogTailer(t *testing.T) {
 	t.Parallel()
 
-	for _, tc := range []struct {
-		name              string
+	for tn, tc := range map[string]struct {
 		namespace         string
 		resourceVersion   string
 		added             bool
@@ -42,56 +41,49 @@ func TestLogTailer(t *testing.T) {
 		buildTailErr      error
 		buildFailed       bool
 	}{
-		{
-			name:            "fetch logs for build",
+		"fetch logs for build": {
 			namespace:       "default",
 			resourceVersion: "some-version",
 			added:           true,
 		},
-		{
-			name:            "when build is not added, don't display logs",
+		"when build is not added, don't display logs": {
 			namespace:       "default",
 			resourceVersion: "some-version",
 			added:           false,
 		},
-		{
-			name:            "build factory returns error, return error",
+		"build factory returns error, return error": {
 			namespace:       "default",
 			resourceVersion: "some-version",
 			buildFactoryErr: errors.New("some-error"),
 			wantErr:         errors.New("some-error"),
 		},
-		{
-			name:            "build fails, returns error",
+		"build fails, returns error": {
 			namespace:       "default",
 			resourceVersion: "some-version",
 			added:           true,
 			buildFailed:     true,
 			wantErr:         errors.New("build failed"),
 		},
-		{
-			name:            "watch build returns an error, return error",
+		"watch build returns an error, return error": {
 			namespace:       "default",
 			resourceVersion: "some-version",
 			buildWatchErr:   errors.New("some-error"),
 			wantErr:         errors.New("some-error"),
 		},
-		{
-			name:              "serving factory returns error, return error",
+		"serving factory returns error, return error": {
 			namespace:         "default",
 			resourceVersion:   "some-version",
 			servingFactoryErr: errors.New("some-error"),
 			wantErr:           errors.New("some-error"),
 		},
-		{
-			name:            "watch service returns an error, return error",
+		"watch service returns an error, return error": {
 			namespace:       "default",
 			resourceVersion: "some-version",
 			serviceWatchErr: errors.New("some-error"),
 			wantErr:         errors.New("some-error"),
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			fakeBuildWatcher := NewFakeWatcher(ctrl)
 			fakeServiceWatcher := NewFakeWatcher(ctrl)

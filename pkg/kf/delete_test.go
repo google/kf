@@ -15,41 +15,35 @@ import (
 func TestDeleteCommand(t *testing.T) {
 	t.Parallel()
 
-	for _, tc := range []struct {
-		name              string
+	for tn, tc := range map[string]struct {
 		namespace         string
 		appName           string
 		wantErr           error
 		servingFactoryErr error
 		serviceDeleteErr  error
 	}{
-		{
-			name:      "deletes given app in namespace",
+		"deletes given app in namespace": {
 			namespace: "some-namespace",
 			appName:   "some-app",
 		},
-		{
-			name:    "deletes given app in the default namespace",
+		"deletes given app in the default namespace": {
 			appName: "some-app",
 		},
-		{
-			name:    "empty app name, returns error",
+		"empty app name, returns error": {
 			wantErr: errors.New("invalid app name"),
 		},
-		{
-			name:              "serving factory error",
+		"serving factory error": {
 			wantErr:           errors.New("some error"),
 			servingFactoryErr: errors.New("some error"),
 			appName:           "some-app",
 		},
-		{
-			name:             "service delete error",
+		"service delete error": {
 			wantErr:          errors.New("some error"),
 			serviceDeleteErr: errors.New("some error"),
 			appName:          "some-app",
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tn, func(t *testing.T) {
 			fake := &fake.FakeServingV1alpha1{
 				Fake: &ktesting.Fake{},
 			}

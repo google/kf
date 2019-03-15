@@ -16,28 +16,24 @@ import (
 
 func TestAppsCommand(t *testing.T) {
 	t.Parallel()
-	for _, tc := range []struct {
-		name      string
+	for tn, tc := range map[string]struct {
 		namespace string
 		wantErr   error
 		listErr   error
 		apps      []string
 	}{
-		{
-			name:      "configured namespace",
+		"configured namespace": {
 			namespace: "somenamespace",
 		},
-		{
-			name: "formats multiple services",
+		"formats multiple services": {
 			apps: []string{"service-a", "service-b"},
 		},
-		{
-			name:    "list applications error, returns error",
+		"list applications error, returns error": {
 			listErr: errors.New("some-error"),
 			wantErr: errors.New("some-error"),
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			fakeLister := fake.NewFakeLister(ctrl)
