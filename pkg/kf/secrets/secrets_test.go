@@ -13,6 +13,8 @@ import (
 )
 
 func TestClient_Create(t *testing.T) {
+	t.Parallel()
+
 	cases := map[string]struct {
 		Name             string
 		Options          []CreateOption
@@ -94,6 +96,8 @@ func TestClient_Create(t *testing.T) {
 }
 
 func TestClient_Get(t *testing.T) {
+	t.Parallel()
+
 	dummySecret := map[string][]byte{
 		"foo": []byte("foo"),
 	}
@@ -171,6 +175,8 @@ func TestClient_Get(t *testing.T) {
 }
 
 func TestClient_Delete(t *testing.T) {
+	t.Parallel()
+
 	cases := map[string]struct {
 		Name      string
 		Options   []DeleteOption
