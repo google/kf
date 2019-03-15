@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"regexp"
 	"strings"
@@ -21,43 +20,15 @@ import (
 	ktesting "k8s.io/client-go/testing"
 )
 
-func TestPush(t *testing.T) {
+func TestPush_BadConfig(t *testing.T) {
 	t.Parallel()
 
 	for tn, tc := range map[string]struct {
-		namespace         string
-		containerRegistry string
 		appName           string
-		path              string
+		containerRegistry string
 		serviceAccount    string
-		actionVerb        string
 		wantErr           error
-		servingFactoryErr error
-		serviceCreateErr  error
-		logErr            error
-
-		// AppLister
-		deployedApps []string
-		listerErr    error
 	}{
-		"pushes app to a configured namespace": {
-			namespace:         "some-namespace",
-			containerRegistry: "some-reg.io",
-			serviceAccount:    "some-service-account",
-			appName:           "some-app",
-		},
-		"pushes app to default namespace": {
-			containerRegistry: "some-reg.io",
-			serviceAccount:    "some-service-account",
-			appName:           "some-app",
-		},
-		"app already exists, update": {
-			containerRegistry: "some-reg.io",
-			serviceAccount:    "some-service-account",
-			appName:           "some-app",
-			actionVerb:        "update",
-			deployedApps:      []string{"some-other-app", "some-app"},
-		},
 		"empty app name, returns error": {
 			wantErr:           errors.New("invalid app name"),
 			containerRegistry: "some-reg.io",
@@ -73,39 +44,234 @@ func TestPush(t *testing.T) {
 			containerRegistry: "some-reg.io",
 			appName:           "some-app",
 		},
-		"serving factory error, returns error": {
-			wantErr:           errors.New("some error"),
-			servingFactoryErr: errors.New("some error"),
-			containerRegistry: "some-reg.io",
-			serviceAccount:    "some-service-account",
-			appName:           "some-app",
-		},
-		"service create error, returns error": {
-			wantErr:           errors.New("some error"),
-			serviceCreateErr:  errors.New("some error"),
-			containerRegistry: "some-reg.io",
-			serviceAccount:    "some-service-account",
-			appName:           "some-app",
-		},
-		"service list error, returns error": {
-			wantErr:           errors.New("some error"),
-			listerErr:         errors.New("some error"),
-			containerRegistry: "some-reg.io",
-			serviceAccount:    "some-service-account",
-			appName:           "some-app",
+	} {
+		t.Run(tn, func(t *testing.T) {
+			p := kf.NewPusher(
+				nil, // AppLister - Should not be used
+				nil, // ServingFactory - Should not be used
+				nil, // SrcImageBuilder - Should not be used
+				nil, // Logs - Should not be used
+			)
+
+			var opts []kf.PushOption
+			if tc.containerRegistry != "" {
+				opts = append(opts, kf.WithPushContainerRegistry(tc.containerRegistry))
+			}
+			if tc.serviceAccount != "" {
+				opts = append(opts, kf.WithPushServiceAccount(tc.serviceAccount))
+			}
+
+			gotErr := p.Push(tc.appName, opts...)
+			if fmt.Sprint(tc.wantErr) != fmt.Sprint(gotErr) {
+				t.Fatalf("wanted err: %v, got: %v", tc.wantErr, gotErr)
+			}
+		})
+	}
+}
+
+func TestPush_Logs(t *testing.T) {
+	t.Parallel()
+
+	for tn, tc := range map[string]struct {
+		appName string
+		wantErr error
+		logErr  error
+	}{
+		"fetching logs succeeds": {
+			appName: "some-app",
 		},
 		"fetching logs returns an error, no error": {
-			logErr:            errors.New("some error"),
-			containerRegistry: "some-reg.io",
-			serviceAccount:    "some-service-account",
-			appName:           "some-app",
-			wantErr:           errors.New("some error"),
+			appName: "some-app",
+			wantErr: errors.New("some error"),
+			logErr:  errors.New("some error"),
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
-			if tc.actionVerb == "" {
-				tc.actionVerb = "create"
+			ctrl := gomock.NewController(t)
+			expectedNamespace := "some-namespace"
+
+			fakeAppLister := kffake.NewFakeLister(ctrl)
+			fakeAppLister.
+				EXPECT().
+				List(gomock.Any()).
+				AnyTimes()
+
+			fakeLogs := kffake.NewFakeLogTailer(ctrl)
+			fakeLogs.
+				EXPECT().
+				Tail(
+					gomock.Not(gomock.Nil()), // out,
+					tc.appName+"-version",    // resourceVersion
+					expectedNamespace,        // namespace
+				).
+				Return(tc.logErr)
+
+			fakeServing := &fake.FakeServingV1alpha1{
+				Fake: &ktesting.Fake{},
 			}
+			fakeServing.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
+				// Set the ResourceVersion
+				obj := action.(ktesting.CreateAction).GetObject()
+				obj.(*serving.Service).ResourceVersion = tc.appName + "-version"
+
+				return true, obj, nil
+			}))
+
+			p := kf.NewPusher(
+				fakeAppLister,
+				func() (cserving.ServingV1alpha1Interface, error) {
+					return fakeServing, nil
+				},
+				func(dir, tag string) error {
+					return nil
+				},
+				fakeLogs,
+			)
+
+			gotErr := p.Push(
+				tc.appName,
+				kf.WithPushNamespace(expectedNamespace),
+				kf.WithPushContainerRegistry("some-container-registry"),
+				kf.WithPushServiceAccount("some-service-account"),
+			)
+
+			if fmt.Sprint(tc.wantErr) != fmt.Sprint(gotErr) {
+				t.Fatalf("wanted err: %v, got: %v", tc.wantErr, gotErr)
+			}
+
+			ctrl.Finish()
+		})
+	}
+}
+
+func TestPush_UpdateApp(t *testing.T) {
+	t.Parallel()
+
+	for tn, tc := range map[string]struct {
+		appName   string
+		listerErr error
+		wantErr   error
+	}{
+		"app already exists, update": {
+			appName: "some-app",
+		},
+		"service list error, returns error": {
+			wantErr:   errors.New("some error"),
+			listerErr: errors.New("some error"),
+			appName:   "some-app",
+		},
+	} {
+		t.Run(tn, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			expectedNamespace := "some-namespace"
+			deployedApps := []string{"some-other-app", "some-app"}
+			containerRegistry := "some-reg.io"
+			serviceAccount := "some-service-account"
+
+			fakeAppLister := kffake.NewFakeLister(ctrl)
+			fakeAppLister.
+				EXPECT().
+				List(gomock.Any()).
+				DoAndReturn(func(opts ...kf.ListOption) ([]serving.Service, error) {
+					if namespace := kf.ListOptions(opts).Namespace(); namespace != expectedNamespace {
+						t.Fatalf("expected namespace %s, got %s", expectedNamespace, namespace)
+					}
+
+					var apps []serving.Service
+					for _, appName := range deployedApps {
+						s := serving.Service{}
+						s.Name = appName
+						s.ResourceVersion = appName + "-version"
+						apps = append(apps, s)
+					}
+
+					return apps, tc.listerErr
+				})
+
+			fakeLogs := kffake.NewFakeLogTailer(ctrl)
+			fakeLogs.
+				EXPECT().
+				Tail(gomock.Any(), gomock.Any(), gomock.Any()).
+				AnyTimes()
+
+			fakeServing := &fake.FakeServingV1alpha1{
+				Fake: &ktesting.Fake{},
+			}
+			var reactorCalled bool
+			fakeServing.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
+				reactorCalled = true
+				testPushReaction(t, action, expectedNamespace, tc.appName, containerRegistry, serviceAccount, "update")
+
+				return false, nil, nil
+			}))
+
+			p := kf.NewPusher(
+				fakeAppLister,
+				func() (cserving.ServingV1alpha1Interface, error) {
+					return fakeServing, nil
+				},
+				func(dir, tag string) error {
+					return nil
+				},
+				fakeLogs,
+			)
+
+			gotErr := p.Push(
+				tc.appName,
+				kf.WithPushNamespace(expectedNamespace),
+				kf.WithPushContainerRegistry(containerRegistry),
+				kf.WithPushServiceAccount(serviceAccount),
+			)
+			if tc.wantErr != nil || gotErr != nil {
+				if fmt.Sprint(tc.wantErr) != fmt.Sprint(gotErr) {
+					t.Fatalf("wanted err: %v, got: %v", tc.wantErr, gotErr)
+				}
+
+				return
+			}
+
+			if !reactorCalled {
+				t.Fatal("Reactor was not invoked")
+			}
+
+			ctrl.Finish()
+		})
+	}
+}
+
+func TestPush_NewApp(t *testing.T) {
+	t.Parallel()
+
+	for tn, tc := range map[string]struct {
+		namespace         string
+		appName           string
+		path              string
+		wantErr           error
+		servingFactoryErr error
+		serviceCreateErr  error
+	}{
+		"pushes app to a configured namespace": {
+			namespace: "some-namespace",
+			appName:   "some-app",
+		},
+		"pushes app to default namespace": {
+			appName: "some-app",
+		},
+		"serving factory error, returns error": {
+			wantErr:           errors.New("some error"),
+			servingFactoryErr: errors.New("some error"),
+			appName:           "some-app",
+		},
+		"service create error, returns error": {
+			wantErr:          errors.New("some error"),
+			serviceCreateErr: errors.New("some error"),
+			appName:          "some-app",
+		},
+	} {
+		t.Run(tn, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			containerRegistry := "some-reg.io"
+			serviceAccount := "some-service-account"
 
 			fake := &fake.FakeServingV1alpha1{
 				Fake: &ktesting.Fake{},
@@ -127,87 +293,53 @@ func TestPush(t *testing.T) {
 			var reactorCalled bool
 			fake.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
 				reactorCalled = true
-				testPushReaction(t, action, expectedNamespace, tc.appName, tc.containerRegistry, tc.serviceAccount, tc.actionVerb)
+				testPushReaction(t, action, expectedNamespace, tc.appName, containerRegistry, serviceAccount, "create")
 
-				// Set the ResourceVersion
-				obj := action.(ktesting.CreateAction).GetObject()
-				obj.(*serving.Service).ResourceVersion = tc.appName + "-version"
-
-				return true, obj, tc.serviceCreateErr
+				return tc.serviceCreateErr != nil, nil, tc.serviceCreateErr
 			}))
 
-			ctrl := gomock.NewController(t)
 			fakeAppLister := kffake.NewFakeLister(ctrl)
-
-			fakeAppListerRecorder := fakeAppLister.
+			fakeAppLister.
 				EXPECT().
 				List(gomock.Any()).
-				DoAndReturn(func(opts ...kf.ListOption) ([]serving.Service, error) {
-					if namespace := kf.ListOptions(opts).Namespace(); namespace != expectedNamespace {
-						t.Fatalf("expected namespace %s, got %s", expectedNamespace, namespace)
-					}
-
-					var apps []serving.Service
-					for _, appName := range tc.deployedApps {
-						s := serving.Service{}
-						s.Name = appName
-						s.ResourceVersion = appName + "-version"
-						apps = append(apps, s)
-					}
-
-					return apps, tc.listerErr
-				})
+				AnyTimes()
 
 			fakeLogs := kffake.NewFakeLogTailer(ctrl)
-
-			fakeLogTailerRecorder := fakeLogs.
+			fakeLogs.
 				EXPECT().
 				Tail(gomock.Any(), gomock.Any(), gomock.Any()).
-				DoAndReturn(func(out io.Writer, resourceVersion, namespace string) error {
-					if out == nil {
-						t.Fatal("expected out to not be nil")
-					}
-					if namespace != expectedNamespace {
-						t.Fatalf("expected namespace %s, got %s", expectedNamespace, namespace)
-					}
+				AnyTimes()
 
-					logResourceVersion := tc.appName + "-version"
-					if resourceVersion != logResourceVersion {
-						t.Fatalf("expected resourceVersion %s, got %s", logResourceVersion, resourceVersion)
-					}
+			srcBuilder := func(dir, tag string) error {
+				if dir != expectedPath {
+					t.Fatalf("wanted image dir %s, got %s", expectedPath, dir)
+				}
 
-					logResourceVersion = resourceVersion
+				if !strings.HasPrefix(tag, containerRegistry) {
+					t.Fatalf("want container registry prefix %s, got %s", containerRegistry, tag)
+				}
 
-					return tc.logErr
-				})
-
-			var (
-				imageDir string
-				imageTag string
-			)
+				if !strings.HasSuffix(tag, "latest") {
+					t.Fatalf("want container registry suffix %s, got %s", "latest", tag)
+				}
+				return nil
+			}
 
 			p := kf.NewPusher(
 				fakeAppLister,
 				func() (cserving.ServingV1alpha1Interface, error) {
 					return fake, tc.servingFactoryErr
 				},
-				func(dir, tag string) error {
-					imageDir = dir
-					imageTag = tag
-					return nil
-				},
+				srcBuilder,
 				fakeLogs,
 			)
 
-			var opts []kf.PushOption
+			opts := []kf.PushOption{
+				kf.WithPushContainerRegistry(containerRegistry),
+				kf.WithPushServiceAccount(serviceAccount),
+			}
 			if tc.namespace != "" {
 				opts = append(opts, kf.WithPushNamespace(tc.namespace))
-			}
-			if tc.containerRegistry != "" {
-				opts = append(opts, kf.WithPushContainerRegistry(tc.containerRegistry))
-			}
-			if tc.serviceAccount != "" {
-				opts = append(opts, kf.WithPushServiceAccount(tc.serviceAccount))
 			}
 			if tc.path != "" {
 				opts = append(opts, kf.WithPushPath(tc.path))
@@ -215,11 +347,6 @@ func TestPush(t *testing.T) {
 
 			gotErr := p.Push(tc.appName, opts...)
 			if tc.wantErr != nil || gotErr != nil {
-				// We don't really care if these were invoked if we want an
-				// error.
-				fakeAppListerRecorder.AnyTimes()
-				fakeLogTailerRecorder.AnyTimes()
-
 				if fmt.Sprint(tc.wantErr) != fmt.Sprint(gotErr) {
 					t.Fatalf("wanted err: %v, got: %v", tc.wantErr, gotErr)
 				}
@@ -231,17 +358,7 @@ func TestPush(t *testing.T) {
 				t.Fatal("Reactor was not invoked")
 			}
 
-			if imageDir != expectedPath {
-				t.Fatalf("wanted cwd %s, got %s", expectedPath, imageDir)
-			}
-
-			if !strings.HasPrefix(imageTag, tc.containerRegistry) {
-				t.Fatalf("want container registry prefix %s, got %s", tc.containerRegistry, imageTag)
-			}
-
-			if !strings.HasSuffix(imageTag, "latest") {
-				t.Fatalf("want container registry suffix %s, got %s", "latest", imageTag)
-			}
+			ctrl.Finish()
 		})
 	}
 }
