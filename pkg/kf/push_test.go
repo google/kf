@@ -9,6 +9,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	kffake "github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
+	kfi "github.com/GoogleCloudPlatform/kf/pkg/kf/internal/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
 	"github.com/golang/mock/gomock"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
@@ -23,11 +24,9 @@ func TestPush_BadConfig(t *testing.T) {
 	t.Parallel()
 
 	for tn, tc := range map[string]struct {
-		appName           string
-		wantErr           error
-		opts              kf.PushOptions
-		containerRegistry string
-		serviceAccount    string
+		appName string
+		wantErr error
+		opts    kf.PushOptions
 	}{
 		"empty app name, returns error": {
 			wantErr: errors.New("invalid app name"),
@@ -36,11 +35,29 @@ func TestPush_BadConfig(t *testing.T) {
 				kf.WithPushServiceAccount("some-service-account"),
 			},
 		},
-		"container registry not configured, returns error": {
+		"container registry and docker image are NOT configured, returns error": {
 			appName: "some-app",
-			wantErr: errors.New("container registry is not set"),
+			wantErr: errors.New("container registry or docker image must be set (not both)"),
 			opts: kf.PushOptions{
 				kf.WithPushServiceAccount("some-service-account"),
+			},
+		},
+		"container registry and docker image are configured, returns error": {
+			appName: "some-app",
+			wantErr: errors.New("container registry or docker image must be set (not both)"),
+			opts: kf.PushOptions{
+				kf.WithPushServiceAccount("some-service-account"),
+				kf.WithPushDockerImage("some-image"),
+				kf.WithPushContainerRegistry("some-reg.io"),
+			},
+		},
+		"path and docker image are configured, returns error": {
+			appName: "some-app",
+			wantErr: errors.New("path flag is not valid with docker image flag"),
+			opts: kf.PushOptions{
+				kf.WithPushServiceAccount("some-service-account"),
+				kf.WithPushDockerImage("some-image"),
+				kf.WithPushPath("some-path"),
 			},
 		},
 		"service account not configured, returns error": {
@@ -61,6 +78,10 @@ func TestPush_BadConfig(t *testing.T) {
 
 			gotErr := p.Push(tc.appName, tc.opts...)
 			testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
+
+			if !kfi.ConfigError(gotErr) {
+				t.Fatal("wanted error to be a ConfigError")
+			}
 		})
 	}
 }
@@ -99,6 +120,7 @@ func TestPush_Logs(t *testing.T) {
 					gomock.Not(gomock.Nil()), // out,
 					tc.appName+"-version",    // resourceVersion
 					expectedNamespace,        // namespace
+					false,                    // skip build logs
 				).
 				Return(tc.logErr)
 
@@ -184,7 +206,7 @@ func TestPush_UpdateApp(t *testing.T) {
 			fakeLogs := kffake.NewFakeLogTailer(ctrl)
 			fakeLogs.
 				EXPECT().
-				Tail(gomock.Any(), gomock.Any(), gomock.Any()).
+				Tail(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 				AnyTimes()
 
 			fakeServing := &fake.FakeServingV1alpha1{
@@ -193,7 +215,7 @@ func TestPush_UpdateApp(t *testing.T) {
 			var reactorCalled bool
 			fakeServing.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
 				reactorCalled = true
-				testPushReaction(t, action, expectedNamespace, tc.appName, containerRegistry, serviceAccount, "update")
+				testPushReaction(t, action, expectedNamespace, tc.appName, containerRegistry, serviceAccount, "update", "")
 
 				return false, nil, nil
 			}))
@@ -243,26 +265,45 @@ func TestPush_NewApp(t *testing.T) {
 			appName: "some-app",
 			opts: kf.PushOptions{
 				kf.WithPushNamespace("some-namespace"),
+				kf.WithPushContainerRegistry("some-reg.io"),
+				kf.WithPushServiceAccount("some-service-account"),
 			},
 		},
 		"pushes app to default namespace": {
 			appName: "some-app",
+			opts: kf.PushOptions{
+				kf.WithPushContainerRegistry("some-reg.io"),
+				kf.WithPushServiceAccount("some-service-account"),
+			},
+		},
+		"pushes docker image": {
+			appName: "some-app",
+			opts: kf.PushOptions{
+				kf.WithPushDockerImage("some-docker-image"),
+				kf.WithPushServiceAccount("some-service-account"),
+			},
 		},
 		"serving factory error, returns error": {
 			appName:           "some-app",
 			wantErr:           errors.New("some error"),
 			servingFactoryErr: errors.New("some error"),
+			opts: kf.PushOptions{
+				kf.WithPushContainerRegistry("some-reg.io"),
+				kf.WithPushServiceAccount("some-service-account"),
+			},
 		},
 		"service create error, returns error": {
 			appName:          "some-app",
 			wantErr:          errors.New("some error"),
 			serviceCreateErr: errors.New("some error"),
+			opts: kf.PushOptions{
+				kf.WithPushContainerRegistry("some-reg.io"),
+				kf.WithPushServiceAccount("some-service-account"),
+			},
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			containerRegistry := "some-reg.io"
-			serviceAccount := "some-service-account"
 
 			fake := &fake.FakeServingV1alpha1{
 				Fake: &ktesting.Fake{},
@@ -284,7 +325,7 @@ func TestPush_NewApp(t *testing.T) {
 			var reactorCalled bool
 			fake.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
 				reactorCalled = true
-				testPushReaction(t, action, expectedNamespace, tc.appName, containerRegistry, serviceAccount, "create")
+				testPushReaction(t, action, expectedNamespace, tc.appName, tc.opts.ContainerRegistry(), tc.opts.ServiceAccount(), "create", tc.opts.DockerImage())
 
 				return tc.serviceCreateErr != nil, nil, tc.serviceCreateErr
 			}))
@@ -298,12 +339,19 @@ func TestPush_NewApp(t *testing.T) {
 			fakeLogs := kffake.NewFakeLogTailer(ctrl)
 			fakeLogs.
 				EXPECT().
-				Tail(gomock.Any(), gomock.Any(), gomock.Any()).
+				Tail(gomock.Any(), gomock.Any(), gomock.Any(), tc.opts.DockerImage() != "").
 				AnyTimes()
 
+			var srcBuilderCalled bool
 			srcBuilder := func(dir, tag string) error {
+				srcBuilderCalled = true
+				if tc.opts.DockerImage() != "" {
+					t.Fatal("should not have been called with docker image")
+				}
+
 				testutil.AssertEqual(t, "path", expectedPath, dir)
-				testutil.AssertRegexp(t, "container registry", "^"+containerRegistry+`/[a-zA-Z0-9_-]+:latest$`, tag)
+				testutil.AssertRegexp(t, "container registry", "^"+tc.opts.ContainerRegistry()+`/[a-zA-Z0-9_-]+:latest$`, tag)
+
 				return nil
 			}
 
@@ -316,11 +364,6 @@ func TestPush_NewApp(t *testing.T) {
 				fakeLogs,
 			)
 
-			tc.opts = append(tc.opts,
-				kf.WithPushContainerRegistry(containerRegistry),
-				kf.WithPushServiceAccount(serviceAccount),
-			)
-
 			gotErr := p.Push(tc.appName, tc.opts...)
 			if tc.wantErr != nil || gotErr != nil {
 				testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
@@ -329,6 +372,9 @@ func TestPush_NewApp(t *testing.T) {
 
 			if !reactorCalled {
 				t.Fatal("Reactor was not invoked")
+			}
+			if !srcBuilderCalled && tc.opts.DockerImage() == "" {
+				t.Fatal("SrcBuilder was not invoked")
 			}
 
 			ctrl.Finish()
@@ -344,6 +390,7 @@ func testPushReaction(
 	containerRegistry string,
 	serviceAccount string,
 	actionVerb string,
+	imageName string,
 ) {
 	t.Helper()
 
@@ -354,7 +401,14 @@ func testPushReaction(
 	}
 
 	service := action.(ktesting.CreateAction).GetObject().(*serving.Service)
-	imageName := testBuild(t, appName, containerRegistry, serviceAccount, service.Spec.RunLatest.Configuration.Build)
+	if imageName == "" {
+		imageName = testBuild(t, appName, containerRegistry, serviceAccount, service.Spec.RunLatest.Configuration.Build)
+	} else {
+		// No build
+		if service.Spec.RunLatest.Configuration.Build != nil {
+			t.Fatal("expected build to be nil when an image is provided")
+		}
+	}
 	testRevisionTemplate(t, imageName, service.Spec.RunLatest.Configuration.RevisionTemplate)
 
 	testutil.AssertEqual(t, "service.Name", appName, service.Name)

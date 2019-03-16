@@ -10,6 +10,9 @@ configs:
 - name: Push
   imports: ["io", "os"]
   options:
+  - name: DockerImage
+    type: string
+    description: the docker image to serve
   - name: Path
     type: string
     description: the path of the directory to push

@@ -10,6 +10,8 @@ import (
 type pushConfig struct {
 	// ContainerRegistry is the container registry's URL
 	ContainerRegistry string
+	// DockerImage is the docker image to serve
+	DockerImage string
 	// Namespace is the Kubernetes namespace to use
 	Namespace string
 	// Output is the io.Writer to write output such as build logs
@@ -52,6 +54,12 @@ func (opts PushOptions) ContainerRegistry() string {
 	return opts.toConfig().ContainerRegistry
 }
 
+// DockerImage returns the last set value for DockerImage or the empty value
+// if not set.
+func (opts PushOptions) DockerImage() string {
+	return opts.toConfig().DockerImage
+}
+
 // Namespace returns the last set value for Namespace or the empty value
 // if not set.
 func (opts PushOptions) Namespace() string {
@@ -80,6 +88,13 @@ func (opts PushOptions) ServiceAccount() string {
 func WithPushContainerRegistry(val string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.ContainerRegistry = val
+	}
+}
+
+// WithPushDockerImage creates an Option that sets the docker image to serve
+func WithPushDockerImage(val string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.DockerImage = val
 	}
 }
 

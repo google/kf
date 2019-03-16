@@ -29,5 +29,5 @@ type Deleter interface {
 
 // LogTailer is implemented by kf.LogTailer.
 type LogTailer interface {
-	Tail(out io.Writer, resourceVersion, namespace string) error
+	Tail(out io.Writer, resourceVersion, namespace string, skipBuild bool) error
 }

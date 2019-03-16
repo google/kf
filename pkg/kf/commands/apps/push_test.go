@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
@@ -19,28 +20,19 @@ func TestPushCommand(t *testing.T) {
 		args              []string
 		namespace         string
 		containerRegistry string
+		dockerImage       string
+		path              string
 		serviceAccount    string
 		wantErr           error
-		wantUsageOnErr    bool
 		pusherErr         error
 	}{
-		"uses configured namespace": {
+		"uses configured properties": {
 			namespace:         "some-namespace",
 			args:              []string{"app-name"},
 			containerRegistry: "some-reg.io",
+			dockerImage:       "some-docker-image",
 			serviceAccount:    "some-service-account",
-		},
-		"container registry not configured, returns error": {
-			args:           []string{"app-name"},
-			wantErr:        errors.New("container registry is not set"),
-			serviceAccount: "some-service-account",
-			wantUsageOnErr: true,
-		},
-		"service account not configured, returns error": {
-			args:              []string{"app-name"},
-			wantErr:           errors.New("service account is not set"),
-			containerRegistry: "some-reg.io",
-			wantUsageOnErr:    true,
+			path:              "some-path",
 		},
 		"service create error": {
 			args:              []string{"app-name"},
@@ -48,14 +40,14 @@ func TestPushCommand(t *testing.T) {
 			pusherErr:         errors.New("some error"),
 			containerRegistry: "some-reg.io",
 			serviceAccount:    "some-service-account",
+			path:              "some-path",
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
 			fakePusher := fake.NewFakePusher(ctrl)
 
-			fakeRecorder := fakePusher.
+			fakePusher.
 				EXPECT().
 				Push(gomock.Any(), gomock.Any()).
 				DoAndReturn(func(appName string, opts ...kf.PushOption) error {
@@ -67,17 +59,25 @@ func TestPushCommand(t *testing.T) {
 						t.Fatalf("expected namespace %s, got %s", tc.namespace, ns)
 					}
 
-					if path := kf.PushOptions(opts).Path(); path != "" {
-						t.Fatalf("expected path to be empty, got %s", path)
+					if p := kf.PushOptions(opts).Path(); filepath.Base(p) != tc.path {
+						t.Fatalf("expected path %s, got %s", filepath.Base(tc.path), p)
+					}
+					if p := kf.PushOptions(opts).Path(); !filepath.IsAbs(p) {
+						t.Fatalf("expected path to be an absolute: %s", p)
 					}
 
 					if cr := kf.PushOptions(opts).ContainerRegistry(); cr != tc.containerRegistry {
 						t.Fatalf("expected container registry %s, got %s", tc.containerRegistry, cr)
 					}
 
+					if cr := kf.PushOptions(opts).DockerImage(); cr != tc.dockerImage {
+						t.Fatalf("expected docker image %s, got %s", tc.dockerImage, cr)
+					}
+
 					if sa := kf.PushOptions(opts).ServiceAccount(); sa != tc.serviceAccount {
 						t.Fatalf("expected service account %s, got %s", tc.serviceAccount, sa)
 					}
+
 					return tc.pusherErr
 				})
 
@@ -89,23 +89,19 @@ func TestPushCommand(t *testing.T) {
 			}, fakePusher)
 
 			c.Flags().Set("container-registry", tc.containerRegistry)
+			c.Flags().Set("docker-image", tc.dockerImage)
 			c.Flags().Set("service-account", tc.serviceAccount)
+			c.Flags().Set("path", tc.path)
 			gotErr := c.RunE(c, tc.args)
 			if tc.wantErr != nil || gotErr != nil {
-				// We don't really care if Push was invoked if we want an
-				// error.
-				fakeRecorder.AnyTimes()
-
 				if fmt.Sprint(tc.wantErr) != fmt.Sprint(gotErr) {
 					t.Fatalf("wanted err: %v, got: %v", tc.wantErr, gotErr)
 				}
 
-				if !tc.wantUsageOnErr != c.SilenceUsage {
-					t.Fatalf("wanted %v, got %v", !tc.wantUsageOnErr, c.SilenceUsage)
-				}
-
 				return
 			}
+
+			ctrl.Finish()
 		})
 	}
 }

@@ -40,11 +40,19 @@ func TestLogTailer(t *testing.T) {
 		serviceWatchErr   error
 		buildTailErr      error
 		buildFailed       bool
+		skipBuild         bool
 	}{
 		"fetch logs for build": {
 			namespace:       "default",
 			resourceVersion: "some-version",
 			added:           true,
+		},
+		"fetch logs for deployment only": {
+			namespace:       "default",
+			resourceVersion: "some-version",
+			added:           true,
+			buildFailed:     true, // should not matter
+			skipBuild:       true,
 		},
 		"when build is not added, don't display logs": {
 			namespace:       "default",
@@ -117,17 +125,19 @@ func TestLogTailer(t *testing.T) {
 
 			close(buildEvents)
 
-			fakeBuildWatcher.
-				EXPECT().
-				ResultChan().
-				DoAndReturn(func() <-chan watch.Event {
-					return buildEvents
-				})
+			if !tc.skipBuild {
+				fakeBuildWatcher.
+					EXPECT().
+					ResultChan().
+					DoAndReturn(func() <-chan watch.Event {
+						return buildEvents
+					})
 
-			// Ensure Stop is invoked to clean up resources.
-			fakeBuildWatcher.
-				EXPECT().
-				Stop()
+				// Ensure Stop is invoked to clean up resources.
+				fakeBuildWatcher.
+					EXPECT().
+					Stop()
+			}
 
 			msgs := []string{"msg-a", "msg-b"}
 			fakeServiceWatcher.
@@ -216,7 +226,7 @@ func TestLogTailer(t *testing.T) {
 				},
 			)
 
-			gotErr := lt.Tail(&buffer, tc.resourceVersion, tc.namespace)
+			gotErr := lt.Tail(&buffer, tc.resourceVersion, tc.namespace, tc.skipBuild)
 			if tc.wantErr != nil || gotErr != nil {
 				if fmt.Sprint(tc.wantErr) != fmt.Sprint(gotErr) {
 					t.Fatalf("wanted err: %v, got: %v", tc.wantErr, gotErr)
@@ -225,13 +235,13 @@ func TestLogTailer(t *testing.T) {
 				return
 			}
 
-			if !buildReactorCalled {
+			if !buildReactorCalled && !tc.skipBuild {
 				t.Fatal("Build Reactor was not invoked")
 			}
 			if !servingReactorCalled {
 				t.Fatal("Serving Reactor was not invoked")
 			}
-			if tc.added && !buildLogCalled {
+			if tc.added && !buildLogCalled && !tc.skipBuild {
 				t.Fatal("BuildLog was not invoked")
 			}
 

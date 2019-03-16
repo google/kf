@@ -2,7 +2,6 @@ package kf
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -10,6 +9,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/kf"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
@@ -37,7 +37,7 @@ type AppLister interface {
 type Logs interface {
 	// Tail writes the logs for the build and deploy stage to the given out.
 	// The method exits once the logs are done streaming.
-	Tail(out io.Writer, resourceVersion, namespace string) error
+	Tail(out io.Writer, resourceVersion, namespace string, skipBuild bool) error
 }
 
 // SrcImageBuilder creates and uploads a container image that contains the
@@ -67,34 +67,48 @@ func (p *Pusher) Push(appName string, opts ...PushOption) error {
 		return err
 	}
 
-	// Uploading source code writes to `log.Print`. Prefix this to indicate
-	// the corresponding logs are for uploading the source code.
-	log.SetPrefix("\033[32m[upload-source-code]\033[0m ")
-	srcImage, err := p.uploadSrc(appName, cfg)
-	// Remove the prefix.
-	log.SetPrefix("")
-	if err != nil {
-		return err
-	}
-
 	d, err := p.deployScheme(appName, cfg.Namespace, client)
 	if err != nil {
 		return err
 	}
 
+	var buildSpec *serving.RawExtension
+	imageName := cfg.DockerImage
+
+	if imageName == "" {
+		// Uploading source code writes to `log.Print`. Prefix this to indicate
+		// the corresponding logs are for uploading the source code.
+		log.SetPrefix("\033[32m[upload-source-code]\033[0m ")
+		srcImage, err := p.uploadSrc(appName, cfg)
+		// Remove the prefix.
+		log.SetPrefix("")
+		if err != nil {
+			return err
+		}
+
+		buildSpec, imageName, err = p.buildSpec(
+			appName,
+			srcImage,
+			cfg.ContainerRegistry,
+			cfg.ServiceAccount,
+		)
+		if err != nil {
+			return err
+		}
+	}
+
 	resourceVersion, err := p.buildAndDeploy(
 		appName,
-		srcImage,
 		cfg.Namespace,
-		cfg.ContainerRegistry,
-		cfg.ServiceAccount,
+		buildSpec,
+		imageName,
 		d,
 	)
 	if err != nil {
 		return err
 	}
 
-	if err := p.bl.Tail(cfg.Output, resourceVersion, cfg.Namespace); err != nil {
+	if err := p.bl.Tail(cfg.Output, resourceVersion, cfg.Namespace, cfg.DockerImage != ""); err != nil {
 		return err
 	}
 
@@ -105,7 +119,7 @@ func (p *Pusher) Push(appName string, opts ...PushOption) error {
 func (p *Pusher) setupConfig(appName string, opts []PushOption) (pushConfig, error) {
 	cfg := PushOptionDefaults().Extend(opts).toConfig()
 
-	if cfg.Path == "" {
+	if cfg.Path == "" && cfg.DockerImage == "" {
 		cwd, err := os.Getwd()
 		if err != nil {
 			return pushConfig{}, err
@@ -114,13 +128,17 @@ func (p *Pusher) setupConfig(appName string, opts []PushOption) (pushConfig, err
 	}
 
 	if appName == "" {
-		return pushConfig{}, errors.New("invalid app name")
+		return pushConfig{}, kf.ConfigErr{"invalid app name"}
 	}
-	if cfg.ContainerRegistry == "" {
-		return pushConfig{}, errors.New("container registry is not set")
+	if (cfg.ContainerRegistry == "" && cfg.DockerImage == "") ||
+		(cfg.ContainerRegistry != "" && cfg.DockerImage != "") {
+		return pushConfig{}, kf.ConfigErr{"container registry or docker image must be set (not both)"}
+	}
+	if cfg.Path != "" && cfg.DockerImage != "" {
+		return pushConfig{}, kf.ConfigErr{"path flag is not valid with docker image flag"}
 	}
 	if cfg.ServiceAccount == "" {
-		return pushConfig{}, errors.New("service account is not set")
+		return pushConfig{}, kf.ConfigErr{"service account is not set"}
 	}
 
 	return cfg, nil
@@ -173,14 +191,12 @@ const (
 	buildAPIVersion = "build.knative.dev/v1alpha1"
 )
 
-func (p *Pusher) buildAndDeploy(
+func (p *Pusher) buildSpec(
 	appName string,
 	srcImage string,
-	namespace string,
 	containerRegistry string,
 	serviceAccount string,
-	d deployer,
-) (string, error) {
+) (*serving.RawExtension, string, error) {
 	imageName := path.Join(
 		containerRegistry,
 		p.imageName(appName, false),
@@ -212,17 +228,26 @@ func (p *Pusher) buildAndDeploy(
 	buildSpec.APIVersion = buildAPIVersion
 	buildSpecRaw, err := json.Marshal(buildSpec)
 	if err != nil {
-		return "", err
+		return nil, "", err
 	}
 
+	return &serving.RawExtension{
+		Raw: buildSpecRaw,
+	}, imageName, nil
+}
+
+func (p *Pusher) buildAndDeploy(
+	appName string,
+	namespace string,
+	buildSpec *serving.RawExtension,
+	imageName string,
+	d deployer,
+) (string, error) {
 	cfg := &serving.Service{
 		Spec: serving.ServiceSpec{
 			RunLatest: &serving.RunLatestType{
 				Configuration: serving.ConfigurationSpec{
-					Build: &serving.RawExtension{
-						Raw: buildSpecRaw,
-					},
-
+					Build: buildSpec,
 					RevisionTemplate: serving.RevisionTemplateSpec{
 						Spec: serving.RevisionSpec{
 							Container: corev1.Container{

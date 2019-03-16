@@ -38,7 +38,7 @@ func NewLogTailer(bf BuildFactory, f ServingFactory, t BuildTail) *LogTailer {
 
 // Tail writes the logs for the build and deploy step for the resourceVersion
 // to out. It blocks until the operation has completed.
-func (t LogTailer) Tail(out io.Writer, resourceVersion, namespace string) error {
+func (t LogTailer) Tail(out io.Writer, resourceVersion, namespace string, skipBuild bool) error {
 	bclient, err := t.bf()
 	if err != nil {
 		return err
@@ -49,36 +49,38 @@ func (t LogTailer) Tail(out io.Writer, resourceVersion, namespace string) error 
 		return err
 	}
 
-	wb, err := bclient.Builds(namespace).Watch(k8smeta.ListOptions{
-		ResourceVersion: resourceVersion,
-	})
-	if err != nil {
-		return err
-	}
-	defer wb.Stop()
+	if !skipBuild {
+		wb, err := bclient.Builds(namespace).Watch(k8smeta.ListOptions{
+			ResourceVersion: resourceVersion,
+		})
+		if err != nil {
+			return err
+		}
+		defer wb.Stop()
 
-	buildNames, buildErrs := make(chan string), make(chan error, 1)
-	go func() {
-		defer close(buildErrs)
+		buildNames, buildErrs := make(chan string), make(chan error, 1)
+		go func() {
+			defer close(buildErrs)
 
-		for e := range wb.ResultChan() {
-			obj := e.Object.(*build.Build)
-			if e.Type == watch.Added {
-				buildNames <- obj.Name
-			}
+			for e := range wb.ResultChan() {
+				obj := e.Object.(*build.Build)
+				if e.Type == watch.Added {
+					buildNames <- obj.Name
+				}
 
-			for _, condition := range obj.Status.Conditions {
-				if condition.Type == "Succeeded" && condition.Status == "False" {
-					// Build failed
-					buildErrs <- errors.New("build failed")
-					return
+				for _, condition := range obj.Status.Conditions {
+					if condition.Type == "Succeeded" && condition.Status == "False" {
+						// Build failed
+						buildErrs <- errors.New("build failed")
+						return
+					}
 				}
 			}
-		}
-	}()
+		}()
 
-	if err := t.waitForBuild(out, namespace, buildNames, buildErrs); err != nil {
-		return err
+		if err := t.waitForBuild(out, namespace, buildNames, buildErrs); err != nil {
+			return err
+		}
 	}
 
 	ws, err := sclient.Services(namespace).Watch(k8smeta.ListOptions{
