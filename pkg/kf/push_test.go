@@ -60,13 +60,6 @@ func TestPush_BadConfig(t *testing.T) {
 				kf.WithPushPath("some-path"),
 			},
 		},
-		"service account not configured, returns error": {
-			appName: "some-app",
-			wantErr: errors.New("service account is not set"),
-			opts: kf.PushOptions{
-				kf.WithPushContainerRegistry("some-reg.io"),
-			},
-		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			p := kf.NewPusher(
@@ -409,7 +402,7 @@ func testPushReaction(
 			t.Fatal("expected build to be nil when an image is provided")
 		}
 	}
-	testRevisionTemplate(t, imageName, service.Spec.RunLatest.Configuration.RevisionTemplate)
+	testRevisionTemplate(t, imageName, serviceAccount, service.Spec.RunLatest.Configuration.RevisionTemplate)
 
 	testutil.AssertEqual(t, "service.Name", appName, service.Name)
 	testutil.AssertEqual(t, "service.Kind", "Service", service.Kind)
@@ -421,11 +414,12 @@ func testPushReaction(
 	}
 }
 
-func testRevisionTemplate(t *testing.T, imageName string, spec serving.RevisionTemplateSpec) {
+func testRevisionTemplate(t *testing.T, imageName, serviceAccount string, spec serving.RevisionTemplateSpec) {
 	t.Helper()
 
 	testutil.AssertEqual(t, "Spec.Container.Image", imageName, spec.Spec.Container.Image)
 	testutil.AssertEqual(t, "Spec.Container.PullPolicy", "Always", string(spec.Spec.Container.ImagePullPolicy))
+	testutil.AssertEqual(t, "Spec.ServiceAccountName", serviceAccount, spec.Spec.ServiceAccountName)
 }
 
 func testBuild(

@@ -73,7 +73,7 @@ func NewPushCommand(p *config.KfParams, pusher Pusher) *cobra.Command {
 		&serviceAccount,
 		"service-account",
 		"",
-		"The service account to enable access to the container registry (REQUIRED)",
+		"The service account to enable access to the container registry",
 	)
 
 	pushCmd.Flags().StringVar(

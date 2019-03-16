@@ -102,6 +102,7 @@ func (p *Pusher) Push(appName string, opts ...PushOption) error {
 		cfg.Namespace,
 		buildSpec,
 		imageName,
+		cfg.ServiceAccount,
 		d,
 	)
 	if err != nil {
@@ -136,9 +137,6 @@ func (p *Pusher) setupConfig(appName string, opts []PushOption) (pushConfig, err
 	}
 	if cfg.Path != "" && cfg.DockerImage != "" {
 		return pushConfig{}, kf.ConfigErr{"path flag is not valid with docker image flag"}
-	}
-	if cfg.ServiceAccount == "" {
-		return pushConfig{}, kf.ConfigErr{"service account is not set"}
 	}
 
 	return cfg, nil
@@ -241,6 +239,7 @@ func (p *Pusher) buildAndDeploy(
 	namespace string,
 	buildSpec *serving.RawExtension,
 	imageName string,
+	serviceAccount string,
 	d deployer,
 ) (string, error) {
 	cfg := &serving.Service{
@@ -250,6 +249,7 @@ func (p *Pusher) buildAndDeploy(
 					Build: buildSpec,
 					RevisionTemplate: serving.RevisionTemplateSpec{
 						Spec: serving.RevisionSpec{
+							ServiceAccountName: serviceAccount,
 							Container: corev1.Container{
 								Image:           imageName,
 								ImagePullPolicy: "Always",
