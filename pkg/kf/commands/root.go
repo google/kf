@@ -8,12 +8,18 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
+	servicescmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/services"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
 	build "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	buildlogs "github.com/knative/build/pkg/logs"
 	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/poy/kontext"
+	svcatclient "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset"
+	"github.com/poy/service-catalog/pkg/svcat"
+	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
+	k8sclient "k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 	"k8s.io/client-go/tools/clientcmd"
@@ -48,6 +54,25 @@ func getBuildConfig() (build.BuildV1alpha1Interface, error) {
 	return client, nil
 }
 
+func getSvcatApp(namespace string) (servicecatalog.SvcatClient, error) {
+	config, err := clientcmd.BuildConfigFromFlags("", kubeCfgFile)
+	if err != nil {
+		return nil, err
+	}
+
+	k8sClient, err := k8sclient.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	catalogClient, err := svcatclient.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	return svcat.NewApp(k8sClient, catalogClient, namespace)
+}
+
 // NewKfCommand creates the root kf command.
 func NewKfCommand() *cobra.Command {
 	p := &config.KfParams{
@@ -59,14 +84,21 @@ func NewKfCommand() *cobra.Command {
 		Short: "kf is like cf for Knative",
 		Long: `kf is like cf for Knative
 
-	Supported sub-commands are:
+kf supports the following sub-commands:
 
-	  kf push
-	  kf delete <app>
-	  kf apps
+Apps:
+  kf push
+  kf delete <app>
+  kf apps
 
-	You can get more info by adding the --help flag to any sub-command.
-	  `,
+Services:
+  kf create-service
+  kf delete-service
+  kf service <instance-name>
+  kf services
+
+You can get more info by adding the --help flag to any sub-command.
+`,
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Usage()
 		},
@@ -87,6 +119,12 @@ func NewKfCommand() *cobra.Command {
 		kf.NewPusher(lister, getConfig, kontext.BuildImage, buildLog)),
 	)
 	rootCmd.AddCommand(apps.NewAppsCommand(p, lister))
+
+	servicesClient := services.NewClient(getSvcatApp)
+	rootCmd.AddCommand(servicescmd.NewCreateServiceCommand(p, servicesClient))
+	rootCmd.AddCommand(servicescmd.NewDeleteServiceCommand(p, servicesClient))
+	rootCmd.AddCommand(servicescmd.NewGetServiceCommand(p, servicesClient))
+	rootCmd.AddCommand(servicescmd.NewListServicesCommand(p, servicesClient))
 
 	return rootCmd
 }

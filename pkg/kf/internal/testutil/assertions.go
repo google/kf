@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"strings"
 	"testing"
 )
 
@@ -32,5 +33,22 @@ func AssertErrorsEqual(t *testing.T, expected, actual error) {
 
 	if fmt.Sprint(expected) != fmt.Sprint(actual) {
 		t.Fatalf("wanted err: %v, got: %v", expected, actual)
+	}
+}
+
+// AssertContainsAll validates that all of the search strings were in the
+// main string.
+func AssertContainsAll(t *testing.T, haystack string, needles []string) {
+	t.Helper()
+
+	var missing []string
+	for _, needle := range needles {
+		if !strings.Contains(haystack, needle) {
+			missing = append(missing, needle)
+		}
+	}
+
+	if len(missing) > 0 {
+		t.Fatalf("expected the values %v to be in %q but %v were missing", needles, haystack, missing)
 	}
 }
