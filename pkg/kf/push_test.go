@@ -5,12 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"regexp"
-	"strings"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	kffake "github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
 	"github.com/golang/mock/gomock"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
@@ -25,24 +24,31 @@ func TestPush_BadConfig(t *testing.T) {
 
 	for tn, tc := range map[string]struct {
 		appName           string
+		wantErr           error
+		opts              kf.PushOptions
 		containerRegistry string
 		serviceAccount    string
-		wantErr           error
 	}{
 		"empty app name, returns error": {
-			wantErr:           errors.New("invalid app name"),
-			containerRegistry: "some-reg.io",
-			serviceAccount:    "some-service-account",
+			wantErr: errors.New("invalid app name"),
+			opts: kf.PushOptions{
+				kf.WithPushContainerRegistry("some-reg.io"),
+				kf.WithPushServiceAccount("some-service-account"),
+			},
 		},
 		"container registry not configured, returns error": {
-			wantErr:        errors.New("container registry is not set"),
-			serviceAccount: "some-service-account",
-			appName:        "some-app",
+			appName: "some-app",
+			wantErr: errors.New("container registry is not set"),
+			opts: kf.PushOptions{
+				kf.WithPushServiceAccount("some-service-account"),
+			},
 		},
 		"service account not configured, returns error": {
-			wantErr:           errors.New("service account is not set"),
-			containerRegistry: "some-reg.io",
-			appName:           "some-app",
+			appName: "some-app",
+			wantErr: errors.New("service account is not set"),
+			opts: kf.PushOptions{
+				kf.WithPushContainerRegistry("some-reg.io"),
+			},
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
@@ -53,18 +59,8 @@ func TestPush_BadConfig(t *testing.T) {
 				nil, // Logs - Should not be used
 			)
 
-			var opts []kf.PushOption
-			if tc.containerRegistry != "" {
-				opts = append(opts, kf.WithPushContainerRegistry(tc.containerRegistry))
-			}
-			if tc.serviceAccount != "" {
-				opts = append(opts, kf.WithPushServiceAccount(tc.serviceAccount))
-			}
-
-			gotErr := p.Push(tc.appName, opts...)
-			if fmt.Sprint(tc.wantErr) != fmt.Sprint(gotErr) {
-				t.Fatalf("wanted err: %v, got: %v", tc.wantErr, gotErr)
-			}
+			gotErr := p.Push(tc.appName, tc.opts...)
+			testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
 		})
 	}
 }
@@ -135,10 +131,7 @@ func TestPush_Logs(t *testing.T) {
 				kf.WithPushServiceAccount("some-service-account"),
 			)
 
-			if fmt.Sprint(tc.wantErr) != fmt.Sprint(gotErr) {
-				t.Fatalf("wanted err: %v, got: %v", tc.wantErr, gotErr)
-			}
-
+			testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
 			ctrl.Finish()
 		})
 	}
@@ -156,9 +149,9 @@ func TestPush_UpdateApp(t *testing.T) {
 			appName: "some-app",
 		},
 		"service list error, returns error": {
+			appName:   "some-app",
 			wantErr:   errors.New("some error"),
 			listerErr: errors.New("some error"),
-			appName:   "some-app",
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
@@ -223,10 +216,7 @@ func TestPush_UpdateApp(t *testing.T) {
 				kf.WithPushServiceAccount(serviceAccount),
 			)
 			if tc.wantErr != nil || gotErr != nil {
-				if fmt.Sprint(tc.wantErr) != fmt.Sprint(gotErr) {
-					t.Fatalf("wanted err: %v, got: %v", tc.wantErr, gotErr)
-				}
-
+				testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
 				return
 			}
 
@@ -243,29 +233,30 @@ func TestPush_NewApp(t *testing.T) {
 	t.Parallel()
 
 	for tn, tc := range map[string]struct {
-		namespace         string
 		appName           string
-		path              string
+		opts              kf.PushOptions
 		wantErr           error
 		servingFactoryErr error
 		serviceCreateErr  error
 	}{
 		"pushes app to a configured namespace": {
-			namespace: "some-namespace",
-			appName:   "some-app",
+			appName: "some-app",
+			opts: kf.PushOptions{
+				kf.WithPushNamespace("some-namespace"),
+			},
 		},
 		"pushes app to default namespace": {
 			appName: "some-app",
 		},
 		"serving factory error, returns error": {
+			appName:           "some-app",
 			wantErr:           errors.New("some error"),
 			servingFactoryErr: errors.New("some error"),
-			appName:           "some-app",
 		},
 		"service create error, returns error": {
+			appName:          "some-app",
 			wantErr:          errors.New("some error"),
 			serviceCreateErr: errors.New("some error"),
-			appName:          "some-app",
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
@@ -277,12 +268,12 @@ func TestPush_NewApp(t *testing.T) {
 				Fake: &ktesting.Fake{},
 			}
 
-			expectedNamespace := tc.namespace
-			if tc.namespace == "" {
+			expectedNamespace := tc.opts.Namespace()
+			if tc.opts.Namespace() == "" {
 				expectedNamespace = "default"
 			}
-			expectedPath := tc.path
-			if tc.path == "" {
+			expectedPath := tc.opts.Path()
+			if tc.opts.Path() == "" {
 				cwd, err := os.Getwd()
 				if err != nil {
 					t.Fatal(err)
@@ -311,17 +302,8 @@ func TestPush_NewApp(t *testing.T) {
 				AnyTimes()
 
 			srcBuilder := func(dir, tag string) error {
-				if dir != expectedPath {
-					t.Fatalf("wanted image dir %s, got %s", expectedPath, dir)
-				}
-
-				if !strings.HasPrefix(tag, containerRegistry) {
-					t.Fatalf("want container registry prefix %s, got %s", containerRegistry, tag)
-				}
-
-				if !strings.HasSuffix(tag, "latest") {
-					t.Fatalf("want container registry suffix %s, got %s", "latest", tag)
-				}
+				testutil.AssertEqual(t, "path", expectedPath, dir)
+				testutil.AssertRegexp(t, "container registry", "^"+containerRegistry+`/[a-zA-Z0-9_-]+:latest$`, tag)
 				return nil
 			}
 
@@ -334,23 +316,14 @@ func TestPush_NewApp(t *testing.T) {
 				fakeLogs,
 			)
 
-			opts := []kf.PushOption{
+			tc.opts = append(tc.opts,
 				kf.WithPushContainerRegistry(containerRegistry),
 				kf.WithPushServiceAccount(serviceAccount),
-			}
-			if tc.namespace != "" {
-				opts = append(opts, kf.WithPushNamespace(tc.namespace))
-			}
-			if tc.path != "" {
-				opts = append(opts, kf.WithPushPath(tc.path))
-			}
+			)
 
-			gotErr := p.Push(tc.appName, opts...)
+			gotErr := p.Push(tc.appName, tc.opts...)
 			if tc.wantErr != nil || gotErr != nil {
-				if fmt.Sprint(tc.wantErr) != fmt.Sprint(gotErr) {
-					t.Fatalf("wanted err: %v, got: %v", tc.wantErr, gotErr)
-				}
-
+				testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
 				return
 			}
 
@@ -374,9 +347,7 @@ func testPushReaction(
 ) {
 	t.Helper()
 
-	if action.GetNamespace() != namespace {
-		t.Fatalf("wanted namespace: %s, got: %s", namespace, action.GetNamespace())
-	}
+	testutil.AssertEqual(t, "namespace", namespace, action.GetNamespace())
 
 	if !action.Matches(actionVerb, "services") {
 		t.Fatal("wrong action")
@@ -386,37 +357,21 @@ func testPushReaction(
 	imageName := testBuild(t, appName, containerRegistry, serviceAccount, service.Spec.RunLatest.Configuration.Build)
 	testRevisionTemplate(t, imageName, service.Spec.RunLatest.Configuration.RevisionTemplate)
 
-	if service.Name != appName {
-		t.Errorf("wanted service name %s, got %s", appName, service.Name)
-	}
-
-	if service.Kind != "Service" {
-		t.Errorf("wanted service Kind %s, got %s", "Service", service.Kind)
-	}
-
-	if service.APIVersion != "serving.knative.dev/v1alpha1" {
-		t.Errorf("wanted service APIVersion %s, got %s", "serving.knative.dev/v1alpha1", service.APIVersion)
-	}
-
-	if service.Namespace != namespace {
-		t.Errorf("wanted service Namespace %s, got %s", namespace, service.Namespace)
-	}
+	testutil.AssertEqual(t, "service.Name", appName, service.Name)
+	testutil.AssertEqual(t, "service.Kind", "Service", service.Kind)
+	testutil.AssertEqual(t, "service.APIVersion", "serving.knative.dev/v1alpha1", service.APIVersion)
+	testutil.AssertEqual(t, "service.Namespace", namespace, service.Namespace)
 
 	if actionVerb == "update" && service.ResourceVersion != appName+"-version" {
-		t.Errorf("wanted service ResourceVersion (on update) %s, got %s", appName+"-version", service.ResourceVersion)
+		testutil.AssertEqual(t, "service.ResourceVersion (on update)", appName+"-version", service.ResourceVersion)
 	}
 }
 
 func testRevisionTemplate(t *testing.T, imageName string, spec serving.RevisionTemplateSpec) {
 	t.Helper()
 
-	if spec.Spec.Container.Image != imageName {
-		t.Errorf("wanted image name %s, got %s", imageName, spec.Spec.Container.Image)
-	}
-
-	if spec.Spec.Container.ImagePullPolicy != "Always" {
-		t.Errorf("wanted image pull policy %s, got %s", "Always", spec.Spec.Container.ImagePullPolicy)
-	}
+	testutil.AssertEqual(t, "Spec.Container.Image", imageName, spec.Spec.Container.Image)
+	testutil.AssertEqual(t, "Spec.Container.PullPolicy", "Always", string(spec.Spec.Container.ImagePullPolicy))
 }
 
 func testBuild(
@@ -433,37 +388,22 @@ func testBuild(
 		t.Fatal(err)
 	}
 
-	if b.Spec.ServiceAccountName != serviceAccount {
-		t.Errorf("wanted service account name: %s, got %s", serviceAccount, b.Spec.ServiceAccountName)
-	}
+	testutil.AssertEqual(t, "Spec.ServiceAccountName", serviceAccount, b.Spec.ServiceAccountName)
 
 	srcPattern := fmt.Sprintf(`^%s/src-%s-[0-9]{19}:latest$`, containerRegistry, appName)
-	if !regexp.MustCompile(srcPattern).MatchString(b.Spec.Source.Custom.Image) {
-		t.Errorf("wanted image pattern: %s, got %s", srcPattern, b.Spec.Source.Custom.Image)
-	}
+	testutil.AssertRegexp(t, "image", srcPattern, b.Spec.Source.Custom.Image)
 
-	if b.Spec.Template.Name != "buildpack" {
-		t.Errorf("wanted template name: %s, got %s", "buildpack", b.Spec.Template.Name)
-	}
+	testutil.AssertEqual(t, "Spec.Template.Name", "buildpack", b.Spec.Template.Name)
 
 	if len(b.Spec.Template.Arguments) != 1 {
 		t.Fatalf("wanted template args len: 1, got %d", len(b.Spec.Template.Arguments))
 	}
-
-	if b.Spec.Template.Arguments[0].Name != "IMAGE" {
-		t.Errorf("wanted template args name: %s, got %s", "IMAGE", b.Spec.Template.Arguments[0].Name)
-	}
+	testutil.AssertEqual(t, "Spec.Template.Arguments[0].Name", "IMAGE", b.Spec.Template.Arguments[0].Name)
 
 	imageName := b.Spec.Template.Arguments[0].Value
-	prefix := fmt.Sprintf("%s/%s", containerRegistry, appName)
-	if !strings.HasPrefix(imageName, prefix) {
-		t.Errorf("wanted image name to have prefix %s, got: %s", prefix, imageName)
-	}
 
 	pattern := fmt.Sprintf(`^%s/%s-[0-9]{19}:latest$`, containerRegistry, appName)
-	if !regexp.MustCompile(pattern).MatchString(imageName) {
-		t.Errorf("wanted image name pattern: %s, got %s", pattern, imageName)
-	}
+	testutil.AssertRegexp(t, "image name", pattern, imageName)
 
 	return imageName
 }
