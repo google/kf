@@ -37,7 +37,7 @@ type AppLister interface {
 type Logs interface {
 	// Tail writes the logs for the build and deploy stage to the given out.
 	// The method exits once the logs are done streaming.
-	Tail(out io.Writer, resourceVersion, namespace string, skipBuild bool) error
+	Tail(out io.Writer, resourceVersion, namespace string) error
 }
 
 // SrcImageBuilder creates and uploads a container image that contains the
@@ -109,7 +109,7 @@ func (p *Pusher) Push(appName string, opts ...PushOption) error {
 		return err
 	}
 
-	if err := p.bl.Tail(cfg.Output, resourceVersion, cfg.Namespace, cfg.DockerImage != ""); err != nil {
+	if err := p.bl.Tail(cfg.Output, resourceVersion, cfg.Namespace); err != nil {
 		return err
 	}
 

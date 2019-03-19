@@ -6,15 +6,12 @@ package fake
 //go:generate mockgen --package=fake --destination=fake_log_tailer.go --mock_names=LogTailer=FakeLogTailer github.com/GoogleCloudPlatform/kf/pkg/kf/fake LogTailer
 
 import (
-	"io"
-
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 )
 
 // Lister is implemented by kf.Lister.
 type Lister interface {
-	List(opts ...kf.ListOption) ([]serving.Service, error)
+	kf.AppLister
 }
 
 // Lister is implemented by kf.Pusher.
@@ -29,5 +26,5 @@ type Deleter interface {
 
 // LogTailer is implemented by kf.LogTailer.
 type LogTailer interface {
-	Tail(out io.Writer, resourceVersion, namespace string, skipBuild bool) error
+	kf.Logs
 }

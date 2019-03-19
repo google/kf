@@ -113,7 +113,6 @@ func TestPush_Logs(t *testing.T) {
 					gomock.Not(gomock.Nil()), // out,
 					tc.appName+"-version",    // resourceVersion
 					expectedNamespace,        // namespace
-					false,                    // skip build logs
 				).
 				Return(tc.logErr)
 
@@ -199,7 +198,7 @@ func TestPush_UpdateApp(t *testing.T) {
 			fakeLogs := kffake.NewFakeLogTailer(ctrl)
 			fakeLogs.
 				EXPECT().
-				Tail(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+				Tail(gomock.Any(), gomock.Any(), gomock.Any()).
 				AnyTimes()
 
 			fakeServing := &fake.FakeServingV1alpha1{
@@ -332,7 +331,7 @@ func TestPush_NewApp(t *testing.T) {
 			fakeLogs := kffake.NewFakeLogTailer(ctrl)
 			fakeLogs.
 				EXPECT().
-				Tail(gomock.Any(), gomock.Any(), gomock.Any(), tc.opts.DockerImage() != "").
+				Tail(gomock.Any(), gomock.Any(), gomock.Any()).
 				AnyTimes()
 
 			var srcBuilderCalled bool

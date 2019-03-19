@@ -2,7 +2,6 @@ package kf
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 
@@ -38,49 +37,67 @@ func NewLogTailer(bf BuildFactory, f ServingFactory, t BuildTail) *LogTailer {
 
 // Tail writes the logs for the build and deploy step for the resourceVersion
 // to out. It blocks until the operation has completed.
-func (t LogTailer) Tail(out io.Writer, resourceVersion, namespace string, skipBuild bool) error {
+func (t LogTailer) Tail(out io.Writer, resourceVersion, namespace string) error {
+	errs := make(chan error, 2)
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	go func() { errs <- t.buildLogs(ctx, out, resourceVersion, namespace) }()
+	go func() { errs <- t.serviceLogs(cancel, out, resourceVersion, namespace) }()
+
+	err1, err2 := <-errs, <-errs
+	for _, err := range []error{err1, err2} {
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (t LogTailer) buildLogs(ctx context.Context, out io.Writer, resourceVersion, namespace string) error {
 	bclient, err := t.bf()
 	if err != nil {
 		return err
 	}
 
-	sclient, err := t.f()
+	wb, err := bclient.Builds(namespace).Watch(k8smeta.ListOptions{
+		ResourceVersion: resourceVersion,
+	})
 	if err != nil {
 		return err
 	}
+	defer wb.Stop()
 
-	if !skipBuild {
-		wb, err := bclient.Builds(namespace).Watch(k8smeta.ListOptions{
-			ResourceVersion: resourceVersion,
-		})
-		if err != nil {
-			return err
-		}
-		defer wb.Stop()
+	go func() {
+		<-ctx.Done()
+		wb.Stop()
+	}()
 
-		buildNames, buildErrs := make(chan string), make(chan error, 1)
-		go func() {
-			defer close(buildErrs)
-
-			for e := range wb.ResultChan() {
-				obj := e.Object.(*build.Build)
-				if e.Type == watch.Added {
-					buildNames <- obj.Name
-				}
-
-				for _, condition := range obj.Status.Conditions {
-					if condition.Type == "Succeeded" && condition.Status == "False" {
-						// Build failed
-						buildErrs <- errors.New("build failed")
-						return
-					}
-				}
+	for e := range wb.ResultChan() {
+		obj := e.Object.(*build.Build)
+		if e.Type == watch.Added {
+			// This blocks until the build is finished.
+			if err := t.t(ctx, out, obj.Name, namespace); err != nil {
+				return err
 			}
-		}()
-
-		if err := t.waitForBuild(out, namespace, buildNames, buildErrs); err != nil {
-			return err
 		}
+
+		for _, condition := range obj.Status.Conditions {
+			if condition.Type == "Succeeded" && condition.Status == "False" {
+				return fmt.Errorf("build failed: %s", condition.Message)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (t LogTailer) serviceLogs(done func(), out io.Writer, resourceVersion, namespace string) error {
+	defer done()
+	sclient, err := t.f()
+	if err != nil {
+		return err
 	}
 
 	ws, err := sclient.Services(namespace).Watch(k8smeta.ListOptions{
@@ -93,29 +110,15 @@ func (t LogTailer) Tail(out io.Writer, resourceVersion, namespace string, skipBu
 
 	for e := range ws.ResultChan() {
 		for _, condition := range e.Object.(*serving.Service).Status.Conditions {
+			if condition.Reason == "RevisionFailed" {
+				return fmt.Errorf("deployment failed: %s", condition.Message)
+			}
+
 			if condition.Message != "" {
 				fmt.Fprintf(out, "\033[32m[deploy-revision]\033[0m %s\n", condition.Message)
 			}
 		}
 	}
-
+	// Success
 	return nil
-}
-
-func (t LogTailer) waitForBuild(out io.Writer, namespace string, buildNames <-chan string, buildErrs <-chan error) error {
-	for {
-		select {
-		case name := <-buildNames:
-			if err := t.t(context.Background(), out, name, namespace); err != nil {
-				return err
-			}
-		case err, closed := <-buildErrs:
-			if !closed {
-				return nil
-			}
-			// Build failed
-			return err
-		}
-	}
-
 }

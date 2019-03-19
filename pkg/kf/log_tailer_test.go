@@ -4,15 +4,14 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"io"
-	"reflect"
 	"strings"
 	"testing"
 
 	duckv1alpha1 "github.com/knative/pkg/apis/duck/v1alpha1"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
 	"github.com/golang/mock/gomock"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	cbuild "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
@@ -26,57 +25,23 @@ import (
 
 //go:generate mockgen --package kf_test --destination fake_watcher_test.go --mock_names=Interface=FakeWatcher k8s.io/apimachinery/pkg/watch Interface
 
-func TestLogTailer(t *testing.T) {
+func TestLogTailer_ServiceLogs(t *testing.T) {
 	t.Parallel()
 
 	for tn, tc := range map[string]struct {
 		namespace         string
 		resourceVersion   string
-		added             bool
-		buildFactoryErr   error
 		servingFactoryErr error
-		wantErr           error
-		buildWatchErr     error
 		serviceWatchErr   error
-		buildTailErr      error
-		buildFailed       bool
-		skipBuild         bool
+		events            []watch.Event
+		wantedMsgs        []string
+		wantErr           error
 	}{
-		"fetch logs for build": {
+		"displays deployment messages": {
 			namespace:       "default",
 			resourceVersion: "some-version",
-			added:           true,
-		},
-		"fetch logs for deployment only": {
-			namespace:       "default",
-			resourceVersion: "some-version",
-			added:           true,
-			buildFailed:     true, // should not matter
-			skipBuild:       true,
-		},
-		"when build is not added, don't display logs": {
-			namespace:       "default",
-			resourceVersion: "some-version",
-			added:           false,
-		},
-		"build factory returns error, return error": {
-			namespace:       "default",
-			resourceVersion: "some-version",
-			buildFactoryErr: errors.New("some-error"),
-			wantErr:         errors.New("some-error"),
-		},
-		"build fails, returns error": {
-			namespace:       "default",
-			resourceVersion: "some-version",
-			added:           true,
-			buildFailed:     true,
-			wantErr:         errors.New("build failed"),
-		},
-		"watch build returns an error, return error": {
-			namespace:       "default",
-			resourceVersion: "some-version",
-			buildWatchErr:   errors.New("some-error"),
-			wantErr:         errors.New("some-error"),
+			events:          createMsgEvents("", "msg-1", "msg-2"),
+			wantedMsgs:      []string{"msg-1", "msg-2"},
 		},
 		"serving factory returns error, return error": {
 			namespace:         "default",
@@ -90,162 +55,45 @@ func TestLogTailer(t *testing.T) {
 			serviceWatchErr: errors.New("some-error"),
 			wantErr:         errors.New("some-error"),
 		},
+		"revision fails, return error": {
+			namespace:       "default",
+			resourceVersion: "some-version",
+			events:          createMsgEvents("RevisionFailed", "some-error"),
+			wantErr:         errors.New("deployment failed: some-error"),
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			fakeBuildWatcher := NewFakeWatcher(ctrl)
-			fakeServiceWatcher := NewFakeWatcher(ctrl)
-
-			buildEvents := make(chan watch.Event, 2)
-			eventType := watch.Modified
-			if tc.added {
-				eventType = watch.Added
-			}
-			b := &build.Build{}
-			b.Name = "build-name"
-			buildEvents <- watch.Event{
-				Type:   eventType,
-				Object: b,
-			}
-
-			if tc.buildFailed {
-				buildEvents <- watch.Event{
-					Object: &build.Build{
-						Status: build.BuildStatus{
-							Conditions: duckv1alpha1.Conditions{
-								{
-									Type:   "Succeeded",
-									Status: "False",
-								},
-							},
-						},
-					},
-				}
-			}
-
-			close(buildEvents)
-
-			if !tc.skipBuild {
-				fakeBuildWatcher.
-					EXPECT().
-					ResultChan().
-					DoAndReturn(func() <-chan watch.Event {
-						return buildEvents
-					})
-
-				// Ensure Stop is invoked to clean up resources.
-				fakeBuildWatcher.
-					EXPECT().
-					Stop()
-			}
-
-			msgs := []string{"msg-a", "msg-b"}
-			fakeServiceWatcher.
-				EXPECT().
-				ResultChan().
-				DoAndReturn(func() <-chan watch.Event {
-					c := make(chan watch.Event, len(msgs))
-					for _, m := range msgs {
-						c <- watch.Event{
-							Object: &serving.Service{
-								Status: serving.ServiceStatus{
-									Conditions: duckv1alpha1.Conditions{
-										{Message: m},
-									},
-								},
-							},
-						}
-					}
-					close(c)
-					return c
-				})
-
-			// Ensure Stop is invoked to clean up resources.
-			fakeServiceWatcher.
-				EXPECT().
-				Stop()
-
-			fakeBuild := &buildfake.FakeBuildV1alpha1{
-				Fake: &ktesting.Fake{},
-			}
-
-			var (
-				buildReactorCalled   bool
-				buildLogCalled       bool
-				servingReactorCalled bool
-				buffer               bytes.Buffer
+			ctrl, fakeServing, fakeBuild := buildLogWatchFakes(
+				t,
+				tc.events, nil,
+				tc.serviceWatchErr, nil,
 			)
 
-			fakeBuild.AddWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
-				buildReactorCalled = true
-
-				testWatch(t, action, "builds", tc.namespace, tc.resourceVersion)
-
-				return true, fakeBuildWatcher, tc.buildWatchErr
-			}))
-
-			fakeServing := &servicefake.FakeServingV1alpha1{
-				Fake: &ktesting.Fake{},
-			}
-
-			fakeServing.AddWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
-				servingReactorCalled = true
-
+			fakeServing.PrependWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
 				testWatch(t, action, "services", tc.namespace, tc.resourceVersion)
-
-				return true, fakeServiceWatcher, tc.serviceWatchErr
+				return false, nil, nil
 			}))
 
 			lt := kf.NewLogTailer(
 				func() (cbuild.BuildV1alpha1Interface, error) {
-					return fakeBuild, tc.buildFactoryErr
+					return fakeBuild, nil
 				},
 				func() (cserving.ServingV1alpha1Interface, error) {
 					return fakeServing, tc.servingFactoryErr
 				},
 				func(ctx context.Context, out io.Writer, buildName, namespace string) error {
-					if !tc.added {
-						t.Fatal("build logs should not have been fetched")
-					}
-					buildLogCalled = true
-
-					if buildName != "build-name" {
-						t.Fatalf("wanted buildName: %s, got: %s", buildName, "build-name")
-					}
-					if namespace != tc.namespace {
-						t.Fatalf("wanted namespace: %s, got: %s", tc.namespace, namespace)
-					}
-					if ctx == nil {
-						t.Fatalf("wanted non-nil context")
-					}
-					if !reflect.DeepEqual(out, &buffer) {
-						t.Fatalf("wrong out, wanted buffer")
-					}
-
-					return tc.buildTailErr
+					return nil
 				},
 			)
 
-			gotErr := lt.Tail(&buffer, tc.resourceVersion, tc.namespace, tc.skipBuild)
+			var buffer bytes.Buffer
+			gotErr := lt.Tail(&buffer, tc.resourceVersion, tc.namespace)
 			if tc.wantErr != nil || gotErr != nil {
-				if fmt.Sprint(tc.wantErr) != fmt.Sprint(gotErr) {
-					t.Fatalf("wanted err: %v, got: %v", tc.wantErr, gotErr)
-				}
-
+				testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
 				return
 			}
 
-			if !buildReactorCalled && !tc.skipBuild {
-				t.Fatal("Build Reactor was not invoked")
-			}
-			if !servingReactorCalled {
-				t.Fatal("Serving Reactor was not invoked")
-			}
-			if tc.added && !buildLogCalled && !tc.skipBuild {
-				t.Fatal("BuildLog was not invoked")
-			}
-
-			for _, msg := range msgs {
+			for _, msg := range tc.wantedMsgs {
 				if strings.Index(buffer.String(), msg) < 0 {
 					t.Fatalf("wanted %q to contain %q", buffer.String(), msg)
 				}
@@ -256,18 +104,199 @@ func TestLogTailer(t *testing.T) {
 	}
 }
 
+func TestLogTailer_BuildLogs(t *testing.T) {
+	t.Parallel()
+
+	for tn, tc := range map[string]struct {
+		namespace       string
+		resourceVersion string
+		buildFactoryErr error
+		buildWatchErr   error
+		buildTailErr    error
+		events          []watch.Event
+		wantedMsgs      []string
+		wantErr         error
+	}{
+		"fetch logs for build": {
+			namespace:       "default",
+			resourceVersion: "some-version",
+			events:          createBuildAddedEvent(),
+		},
+		"build factory returns error, return error": {
+			namespace:       "default",
+			resourceVersion: "some-version",
+			buildFactoryErr: errors.New("some-error"),
+			wantErr:         errors.New("some-error"),
+		},
+		"build tail returns error, return error": {
+			namespace:       "default",
+			resourceVersion: "some-version",
+			buildTailErr:    errors.New("some-error"),
+			events:          createBuildAddedEvent(),
+			wantErr:         errors.New("some-error"),
+		},
+		"build fails, returns error": {
+			namespace:       "default",
+			resourceVersion: "some-version",
+			events: append(createBuildAddedEvent(), watch.Event{
+				Object: &build.Build{
+					Status: build.BuildStatus{
+						Conditions: duckv1alpha1.Conditions{
+							{
+								Type:    "Succeeded",
+								Status:  "False",
+								Message: "some-message",
+							},
+						},
+					},
+				},
+			}),
+			wantErr: errors.New("build failed: some-message"),
+		},
+		"watch build returns an error, return error": {
+			namespace:       "default",
+			resourceVersion: "some-version",
+			buildWatchErr:   errors.New("some-error"),
+			wantErr:         errors.New("some-error"),
+		},
+	} {
+		t.Run(tn, func(t *testing.T) {
+			ctrl, fakeServing, fakeBuild := buildLogWatchFakes(
+				t,
+				nil, tc.events,
+				nil, tc.buildWatchErr,
+			)
+
+			fakeBuild.PrependWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
+				testWatch(t, action, "builds", tc.namespace, tc.resourceVersion)
+				return false, nil, nil
+			}))
+
+			var buffer bytes.Buffer
+			lt := kf.NewLogTailer(
+				func() (cbuild.BuildV1alpha1Interface, error) {
+					return fakeBuild, tc.buildFactoryErr
+				},
+				func() (cserving.ServingV1alpha1Interface, error) {
+					return fakeServing, nil
+				},
+				func(ctx context.Context, out io.Writer, buildName, namespace string) error {
+					testutil.AssertEqual(t, "buildName", "build-name", buildName)
+					testutil.AssertEqual(t, "namespace", tc.namespace, namespace)
+					testutil.AssertEqual(t, "out", &buffer, out)
+
+					return tc.buildTailErr
+				},
+			)
+
+			gotErr := lt.Tail(&buffer, tc.resourceVersion, tc.namespace)
+			if tc.wantErr != nil || gotErr != nil {
+				testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
+				return
+			}
+
+			ctrl.Finish()
+		})
+	}
+}
+
 func testWatch(t *testing.T, action ktesting.Action, resource, namespace, resourceVersion string) {
 	t.Helper()
 
-	if action.GetNamespace() != namespace {
-		t.Fatalf("wanted namespace: %s, got: %s", namespace, action.GetNamespace())
-	}
+	testutil.AssertEqual(t, "namespace", namespace, action.GetNamespace())
+	testutil.AssertEqual(t, "resourceVersion", resourceVersion, action.(ktesting.WatchActionImpl).WatchRestrictions.ResourceVersion)
 
 	if !action.Matches("watch", resource) {
 		t.Fatal("wrong action")
 	}
+}
 
-	if rv := action.(ktesting.WatchActionImpl).WatchRestrictions.ResourceVersion; rv != resourceVersion {
-		t.Fatalf("wanted resourceVersion %s, got %s", resourceVersion, rv)
+func createEvents(es []watch.Event) <-chan watch.Event {
+	c := make(chan watch.Event, len(es))
+	defer close(c)
+	for _, e := range es {
+		c <- e
 	}
+	return c
+}
+
+func createMsgEvents(reason string, msgs ...string) []watch.Event {
+	var es []watch.Event
+	for _, m := range msgs {
+		es = append(es, watch.Event{
+			Object: &serving.Service{
+				Status: serving.ServiceStatus{
+					Conditions: duckv1alpha1.Conditions{
+						{Reason: reason, Message: m},
+					},
+				},
+			},
+		})
+	}
+	return es
+}
+
+func createBuildAddedEvent() []watch.Event {
+	b := &build.Build{}
+	b.Name = "build-name"
+	return []watch.Event{
+		{
+			Type:   watch.Added,
+			Object: b,
+		},
+	}
+}
+
+func buildLogWatchFakes(
+	t *testing.T,
+	serviceEvents, buildEvents []watch.Event,
+	serviceErr, buildErr error,
+) (*gomock.Controller, *servicefake.FakeServingV1alpha1, *buildfake.FakeBuildV1alpha1) {
+	ctrl := gomock.NewController(t)
+	fakeServiceWatcher := NewFakeWatcher(ctrl)
+	fakeServiceWatcher.
+		EXPECT().
+		ResultChan().
+		DoAndReturn(func() <-chan watch.Event {
+			return createEvents(serviceEvents)
+		})
+
+	// Ensure Stop is invoked to clean up resources.
+	fakeServiceWatcher.
+		EXPECT().
+		Stop().
+		AnyTimes()
+
+	fakeServing := &servicefake.FakeServingV1alpha1{
+		Fake: &ktesting.Fake{},
+	}
+
+	fakeServing.AddWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
+		return true, fakeServiceWatcher, serviceErr
+	}))
+
+	fakeBuildWatcher := NewFakeWatcher(ctrl)
+
+	fakeBuildWatcher.
+		EXPECT().
+		ResultChan().
+		DoAndReturn(func() <-chan watch.Event {
+			return createEvents(buildEvents)
+		})
+
+	// Ensure Stop is invoked to clean up resources.
+	fakeBuildWatcher.
+		EXPECT().
+		Stop().
+		AnyTimes()
+
+	fakeBuild := &buildfake.FakeBuildV1alpha1{
+		Fake: &ktesting.Fake{},
+	}
+
+	fakeBuild.AddWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
+		return true, fakeBuildWatcher, buildErr
+	}))
+
+	return ctrl, fakeServing, fakeBuild
 }
