@@ -3,6 +3,7 @@ package secrets
 import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -17,10 +18,16 @@ type ClientInterface interface {
 	Create(name string, options ...CreateOption) error
 
 	// Get retrieves a Kubernetes secret by its given name.
-	Get(name string, options ...GetOption) (map[string][]byte, error)
+	Get(name string, options ...GetOption) (*corev1.Secret, error)
 
 	// Delete removes a Kubernetes secret with the given name.
 	Delete(name string, options ...DeleteOption) error
+
+	// AddLabels adds labels to an existing secret.
+	AddLabels(name string, labels map[string]string, options ...AddLabelsOption) error
+
+	// List returns a list of secrets optionally filtered by their labels.
+	List(options ...ListOption) ([]corev1.Secret, error)
 }
 
 // NewClient creates a new client capable of interacting with Kubernetes secrets.
@@ -59,7 +66,7 @@ func (c *Client) Create(name string, options ...CreateOption) error {
 }
 
 // Get retrieves a Kubernetes secret by its given name.
-func (c *Client) Get(name string, options ...GetOption) (map[string][]byte, error) {
+func (c *Client) Get(name string, options ...GetOption) (*corev1.Secret, error) {
 	config := GetOptionDefaults().Extend(options).toConfig()
 
 	k8sClient, err := c.createK8sClient()
@@ -72,7 +79,7 @@ func (c *Client) Get(name string, options ...GetOption) (map[string][]byte, erro
 		return nil, err
 	}
 
-	return secret.Data, nil
+	return secret, nil
 }
 
 // Delete removes a Kubernetes secret with the given name.
@@ -88,4 +95,46 @@ func (c *Client) Delete(name string, options ...DeleteOption) error {
 		CoreV1().
 		Secrets(config.Namespace).
 		Delete(name, nil)
+}
+
+// AddLabels adds labels to an existing secret.
+func (c *Client) AddLabels(name string, newLabels map[string]string, options ...AddLabelsOption) error {
+	config := AddLabelsOptionDefaults().Extend(options).toConfig()
+
+	k8sClient, err := c.createK8sClient()
+	if err != nil {
+		return err
+	}
+
+	secret, err := k8sClient.CoreV1().Secrets(config.Namespace).Get(name, v1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	secret.Labels = labels.Merge(secret.Labels, newLabels)
+
+	if _, err := k8sClient.CoreV1().Secrets(config.Namespace).Update(secret); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// List returns a list of secrets optionally filtered by their labels.
+func (c *Client) List(options ...ListOption) ([]corev1.Secret, error) {
+	config := ListOptionDefaults().Extend(options).toConfig()
+	k8sClient, err := c.createK8sClient()
+	if err != nil {
+		return nil, err
+	}
+
+	secrets, err := k8sClient.CoreV1().Secrets(config.Namespace).List(v1.ListOptions{
+		LabelSelector: config.LabelSelector,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return secrets.Items, nil
 }

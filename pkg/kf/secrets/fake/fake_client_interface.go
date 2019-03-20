@@ -7,6 +7,7 @@ package fake
 import (
 	secrets "github.com/GoogleCloudPlatform/kf/pkg/kf/secrets"
 	gomock "github.com/golang/mock/gomock"
+	v1 "k8s.io/api/core/v1"
 	reflect "reflect"
 )
 
@@ -31,6 +32,25 @@ func NewFakeClientInterface(ctrl *gomock.Controller) *FakeClientInterface {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *FakeClientInterface) EXPECT() *FakeClientInterfaceMockRecorder {
 	return m.recorder
+}
+
+// AddLabels mocks base method
+func (m *FakeClientInterface) AddLabels(arg0 string, arg1 map[string]string, arg2 ...secrets.AddLabelsOption) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AddLabels", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddLabels indicates an expected call of AddLabels
+func (mr *FakeClientInterfaceMockRecorder) AddLabels(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddLabels", reflect.TypeOf((*FakeClientInterface)(nil).AddLabels), varargs...)
 }
 
 // Create mocks base method
@@ -72,14 +92,14 @@ func (mr *FakeClientInterfaceMockRecorder) Delete(arg0 interface{}, arg1 ...inte
 }
 
 // Get mocks base method
-func (m *FakeClientInterface) Get(arg0 string, arg1 ...secrets.GetOption) (map[string][]byte, error) {
+func (m *FakeClientInterface) Get(arg0 string, arg1 ...secrets.GetOption) (*v1.Secret, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Get", varargs...)
-	ret0, _ := ret[0].(map[string][]byte)
+	ret0, _ := ret[0].(*v1.Secret)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -89,4 +109,23 @@ func (mr *FakeClientInterfaceMockRecorder) Get(arg0 interface{}, arg1 ...interfa
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*FakeClientInterface)(nil).Get), varargs...)
+}
+
+// List mocks base method
+func (m *FakeClientInterface) List(arg0 ...secrets.ListOption) ([]v1.Secret, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range arg0 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "List", varargs...)
+	ret0, _ := ret[0].([]v1.Secret)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// List indicates an expected call of List
+func (mr *FakeClientInterfaceMockRecorder) List(arg0 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*FakeClientInterface)(nil).List), arg0...)
 }
