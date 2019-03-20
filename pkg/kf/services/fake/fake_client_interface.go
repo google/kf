@@ -111,3 +111,22 @@ func (mr *FakeClientInterfaceMockRecorder) ListServices(arg0 ...interface{}) *go
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListServices", reflect.TypeOf((*FakeClientInterface)(nil).ListServices), arg0...)
 }
+
+// Marketplace mocks base method
+func (m *FakeClientInterface) Marketplace(arg0 ...services.MarketplaceOption) (*services.KfMarketplace, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range arg0 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Marketplace", varargs...)
+	ret0, _ := ret[0].(*services.KfMarketplace)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Marketplace indicates an expected call of Marketplace
+func (mr *FakeClientInterfaceMockRecorder) Marketplace(arg0 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Marketplace", reflect.TypeOf((*FakeClientInterface)(nil).Marketplace), arg0...)
+}

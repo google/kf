@@ -92,6 +92,7 @@ Apps:
   kf apps
 
 Services:
+  kf marketplace
   kf create-service
   kf delete-service
   kf service <instance-name>
@@ -125,6 +126,7 @@ You can get more info by adding the --help flag to any sub-command.
 	rootCmd.AddCommand(servicescmd.NewDeleteServiceCommand(p, servicesClient))
 	rootCmd.AddCommand(servicescmd.NewGetServiceCommand(p, servicesClient))
 	rootCmd.AddCommand(servicescmd.NewListServicesCommand(p, servicesClient))
+	rootCmd.AddCommand(servicescmd.NewMarketplaceCommand(p, servicesClient))
 
 	return rootCmd
 }

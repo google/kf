@@ -13,3 +13,4 @@ configs:
 - name: DeleteService
 - name: GetService
 - name: ListServices
+- name: Marketplace

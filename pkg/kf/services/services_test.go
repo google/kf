@@ -286,3 +286,83 @@ func TestClient_ListServices(t *testing.T) {
 		})
 	}
 }
+
+func TestClient_Marketplace(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		InstanceName  string
+		Options       []MarketplaceOption
+		FactoryErr    error
+		GetClassesErr error
+		GetPlansErr   error
+
+		ExpectErr error
+	}{
+		"default values": {
+			InstanceName: "instance-name",
+			Options:      []MarketplaceOption{},
+			ExpectErr:    nil,
+		},
+		"custom values": {
+			InstanceName: "instance-name",
+			Options: []MarketplaceOption{
+				WithMarketplaceNamespace("custom-namespace"),
+			},
+			ExpectErr: nil,
+		},
+		"error in factory": {
+			InstanceName: "instance-name",
+			FactoryErr:   errors.New("some-err"),
+			ExpectErr:    errors.New("some-err"),
+		},
+		"error in get classes": {
+			InstanceName:  "instance-name",
+			GetClassesErr: errors.New("server-err"),
+			ExpectErr:     errors.New("server-err"),
+		},
+		"error in get plans": {
+			InstanceName: "instance-name",
+			GetPlansErr:  errors.New("server-err"),
+			ExpectErr:    errors.New("server-err"),
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			expectedCfg := MarketplaceOptionDefaults().Extend(tc.Options).toConfig()
+			fakeClient := &servicecatalogfakes.FakeSvcatClient{}
+
+			fakeClient.RetrieveClassesStub = func(scope servicecatalog.ScopeOptions) ([]servicecatalog.Class, error) {
+				testutil.AssertEqual(t, "namespace", expectedCfg.Namespace, scope.Namespace)
+
+				return nil, tc.GetClassesErr
+			}
+
+			fakeClient.RetrievePlansStub = func(classFilter string, scope servicecatalog.ScopeOptions) ([]servicecatalog.Plan, error) {
+				testutil.AssertEqual(t, "namespace", expectedCfg.Namespace, scope.Namespace)
+				testutil.AssertEqual(t, "classFilter", "", classFilter)
+
+				return nil, tc.GetPlansErr
+			}
+
+			client := NewClient(func(ns string) (servicecatalog.SvcatClient, error) {
+				testutil.AssertEqual(t, "namespace", expectedCfg.Namespace, ns)
+
+				return fakeClient, tc.FactoryErr
+			})
+
+			_, actualErr := client.Marketplace(tc.Options...)
+			if tc.ExpectErr != nil || actualErr != nil {
+				if fmt.Sprint(tc.ExpectErr) != fmt.Sprint(actualErr) {
+					t.Fatalf("wanted err: %v, got: %v", tc.ExpectErr, actualErr)
+				}
+
+				return
+			}
+
+			testutil.AssertEqual(t, "calls to RetrieveClasses", 1, fakeClient.RetrieveClassesCallCount())
+			testutil.AssertEqual(t, "calls to RetrievePlans", 1, fakeClient.RetrievePlansCallCount())
+		})
+	}
+}

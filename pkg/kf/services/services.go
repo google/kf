@@ -7,6 +7,13 @@ import (
 
 //go:generate go run ../internal/tools/option-builder/option-builder.go options.yml
 
+// KfMarketplace contains information to describe the
+// services and plans available in the catalog.
+type KfMarketplace struct {
+	Services []servicecatalog.Class
+	Plans    []servicecatalog.Plan
+}
+
 // ClientInterface is a client capable of interacting with service catalog services
 // and mapping the CF to Kubernetes concepts.
 type ClientInterface interface {
@@ -21,6 +28,9 @@ type ClientInterface interface {
 
 	// ListServices lists instances of services on the cluster.
 	ListServices(opts ...ListServicesOption) (*v1beta1.ServiceInstanceList, error)
+
+	// Marketplace lists available services and plans in the marketplace.
+	Marketplace(opts ...MarketplaceOption) (*KfMarketplace, error)
 }
 
 // SClientFactory creates a Service Catalog client.
@@ -90,4 +100,35 @@ func (c *Client) ListServices(opts ...ListServicesOption) (*v1beta1.ServiceInsta
 
 	// RetrieveInstances(ns, classFilter, planFilter string)
 	return svcat.RetrieveInstances(cfg.Namespace, "", "")
+}
+
+// Marketplace lists available services and plans in the marketplace.
+func (c *Client) Marketplace(opts ...MarketplaceOption) (*KfMarketplace, error) {
+	cfg := MarketplaceOptionDefaults().Extend(opts).toConfig()
+
+	svcat, err := c.createSvcatClient(cfg.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	scope := servicecatalog.ScopeOptions{
+		Namespace: cfg.Namespace,
+		Scope:     servicecatalog.AllScope,
+	}
+
+	classes, err := svcat.RetrieveClasses(scope)
+	if err != nil {
+		return nil, err
+	}
+
+	// an empty first param gets all plans
+	plans, err := svcat.RetrievePlans("", scope)
+	if err != nil {
+		return nil, err
+	}
+
+	return &KfMarketplace{
+		Services: classes,
+		Plans:    plans,
+	}, nil
 }
