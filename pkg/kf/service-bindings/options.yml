@@ -1,0 +1,24 @@
+package: servicebindings
+common:
+- name: Namespace
+  type: string
+  description: the Kubernetes namespace to use.
+  default: '"default"'
+configs:
+- name: Create
+  options:
+  - name: Params
+    type: 'map[string]interface{}'
+    description: service-specific configuration parameters.
+  - name: BindingName
+    type: 'string'
+    description: name to expose service instance to app process with.
+- name: Delete
+- name: List
+  options:
+  - name: AppName
+    type: 'string'
+    description: filter the results to bindings for the given app.
+  - name: ServiceInstance
+    type: 'string'
+    description: filter the results to bindings for the given service instance.

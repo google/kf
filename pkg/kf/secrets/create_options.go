@@ -5,6 +5,8 @@ package secrets
 type createConfig struct {
 	// Data is data to store in the secret. Values MUST be base64.
 	Data map[string][]byte
+	// Labels is labels to set on the secret.
+	Labels map[string]string
 	// Namespace is the Kubernetes namespace to use
 	Namespace string
 	// StringData is data to store in the secret. Values are encoded in base64 automatically.
@@ -43,6 +45,12 @@ func (opts CreateOptions) Data() map[string][]byte {
 	return opts.toConfig().Data
 }
 
+// Labels returns the last set value for Labels or the empty value
+// if not set.
+func (opts CreateOptions) Labels() map[string]string {
+	return opts.toConfig().Labels
+}
+
 // Namespace returns the last set value for Namespace or the empty value
 // if not set.
 func (opts CreateOptions) Namespace() string {
@@ -59,6 +67,13 @@ func (opts CreateOptions) StringData() map[string]string {
 func WithCreateData(val map[string][]byte) CreateOption {
 	return func(cfg *createConfig) {
 		cfg.Data = val
+	}
+}
+
+// WithCreateLabels creates an Option that sets labels to set on the secret.
+func WithCreateLabels(val map[string]string) CreateOption {
+	return func(cfg *createConfig) {
+		cfg.Labels = val
 	}
 }
 

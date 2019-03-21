@@ -23,6 +23,7 @@ func TestClient_Create(t *testing.T) {
 		ExpectNamespace  string
 		ExpectStringData map[string]string
 		ExpectData       map[string][]byte
+		ExpectLabels     map[string]string
 	}{
 		"use default namespace by default": {
 			Name: "broker-secret",
@@ -58,6 +59,13 @@ func TestClient_Create(t *testing.T) {
 			},
 			ExpectData: map[string][]byte{"username": []byte("user"), "password": []byte("pass")},
 		},
+		"labels": {
+			Name: "broker-secret",
+			Options: []CreateOption{
+				WithCreateLabels(map[string]string{"key": "value"}),
+			},
+			ExpectLabels: map[string]string{"key": "value"},
+		},
 	}
 
 	for tn, tc := range cases {
@@ -84,6 +92,7 @@ func TestClient_Create(t *testing.T) {
 
 			testutil.AssertEqual(t, "StringData", tc.ExpectStringData, secret.StringData)
 			testutil.AssertEqual(t, "Data", tc.ExpectData, secret.Data)
+			testutil.AssertEqual(t, "labels", tc.ExpectLabels, secret.Labels)
 		})
 	}
 }

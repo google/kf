@@ -71,3 +71,12 @@ func AssertContainsAll(t *testing.T, haystack string, needles []string) {
 		t.Fatalf("expected the values %v to be in %q but %v were missing", needles, haystack, missing)
 	}
 }
+
+// AssertNil fails the test if the value is not nil.
+func AssertNil(t *testing.T, name string, value interface{}) {
+	t.Helper()
+
+	if value != nil {
+		t.Fatalf("expected %s to be nil but got: %v", name, value)
+	}
+}

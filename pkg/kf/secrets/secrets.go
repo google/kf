@@ -57,6 +57,7 @@ func (c *Client) Create(name string, options ...CreateOption) error {
 	secret.Kind = "Secret"
 	secret.Namespace = config.Namespace
 	secret.APIVersion = "v1"
+	secret.Labels = config.Labels
 
 	if _, err := k8sClient.CoreV1().Secrets(config.Namespace).Create(secret); err != nil {
 		return err
