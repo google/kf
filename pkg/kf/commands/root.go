@@ -112,6 +112,7 @@ You can get more info by adding the --help flag to any sub-command.
 	rootCmd.PersistentFlags().StringVar(&kubeCfgFile, "kubeconfig", "", "kubectl config file (default is $HOME/.kube/config)")
 	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "default", "namespace")
 
+	// App interaction
 	lister := kf.NewLister(getConfig)
 	buildLog := kf.NewLogTailer(getBuildConfig, getConfig, buildlogs.Tail)
 	rootCmd.AddCommand(apps.NewDeleteCommand(p, kf.NewDeleter(getConfig)))
@@ -121,6 +122,12 @@ You can get more info by adding the --help flag to any sub-command.
 	)
 	rootCmd.AddCommand(apps.NewAppsCommand(p, lister))
 
+	// Environment Variables
+	envClient := kf.NewEnvironmentClient(lister, getConfig)
+	rootCmd.AddCommand(apps.NewEnvCommand(p, envClient))
+	rootCmd.AddCommand(apps.NewSetEnvCommand(p, envClient))
+
+	// Services
 	servicesClient := services.NewClient(getSvcatApp)
 	rootCmd.AddCommand(servicescmd.NewCreateServiceCommand(p, servicesClient))
 	rootCmd.AddCommand(servicescmd.NewDeleteServiceCommand(p, servicesClient))

@@ -150,6 +150,7 @@ func (p *Pusher) deployScheme(appName, namespace string, client cserving.Serving
 		return nil, err
 	}
 
+	// TODO: use WithListAppName
 	// Look to see if an app with the same name exists in this namespace. If
 	// so, we want to update intead of create.
 	for _, app := range apps {

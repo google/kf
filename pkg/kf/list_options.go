@@ -3,6 +3,8 @@
 package kf
 
 type listConfig struct {
+	// AppName is the specific app name to look for
+	AppName string
 	// Namespace is the Kubernetes namespace to use
 	Namespace string
 }
@@ -33,10 +35,23 @@ func (opts ListOptions) Extend(other ListOptions) ListOptions {
 	return out
 }
 
+// AppName returns the last set value for AppName or the empty value
+// if not set.
+func (opts ListOptions) AppName() string {
+	return opts.toConfig().AppName
+}
+
 // Namespace returns the last set value for Namespace or the empty value
 // if not set.
 func (opts ListOptions) Namespace() string {
 	return opts.toConfig().Namespace
+}
+
+// WithListAppName creates an Option that sets the specific app name to look for
+func WithListAppName(val string) ListOption {
+	return func(cfg *listConfig) {
+		cfg.AppName = val
+	}
 }
 
 // WithListNamespace creates an Option that sets the Kubernetes namespace to use

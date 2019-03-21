@@ -13,8 +13,27 @@ import (
 func AssertEqual(t *testing.T, fieldName string, expected, actual interface{}) {
 	t.Helper()
 
-	if !reflect.DeepEqual(expected, actual) {
+	fail := func() {
+		t.Helper()
 		t.Fatalf("expected %s to be equal expected: %#v actual: %#v", fieldName, expected, actual)
+	}
+
+	v1, v2 := reflect.ValueOf(expected), reflect.ValueOf(actual)
+	if v1.Kind() != v2.Kind() {
+		fail()
+	}
+
+	// If the type has a length and can be nil, ensure one isn't nil.
+	// DeepEqual would return a false positive.
+	switch v1.Kind() {
+	case reflect.Array, reflect.Chan, reflect.Map, reflect.Slice:
+		if v1.Len() == 0 && v2.Len() == 0 {
+			return
+		}
+	}
+
+	if !reflect.DeepEqual(expected, actual) {
+		fail()
 	}
 }
 

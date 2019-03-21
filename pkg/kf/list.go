@@ -31,7 +31,12 @@ func (l *Lister) List(opts ...ListOption) ([]serving.Service, error) {
 		return nil, err
 	}
 
-	services, err := client.Services(cfg.Namespace).List(v1.ListOptions{})
+	listOptions := v1.ListOptions{}
+	if cfg.AppName != "" {
+		listOptions.FieldSelector = "metadata.name=" + cfg.AppName
+	}
+
+	services, err := client.Services(cfg.Namespace).List(listOptions)
 	if err != nil {
 		return nil, err
 	}

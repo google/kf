@@ -2,13 +2,13 @@ package kf_test
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ktesting "k8s.io/client-go/testing"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
 	"github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	"github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1/fake"
@@ -19,33 +19,43 @@ func TestList(t *testing.T) {
 	t.Parallel()
 
 	for tn, tc := range map[string]struct {
-		namespace         string
+		expectedNamespace string
+		appName           string
 		wantErr           error
 		servingFactoryErr error
 		serviceListErr    error
 		serviceNames      []string
+		opts              []kf.ListOption
 	}{
 		"configured namespace": {
-			namespace: "somenamespace",
+			expectedNamespace: "some-namespace",
+			opts: []kf.ListOption{
+				kf.WithListNamespace("some-namespace"),
+			},
+		},
+		"configured app name": {
+			appName:           "some-app",
+			expectedNamespace: "default",
+			opts: []kf.ListOption{
+				kf.WithListAppName("some-app"),
+			},
 		},
 		"formats multiple services": {
-			serviceNames: []string{"service-a", "service-b"},
+			serviceNames:      []string{"service-a", "service-b"},
+			expectedNamespace: "default",
 		},
 		"list services error, returns error": {
-			serviceListErr: errors.New("some-error"),
-			wantErr:        errors.New("some-error"),
+			serviceListErr:    errors.New("some-error"),
+			wantErr:           errors.New("some-error"),
+			expectedNamespace: "default",
 		},
 		"serving factor error, returns error": {
 			servingFactoryErr: errors.New("some-error"),
 			wantErr:           errors.New("some-error"),
+			expectedNamespace: "default",
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
-			expectedNamespace := tc.namespace
-			if tc.namespace == "" {
-				expectedNamespace = "default"
-			}
-
 			fake := &fake.FakeServingV1alpha1{
 				Fake: &ktesting.Fake{},
 			}
@@ -63,11 +73,17 @@ func TestList(t *testing.T) {
 				})
 			}
 
-			called := false
 			fake.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
-				called = true
-				if action.GetNamespace() != expectedNamespace {
-					t.Fatalf("wanted namespace: %s, got: %s", expectedNamespace, action.GetNamespace())
+				obj := action.(ktesting.ListActionImpl)
+				testutil.AssertEqual(t, "namespace", tc.expectedNamespace, action.GetNamespace())
+
+				if tc.appName != "" {
+					if len(obj.ListRestrictions.Fields.Requirements()) != 1 {
+						t.Fatalf("expected to have 1 requirement, got %d", len(obj.ListRestrictions.Fields.Requirements()))
+					}
+
+					testutil.AssertEqual(t, "FieldSelector Field", "metadata.name", obj.ListRestrictions.Fields.Requirements()[0].Field)
+					testutil.AssertEqual(t, "FieldSelector Value", tc.appName, obj.ListRestrictions.Fields.Requirements()[0].Value)
 				}
 
 				return true, serviceList, tc.serviceListErr
@@ -77,28 +93,15 @@ func TestList(t *testing.T) {
 				return fake, tc.servingFactoryErr
 			})
 
-			var opts []kf.ListOption
-			if tc.namespace != "" {
-				opts = append(opts, kf.WithListNamespace(tc.namespace))
-			}
-
-			apps, gotErr := lister.List(opts...)
+			apps, gotErr := lister.List(tc.opts...)
 
 			if tc.wantErr != nil {
-				if fmt.Sprint(tc.wantErr) != fmt.Sprint(gotErr) {
-					t.Fatalf("wanted err: %v, got: %v", tc.wantErr, gotErr)
-				}
+				testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
 				return
 			}
 
-			if !called {
-				t.Fatal("Reactor was not invoked")
-			}
-
 			for i, service := range tc.serviceNames {
-				if apps[i].Name != service {
-					t.Fatalf("wanted app: %s: got:\n%v", service, apps[i].Name)
-				}
+				testutil.AssertEqual(t, "app", service, apps[i].Name)
 			}
 		})
 	}
