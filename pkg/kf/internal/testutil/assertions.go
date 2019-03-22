@@ -80,3 +80,18 @@ func AssertNil(t *testing.T, name string, value interface{}) {
 		t.Fatalf("expected %s to be nil but got: %v", name, value)
 	}
 }
+
+// AssertKeyWithValue ensures the key is present in the map and has the
+// given value.
+func AssertKeyWithValue(t *testing.T, m map[interface{}]interface{}, key, value interface{}) {
+	t.Helper()
+
+	a, ok := m[key]
+	if !ok {
+		t.Fatalf("expected %v to have key %v", m, key)
+	}
+
+	if !reflect.DeepEqual(value, a) {
+		t.Fatalf("expected %v to have key %v with value %v", m, key, value)
+	}
+}

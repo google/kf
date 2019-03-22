@@ -1,17 +1,25 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/apps"
+	cbuildpacks "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	servicebindingscmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/service-bindings"
 	servicescmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/services"
 	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
+	"github.com/buildpack/lifecycle/image"
+	"github.com/buildpack/pack"
+	packconfig "github.com/buildpack/pack/config"
+	"github.com/buildpack/pack/docker"
+	"github.com/buildpack/pack/fs"
 	build "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	buildlogs "github.com/knative/build/pkg/logs"
 	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
@@ -166,6 +174,13 @@ You can get more info by adding the --help flag to any sub-command.
 	rootCmd.AddCommand(servicebindingscmd.NewListBindingsCommand(p, bindingClient))
 	rootCmd.AddCommand(servicebindingscmd.NewUnbindServiceCommand(p, bindingClient))
 
+	// Buildpacks
+	rootCmd.AddCommand(cbuildpacks.NewUploadBuildpacks(
+		p,
+		initBuilderCreator(),
+		buildpacks.NewBuildTemplateUploader(getBuildConfig),
+	))
+
 	return rootCmd
 }
 
@@ -182,4 +197,44 @@ func initKubeConfig() {
 		}
 		kubeCfgFile = filepath.Join(home, ".kube", "config")
 	}
+}
+
+func initBuilderCreator() *buildpacks.BuilderCreator {
+	return buildpacks.NewBuilderCreator(func(flags pack.CreateBuilderFlags) error {
+		factory, err := image.NewFactory()
+		if err != nil {
+			return err
+		}
+
+		dockerClient, err := docker.New()
+		if err != nil {
+			return err
+		}
+
+		cfg, err := packconfig.NewDefault()
+		if err != nil {
+			return err
+		}
+		builderFactory := pack.BuilderFactory{
+			FS:     &fs.FS{},
+			Config: cfg,
+			Fetcher: &pack.ImageFetcher{
+				Factory: factory,
+				Docker:  dockerClient,
+			},
+		}
+		builderConfig, err := builderFactory.BuilderConfigFromFlags(
+			context.Background(),
+			flags,
+		)
+		if err != nil {
+			return err
+		}
+
+		if err := builderFactory.Create(builderConfig); err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
