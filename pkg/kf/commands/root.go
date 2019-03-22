@@ -8,20 +8,25 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
+	servicebindingscmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/service-bindings"
 	servicescmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/services"
+	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
 	build "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	buildlogs "github.com/knative/build/pkg/logs"
 	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/poy/kontext"
+	"github.com/poy/service-catalog/pkg/client/clientset_generated/clientset"
 	svcatclient "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset"
+	scv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	"github.com/poy/service-catalog/pkg/svcat"
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 	k8sclient "k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -30,8 +35,12 @@ var (
 	kubeCfgFile string
 )
 
+func getRestConfig() (*rest.Config, error) {
+	return clientcmd.BuildConfigFromFlags("", kubeCfgFile)
+}
+
 func getConfig() (serving.ServingV1alpha1Interface, error) {
-	config, err := clientcmd.BuildConfigFromFlags("", kubeCfgFile)
+	config, err := getRestConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +52,7 @@ func getConfig() (serving.ServingV1alpha1Interface, error) {
 }
 
 func getBuildConfig() (build.BuildV1alpha1Interface, error) {
-	config, err := clientcmd.BuildConfigFromFlags("", kubeCfgFile)
+	config, err := getRestConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +64,7 @@ func getBuildConfig() (build.BuildV1alpha1Interface, error) {
 }
 
 func getSvcatApp(namespace string) (servicecatalog.SvcatClient, error) {
-	config, err := clientcmd.BuildConfigFromFlags("", kubeCfgFile)
+	config, err := getRestConfig()
 	if err != nil {
 		return nil, err
 	}
@@ -71,6 +80,20 @@ func getSvcatApp(namespace string) (servicecatalog.SvcatClient, error) {
 	}
 
 	return svcat.NewApp(k8sClient, catalogClient, namespace)
+}
+
+func getServiceCatalogClient() (scv1beta1.ServicecatalogV1beta1Interface, error) {
+	config, err := getRestConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	cs, err := clientset.NewForConfig(config)
+	if err != nil {
+		return nil, err
+	}
+
+	return cs.ServicecatalogV1beta1(), nil
 }
 
 // NewKfCommand creates the root kf command.
@@ -97,6 +120,9 @@ Services:
   kf delete-service
   kf service <instance-name>
   kf services
+	kf bindings
+	kf bind-service <app> <instance-name>
+	kf unbind-service <app> <instance-name>
 
 You can get more info by adding the --help flag to any sub-command.
 `,
@@ -134,6 +160,11 @@ You can get more info by adding the --help flag to any sub-command.
 	rootCmd.AddCommand(servicescmd.NewGetServiceCommand(p, servicesClient))
 	rootCmd.AddCommand(servicescmd.NewListServicesCommand(p, servicesClient))
 	rootCmd.AddCommand(servicescmd.NewMarketplaceCommand(p, servicesClient))
+
+	bindingClient := servicebindings.NewClient(getServiceCatalogClient)
+	rootCmd.AddCommand(servicebindingscmd.NewBindServiceCommand(p, bindingClient))
+	rootCmd.AddCommand(servicebindingscmd.NewListBindingsCommand(p, bindingClient))
+	rootCmd.AddCommand(servicebindingscmd.NewUnbindServiceCommand(p, bindingClient))
 
 	return rootCmd
 }
