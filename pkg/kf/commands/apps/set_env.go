@@ -9,7 +9,7 @@ import (
 // NewSetEnvCommand creates a SetEnv command.
 func NewSetEnvCommand(p *config.KfParams, c EnvironmentClient) *cobra.Command {
 	var envCmd = &cobra.Command{
-		Use:   "set-env APP_NAME [NAME=VALUE]",
+		Use:   "set-env APP_NAME NAME VALUE",
 		Short: "Set an environment variable for an app",
 		Args:  cobra.ExactArgs(3),
 		Long:  ``,
