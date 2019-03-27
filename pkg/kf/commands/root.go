@@ -20,6 +20,7 @@ import (
 	packconfig "github.com/buildpack/pack/config"
 	"github.com/buildpack/pack/docker"
 	"github.com/buildpack/pack/fs"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 	build "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	buildlogs "github.com/knative/build/pkg/logs"
 	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
@@ -175,6 +176,8 @@ You can get more info by adding the --help flag to any sub-command.
 	rootCmd.AddCommand(servicebindingscmd.NewUnbindServiceCommand(p, bindingClient))
 
 	// Buildpacks
+	buildpackLister := buildpacks.NewBuildpackLister(getBuildConfig, remote.Image)
+	rootCmd.AddCommand(cbuildpacks.NewBuildpacks(p, buildpackLister))
 	rootCmd.AddCommand(cbuildpacks.NewUploadBuildpacks(
 		p,
 		initBuilderCreator(),

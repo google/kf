@@ -8,3 +8,4 @@ common:
   default: '"default"'
 configs:
 - name: UploadBuildTemplate
+- name: BuildpackList

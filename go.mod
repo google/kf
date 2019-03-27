@@ -16,6 +16,7 @@ require (
 	github.com/golang/protobuf v1.3.0
 	github.com/google/btree v0.0.0-20180124185431-e89373fe6b4a
 	github.com/google/go-cmp v0.2.0
+	github.com/google/go-containerregistry v0.0.0-20190306174256-678f6c51f585
 	github.com/google/gofuzz v0.0.0-20161122191042-44d81051d367
 	github.com/google/licenseclassifier v0.0.0-20181010185715-e979a0b10eeb
 	github.com/googleapis/gnostic v0.0.0-20170729233727-0c5108395e2d
@@ -37,6 +38,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
 	github.com/modern-go/reflect2 v1.0.1
+	github.com/pelletier/go-toml v1.2.0
 	github.com/petar/GoLLRB v0.0.0-20130427215148-53be0d36a84c
 	github.com/peterbourgon/diskv v2.0.1+incompatible
 	github.com/pkg/errors v0.8.1
