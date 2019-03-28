@@ -5,18 +5,26 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/secrets"
+	secretsfake "github.com/GoogleCloudPlatform/kf/pkg/kf/secrets/fake"
 	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
 	"github.com/golang/mock/gomock"
 	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	testclient "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	clientv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+type fakeDependencies struct {
+	apiserver *testutil.FakeApiServer
+	secrets   *secretsfake.FakeClientInterface
+}
+
 type ServiceBindingApiTestCase struct {
 	FactoryErr error
-	Run        func(t *testing.T, apiserver *testutil.FakeApiServer, client servicebindings.ClientInterface)
+	Run        func(t *testing.T, fakes fakeDependencies, client servicebindings.ClientInterface)
 }
 
 func (tc *ServiceBindingApiTestCase) ExecuteTest(t *testing.T) {
@@ -26,40 +34,46 @@ func (tc *ServiceBindingApiTestCase) ExecuteTest(t *testing.T) {
 	cs := &testclient.Clientset{}
 	fakeApiServer := testutil.AddFakeReactor(cs, controller)
 
+	secretsController := gomock.NewController(t)
+	defer secretsController.Finish()
+	fakeSecrets := secretsfake.NewFakeClientInterface(secretsController)
+
 	client := servicebindings.NewClient(func() (clientv1beta1.ServicecatalogV1beta1Interface, error) {
 		return cs.ServicecatalogV1beta1(), tc.FactoryErr
+	}, func() (secrets.ClientInterface, error) {
+		return fakeSecrets, nil
 	})
 
-	tc.Run(t, fakeApiServer, client)
+	tc.Run(t, fakeDependencies{apiserver: fakeApiServer, secrets: fakeSecrets}, client)
 }
 
 func TestClient_Create(t *testing.T) {
 	cases := map[string]ServiceBindingApiTestCase{
 		"factory error": {
 			FactoryErr: errors.New("some-error"),
-			Run: func(t *testing.T, api *testutil.FakeApiServer, client servicebindings.ClientInterface) {
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
 				_, err := client.Create("mydb", "myapp")
 				testutil.AssertErrorsEqual(t, errors.New("some-error"), err)
 			},
 		},
 		"server error": {
-			Run: func(t *testing.T, api *testutil.FakeApiServer, client servicebindings.ClientInterface) {
-				api.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api error"))
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
+				deps.apiserver.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api error"))
 				_, err := client.Create("mydb", "myapp")
 				testutil.AssertErrorsEqual(t, errors.New("api error"), err)
 			},
 		},
 		"custom namespace": {
-			Run: func(t *testing.T, api *testutil.FakeApiServer, client servicebindings.ClientInterface) {
-				api.EXPECT().Create(gomock.Any(), "custom-ns", gomock.Any()).Return(nil, nil)
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
+				deps.apiserver.EXPECT().Create(gomock.Any(), "custom-ns", gomock.Any()).Return(nil, nil)
 
 				_, err := client.Create("mydb", "myapp", servicebindings.WithCreateNamespace("custom-ns"))
 				testutil.AssertNil(t, "create err", err)
 			},
 		},
 		"call semantics": {
-			Run: func(t *testing.T, api *testutil.FakeApiServer, client servicebindings.ClientInterface) {
-				api.EXPECT().Create(gomock.Any(), "custom-ns", gomock.Any()).DoAndReturn(func(grv schema.GroupVersionResource, ns string, obj runtime.Object) (runtime.Object, error) {
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
+				deps.apiserver.EXPECT().Create(gomock.Any(), "custom-ns", gomock.Any()).DoAndReturn(func(grv schema.GroupVersionResource, ns string, obj runtime.Object) (runtime.Object, error) {
 					testutil.AssertEqual(t, "group", "servicecatalog.k8s.io", grv.Group)
 					testutil.AssertEqual(t, "resource", "servicebindings", grv.Resource)
 
@@ -71,8 +85,8 @@ func TestClient_Create(t *testing.T) {
 			},
 		},
 		"default values": {
-			Run: func(t *testing.T, api *testutil.FakeApiServer, client servicebindings.ClientInterface) {
-				api.EXPECT().Create(gomock.Any(), "default", gomock.Any()).DoAndReturn(func(grv schema.GroupVersionResource, ns string, obj runtime.Object) (runtime.Object, error) {
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
+				deps.apiserver.EXPECT().Create(gomock.Any(), "default", gomock.Any()).DoAndReturn(func(grv schema.GroupVersionResource, ns string, obj runtime.Object) (runtime.Object, error) {
 					binding := obj.(*apiv1beta1.ServiceBinding)
 					testutil.AssertEqual(t, "name", "kf-binding-myapp-mydb", binding.Name)
 					testutil.AssertEqual(t, "namespace", "default", binding.Namespace)
@@ -86,8 +100,8 @@ func TestClient_Create(t *testing.T) {
 			},
 		},
 		"custom values": {
-			Run: func(t *testing.T, api *testutil.FakeApiServer, client servicebindings.ClientInterface) {
-				api.EXPECT().Create(gomock.Any(), "custom-ns", gomock.Any()).DoAndReturn(func(grv schema.GroupVersionResource, ns string, obj runtime.Object) (runtime.Object, error) {
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
+				deps.apiserver.EXPECT().Create(gomock.Any(), "custom-ns", gomock.Any()).DoAndReturn(func(grv schema.GroupVersionResource, ns string, obj runtime.Object) (runtime.Object, error) {
 					binding := obj.(*apiv1beta1.ServiceBinding)
 					testutil.AssertEqual(t, "name", "kf-binding-myapp-mydb", binding.Name)
 					testutil.AssertEqual(t, "namespace", "custom-ns", binding.Namespace)
@@ -115,30 +129,30 @@ func TestClient_Delete(t *testing.T) {
 	cases := map[string]ServiceBindingApiTestCase{
 		"factory error": {
 			FactoryErr: errors.New("some-error"),
-			Run: func(t *testing.T, api *testutil.FakeApiServer, client servicebindings.ClientInterface) {
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
 				err := client.Delete("mydb", "myapp")
 				testutil.AssertErrorsEqual(t, errors.New("some-error"), err)
 			},
 		},
 		"api-error": {
-			Run: func(t *testing.T, api *testutil.FakeApiServer, client servicebindings.ClientInterface) {
-				api.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("api-error"))
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
+				deps.apiserver.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("api-error"))
 
 				err := client.Delete("mydb", "myapp")
 				testutil.AssertErrorsEqual(t, errors.New("api-error"), err)
 			},
 		},
 		"default options": {
-			Run: func(t *testing.T, api *testutil.FakeApiServer, client servicebindings.ClientInterface) {
-				api.EXPECT().Delete(gomock.Any(), "default", "kf-binding-myapp-mydb").Return(nil)
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
+				deps.apiserver.EXPECT().Delete(gomock.Any(), "default", "kf-binding-myapp-mydb").Return(nil)
 
 				err := client.Delete("mydb", "myapp")
 				testutil.AssertNil(t, "delete err", err)
 			},
 		},
 		"full options": {
-			Run: func(t *testing.T, api *testutil.FakeApiServer, client servicebindings.ClientInterface) {
-				api.EXPECT().Delete(gomock.Any(), "custom-ns", "kf-binding-myapp2-mydb2").Return(nil)
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
+				deps.apiserver.EXPECT().Delete(gomock.Any(), "custom-ns", "kf-binding-myapp2-mydb2").Return(nil)
 
 				err := client.Delete("mydb2", "myapp2", servicebindings.WithDeleteNamespace("custom-ns"))
 				testutil.AssertNil(t, "delete err", err)
@@ -155,14 +169,14 @@ func TestClient_List(t *testing.T) {
 	cases := map[string]ServiceBindingApiTestCase{
 		"factory error": {
 			FactoryErr: errors.New("some-error"),
-			Run: func(t *testing.T, api *testutil.FakeApiServer, client servicebindings.ClientInterface) {
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
 				_, err := client.List()
 				testutil.AssertErrorsEqual(t, errors.New("some-error"), err)
 			},
 		},
 		"default options": {
-			Run: func(t *testing.T, api *testutil.FakeApiServer, client servicebindings.ClientInterface) {
-				api.EXPECT().
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
+				deps.apiserver.EXPECT().
 					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
 					Return(&apiv1beta1.ServiceBindingList{}, nil)
 
@@ -171,8 +185,8 @@ func TestClient_List(t *testing.T) {
 			},
 		},
 		"service error": {
-			Run: func(t *testing.T, api *testutil.FakeApiServer, client servicebindings.ClientInterface) {
-				api.EXPECT().
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
+				deps.apiserver.EXPECT().
 					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
 					Return(nil, errors.New("api-error"))
 
@@ -181,8 +195,8 @@ func TestClient_List(t *testing.T) {
 			},
 		},
 		"different namespace": {
-			Run: func(t *testing.T, api *testutil.FakeApiServer, client servicebindings.ClientInterface) {
-				api.EXPECT().
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
+				deps.apiserver.EXPECT().
 					List(gomock.Any(), "custom-ns", gomock.Any(), gomock.Any()).
 					Return(&apiv1beta1.ServiceBindingList{}, nil)
 
@@ -191,8 +205,8 @@ func TestClient_List(t *testing.T) {
 			},
 		},
 		"instances get passed back": {
-			Run: func(t *testing.T, api *testutil.FakeApiServer, client servicebindings.ClientInterface) {
-				api.EXPECT().
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
+				deps.apiserver.EXPECT().
 					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
 					Return(&apiv1beta1.ServiceBindingList{
 						Items: []apiv1beta1.ServiceBinding{
@@ -208,7 +222,7 @@ func TestClient_List(t *testing.T) {
 			},
 		},
 		"instances get filtered by app": {
-			Run: func(t *testing.T, api *testutil.FakeApiServer, client servicebindings.ClientInterface) {
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
 				mybinding := apiv1beta1.ServiceBinding{}
 				mybinding.Name = "bound-to-my-app"
 				mybinding.Labels = map[string]string{servicebindings.AppNameLabel: "my-app"}
@@ -217,7 +231,7 @@ func TestClient_List(t *testing.T) {
 				otherbinding.Name = "bound-to-other-app"
 				otherbinding.Labels = map[string]string{servicebindings.AppNameLabel: "other-app"}
 
-				api.EXPECT().
+				deps.apiserver.EXPECT().
 					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
 					Return(&apiv1beta1.ServiceBindingList{Items: []apiv1beta1.ServiceBinding{mybinding, otherbinding}}, nil)
 
@@ -228,7 +242,7 @@ func TestClient_List(t *testing.T) {
 			},
 		},
 		"instances get filtered by service": {
-			Run: func(t *testing.T, api *testutil.FakeApiServer, client servicebindings.ClientInterface) {
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
 				mybinding := apiv1beta1.ServiceBinding{}
 				mybinding.Name = "bound-to-my-service"
 				mybinding.Spec.InstanceRef.Name = "my-service"
@@ -237,7 +251,7 @@ func TestClient_List(t *testing.T) {
 				otherbinding.Name = "bound-to-other-service"
 				otherbinding.Spec.InstanceRef.Name = "other-service"
 
-				api.EXPECT().
+				deps.apiserver.EXPECT().
 					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
 					Return(&apiv1beta1.ServiceBindingList{Items: []apiv1beta1.ServiceBinding{mybinding, otherbinding}}, nil)
 
@@ -245,6 +259,111 @@ func TestClient_List(t *testing.T) {
 				testutil.AssertNil(t, "list err", err)
 				testutil.AssertEqual(t, "item count", 1, len(list))
 				testutil.AssertEqual(t, "filtered item", mybinding, list[0])
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, tc.ExecuteTest)
+	}
+}
+
+func TestClient_GetVcapServices(t *testing.T) {
+	fakeBinding := apiv1beta1.ServiceBinding{}
+	fakeBinding.Name = "my-binding"
+	fakeBinding.Labels = map[string]string{
+		servicebindings.AppNameLabel:     "my-app",
+		servicebindings.BindingNameLabel: "binding-name",
+	}
+	fakeBinding.Spec.SecretName = "my-secret"
+
+	fakeBindingList := &apiv1beta1.ServiceBindingList{
+		Items: []apiv1beta1.ServiceBinding{fakeBinding},
+	}
+
+	emptyBindingList := &apiv1beta1.ServiceBindingList{
+		Items: []apiv1beta1.ServiceBinding{},
+	}
+
+	fakeSecret := corev1.Secret{}
+	fakeSecret.Name = "my-secret"
+	fakeSecret.Data = map[string][]byte{
+		"key1": []byte("value1"),
+		"key2": []byte("value2"),
+	}
+
+	cases := map[string]ServiceBindingApiTestCase{
+		"factory error": {
+			FactoryErr: errors.New("some-error"),
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
+				_, err := client.GetVcapServices("my-app")
+				testutil.AssertErrorsEqual(t, errors.New("some-error"), err)
+			},
+		},
+		"api-error": {
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
+				deps.apiserver.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api-error"))
+
+				_, err := client.GetVcapServices("my-app")
+				testutil.AssertErrorsEqual(t, errors.New("api-error"), err)
+			},
+		},
+		"default options": {
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
+				deps.apiserver.EXPECT().
+					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
+					Return(emptyBindingList, nil)
+
+				_, err := client.GetVcapServices("my-app")
+				testutil.AssertNil(t, "GetVcapServices err", err)
+			},
+		},
+		"gets secret": {
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
+				deps.apiserver.EXPECT().
+					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
+					Return(fakeBindingList, nil)
+
+				deps.secrets.EXPECT().Get("my-secret", gomock.Any()).Return(&fakeSecret, nil)
+
+				actualVcap, err := client.GetVcapServices("my-app")
+				testutil.AssertNil(t, "GetVcapServices err", err)
+
+				expectedVcap := servicebindings.VcapServicesMap{}
+				expectedVcap.Add(servicebindings.NewVcapService(fakeBinding, &fakeSecret))
+				testutil.AssertEqual(t, "vcap services", expectedVcap, actualVcap)
+			},
+		},
+		"fail on bad secret": {
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
+				deps.apiserver.EXPECT().
+					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
+					Return(fakeBindingList, nil)
+
+				deps.secrets.EXPECT().
+					Get("my-secret", gomock.Any()).
+					Return(nil, errors.New("secret doesn't exist"))
+
+				_, actualErr := client.GetVcapServices("my-app", servicebindings.WithGetVcapServicesFailOnBadSecret(true))
+				expectedErr := errors.New("couldn't create VCAP_SERVICES, the secret for binding my-binding couldn't be fetched: secret doesn't exist")
+				testutil.AssertErrorsEqual(t, expectedErr, actualErr)
+			},
+		},
+		"no fail on bad secret": {
+			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
+
+				deps.apiserver.EXPECT().
+					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
+					Return(fakeBindingList, nil)
+
+				deps.secrets.EXPECT().Get("my-secret", gomock.Any()).Return(nil, errors.New("secret doesn't exist"))
+
+				// VCAP should be empty
+				actualVcap, err := client.GetVcapServices("my-app")
+				testutil.AssertNil(t, "GetVcapServices err", err)
+
+				expectedVcap := servicebindings.VcapServicesMap{}
+				testutil.AssertEqual(t, "vcap services", expectedVcap, actualVcap)
 			},
 		},
 	}

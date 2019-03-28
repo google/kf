@@ -3,10 +3,11 @@ package servicebindings
 import (
 	"fmt"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/secrets"
 	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	clientv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 //go:generate go run ../internal/tools/option-builder/option-builder.go options.yml
@@ -29,21 +30,29 @@ type ClientInterface interface {
 
 	// List queries Kubernetes for service bindings.
 	List(opts ...ListOption) ([]apiv1beta1.ServiceBinding, error)
+
+	// GetVcapServices gets a VCAP_SERVICES compatible environment variable.
+	GetVcapServices(appName string, opts ...GetVcapServicesOption) (VcapServicesMap, error)
 }
 
 // SClientFactory creates a Service Catalog client.
 type SClientFactory func() (clientv1beta1.ServicecatalogV1beta1Interface, error)
 
+// SecretClientFactory is a constructor for Secret clients.
+type SecretClientFactory func() (secrets.ClientInterface, error)
+
 // NewClient creates a new client capable of interacting with service catalog
 // services.
-func NewClient(sclient SClientFactory) ClientInterface {
+func NewClient(sclient SClientFactory, secretClient SecretClientFactory) ClientInterface {
 	return &Client{
-		createSvcatClient: sclient,
+		createSvcatClient:  sclient,
+		createSecretClient: secretClient,
 	}
 }
 
 type Client struct {
-	createSvcatClient SClientFactory
+	createSvcatClient  SClientFactory
+	createSecretClient SecretClientFactory
 }
 
 // Create binds a service instance to an app.
@@ -128,6 +137,35 @@ func (c *Client) List(opts ...ListOption) ([]apiv1beta1.ServiceBinding, error) {
 	}
 
 	return filtered, nil
+}
+
+// GetVcapServices gets a VCAP_SERVICES compatible environment variable.
+func (c *Client) GetVcapServices(appName string, opts ...GetVcapServicesOption) (VcapServicesMap, error) {
+	cfg := GetVcapServicesOptionDefaults().Extend(opts).toConfig()
+
+	secretClient, err := c.createSecretClient()
+	if err != nil {
+		return nil, err
+	}
+
+	bindings, err := c.List(WithListAppName(appName), WithListNamespace(cfg.Namespace))
+	if err != nil {
+		return nil, err
+	}
+
+	out := VcapServicesMap{}
+	for _, binding := range bindings {
+		secret, err := secretClient.Get(binding.Spec.SecretName, secrets.WithGetNamespace(cfg.Namespace))
+		if err == nil {
+			out.Add(NewVcapService(binding, secret))
+		} else {
+			if cfg.FailOnBadSecret {
+				return nil, fmt.Errorf("couldn't create VCAP_SERVICES, the secret for binding %s couldn't be fetched: %v", binding.Name, err)
+			}
+		}
+	}
+
+	return out, nil
 }
 
 // serviceBindingName is the primary key for service bindings consisting of the

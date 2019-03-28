@@ -13,7 +13,9 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	servicebindingscmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/service-bindings"
 	servicescmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/services"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/secrets"
 	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
+
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
 	"github.com/buildpack/lifecycle/image"
 	"github.com/buildpack/pack"
@@ -48,6 +50,15 @@ func getRestConfig() (*rest.Config, error) {
 	return clientcmd.BuildConfigFromFlags("", kubeCfgFile)
 }
 
+func getKubernetes() (k8sclient.Interface, error) {
+	config, err := getRestConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	return k8sclient.NewForConfig(config)
+}
+
 func getConfig() (serving.ServingV1alpha1Interface, error) {
 	config, err := getRestConfig()
 	if err != nil {
@@ -70,6 +81,10 @@ func getBuildConfig() (build.BuildV1alpha1Interface, error) {
 		return nil, err
 	}
 	return client, nil
+}
+
+func getSecretClient() (secrets.ClientInterface, error) {
+	return secrets.NewClient(getKubernetes), nil
 }
 
 func getSvcatApp(namespace string) (servicecatalog.SvcatClient, error) {
@@ -170,10 +185,11 @@ You can get more info by adding the --help flag to any sub-command.
 	rootCmd.AddCommand(servicescmd.NewListServicesCommand(p, servicesClient))
 	rootCmd.AddCommand(servicescmd.NewMarketplaceCommand(p, servicesClient))
 
-	bindingClient := servicebindings.NewClient(getServiceCatalogClient)
+	bindingClient := servicebindings.NewClient(getServiceCatalogClient, getSecretClient)
 	rootCmd.AddCommand(servicebindingscmd.NewBindServiceCommand(p, bindingClient))
 	rootCmd.AddCommand(servicebindingscmd.NewListBindingsCommand(p, bindingClient))
 	rootCmd.AddCommand(servicebindingscmd.NewUnbindServiceCommand(p, bindingClient))
+	rootCmd.AddCommand(servicebindingscmd.NewVcapServicesCommand(p, bindingClient))
 
 	// Buildpacks
 	buildpackLister := buildpacks.NewBuildpackLister(getBuildConfig, remote.Image)
