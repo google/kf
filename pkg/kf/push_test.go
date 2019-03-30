@@ -158,9 +158,17 @@ func TestPush_UpdateApp(t *testing.T) {
 		appName   string
 		listerErr error
 		wantErr   error
+		envs      map[string]string
 	}{
 		"app already exists, update": {
 			appName: "some-app",
+		},
+		"preserves existing environment variables": {
+			appName: "some-app",
+			envs: map[string]string{
+				"ENV-1": "a",
+				"ENV-2": "b",
+			},
 		},
 		"service list error, returns error": {
 			appName:   "some-app",
@@ -186,8 +194,7 @@ func TestPush_UpdateApp(t *testing.T) {
 
 					var apps []serving.Service
 					for _, appName := range deployedApps {
-						s := serving.Service{}
-						s.Name = appName
+						s := buildServiceWithEnvs(appName, tc.envs)
 						s.ResourceVersion = appName + "-version"
 						apps = append(apps, s)
 					}
@@ -207,7 +214,7 @@ func TestPush_UpdateApp(t *testing.T) {
 			var reactorCalled bool
 			fakeServing.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
 				reactorCalled = true
-				testPushReaction(t, action, expectedNamespace, tc.appName, containerRegistry, serviceAccount, "update", "")
+				testPushReaction(t, action, expectedNamespace, tc.appName, containerRegistry, serviceAccount, "update", "", tc.envs)
 
 				return false, nil, nil
 			}))
@@ -317,7 +324,7 @@ func TestPush_NewApp(t *testing.T) {
 			var reactorCalled bool
 			fake.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
 				reactorCalled = true
-				testPushReaction(t, action, expectedNamespace, tc.appName, tc.opts.ContainerRegistry(), tc.opts.ServiceAccount(), "create", tc.opts.DockerImage())
+				testPushReaction(t, action, expectedNamespace, tc.appName, tc.opts.ContainerRegistry(), tc.opts.ServiceAccount(), "create", tc.opts.DockerImage(), nil)
 
 				return tc.serviceCreateErr != nil, nil, tc.serviceCreateErr
 			}))
@@ -383,6 +390,7 @@ func testPushReaction(
 	serviceAccount string,
 	actionVerb string,
 	imageName string,
+	envs map[string]string,
 ) {
 	t.Helper()
 
@@ -410,6 +418,12 @@ func testPushReaction(
 
 	if actionVerb == "update" && service.ResourceVersion != appName+"-version" {
 		testutil.AssertEqual(t, "service.ResourceVersion (on update)", appName+"-version", service.ResourceVersion)
+	}
+
+	actualEnvs := service.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env
+	testutil.AssertEqual(t, "env len", len(envs), len(actualEnvs))
+	for _, env := range actualEnvs {
+		testutil.AssertEqual(t, "env: "+env.Name, envs[env.Name], env.Value)
 	}
 }
 

@@ -300,7 +300,8 @@ func buildServiceWithEnvs(appName string, envs map[string]string) serving.Servic
 					RevisionTemplate: serving.RevisionTemplateSpec{
 						Spec: serving.RevisionSpec{
 							Container: corev1.Container{
-								Env: buildEnvVars(envs),
+								Env:             buildEnvVars(envs),
+								ImagePullPolicy: "Always",
 							},
 						},
 					},

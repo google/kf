@@ -67,7 +67,7 @@ func (p *Pusher) Push(appName string, opts ...PushOption) error {
 		return err
 	}
 
-	d, err := p.deployScheme(appName, cfg.Namespace, client)
+	d, s, err := p.deployScheme(appName, cfg.Namespace, client)
 	if err != nil {
 		return err
 	}
@@ -97,13 +97,18 @@ func (p *Pusher) Push(appName string, opts ...PushOption) error {
 		}
 	}
 
+	if s == nil {
+		s = p.initService(appName, cfg.Namespace, buildSpec)
+	}
+	s.Spec.RunLatest.Configuration.Build = buildSpec
+	s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Image = imageName
+	s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.ServiceAccountName = cfg.ServiceAccount
+
 	resourceVersion, err := p.buildAndDeploy(
 		appName,
 		cfg.Namespace,
-		buildSpec,
-		imageName,
-		cfg.ServiceAccount,
 		d,
+		s,
 	)
 	if err != nil {
 		return err
@@ -144,10 +149,10 @@ func (p *Pusher) setupConfig(appName string, opts []PushOption) (pushConfig, err
 
 type deployer func(*serving.Service) (*serving.Service, error)
 
-func (p *Pusher) deployScheme(appName, namespace string, client cserving.ServingV1alpha1Interface) (deployer, error) {
+func (p *Pusher) deployScheme(appName, namespace string, client cserving.ServingV1alpha1Interface) (deployer, *serving.Service, error) {
 	apps, err := p.l.List(WithListNamespace(namespace))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// TODO: use WithListAppName
@@ -155,15 +160,11 @@ func (p *Pusher) deployScheme(appName, namespace string, client cserving.Serving
 	// so, we want to update intead of create.
 	for _, app := range apps {
 		if app.Name == appName {
-			return func(cfg *serving.Service) (*serving.Service, error) {
-				// Modify the ResourceVersion. This is required for updates.
-				cfg.ResourceVersion = app.ResourceVersion
-				return client.Services(namespace).Update(cfg)
-			}, nil
+			return client.Services(namespace).Update, &app, nil
 		}
 	}
 
-	return client.Services(namespace).Create, nil
+	return client.Services(namespace).Create, nil, nil
 }
 
 func (p *Pusher) uploadSrc(appName string, cfg pushConfig) (string, error) {
@@ -235,24 +236,15 @@ func (p *Pusher) buildSpec(
 	}, imageName, nil
 }
 
-func (p *Pusher) buildAndDeploy(
-	appName string,
-	namespace string,
-	buildSpec *serving.RawExtension,
-	imageName string,
-	serviceAccount string,
-	d deployer,
-) (string, error) {
-	cfg := &serving.Service{
+func (p *Pusher) initService(appName, namespace string, build *serving.RawExtension) *serving.Service {
+	s := &serving.Service{
 		Spec: serving.ServiceSpec{
 			RunLatest: &serving.RunLatestType{
 				Configuration: serving.ConfigurationSpec{
-					Build: buildSpec,
+					Build: build,
 					RevisionTemplate: serving.RevisionTemplateSpec{
 						Spec: serving.RevisionSpec{
-							ServiceAccountName: serviceAccount,
 							Container: corev1.Container{
-								Image:           imageName,
 								ImagePullPolicy: "Always",
 							},
 						},
@@ -261,12 +253,27 @@ func (p *Pusher) buildAndDeploy(
 			},
 		},
 	}
-	cfg.Name = appName
-	cfg.Kind = "Service"
-	cfg.APIVersion = "serving.knative.dev/v1alpha1"
-	cfg.Namespace = namespace
 
-	s, err := d(cfg)
+	p.initMeta(s, appName, namespace)
+
+	return s
+}
+
+func (p *Pusher) initMeta(s *serving.Service, appName, namespace string) {
+	s.Name = appName
+	s.Kind = "Service"
+	s.APIVersion = "serving.knative.dev/v1alpha1"
+	s.Namespace = namespace
+}
+
+func (p *Pusher) buildAndDeploy(
+	appName string,
+	namespace string,
+	d deployer,
+	s *serving.Service,
+) (string, error) {
+	p.initMeta(s, appName, namespace)
+	s, err := d(s)
 	if err != nil {
 		return "", err
 	}
