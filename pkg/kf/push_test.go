@@ -342,7 +342,7 @@ func TestPush_NewApp(t *testing.T) {
 				}
 
 				testutil.AssertEqual(t, "path", expectedPath, dir)
-				testutil.AssertRegexp(t, "container registry", "^"+tc.opts.ContainerRegistry()+`/[a-zA-Z0-9_-]+:latest$`, tag)
+				testutil.AssertRegexp(t, "container registry", "^"+tc.opts.ContainerRegistry()+`/[a-zA-Z0-9_-]+:[0-9_-]+$`, tag)
 
 				return nil
 			}
@@ -437,7 +437,7 @@ func testBuild(
 
 	testutil.AssertEqual(t, "Spec.ServiceAccountName", serviceAccount, b.Spec.ServiceAccountName)
 
-	srcPattern := fmt.Sprintf(`^%s/src-%s-[0-9]{19}:latest$`, containerRegistry, appName)
+	srcPattern := fmt.Sprintf(`^%s/src-%s:[0-9]{19}$`, containerRegistry, appName)
 	testutil.AssertRegexp(t, "image", srcPattern, b.Spec.Source.Custom.Image)
 
 	testutil.AssertEqual(t, "Spec.Template.Name", "buildpack", b.Spec.Template.Name)
@@ -449,7 +449,7 @@ func testBuild(
 
 	imageName := b.Spec.Template.Arguments[0].Value
 
-	pattern := fmt.Sprintf(`^%s/%s-[0-9]{19}:latest$`, containerRegistry, appName)
+	pattern := fmt.Sprintf(`^%s/%s:[0-9]{19}$`, containerRegistry, appName)
 	testutil.AssertRegexp(t, "image name", pattern, imageName)
 
 	return imageName

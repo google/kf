@@ -41,7 +41,7 @@ func TestBuilderCreator(t *testing.T) {
 				testutil.AssertEqual(t, "publish", true, f.Publish)
 				testutil.AssertEqual(t, "BuilderTomlPath", "some-path/builder.toml", f.BuilderTomlPath)
 				testutil.AssertEqual(t, "RepoName", "some-path/builder.toml", f.BuilderTomlPath)
-				testutil.AssertRegexp(t, "RepoName", `some-registry.io/buildpack-builder-[0-9]+`, f.RepoName)
+				testutil.AssertRegexp(t, "RepoName", `some-registry.io/buildpack-builder:[0-9]+`, f.RepoName)
 				return nil
 			},
 		},
@@ -66,7 +66,7 @@ func TestBuilderCreator(t *testing.T) {
 				return
 			}
 
-			testutil.AssertRegexp(t, "image name", tc.ContainerRegistry+`/buildpack-builder-[0-9]+`, image)
+			testutil.AssertRegexp(t, "image name", tc.ContainerRegistry+`/buildpack-builder:[0-9]+`, image)
 		})
 	}
 }

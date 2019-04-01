@@ -183,7 +183,7 @@ func (p *Pusher) imageName(appName string, srcCodeImage bool) string {
 	if srcCodeImage {
 		prefix = "src-"
 	}
-	return fmt.Sprintf("%s%s-%d:latest", prefix, appName, time.Now().UnixNano())
+	return fmt.Sprintf("%s%s:%d", prefix, appName, time.Now().UnixNano())
 }
 
 const (

@@ -39,7 +39,7 @@ func (b *BuilderCreator) Create(dir, containerRegistry string) (string, error) {
 		dir = filepath.Join(dir, "builder.toml")
 	}
 
-	imageName := path.Join(containerRegistry, fmt.Sprintf("buildpack-builder-%d", time.Now().UnixNano()))
+	imageName := path.Join(containerRegistry, fmt.Sprintf("buildpack-builder:%d", time.Now().UnixNano()))
 	if err := b.f(pack.CreateBuilderFlags{
 		Publish:         true,
 		BuilderTomlPath: dir,
