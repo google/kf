@@ -26,6 +26,9 @@ configs:
     type: "io.Writer"
     description: the io.Writer to write output such as build logs
     default: "os.Stdout"
+  - name: EnvironmentVariables
+    type: "[]string"
+    description: Set environment variables.
 - name: Delete
 - name: List
   options:

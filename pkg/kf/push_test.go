@@ -381,6 +381,124 @@ func TestPush_NewApp(t *testing.T) {
 	}
 }
 
+func TestPush_EnvVars(t *testing.T) {
+	t.Parallel()
+
+	for tn, tc := range map[string]struct {
+		opts                       kf.PushOptions
+		update                     bool
+		existingEnvs, expectedEnvs map[string]string
+		wantErr                    error
+	}{
+		"multiple envs": {
+			opts: kf.PushOptions{
+				kf.WithPushEnvironmentVariables([]string{
+					"NAME1=VAL1",
+					"NAME2=VAL2",
+				}),
+			},
+			expectedEnvs: map[string]string{
+				"NAME1": "VAL1",
+				"NAME2": "VAL2",
+			},
+		},
+		"replace envs": {
+			update: true,
+			opts: kf.PushOptions{
+				kf.WithPushEnvironmentVariables([]string{
+					"NAME1=VAL1",
+					"NAME2=VAL2",
+				}),
+			},
+			existingEnvs: map[string]string{
+				"OLD1":  "VAL1",
+				"OLD2":  "VAL2",
+				"NAME1": "OLD1",
+			},
+			expectedEnvs: map[string]string{
+				"NAME1": "VAL1",
+				"NAME2": "VAL2",
+			},
+		},
+		"leave existing envs": {
+			update: true,
+			existingEnvs: map[string]string{
+				"OLD1": "VAL1",
+				"OLD2": "VAL2",
+			},
+			expectedEnvs: map[string]string{
+				"OLD1": "VAL1",
+				"OLD2": "VAL2",
+			},
+		},
+		"invalid env, returns error": {
+			wantErr: errors.New("malformed environment variable: INVALID"),
+			opts: kf.PushOptions{
+				kf.WithPushEnvironmentVariables([]string{
+					"NAME1=VAL1",
+					"INVALID",
+				}),
+			},
+		},
+	} {
+		t.Run(tn, func(t *testing.T) {
+			const appName = "some-app"
+			ctrl := gomock.NewController(t)
+			fakeLogs := kffake.NewFakeLogTailer(ctrl)
+			fakeLogs.
+				EXPECT().
+				Tail(gomock.Any(), gomock.Any(), gomock.Any()).
+				AnyTimes()
+
+			fakeAppLister := kffake.NewFakeLister(ctrl)
+			var apps []serving.Service
+			if tc.update {
+				apps = append(apps, buildServiceWithEnvs(appName, tc.existingEnvs))
+			}
+			fakeAppLister.
+				EXPECT().
+				List(gomock.Any()).
+				Return(apps, nil).
+				AnyTimes()
+
+			fake := &fake.FakeServingV1alpha1{
+				Fake: &ktesting.Fake{},
+			}
+
+			fake.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
+				service := action.(ktesting.CreateAction).GetObject().(*serving.Service)
+				envs := map[string]string{}
+				for _, env := range service.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env {
+					envs[env.Name] = env.Value
+				}
+
+				testutil.AssertEqual(t, "env len", len(tc.expectedEnvs), len(envs))
+				testutil.AssertEqual(t, "envs", tc.expectedEnvs, envs)
+
+				return false, nil, nil
+			}))
+
+			p := kf.NewPusher(
+				fakeAppLister,
+				func() (cserving.ServingV1alpha1Interface, error) {
+					return fake, nil
+				},
+				func(dir, tag string) error { return nil },
+				fakeLogs,
+			)
+
+			tc.opts = append(tc.opts, kf.WithPushContainerRegistry("some-reg.io"))
+
+			gotErr := p.Push("some-app", tc.opts...)
+			if tc.wantErr != nil || gotErr != nil {
+				testutil.AssertEqual(t, "ConfigErr", true, kfi.ConfigError(gotErr))
+				testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
+				return
+			}
+		})
+	}
+}
+
 func testPushReaction(
 	t *testing.T,
 	action ktesting.Action,

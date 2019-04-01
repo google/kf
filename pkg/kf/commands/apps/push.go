@@ -22,6 +22,7 @@ func NewPushCommand(p *config.KfParams, pusher Pusher) *cobra.Command {
 		dockerImage       string
 		serviceAccount    string
 		path              string
+		envs              []string
 	)
 
 	var pushCmd = &cobra.Command{
@@ -48,6 +49,7 @@ func NewPushCommand(p *config.KfParams, pusher Pusher) *cobra.Command {
 				kf.WithPushDockerImage(dockerImage),
 				kf.WithPushServiceAccount(serviceAccount),
 				kf.WithPushPath(path),
+				kf.WithPushEnvironmentVariables(envs),
 			)
 			cmd.SilenceUsage = !kfi.ConfigError(err)
 
@@ -81,6 +83,14 @@ func NewPushCommand(p *config.KfParams, pusher Pusher) *cobra.Command {
 		"path",
 		"",
 		"The path the source code lives. Defaults to current directory.",
+	)
+
+	pushCmd.Flags().StringArrayVarP(
+		&envs,
+		"env",
+		"e",
+		nil,
+		"Set environment variables. Multiple can be set by using the flag multiple times (e.g., NAME=VALUE).",
 	)
 
 	return pushCmd

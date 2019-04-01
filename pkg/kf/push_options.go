@@ -12,6 +12,8 @@ type pushConfig struct {
 	ContainerRegistry string
 	// DockerImage is the docker image to serve
 	DockerImage string
+	// EnvironmentVariables is Set environment variables.
+	EnvironmentVariables []string
 	// Namespace is the Kubernetes namespace to use
 	Namespace string
 	// Output is the io.Writer to write output such as build logs
@@ -60,6 +62,12 @@ func (opts PushOptions) DockerImage() string {
 	return opts.toConfig().DockerImage
 }
 
+// EnvironmentVariables returns the last set value for EnvironmentVariables or the empty value
+// if not set.
+func (opts PushOptions) EnvironmentVariables() []string {
+	return opts.toConfig().EnvironmentVariables
+}
+
 // Namespace returns the last set value for Namespace or the empty value
 // if not set.
 func (opts PushOptions) Namespace() string {
@@ -95,6 +103,13 @@ func WithPushContainerRegistry(val string) PushOption {
 func WithPushDockerImage(val string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.DockerImage = val
+	}
+}
+
+// WithPushEnvironmentVariables creates an Option that sets Set environment variables.
+func WithPushEnvironmentVariables(val []string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.EnvironmentVariables = val
 	}
 }
 
