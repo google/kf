@@ -23,6 +23,7 @@ func NewAppsCommand(p *config.KfParams, l AppLister) *cobra.Command {
 		Use:   "apps",
 		Short: "List pushed apps.",
 		Long:  ``,
+		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Fprintf(p.Output, "Getting apps in namespace: %s\n", p.Namespace)
 			fmt.Fprintln(p.Output)

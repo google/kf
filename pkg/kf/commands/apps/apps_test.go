@@ -12,7 +12,6 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
 	"github.com/golang/mock/gomock"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	"github.com/spf13/cobra"
 )
 
 func TestAppsCommand(t *testing.T) {
@@ -22,7 +21,12 @@ func TestAppsCommand(t *testing.T) {
 		wantErr   error
 		listErr   error
 		apps      []string
+		args      []string
 	}{
+		"invalid number of args": {
+			args:    []string{"invalid"},
+			wantErr: errors.New("accepts 0 arg(s), received 1"),
+		},
 		"configured namespace": {
 			namespace: "somenamespace",
 		},
@@ -64,7 +68,8 @@ func TestAppsCommand(t *testing.T) {
 				Output:    buffer,
 			}, fakeLister)
 
-			gotErr := c.RunE(&cobra.Command{}, nil)
+			c.SetArgs(tc.args)
+			gotErr := c.Execute()
 			if tc.wantErr != nil {
 				// We don't really care if Push was invoked if we want an
 				// error.
