@@ -40,7 +40,7 @@ func NewAppsCommand(p *config.KfParams, l AppLister) *cobra.Command {
 			for _, app := range apps {
 				status := ""
 				reason := ""
-				for _, cond := range app.Status.GetConditions() {
+				for _, cond := range app.Status.Conditions {
 					if cond.Type == "Ready" {
 						status = fmt.Sprintf("%v", cond.Status)
 						reason = cond.Reason

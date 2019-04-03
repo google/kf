@@ -26,10 +26,10 @@ require (
 	github.com/imdario/mergo v0.3.6
 	github.com/joho/godotenv v1.3.0
 	github.com/json-iterator/go v0.0.0-20180701071628-ab8a2e0c74be
-	github.com/knative/build v0.4.0
+	github.com/knative/build v0.5.0
 	github.com/knative/caching v0.0.0-20190102190439-06e978715750
-	github.com/knative/pkg v0.0.0-20190214162945-0183bf9cdc73
-	github.com/knative/serving v0.4.0
+	github.com/knative/pkg v0.0.0-20190402181056-ff46edef0ae5
+	github.com/knative/serving v0.5.0
 	github.com/knative/test-infra v0.0.0-20190219221246-c579616b211a
 	github.com/kubernetes-incubator/service-catalog v0.1.42 // indirect
 	github.com/markbates/inflect v1.0.4

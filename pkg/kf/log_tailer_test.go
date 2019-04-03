@@ -8,14 +8,13 @@ import (
 	"strings"
 	"testing"
 
-	duckv1alpha1 "github.com/knative/pkg/apis/duck/v1alpha1"
-
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
 	"github.com/golang/mock/gomock"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	cbuild "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	buildfake "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1/fake"
+	duckv1alpha1 "github.com/knative/pkg/apis/duck/v1alpha1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	servicefake "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1/fake"
@@ -141,11 +140,13 @@ func TestLogTailer_BuildLogs(t *testing.T) {
 			events: append(createBuildAddedEvent(), watch.Event{
 				Object: &build.Build{
 					Status: build.BuildStatus{
-						Conditions: duckv1alpha1.Conditions{
-							{
-								Type:    "Succeeded",
-								Status:  "False",
-								Message: "some-message",
+						Status: duckv1alpha1.Status{
+							Conditions: duckv1alpha1.Conditions{
+								{
+									Type:    "Succeeded",
+									Status:  "False",
+									Message: "some-message",
+								},
 							},
 						},
 					},
@@ -226,8 +227,10 @@ func createMsgEvents(reason string, msgs ...string) []watch.Event {
 		es = append(es, watch.Event{
 			Object: &serving.Service{
 				Status: serving.ServiceStatus{
-					Conditions: duckv1alpha1.Conditions{
-						{Reason: reason, Message: m},
+					Status: duckv1alpha1.Status{
+						Conditions: duckv1alpha1.Conditions{
+							{Reason: reason, Message: m},
+						},
 					},
 				},
 			},
