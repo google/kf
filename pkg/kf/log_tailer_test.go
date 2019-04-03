@@ -18,6 +18,7 @@ import (
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	servicefake "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1/fake"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	ktesting "k8s.io/client-go/testing"
 )
@@ -28,36 +29,49 @@ func TestLogTailer_ServiceLogs(t *testing.T) {
 	t.Parallel()
 
 	for tn, tc := range map[string]struct {
-		namespace         string
-		resourceVersion   string
-		servingFactoryErr error
-		serviceWatchErr   error
-		events            []watch.Event
-		wantedMsgs        []string
-		wantErr           error
+		appName                  string
+		namespace                string
+		resourceVersion          string
+		servingFactoryErr        error
+		serviceWatchErr          error
+		events                   []watch.Event
+		unwantedMsgs, wantedMsgs []string
+		wantErr                  error
 	}{
 		"displays deployment messages": {
+			appName:         "some-app",
 			namespace:       "default",
 			resourceVersion: "some-version",
-			events:          createMsgEvents("", "msg-1", "msg-2"),
+			events:          createMsgEvents("some-app", "", "msg-1", "msg-2"),
 			wantedMsgs:      []string{"msg-1", "msg-2"},
 		},
+		"filters out messages from other apps": {
+			appName:         "some-app",
+			namespace:       "default",
+			resourceVersion: "some-version",
+			events:          append(createMsgEvents("some-app", "", "msg-1", "msg-2"), createMsgEvents("some-other-app", "", "should not see")...),
+			wantedMsgs:      []string{"msg-1", "msg-2"},
+			unwantedMsgs:    []string{"should not see"},
+		},
 		"serving factory returns error, return error": {
+			appName:           "some-app",
 			namespace:         "default",
 			resourceVersion:   "some-version",
 			servingFactoryErr: errors.New("some-error"),
 			wantErr:           errors.New("some-error"),
 		},
 		"watch service returns an error, return error": {
+			appName:         "some-app",
 			namespace:       "default",
 			resourceVersion: "some-version",
 			serviceWatchErr: errors.New("some-error"),
 			wantErr:         errors.New("some-error"),
 		},
 		"revision fails, return error": {
+			appName:         "some-app",
 			namespace:       "default",
 			resourceVersion: "some-version",
-			events:          createMsgEvents("RevisionFailed", "some-error"),
+			events:          createMsgEvents("some-app", "RevisionFailed", "some-error"),
 			wantErr:         errors.New("deployment failed: some-error"),
 		},
 	} {
@@ -86,7 +100,7 @@ func TestLogTailer_ServiceLogs(t *testing.T) {
 			)
 
 			var buffer bytes.Buffer
-			gotErr := lt.Tail(&buffer, tc.resourceVersion, tc.namespace)
+			gotErr := lt.Tail(&buffer, tc.appName, tc.resourceVersion, tc.namespace)
 			if tc.wantErr != nil || gotErr != nil {
 				testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
 				return
@@ -95,6 +109,12 @@ func TestLogTailer_ServiceLogs(t *testing.T) {
 			for _, msg := range tc.wantedMsgs {
 				if strings.Index(buffer.String(), msg) < 0 {
 					t.Fatalf("wanted %q to contain %q", buffer.String(), msg)
+				}
+			}
+
+			for _, msg := range tc.unwantedMsgs {
+				if strings.Index(buffer.String(), msg) >= 0 {
+					t.Fatalf("wanted %q to not contain %q", buffer.String(), msg)
 				}
 			}
 
@@ -107,38 +127,68 @@ func TestLogTailer_BuildLogs(t *testing.T) {
 	t.Parallel()
 
 	for tn, tc := range map[string]struct {
+		appName         string
 		namespace       string
 		resourceVersion string
 		buildFactoryErr error
 		buildWatchErr   error
-		buildTailErr    error
 		events          []watch.Event
 		wantedMsgs      []string
 		wantErr         error
+		bufferF         func(t *testing.T, buf *bytes.Buffer)
+		tailF           func(t *testing.T) func(ctx context.Context, out io.Writer, buildName, namespace string) error
 	}{
 		"fetch logs for build": {
+			appName:         "some-app",
 			namespace:       "default",
 			resourceVersion: "some-version",
-			events:          createBuildAddedEvent(),
+			events:          append(createBuildAddedEvent("some-other-app", "some-other-build"), createBuildAddedEvent("some-app", "some-build")...),
+			tailF: func(t *testing.T) func(ctx context.Context, out io.Writer, buildName, namespace string) error {
+				return func(ctx context.Context, out io.Writer, buildName, namespace string) error {
+					testutil.AssertEqual(t, "buildName", "some-build", buildName)
+					testutil.AssertEqual(t, "namespace", "default", namespace)
+
+					out.Write([]byte("some-data"))
+
+					return nil
+				}
+			},
+			bufferF: func(t *testing.T, buf *bytes.Buffer) {
+				testutil.AssertContainsAll(t, buf.String(), []string{"some-data"})
+			},
 		},
 		"build factory returns error, return error": {
+			appName:         "some-app",
 			namespace:       "default",
 			resourceVersion: "some-version",
 			buildFactoryErr: errors.New("some-error"),
 			wantErr:         errors.New("some-error"),
 		},
 		"build tail returns error, return error": {
+			appName:         "some-app",
 			namespace:       "default",
 			resourceVersion: "some-version",
-			buildTailErr:    errors.New("some-error"),
-			events:          createBuildAddedEvent(),
+			events:          createBuildAddedEvent("some-app", "some-build"),
 			wantErr:         errors.New("some-error"),
+			tailF: func(t *testing.T) func(ctx context.Context, out io.Writer, buildName, namespace string) error {
+				return func(ctx context.Context, out io.Writer, buildName, namespace string) error {
+					return errors.New("some-error")
+				}
+			},
 		},
 		"build fails, returns error": {
+			appName:         "some-app",
 			namespace:       "default",
 			resourceVersion: "some-version",
-			events: append(createBuildAddedEvent(), watch.Event{
+			events: append(createBuildAddedEvent("some-app", "some-build"), watch.Event{
 				Object: &build.Build{
+					ObjectMeta: metav1.ObjectMeta{
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								Name: "some-app",
+							},
+						},
+					},
 					Status: build.BuildStatus{
 						Status: duckv1alpha1.Status{
 							Conditions: duckv1alpha1.Conditions{
@@ -155,6 +205,7 @@ func TestLogTailer_BuildLogs(t *testing.T) {
 			wantErr: errors.New("build failed: some-message"),
 		},
 		"watch build returns an error, return error": {
+			appName:         "some-app",
 			namespace:       "default",
 			resourceVersion: "some-version",
 			buildWatchErr:   errors.New("some-error"),
@@ -173,6 +224,14 @@ func TestLogTailer_BuildLogs(t *testing.T) {
 				return false, nil, nil
 			}))
 
+			if tc.tailF == nil {
+				tc.tailF = func(t *testing.T) func(ctx context.Context, out io.Writer, buildName, namespace string) error {
+					return func(ctx context.Context, out io.Writer, buildName, namespace string) error {
+						return nil
+					}
+				}
+			}
+
 			var buffer bytes.Buffer
 			lt := kf.NewLogTailer(
 				func() (cbuild.BuildV1alpha1Interface, error) {
@@ -181,19 +240,17 @@ func TestLogTailer_BuildLogs(t *testing.T) {
 				func() (cserving.ServingV1alpha1Interface, error) {
 					return fakeServing, nil
 				},
-				func(ctx context.Context, out io.Writer, buildName, namespace string) error {
-					testutil.AssertEqual(t, "buildName", "build-name", buildName)
-					testutil.AssertEqual(t, "namespace", tc.namespace, namespace)
-					testutil.AssertEqual(t, "out", &buffer, out)
-
-					return tc.buildTailErr
-				},
+				tc.tailF(t),
 			)
 
-			gotErr := lt.Tail(&buffer, tc.resourceVersion, tc.namespace)
+			gotErr := lt.Tail(&buffer, tc.appName, tc.resourceVersion, tc.namespace)
 			if tc.wantErr != nil || gotErr != nil {
 				testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
 				return
+			}
+
+			if tc.bufferF != nil {
+				tc.bufferF(t, &buffer)
 			}
 
 			ctrl.Finish()
@@ -221,11 +278,14 @@ func createEvents(es []watch.Event) <-chan watch.Event {
 	return c
 }
 
-func createMsgEvents(reason string, msgs ...string) []watch.Event {
+func createMsgEvents(appName, reason string, msgs ...string) []watch.Event {
 	var es []watch.Event
 	for _, m := range msgs {
 		es = append(es, watch.Event{
 			Object: &serving.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: appName,
+				},
 				Status: serving.ServiceStatus{
 					Status: duckv1alpha1.Status{
 						Conditions: duckv1alpha1.Conditions{
@@ -239,9 +299,14 @@ func createMsgEvents(reason string, msgs ...string) []watch.Event {
 	return es
 }
 
-func createBuildAddedEvent() []watch.Event {
+func createBuildAddedEvent(appName, buildName string) []watch.Event {
 	b := &build.Build{}
-	b.Name = "build-name"
+	b.Name = buildName
+	b.ObjectMeta.OwnerReferences = []metav1.OwnerReference{
+		{
+			Name: appName,
+		},
+	}
 	return []watch.Event{
 		{
 			Type:   watch.Added,

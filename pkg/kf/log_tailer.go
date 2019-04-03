@@ -37,13 +37,13 @@ func NewLogTailer(bf BuildFactory, f ServingFactory, t BuildTail) *LogTailer {
 
 // Tail writes the logs for the build and deploy step for the resourceVersion
 // to out. It blocks until the operation has completed.
-func (t LogTailer) Tail(out io.Writer, resourceVersion, namespace string) error {
+func (t LogTailer) Tail(out io.Writer, appName, resourceVersion, namespace string) error {
 	errs := make(chan error, 2)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	go func() { errs <- t.buildLogs(ctx, out, resourceVersion, namespace) }()
-	go func() { errs <- t.serviceLogs(cancel, out, resourceVersion, namespace) }()
+	go func() { errs <- t.buildLogs(ctx, out, appName, resourceVersion, namespace) }()
+	go func() { errs <- t.serviceLogs(cancel, out, appName, resourceVersion, namespace) }()
 
 	err1, err2 := <-errs, <-errs
 	for _, err := range []error{err1, err2} {
@@ -55,7 +55,7 @@ func (t LogTailer) Tail(out io.Writer, resourceVersion, namespace string) error 
 	return nil
 }
 
-func (t LogTailer) buildLogs(ctx context.Context, out io.Writer, resourceVersion, namespace string) error {
+func (t LogTailer) buildLogs(ctx context.Context, out io.Writer, appName, resourceVersion, namespace string) error {
 	bclient, err := t.bf()
 	if err != nil {
 		return err
@@ -63,6 +63,7 @@ func (t LogTailer) buildLogs(ctx context.Context, out io.Writer, resourceVersion
 
 	wb, err := bclient.Builds(namespace).Watch(k8smeta.ListOptions{
 		ResourceVersion: resourceVersion,
+		Watch:           true,
 	})
 	if err != nil {
 		return err
@@ -76,6 +77,17 @@ func (t LogTailer) buildLogs(ctx context.Context, out io.Writer, resourceVersion
 
 	for e := range wb.ResultChan() {
 		obj := e.Object.(*build.Build)
+		var foundRef bool
+		for _, ref := range obj.ObjectMeta.OwnerReferences {
+			if ref.Name == appName {
+				foundRef = true
+				break
+			}
+		}
+		if !foundRef {
+			continue
+		}
+
 		if e.Type == watch.Added {
 			// This blocks until the build is finished.
 			if err := t.t(ctx, out, obj.Name, namespace); err != nil {
@@ -93,7 +105,7 @@ func (t LogTailer) buildLogs(ctx context.Context, out io.Writer, resourceVersion
 	return nil
 }
 
-func (t LogTailer) serviceLogs(done func(), out io.Writer, resourceVersion, namespace string) error {
+func (t LogTailer) serviceLogs(done func(), out io.Writer, appName, resourceVersion, namespace string) error {
 	defer done()
 	sclient, err := t.f()
 	if err != nil {
@@ -102,6 +114,7 @@ func (t LogTailer) serviceLogs(done func(), out io.Writer, resourceVersion, name
 
 	ws, err := sclient.Services(namespace).Watch(k8smeta.ListOptions{
 		ResourceVersion: resourceVersion,
+		Watch:           true,
 	})
 	if err != nil {
 		return err
@@ -109,7 +122,12 @@ func (t LogTailer) serviceLogs(done func(), out io.Writer, resourceVersion, name
 	defer ws.Stop()
 
 	for e := range ws.ResultChan() {
-		for _, condition := range e.Object.(*serving.Service).Status.Conditions {
+		s := e.Object.(*serving.Service)
+		if s.Name != appName {
+			continue
+		}
+
+		for _, condition := range s.Status.Conditions {
 			if condition.Reason == "RevisionFailed" {
 				return fmt.Errorf("deployment failed: %s", condition.Message)
 			}
