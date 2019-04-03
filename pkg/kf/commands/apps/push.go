@@ -23,6 +23,7 @@ func NewPushCommand(p *config.KfParams, pusher Pusher) *cobra.Command {
 		serviceAccount    string
 		path              string
 		envs              []string
+		grpc              bool
 	)
 
 	var pushCmd = &cobra.Command{
@@ -50,6 +51,7 @@ func NewPushCommand(p *config.KfParams, pusher Pusher) *cobra.Command {
 				kf.WithPushServiceAccount(serviceAccount),
 				kf.WithPushPath(path),
 				kf.WithPushEnvironmentVariables(envs),
+				kf.WithPushGrpc(grpc),
 			)
 			cmd.SilenceUsage = !kfi.ConfigError(err)
 
@@ -91,6 +93,13 @@ func NewPushCommand(p *config.KfParams, pusher Pusher) *cobra.Command {
 		"e",
 		nil,
 		"Set environment variables. Multiple can be set by using the flag multiple times (e.g., NAME=VALUE).",
+	)
+
+	pushCmd.Flags().BoolVar(
+		&grpc,
+		"grpc",
+		false,
+		"Setup the container to allow application to use gRPC.",
 	)
 
 	return pushCmd

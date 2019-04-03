@@ -114,6 +114,10 @@ func (p *Pusher) Push(appName string, opts ...PushOption) error {
 	s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Image = imageName
 	s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.ServiceAccountName = cfg.ServiceAccount
 
+	if cfg.Grpc {
+		s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Ports = []corev1.ContainerPort{{Name: "h2c", ContainerPort: 8080}}
+	}
+
 	if len(envs) > 0 {
 		var result []corev1.EnvVar
 		for name, value := range envs {

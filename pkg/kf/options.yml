@@ -29,6 +29,9 @@ configs:
   - name: EnvironmentVariables
     type: "[]string"
     description: Set environment variables.
+  - name: Grpc
+    type: bool
+    description: setup the ports for the container to allow gRPC to work.
 - name: Delete
 - name: List
   options:

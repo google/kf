@@ -14,6 +14,8 @@ type pushConfig struct {
 	DockerImage string
 	// EnvironmentVariables is Set environment variables.
 	EnvironmentVariables []string
+	// Grpc is setup the ports for the container to allow gRPC to work.
+	Grpc bool
 	// Namespace is the Kubernetes namespace to use
 	Namespace string
 	// Output is the io.Writer to write output such as build logs
@@ -68,6 +70,12 @@ func (opts PushOptions) EnvironmentVariables() []string {
 	return opts.toConfig().EnvironmentVariables
 }
 
+// Grpc returns the last set value for Grpc or the empty value
+// if not set.
+func (opts PushOptions) Grpc() bool {
+	return opts.toConfig().Grpc
+}
+
 // Namespace returns the last set value for Namespace or the empty value
 // if not set.
 func (opts PushOptions) Namespace() string {
@@ -110,6 +118,13 @@ func WithPushDockerImage(val string) PushOption {
 func WithPushEnvironmentVariables(val []string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.EnvironmentVariables = val
+	}
+}
+
+// WithPushGrpc creates an Option that sets setup the ports for the container to allow gRPC to work.
+func WithPushGrpc(val bool) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.Grpc = val
 	}
 }
 

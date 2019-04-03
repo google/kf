@@ -16,6 +16,7 @@ import (
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	"github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1/fake"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ktesting "k8s.io/client-go/testing"
 )
@@ -259,6 +260,7 @@ func TestPush_NewApp(t *testing.T) {
 		wantErr           error
 		servingFactoryErr error
 		serviceCreateErr  error
+		assert            func(t *testing.T, service *serving.Service)
 	}{
 		"pushes app to a configured namespace": {
 			appName: "some-app",
@@ -300,6 +302,21 @@ func TestPush_NewApp(t *testing.T) {
 				kf.WithPushServiceAccount("some-service-account"),
 			},
 		},
+		"set ports to h2c for gRPC": {
+			appName: "some-app",
+			assert: func(t *testing.T, service *serving.Service) {
+				testutil.AssertEqual(
+					t,
+					"container.ports",
+					[]corev1.ContainerPort{{Name: "h2c", ContainerPort: 8080}},
+					service.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Ports,
+				)
+			},
+			opts: kf.PushOptions{
+				kf.WithPushContainerRegistry("some-reg.io"),
+				kf.WithPushGrpc(true),
+			},
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
@@ -325,6 +342,13 @@ func TestPush_NewApp(t *testing.T) {
 			fake.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
 				reactorCalled = true
 				testPushReaction(t, action, expectedNamespace, tc.appName, tc.opts.ContainerRegistry(), tc.opts.ServiceAccount(), "create", tc.opts.DockerImage(), nil)
+
+				if tc.assert != nil {
+					tc.assert(
+						t,
+						action.(ktesting.CreateAction).GetObject().(*serving.Service),
+					)
+				}
 
 				return tc.serviceCreateErr != nil, nil, tc.serviceCreateErr
 			}))
