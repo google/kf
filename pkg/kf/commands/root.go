@@ -176,6 +176,7 @@ You can get more info by adding the --help flag to any sub-command.
 	envClient := kf.NewEnvironmentClient(lister, getConfig)
 	rootCmd.AddCommand(apps.NewEnvCommand(p, envClient))
 	rootCmd.AddCommand(apps.NewSetEnvCommand(p, envClient))
+	rootCmd.AddCommand(apps.NewUnsetEnvCommand(p, envClient))
 
 	// Services
 	servicesClient := services.NewClient(getSvcatApp)

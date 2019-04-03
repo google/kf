@@ -71,3 +71,22 @@ func (mr *FakeEnvironmentClientMockRecorder) Set(arg0, arg1 interface{}, arg2 ..
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*FakeEnvironmentClient)(nil).Set), varargs...)
 }
+
+// Unset mocks base method
+func (m *FakeEnvironmentClient) Unset(arg0 string, arg1 []string, arg2 ...kf.UnsetEnvOption) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Unset", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Unset indicates an expected call of Unset
+func (mr *FakeEnvironmentClientMockRecorder) Unset(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unset", reflect.TypeOf((*FakeEnvironmentClient)(nil).Unset), varargs...)
+}

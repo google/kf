@@ -112,12 +112,200 @@ func TestEnvironmentClient_List(t *testing.T) {
 	}
 }
 
+func TestEnvironmentClient_Config_Set(t *testing.T) {
+	t.Parallel()
+
+	setupEnvClientTests(t, "Set", func(c *kf.EnvironmentClient, appName, namespace string, m map[string]string) error {
+		var opts []kf.SetEnvOption
+		if namespace != "" {
+			opts = append(opts, kf.WithSetEnvNamespace(namespace))
+		}
+		return c.Set(appName, m, opts...)
+	})
+}
+
 func TestEnvironmentClient_Set(t *testing.T) {
 	t.Parallel()
 	for tn, tc := range map[string]struct {
+		values         map[string]string
+		expectedValues map[string]string
+		setup          func(t *testing.T, fake *kffake.FakeLister)
+	}{
+		"adds new envs": {
+			expectedValues: map[string]string{
+				"name-0": "value-0",
+				"name-1": "value-1",
+			},
+			values: map[string]string{
+				"name-0": "value-0",
+				"name-1": "value-1",
+			},
+			setup: func(t *testing.T, fake *kffake.FakeLister) {
+				fake.EXPECT().List(gomock.Any()).Return([]serving.Service{buildServiceWithEnvs("some-app", nil)}, nil)
+			},
+		},
+		"appends new envs": {
+			expectedValues: map[string]string{
+				"name-0": "value-0",
+				"name-1": "value-1",
+				"name-2": "value-2",
+			},
+			values: map[string]string{
+				"name-1": "value-1",
+				"name-2": "value-2",
+			},
+			setup: func(t *testing.T, fake *kffake.FakeLister) {
+				fake.EXPECT().List(gomock.Any()).Return([]serving.Service{buildServiceWithEnvs("some-app", map[string]string{"name-0": "value-0"})}, nil)
+			},
+		},
+		"clobbers old envs": {
+			expectedValues: map[string]string{
+				"name-0": "new",
+				"name-1": "value-1",
+			},
+			values: map[string]string{
+				"name-0": "new",
+				"name-1": "value-1",
+			},
+			setup: func(t *testing.T, fake *kffake.FakeLister) {
+				fake.EXPECT().List(gomock.Any()).Return([]serving.Service{buildServiceWithEnvs("some-app", map[string]string{"name-0": "value-0"})}, nil)
+			},
+		},
+	} {
+		t.Run(tn, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			fakeLister := kffake.NewFakeLister(ctrl)
+
+			if tc.setup != nil {
+				tc.setup(t, fakeLister)
+			}
+
+			fakeServing := &fake.FakeServingV1alpha1{
+				Fake: &ktesting.Fake{},
+			}
+			fakeServing.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
+				actualEnvs := action.(ktesting.CreateAction).GetObject().(*serving.Service).Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env
+
+				// Converting to map will clobber. Make sure we don't have duplicates
+				testutil.AssertEqual(t, "service.env len", len(tc.expectedValues), len(actualEnvs))
+				testutil.AssertEqual(t, "service.env", tc.expectedValues, buildFromEnvVars(actualEnvs))
+
+				return false, nil, nil
+			}))
+
+			c := kf.NewEnvironmentClient(
+				fakeLister,
+				func() (cserving.ServingV1alpha1Interface, error) {
+					return fakeServing, nil
+				},
+			)
+
+			gotErr := c.Set("some-app", tc.values)
+			testutil.AssertErrorsEqual(t, nil, gotErr)
+			ctrl.Finish()
+		})
+	}
+}
+
+func TestEnvironmentClient_Config_Unset(t *testing.T) {
+	t.Parallel()
+
+	setupEnvClientTests(t, "Unset", func(c *kf.EnvironmentClient, appName, namespace string, m map[string]string) error {
+		var (
+			opts  []kf.UnsetEnvOption
+			names []string
+		)
+		for name := range m {
+			names = append(names, name)
+		}
+
+		if namespace != "" {
+			opts = append(opts, kf.WithUnsetEnvNamespace(namespace))
+		}
+
+		return c.Unset(appName, names, opts...)
+	})
+}
+
+func TestEnvironmentClient_Unset(t *testing.T) {
+	t.Parallel()
+	for tn, tc := range map[string]struct {
+		names          []string
+		expectedValues map[string]string
+		setup          func(t *testing.T, fake *kffake.FakeLister)
+	}{
+		"remove all envs": {
+			names: []string{
+				"name-0",
+				"name-1",
+			},
+			setup: func(t *testing.T, fake *kffake.FakeLister) {
+				fake.EXPECT().List(gomock.Any()).Return([]serving.Service{buildServiceWithEnvs("some-app", map[string]string{"name-0": "value-0", "name-1": "value-1"})}, nil)
+			},
+		},
+		"remove some envs": {
+			expectedValues: map[string]string{
+				"name-1": "value-1",
+			},
+			names: []string{
+				"name-0",
+			},
+			setup: func(t *testing.T, fake *kffake.FakeLister) {
+				fake.EXPECT().List(gomock.Any()).Return([]serving.Service{buildServiceWithEnvs("some-app", map[string]string{"name-0": "value-0", "name-1": "value-1"})}, nil)
+			},
+		},
+		"remove non-existing env": {
+			expectedValues: map[string]string{
+				"name-0": "value-0",
+			},
+			names: []string{
+				"not-there",
+				"name-1",
+			},
+			setup: func(t *testing.T, fake *kffake.FakeLister) {
+				fake.EXPECT().List(gomock.Any()).Return([]serving.Service{buildServiceWithEnvs("some-app", map[string]string{"name-0": "value-0", "name-1": "value-1"})}, nil)
+			},
+		},
+	} {
+		t.Run(tn, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			fakeLister := kffake.NewFakeLister(ctrl)
+
+			if tc.setup != nil {
+				tc.setup(t, fakeLister)
+			}
+
+			fakeServing := &fake.FakeServingV1alpha1{
+				Fake: &ktesting.Fake{},
+			}
+			fakeServing.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
+				actualEnvs := action.(ktesting.CreateAction).GetObject().(*serving.Service).Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env
+
+				// Converting to map will clobber. Make sure we don't have duplicates
+				testutil.AssertEqual(t, "service.env len", len(tc.expectedValues), len(actualEnvs))
+				testutil.AssertEqual(t, "service.env", tc.expectedValues, buildFromEnvVars(actualEnvs))
+
+				return false, nil, nil
+			}))
+
+			c := kf.NewEnvironmentClient(
+				fakeLister,
+				func() (cserving.ServingV1alpha1Interface, error) {
+					return fakeServing, nil
+				},
+			)
+
+			gotErr := c.Unset("some-app", tc.names)
+			testutil.AssertErrorsEqual(t, nil, gotErr)
+			ctrl.Finish()
+		})
+	}
+}
+
+func setupEnvClientTests(t *testing.T, prefix string, f func(c *kf.EnvironmentClient, appName, namespace string, m map[string]string) error) {
+	for tn, tc := range map[string]struct {
 		appName           string
 		expectedNamespace string
-		opts              []kf.SetEnvOption
 		values            map[string]string
 		expectedValues    map[string]string
 		updateErr         error
@@ -131,9 +319,6 @@ func TestEnvironmentClient_Set(t *testing.T) {
 		"custom namespace": {
 			appName:           "some-app",
 			expectedNamespace: "some-namespace",
-			opts: []kf.SetEnvOption{
-				kf.WithSetEnvNamespace("some-namespace"),
-			},
 			setup: func(t *testing.T, fake *kffake.FakeLister) {
 				fake.EXPECT().List(gomock.Any()).Do(func(opts ...kf.ListOption) {
 					testutil.AssertEqual(t, "namespace", "some-namespace", kf.ListOptions(opts).Namespace())
@@ -180,54 +365,8 @@ func TestEnvironmentClient_Set(t *testing.T) {
 				fake.EXPECT().List(gomock.Any()).Return([]serving.Service{buildServiceWithEnvs("some-app", nil)}, nil)
 			},
 		},
-		"adds new envs": {
-			appName:           "some-app",
-			expectedNamespace: "default",
-			expectedValues: map[string]string{
-				"name-0": "value-0",
-				"name-1": "value-1",
-			},
-			values: map[string]string{
-				"name-0": "value-0",
-				"name-1": "value-1",
-			},
-			setup: func(t *testing.T, fake *kffake.FakeLister) {
-				fake.EXPECT().List(gomock.Any()).Return([]serving.Service{buildServiceWithEnvs("some-app", nil)}, nil)
-			},
-		},
-		"appends new envs": {
-			appName:           "some-app",
-			expectedNamespace: "default",
-			expectedValues: map[string]string{
-				"name-0": "value-0",
-				"name-1": "value-1",
-				"name-2": "value-2",
-			},
-			values: map[string]string{
-				"name-1": "value-1",
-				"name-2": "value-2",
-			},
-			setup: func(t *testing.T, fake *kffake.FakeLister) {
-				fake.EXPECT().List(gomock.Any()).Return([]serving.Service{buildServiceWithEnvs("some-app", map[string]string{"name-0": "value-0"})}, nil)
-			},
-		},
-		"clobbers old envs": {
-			appName:           "some-app",
-			expectedNamespace: "default",
-			expectedValues: map[string]string{
-				"name-0": "new",
-				"name-1": "value-1",
-			},
-			values: map[string]string{
-				"name-0": "new",
-				"name-1": "value-1",
-			},
-			setup: func(t *testing.T, fake *kffake.FakeLister) {
-				fake.EXPECT().List(gomock.Any()).Return([]serving.Service{buildServiceWithEnvs("some-app", map[string]string{"name-0": "value-0"})}, nil)
-			},
-		},
 	} {
-		t.Run(tn, func(t *testing.T) {
+		t.Run(prefix+": "+tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			fakeLister := kffake.NewFakeLister(ctrl)
 
@@ -239,16 +378,9 @@ func TestEnvironmentClient_Set(t *testing.T) {
 				Fake: &ktesting.Fake{},
 			}
 			fakeServing.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
-				// testPushReaction(t, action, expectedNamespace, tc.appName, containerRegistry, serviceAccount, "update", "")
 				testutil.AssertEqual(t, "action.namespace", tc.expectedNamespace, action.GetNamespace())
 				testutil.AssertEqual(t, "action.verb", "update", action.GetVerb())
 				testutil.AssertEqual(t, "action.resources", "services", action.GetResource().Resource)
-
-				actualEnvs := action.(ktesting.CreateAction).GetObject().(*serving.Service).Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env
-
-				// Converting to map will clobber. Make sure we don't have duplicates
-				testutil.AssertEqual(t, "service.env len", len(tc.expectedValues), len(actualEnvs))
-				testutil.AssertEqual(t, "service.env", tc.expectedValues, buildFromEnvVars(actualEnvs))
 
 				return tc.updateErr != nil, nil, tc.updateErr
 			}))
@@ -260,7 +392,7 @@ func TestEnvironmentClient_Set(t *testing.T) {
 				},
 			)
 
-			gotErr := c.Set(tc.appName, tc.values, tc.opts...)
+			gotErr := f(c, tc.appName, tc.expectedNamespace, tc.values)
 			if tc.wantErr != nil || gotErr != nil {
 				testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
 				return

@@ -37,3 +37,4 @@ configs:
     description: the specific app name to look for
 - name: ListEnv
 - name: SetEnv
+- name: UnsetEnv

@@ -6,24 +6,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewSetEnvCommand creates a SetEnv command.
-func NewSetEnvCommand(p *config.KfParams, c EnvironmentClient) *cobra.Command {
+// NewUnsetEnvCommand creates a SetEnv command.
+func NewUnsetEnvCommand(p *config.KfParams, c EnvironmentClient) *cobra.Command {
 	var envCmd = &cobra.Command{
-		Use:   "set-env APP_NAME ENV_VAR_NAME ENV_VAR_VALUE",
-		Short: "Set an environment variable for an app",
-		Args:  cobra.ExactArgs(3),
+		Use:   "unset-env APP_NAME ENV_VAR_NAME",
+		Short: "Unset an environment variable for an app",
+		Args:  cobra.ExactArgs(2),
 		Long:  ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appName := args[0]
 			name := args[1]
-			value := args[2]
 
 			cmd.SilenceUsage = true
 
-			err := c.Set(
+			err := c.Unset(
 				appName,
-				map[string]string{name: value},
-				kf.WithSetEnvNamespace(p.Namespace),
+				[]string{name},
+				kf.WithUnsetEnvNamespace(p.Namespace),
 			)
 			if err != nil {
 				return err

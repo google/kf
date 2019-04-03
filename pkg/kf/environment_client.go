@@ -23,7 +23,7 @@ func NewEnvironmentClient(l AppLister, f ServingFactory) *EnvironmentClient {
 	}
 }
 
-// Get fetches the current value of an environment variable.
+// List fetches the environment variables for an app.
 func (c *EnvironmentClient) List(appName string, opts ...ListEnvOption) (map[string]string, error) {
 	if appName == "" {
 		return nil, errors.New("invalid app name")
@@ -43,7 +43,7 @@ func (c *EnvironmentClient) List(appName string, opts ...ListEnvOption) (map[str
 	return results, err
 }
 
-// Get fetches the current value of an environment variable.
+// Set sets an environment variables for an app.
 func (c *EnvironmentClient) Set(appName string, values map[string]string, opts ...SetEnvOption) error {
 	if appName == "" {
 		return errors.New("invalid app name")
@@ -71,6 +71,53 @@ func (c *EnvironmentClient) Set(appName string, values map[string]string, opts .
 	}
 
 	return nil
+}
+
+// Unset removes environment variables for an app.
+func (c *EnvironmentClient) Unset(appName string, names []string, opts ...UnsetEnvOption) error {
+	if appName == "" {
+		return errors.New("invalid app name")
+	}
+	cfg := UnsetEnvOptionDefaults().Extend(opts).toConfig()
+
+	client, err := c.f()
+	if err != nil {
+		return err
+	}
+
+	s, err := c.fetchService(cfg.Namespace, appName)
+	if err != nil {
+		return err
+	}
+
+	newValues := c.removeEnvs(
+		names,
+		s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env,
+	)
+
+	s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env = newValues
+	if _, err := client.Services(cfg.Namespace).Update(&s); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *EnvironmentClient) removeEnvs(names []string, envs []corev1.EnvVar) []corev1.EnvVar {
+	m := map[string]bool{}
+	for _, name := range names {
+		m[name] = true
+	}
+
+	var newValues []corev1.EnvVar
+	for _, env := range envs {
+		if m[env.Name] {
+			continue
+		}
+		newValues = append(newValues, env)
+	}
+
+	return newValues
 }
 
 func (c *EnvironmentClient) dedupeEnvs(values map[string]string, envs []corev1.EnvVar) map[string]string {

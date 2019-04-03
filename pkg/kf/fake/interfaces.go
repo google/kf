@@ -38,4 +38,7 @@ type EnvironmentClient interface {
 
 	// Set sets the given environment variables.
 	Set(appName string, values map[string]string, opts ...kf.SetEnvOption) error
+
+	// Unset unsets the given environment variables.
+	Unset(appName string, names []string, opts ...kf.UnsetEnvOption) error
 }
