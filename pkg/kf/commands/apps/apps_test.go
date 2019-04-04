@@ -32,6 +32,12 @@ func TestAppsCommand(t *testing.T) {
 			setup: func(t *testing.T, fakeLister *fake.FakeLister) {
 				fakeLister.
 					EXPECT().
+					ListConfigurations(gomock.Any()).
+					Do(func(opts ...kf.ListConfigurationsOption) {
+						testutil.AssertEqual(t, "namespace", "some-namespace", kf.ListConfigurationsOptions(opts).Namespace())
+					})
+				fakeLister.
+					EXPECT().
 					List(gomock.Any()).
 					Do(func(opts ...kf.ListOption) {
 						testutil.AssertEqual(t, "namespace", "some-namespace", kf.ListOptions(opts).Namespace())
@@ -42,6 +48,13 @@ func TestAppsCommand(t *testing.T) {
 			setup: func(t *testing.T, fakeLister *fake.FakeLister) {
 				fakeLister.
 					EXPECT().
+					ListConfigurations(gomock.Any()).
+					Return([]serving.Configuration{
+						{ObjectMeta: metav1.ObjectMeta{Name: "service-a"}},
+						{ObjectMeta: metav1.ObjectMeta{Name: "service-b"}},
+					}, nil)
+				fakeLister.
+					EXPECT().
 					List(gomock.Any()).
 					Return([]serving.Service{
 						{ObjectMeta: metav1.ObjectMeta{Name: "service-a"}},
@@ -49,13 +62,47 @@ func TestAppsCommand(t *testing.T) {
 					}, nil)
 			},
 			assert: func(t *testing.T, buffer *bytes.Buffer) {
-				header := "Getting apps in namespace: "
-				testutil.AssertContainsAll(t, buffer.String(), []string{header, "service-a", "service-b"})
+				header1 := "Getting apps in namespace: "
+				header2 := "Found 2 apps in namespace "
+				testutil.AssertContainsAll(t, buffer.String(), []string{header1, header2, "service-a", "service-b"})
+			},
+		},
+		"shows app as deleting": {
+			setup: func(t *testing.T, fakeLister *fake.FakeLister) {
+				fakeLister.
+					EXPECT().
+					ListConfigurations(gomock.Any()).
+					Return([]serving.Configuration{
+						{ObjectMeta: metav1.ObjectMeta{Name: "service-a", Finalizers: []string{"foregroundDeletion"}}},
+					}, nil)
+				fakeLister.
+					EXPECT().
+					List(gomock.Any()).
+					Return([]serving.Service{
+						{ObjectMeta: metav1.ObjectMeta{Name: "service-a"}},
+					}, nil)
+			},
+			assert: func(t *testing.T, buffer *bytes.Buffer) {
+				header1 := "Getting apps in namespace: "
+				header2 := "Found 1 apps in namespace "
+				testutil.AssertContainsAll(t, buffer.String(), []string{header1, header2, "service-a", "Deleting"})
+			},
+		},
+		"list configurations error, returns error": {
+			wantErr: errors.New("some-error"),
+			setup: func(t *testing.T, fakeLister *fake.FakeLister) {
+				fakeLister.
+					EXPECT().
+					ListConfigurations(gomock.Any()).
+					Return(nil, errors.New("some-error"))
 			},
 		},
 		"list applications error, returns error": {
 			wantErr: errors.New("some-error"),
 			setup: func(t *testing.T, fakeLister *fake.FakeLister) {
+				fakeLister.
+					EXPECT().
+					ListConfigurations(gomock.Any())
 				fakeLister.
 					EXPECT().
 					List(gomock.Any()).

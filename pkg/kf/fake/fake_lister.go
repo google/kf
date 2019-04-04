@@ -52,3 +52,22 @@ func (mr *FakeListerMockRecorder) List(arg0 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*FakeLister)(nil).List), arg0...)
 }
+
+// ListConfigurations mocks base method
+func (m *FakeLister) ListConfigurations(arg0 ...kf.ListConfigurationsOption) ([]v1alpha1.Configuration, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range arg0 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListConfigurations", varargs...)
+	ret0, _ := ret[0].([]v1alpha1.Configuration)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListConfigurations indicates an expected call of ListConfigurations
+func (mr *FakeListerMockRecorder) ListConfigurations(arg0 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListConfigurations", reflect.TypeOf((*FakeLister)(nil).ListConfigurations), arg0...)
+}

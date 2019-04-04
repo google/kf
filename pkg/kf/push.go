@@ -32,6 +32,9 @@ type Pusher struct {
 type AppLister interface {
 	// List lists the deployed apps.
 	List(opts ...ListOption) ([]serving.Service, error)
+
+	// ListConfigurations the deployed configurations in a namespace.
+	ListConfigurations(...ListConfigurationsOption) ([]serving.Configuration, error)
 }
 
 // Logs handles build and deploy logs.

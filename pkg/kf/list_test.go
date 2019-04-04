@@ -37,6 +37,37 @@ func TestLister_List(t *testing.T) {
 		})
 }
 
+func TestLister_ListConfigurations(t *testing.T) {
+	t.Parallel()
+
+	setupListTest(
+		t,
+		func(s ...string) runtime.Object {
+			return createConfigList(s)
+		},
+		func(l *kf.Lister, opts ...kf.ListOption) ([]string, error) {
+			var copts []kf.ListConfigurationsOption
+			if appName := kf.ListOptions(opts).AppName(); appName != "" {
+				copts = append(copts, kf.WithListConfigurationsAppName(appName))
+			}
+
+			if namespace := kf.ListOptions(opts).Namespace(); namespace != "" {
+				copts = append(copts, kf.WithListConfigurationsNamespace(namespace))
+			}
+
+			x, err := l.ListConfigurations(copts...)
+			if err != nil {
+				return nil, err
+			}
+
+			var names []string
+			for _, s := range x {
+				names = append(names, s.Name)
+			}
+			return names, nil
+		})
+}
+
 func setupListTest(t *testing.T, resultsF func(...string) runtime.Object, listF func(*kf.Lister, ...kf.ListOption) ([]string, error)) {
 	for tn, tc := range map[string]struct {
 		servingFactoryErr error
@@ -145,6 +176,23 @@ func listMustPass(t *testing.T) func([]string, error) []string {
 		}
 		return s
 	}
+}
+
+func createConfigList(names []string) *v1alpha1.ConfigurationList {
+	configurationList := &v1alpha1.ConfigurationList{}
+	for _, configuration := range names {
+		configurationList.Items = append(configurationList.Items, v1alpha1.Configuration{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "configuration",
+				APIVersion: "serving.knative.dev/v1alpha1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: configuration,
+			},
+		})
+	}
+
+	return configurationList
 }
 
 func createServiceList(names []string) *v1alpha1.ServiceList {
