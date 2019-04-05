@@ -23,6 +23,7 @@ func TestPushCommand(t *testing.T) {
 		namespace         string
 		containerRegistry string
 		dockerImage       string
+		buildpack         string
 		path              string
 		serviceAccount    string
 		grpc              bool
@@ -38,6 +39,7 @@ func TestPushCommand(t *testing.T) {
 			serviceAccount:    "some-service-account",
 			path:              "some-path",
 			grpc:              true,
+			buildpack:         "some-buildpack",
 			envVars:           []string{"env1=val1", "env2=val2"},
 		},
 		"service create error": {
@@ -68,6 +70,7 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "namespace", tc.namespace, kf.PushOptions(opts).Namespace())
 					testutil.AssertEqual(t, "container registry", tc.containerRegistry, kf.PushOptions(opts).ContainerRegistry())
 					testutil.AssertEqual(t, "docker image", tc.dockerImage, kf.PushOptions(opts).DockerImage())
+					testutil.AssertEqual(t, "buildpack", tc.buildpack, kf.PushOptions(opts).Buildpack())
 					testutil.AssertEqual(t, "service account", tc.serviceAccount, kf.PushOptions(opts).ServiceAccount())
 					testutil.AssertEqual(t, "grpc", tc.grpc, kf.PushOptions(opts).Grpc())
 					testutil.AssertEqual(t, "env vars", tc.envVars, kf.PushOptions(opts).EnvironmentVariables())
@@ -87,6 +90,7 @@ func TestPushCommand(t *testing.T) {
 			c.Flags().Set("service-account", tc.serviceAccount)
 			c.Flags().Set("path", tc.path)
 			c.Flags().Set("grpc", strconv.FormatBool(tc.grpc))
+			c.Flags().Set("buildpack", tc.buildpack)
 
 			for _, env := range tc.envVars {
 				c.Flags().Set("env", env)

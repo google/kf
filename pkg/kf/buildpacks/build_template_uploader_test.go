@@ -82,6 +82,7 @@ func TestBuildTemplateUploader(t *testing.T) {
 				testutil.AssertKeyWithValue(t, params, "CACHE", "empty-dir")
 				testutil.AssertKeyWithValue(t, params, "USER_ID", "1000")
 				testutil.AssertKeyWithValue(t, params, "GROUP_ID", "1000")
+				testutil.AssertKeyWithValue(t, params, "BUILDPACK", "")
 			},
 		},
 		"step prepare": {
@@ -108,12 +109,7 @@ func TestBuildTemplateUploader(t *testing.T) {
 				step := action.(ktesting.CreateActionImpl).Object.(*build.BuildTemplate).Spec.Steps[1]
 				testutil.AssertEqual(t, "Name", "detect", step.Name)
 				testutil.AssertEqual(t, "Image", "${BUILDER_IMAGE}", step.Image)
-				testutil.AssertEqual(t, "Command", []string{"/lifecycle/detector"}, step.Command)
-				testutil.AssertEqual(t, "Args", []string{
-					"-app=/workspace",
-					"-group=/layers/group.toml",
-					"-plan=/layers/plan.toml",
-				}, step.Args)
+				testutil.AssertEqual(t, "Command", []string{"/bin/bash"}, step.Command)
 				testutil.AssertEqual(t, "VolumeMounts.Name", "${CACHE}", step.VolumeMounts[0].Name)
 				testutil.AssertEqual(t, "VolumeMounts.MountPath", "/layers", step.VolumeMounts[0].MountPath)
 				testutil.AssertEqual(t, "ImagePullPolicy", "Always", string(step.ImagePullPolicy))

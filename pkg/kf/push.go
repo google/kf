@@ -101,6 +101,7 @@ func (p *Pusher) Push(appName string, opts ...PushOption) error {
 			srcImage,
 			cfg.ContainerRegistry,
 			cfg.ServiceAccount,
+			cfg.Buildpack,
 		)
 		if err != nil {
 			return err
@@ -221,11 +222,26 @@ func (p *Pusher) buildSpec(
 	srcImage string,
 	containerRegistry string,
 	serviceAccount string,
+	buildpack string,
 ) (*serving.RawExtension, string, error) {
 	imageName := path.Join(
 		containerRegistry,
 		p.imageName(appName, false),
 	)
+
+	args := []build.ArgumentSpec{
+		{
+			Name:  "IMAGE",
+			Value: imageName,
+		},
+	}
+
+	if buildpack != "" {
+		args = append(args, build.ArgumentSpec{
+			Name:  "BUILDPACK",
+			Value: buildpack,
+		})
+	}
 
 	// Knative Build wants a Build, but the RawExtension (used by the
 	// Configuration object) wants a BuildSpec. Therefore, we have to manually
@@ -239,13 +255,8 @@ func (p *Pusher) buildSpec(
 				},
 			},
 			Template: &build.TemplateInstantiationSpec{
-				Name: "buildpack",
-				Arguments: []build.ArgumentSpec{
-					{
-						Name:  "IMAGE",
-						Value: imageName,
-					},
-				},
+				Name:      "buildpack",
+				Arguments: args,
 			},
 		},
 	}

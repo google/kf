@@ -22,6 +22,7 @@ func NewPushCommand(p *config.KfParams, pusher Pusher) *cobra.Command {
 		dockerImage       string
 		serviceAccount    string
 		path              string
+		buildpack         string
 		envs              []string
 		grpc              bool
 	)
@@ -52,6 +53,7 @@ func NewPushCommand(p *config.KfParams, pusher Pusher) *cobra.Command {
 				kf.WithPushPath(path),
 				kf.WithPushEnvironmentVariables(envs),
 				kf.WithPushGrpc(grpc),
+				kf.WithPushBuildpack(buildpack),
 			)
 			cmd.SilenceUsage = !kfi.ConfigError(err)
 
@@ -100,6 +102,14 @@ func NewPushCommand(p *config.KfParams, pusher Pusher) *cobra.Command {
 		"grpc",
 		false,
 		"Setup the container to allow application to use gRPC.",
+	)
+
+	pushCmd.Flags().StringVarP(
+		&buildpack,
+		"buildpack",
+		"b",
+		"",
+		"Skip the 'detect' buildpack step and use the given name.",
 	)
 
 	return pushCmd

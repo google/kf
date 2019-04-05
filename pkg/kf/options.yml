@@ -10,6 +10,9 @@ configs:
 - name: Push
   imports: ["io", "os"]
   options:
+  - name: Buildpack
+    type: string
+    description: skip the detect buildpack step and use the given name
   - name: DockerImage
     type: string
     description: the docker image to serve
@@ -28,7 +31,7 @@ configs:
     default: "os.Stdout"
   - name: EnvironmentVariables
     type: "[]string"
-    description: Set environment variables.
+    description: set environment variables
   - name: Grpc
     type: bool
     description: setup the ports for the container to allow gRPC to work.

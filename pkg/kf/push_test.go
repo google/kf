@@ -216,7 +216,7 @@ func TestPush_UpdateApp(t *testing.T) {
 			var reactorCalled bool
 			fakeServing.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
 				reactorCalled = true
-				testPushReaction(t, action, expectedNamespace, tc.appName, containerRegistry, serviceAccount, "update", "", tc.envs)
+				testPushReaction(t, action, expectedNamespace, tc.appName, containerRegistry, serviceAccount, "update", "", "", tc.envs)
 
 				return false, nil, nil
 			}))
@@ -257,6 +257,7 @@ func TestPush_NewApp(t *testing.T) {
 
 	for tn, tc := range map[string]struct {
 		appName           string
+		buildpack         string
 		opts              kf.PushOptions
 		wantErr           error
 		servingFactoryErr error
@@ -276,6 +277,15 @@ func TestPush_NewApp(t *testing.T) {
 			opts: kf.PushOptions{
 				kf.WithPushContainerRegistry("some-reg.io"),
 				kf.WithPushServiceAccount("some-service-account"),
+			},
+		},
+		"pushes app with buildpack": {
+			appName:   "some-app",
+			buildpack: "some-buildpack",
+			opts: kf.PushOptions{
+				kf.WithPushContainerRegistry("some-reg.io"),
+				kf.WithPushServiceAccount("some-service-account"),
+				kf.WithPushBuildpack("some-buildpack"),
 			},
 		},
 		"pushes docker image": {
@@ -342,7 +352,7 @@ func TestPush_NewApp(t *testing.T) {
 			var reactorCalled bool
 			fake.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
 				reactorCalled = true
-				testPushReaction(t, action, expectedNamespace, tc.appName, tc.opts.ContainerRegistry(), tc.opts.ServiceAccount(), "create", tc.opts.DockerImage(), nil)
+				testPushReaction(t, action, expectedNamespace, tc.appName, tc.opts.ContainerRegistry(), tc.opts.ServiceAccount(), "create", tc.opts.DockerImage(), tc.buildpack, nil)
 
 				if tc.assert != nil {
 					tc.assert(
@@ -533,6 +543,7 @@ func testPushReaction(
 	serviceAccount string,
 	actionVerb string,
 	imageName string,
+	buildpack string,
 	envs map[string]string,
 ) {
 	t.Helper()
@@ -545,7 +556,7 @@ func testPushReaction(
 
 	service := action.(ktesting.CreateAction).GetObject().(*serving.Service)
 	if imageName == "" {
-		imageName = testBuild(t, appName, containerRegistry, serviceAccount, service.Spec.RunLatest.Configuration.Build)
+		imageName = testBuild(t, appName, containerRegistry, serviceAccount, buildpack, service.Spec.RunLatest.Configuration.Build)
 	} else {
 		// No build
 		if service.Spec.RunLatest.Configuration.Build != nil {
@@ -583,6 +594,7 @@ func testBuild(
 	appName string,
 	containerRegistry string,
 	serviceAccount string,
+	buildpack string,
 	raw *serving.RawExtension,
 ) string {
 	t.Helper()
@@ -599,8 +611,8 @@ func testBuild(
 
 	testutil.AssertEqual(t, "Spec.Template.Name", "buildpack", b.Spec.Template.Name)
 
-	if len(b.Spec.Template.Arguments) != 1 {
-		t.Fatalf("wanted template args len: 1, got %d", len(b.Spec.Template.Arguments))
+	if len(b.Spec.Template.Arguments) == 0 {
+		t.Fatalf("wanted template args got %d", len(b.Spec.Template.Arguments))
 	}
 	testutil.AssertEqual(t, "Spec.Template.Arguments[0].Name", "IMAGE", b.Spec.Template.Arguments[0].Name)
 
@@ -608,6 +620,11 @@ func testBuild(
 
 	pattern := fmt.Sprintf(`^%s/%s:[0-9]{19}$`, containerRegistry, appName)
 	testutil.AssertRegexp(t, "image name", pattern, imageName)
+
+	if buildpack != "" {
+		testutil.AssertEqual(t, "Spec.Template.Arguments[1].Name", "BUILDPACK", b.Spec.Template.Arguments[1].Name)
+		testutil.AssertEqual(t, "Spec.Template.Arguments[1].Value", buildpack, b.Spec.Template.Arguments[1].Value)
+	}
 
 	return imageName
 }

@@ -85,6 +85,11 @@ func (u *BuildTemplateUploader) UploadBuildTemplate(imageName string, opts ...Up
 					Description: `The group ID of the builder image user`,
 					Default:     u.strToPtr("1000"),
 				},
+				{
+					Name:        "BUILDPACK",
+					Description: `When set, skip the detect step and use the given buildpack.`,
+					Default:     u.strToPtr(""),
+				},
 			},
 			Steps: []corev1.Container{
 				{
@@ -106,11 +111,22 @@ func (u *BuildTemplateUploader) UploadBuildTemplate(imageName string, opts ...Up
 				{
 					Name:    "detect",
 					Image:   "${BUILDER_IMAGE}",
-					Command: []string{"/lifecycle/detector"},
+					Command: []string{"/bin/bash"},
 					Args: []string{
-						"-app=/workspace",
-						"-group=/layers/group.toml",
-						"-plan=/layers/plan.toml",
+						"-c",
+						`if [[ -z "${BUILDPACK}" ]]; then
+  /lifecycle/detector \
+  -app=/workspace \
+  -group=/layers/group.toml \
+  -plan=/layers/plan.toml
+else
+touch /layers/plan.toml
+cat <<EOF > /layers/group.toml
+[[buildpacks]]
+  id = "${BUILDPACK}"
+  version = "latest"
+EOF
+fi`,
 					},
 					VolumeMounts: []corev1.VolumeMount{{
 						Name:      "${CACHE}",

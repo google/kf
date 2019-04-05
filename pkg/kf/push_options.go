@@ -8,11 +8,13 @@ import (
 )
 
 type pushConfig struct {
+	// Buildpack is skip the detect buildpack step and use the given name
+	Buildpack string
 	// ContainerRegistry is the container registry's URL
 	ContainerRegistry string
 	// DockerImage is the docker image to serve
 	DockerImage string
-	// EnvironmentVariables is Set environment variables.
+	// EnvironmentVariables is set environment variables
 	EnvironmentVariables []string
 	// Grpc is setup the ports for the container to allow gRPC to work.
 	Grpc bool
@@ -50,6 +52,12 @@ func (opts PushOptions) Extend(other PushOptions) PushOptions {
 	out = append(out, opts...)
 	out = append(out, other...)
 	return out
+}
+
+// Buildpack returns the last set value for Buildpack or the empty value
+// if not set.
+func (opts PushOptions) Buildpack() string {
+	return opts.toConfig().Buildpack
 }
 
 // ContainerRegistry returns the last set value for ContainerRegistry or the empty value
@@ -100,6 +108,13 @@ func (opts PushOptions) ServiceAccount() string {
 	return opts.toConfig().ServiceAccount
 }
 
+// WithPushBuildpack creates an Option that sets skip the detect buildpack step and use the given name
+func WithPushBuildpack(val string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.Buildpack = val
+	}
+}
+
 // WithPushContainerRegistry creates an Option that sets the container registry's URL
 func WithPushContainerRegistry(val string) PushOption {
 	return func(cfg *pushConfig) {
@@ -114,7 +129,7 @@ func WithPushDockerImage(val string) PushOption {
 	}
 }
 
-// WithPushEnvironmentVariables creates an Option that sets Set environment variables.
+// WithPushEnvironmentVariables creates an Option that sets set environment variables
 func WithPushEnvironmentVariables(val []string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.EnvironmentVariables = val
