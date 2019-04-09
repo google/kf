@@ -42,7 +42,6 @@ import (
 )
 
 var (
-	cfgFile     string
 	kubeCfgFile string
 )
 
@@ -155,10 +154,6 @@ You can get more info by adding the --help flag to any sub-command.
 		},
 	}
 
-	// Model new commands after:
-	// https://github.com/knative/client/blob/master/pkg/kn/commands/service_list.go
-	// to take an idiomatic k8s like approach.
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kf.yaml)")
 	rootCmd.PersistentFlags().StringVar(&kubeCfgFile, "kubeconfig", "", "kubectl config file (default is $HOME/.kube/config)")
 	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "default", "namespace")
 
