@@ -225,3 +225,40 @@ func createServiceList(names []string) *v1alpha1.ServiceList {
 
 	return serviceList
 }
+
+func TestExtractOneService(t *testing.T) {
+	cases := map[string]struct {
+		services []v1alpha1.Service
+		err      error
+
+		expectErr error
+	}{
+		"error identity": {
+			err:       errors.New("test-err"),
+			expectErr: errors.New("test-err"),
+		},
+		"zero services": {
+			expectErr: errors.New("expected 1 app, but found 0"),
+		},
+		"too many services": {
+			services:  []v1alpha1.Service{v1alpha1.Service{}, v1alpha1.Service{}},
+			expectErr: errors.New("expected 1 app, but found 2"),
+		},
+		"just right": {
+			services: []v1alpha1.Service{v1alpha1.Service{}},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			svc, actualErr := kf.ExtractOneService(tc.services, tc.err)
+
+			if tc.expectErr != nil || actualErr != nil {
+				testutil.AssertErrorsEqual(t, tc.expectErr, actualErr)
+				return
+			}
+
+			testutil.AssertNotNil(t, "service", svc)
+		})
+	}
+}

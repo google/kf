@@ -1,0 +1,121 @@
+// Copyright 2019 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package apps
+
+import (
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"net/http/httputil"
+
+	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
+	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
+)
+
+// IngressLister gets Istio ingresses points for clusters.
+type IngressLister interface {
+	ListIngresses(opts ...kf.ListIngressesOption) ([]corev1.LoadBalancerIngress, error)
+}
+
+// NewProxyCommand creates a proxy command.
+func NewProxyCommand(p *config.KfParams, l AppLister, ingressLister IngressLister) *cobra.Command {
+	var (
+		gateway string
+		port    int
+		noStart bool
+	)
+
+	var proxy = &cobra.Command{
+		Use:   "proxy APP_NAME",
+		Short: "Creates a proxy to an app on a local port.",
+		Long: `
+	This command creates a local proxy to a remote gateway modifying the request
+	headers to make requests route to your app.
+
+	You can manually specify the gateway or have it autodetected based on your
+	cluster.`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			appName := args[0]
+
+			cmd.SilenceUsage = true
+
+			if gateway == "" {
+				fmt.Fprintln(p.Output, "Autodetecting app gateway. Specify a custom gateway using the --gateway flag.")
+
+				ingress, err := kf.ExtractIngressFromList(ingressLister.ListIngresses())
+				if err != nil {
+					return err
+				}
+				gateway = ingress
+			}
+
+			app, err := kf.ExtractOneService(l.List(kf.WithListNamespace(p.Namespace), kf.WithListAppName(appName)))
+			if err != nil {
+				return err
+			}
+
+			fmt.Fprintf(p.Output, "Forwarding requests from http://localhost:%d to http://%s\n", port, gateway)
+
+			if noStart {
+				fmt.Fprintln(p.Output, "exiting because no-start flag was provided")
+				return nil
+			}
+
+			return http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), createProxy(p.Output, app.Status.Domain, gateway))
+		},
+	}
+
+	proxy.Flags().StringVar(
+		&gateway,
+		"gateway",
+		"",
+		"the HTTP gateway to route requests to, if unset it will be autodetected",
+	)
+
+	proxy.Flags().IntVar(
+		&port,
+		"port",
+		8080,
+		"the local port to attach to",
+	)
+
+	proxy.Flags().BoolVar(
+		&noStart,
+		"no-start",
+		false,
+		"don't actually start the HTTP proxy",
+	)
+	proxy.Flags().MarkHidden("no-start")
+
+	return proxy
+}
+
+func createProxy(w io.Writer, appHost, gateway string) *httputil.ReverseProxy {
+	logger := log.New(w, fmt.Sprintf("\033[34m[%s via %s]\033[0m ", appHost, gateway), log.Ltime)
+	return &httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			req.Host = appHost
+			req.URL.Scheme = "http"
+			req.URL.Host = gateway
+
+			logger.Printf("%s %s\n", req.Method, req.URL.RequestURI())
+		},
+		ErrorLog: logger,
+	}
+}

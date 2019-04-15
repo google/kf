@@ -52,7 +52,7 @@ func TestEnvironmentClient_List(t *testing.T) {
 		},
 		"unknown app": {
 			appName: "some-app",
-			wantErr: errors.New("unknown app: 'some-app'"),
+			wantErr: errors.New("expected 1 app, but found 0"),
 			setup: func(t *testing.T, fake *kffake.FakeLister) {
 				fake.EXPECT().List(gomock.Any())
 			},
@@ -365,7 +365,7 @@ func setupEnvClientTests(t *testing.T, prefix string, f func(c *kf.EnvironmentCl
 		"unknown app": {
 			appName:           "some-app",
 			expectedNamespace: "default",
-			wantErr:           errors.New("unknown app: 'some-app'"),
+			wantErr:           errors.New("expected 1 app, but found 0"),
 			setup: func(t *testing.T, fake *kffake.FakeLister) {
 				fake.EXPECT().List(gomock.Any())
 			},

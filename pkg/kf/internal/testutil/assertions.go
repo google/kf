@@ -95,6 +95,15 @@ func AssertNil(t *testing.T, name string, value interface{}) {
 	}
 }
 
+// AssertNotNil fails the test if the value is nil.
+func AssertNotNil(t *testing.T, name string, value interface{}) {
+	t.Helper()
+
+	if value == nil {
+		t.Fatalf("expected %s not to be nil", name)
+	}
+}
+
 // AssertKeyWithValue ensures the key is present in the map and has the
 // given value.
 func AssertKeyWithValue(t *testing.T, m map[interface{}]interface{}, key, value interface{}) {

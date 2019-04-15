@@ -16,7 +16,6 @@ package kf
 
 import (
 	"errors"
-	"fmt"
 
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -80,7 +79,7 @@ func (c *EnvironmentClient) Set(appName string, values map[string]string, opts .
 	)
 
 	s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env = c.mapToEnvs(newValues)
-	if _, err := client.Services(cfg.Namespace).Update(&s); err != nil {
+	if _, err := client.Services(cfg.Namespace).Update(s); err != nil {
 		return err
 	}
 
@@ -110,7 +109,7 @@ func (c *EnvironmentClient) Unset(appName string, names []string, opts ...UnsetE
 	)
 
 	s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env = newValues
-	if _, err := client.Services(cfg.Namespace).Update(&s); err != nil {
+	if _, err := client.Services(cfg.Namespace).Update(s); err != nil {
 		return err
 	}
 
@@ -156,18 +155,9 @@ func (c *EnvironmentClient) mapToEnvs(values map[string]string) []corev1.EnvVar 
 	return envs
 }
 
-func (c *EnvironmentClient) fetchService(namespace, appName string) (serving.Service, error) {
-	services, err := c.l.List(
+func (c *EnvironmentClient) fetchService(namespace, appName string) (*serving.Service, error) {
+	return ExtractOneService(c.l.List(
 		WithListNamespace(namespace),
 		WithListAppName(appName),
-	)
-	if err != nil {
-		return serving.Service{}, err
-	}
-
-	if len(services) != 1 {
-		return serving.Service{}, fmt.Errorf("unknown app: '%s'", appName)
-	}
-
-	return services[0], nil
+	))
 }

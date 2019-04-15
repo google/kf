@@ -173,6 +173,7 @@ You can get more info by adding the --help flag to any sub-command.
 
 	// App interaction
 	lister := kf.NewLister(getConfig)
+	ingressLister := kf.NewIstioClient(getKubernetes)
 	buildLog := kf.NewLogTailer(getBuildConfig, getConfig, buildlogs.Tail)
 	rootCmd.AddCommand(apps.NewDeleteCommand(p, kf.NewDeleter(getConfig)))
 	rootCmd.AddCommand(apps.NewPushCommand(
@@ -180,6 +181,7 @@ You can get more info by adding the --help flag to any sub-command.
 		kf.NewPusher(lister, getConfig, kontext.BuildImage, buildLog)),
 	)
 	rootCmd.AddCommand(apps.NewAppsCommand(p, lister))
+	rootCmd.AddCommand(apps.NewProxyCommand(p, lister, ingressLister))
 
 	// Environment Variables
 	envClient := kf.NewEnvironmentClient(lister, getConfig)

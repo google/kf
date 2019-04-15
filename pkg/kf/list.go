@@ -15,9 +15,11 @@
 package kf
 
 import (
+	"fmt"
+
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -71,6 +73,21 @@ func (l *Lister) ListConfigurations(opts ...ListConfigurationsOption) ([]serving
 	}
 
 	return configs.Items, nil
+}
+
+// ExtractOneService is a utility function to wrap Lister.List. It expects
+// the results to be exactly one serving.Service, otherwise it will return
+// an error.
+func ExtractOneService(services []serving.Service, err error) (*serving.Service, error) {
+	if err != nil {
+		return nil, err
+	}
+
+	if len(services) != 1 {
+		return nil, fmt.Errorf("expected 1 app, but found %d", len(services))
+	}
+
+	return &services[0], nil
 }
 
 func (l *Lister) setup(cfg listConfig, opts []ListOption) (cserving.ServingV1alpha1Interface, v1.ListOptions, error) {
