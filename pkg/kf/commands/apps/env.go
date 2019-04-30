@@ -39,10 +39,11 @@ type EnvironmentClient interface {
 // NewEnvCommand creates a Env command.
 func NewEnvCommand(p *config.KfParams, c EnvironmentClient) *cobra.Command {
 	var envCmd = &cobra.Command{
-		Use:   "env APP_NAME",
-		Short: "List the names and values of the environment variables for an app",
-		Args:  cobra.ExactArgs(1),
-		Long:  ``,
+		Use:     "env APP_NAME",
+		Short:   "List the names and values of the environment variables for an app",
+		Example: `  kf env myapp`,
+		Args:    cobra.ExactArgs(1),
+		Long:    ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appName := args[0]
 			cmd.SilenceUsage = true

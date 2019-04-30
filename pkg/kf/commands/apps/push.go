@@ -42,10 +42,16 @@ func NewPushCommand(p *config.KfParams, pusher Pusher) *cobra.Command {
 	)
 
 	var pushCmd = &cobra.Command{
-		Use:   "push",
+		Use:   "push APP_NAME [--container-registry CONTAINER_REGISTRY]",
 		Short: "Push a new app or sync changes to an existing app",
-		Args:  cobra.ExactArgs(1),
-		Long:  ``,
+		Example: `
+  kf push myapp --container-registry gcr.io/myproject
+  kf push myapp --container-registry docker.io/myuser --service-account docker-account
+  kf push myapp --container-registry gcr.io/myproject --buildpack my.special.buildpack # Discover via kf buildpacks
+  kf push myapp --container-registry gcr.io/myproject --env FOO=bar --env BAZ=foo
+  kf push myapp --docker-image docker.io/myuser/myimage
+  `,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Cobra ensures we are only called with a single argument.
 			appName := args[0]

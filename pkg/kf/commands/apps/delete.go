@@ -31,10 +31,11 @@ type Deleter interface {
 // NewDeleteCommand creates a delete command.
 func NewDeleteCommand(p *config.KfParams, d Deleter) *cobra.Command {
 	var deleteCmd = &cobra.Command{
-		Use:   "delete",
-		Short: "Delete an existing app",
-		Args:  cobra.ExactArgs(1),
-		Long:  ``,
+		Use:     "delete APP_NAME",
+		Short:   "Delete an existing app",
+		Example: `  kf delete myapp`,
+		Args:    cobra.ExactArgs(1),
+		Long:    ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 

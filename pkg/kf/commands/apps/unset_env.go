@@ -23,10 +23,10 @@ import (
 // NewUnsetEnvCommand creates a SetEnv command.
 func NewUnsetEnvCommand(p *config.KfParams, c EnvironmentClient) *cobra.Command {
 	var envCmd = &cobra.Command{
-		Use:   "unset-env APP_NAME ENV_VAR_NAME",
-		Short: "Unset an environment variable for an app",
-		Args:  cobra.ExactArgs(2),
-		Long:  ``,
+		Use:     "unset-env APP_NAME ENV_VAR_NAME",
+		Short:   "Unset an environment variable for an app",
+		Example: `  kf unset-env myapp FOO`,
+		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appName := args[0]
 			name := args[1]
