@@ -82,6 +82,10 @@ func NewAppsCommand(p *config.KfParams, l AppLister) *cobra.Command {
 					}
 				}
 
+				if app.Name == "" {
+					continue
+				}
+
 				fmt.Fprintf(w, "%s\t%s\t%v\t%v\t%s\t%s\n",
 					app.Name,
 					app.Status.Domain,

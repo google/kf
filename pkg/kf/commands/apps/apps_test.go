@@ -17,6 +17,7 @@ package apps
 import (
 	"bytes"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
@@ -24,6 +25,7 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
 	"github.com/golang/mock/gomock"
+	duckv1alpha1 "github.com/knative/pkg/apis/duck/v1alpha1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -121,6 +123,29 @@ func TestAppsCommand(t *testing.T) {
 					EXPECT().
 					List(gomock.Any()).
 					Return(nil, errors.New("some-error"))
+			},
+		},
+		"filters out configurations without a name": {
+			setup: func(t *testing.T, fakeLister *fake.FakeLister) {
+				fakeLister.
+					EXPECT().
+					ListConfigurations(gomock.Any()).
+					Return([]serving.Configuration{
+						{ObjectMeta: metav1.ObjectMeta{Name: "service-a"}},
+						{ObjectMeta: metav1.ObjectMeta{Name: "service-b"}},
+					}, nil)
+				fakeLister.
+					EXPECT().
+					List(gomock.Any()).
+					Return([]serving.Service{
+						{Status: serving.ServiceStatus{Status: duckv1alpha1.Status{Conditions: []duckv1alpha1.Condition{{Type: "Ready", Status: "should-not-see-this"}}}}},
+						{ObjectMeta: metav1.ObjectMeta{Name: "service-b"}},
+					}, nil)
+			},
+			assert: func(t *testing.T, buffer *bytes.Buffer) {
+				if strings.Contains(buffer.String(), "should-not-see-this") {
+					t.Fatalf("expected app to be filtered out")
+				}
 			},
 		},
 	} {
