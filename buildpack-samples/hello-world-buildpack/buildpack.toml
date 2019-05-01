@@ -1,0 +1,4 @@
+id = "io.buildpacks.samples.buildpack.hello-world"
+version = "0.0.1"
+name = "Hello World Buildpack"
+stacks = ["packs/v3"]
