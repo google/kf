@@ -25,11 +25,13 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/apps"
 	cbuildpacks "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/doctor"
 	servicebindingscmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/service-bindings"
 	servicescmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/services"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/secrets"
 	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
 
+	pkgdoctor "github.com/GoogleCloudPlatform/kf/pkg/kf/doctor"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
 	"github.com/buildpack/lifecycle/image"
 	"github.com/buildpack/pack"
@@ -211,6 +213,17 @@ You can get more info by adding the --help flag to any sub-command.
 		initBuilderCreator(),
 		buildpacks.NewBuildTemplateUploader(getBuildConfig),
 	))
+
+	// DoctorTests are run in the order they're defined in this list.
+	// Tests will stop as soon as one of these top-level tests fails so they
+	// should be ordered in a logical way e.g. testing apps should come after
+	// testing the cluster because if the cluster isn't working then all the
+	// app tests will fail.
+	tests := []doctor.DoctorTest{
+		{Name: "cluster", Test: pkgdoctor.NewClusterDiagnostic(getKubernetes)},
+	}
+
+	rootCmd.AddCommand(doctor.NewDoctorCommand(p, tests))
 
 	return rootCmd
 }
