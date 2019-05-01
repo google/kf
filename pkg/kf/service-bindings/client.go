@@ -162,6 +162,11 @@ func (c *Client) GetVcapServices(appName string, opts ...GetVcapServicesOption) 
 		return nil, err
 	}
 
+	instanceClient, err := c.createSvcatClient()
+	if err != nil {
+		return nil, err
+	}
+
 	bindings, err := c.List(WithListAppName(appName), WithListNamespace(cfg.Namespace))
 	if err != nil {
 		return nil, err
@@ -169,14 +174,21 @@ func (c *Client) GetVcapServices(appName string, opts ...GetVcapServicesOption) 
 
 	out := VcapServicesMap{}
 	for _, binding := range bindings {
+		instance, err := instanceClient.ServiceInstances(cfg.Namespace).Get(binding.Spec.InstanceRef.Name, v1.GetOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("couldn't create VCAP_SERVICES, couldn't get instance for binding %s: %v", binding.Name, err)
+		}
+
 		secret, err := secretClient.Get(binding.Spec.SecretName, secrets.WithGetNamespace(cfg.Namespace))
-		if err == nil {
-			out.Add(NewVcapService(binding, secret))
-		} else {
+		if err != nil {
 			if cfg.FailOnBadSecret {
 				return nil, fmt.Errorf("couldn't create VCAP_SERVICES, the secret for binding %s couldn't be fetched: %v", binding.Name, err)
+			} else {
+				continue
 			}
 		}
+
+		out.Add(NewVcapService(*instance, binding, secret))
 	}
 
 	return out, nil
