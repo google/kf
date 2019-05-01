@@ -19,12 +19,19 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
-	"testing"
 )
+
+// Failable is an interface for testing.T like things. We can't use
+// testing.TB which would be preferable because they explicitly set a
+// private field on it to prevent others from implementing it.
+type Failable interface {
+	Helper()
+	Fatalf(format string, args ...interface{})
+}
 
 // AssertEqual causes a test to fail if the two values are not DeepEqual to
 // one another.
-func AssertEqual(t *testing.T, fieldName string, expected, actual interface{}) {
+func AssertEqual(t Failable, fieldName string, expected, actual interface{}) {
 	t.Helper()
 
 	fail := func() {
@@ -52,7 +59,7 @@ func AssertEqual(t *testing.T, fieldName string, expected, actual interface{}) {
 }
 
 // AssertRegexp causes a test to fail if the value does not match a pattern.
-func AssertRegexp(t *testing.T, fieldName, pattern, actual string) {
+func AssertRegexp(t Failable, fieldName, pattern, actual string) {
 	t.Helper()
 
 	if !regexp.MustCompile(pattern).MatchString(actual) {
@@ -61,7 +68,7 @@ func AssertRegexp(t *testing.T, fieldName, pattern, actual string) {
 }
 
 // AssertErrorsEqual checks that the values of the two errors match.
-func AssertErrorsEqual(t *testing.T, expected, actual error) {
+func AssertErrorsEqual(t Failable, expected, actual error) {
 	t.Helper()
 
 	if fmt.Sprint(expected) != fmt.Sprint(actual) {
@@ -71,7 +78,7 @@ func AssertErrorsEqual(t *testing.T, expected, actual error) {
 
 // AssertContainsAll validates that all of the search strings were in the
 // main string.
-func AssertContainsAll(t *testing.T, haystack string, needles []string) {
+func AssertContainsAll(t Failable, haystack string, needles []string) {
 	t.Helper()
 
 	var missing []string
@@ -87,7 +94,7 @@ func AssertContainsAll(t *testing.T, haystack string, needles []string) {
 }
 
 // AssertNil fails the test if the value is not nil.
-func AssertNil(t *testing.T, name string, value interface{}) {
+func AssertNil(t Failable, name string, value interface{}) {
 	t.Helper()
 
 	if value != nil {
@@ -96,7 +103,7 @@ func AssertNil(t *testing.T, name string, value interface{}) {
 }
 
 // AssertNotNil fails the test if the value is nil.
-func AssertNotNil(t *testing.T, name string, value interface{}) {
+func AssertNotNil(t Failable, name string, value interface{}) {
 	t.Helper()
 
 	if value == nil {
@@ -106,7 +113,7 @@ func AssertNotNil(t *testing.T, name string, value interface{}) {
 
 // AssertKeyWithValue ensures the key is present in the map and has the
 // given value.
-func AssertKeyWithValue(t *testing.T, m map[interface{}]interface{}, key, value interface{}) {
+func AssertKeyWithValue(t Failable, m map[interface{}]interface{}, key, value interface{}) {
 	t.Helper()
 
 	a, ok := m[key]
