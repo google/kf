@@ -20,40 +20,64 @@ import (
 )
 
 // VcapServicesMap mimics CF's VCAP_SERVICES environment variable.
-type VcapServicesMap map[string]VcapService
+// See https://docs.cloudfoundry.org/devguide/deploy-apps/environment-variable.html#VCAP-SERVICES
+// for more information about the structure.
+// The key for each service is the same as the value of the "label" attribute.
+type VcapServicesMap map[string][]VcapService
 
 // Add inserts the VcapService to the map.
 func (vm VcapServicesMap) Add(service VcapService) {
-	vm[service.BindingName] = service
+	// See the cloud-controller-ng source for the definition of how this is
+	// built.
+	// https://github.com/cloudfoundry/cloud_controller_ng/blob/65a75e6c97f49756df96e437e253f033415b2db1/app/presenters/system_environment/system_env_presenter.rb
+	vm[service.Label] = append(vm[service.Label], service)
 }
 
 // VcapService represents a single entry in a VCAP_SERVICES map.
 // It holds the credentials for a single service binding.
 type VcapService struct {
-	BindingName  string            `json:"binding_name"`
-	InstanceName string            `json:"instance_name"`
-	Name         string            `json:"name"`
-	Plan         string            `json:"plan"`
-	Credentials  map[string]string `json:"credentials"`
+	BindingName  string            `json:"binding_name"`  // The name assigned to the service binding by the user.
+	InstanceName string            `json:"instance_name"` // The name assigned to the service instance by the user.
+	Name         string            `json:"name"`          // The binding_name if it exists; otherwise the instance_name.
+	Label        string            `json:"label"`         // The name of the service offering.
+	Tags         []string          `json:"tags"`          // An array of strings an app can use to identify a service instance.
+	Plan         string            `json:"plan"`          // The service plan selected when the service instance was created.
+	Credentials  map[string]string `json:"credentials"`   // The service-specific credentials needed to access the service instance.
 }
 
 // NewVcapService creates a new VcapService given a binding and associated
 // secret.
-func NewVcapService(binding apiv1beta1.ServiceBinding, secret *corev1.Secret) VcapService {
+func NewVcapService(instance apiv1beta1.ServiceInstance, binding apiv1beta1.ServiceBinding, secret *corev1.Secret) VcapService {
+	// See the cloud-controller-ng source for how this is supposed to be built
+	// being that it doesn't seem to be formally fully documented anywhere:
+	// https://github.com/cloudfoundry/cloud_controller_ng/blob/65a75e6c97f49756df96e437e253f033415b2db1/app/presenters/system_environment/service_binding_presenter.rb#L32
 	vs := VcapService{
 		BindingName:  binding.Labels[BindingNameLabel],
 		Name:         binding.Name,
 		InstanceName: binding.Spec.InstanceRef.Name,
+		Label:        instance.Spec.ClusterServiceClassExternalName,
+		Plan:         instance.Spec.ClusterServicePlanExternalName,
 		Credentials:  make(map[string]string),
 	}
+
+	// Make sure we can work with both ServiceClass and ClusterServiceClass
+	if instance.Spec.ServiceClassExternalName != "" {
+		vs.Label = instance.Spec.ServiceClassExternalName
+	}
+
+	if instance.Spec.ServicePlanExternalName != "" {
+		vs.Plan = instance.Spec.ServicePlanExternalName
+	}
+
+	// TODO(josephlewis42) we need to get tags from the (Cluster)ServiceClass
+	// this could be aided by the BindingParentHierarchy function in the
+	// service catalog SDK.
 
 	// Credentials are stored by the service catalog in a flat map, the data
 	// values are just strings.
 	for sn, sd := range secret.Data {
 		vs.Credentials[sn] = string(sd)
 	}
-
-	// XXX: Plan is not populated but _is_ included in the struct for completeness.
 
 	return vs
 }

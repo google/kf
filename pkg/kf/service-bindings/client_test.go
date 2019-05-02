@@ -283,6 +283,9 @@ func TestClient_List(t *testing.T) {
 }
 
 func TestClient_GetVcapServices(t *testing.T) {
+	fakeInstance := apiv1beta1.ServiceInstance{}
+	fakeInstance.Name = "my-instance"
+
 	fakeBinding := apiv1beta1.ServiceBinding{}
 	fakeBinding.Name = "my-binding"
 	fakeBinding.Labels = map[string]string{
@@ -290,6 +293,7 @@ func TestClient_GetVcapServices(t *testing.T) {
 		servicebindings.BindingNameLabel: "binding-name",
 	}
 	fakeBinding.Spec.SecretName = "my-secret"
+	fakeBinding.Spec.InstanceRef.Name = fakeInstance.Name
 
 	fakeBindingList := &apiv1beta1.ServiceBindingList{
 		Items: []apiv1beta1.ServiceBinding{fakeBinding},
@@ -338,13 +342,17 @@ func TestClient_GetVcapServices(t *testing.T) {
 					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
 					Return(fakeBindingList, nil)
 
+				deps.apiserver.EXPECT().
+					Get(gomock.Any(), "default", "my-instance").
+					Return(&fakeInstance, nil)
+
 				deps.secrets.EXPECT().Get("my-secret", gomock.Any()).Return(&fakeSecret, nil)
 
 				actualVcap, err := client.GetVcapServices("my-app")
 				testutil.AssertNil(t, "GetVcapServices err", err)
 
 				expectedVcap := servicebindings.VcapServicesMap{}
-				expectedVcap.Add(servicebindings.NewVcapService(fakeBinding, &fakeSecret))
+				expectedVcap.Add(servicebindings.NewVcapService(fakeInstance, fakeBinding, &fakeSecret))
 				testutil.AssertEqual(t, "vcap services", expectedVcap, actualVcap)
 			},
 		},
@@ -353,6 +361,10 @@ func TestClient_GetVcapServices(t *testing.T) {
 				deps.apiserver.EXPECT().
 					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
 					Return(fakeBindingList, nil)
+
+				deps.apiserver.EXPECT().
+					Get(gomock.Any(), "default", "my-instance").
+					Return(&fakeInstance, nil)
 
 				deps.secrets.EXPECT().
 					Get("my-secret", gomock.Any()).
@@ -369,6 +381,10 @@ func TestClient_GetVcapServices(t *testing.T) {
 				deps.apiserver.EXPECT().
 					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
 					Return(fakeBindingList, nil)
+
+				deps.apiserver.EXPECT().
+					Get(gomock.Any(), "default", "my-instance").
+					Return(&fakeInstance, nil)
 
 				deps.secrets.EXPECT().Get("my-secret", gomock.Any()).Return(nil, errors.New("secret doesn't exist"))
 

@@ -24,19 +24,25 @@ import (
 
 func ExampleVcapServicesMap_Add() {
 	m := servicebindings.VcapServicesMap{}
-	m.Add(servicebindings.VcapService{BindingName: "foo", InstanceName: "instance-a"})
-	m.Add(servicebindings.VcapService{BindingName: "foo", InstanceName: "instance-b"})
+	m.Add(servicebindings.VcapService{InstanceName: "instance-a", Label: "foo"})
+	m.Add(servicebindings.VcapService{InstanceName: "instance-b", Label: "foo"})
 
-	// Elements are registered by their binding name, if multiple instances exist
-	// with the same name then the last one wins.
+	// Elements are registered by their Label.
 	fmt.Printf("Number of bindings: %d\n", len(m))
-	fmt.Printf("Binding: %s, Instance: %s\n", m["foo"].BindingName, m["foo"].InstanceName)
+	fmt.Printf("Binding 0: %s, Instance: %s\n", m["foo"][0].Label, m["foo"][0].InstanceName)
+	fmt.Printf("Binding 1: %s, Instance: %s\n", m["foo"][1].Label, m["foo"][1].InstanceName)
 
 	// Output: Number of bindings: 1
-	// Binding: foo, Instance: instance-b
+	// Binding 0: foo, Instance: instance-a
+	// Binding 1: foo, Instance: instance-b
 }
 
 func ExampleNewVcapService() {
+	instance := apiv1beta1.ServiceInstance{}
+	instance.Name = "my-instance"
+	instance.Spec.ServiceClassExternalName = "my-service"
+	instance.Spec.ServicePlanExternalName = "my-service-plan"
+
 	binding := apiv1beta1.ServiceBinding{}
 	binding.Spec.InstanceRef.Name = "my-instance"
 	binding.Name = "my-binding"
@@ -50,15 +56,19 @@ func ExampleNewVcapService() {
 		"key2": []byte("value2"),
 	}
 
-	vs := servicebindings.NewVcapService(binding, &secret)
+	vs := servicebindings.NewVcapService(instance, binding, &secret)
 
 	fmt.Printf("Name: %s\n", vs.Name)
 	fmt.Printf("InstanceName: %s\n", vs.InstanceName)
 	fmt.Printf("BindingName: %s\n", vs.BindingName)
 	fmt.Printf("Credentials: %v\n", vs.Credentials)
+	fmt.Printf("Service: %v\n", vs.Label)
+	fmt.Printf("Plan: %v\n", vs.Plan)
 
 	// Output: Name: my-binding
 	// InstanceName: my-instance
 	// BindingName: custom-binding-name
 	// Credentials: map[key1:value1 key2:value2]
+	// Service: my-service
+	// Plan: my-service-plan
 }
