@@ -21,3 +21,8 @@ $ go build ./cmd/...
 **Notes:**
 
 - `kf` CLI must be built outside of the `$GOPATH` folder unless you explicitly use `export GO111MODULE=on`.
+
+
+## Releasing
+
+We use [ko](https://github.com/google/ko) to build a full set of `kf` images and installation YAML.
