@@ -22,36 +22,48 @@ import (
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	cbuild "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-// BuildFactory returns a bclient for build.
-type BuildFactory func() (cbuild.BuildV1alpha1Interface, error)
-
-// BuildTail writes the build logs to out.
-type BuildTail func(ctx context.Context, out io.Writer, buildName, namespace string) error
-
-// LogTailer tails logs for a service. This includes the build and deploy
-// step. It should be created via NewLogTailer.
-type LogTailer struct {
-	f  ServingFactory
-	bf BuildFactory
-	t  BuildTail
+// BuildTailer writes the build logs to out.
+type BuildTailer interface {
+	Tail(ctx context.Context, out io.Writer, buildName, namespace string) error
 }
 
-// NewLogTailer creates a new LogTailer.
-func NewLogTailer(bf BuildFactory, f ServingFactory, t BuildTail) *LogTailer {
-	return &LogTailer{
-		bf: bf,
-		f:  f,
+// BuildTailerFunc converts a func into a BuildTailer.
+type BuildTailerFunc func(ctx context.Context, out io.Writer, buildName, namespace string) error
+
+// Tail implements BuildTailer.
+func (f BuildTailerFunc) Tail(ctx context.Context, out io.Writer, buildName, namespace string) error {
+	return f(ctx, out, buildName, namespace)
+}
+
+// logTailer tails logs for a service. This includes the build and deploy
+// step. It should be created via NewLogTailer.
+type logTailer struct {
+	bc cbuild.BuildV1alpha1Interface
+	sc cserving.ServingV1alpha1Interface
+	t  BuildTailer
+}
+
+// NewLogTailer creates a new Logs.
+func NewLogTailer(
+	bc cbuild.BuildV1alpha1Interface,
+	sc cserving.ServingV1alpha1Interface,
+	t BuildTailer,
+) Logs {
+	return &logTailer{
+		bc: bc,
+		sc: sc,
 		t:  t,
 	}
 }
 
 // Tail writes the logs for the build and deploy step for the resourceVersion
 // to out. It blocks until the operation has completed.
-func (t LogTailer) Tail(out io.Writer, appName, resourceVersion, namespace string) error {
+func (t logTailer) Tail(out io.Writer, appName, resourceVersion, namespace string) error {
 	errs := make(chan error, 2)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -69,13 +81,8 @@ func (t LogTailer) Tail(out io.Writer, appName, resourceVersion, namespace strin
 	return nil
 }
 
-func (t LogTailer) buildLogs(ctx context.Context, out io.Writer, appName, resourceVersion, namespace string) error {
-	bclient, err := t.bf()
-	if err != nil {
-		return err
-	}
-
-	wb, err := bclient.Builds(namespace).Watch(k8smeta.ListOptions{
+func (t logTailer) buildLogs(ctx context.Context, out io.Writer, appName, resourceVersion, namespace string) error {
+	wb, err := t.bc.Builds(namespace).Watch(k8smeta.ListOptions{
 		ResourceVersion: resourceVersion,
 		Watch:           true,
 	})
@@ -104,7 +111,7 @@ func (t LogTailer) buildLogs(ctx context.Context, out io.Writer, appName, resour
 
 		if e.Type == watch.Added {
 			// This blocks until the build is finished.
-			if err := t.t(ctx, out, obj.Name, namespace); err != nil {
+			if err := t.t.Tail(ctx, out, obj.Name, namespace); err != nil {
 				return err
 			}
 		}
@@ -119,14 +126,9 @@ func (t LogTailer) buildLogs(ctx context.Context, out io.Writer, appName, resour
 	return nil
 }
 
-func (t LogTailer) serviceLogs(done func(), out io.Writer, appName, resourceVersion, namespace string) error {
+func (t logTailer) serviceLogs(done func(), out io.Writer, appName, resourceVersion, namespace string) error {
 	defer done()
-	sclient, err := t.f()
-	if err != nil {
-		return err
-	}
-
-	ws, err := sclient.Services(namespace).Watch(k8smeta.ListOptions{
+	ws, err := t.sc.Services(namespace).Watch(k8smeta.ListOptions{
 		ResourceVersion: resourceVersion,
 		Watch:           true,
 	})

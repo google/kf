@@ -23,7 +23,6 @@ package fake
 
 import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
-	corev1 "k8s.io/api/core/v1"
 )
 
 // Lister is implemented by kf.Lister.
@@ -33,12 +32,12 @@ type Lister interface {
 
 // Pusher is implemented by kf.Pusher.
 type Pusher interface {
-	Push(appName string, opts ...kf.PushOption) error
+	kf.Pusher
 }
 
 // Deleter is implemented by kf.Deleter.
 type Deleter interface {
-	Delete(appName string, opts ...kf.DeleteOption) error
+	kf.Deleter
 }
 
 // LogTailer is implemented by kf.LogTailer.
@@ -48,19 +47,10 @@ type LogTailer interface {
 
 // EnvironmentClient is implemented by kf.EnvironmentClient.
 type EnvironmentClient interface {
-	// List shows all the names and values of the environment variables for an
-	// app.
-	List(appName string, opts ...kf.ListEnvOption) (map[string]string, error)
-
-	// Set sets the given environment variables.
-	Set(appName string, values map[string]string, opts ...kf.SetEnvOption) error
-
-	// Unset unsets the given environment variables.
-	Unset(appName string, names []string, opts ...kf.UnsetEnvOption) error
+	kf.EnvironmentClient
 }
 
 // IstioClient is implemented by kf.IstioClient.
 type IstioClient interface {
-	// ListIngresses gets the Istio ingres IP address(es) for the cluster.
-	ListIngresses(opts ...kf.ListIngressesOption) ([]corev1.LoadBalancerIngress, error)
+	kf.IngressLister
 }

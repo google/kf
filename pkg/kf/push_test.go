@@ -28,7 +28,6 @@ import (
 	"github.com/golang/mock/gomock"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	"github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1/fake"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -79,7 +78,7 @@ func TestPush_BadConfig(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 			p := kf.NewPusher(
 				nil, // AppLister - Should not be used
-				nil, // ServingFactory - Should not be used
+				nil, // Client - Should not be used
 				nil, // SrcImageBuilder - Should not be used
 				nil, // Logs - Should not be used
 			)
@@ -145,12 +144,10 @@ func TestPush_Logs(t *testing.T) {
 
 			p := kf.NewPusher(
 				fakeAppLister,
-				func() (cserving.ServingV1alpha1Interface, error) {
-					return fakeServing, nil
-				},
-				func(dir, tag string) error {
+				fakeServing,
+				kf.SrcImageBuilderFunc(func(dir, tag string) error {
 					return nil
-				},
+				}),
 				fakeLogs,
 			)
 
@@ -237,12 +234,10 @@ func TestPush_UpdateApp(t *testing.T) {
 
 			p := kf.NewPusher(
 				fakeAppLister,
-				func() (cserving.ServingV1alpha1Interface, error) {
-					return fakeServing, nil
-				},
-				func(dir, tag string) error {
+				fakeServing,
+				kf.SrcImageBuilderFunc(func(dir, tag string) error {
 					return nil
-				},
+				}),
 				fakeLogs,
 			)
 
@@ -270,13 +265,12 @@ func TestPush_NewApp(t *testing.T) {
 	t.Parallel()
 
 	for tn, tc := range map[string]struct {
-		appName           string
-		buildpack         string
-		opts              kf.PushOptions
-		wantErr           error
-		servingFactoryErr error
-		serviceCreateErr  error
-		assert            func(t *testing.T, service *serving.Service)
+		appName          string
+		buildpack        string
+		opts             kf.PushOptions
+		wantErr          error
+		serviceCreateErr error
+		assert           func(t *testing.T, service *serving.Service)
 	}{
 		"pushes app to a configured namespace": {
 			appName: "some-app",
@@ -306,15 +300,6 @@ func TestPush_NewApp(t *testing.T) {
 			appName: "some-app",
 			opts: kf.PushOptions{
 				kf.WithPushDockerImage("some-docker-image"),
-				kf.WithPushServiceAccount("some-service-account"),
-			},
-		},
-		"serving factory error, returns error": {
-			appName:           "some-app",
-			wantErr:           errors.New("some error"),
-			servingFactoryErr: errors.New("some error"),
-			opts: kf.PushOptions{
-				kf.WithPushContainerRegistry("some-reg.io"),
 				kf.WithPushServiceAccount("some-service-account"),
 			},
 		},
@@ -391,7 +376,7 @@ func TestPush_NewApp(t *testing.T) {
 				AnyTimes()
 
 			var srcBuilderCalled bool
-			srcBuilder := func(dir, tag string) error {
+			srcBuilder := kf.SrcImageBuilderFunc(func(dir, tag string) error {
 				srcBuilderCalled = true
 				if tc.opts.DockerImage() != "" {
 					t.Fatal("should not have been called with docker image")
@@ -401,13 +386,11 @@ func TestPush_NewApp(t *testing.T) {
 				testutil.AssertRegexp(t, "container registry", "^"+tc.opts.ContainerRegistry()+`/[a-zA-Z0-9_-]+:[0-9_-]+$`, tag)
 
 				return nil
-			}
+			})
 
 			p := kf.NewPusher(
 				fakeAppLister,
-				func() (cserving.ServingV1alpha1Interface, error) {
-					return fake, tc.servingFactoryErr
-				},
+				fake,
 				srcBuilder,
 				fakeLogs,
 			)
@@ -529,10 +512,8 @@ func TestPush_EnvVars(t *testing.T) {
 
 			p := kf.NewPusher(
 				fakeAppLister,
-				func() (cserving.ServingV1alpha1Interface, error) {
-					return fake, nil
-				},
-				func(dir, tag string) error { return nil },
+				fake,
+				kf.SrcImageBuilderFunc(func(dir, tag string) error { return nil }),
 				fakeLogs,
 			)
 

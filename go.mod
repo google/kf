@@ -19,6 +19,7 @@ require (
 	github.com/google/go-containerregistry v0.0.0-20190306174256-678f6c51f585
 	github.com/google/gofuzz v0.0.0-20161122191042-44d81051d367
 	github.com/google/licenseclassifier v0.0.0-20181010185715-e979a0b10eeb
+	github.com/google/wire v0.2.1
 	github.com/googleapis/gnostic v0.0.0-20170729233727-0c5108395e2d
 	github.com/gophercloud/gophercloud v0.0.0-20180706145943-19d3956666f3
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7

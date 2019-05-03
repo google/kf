@@ -24,14 +24,21 @@ import (
 	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
+	cbuild "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	toml "github.com/pelletier/go-toml"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// BuildpackLister lists the available buildpacks. It should be created via
+// BuildpackLister lists the buildpacks available.
+type BuildpackLister interface {
+	// List lists the buildpacks available.
+	List(opts ...BuildpackListOption) ([]string, error)
+}
+
+// buildpackLister lists the available buildpacks. It should be created via
 // NewBuildpackLister.
-type BuildpackLister struct {
-	f   BuildFactory
+type buildpackLister struct {
+	c   cbuild.BuildV1alpha1Interface
 	rif RemoteImageFetcher
 }
 
@@ -40,21 +47,17 @@ type BuildpackLister struct {
 type RemoteImageFetcher func(ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error)
 
 // NewBuildpackLister creates a new BuildpackLister.
-func NewBuildpackLister(f BuildFactory, rif RemoteImageFetcher) *BuildpackLister {
-	return &BuildpackLister{
-		f:   f,
+func NewBuildpackLister(c cbuild.BuildV1alpha1Interface, rif RemoteImageFetcher) BuildpackLister {
+	return &buildpackLister{
+		c:   c,
 		rif: rif,
 	}
 }
 
 // List lists the available buildpacks.
-func (l *BuildpackLister) List(opts ...BuildpackListOption) ([]string, error) {
+func (l *buildpackLister) List(opts ...BuildpackListOption) ([]string, error) {
 	cfg := BuildpackListOptionDefaults().Extend(opts).toConfig()
-	c, err := l.f()
-	if err != nil {
-		return nil, err
-	}
-	templates, err := c.BuildTemplates(cfg.Namespace).List(metav1.ListOptions{
+	templates, err := l.c.BuildTemplates(cfg.Namespace).List(metav1.ListOptions{
 		FieldSelector: "metadata.name=buildpack",
 	})
 	if err != nil {
@@ -108,7 +111,7 @@ func (l *BuildpackLister) List(opts ...BuildpackListOption) ([]string, error) {
 	return nil, nil
 }
 
-func (l *BuildpackLister) readOrder(reader io.Reader) ([]string, error) {
+func (l *buildpackLister) readOrder(reader io.Reader) ([]string, error) {
 	var buildpackIDs []string
 	var order struct {
 		Groups []lifecycle.BuildpackGroup `toml:"groups"`
@@ -126,7 +129,7 @@ func (l *BuildpackLister) readOrder(reader io.Reader) ([]string, error) {
 	return buildpackIDs, nil
 }
 
-func (l *BuildpackLister) fetchImageTar(layer gcrv1.Layer) (*tar.Reader, io.Closer, error) {
+func (l *buildpackLister) fetchImageTar(layer gcrv1.Layer) (*tar.Reader, io.Closer, error) {
 	ucl, err := layer.Uncompressed()
 	if err != nil {
 		return nil, nil, err
@@ -135,7 +138,7 @@ func (l *BuildpackLister) fetchImageTar(layer gcrv1.Layer) (*tar.Reader, io.Clos
 	return tar.NewReader(ucl), ucl, nil
 }
 
-func (l *BuildpackLister) fetchBuilderImageName(params []build.ParameterSpec) string {
+func (l *buildpackLister) fetchBuilderImageName(params []build.ParameterSpec) string {
 	for _, p := range params {
 		if p.Name == "BUILDER_IMAGE" && p.Default != nil {
 			return *p.Default

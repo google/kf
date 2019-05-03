@@ -24,30 +24,27 @@ import (
 
 //go:generate go run internal/tools/option-builder/option-builder.go istio_client_options.yml
 
-// KClientFactory builds a Kuberentes client.
-type KClientFactory func() (kubernetes.Interface, error)
+// IngressLister gets Istio ingresses points for clusters.
+type IngressLister interface {
+	ListIngresses(opts ...ListIngressesOption) ([]corev1.LoadBalancerIngress, error)
+}
 
 // NewIstioClient creates an IngressLister used to find ingress points for the
 // cluster's apps.
-func NewIstioClient(clientFactory KClientFactory) *IstioClient {
-	return &IstioClient{clientFactory: clientFactory}
+func NewIstioClient(c kubernetes.Interface) IngressLister {
+	return &istioClient{c: c}
 }
 
-// IstioClient is used to find ingress points for the cluster's apps.
-type IstioClient struct {
-	clientFactory KClientFactory
+// istioClient is used to find ingress points for the cluster's apps.
+type istioClient struct {
+	c kubernetes.Interface
 }
 
 // ListIngresses gets the Istio ingres IP address(es) for a particular gateway.
-func (i *IstioClient) ListIngresses(opts ...ListIngressesOption) ([]corev1.LoadBalancerIngress, error) {
+func (c *istioClient) ListIngresses(opts ...ListIngressesOption) ([]corev1.LoadBalancerIngress, error) {
 	cfg := ListIngressesOptionDefaults().Extend(opts).toConfig()
 
-	clientset, err := i.clientFactory()
-	if err != nil {
-		return nil, err
-	}
-
-	svc, err := clientset.
+	svc, err := c.c.
 		CoreV1().
 		Services(cfg.Namespace).
 		Get(cfg.Service, metav1.GetOptions{})
@@ -59,7 +56,7 @@ func (i *IstioClient) ListIngresses(opts ...ListIngressesOption) ([]corev1.LoadB
 	return svc.Status.LoadBalancer.Ingress, nil
 }
 
-// ExtractIngressFromList is a utility function to wrap IstioClient.ListIngresses
+// ExtractIngressFromList is a utility function to wrap IngressLister.ListIngresses
 // and extract a single ingress.
 func ExtractIngressFromList(ingresses []corev1.LoadBalancerIngress, err error) (string, error) {
 	if err != nil {

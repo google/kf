@@ -25,37 +25,37 @@ import (
 
 //go:generate go run ../internal/tools/option-builder/option-builder.go options.yml
 
-// BuildFactory returns a client for build.
-type BuildFactory func() (cbuild.BuildV1alpha1Interface, error)
+// BuildTemplateUploader uploads a build template
+type BuildTemplateUploader interface {
+	// UploadBuildTemplate uploads a buildpack build template with the name
+	// "buildpack".
+	UploadBuildTemplate(imageName string, opts ...UploadBuildTemplateOption) error
+}
 
-// BuildTemplateUploader uploads a new buildpack build template. It should be
+// buildTemplateUploader uploads a new buildpack build template. It should be
 // created via NewBuildTemplateUploader.
-type BuildTemplateUploader struct {
-	f BuildFactory
+type buildTemplateUploader struct {
+	c cbuild.BuildV1alpha1Interface
 }
 
 // NewBuildTemplateUploader creates a new BuildTemplateUploader.
-func NewBuildTemplateUploader(f BuildFactory) *BuildTemplateUploader {
-	return &BuildTemplateUploader{
-		f: f,
+func NewBuildTemplateUploader(c cbuild.BuildV1alpha1Interface) BuildTemplateUploader {
+	return &buildTemplateUploader{
+		c: c,
 	}
 }
 
 // UploadBuildTemplate uploads a buildpack build template with the name
 // "buildpack".
-func (u *BuildTemplateUploader) UploadBuildTemplate(imageName string, opts ...UploadBuildTemplateOption) error {
+func (u *buildTemplateUploader) UploadBuildTemplate(imageName string, opts ...UploadBuildTemplateOption) error {
 	if imageName == "" {
 		return errors.New("image name must not be empty")
 	}
 
 	cfg := UploadBuildTemplateOptionDefaults().Extend(opts).toConfig()
-	c, err := u.f()
-	if err != nil {
-		return err
-	}
 
 	// TODO: It would be nice if we generated this instead.
-	if _, err := u.deployer(c, cfg.Namespace)(&build.BuildTemplate{
+	if _, err := u.deployer(cfg.Namespace)(&build.BuildTemplate{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "build.knative.dev/v1alpha1",
 			Kind:       "BuildTemplate",
@@ -212,8 +212,8 @@ fi`,
 
 type deployer func(*build.BuildTemplate) (*build.BuildTemplate, error)
 
-func (u *BuildTemplateUploader) deployer(c cbuild.BuildV1alpha1Interface, namespace string) deployer {
-	builds, err := c.BuildTemplates(namespace).List(metav1.ListOptions{
+func (u *buildTemplateUploader) deployer(namespace string) deployer {
+	builds, err := u.c.BuildTemplates(namespace).List(metav1.ListOptions{
 		FieldSelector: "metadata.name=buildpack",
 	})
 
@@ -227,16 +227,16 @@ func (u *BuildTemplateUploader) deployer(c cbuild.BuildV1alpha1Interface, namesp
 
 	if len(builds.Items) == 0 {
 		return func(t *build.BuildTemplate) (*build.BuildTemplate, error) {
-			return c.BuildTemplates(namespace).Create(t)
+			return u.c.BuildTemplates(namespace).Create(t)
 		}
 	}
 
 	return func(t *build.BuildTemplate) (*build.BuildTemplate, error) {
 		t.ResourceVersion = builds.Items[0].ResourceVersion
-		return c.BuildTemplates(namespace).Update(t)
+		return u.c.BuildTemplates(namespace).Update(t)
 	}
 }
 
-func (u *BuildTemplateUploader) strToPtr(s string) *string {
+func (u *buildTemplateUploader) strToPtr(s string) *string {
 	return &s
 }

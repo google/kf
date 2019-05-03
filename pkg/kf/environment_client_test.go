@@ -23,7 +23,6 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
 	"github.com/golang/mock/gomock"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	"github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1/fake"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -129,7 +128,7 @@ func TestEnvironmentClient_List(t *testing.T) {
 func TestEnvironmentClient_Config_Set(t *testing.T) {
 	t.Parallel()
 
-	setupEnvClientTests(t, "Set", func(c *kf.EnvironmentClient, appName, namespace string, m map[string]string) error {
+	setupEnvClientTests(t, "Set", func(c kf.EnvironmentClient, appName, namespace string, m map[string]string) error {
 		var opts []kf.SetEnvOption
 		if namespace != "" {
 			opts = append(opts, kf.WithSetEnvNamespace(namespace))
@@ -209,9 +208,7 @@ func TestEnvironmentClient_Set(t *testing.T) {
 
 			c := kf.NewEnvironmentClient(
 				fakeLister,
-				func() (cserving.ServingV1alpha1Interface, error) {
-					return fakeServing, nil
-				},
+				fakeServing,
 			)
 
 			gotErr := c.Set("some-app", tc.values)
@@ -224,7 +221,7 @@ func TestEnvironmentClient_Set(t *testing.T) {
 func TestEnvironmentClient_Config_Unset(t *testing.T) {
 	t.Parallel()
 
-	setupEnvClientTests(t, "Unset", func(c *kf.EnvironmentClient, appName, namespace string, m map[string]string) error {
+	setupEnvClientTests(t, "Unset", func(c kf.EnvironmentClient, appName, namespace string, m map[string]string) error {
 		var (
 			opts  []kf.UnsetEnvOption
 			names []string
@@ -304,9 +301,7 @@ func TestEnvironmentClient_Unset(t *testing.T) {
 
 			c := kf.NewEnvironmentClient(
 				fakeLister,
-				func() (cserving.ServingV1alpha1Interface, error) {
-					return fakeServing, nil
-				},
+				fakeServing,
 			)
 
 			gotErr := c.Unset("some-app", tc.names)
@@ -316,14 +311,13 @@ func TestEnvironmentClient_Unset(t *testing.T) {
 	}
 }
 
-func setupEnvClientTests(t *testing.T, prefix string, f func(c *kf.EnvironmentClient, appName, namespace string, m map[string]string) error) {
+func setupEnvClientTests(t *testing.T, prefix string, f func(c kf.EnvironmentClient, appName, namespace string, m map[string]string) error) {
 	for tn, tc := range map[string]struct {
 		appName           string
 		expectedNamespace string
 		values            map[string]string
 		expectedValues    map[string]string
 		updateErr         error
-		servingFactoryErr error
 		wantErr           error
 		setup             func(t *testing.T, fake *kffake.FakeLister)
 	}{
@@ -347,12 +341,6 @@ func setupEnvClientTests(t *testing.T, prefix string, f func(c *kf.EnvironmentCl
 					testutil.AssertEqual(t, "app name", "some-app", kf.ListOptions(opts).AppName())
 				}).Return([]serving.Service{buildServiceWithEnvs("some-app", nil)}, nil)
 			},
-		},
-		"serving factory fails": {
-			appName:           "some-app",
-			expectedNamespace: "default",
-			servingFactoryErr: errors.New("some-error"),
-			wantErr:           errors.New("some-error"),
 		},
 		"listing fails": {
 			appName:           "some-app",
@@ -401,9 +389,7 @@ func setupEnvClientTests(t *testing.T, prefix string, f func(c *kf.EnvironmentCl
 
 			c := kf.NewEnvironmentClient(
 				fakeLister,
-				func() (cserving.ServingV1alpha1Interface, error) {
-					return fakeServing, tc.servingFactoryErr
-				},
+				fakeServing,
 			)
 
 			gotErr := f(c, tc.appName, tc.expectedNamespace, tc.values)

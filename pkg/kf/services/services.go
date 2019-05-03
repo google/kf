@@ -48,7 +48,7 @@ type ClientInterface interface {
 }
 
 // SClientFactory creates a Service Catalog client.
-type SClientFactory func(namespace string) (servicecatalog.SvcatClient, error)
+type SClientFactory func(namespace string) servicecatalog.SvcatClient
 
 // NewClient creates a new client capable of interacting siwht service catalog
 // services.
@@ -67,10 +67,7 @@ type Client struct {
 func (c *Client) CreateService(instanceName, serviceName, planName string, opts ...CreateServiceOption) (*v1beta1.ServiceInstance, error) {
 	cfg := CreateServiceOptionDefaults().Extend(opts).toConfig()
 
-	svcat, err := c.createSvcatClient(cfg.Namespace)
-	if err != nil {
-		return nil, err
-	}
+	svcat := c.createSvcatClient(cfg.Namespace)
 
 	// Provision(instanceName, className, planName string, opts *ProvisionOptions) (*v1beta1.ServiceInstance, error)
 	return svcat.Provision(instanceName, serviceName, planName, &servicecatalog.ProvisionOptions{
@@ -83,11 +80,7 @@ func (c *Client) CreateService(instanceName, serviceName, planName string, opts 
 func (c *Client) DeleteService(instanceName string, opts ...DeleteServiceOption) error {
 	cfg := DeleteServiceOptionDefaults().Extend(opts).toConfig()
 
-	svcat, err := c.createSvcatClient(cfg.Namespace)
-	if err != nil {
-		return err
-	}
-
+	svcat := c.createSvcatClient(cfg.Namespace)
 	return svcat.Deprovision(cfg.Namespace, instanceName)
 }
 
@@ -95,11 +88,7 @@ func (c *Client) DeleteService(instanceName string, opts ...DeleteServiceOption)
 func (c *Client) GetService(instanceName string, opts ...GetServiceOption) (*v1beta1.ServiceInstance, error) {
 	cfg := GetServiceOptionDefaults().Extend(opts).toConfig()
 
-	svcat, err := c.createSvcatClient(cfg.Namespace)
-	if err != nil {
-		return nil, err
-	}
-
+	svcat := c.createSvcatClient(cfg.Namespace)
 	return svcat.RetrieveInstance(cfg.Namespace, instanceName)
 }
 
@@ -107,10 +96,7 @@ func (c *Client) GetService(instanceName string, opts ...GetServiceOption) (*v1b
 func (c *Client) ListServices(opts ...ListServicesOption) (*v1beta1.ServiceInstanceList, error) {
 	cfg := ListServicesOptionDefaults().Extend(opts).toConfig()
 
-	svcat, err := c.createSvcatClient(cfg.Namespace)
-	if err != nil {
-		return nil, err
-	}
+	svcat := c.createSvcatClient(cfg.Namespace)
 
 	// RetrieveInstances(ns, classFilter, planFilter string)
 	return svcat.RetrieveInstances(cfg.Namespace, "", "")
@@ -120,10 +106,7 @@ func (c *Client) ListServices(opts ...ListServicesOption) (*v1beta1.ServiceInsta
 func (c *Client) Marketplace(opts ...MarketplaceOption) (*KfMarketplace, error) {
 	cfg := MarketplaceOptionDefaults().Extend(opts).toConfig()
 
-	svcat, err := c.createSvcatClient(cfg.Namespace)
-	if err != nil {
-		return nil, err
-	}
+	svcat := c.createSvcatClient(cfg.Namespace)
 
 	scope := servicecatalog.ScopeOptions{
 		Namespace: cfg.Namespace,

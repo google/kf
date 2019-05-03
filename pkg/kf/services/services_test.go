@@ -33,7 +33,6 @@ func TestClient_CreateService(t *testing.T) {
 		ServiceName  string
 		PlanName     string
 		Options      []CreateServiceOption
-		FactoryErr   error
 		ProvisionErr error
 
 		ExpectErr error
@@ -54,13 +53,6 @@ func TestClient_CreateService(t *testing.T) {
 				WithCreateServiceParams(map[string]interface{}{"foo": 33}),
 			},
 			ExpectErr: nil,
-		},
-		"error in factory": {
-			InstanceName: "instance-name",
-			ServiceName:  "service-name",
-			PlanName:     "plan-name",
-			FactoryErr:   errors.New("some-err"),
-			ExpectErr:    errors.New("some-err"),
 		},
 		"error in provision": {
 			InstanceName: "instance-name",
@@ -87,8 +79,8 @@ func TestClient_CreateService(t *testing.T) {
 				return nil, tc.ProvisionErr
 			}
 
-			client := NewClient(func(ns string) (servicecatalog.SvcatClient, error) {
-				return fakeClient, tc.FactoryErr
+			client := NewClient(func(ns string) servicecatalog.SvcatClient {
+				return fakeClient
 			})
 
 			_, actualErr := client.CreateService(tc.InstanceName, tc.ServiceName, tc.PlanName, tc.Options...)
@@ -109,7 +101,6 @@ func TestClient_DeleteService(t *testing.T) {
 	cases := map[string]struct {
 		InstanceName string
 		Options      []DeleteServiceOption
-		FactoryErr   error
 		ServerErr    error
 
 		ExpectErr error
@@ -125,11 +116,6 @@ func TestClient_DeleteService(t *testing.T) {
 				WithDeleteServiceNamespace("custom-namespace"),
 			},
 			ExpectErr: nil,
-		},
-		"error in factory": {
-			InstanceName: "instance-name",
-			FactoryErr:   errors.New("some-err"),
-			ExpectErr:    errors.New("some-err"),
 		},
 		"error in delete": {
 			InstanceName: "instance-name",
@@ -150,10 +136,10 @@ func TestClient_DeleteService(t *testing.T) {
 				return tc.ServerErr
 			}
 
-			client := NewClient(func(ns string) (servicecatalog.SvcatClient, error) {
+			client := NewClient(func(ns string) servicecatalog.SvcatClient {
 				testutil.AssertEqual(t, "namespace", expectedCfg.Namespace, ns)
 
-				return fakeClient, tc.FactoryErr
+				return fakeClient
 			})
 
 			actualErr := client.DeleteService(tc.InstanceName, tc.Options...)
@@ -174,7 +160,6 @@ func TestClient_GetService(t *testing.T) {
 	cases := map[string]struct {
 		InstanceName string
 		Options      []GetServiceOption
-		FactoryErr   error
 		ServerErr    error
 
 		ExpectErr error
@@ -190,11 +175,6 @@ func TestClient_GetService(t *testing.T) {
 				WithGetServiceNamespace("custom-namespace"),
 			},
 			ExpectErr: nil,
-		},
-		"error in factory": {
-			InstanceName: "instance-name",
-			FactoryErr:   errors.New("some-err"),
-			ExpectErr:    errors.New("some-err"),
 		},
 		"error in get": {
 			InstanceName: "instance-name",
@@ -215,10 +195,10 @@ func TestClient_GetService(t *testing.T) {
 				return nil, tc.ServerErr
 			}
 
-			client := NewClient(func(ns string) (servicecatalog.SvcatClient, error) {
+			client := NewClient(func(ns string) servicecatalog.SvcatClient {
 				testutil.AssertEqual(t, "namespace", expectedCfg.Namespace, ns)
 
-				return fakeClient, tc.FactoryErr
+				return fakeClient
 			})
 
 			_, actualErr := client.GetService(tc.InstanceName, tc.Options...)
@@ -239,7 +219,6 @@ func TestClient_ListServices(t *testing.T) {
 	cases := map[string]struct {
 		InstanceName string
 		Options      []ListServicesOption
-		FactoryErr   error
 		ServerErr    error
 
 		ExpectErr error
@@ -255,11 +234,6 @@ func TestClient_ListServices(t *testing.T) {
 				WithListServicesNamespace("custom-namespace"),
 			},
 			ExpectErr: nil,
-		},
-		"error in factory": {
-			InstanceName: "instance-name",
-			FactoryErr:   errors.New("some-err"),
-			ExpectErr:    errors.New("some-err"),
 		},
 		"error in get": {
 			InstanceName: "instance-name",
@@ -281,10 +255,10 @@ func TestClient_ListServices(t *testing.T) {
 				return nil, tc.ServerErr
 			}
 
-			client := NewClient(func(ns string) (servicecatalog.SvcatClient, error) {
+			client := NewClient(func(ns string) servicecatalog.SvcatClient {
 				testutil.AssertEqual(t, "namespace", expectedCfg.Namespace, ns)
 
-				return fakeClient, tc.FactoryErr
+				return fakeClient
 			})
 
 			_, actualErr := client.ListServices(tc.Options...)
@@ -307,7 +281,6 @@ func TestClient_Marketplace(t *testing.T) {
 	cases := map[string]struct {
 		InstanceName  string
 		Options       []MarketplaceOption
-		FactoryErr    error
 		GetClassesErr error
 		GetPlansErr   error
 
@@ -324,11 +297,6 @@ func TestClient_Marketplace(t *testing.T) {
 				WithMarketplaceNamespace("custom-namespace"),
 			},
 			ExpectErr: nil,
-		},
-		"error in factory": {
-			InstanceName: "instance-name",
-			FactoryErr:   errors.New("some-err"),
-			ExpectErr:    errors.New("some-err"),
 		},
 		"error in get classes": {
 			InstanceName:  "instance-name",
@@ -360,10 +328,10 @@ func TestClient_Marketplace(t *testing.T) {
 				return nil, tc.GetPlansErr
 			}
 
-			client := NewClient(func(ns string) (servicecatalog.SvcatClient, error) {
+			client := NewClient(func(ns string) servicecatalog.SvcatClient {
 				testutil.AssertEqual(t, "namespace", expectedCfg.Namespace, ns)
 
-				return fakeClient, tc.FactoryErr
+				return fakeClient
 			})
 
 			_, actualErr := client.Marketplace(tc.Options...)

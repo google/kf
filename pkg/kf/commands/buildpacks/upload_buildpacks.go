@@ -24,21 +24,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// BuilderCreator creates a new buildback builder.
-type BuilderCreator interface {
-	// Create creates and publishes a builder image.
-	Create(dir, containerRegistry string) (string, error)
-}
-
-// BuildTemplateUploader uploads a build template
-type BuildTemplateUploader interface {
-	// UploadBuildTemplate uploads a buildpack build template with the name
-	// "buildpack".
-	UploadBuildTemplate(imageName string, opts ...buildpacks.UploadBuildTemplateOption) error
-}
-
 // NewUploadBuildpacks creates a UploadBuildpacks command.
-func NewUploadBuildpacks(p *config.KfParams, c BuilderCreator, u BuildTemplateUploader) *cobra.Command {
+func NewUploadBuildpacks(p *config.KfParams, c buildpacks.BuilderCreator, u buildpacks.BuildTemplateUploader) *cobra.Command {
 	var (
 		containerRegistry string
 		path              string

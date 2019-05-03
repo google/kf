@@ -14,10 +14,121 @@
 
 package config
 
-import "io"
+import (
+	"fmt"
+	"io"
+	"log"
+	"os"
+	"path/filepath"
+
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/secrets"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
+	build "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
+	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
+	homedir "github.com/mitchellh/go-homedir"
+	"github.com/poy/service-catalog/pkg/client/clientset_generated/clientset"
+	svcatclient "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset"
+	scv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
+	"github.com/poy/service-catalog/pkg/svcat"
+	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
+	k8sclient "k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+)
 
 // KfParams stores everything needed to interact with the user and Knative.
 type KfParams struct {
-	Output    io.Writer
-	Namespace string
+	Output      io.Writer
+	Namespace   string
+	KubeCfgFile string
+}
+
+// GetServingClient returns a Serving interface.
+func GetServingClient(p *KfParams) serving.ServingV1alpha1Interface {
+	config := getRestConfig(p)
+	client, err := serving.NewForConfig(config)
+	if err != nil {
+		log.Fatalf("failed to create a Serving client: %s", err)
+	}
+	return client
+}
+
+// GetServingClient returns a Build interface.
+func GetBuildClient(p *KfParams) build.BuildV1alpha1Interface {
+	config := getRestConfig(p)
+	client, err := build.NewForConfig(config)
+	if err != nil {
+		log.Fatalf("failed to create a Build client: %s", err)
+	}
+	return client
+}
+
+// GetKubernetes returns a K8s client.
+func GetKubernetes(p *KfParams) k8sclient.Interface {
+	config := getRestConfig(p)
+	c, err := k8sclient.NewForConfig(config)
+	if err != nil {
+		log.Fatalf("failed to create a K8s client: %s", err)
+	}
+	return c
+}
+
+// GetServingClient returns a secrets Client.
+func GetSecretClient(p *KfParams) secrets.ClientInterface {
+	return secrets.NewClient(GetKubernetes(p))
+}
+
+// GetServiceCatalogClient returns a ServiceCatalogClient.
+func GetServiceCatalogClient(p *KfParams) scv1beta1.ServicecatalogV1beta1Interface {
+	config := getRestConfig(p)
+
+	cs, err := clientset.NewForConfig(config)
+	if err != nil {
+		log.Fatalf("failed to build clientset: %s", err)
+	}
+
+	return cs.ServicecatalogV1beta1()
+}
+
+// GetSvcatApp returns a SvcatClient.
+func GetSvcatApp(p *KfParams) services.SClientFactory {
+	return func(namespace string) servicecatalog.SvcatClient {
+		config := getRestConfig(p)
+
+		k8sClient, err := k8sclient.NewForConfig(config)
+		if err != nil {
+			log.Fatalf("failed to create a K8s client: %s", err)
+		}
+
+		catalogClient, err := svcatclient.NewForConfig(config)
+		if err != nil {
+			log.Fatalf("failed to create a svcatclient: %s", err)
+		}
+
+		c, err := svcat.NewApp(k8sClient, catalogClient, namespace)
+		if err != nil {
+			log.Fatalf("failed to create a svcat App: %s", err)
+		}
+		return c
+	}
+}
+
+func getRestConfig(p *KfParams) *rest.Config {
+	initKubeConfig(p)
+	c, err := clientcmd.BuildConfigFromFlags("", p.KubeCfgFile)
+	if err != nil {
+		log.Fatalf("failed to build clientcmd: %s", err)
+	}
+	return c
+}
+
+func initKubeConfig(p *KfParams) {
+	if p.KubeCfgFile == "" {
+		home, err := homedir.Dir()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		p.KubeCfgFile = filepath.Join(home, ".kube", "config")
+	}
 }

@@ -20,13 +20,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// KubernetesClientFactory creates a Kubernetes client
-type KubernetesClientFactory func() (kubernetes.Interface, error)
-
 // ClusterDiagnostic tests that the cluster's Kubernetes version and components
 // are suitable for kf.
 type ClusterDiagnostic struct {
-	createKubernetesClient KubernetesClientFactory
+	kubeClient kubernetes.Interface
 }
 
 var _ Diagnosable = (*ClusterDiagnostic)(nil)
@@ -34,23 +31,20 @@ var _ Diagnosable = (*ClusterDiagnostic)(nil)
 // Diagnose valiates the version and components of the current Kubernetes
 // cluster.
 func (c *ClusterDiagnostic) Diagnose(d *Diagnostic) {
-	client, err := c.createKubernetesClient()
-	testutil.AssertNil(d, "Kubernetes Client Error", err)
-
 	d.Run("Version", func(d *Diagnostic) {
-		diagnoseKubernetesVersion(d, client.Discovery())
+		diagnoseKubernetesVersion(d, c.kubeClient.Discovery())
 	})
 
 	d.Run("Components", func(d *Diagnostic) {
-		diagnoseComponents(d, client.Discovery())
+		diagnoseComponents(d, c.kubeClient.Discovery())
 	})
 }
 
 // NewClusterDiagnostic creates a new ClusterDiagnostic to validate the
 // install pointed at by the client.
-func NewClusterDiagnostic(clientFactory KubernetesClientFactory) *ClusterDiagnostic {
+func NewClusterDiagnostic(kubeClient kubernetes.Interface) *ClusterDiagnostic {
 	return &ClusterDiagnostic{
-		createKubernetesClient: clientFactory,
+		kubeClient: kubeClient,
 	}
 }
 

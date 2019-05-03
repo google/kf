@@ -24,14 +24,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// BuildpackLister lists the buildpacks available.
-type BuildpackLister interface {
-	// List lists the buildpacks available.
-	List(opts ...buildpacks.BuildpackListOption) ([]string, error)
-}
-
 // NewUploadBuildpacks creates a UploadBuildpacks command.
-func NewBuildpacks(p *config.KfParams, l BuildpackLister) *cobra.Command {
+func NewBuildpacks(p *config.KfParams, l buildpacks.BuildpackLister) *cobra.Command {
 	var buildpacksCmd = &cobra.Command{
 		Use:   "buildpacks",
 		Short: "List buildpacks in current builder.",

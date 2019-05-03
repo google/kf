@@ -24,16 +24,10 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/spf13/cobra"
-	corev1 "k8s.io/api/core/v1"
 )
 
-// IngressLister gets Istio ingresses points for clusters.
-type IngressLister interface {
-	ListIngresses(opts ...kf.ListIngressesOption) ([]corev1.LoadBalancerIngress, error)
-}
-
 // NewProxyCommand creates a proxy command.
-func NewProxyCommand(p *config.KfParams, l AppLister, ingressLister IngressLister) *cobra.Command {
+func NewProxyCommand(p *config.KfParams, l kf.AppLister, ingressLister kf.IngressLister) *cobra.Command {
 	var (
 		gateway string
 		port    int

@@ -32,7 +32,6 @@ func TestClient_Create(t *testing.T) {
 	cases := map[string]struct {
 		Name             string
 		Options          []CreateOption
-		CreateErr        error
 		ExpectErr        error
 		ExpectNamespace  string
 		ExpectStringData map[string]string
@@ -56,15 +55,6 @@ func TestClient_Create(t *testing.T) {
 			ExpectNamespace:  "supersecret",
 			ExpectStringData: map[string]string{"username": "user", "password": "pass"},
 		},
-		"error": {
-			Name: "broker-secret",
-			Options: []CreateOption{
-				WithCreateNamespace("default"),
-				WithCreateStringData(map[string]string{"username": "user", "password": "pass"}),
-			},
-			CreateErr: errors.New("some-error"),
-			ExpectErr: errors.New("some-error"),
-		},
 		"non-string data": {
 			Name: "broker-secret",
 			Options: []CreateOption{
@@ -86,11 +76,7 @@ func TestClient_Create(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 
 			mockK8s := testclient.NewSimpleClientset()
-			k8sFactory := func() (kubernetes.Interface, error) {
-				return mockK8s, tc.CreateErr
-			}
-
-			secretsClient := NewClient(k8sFactory)
+			secretsClient := NewClient(mockK8s)
 
 			actualErr := secretsClient.Create(tc.Name, tc.Options...)
 			if tc.ExpectErr != nil || actualErr != nil {
@@ -121,7 +107,6 @@ func TestClient_Get(t *testing.T) {
 	cases := map[string]struct {
 		Name          string
 		Options       []GetOption
-		FactoryErr    error
 		ExpectErr     error
 		ExpectSecrets map[string][]byte
 		Setup         func(mockK8s kubernetes.Interface)
@@ -153,27 +138,17 @@ func TestClient_Get(t *testing.T) {
 			Options:   []GetOption{},
 			ExpectErr: errors.New(`secrets "some-secret" not found`),
 		},
-		"client creation error": {
-			Name:       "some-secret",
-			Options:    []GetOption{},
-			FactoryErr: errors.New(`some-error`),
-			ExpectErr:  errors.New(`some-error`),
-		},
 	}
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
 
 			mockK8s := testclient.NewSimpleClientset()
-			k8sFactory := func() (kubernetes.Interface, error) {
-				return mockK8s, tc.FactoryErr
-			}
-
 			if tc.Setup != nil {
 				tc.Setup(mockK8s)
 			}
 
-			secretsClient := NewClient(k8sFactory)
+			secretsClient := NewClient(mockK8s)
 			actualSecrets, actualErr := secretsClient.Get(tc.Name, tc.Options...)
 			if tc.ExpectErr != nil || actualErr != nil {
 				testutil.AssertErrorsEqual(t, tc.ExpectErr, actualErr)
@@ -192,7 +167,6 @@ func TestClient_Delete(t *testing.T) {
 	cases := map[string]struct {
 		Name      string
 		Options   []DeleteOption
-		DeleteErr error
 		ExpectErr error
 		Setup     func(mockK8s kubernetes.Interface)
 	}{
@@ -202,14 +176,6 @@ func TestClient_Delete(t *testing.T) {
 				WithDeleteNamespace("default"),
 			},
 			ExpectErr: errors.New(`secrets "some-secret" not found`),
-		},
-		"client creation error": {
-			Name: "some-secret",
-			Options: []DeleteOption{
-				WithDeleteNamespace("default"),
-			},
-			DeleteErr: errors.New(`some-error`),
-			ExpectErr: errors.New(`some-error`),
 		},
 		"secret exists": {
 			Name: "some-secret",
@@ -237,15 +203,11 @@ func TestClient_Delete(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 
 			mockK8s := testclient.NewSimpleClientset()
-			k8sFactory := func() (kubernetes.Interface, error) {
-				return mockK8s, tc.DeleteErr
-			}
-
 			if tc.Setup != nil {
 				tc.Setup(mockK8s)
 			}
 
-			secretsClient := NewClient(k8sFactory)
+			secretsClient := NewClient(mockK8s)
 			actualErr := secretsClient.Delete(tc.Name, tc.Options...)
 			if tc.ExpectErr != nil || actualErr != nil {
 				testutil.AssertErrorsEqual(t, tc.ExpectErr, actualErr)
@@ -283,7 +245,6 @@ func TestClient_AddLabels(t *testing.T) {
 		Name            string
 		Labels          map[string]string
 		Options         []AddLabelsOption
-		FactoryError    error
 		ExpectErr       error
 		ExpectNamespace string
 		ExpectLabels    map[string]string
@@ -294,12 +255,6 @@ func TestClient_AddLabels(t *testing.T) {
 			Options:         []AddLabelsOption{},
 			ExpectNamespace: "default",
 			ExpectErr:       errors.New(`secrets "some-secret" not found`),
-		},
-		"client creation error": {
-			Name:         "some-secret",
-			Options:      []AddLabelsOption{},
-			FactoryError: errors.New(`some-error`),
-			ExpectErr:    errors.New(`some-error`),
 		},
 		"custom values": {
 			Name: "some-secret",
@@ -341,15 +296,11 @@ func TestClient_AddLabels(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 
 			mockK8s := testclient.NewSimpleClientset()
-			k8sFactory := func() (kubernetes.Interface, error) {
-				return mockK8s, tc.FactoryError
-			}
-
 			if tc.Setup != nil {
 				tc.Setup(mockK8s)
 			}
 
-			secretsClient := NewClient(k8sFactory)
+			secretsClient := NewClient(mockK8s)
 			actualErr := secretsClient.AddLabels(tc.Name, tc.Labels, tc.Options...)
 			if tc.ExpectErr != nil || actualErr != nil {
 				testutil.AssertErrorsEqual(t, tc.ExpectErr, actualErr)
@@ -372,22 +323,11 @@ func TestClient_List(t *testing.T) {
 
 	cases := map[string]struct {
 		Options         []ListOption
-		FactoryError    error
 		ExpectErr       error
 		ExpectNamespace string
 		ExpectSecrets   []string
 		Setup           func(mockK8s kubernetes.Interface)
 	}{
-		"client creation error": {
-			Options:      []ListOption{},
-			FactoryError: errors.New(`some-error`),
-			ExpectErr:    errors.New(`some-error`),
-		},
-		"no secrets": {
-			Options:      []ListOption{},
-			FactoryError: errors.New(`some-error`),
-			ExpectErr:    errors.New(`some-error`),
-		},
 		"default options": {
 			Options:       []ListOption{},
 			Setup:         createDummySecret("secret1", "default", nil),
@@ -419,15 +359,11 @@ func TestClient_List(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 
 			mockK8s := testclient.NewSimpleClientset()
-			k8sFactory := func() (kubernetes.Interface, error) {
-				return mockK8s, tc.FactoryError
-			}
-
 			if tc.Setup != nil {
 				tc.Setup(mockK8s)
 			}
 
-			secretsClient := NewClient(k8sFactory)
+			secretsClient := NewClient(mockK8s)
 			secrets, actualErr := secretsClient.List(tc.Options...)
 			if tc.ExpectErr != nil || actualErr != nil {
 				testutil.AssertErrorsEqual(t, tc.ExpectErr, actualErr)

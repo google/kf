@@ -21,7 +21,6 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
-	cbuild "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	"github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -34,7 +33,6 @@ func TestBuildTemplateUploader(t *testing.T) {
 	for tn, tc := range map[string]struct {
 		ImageName            string
 		ExpectedErr          error
-		BuildFactoryErr      error
 		BuildTemplateErr     error
 		BuildTemplateItems   []string
 		ListBuildTemplateErr error
@@ -221,11 +219,6 @@ func TestBuildTemplateUploader(t *testing.T) {
 			ListBuildTemplateErr: errors.New("some-error"),
 			ExpectedErr:          errors.New("some-error"),
 		},
-		"build factory error": {
-			ImageName:       "some-image",
-			BuildFactoryErr: errors.New("some-error"),
-			ExpectedErr:     errors.New("some-error"),
-		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			fake := &fake.FakeBuildV1alpha1{
@@ -265,10 +258,7 @@ func TestBuildTemplateUploader(t *testing.T) {
 				return false, nil, nil
 			}))
 
-			u := buildpacks.NewBuildTemplateUploader(func() (cbuild.BuildV1alpha1Interface, error) {
-				return fake, tc.BuildFactoryErr
-			})
-
+			u := buildpacks.NewBuildTemplateUploader(fake)
 			gotErr := u.UploadBuildTemplate(tc.ImageName, tc.Opts...)
 			if gotErr != nil || tc.ExpectedErr != nil {
 				testutil.AssertErrorsEqual(t, tc.ExpectedErr, gotErr)

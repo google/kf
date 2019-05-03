@@ -22,14 +22,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Deleter deletes deployed apps.
-type Deleter interface {
-	// Delete deletes deployed apps.
-	Delete(appName string, opts ...kf.DeleteOption) error
-}
-
 // NewDeleteCommand creates a delete command.
-func NewDeleteCommand(p *config.KfParams, d Deleter) *cobra.Command {
+func NewDeleteCommand(p *config.KfParams, d kf.Deleter) *cobra.Command {
 	var deleteCmd = &cobra.Command{
 		Use:     "delete APP_NAME",
 		Short:   "Delete an existing app",

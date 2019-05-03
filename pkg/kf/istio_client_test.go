@@ -33,16 +33,11 @@ func TestIstioClient_ListIngresses(t *testing.T) {
 	t.Parallel()
 
 	cases := map[string]struct {
-		opts       []kf.ListIngressesOption
-		factoryErr error
-		setup      func(mockK8s kubernetes.Interface)
+		opts  []kf.ListIngressesOption
+		setup func(mockK8s kubernetes.Interface)
 
 		expectErr error
 	}{
-		"factory-err": {
-			factoryErr: errors.New("factory-error"),
-			expectErr:  errors.New("factory-error"),
-		},
 		"server-error": {
 			opts: []kf.ListIngressesOption{
 				kf.WithListIngressesService("bad-service"),
@@ -75,9 +70,7 @@ func TestIstioClient_ListIngresses(t *testing.T) {
 			if tc.setup != nil {
 				tc.setup(mockK8s)
 			}
-			client := kf.NewIstioClient(func() (kubernetes.Interface, error) {
-				return mockK8s, tc.factoryErr
-			})
+			client := kf.NewIstioClient(mockK8s)
 
 			ingresses, actualErr := client.ListIngresses(tc.opts...)
 			if actualErr != nil || tc.expectErr != nil {

@@ -17,37 +17,39 @@ package kf
 import (
 	"errors"
 
+	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Deleter deletes a deployed application. It should be created via
+// Deleter deletes deployed apps.
+type Deleter interface {
+	// Delete deletes deployed apps.
+	Delete(appName string, opts ...DeleteOption) error
+}
+
+// deleter deletes a deployed application. It should be created via
 // NewDeleter.
-type Deleter struct {
-	f ServingFactory
+type deleter struct {
+	c cserving.ServingV1alpha1Interface
 }
 
 // NewDeleter created a new Deleter.
-func NewDeleter(f ServingFactory) *Deleter {
-	return &Deleter{
-		f: f,
+func NewDeleter(c cserving.ServingV1alpha1Interface) Deleter {
+	return &deleter{
+		c: c,
 	}
 }
 
 // Delete deletes a deployed application.
-func (d *Deleter) Delete(appName string, opts ...DeleteOption) error {
+func (d *deleter) Delete(appName string, opts ...DeleteOption) error {
 	cfg := DeleteOptionDefaults().Extend(opts).toConfig()
 
 	if appName == "" {
 		return errors.New("invalid app name")
 	}
 
-	client, err := d.f()
-	if err != nil {
-		return err
-	}
-
 	propPolicy := k8smeta.DeletePropagationForeground
-	if err := client.Services(cfg.Namespace).Delete(appName, &k8smeta.DeleteOptions{
+	if err := d.c.Services(cfg.Namespace).Delete(appName, &k8smeta.DeleteOptions{
 		PropagationPolicy: &propPolicy,
 	}); err != nil {
 		return err
