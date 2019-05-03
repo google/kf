@@ -12,8 +12,8 @@ require (
 	github.com/gobuffalo/envy v1.6.5
 	github.com/gogo/protobuf v1.2.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/golang/mock v1.2.0
-	github.com/golang/protobuf v1.3.0
+	github.com/golang/mock v1.3.0
+	github.com/golang/protobuf v1.3.1
 	github.com/google/btree v0.0.0-20180124185431-e89373fe6b4a
 	github.com/google/go-cmp v0.2.0
 	github.com/google/go-containerregistry v0.0.0-20190306174256-678f6c51f585
@@ -51,15 +51,15 @@ require (
 	go.uber.org/atomic v1.3.2
 	go.uber.org/multierr v1.1.0
 	go.uber.org/zap v1.9.1
-	golang.org/x/crypto v0.0.0-20190228161510-8dd112bcdc25
-	golang.org/x/net v0.0.0-20190213061140-3a22650c66bd
+	golang.org/x/crypto v0.0.0-20190426145343-a29dc8fdc734
+	golang.org/x/net v0.0.0-20190502183928-7f726cade0ab
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
-	golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6
-	golang.org/x/sys v0.0.0-20190306220723-b294cbcfc56d
-	golang.org/x/text v0.3.0
+	golang.org/x/sync v0.0.0-20190423024810-112230192c58
+	golang.org/x/sys v0.0.0-20190502175342-a43fa875dd82
+	golang.org/x/text v0.3.2
 	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c
-	golang.org/x/tools v0.0.0-20190226205152-f727befe758c
-	google.golang.org/appengine v1.4.0
+	golang.org/x/tools v0.0.0-20190501045030-23463209683d
+	google.golang.org/appengine v1.5.0
 	gopkg.in/inf.v0 v0.9.1
 	gopkg.in/yaml.v2 v2.2.1
 	k8s.io/api v0.0.0-20181121191454-a61488babbd6
