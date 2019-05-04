@@ -19,6 +19,7 @@
 
 set -euo pipefail
 
+go install github.com/google/wire/cmd/wire
 go install github.com/golang/mock/mockgen
 go generate ./...
 

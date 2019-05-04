@@ -49,34 +49,23 @@ type ClientInterface interface {
 	GetVcapServices(appName string, opts ...GetVcapServicesOption) (VcapServicesMap, error)
 }
 
-// SClientFactory creates a Service Catalog client.
-type SClientFactory func() (clientv1beta1.ServicecatalogV1beta1Interface, error)
-
-// SecretClientFactory is a constructor for Secret clients.
-type SecretClientFactory func() (secrets.ClientInterface, error)
-
 // NewClient creates a new client capable of interacting with service catalog
 // services.
-func NewClient(sclient SClientFactory, secretClient SecretClientFactory) ClientInterface {
+func NewClient(c clientv1beta1.ServicecatalogV1beta1Interface, sc secrets.ClientInterface) ClientInterface {
 	return &Client{
-		createSvcatClient:  sclient,
-		createSecretClient: secretClient,
+		c:  c,
+		sc: sc,
 	}
 }
 
 type Client struct {
-	createSvcatClient  SClientFactory
-	createSecretClient SecretClientFactory
+	c  clientv1beta1.ServicecatalogV1beta1Interface
+	sc secrets.ClientInterface
 }
 
 // Create binds a service instance to an app.
 func (c *Client) Create(serviceInstanceName, appName string, opts ...CreateOption) (*apiv1beta1.ServiceBinding, error) {
 	cfg := CreateOptionDefaults().Extend(opts).toConfig()
-
-	svcat, err := c.createSvcatClient()
-	if err != nil {
-		return nil, err
-	}
 
 	bindingName := cfg.BindingName
 	if bindingName == "" {
@@ -102,31 +91,22 @@ func (c *Client) Create(serviceInstanceName, appName string, opts ...CreateOptio
 		},
 	}
 
-	return svcat.ServiceBindings(cfg.Namespace).Create(request)
+	return c.c.ServiceBindings(cfg.Namespace).Create(request)
 }
 
 // Delete unbinds a service instance from an app.
 func (c *Client) Delete(serviceInstanceName, appName string, opts ...DeleteOption) error {
 	cfg := DeleteOptionDefaults().Extend(opts).toConfig()
 
-	svcat, err := c.createSvcatClient()
-	if err != nil {
-		return err
-	}
-
 	bindingReference := serviceBindingName(appName, serviceInstanceName)
-	return svcat.ServiceBindings(cfg.Namespace).Delete(bindingReference, &v1.DeleteOptions{})
+	return c.c.ServiceBindings(cfg.Namespace).Delete(bindingReference, &v1.DeleteOptions{})
 }
 
 // List queries Kubernetes for service bindings.
 func (c *Client) List(opts ...ListOption) ([]apiv1beta1.ServiceBinding, error) {
 	cfg := ListOptionDefaults().Extend(opts).toConfig()
 
-	svcat, err := c.createSvcatClient()
-	if err != nil {
-		return nil, err
-	}
-	bindings, err := svcat.ServiceBindings(cfg.Namespace).List(v1.ListOptions{})
+	bindings, err := c.c.ServiceBindings(cfg.Namespace).List(v1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -157,16 +137,6 @@ func (c *Client) List(opts ...ListOption) ([]apiv1beta1.ServiceBinding, error) {
 func (c *Client) GetVcapServices(appName string, opts ...GetVcapServicesOption) (VcapServicesMap, error) {
 	cfg := GetVcapServicesOptionDefaults().Extend(opts).toConfig()
 
-	secretClient, err := c.createSecretClient()
-	if err != nil {
-		return nil, err
-	}
-
-	instanceClient, err := c.createSvcatClient()
-	if err != nil {
-		return nil, err
-	}
-
 	bindings, err := c.List(WithListAppName(appName), WithListNamespace(cfg.Namespace))
 	if err != nil {
 		return nil, err
@@ -174,12 +144,12 @@ func (c *Client) GetVcapServices(appName string, opts ...GetVcapServicesOption) 
 
 	out := VcapServicesMap{}
 	for _, binding := range bindings {
-		instance, err := instanceClient.ServiceInstances(cfg.Namespace).Get(binding.Spec.InstanceRef.Name, v1.GetOptions{})
+		instance, err := c.c.ServiceInstances(cfg.Namespace).Get(binding.Spec.InstanceRef.Name, v1.GetOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("couldn't create VCAP_SERVICES, couldn't get instance for binding %s: %v", binding.Name, err)
 		}
 
-		secret, err := secretClient.Get(binding.Spec.SecretName, secrets.WithGetNamespace(cfg.Namespace))
+		secret, err := c.sc.Get(binding.Spec.SecretName, secrets.WithGetNamespace(cfg.Namespace))
 		if err != nil {
 			if cfg.FailOnBadSecret {
 				return nil, fmt.Errorf("couldn't create VCAP_SERVICES, the secret for binding %s couldn't be fetched: %v", binding.Name, err)

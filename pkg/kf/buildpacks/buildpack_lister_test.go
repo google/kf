@@ -29,7 +29,6 @@ import (
 	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
-	cbuild "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	"github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	ktesting "k8s.io/client-go/testing"
@@ -41,7 +40,6 @@ func TestBuildpackLister(t *testing.T) {
 	t.Parallel()
 
 	for tn, tc := range map[string]struct {
-		BuildFactoryErr        error
 		ReactorListErr         error
 		ExpectedErr            error
 		EmptyBuildTemplateList bool
@@ -49,10 +47,6 @@ func TestBuildpackLister(t *testing.T) {
 		RemoteImageFetcher     func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error)
 		HandleOutput           func(t *testing.T, buildpacks []string)
 	}{
-		"build factory returns an error": {
-			BuildFactoryErr: errors.New("some-error"),
-			ExpectedErr:     errors.New("some-error"),
-		},
 		"list only buildpack build template": {
 			HandleListAction: func(t *testing.T, action ktesting.Action) {
 				testutil.AssertEqual(t, "Verb", "list", action.GetVerb())
@@ -145,9 +139,7 @@ func TestBuildpackLister(t *testing.T) {
 				return true, buildTemplateList(tc.EmptyBuildTemplateList), tc.ReactorListErr
 			}))
 
-			l := buildpacks.NewBuildpackLister(func() (cbuild.BuildV1alpha1Interface, error) {
-				return fake, tc.BuildFactoryErr
-			}, func(ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
+			l := buildpacks.NewBuildpackLister(fake, func(ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
 				if tc.RemoteImageFetcher == nil {
 					fakeImage := NewFakeImage(gomock.NewController(t))
 					fakeImage.EXPECT().Layers().AnyTimes()

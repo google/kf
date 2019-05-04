@@ -22,15 +22,15 @@ import "github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
 
 // BuilderFactory is implemented by buildpacks.BuilderFactory.
 type BuilderCreator interface {
-	Create(dir, containerRegistry string) (string, error)
+	buildpacks.BuilderCreator
 }
 
 // BuildTemplateUploader is implemented by buildpacks.BuildTemplateUploader.
 type BuildTemplateUploader interface {
-	UploadBuildTemplate(imageName string, opts ...buildpacks.UploadBuildTemplateOption) error
+	buildpacks.BuildTemplateUploader
 }
 
 // BuildpackLister is implemented by buildpacks.BuildpackLister.
 type BuildpackLister interface {
-	List(opts ...buildpacks.BuildpackListOption) ([]string, error)
+	buildpacks.BuildpackLister
 }

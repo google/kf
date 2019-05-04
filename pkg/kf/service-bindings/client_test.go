@@ -19,13 +19,11 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/secrets"
 	secretsfake "github.com/GoogleCloudPlatform/kf/pkg/kf/secrets/fake"
 	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
 	"github.com/golang/mock/gomock"
 	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	testclient "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/fake"
-	clientv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -37,8 +35,7 @@ type fakeDependencies struct {
 }
 
 type ServiceBindingApiTestCase struct {
-	FactoryErr error
-	Run        func(t *testing.T, fakes fakeDependencies, client servicebindings.ClientInterface)
+	Run func(t *testing.T, fakes fakeDependencies, client servicebindings.ClientInterface)
 }
 
 func (tc *ServiceBindingApiTestCase) ExecuteTest(t *testing.T) {
@@ -52,24 +49,12 @@ func (tc *ServiceBindingApiTestCase) ExecuteTest(t *testing.T) {
 	defer secretsController.Finish()
 	fakeSecrets := secretsfake.NewFakeClientInterface(secretsController)
 
-	client := servicebindings.NewClient(func() (clientv1beta1.ServicecatalogV1beta1Interface, error) {
-		return cs.ServicecatalogV1beta1(), tc.FactoryErr
-	}, func() (secrets.ClientInterface, error) {
-		return fakeSecrets, nil
-	})
-
+	client := servicebindings.NewClient(cs.ServicecatalogV1beta1(), fakeSecrets)
 	tc.Run(t, fakeDependencies{apiserver: fakeApiServer, secrets: fakeSecrets}, client)
 }
 
 func TestClient_Create(t *testing.T) {
 	cases := map[string]ServiceBindingApiTestCase{
-		"factory error": {
-			FactoryErr: errors.New("some-error"),
-			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				_, err := client.Create("mydb", "myapp")
-				testutil.AssertErrorsEqual(t, errors.New("some-error"), err)
-			},
-		},
 		"server error": {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
 				deps.apiserver.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api error"))
@@ -141,13 +126,6 @@ func TestClient_Create(t *testing.T) {
 
 func TestClient_Delete(t *testing.T) {
 	cases := map[string]ServiceBindingApiTestCase{
-		"factory error": {
-			FactoryErr: errors.New("some-error"),
-			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				err := client.Delete("mydb", "myapp")
-				testutil.AssertErrorsEqual(t, errors.New("some-error"), err)
-			},
-		},
 		"api-error": {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
 				deps.apiserver.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("api-error"))
@@ -181,13 +159,6 @@ func TestClient_Delete(t *testing.T) {
 
 func TestClient_List(t *testing.T) {
 	cases := map[string]ServiceBindingApiTestCase{
-		"factory error": {
-			FactoryErr: errors.New("some-error"),
-			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				_, err := client.List()
-				testutil.AssertErrorsEqual(t, errors.New("some-error"), err)
-			},
-		},
 		"default options": {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
 				deps.apiserver.EXPECT().
@@ -311,13 +282,6 @@ func TestClient_GetVcapServices(t *testing.T) {
 	}
 
 	cases := map[string]ServiceBindingApiTestCase{
-		"factory error": {
-			FactoryErr: errors.New("some-error"),
-			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				_, err := client.GetVcapServices("my-app")
-				testutil.AssertErrorsEqual(t, errors.New("some-error"), err)
-			},
-		},
 		"api-error": {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
 				deps.apiserver.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api-error"))

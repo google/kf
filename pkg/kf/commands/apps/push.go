@@ -23,14 +23,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Pusher deploys applications.
-type Pusher interface {
-	// Push deploys an application.
-	Push(appName string, opts ...kf.PushOption) error
-}
-
 // NewPushCommand creates a push command.
-func NewPushCommand(p *config.KfParams, pusher Pusher) *cobra.Command {
+func NewPushCommand(p *config.KfParams, pusher kf.Pusher) *cobra.Command {
 	var (
 		containerRegistry string
 		dockerImage       string

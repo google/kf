@@ -24,7 +24,6 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
 	"github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	"github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -37,7 +36,7 @@ func TestLister_List(t *testing.T) {
 		func(s ...string) runtime.Object {
 			return createServiceList(s)
 		},
-		func(l *kf.Lister, opts ...kf.ListOption) ([]string, error) {
+		func(l kf.AppLister, opts ...kf.ListOption) ([]string, error) {
 			x, err := l.List(opts...)
 			if err != nil {
 				return nil, err
@@ -59,7 +58,7 @@ func TestLister_ListConfigurations(t *testing.T) {
 		func(s ...string) runtime.Object {
 			return createConfigList(s)
 		},
-		func(l *kf.Lister, opts ...kf.ListOption) ([]string, error) {
+		func(l kf.AppLister, opts ...kf.ListOption) ([]string, error) {
 			var copts []kf.ListConfigurationsOption
 			if appName := kf.ListOptions(opts).AppName(); appName != "" {
 				copts = append(copts, kf.WithListConfigurationsAppName(appName))
@@ -82,12 +81,10 @@ func TestLister_ListConfigurations(t *testing.T) {
 		})
 }
 
-func setupListTest(t *testing.T, resultsF func(...string) runtime.Object, listF func(*kf.Lister, ...kf.ListOption) ([]string, error)) {
+func setupListTest(t *testing.T, resultsF func(...string) runtime.Object, listF func(kf.AppLister, ...kf.ListOption) ([]string, error)) {
 	for tn, tc := range map[string]struct {
-		servingFactoryErr error
-
 		reactor func(t *testing.T, action ktesting.Action) (handled bool, ret runtime.Object, err error)
-		do      func(t *testing.T, l *kf.Lister)
+		do      func(t *testing.T, l kf.AppLister)
 	}{
 		"configured namespace": {
 			reactor: func(t *testing.T, action ktesting.Action) (handled bool, ret runtime.Object, err error) {
@@ -95,7 +92,7 @@ func setupListTest(t *testing.T, resultsF func(...string) runtime.Object, listF 
 
 				return false, nil, nil
 			},
-			do: func(t *testing.T, l *kf.Lister) {
+			do: func(t *testing.T, l kf.AppLister) {
 				listMustPass(t)(listF(l, kf.WithListNamespace("some-namespace")))
 			},
 		},
@@ -105,7 +102,7 @@ func setupListTest(t *testing.T, resultsF func(...string) runtime.Object, listF 
 
 				return false, nil, nil
 			},
-			do: func(t *testing.T, l *kf.Lister) {
+			do: func(t *testing.T, l kf.AppLister) {
 				listMustPass(t)(listF(l))
 			},
 		},
@@ -121,7 +118,7 @@ func setupListTest(t *testing.T, resultsF func(...string) runtime.Object, listF 
 				testutil.AssertEqual(t, "FieldSelector Value", "some-app", obj.ListRestrictions.Fields.Requirements()[0].Value)
 				return false, nil, nil
 			},
-			do: func(t *testing.T, l *kf.Lister) {
+			do: func(t *testing.T, l kf.AppLister) {
 				listMustPass(t)(listF(l, kf.WithListAppName("some-app")))
 			},
 		},
@@ -130,7 +127,7 @@ func setupListTest(t *testing.T, resultsF func(...string) runtime.Object, listF 
 				testutil.AssertEqual(t, "namespace", "default", action.GetNamespace())
 				return true, resultsF("service-a", "service-b"), nil
 			},
-			do: func(t *testing.T, l *kf.Lister) {
+			do: func(t *testing.T, l kf.AppLister) {
 				expected := []string{"service-a", "service-b"}
 				actual := listMustPass(t)(listF(l))
 				for i, s := range expected {
@@ -144,17 +141,7 @@ func setupListTest(t *testing.T, resultsF func(...string) runtime.Object, listF 
 
 				return true, nil, errors.New("some-error")
 			},
-			do: func(t *testing.T, l *kf.Lister) {
-				_, err := listF(l)
-				testutil.AssertErrorsEqual(t, errors.New("some-error"), err)
-			},
-		},
-		"serving factor error, returns error": {
-			servingFactoryErr: errors.New("some-error"),
-			reactor: func(t *testing.T, action ktesting.Action) (handled bool, ret runtime.Object, err error) {
-				return false, nil, nil
-			},
-			do: func(t *testing.T, l *kf.Lister) {
+			do: func(t *testing.T, l kf.AppLister) {
 				_, err := listF(l)
 				testutil.AssertErrorsEqual(t, errors.New("some-error"), err)
 			},
@@ -172,9 +159,7 @@ func setupListTest(t *testing.T, resultsF func(...string) runtime.Object, listF 
 				return false, nil, nil
 			}))
 
-			lister := kf.NewLister(func() (serving.ServingV1alpha1Interface, error) {
-				return fake, tc.servingFactoryErr
-			})
+			lister := kf.NewLister(fake)
 
 			tc.do(t, lister)
 		})

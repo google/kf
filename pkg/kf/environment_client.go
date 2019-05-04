@@ -18,26 +18,40 @@ import (
 	"errors"
 
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 
-// EnvironmentClient interacts with an apps environment variables. It should
+// EnvironmentClient interacts with app's environment variables.
+type EnvironmentClient interface {
+	// List shows all the names and values of the environment variables for an
+	// app.
+	List(appName string, opts ...ListEnvOption) (map[string]string, error)
+
+	// Set sets the given environment variables.
+	Set(appName string, values map[string]string, opts ...SetEnvOption) error
+
+	// Unset unsets the given environment variables.
+	Unset(appName string, names []string, opts ...UnsetEnvOption) error
+}
+
+// environmentClient interacts with an apps environment variables. It should
 // be created via NewEnvironmentClient.
-type EnvironmentClient struct {
+type environmentClient struct {
 	l AppLister
-	f ServingFactory
+	c cserving.ServingV1alpha1Interface
 }
 
 // NewEnvironmentClient creates a new EnvironmentClient.
-func NewEnvironmentClient(l AppLister, f ServingFactory) *EnvironmentClient {
-	return &EnvironmentClient{
+func NewEnvironmentClient(l AppLister, c cserving.ServingV1alpha1Interface) EnvironmentClient {
+	return &environmentClient{
 		l: l,
-		f: f,
+		c: c,
 	}
 }
 
 // List fetches the environment variables for an app.
-func (c *EnvironmentClient) List(appName string, opts ...ListEnvOption) (map[string]string, error) {
+func (c *environmentClient) List(appName string, opts ...ListEnvOption) (map[string]string, error) {
 	if appName == "" {
 		return nil, errors.New("invalid app name")
 	}
@@ -57,16 +71,11 @@ func (c *EnvironmentClient) List(appName string, opts ...ListEnvOption) (map[str
 }
 
 // Set sets an environment variables for an app.
-func (c *EnvironmentClient) Set(appName string, values map[string]string, opts ...SetEnvOption) error {
+func (c *environmentClient) Set(appName string, values map[string]string, opts ...SetEnvOption) error {
 	if appName == "" {
 		return errors.New("invalid app name")
 	}
 	cfg := SetEnvOptionDefaults().Extend(opts).toConfig()
-
-	client, err := c.f()
-	if err != nil {
-		return err
-	}
 
 	s, err := c.fetchService(cfg.Namespace, appName)
 	if err != nil {
@@ -79,7 +88,7 @@ func (c *EnvironmentClient) Set(appName string, values map[string]string, opts .
 	)
 
 	s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env = c.mapToEnvs(newValues)
-	if _, err := client.Services(cfg.Namespace).Update(s); err != nil {
+	if _, err := c.c.Services(cfg.Namespace).Update(s); err != nil {
 		return err
 	}
 
@@ -87,16 +96,11 @@ func (c *EnvironmentClient) Set(appName string, values map[string]string, opts .
 }
 
 // Unset removes environment variables for an app.
-func (c *EnvironmentClient) Unset(appName string, names []string, opts ...UnsetEnvOption) error {
+func (c *environmentClient) Unset(appName string, names []string, opts ...UnsetEnvOption) error {
 	if appName == "" {
 		return errors.New("invalid app name")
 	}
 	cfg := UnsetEnvOptionDefaults().Extend(opts).toConfig()
-
-	client, err := c.f()
-	if err != nil {
-		return err
-	}
 
 	s, err := c.fetchService(cfg.Namespace, appName)
 	if err != nil {
@@ -109,14 +113,14 @@ func (c *EnvironmentClient) Unset(appName string, names []string, opts ...UnsetE
 	)
 
 	s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env = newValues
-	if _, err := client.Services(cfg.Namespace).Update(s); err != nil {
+	if _, err := c.c.Services(cfg.Namespace).Update(s); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (c *EnvironmentClient) removeEnvs(names []string, envs []corev1.EnvVar) []corev1.EnvVar {
+func (c *environmentClient) removeEnvs(names []string, envs []corev1.EnvVar) []corev1.EnvVar {
 	m := map[string]bool{}
 	for _, name := range names {
 		m[name] = true
@@ -133,7 +137,7 @@ func (c *EnvironmentClient) removeEnvs(names []string, envs []corev1.EnvVar) []c
 	return newValues
 }
 
-func (c *EnvironmentClient) dedupeEnvs(values map[string]string, envs []corev1.EnvVar) map[string]string {
+func (c *environmentClient) dedupeEnvs(values map[string]string, envs []corev1.EnvVar) map[string]string {
 	// Create a new map so that we can prioritize the new values over the
 	// existing.
 	newValues := map[string]string{}
@@ -147,7 +151,7 @@ func (c *EnvironmentClient) dedupeEnvs(values map[string]string, envs []corev1.E
 	return newValues
 }
 
-func (c *EnvironmentClient) mapToEnvs(values map[string]string) []corev1.EnvVar {
+func (c *environmentClient) mapToEnvs(values map[string]string) []corev1.EnvVar {
 	var envs []corev1.EnvVar
 	for n, v := range values {
 		envs = append(envs, corev1.EnvVar{Name: n, Value: v})
@@ -155,7 +159,7 @@ func (c *EnvironmentClient) mapToEnvs(values map[string]string) []corev1.EnvVar 
 	return envs
 }
 
-func (c *EnvironmentClient) fetchService(namespace, appName string) (*serving.Service, error) {
+func (c *environmentClient) fetchService(namespace, appName string) (*serving.Service, error) {
 	return ExtractOneService(c.l.List(
 		WithListNamespace(namespace),
 		WithListAppName(appName),

@@ -24,18 +24,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// AppLister lists deployed applications.
-type AppLister interface {
-	// List the deployed applications in a namespace.
-	List(...kf.ListOption) ([]serving.Service, error)
-
-	// ListConfigurations the deployed configurations in a namespace.
-	ListConfigurations(...kf.ListConfigurationsOption) ([]serving.Configuration, error)
-}
-
 // NewAppsCommand creates a apps command.
-func NewAppsCommand(p *config.KfParams, l AppLister) *cobra.Command {
-
+func NewAppsCommand(p *config.KfParams, l kf.AppLister) *cobra.Command {
 	var apps = &cobra.Command{
 		Use:     "apps",
 		Short:   "List pushed apps",

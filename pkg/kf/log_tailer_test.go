@@ -26,11 +26,9 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
 	"github.com/golang/mock/gomock"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
-	cbuild "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	buildfake "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1/fake"
 	duckv1alpha1 "github.com/knative/pkg/apis/duck/v1alpha1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	servicefake "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -46,7 +44,6 @@ func TestLogTailer_ServiceLogs(t *testing.T) {
 		appName                  string
 		namespace                string
 		resourceVersion          string
-		servingFactoryErr        error
 		serviceWatchErr          error
 		events                   []watch.Event
 		unwantedMsgs, wantedMsgs []string
@@ -66,13 +63,6 @@ func TestLogTailer_ServiceLogs(t *testing.T) {
 			events:          append(createMsgEvents("some-app", "", "msg-1", "msg-2"), createMsgEvents("some-other-app", "", "should not see")...),
 			wantedMsgs:      []string{"msg-1", "msg-2"},
 			unwantedMsgs:    []string{"should not see"},
-		},
-		"serving factory returns error, return error": {
-			appName:           "some-app",
-			namespace:         "default",
-			resourceVersion:   "some-version",
-			servingFactoryErr: errors.New("some-error"),
-			wantErr:           errors.New("some-error"),
 		},
 		"watch service returns an error, return error": {
 			appName:         "some-app",
@@ -102,15 +92,11 @@ func TestLogTailer_ServiceLogs(t *testing.T) {
 			}))
 
 			lt := kf.NewLogTailer(
-				func() (cbuild.BuildV1alpha1Interface, error) {
-					return fakeBuild, nil
-				},
-				func() (cserving.ServingV1alpha1Interface, error) {
-					return fakeServing, tc.servingFactoryErr
-				},
-				func(ctx context.Context, out io.Writer, buildName, namespace string) error {
+				fakeBuild,
+				fakeServing,
+				kf.BuildTailerFunc(func(ctx context.Context, out io.Writer, buildName, namespace string) error {
 					return nil
-				},
+				}),
 			)
 
 			var buffer bytes.Buffer
@@ -144,20 +130,19 @@ func TestLogTailer_BuildLogs(t *testing.T) {
 		appName         string
 		namespace       string
 		resourceVersion string
-		buildFactoryErr error
 		buildWatchErr   error
 		events          []watch.Event
 		wantedMsgs      []string
 		wantErr         error
 		bufferF         func(t *testing.T, buf *bytes.Buffer)
-		tailF           func(t *testing.T) func(ctx context.Context, out io.Writer, buildName, namespace string) error
+		tailF           func(*testing.T) kf.BuildTailerFunc
 	}{
 		"fetch logs for build": {
 			appName:         "some-app",
 			namespace:       "default",
 			resourceVersion: "some-version",
 			events:          append(createBuildAddedEvent("some-other-app", "some-other-build"), createBuildAddedEvent("some-app", "some-build")...),
-			tailF: func(t *testing.T) func(ctx context.Context, out io.Writer, buildName, namespace string) error {
+			tailF: func(t *testing.T) kf.BuildTailerFunc {
 				return func(ctx context.Context, out io.Writer, buildName, namespace string) error {
 					testutil.AssertEqual(t, "buildName", "some-build", buildName)
 					testutil.AssertEqual(t, "namespace", "default", namespace)
@@ -171,20 +156,13 @@ func TestLogTailer_BuildLogs(t *testing.T) {
 				testutil.AssertContainsAll(t, buf.String(), []string{"some-data"})
 			},
 		},
-		"build factory returns error, return error": {
-			appName:         "some-app",
-			namespace:       "default",
-			resourceVersion: "some-version",
-			buildFactoryErr: errors.New("some-error"),
-			wantErr:         errors.New("some-error"),
-		},
 		"build tail returns error, return error": {
 			appName:         "some-app",
 			namespace:       "default",
 			resourceVersion: "some-version",
 			events:          createBuildAddedEvent("some-app", "some-build"),
 			wantErr:         errors.New("some-error"),
-			tailF: func(t *testing.T) func(ctx context.Context, out io.Writer, buildName, namespace string) error {
+			tailF: func(t *testing.T) kf.BuildTailerFunc {
 				return func(ctx context.Context, out io.Writer, buildName, namespace string) error {
 					return errors.New("some-error")
 				}
@@ -239,7 +217,7 @@ func TestLogTailer_BuildLogs(t *testing.T) {
 			}))
 
 			if tc.tailF == nil {
-				tc.tailF = func(t *testing.T) func(ctx context.Context, out io.Writer, buildName, namespace string) error {
+				tc.tailF = func(t *testing.T) kf.BuildTailerFunc {
 					return func(ctx context.Context, out io.Writer, buildName, namespace string) error {
 						return nil
 					}
@@ -248,12 +226,8 @@ func TestLogTailer_BuildLogs(t *testing.T) {
 
 			var buffer bytes.Buffer
 			lt := kf.NewLogTailer(
-				func() (cbuild.BuildV1alpha1Interface, error) {
-					return fakeBuild, tc.buildFactoryErr
-				},
-				func() (cserving.ServingV1alpha1Interface, error) {
-					return fakeServing, nil
-				},
+				fakeBuild,
+				fakeServing,
 				tc.tailF(t),
 			)
 

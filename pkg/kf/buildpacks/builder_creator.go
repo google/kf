@@ -24,9 +24,15 @@ import (
 	"github.com/buildpack/pack"
 )
 
-// BuilderCreator creates a new buildback builder. It should be created via
+// BuilderCreator creates a new buildback builder.
+type BuilderCreator interface {
+	// Create creates and publishes a builder image.
+	Create(dir, containerRegistry string) (string, error)
+}
+
+// builderCreator creates a new buildback builder. It should be created via
 // NewCreateBuilder.
-type BuilderCreator struct {
+type builderCreator struct {
 	f BuilderFactoryCreate
 }
 
@@ -34,14 +40,14 @@ type BuilderCreator struct {
 type BuilderFactoryCreate func(flags pack.CreateBuilderFlags) error
 
 // NewBuilderCreator creates a new BuilderCreator.
-func NewBuilderCreator(f BuilderFactoryCreate) *BuilderCreator {
-	return &BuilderCreator{
+func NewBuilderCreator(f BuilderFactoryCreate) BuilderCreator {
+	return &builderCreator{
 		f: f,
 	}
 }
 
 // Create creates and publishes a builder image.
-func (b *BuilderCreator) Create(dir, containerRegistry string) (string, error) {
+func (b *builderCreator) Create(dir, containerRegistry string) (string, error) {
 	if dir == "" {
 		return "", kf.ConfigErr{"dir must not be empty"}
 	}

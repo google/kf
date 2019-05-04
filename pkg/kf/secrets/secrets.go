@@ -23,9 +23,6 @@ import (
 
 //go:generate go run ../internal/tools/option-builder/option-builder.go options.yml
 
-// KClientFactory builds a Kuberentes client.
-type KClientFactory func() (kubernetes.Interface, error)
-
 // ClientInterface is a client capable of interacting with Kubernetes secrets.
 type ClientInterface interface {
 	// Create creates a Kubernetes secret with the given name and contents.
@@ -45,25 +42,20 @@ type ClientInterface interface {
 }
 
 // NewClient creates a new client capable of interacting with Kubernetes secrets.
-func NewClient(kclient KClientFactory) ClientInterface {
+func NewClient(kclient kubernetes.Interface) ClientInterface {
 	return &Client{
-		createK8sClient: kclient,
+		kclient: kclient,
 	}
 }
 
 // Client is an implementation of Interface that works with the Service Catalog.
 type Client struct {
-	createK8sClient KClientFactory
+	kclient kubernetes.Interface
 }
 
 // Create creates a Kubernetes secret with the given name and contents.
 func (c *Client) Create(name string, options ...CreateOption) error {
 	config := CreateOptionDefaults().Extend(options).toConfig()
-
-	k8sClient, err := c.createK8sClient()
-	if err != nil {
-		return err
-	}
 
 	secret := &corev1.Secret{StringData: config.StringData, Data: config.Data}
 
@@ -73,7 +65,7 @@ func (c *Client) Create(name string, options ...CreateOption) error {
 	secret.APIVersion = "v1"
 	secret.Labels = config.Labels
 
-	if _, err := k8sClient.CoreV1().Secrets(config.Namespace).Create(secret); err != nil {
+	if _, err := c.kclient.CoreV1().Secrets(config.Namespace).Create(secret); err != nil {
 		return err
 	}
 
@@ -84,12 +76,7 @@ func (c *Client) Create(name string, options ...CreateOption) error {
 func (c *Client) Get(name string, options ...GetOption) (*corev1.Secret, error) {
 	config := GetOptionDefaults().Extend(options).toConfig()
 
-	k8sClient, err := c.createK8sClient()
-	if err != nil {
-		return nil, err
-	}
-
-	secret, err := k8sClient.CoreV1().Secrets(config.Namespace).Get(name, v1.GetOptions{})
+	secret, err := c.kclient.CoreV1().Secrets(config.Namespace).Get(name, v1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -101,12 +88,7 @@ func (c *Client) Get(name string, options ...GetOption) (*corev1.Secret, error) 
 func (c *Client) Delete(name string, options ...DeleteOption) error {
 	config := DeleteOptionDefaults().Extend(options).toConfig()
 
-	k8sClient, err := c.createK8sClient()
-	if err != nil {
-		return err
-	}
-
-	return k8sClient.
+	return c.kclient.
 		CoreV1().
 		Secrets(config.Namespace).
 		Delete(name, nil)
@@ -116,19 +98,14 @@ func (c *Client) Delete(name string, options ...DeleteOption) error {
 func (c *Client) AddLabels(name string, newLabels map[string]string, options ...AddLabelsOption) error {
 	config := AddLabelsOptionDefaults().Extend(options).toConfig()
 
-	k8sClient, err := c.createK8sClient()
-	if err != nil {
-		return err
-	}
-
-	secret, err := k8sClient.CoreV1().Secrets(config.Namespace).Get(name, v1.GetOptions{})
+	secret, err := c.kclient.CoreV1().Secrets(config.Namespace).Get(name, v1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
 	secret.Labels = labels.Merge(secret.Labels, newLabels)
 
-	if _, err := k8sClient.CoreV1().Secrets(config.Namespace).Update(secret); err != nil {
+	if _, err := c.kclient.CoreV1().Secrets(config.Namespace).Update(secret); err != nil {
 		return err
 	}
 
@@ -138,12 +115,8 @@ func (c *Client) AddLabels(name string, newLabels map[string]string, options ...
 // List returns a list of secrets optionally filtered by their labels.
 func (c *Client) List(options ...ListOption) ([]corev1.Secret, error) {
 	config := ListOptionDefaults().Extend(options).toConfig()
-	k8sClient, err := c.createK8sClient()
-	if err != nil {
-		return nil, err
-	}
 
-	secrets, err := k8sClient.CoreV1().Secrets(config.Namespace).List(v1.ListOptions{
+	secrets, err := c.kclient.CoreV1().Secrets(config.Namespace).List(v1.ListOptions{
 		LabelSelector: config.LabelSelector,
 	})
 

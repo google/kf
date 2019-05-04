@@ -23,21 +23,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// EnvironmentClient interacts with app's environment variables.
-type EnvironmentClient interface {
-	// List shows all the names and values of the environment variables for an
-	// app.
-	List(appName string, opts ...kf.ListEnvOption) (map[string]string, error)
-
-	// Set sets the given environment variables.
-	Set(appName string, values map[string]string, opts ...kf.SetEnvOption) error
-
-	// Unset unsets the given environment variables.
-	Unset(appName string, names []string, opts ...kf.UnsetEnvOption) error
-}
-
 // NewEnvCommand creates a Env command.
-func NewEnvCommand(p *config.KfParams, c EnvironmentClient) *cobra.Command {
+func NewEnvCommand(p *config.KfParams, c kf.EnvironmentClient) *cobra.Command {
 	var envCmd = &cobra.Command{
 		Use:     "env APP_NAME",
 		Short:   "List the names and values of the environment variables for an app",

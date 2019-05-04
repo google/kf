@@ -21,7 +21,7 @@ import (
 )
 
 // NewSetEnvCommand creates a SetEnv command.
-func NewSetEnvCommand(p *config.KfParams, c EnvironmentClient) *cobra.Command {
+func NewSetEnvCommand(p *config.KfParams, c kf.EnvironmentClient) *cobra.Command {
 	var envCmd = &cobra.Command{
 		Use:     "set-env APP_NAME ENV_VAR_NAME ENV_VAR_VALUE",
 		Short:   "Set an environment variable for an app",

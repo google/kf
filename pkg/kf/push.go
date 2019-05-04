@@ -33,9 +33,9 @@ import (
 
 //go:generate go run internal/tools/option-builder/option-builder.go options.yml
 
-// Pusher deploys source code to Knative. It should be created via NewPusher.
-type Pusher struct {
-	f   ServingFactory
+// pusher deploys source code to Knative. It should be created via NewPusher.
+type pusher struct {
+	c   cserving.ServingV1alpha1Interface
 	b   SrcImageBuilder
 	l   AppLister
 	bl  Logs
@@ -58,15 +58,31 @@ type Logs interface {
 	Tail(out io.Writer, appName, resourceVersion, namespace string) error
 }
 
+// Pusher deploys applications.
+type Pusher interface {
+	// Push deploys an application.
+	Push(appName string, opts ...PushOption) error
+}
+
 // SrcImageBuilder creates and uploads a container image that contains the
 // contents of the argument 'dir'.
-type SrcImageBuilder func(dir, srcImage string) error
+type SrcImageBuilder interface {
+	BuildSrcImage(dir, srcImage string) error
+}
+
+// SrcImageBuilderFunc converts a func into a SrcImageBuilder.
+type SrcImageBuilderFunc func(dir, srcImage string) error
+
+// BuildSrcImage implements SrcImageBuilder.
+func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string) error {
+	return f(dir, srcImage)
+}
 
 // NewPusher creates a new Pusher.
-func NewPusher(l AppLister, f ServingFactory, b SrcImageBuilder, bl Logs) *Pusher {
-	return &Pusher{
+func NewPusher(l AppLister, c cserving.ServingV1alpha1Interface, b SrcImageBuilder, bl Logs) Pusher {
+	return &pusher{
 		l:  l,
-		f:  f,
+		c:  c,
 		b:  b,
 		bl: bl,
 	}
@@ -74,7 +90,7 @@ func NewPusher(l AppLister, f ServingFactory, b SrcImageBuilder, bl Logs) *Pushe
 
 // Push deploys an application to Knative. It can be configured via
 // Options.
-func (p *Pusher) Push(appName string, opts ...PushOption) error {
+func (p *pusher) Push(appName string, opts ...PushOption) error {
 	cfg, err := p.setupConfig(appName, opts)
 	if err != nil {
 		return err
@@ -89,12 +105,7 @@ func (p *Pusher) Push(appName string, opts ...PushOption) error {
 		}
 	}
 
-	client, err := p.f()
-	if err != nil {
-		return err
-	}
-
-	d, s, err := p.deployScheme(appName, cfg.Namespace, client)
+	d, s, err := p.deployScheme(appName, cfg.Namespace)
 	if err != nil {
 		return err
 	}
@@ -165,7 +176,7 @@ func (p *Pusher) Push(appName string, opts ...PushOption) error {
 	return nil
 }
 
-func (p *Pusher) setupConfig(appName string, opts []PushOption) (pushConfig, error) {
+func (p *pusher) setupConfig(appName string, opts []PushOption) (pushConfig, error) {
 	cfg := PushOptionDefaults().Extend(opts).toConfig()
 
 	if cfg.Path == "" && cfg.DockerImage == "" {
@@ -192,37 +203,37 @@ func (p *Pusher) setupConfig(appName string, opts []PushOption) (pushConfig, err
 
 type deployer func(*serving.Service) (*serving.Service, error)
 
-func (p *Pusher) deployScheme(appName, namespace string, client cserving.ServingV1alpha1Interface) (deployer, *serving.Service, error) {
+func (p *pusher) deployScheme(appName, namespace string) (deployer, *serving.Service, error) {
 	apps, err := p.l.List(WithListNamespace(namespace))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// TODO: use WithListAppName
+	// TODO(poy): use WithListAppName
 	// Look to see if an app with the same name exists in this namespace. If
 	// so, we want to update intead of create.
 	for _, app := range apps {
 		if app.Name == appName {
-			return client.Services(namespace).Update, &app, nil
+			return p.c.Services(namespace).Update, &app, nil
 		}
 	}
 
-	return client.Services(namespace).Create, nil, nil
+	return p.c.Services(namespace).Create, nil, nil
 }
 
-func (p *Pusher) uploadSrc(appName string, cfg pushConfig) (string, error) {
+func (p *pusher) uploadSrc(appName string, cfg pushConfig) (string, error) {
 	srcImage := path.Join(
 		cfg.ContainerRegistry,
 		p.imageName(appName, true),
 	)
-	if err := p.b(cfg.Path, srcImage); err != nil {
+	if err := p.b.BuildSrcImage(cfg.Path, srcImage); err != nil {
 		return "", err
 	}
 
 	return srcImage, nil
 }
 
-func (p *Pusher) imageName(appName string, srcCodeImage bool) string {
+func (p *pusher) imageName(appName string, srcCodeImage bool) string {
 	var prefix string
 	if srcCodeImage {
 		prefix = "src-"
@@ -234,7 +245,7 @@ const (
 	buildAPIVersion = "build.knative.dev/v1alpha1"
 )
 
-func (p *Pusher) buildSpec(
+func (p *pusher) buildSpec(
 	appName string,
 	srcImage string,
 	containerRegistry string,
@@ -289,7 +300,7 @@ func (p *Pusher) buildSpec(
 	}, imageName, nil
 }
 
-func (p *Pusher) initService(appName, namespace string, build *serving.RawExtension) *serving.Service {
+func (p *pusher) initService(appName, namespace string, build *serving.RawExtension) *serving.Service {
 	s := &serving.Service{
 		Spec: serving.ServiceSpec{
 			RunLatest: &serving.RunLatestType{
@@ -312,14 +323,14 @@ func (p *Pusher) initService(appName, namespace string, build *serving.RawExtens
 	return s
 }
 
-func (p *Pusher) initMeta(s *serving.Service, appName, namespace string) {
+func (p *pusher) initMeta(s *serving.Service, appName, namespace string) {
 	s.Name = appName
 	s.Kind = "Service"
 	s.APIVersion = "serving.knative.dev/v1alpha1"
 	s.Namespace = namespace
 }
 
-func (p *Pusher) buildAndDeploy(
+func (p *pusher) buildAndDeploy(
 	appName string,
 	namespace string,
 	d deployer,
@@ -338,7 +349,7 @@ func (p *Pusher) buildAndDeploy(
 // logic is taken from os/exec.dedupEnvCase with a few differences:
 // malformed strings create an error, and case insensitivity is always assumed
 // false.
-func (p *Pusher) parseEnvs(envs []string) (map[string]string, error) {
+func (p *pusher) parseEnvs(envs []string) (map[string]string, error) {
 	m := map[string]string{}
 	for _, kv := range envs {
 		eq := strings.Index(kv, "=")
@@ -352,7 +363,7 @@ func (p *Pusher) parseEnvs(envs []string) (map[string]string, error) {
 	return m, nil
 }
 
-func (p *Pusher) dedupEnvs(m map[string]string, envs []corev1.EnvVar) []corev1.EnvVar {
+func (p *pusher) dedupEnvs(m map[string]string, envs []corev1.EnvVar) []corev1.EnvVar {
 	mEnvs := map[string]string{}
 
 	for _, env := range envs {

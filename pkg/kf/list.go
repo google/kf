@@ -23,30 +23,27 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// ServingFactory returns a client for serving.
-type ServingFactory func() (cserving.ServingV1alpha1Interface, error)
-
-// Lister lists deployed applications. It should be created via NewLister.
-type Lister struct {
-	f ServingFactory
+// lister lists deployed applications. It should be created via NewLister.
+type lister struct {
+	c cserving.ServingV1alpha1Interface
 }
 
-// NewLister creates a new Lister.
-func NewLister(f ServingFactory) *Lister {
-	return &Lister{
-		f: f,
+// NewLister creates a new AppLister.
+func NewLister(c cserving.ServingV1alpha1Interface) AppLister {
+	return &lister{
+		c: c,
 	}
 }
 
 // List lists the deployed applications for the given namespace.
-func (l *Lister) List(opts ...ListOption) ([]serving.Service, error) {
+func (l *lister) List(opts ...ListOption) ([]serving.Service, error) {
 	cfg := ListOptionDefaults().Extend(opts).toConfig()
-	client, listOptions, err := l.setup(cfg, opts)
+	listOptions, err := l.setup(cfg, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	services, err := client.Services(cfg.Namespace).List(listOptions)
+	services, err := l.c.Services(cfg.Namespace).List(listOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -60,14 +57,14 @@ func (l *Lister) List(opts ...ListOption) ([]serving.Service, error) {
 }
 
 // ListConfigurations lists the deployed Configurations for a given namespace.
-func (l *Lister) ListConfigurations(opts ...ListConfigurationsOption) ([]serving.Configuration, error) {
+func (l *lister) ListConfigurations(opts ...ListConfigurationsOption) ([]serving.Configuration, error) {
 	cfg := ListConfigurationsOptionDefaults().Extend(opts).toConfig()
-	client, listOptions, err := l.setupConfiguration(cfg, opts)
+	listOptions, err := l.setupConfiguration(cfg, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	configs, err := client.Configurations(cfg.Namespace).List(listOptions)
+	configs, err := l.c.Configurations(cfg.Namespace).List(listOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +72,7 @@ func (l *Lister) ListConfigurations(opts ...ListConfigurationsOption) ([]serving
 	return configs.Items, nil
 }
 
-// ExtractOneService is a utility function to wrap Lister.List. It expects
+// ExtractOneService is a utility function to wrap AppLister.List. It expects
 // the results to be exactly one serving.Service, otherwise it will return
 // an error.
 func ExtractOneService(services []serving.Service, err error) (*serving.Service, error) {
@@ -90,30 +87,20 @@ func ExtractOneService(services []serving.Service, err error) (*serving.Service,
 	return &services[0], nil
 }
 
-func (l *Lister) setup(cfg listConfig, opts []ListOption) (cserving.ServingV1alpha1Interface, v1.ListOptions, error) {
-	client, err := l.f()
-	if err != nil {
-		return nil, v1.ListOptions{}, err
-	}
-
+func (l *lister) setup(cfg listConfig, opts []ListOption) (v1.ListOptions, error) {
 	listOptions := v1.ListOptions{}
 	if cfg.AppName != "" {
 		listOptions.FieldSelector = "metadata.name=" + cfg.AppName
 	}
 
-	return client, listOptions, nil
+	return listOptions, nil
 }
 
-func (l *Lister) setupConfiguration(cfg listConfigurationsConfig, opts []ListConfigurationsOption) (cserving.ServingV1alpha1Interface, v1.ListOptions, error) {
-	client, err := l.f()
-	if err != nil {
-		return nil, v1.ListOptions{}, err
-	}
-
+func (l *lister) setupConfiguration(cfg listConfigurationsConfig, opts []ListConfigurationsOption) (v1.ListOptions, error) {
 	listOptions := v1.ListOptions{}
 	if cfg.AppName != "" {
 		listOptions.FieldSelector = "metadata.name=" + cfg.AppName
 	}
 
-	return client, listOptions, nil
+	return listOptions, nil
 }
