@@ -1,0 +1,106 @@
+---
+# Source: catalog/templates/controller-manager-deployment.yaml
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: release-name-catalog-controller-manager
+  labels:
+    app: release-name-catalog
+    chart: "catalog-0.1.43"
+    release: "release-name"
+    heritage: "Tiller"
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  minReadySeconds: 1
+  selector:
+    matchLabels:
+      app: release-name-catalog-controller-manager
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: "false"
+      
+      labels:
+        app: release-name-catalog-controller-manager
+        chart: "catalog-0.1.43"
+        release: "release-name"
+        heritage: "Tiller"
+    spec:        
+      serviceAccountName: "service-catalog-controller-manager"
+      containers:
+      - name: controller-manager
+        image: quay.io/kubernetes-service-catalog/service-catalog:v0.1.43
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: 100m
+            memory: 30Mi
+          requests:
+            cpu: 100m
+            memory: 20Mi
+          
+        env:
+        - name: K8S_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        args:
+        - controller-manager
+        - --secure-port
+        - "8444"
+        - "--cluster-id-configmap-namespace=default"
+        
+        - "--leader-elect=false"
+        
+        
+        
+        - -v
+        - "10"
+        - --resync-interval
+        - 5m
+        - --broker-relist-interval
+        - 24h
+        - --operation-polling-maximum-backoff-duration
+        - 20m
+        - --feature-gates
+        - OriginatingIdentity=true
+        - --feature-gates
+        - ServicePlanDefaults=false
+        ports:
+        - containerPort: 8444
+        volumeMounts:
+        - name: service-catalog-cert
+          mountPath: /var/run/kubernetes-service-catalog
+          readOnly: true
+        readinessProbe:
+          httpGet:
+            port: 8444
+            path: /healthz/ready
+            scheme: HTTPS
+          failureThreshold: 1
+          initialDelaySeconds: 20
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            port: 8444
+            path: /healthz
+            scheme: HTTPS
+          failureThreshold: 3
+          initialDelaySeconds: 40
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+      
+      volumes:
+      - name: service-catalog-cert
+        secret:
+          secretName: release-name-catalog-apiserver-cert
+          items:
+          - key: tls.crt
+            path: apiserver.crt
+          - key: tls.key
+            path: apiserver.key
