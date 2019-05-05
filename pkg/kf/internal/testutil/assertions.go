@@ -15,6 +15,7 @@
 package testutil
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -123,5 +124,17 @@ func AssertKeyWithValue(t Failable, m map[interface{}]interface{}, key, value in
 
 	if !reflect.DeepEqual(value, a) {
 		t.Fatalf("expected %v to have key %v with value %v", m, key, value)
+	}
+}
+
+// AssertJSONEqual ensures the expexted JSON matches the actual JSON.
+func AssertJSONEqual(t Failable, expected, actual string) {
+	t.Helper()
+	var em, am interface{}
+	AssertNil(t, "expected JSON", json.Unmarshal([]byte(expected), &em))
+	AssertNil(t, "actual JSON", json.Unmarshal([]byte(expected), &am))
+
+	if !reflect.DeepEqual(em, am) {
+		t.Fatalf("expected %q to equal %q", actual, expected)
 	}
 }

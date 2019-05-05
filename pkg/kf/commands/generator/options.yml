@@ -1,0 +1,9 @@
+# This file contains options for option-builder.go
+---
+package: generator
+config:
+- name: Register
+  options:
+  - name: UploadDir
+    type: bool
+    description: upload a directory as part of the command

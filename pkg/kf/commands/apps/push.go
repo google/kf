@@ -15,7 +15,11 @@
 package apps
 
 import (
+	"errors"
+	"fmt"
+	"math/rand"
 	"path/filepath"
+	"time"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
@@ -23,11 +27,25 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// SrcImageBuilder creates and uploads a container image that contains the
+// contents of the argument 'dir'.
+type SrcImageBuilder interface {
+	BuildSrcImage(dir, srcImage string) error
+}
+
+// SrcImageBuilderFunc converts a func into a SrcImageBuilder.
+type SrcImageBuilderFunc func(dir, srcImage string) error
+
+// BuildSrcImage implements SrcImageBuilder.
+func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string) error {
+	return f(dir, srcImage)
+}
+
 // NewPushCommand creates a push command.
-func NewPushCommand(p *config.KfParams, pusher kf.Pusher) *cobra.Command {
+func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *cobra.Command {
 	var (
 		containerRegistry string
-		dockerImage       string
+		sourceImage       string
 		serviceAccount    string
 		path              string
 		buildpack         string
@@ -40,31 +58,45 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher) *cobra.Command {
 		Short: "Push a new app or sync changes to an existing app",
 		Example: `
   kf push myapp --container-registry gcr.io/myproject
-  kf push myapp --container-registry docker.io/myuser --service-account docker-account
   kf push myapp --container-registry gcr.io/myproject --buildpack my.special.buildpack # Discover via kf buildpacks
   kf push myapp --container-registry gcr.io/myproject --env FOO=bar --env BAZ=foo
-  kf push myapp --docker-image docker.io/myuser/myimage
   `,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if containerRegistry == "" {
+				return errors.New("container-registry is required")
+			}
+
 			// Cobra ensures we are only called with a single argument.
 			appName := args[0]
+			var imageName string
 
-			if path != "" {
-				var err error
-				path, err = filepath.Abs(path)
-				if err != nil {
+			switch {
+			case sourceImage != "":
+				imageName = sourceImage
+			default:
+				if path != "" {
+					var err error
+					path, err = filepath.Abs(path)
+					if err != nil {
+						cmd.SilenceUsage = true
+						return err
+					}
+				}
+
+				imageName = fmt.Sprintf("src-%s-%d%d", appName, time.Now().UnixNano(), rand.Uint64())
+				if err := b.BuildSrcImage(path, imageName); err != nil {
+					cmd.SilenceUsage = true
 					return err
 				}
 			}
 
 			err := pusher.Push(
 				appName,
+				imageName,
 				kf.WithPushNamespace(p.Namespace),
 				kf.WithPushContainerRegistry(containerRegistry),
-				kf.WithPushDockerImage(dockerImage),
 				kf.WithPushServiceAccount(serviceAccount),
-				kf.WithPushPath(path),
 				kf.WithPushEnvironmentVariables(envs),
 				kf.WithPushGrpc(grpc),
 				kf.WithPushBuildpack(buildpack),
@@ -79,14 +111,7 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher) *cobra.Command {
 		&containerRegistry,
 		"container-registry",
 		"",
-		"The container registry to push containers. Either docker-image or container-registry must be set (but not both).",
-	)
-
-	pushCmd.Flags().StringVar(
-		&dockerImage,
-		"docker-image",
-		"",
-		"The docker image to push. Either docker-image or container-registry must be set (but not both).",
+		"The container registry to push containers (REQUIRED).",
 	)
 
 	pushCmd.Flags().StringVar(
@@ -125,6 +150,14 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher) *cobra.Command {
 		"",
 		"Skip the 'detect' buildpack step and use the given name.",
 	)
+
+	pushCmd.Flags().StringVar(
+		&sourceImage,
+		"source-image",
+		"",
+		"The kontext image that has the source code.",
+	)
+	pushCmd.Flags().MarkHidden("source-image")
 
 	return pushCmd
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	servicebindings2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/service-bindings"
 	services2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/services"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/utils"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
 	"github.com/buildpack/lifecycle/image"
@@ -34,33 +35,33 @@ import (
 
 // Injectors from wire_injector.go:
 
-func injectPush(p *config.KfParams) *cobra.Command {
+func InjectPush(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
 	appLister := kf.NewLister(servingV1alpha1Interface)
-	srcImageBuilder := provideSrcImageBuilder()
 	buildV1alpha1Interface := config.GetBuildClient(p)
 	buildTailer := provideBuildTailer()
 	logs := kf.NewLogTailer(buildV1alpha1Interface, servingV1alpha1Interface, buildTailer)
-	pusher := kf.NewPusher(appLister, servingV1alpha1Interface, srcImageBuilder, logs)
-	command := apps.NewPushCommand(p, pusher)
+	pusher := kf.NewPusher(appLister, servingV1alpha1Interface, logs)
+	srcImageBuilder := provideSrcImageBuilder()
+	command := apps.NewPushCommand(p, pusher, srcImageBuilder)
 	return command
 }
 
-func injectDelete(p *config.KfParams) *cobra.Command {
+func InjectDelete(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
 	deleter := kf.NewDeleter(servingV1alpha1Interface)
 	command := apps.NewDeleteCommand(p, deleter)
 	return command
 }
 
-func injectApps(p *config.KfParams) *cobra.Command {
+func InjectApps(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
 	appLister := kf.NewLister(servingV1alpha1Interface)
 	command := apps.NewAppsCommand(p, appLister)
 	return command
 }
 
-func injectProxy(p *config.KfParams) *cobra.Command {
+func InjectProxy(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
 	appLister := kf.NewLister(servingV1alpha1Interface)
 	kubernetesInterface := config.GetKubernetes(p)
@@ -69,7 +70,7 @@ func injectProxy(p *config.KfParams) *cobra.Command {
 	return command
 }
 
-func injectEnv(p *config.KfParams) *cobra.Command {
+func InjectEnv(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
 	appLister := kf.NewLister(servingV1alpha1Interface)
 	environmentClient := kf.NewEnvironmentClient(appLister, servingV1alpha1Interface)
@@ -77,7 +78,7 @@ func injectEnv(p *config.KfParams) *cobra.Command {
 	return command
 }
 
-func injectSetEnv(p *config.KfParams) *cobra.Command {
+func InjectSetEnv(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
 	appLister := kf.NewLister(servingV1alpha1Interface)
 	environmentClient := kf.NewEnvironmentClient(appLister, servingV1alpha1Interface)
@@ -85,7 +86,7 @@ func injectSetEnv(p *config.KfParams) *cobra.Command {
 	return command
 }
 
-func injectUnsetEnv(p *config.KfParams) *cobra.Command {
+func InjectUnsetEnv(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
 	appLister := kf.NewLister(servingV1alpha1Interface)
 	environmentClient := kf.NewEnvironmentClient(appLister, servingV1alpha1Interface)
@@ -93,42 +94,42 @@ func injectUnsetEnv(p *config.KfParams) *cobra.Command {
 	return command
 }
 
-func injectCreateService(p *config.KfParams) *cobra.Command {
+func InjectCreateService(p *config.KfParams) *cobra.Command {
 	sClientFactory := config.GetSvcatApp(p)
 	clientInterface := services.NewClient(sClientFactory)
 	command := services2.NewCreateServiceCommand(p, clientInterface)
 	return command
 }
 
-func injectDeleteService(p *config.KfParams) *cobra.Command {
+func InjectDeleteService(p *config.KfParams) *cobra.Command {
 	sClientFactory := config.GetSvcatApp(p)
 	clientInterface := services.NewClient(sClientFactory)
 	command := services2.NewDeleteServiceCommand(p, clientInterface)
 	return command
 }
 
-func injectGetService(p *config.KfParams) *cobra.Command {
+func InjectGetService(p *config.KfParams) *cobra.Command {
 	sClientFactory := config.GetSvcatApp(p)
 	clientInterface := services.NewClient(sClientFactory)
 	command := services2.NewGetServiceCommand(p, clientInterface)
 	return command
 }
 
-func injectListServices(p *config.KfParams) *cobra.Command {
+func InjectListServices(p *config.KfParams) *cobra.Command {
 	sClientFactory := config.GetSvcatApp(p)
 	clientInterface := services.NewClient(sClientFactory)
 	command := services2.NewListServicesCommand(p, clientInterface)
 	return command
 }
 
-func injectMarketplace(p *config.KfParams) *cobra.Command {
+func InjectMarketplace(p *config.KfParams) *cobra.Command {
 	sClientFactory := config.GetSvcatApp(p)
 	clientInterface := services.NewClient(sClientFactory)
 	command := services2.NewMarketplaceCommand(p, clientInterface)
 	return command
 }
 
-func injectBindingService(p *config.KfParams) *cobra.Command {
+func InjectBindingService(p *config.KfParams) *cobra.Command {
 	servicecatalogV1beta1Interface := config.GetServiceCatalogClient(p)
 	clientInterface := config.GetSecretClient(p)
 	servicebindingsClientInterface := servicebindings.NewClient(servicecatalogV1beta1Interface, clientInterface)
@@ -136,7 +137,7 @@ func injectBindingService(p *config.KfParams) *cobra.Command {
 	return command
 }
 
-func injectListBindings(p *config.KfParams) *cobra.Command {
+func InjectListBindings(p *config.KfParams) *cobra.Command {
 	servicecatalogV1beta1Interface := config.GetServiceCatalogClient(p)
 	clientInterface := config.GetSecretClient(p)
 	servicebindingsClientInterface := servicebindings.NewClient(servicecatalogV1beta1Interface, clientInterface)
@@ -144,7 +145,7 @@ func injectListBindings(p *config.KfParams) *cobra.Command {
 	return command
 }
 
-func injectUnbindService(p *config.KfParams) *cobra.Command {
+func InjectUnbindService(p *config.KfParams) *cobra.Command {
 	servicecatalogV1beta1Interface := config.GetServiceCatalogClient(p)
 	clientInterface := config.GetSecretClient(p)
 	servicebindingsClientInterface := servicebindings.NewClient(servicecatalogV1beta1Interface, clientInterface)
@@ -152,7 +153,7 @@ func injectUnbindService(p *config.KfParams) *cobra.Command {
 	return command
 }
 
-func injectVcapServices(p *config.KfParams) *cobra.Command {
+func InjectVcapServices(p *config.KfParams) *cobra.Command {
 	servicecatalogV1beta1Interface := config.GetServiceCatalogClient(p)
 	clientInterface := config.GetSecretClient(p)
 	servicebindingsClientInterface := servicebindings.NewClient(servicecatalogV1beta1Interface, clientInterface)
@@ -160,7 +161,7 @@ func injectVcapServices(p *config.KfParams) *cobra.Command {
 	return command
 }
 
-func injectBuildpacks(p *config.KfParams) *cobra.Command {
+func InjectBuildpacks(p *config.KfParams) *cobra.Command {
 	buildV1alpha1Interface := config.GetBuildClient(p)
 	remoteImageFetcher := provideRemoteImageFetcher()
 	buildpackLister := buildpacks.NewBuildpackLister(buildV1alpha1Interface, remoteImageFetcher)
@@ -168,7 +169,7 @@ func injectBuildpacks(p *config.KfParams) *cobra.Command {
 	return command
 }
 
-func injectUploadBuildpacks(p *config.KfParams) *cobra.Command {
+func InjectUploadBuildpacks(p *config.KfParams) *cobra.Command {
 	builderCreator := provideBuilderCreator()
 	buildV1alpha1Interface := config.GetBuildClient(p)
 	buildTemplateUploader := buildpacks.NewBuildTemplateUploader(buildV1alpha1Interface)
@@ -176,10 +177,19 @@ func injectUploadBuildpacks(p *config.KfParams) *cobra.Command {
 	return command
 }
 
+func InjectOverrider(p *config.KfParams) utils.CommandOverrideFetcher {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	buildV1alpha1Interface := config.GetBuildClient(p)
+	buildTailer := provideBuildTailer()
+	srcImageBuilder := provideSrcImageBuilder()
+	commandOverrideFetcher := utils.NewCommandOverrideFetcher(kfV1alpha1Interface, buildV1alpha1Interface, buildTailer, srcImageBuilder, p)
+	return commandOverrideFetcher
+}
+
 // wire_injector.go:
 
-func provideSrcImageBuilder() kf.SrcImageBuilder {
-	return kf.SrcImageBuilderFunc(kontext.BuildImage)
+func provideSrcImageBuilder() apps.SrcImageBuilder {
+	return apps.SrcImageBuilderFunc(kontext.BuildImage)
 }
 
 func provideBuildTailer() kf.BuildTailer {
