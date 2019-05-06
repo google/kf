@@ -1,0 +1,7 @@
+[buildpack]
+id = "io.buildpacks.samples.gradle"
+version = "0.0.1"
+name = "Sample Gradle Buildpack"
+
+[[stacks]]
+id = "io.buildpacks.stacks.bionic"

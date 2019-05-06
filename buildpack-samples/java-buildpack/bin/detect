@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+if [[ -f pom.xml ]]; then
+    exit 0
+fi
+
+exit 1

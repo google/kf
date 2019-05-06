@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+set -eo pipefail
+
+env_dir="$2/env"
+layers_dir="$1"
+plan_path="$3"
+
+cat $plan_path
+
+go_version=1.12.1
+go_url=https://dl.google.com/go/go${go_version}.linux-amd64.tar.gz
+
+# Load user-provided build-time environment variables
+if compgen -G "$env_dir/*" > /dev/null; then
+    for var in "$env_dir"/*; do
+        declare "$(basename "$var")=$(<"$var")"
+    done
+fi
+
+# If it doesn't exist locally, create a Go cache layer with POSIX-style root
+# for build (bin, src, etc).  This makes Go available to subsequent buildpacks
+# as well.
+if [[ -f $layers_dir/go.toml ]]; then
+    cached_go_version=$(cat "$layers_dir/go.toml" | yj -t | jq -r .metadata.version)
+fi
+if [[ $go_version != $cached_go_version ]] ; then
+    rm -rf "$layers_dir/go"
+    rm -rf "$layers_dir/go.toml"
+    mkdir "$layers_dir/go"
+    echo "Downloading go: ($go_url)..."
+    wget -q -O - "$go_url" | tar -xzf - -C "$layers_dir/go" --strip-components=1
+    echo "Done installing go: ($go_version)."
+    mkdir -p "$layers_dir/go/env"
+    echo "launch = true" > "$layers_dir/go.toml"
+    echo "build = true" >> "$layers_dir/go.toml"
+    echo "cache = true" >> "$layers_dir/go.toml"
+    echo -e "[metadata]\n  version = \"$go_version\"" >> "$layers_dir/go.toml"
+fi
+
+export PATH=$PATH:$layers_dir/go/bin
+export GO111MODULE=on
+
+go version
+go build -o app.out
+
+# Set default start command
+echo 'processes = [{ type = "web", command = "./app.out"}]' > "$layers_dir/launch.toml"
