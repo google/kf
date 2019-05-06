@@ -1,0 +1,32 @@
+# This file contains options for option-builder.go
+---
+package: builds
+common:
+- name: Namespace
+  type: string
+  description: the Kubernetes namespace to use
+  default: '"default"'
+configs:
+- name: Create
+  options:
+  - name: SourceImage
+    type: "string"
+    description: a Kontext source image to seed this build with
+  - name: ServiceAccount
+    type: "string"
+    description: the service account to run as
+  - name: Args
+    type: "map[string]string"
+    description: the arguments to the build template
+- name: Logs
+  imports: ["io", "os", "context"]
+  options:
+  - name: Output
+    type: "io.Writer"
+    description: the io.Writer to write the logs to
+    default: "os.Stdout"
+  - name: Context
+    type: "context.Context"
+    description: the parent context for the log watcher goroutines
+    default: "context.Background()"
+- name: Status

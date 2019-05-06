@@ -45,6 +45,7 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/poy/kontext v0.0.0-20190322194304-59ced15e96b1
 	github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c
+	github.com/segmentio/textio v1.2.0
 	github.com/sergi/go-diff v1.0.0
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3
