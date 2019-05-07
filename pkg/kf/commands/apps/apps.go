@@ -54,7 +54,7 @@ func NewAppsCommand(p *config.KfParams, l kf.AppLister) *cobra.Command {
 			// Emulating:
 			// https://github.com/knative/serving/blob/master/config/300-service.yaml
 			w := tabwriter.NewWriter(p.Output, 8, 4, 1, ' ', tabwriter.StripEscape)
-			fmt.Fprintln(w, "NAME\tDOMAIN\tLATESTCREATED\tLATESTREADY\tREADY\tREASON")
+			fmt.Fprintln(w, "NAME\tDOMAIN\tLATEST CREATED\tLATEST READY\tREADY\tREASON")
 			for _, config := range configs {
 				app := mApps[config.Name]
 				status := ""
