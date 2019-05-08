@@ -16,12 +16,22 @@ package builds
 
 import build "github.com/knative/build/pkg/apis/build/v1alpha1"
 
-const clusterBuildTemplate = "ClusterBuildTemplate"
+const (
+	clusterBuildTemplate = "ClusterBuildTemplate"
+	buildTemplate        = "BuildTemplate"
+)
 
 // BuildpackTemplate gets the template spec for the bulidpack template.
 func BuildpackTemplate() build.TemplateInstantiationSpec {
 	return build.TemplateInstantiationSpec{
 		Name: "buildpack",
 		Kind: clusterBuildTemplate,
+	}
+}
+
+// allBuiltins returns a list of all ClusterBuildTemplates
+func clusterBuiltins() []build.TemplateInstantiationSpec {
+	return []build.TemplateInstantiationSpec{
+		BuildpackTemplate(),
 	}
 }

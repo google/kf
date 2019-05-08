@@ -16,11 +16,17 @@
 
 package builds
 
+import (
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
 type createConfig struct {
 	// Args is the arguments to the build template
 	Args map[string]string
 	// Namespace is the Kubernetes namespace to use
 	Namespace string
+	// Owner is a reference to the owner of this build
+	Owner *v1.OwnerReference
 	// ServiceAccount is the service account to run as
 	ServiceAccount string
 	// SourceImage is a Kontext source image to seed this build with
@@ -65,6 +71,12 @@ func (opts CreateOptions) Namespace() string {
 	return opts.toConfig().Namespace
 }
 
+// Owner returns the last set value for Owner or the empty value
+// if not set.
+func (opts CreateOptions) Owner() *v1.OwnerReference {
+	return opts.toConfig().Owner
+}
+
 // ServiceAccount returns the last set value for ServiceAccount or the empty value
 // if not set.
 func (opts CreateOptions) ServiceAccount() string {
@@ -88,6 +100,13 @@ func WithCreateArgs(val map[string]string) CreateOption {
 func WithCreateNamespace(val string) CreateOption {
 	return func(cfg *createConfig) {
 		cfg.Namespace = val
+	}
+}
+
+// WithCreateOwner creates an Option that sets a reference to the owner of this build
+func WithCreateOwner(val *v1.OwnerReference) CreateOption {
+	return func(cfg *createConfig) {
+		cfg.Owner = val
 	}
 }
 

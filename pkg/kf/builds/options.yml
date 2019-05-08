@@ -8,6 +8,7 @@ common:
   default: '"default"'
 configs:
 - name: Create
+  imports: ["k8s.io/apimachinery/pkg/apis/meta/v1"]
   options:
   - name: SourceImage
     type: "string"
@@ -18,15 +19,8 @@ configs:
   - name: Args
     type: "map[string]string"
     description: the arguments to the build template
-- name: Logs
-  imports: ["io", "os", "context"]
-  options:
-  - name: Output
-    type: "io.Writer"
-    description: the io.Writer to write the logs to
-    default: "os.Stdout"
-  - name: Context
-    type: "context.Context"
-    description: the parent context for the log watcher goroutines
-    default: "context.Background()"
+  - name: Owner
+    type: "*v1.OwnerReference"
+    description: a reference to the owner of this build
 - name: Status
+- name: Delete
