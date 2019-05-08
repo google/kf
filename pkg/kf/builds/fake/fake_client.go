@@ -20,10 +20,12 @@
 package fake
 
 import (
+	reflect "reflect"
+
 	builds "github.com/GoogleCloudPlatform/kf/pkg/kf/builds"
+	doctor "github.com/GoogleCloudPlatform/kf/pkg/kf/doctor"
 	gomock "github.com/golang/mock/gomock"
 	v1alpha1 "github.com/knative/build/pkg/apis/build/v1alpha1"
-	reflect "reflect"
 )
 
 // FakeClient is a mock of Client interface
@@ -69,23 +71,35 @@ func (mr *FakeClientMockRecorder) Create(arg0, arg1 interface{}, arg2 ...interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*FakeClient)(nil).Create), varargs...)
 }
 
-// Logs mocks base method
-func (m *FakeClient) Logs(arg0 string, arg1 ...builds.LogsOption) error {
+// Delete mocks base method
+func (m *FakeClient) Delete(arg0 string, arg1 ...builds.DeleteOption) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "Logs", varargs...)
+	ret := m.ctrl.Call(m, "Delete", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Logs indicates an expected call of Logs
-func (mr *FakeClientMockRecorder) Logs(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+// Delete indicates an expected call of Delete
+func (mr *FakeClientMockRecorder) Delete(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Logs", reflect.TypeOf((*FakeClient)(nil).Logs), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*FakeClient)(nil).Delete), varargs...)
+}
+
+// Diagnose mocks base method
+func (m *FakeClient) Diagnose(arg0 *doctor.Diagnostic) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Diagnose", arg0)
+}
+
+// Diagnose indicates an expected call of Diagnose
+func (mr *FakeClientMockRecorder) Diagnose(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Diagnose", reflect.TypeOf((*FakeClient)(nil).Diagnose), arg0)
 }
 
 // Status mocks base method

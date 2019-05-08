@@ -187,6 +187,7 @@ func TestLogTailer_BuildLogs(t *testing.T) {
 								{
 									Type:    "Succeeded",
 									Status:  "False",
+									Reason:  "KubernetesOnFire",
 									Message: "some-message",
 								},
 							},
@@ -194,7 +195,7 @@ func TestLogTailer_BuildLogs(t *testing.T) {
 					},
 				},
 			}),
-			wantErr: errors.New("build failed: some-message"),
+			wantErr: errors.New("build failed for reason: KubernetesOnFire with message: some-message"),
 		},
 		"watch build returns an error, return error": {
 			appName:         "some-app",

@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/builds"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/kf"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
@@ -252,44 +253,28 @@ func (p *pusher) buildSpec(
 	serviceAccount string,
 	buildpack string,
 ) (*serving.RawExtension, string, error) {
-	imageName := path.Join(
-		containerRegistry,
-		p.imageName(appName, false),
-	)
+	imageName := path.Join(containerRegistry, p.imageName(appName, false))
 
-	args := []build.ArgumentSpec{
-		{
-			Name:  "IMAGE",
-			Value: imageName,
-		},
+	args := map[string]string{
+		"IMAGE": imageName,
 	}
 
 	if buildpack != "" {
-		args = append(args, build.ArgumentSpec{
-			Name:  "BUILDPACK",
-			Value: buildpack,
-		})
+		args["BUILDPACK"] = buildpack
 	}
 
 	// Knative Build wants a Build, but the RawExtension (used by the
 	// Configuration object) wants a BuildSpec. Therefore, we have to manually
 	// create the required JSON.
-	buildSpec := build.Build{
-		Spec: build.BuildSpec{
-			ServiceAccountName: serviceAccount,
-			Source: &build.SourceSpec{
-				Custom: &corev1.Container{
-					Image: srcImage,
-				},
-			},
-			Template: &build.TemplateInstantiationSpec{
-				Name:      "buildpack",
-				Arguments: args,
-			},
-		},
-	}
-	buildSpec.Kind = "Build"
-	buildSpec.APIVersion = buildAPIVersion
+	buildSpec := builds.PopulateTemplate(
+		"", // no name provided
+		build.TemplateInstantiationSpec{Name: "buildpack"},
+		builds.WithCreateServiceAccount(serviceAccount),
+		builds.WithCreateArgs(args),
+		builds.WithCreateSourceImage(srcImage),
+		builds.WithCreateNamespace(""), // set blank namespace so Knative can choose
+	)
+
 	buildSpecRaw, err := json.Marshal(buildSpec)
 	if err != nil {
 		return nil, "", err
