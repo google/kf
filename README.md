@@ -3,7 +3,7 @@
 `kf` is like `cf` for Knative
 
 ## Getting started.
-Build a `kf` binary and follow our [install instructions](/.install.md) 
+Build a `kf` binary and follow our [install instructions](docs/install.md) 
 for Knative. 
 
 ## How to build
