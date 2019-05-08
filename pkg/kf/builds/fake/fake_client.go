@@ -20,12 +20,11 @@
 package fake
 
 import (
-	reflect "reflect"
-
 	builds "github.com/GoogleCloudPlatform/kf/pkg/kf/builds"
 	doctor "github.com/GoogleCloudPlatform/kf/pkg/kf/doctor"
 	gomock "github.com/golang/mock/gomock"
 	v1alpha1 "github.com/knative/build/pkg/apis/build/v1alpha1"
+	reflect "reflect"
 )
 
 // FakeClient is a mock of Client interface
