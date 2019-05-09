@@ -110,7 +110,7 @@ func ExampleRemoveEnvVars() {
 	// Key FOO Value 2
 }
 
-func TestParseCliEnvVars(t *testing.T) {
+func TestParseCLIEnvVars(t *testing.T) {
 	t.Parallel()
 
 	cases := map[string]struct {
@@ -143,7 +143,7 @@ func TestParseCliEnvVars(t *testing.T) {
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			parsed, actualErr := envutil.ParseCliEnvVars(tc.vars)
+			parsed, actualErr := envutil.ParseCLIEnvVars(tc.vars)
 			if tc.expectedErr != nil || actualErr != nil {
 				testutil.AssertErrorsEqual(t, tc.expectedErr, actualErr)
 				return

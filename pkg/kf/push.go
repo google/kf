@@ -82,7 +82,7 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 	var envs []corev1.EnvVar
 	if len(cfg.EnvironmentVariables) > 0 {
 		var err error
-		envs, err = envutil.ParseCliEnvVars(cfg.EnvironmentVariables)
+		envs, err = envutil.ParseCLIEnvVars(cfg.EnvironmentVariables)
 		if err != nil {
 			return kf.ConfigErr{Reason: err.Error()}
 		}

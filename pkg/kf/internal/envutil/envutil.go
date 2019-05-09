@@ -68,11 +68,11 @@ func RemoveEnvVars(varsToRemove []string, envs []corev1.EnvVar) []corev1.EnvVar 
 	return MapToEnvVars(m)
 }
 
-// ParseCliEnvVars turns a slice of strings formatted as NAME=VALUE into a map.
+// ParseCLIEnvVars turns a slice of strings formatted as NAME=VALUE into a map.
 // The logic is taken from os/exec.dedupEnvCase with a few differences:
 // malformed strings create an error, and case insensitivity is always assumed
 // false.
-func ParseCliEnvVars(cliEnv []string) ([]corev1.EnvVar, error) {
+func ParseCLIEnvVars(cliEnv []string) ([]corev1.EnvVar, error) {
 	out := make(map[string]string)
 
 	for _, kv := range cliEnv {
