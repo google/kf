@@ -72,18 +72,21 @@ kf marketplace
 
 ## Install a service broker
 Once you have the service catalog you'll want to install a service
-broker. This exampe will use a the `sc` cli tool and a hosted 
-set of service from GCP.
+broker. This example uses a broker called "mini-broker" which will
+deploy services as helm charts locally in you r cluster.
 
-Install `sc` with homebrew
+Configure helm in your cluster
 ```
-brew update
-brew install kubernetes-service-catalog-client
+kubectl create serviceaccount --namespace kube-system tiller 
+kubectl create clusterrolebinding tiller-cluster-rule \
+--clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+helm init --service-account tiller
 ```
 
-Install the broker
+Add the chart and install
 ```
-sc add-gcp-broker
+helm repo add minibroker https://minibroker.blob.core.windows.net/charts
+helm install --name minibroker --namespace minibroker minibroker/minibroker
 ```
 
 [knative]: https://github.com/knative/docs/tree/master/docs/install
