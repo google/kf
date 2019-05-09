@@ -17,9 +17,9 @@ package kf
 import (
 	"errors"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
 )
 
 // EnvironmentClient interacts with app's environment variables.
@@ -82,12 +82,12 @@ func (c *environmentClient) Set(appName string, values map[string]string, opts .
 		return err
 	}
 
-	newValues := c.dedupeEnvs(
-		values,
-		s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env,
-	)
+	newValues := envutil.EnvVarsToMap(s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env)
+	for k, v := range values {
+		newValues[k] = v
+	}
 
-	s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env = c.mapToEnvs(newValues)
+	s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env = envutil.MapToEnvVars(newValues)
 	if _, err := c.c.Services(cfg.Namespace).Update(s); err != nil {
 		return err
 	}
@@ -107,7 +107,7 @@ func (c *environmentClient) Unset(appName string, names []string, opts ...UnsetE
 		return err
 	}
 
-	newValues := c.removeEnvs(
+	newValues := envutil.RemoveEnvVars(
 		names,
 		s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env,
 	)
@@ -118,45 +118,6 @@ func (c *environmentClient) Unset(appName string, names []string, opts ...UnsetE
 	}
 
 	return nil
-}
-
-func (c *environmentClient) removeEnvs(names []string, envs []corev1.EnvVar) []corev1.EnvVar {
-	m := map[string]bool{}
-	for _, name := range names {
-		m[name] = true
-	}
-
-	var newValues []corev1.EnvVar
-	for _, env := range envs {
-		if m[env.Name] {
-			continue
-		}
-		newValues = append(newValues, env)
-	}
-
-	return newValues
-}
-
-func (c *environmentClient) dedupeEnvs(values map[string]string, envs []corev1.EnvVar) map[string]string {
-	// Create a new map so that we can prioritize the new values over the
-	// existing.
-	newValues := map[string]string{}
-	for _, e := range envs {
-		newValues[e.Name] = e.Value
-	}
-	for n, v := range values {
-		newValues[n] = v
-	}
-
-	return newValues
-}
-
-func (c *environmentClient) mapToEnvs(values map[string]string) []corev1.EnvVar {
-	var envs []corev1.EnvVar
-	for n, v := range values {
-		envs = append(envs, corev1.EnvVar{Name: n, Value: v})
-	}
-	return envs
 }
 
 func (c *environmentClient) fetchService(namespace, appName string) (*serving.Service, error) {

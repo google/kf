@@ -21,9 +21,9 @@ import (
 	"log"
 	"os"
 	"path"
-	"strings"
 	"time"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/kf"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
@@ -96,10 +96,10 @@ func (p *pusher) Push(appName string, opts ...PushOption) error {
 		return err
 	}
 
-	var envs map[string]string
+	var envs []corev1.EnvVar
 	if len(cfg.EnvironmentVariables) > 0 {
 		var err error
-		envs, err = p.parseEnvs(cfg.EnvironmentVariables)
+		envs, err = envutil.ParseCliEnvVars(cfg.EnvironmentVariables)
 		if err != nil {
 			return kf.ConfigErr{Reason: err.Error()}
 		}
@@ -148,15 +148,10 @@ func (p *pusher) Push(appName string, opts ...PushOption) error {
 	}
 
 	if len(envs) > 0 {
-		var result []corev1.EnvVar
-		for name, value := range envs {
-			result = append(result, corev1.EnvVar{
-				Name:  name,
-				Value: value,
-			})
-		}
-		s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env = result
+		s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env = envs
 	}
+
+	// TODO(josephlewis42): inject VCAP style environment variables here.
 
 	resourceVersion, err := p.buildAndDeploy(
 		appName,
@@ -343,42 +338,4 @@ func (p *pusher) buildAndDeploy(
 	}
 
 	return s.ResourceVersion, nil
-}
-
-// parseEnvs turns a slice of strings formatted as NAME=VALUE into a map. The
-// logic is taken from os/exec.dedupEnvCase with a few differences:
-// malformed strings create an error, and case insensitivity is always assumed
-// false.
-func (p *pusher) parseEnvs(envs []string) (map[string]string, error) {
-	m := map[string]string{}
-	for _, kv := range envs {
-		eq := strings.Index(kv, "=")
-		if eq < 0 {
-			return nil, fmt.Errorf("malformed environment variable: %s", kv)
-		}
-		k := kv[:eq]
-		v := kv[eq+1:]
-		m[k] = v
-	}
-	return m, nil
-}
-
-func (p *pusher) dedupEnvs(m map[string]string, envs []corev1.EnvVar) []corev1.EnvVar {
-	mEnvs := map[string]string{}
-
-	for _, env := range envs {
-		mEnvs[env.Name] = env.Value
-	}
-	for name, value := range m {
-		mEnvs[name] = value
-	}
-
-	var result []corev1.EnvVar
-	for name, value := range mEnvs {
-		result = append(result, corev1.EnvVar{
-			Name:  name,
-			Value: value,
-		})
-	}
-	return result
 }

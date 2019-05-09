@@ -20,6 +20,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	kffake "github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
 	"github.com/golang/mock/gomock"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
@@ -201,7 +202,7 @@ func TestEnvironmentClient_Set(t *testing.T) {
 
 				// Converting to map will clobber. Make sure we don't have duplicates
 				testutil.AssertEqual(t, "service.env len", len(tc.expectedValues), len(actualEnvs))
-				testutil.AssertEqual(t, "service.env", tc.expectedValues, buildFromEnvVars(actualEnvs))
+				testutil.AssertEqual(t, "service.env", tc.expectedValues, envutil.EnvVarsToMap(actualEnvs))
 
 				return false, nil, nil
 			}))
@@ -294,7 +295,7 @@ func TestEnvironmentClient_Unset(t *testing.T) {
 
 				// Converting to map will clobber. Make sure we don't have duplicates
 				testutil.AssertEqual(t, "service.env len", len(tc.expectedValues), len(actualEnvs))
-				testutil.AssertEqual(t, "service.env", tc.expectedValues, buildFromEnvVars(actualEnvs))
+				testutil.AssertEqual(t, "service.env", tc.expectedValues, envutil.EnvVarsToMap(actualEnvs))
 
 				return false, nil, nil
 			}))
@@ -402,25 +403,6 @@ func setupEnvClientTests(t *testing.T, prefix string, f func(c kf.EnvironmentCli
 	}
 }
 
-func buildEnvVars(envs map[string]string) []corev1.EnvVar {
-	ev := []corev1.EnvVar{}
-	for n, v := range envs {
-		ev = append(ev, corev1.EnvVar{
-			Name:  n,
-			Value: v,
-		})
-	}
-	return ev
-}
-
-func buildFromEnvVars(ev []corev1.EnvVar) map[string]string {
-	m := map[string]string{}
-	for _, e := range ev {
-		m[e.Name] = e.Value
-	}
-	return m
-}
-
 func buildServiceWithEnvs(appName string, envs map[string]string) serving.Service {
 	return serving.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -432,7 +414,7 @@ func buildServiceWithEnvs(appName string, envs map[string]string) serving.Servic
 					RevisionTemplate: serving.RevisionTemplateSpec{
 						Spec: serving.RevisionSpec{
 							Container: corev1.Container{
-								Env:             buildEnvVars(envs),
+								Env:             envutil.MapToEnvVars(envs),
 								ImagePullPolicy: "Always",
 							},
 						},
