@@ -609,16 +609,27 @@ func testBuild(
 	if len(b.Spec.Template.Arguments) == 0 {
 		t.Fatalf("wanted template args got %d", len(b.Spec.Template.Arguments))
 	}
-	testutil.AssertEqual(t, "Spec.Template.Arguments[0].Name", "IMAGE", b.Spec.Template.Arguments[0].Name)
 
-	imageName := b.Spec.Template.Arguments[0].Value
+	args := make(map[string]string)
+	for _, arg := range b.Spec.Template.Arguments {
+		args[arg.Name] = arg.Value
+	}
 
-	pattern := fmt.Sprintf(`^%s/%s:[0-9]{19}$`, containerRegistry, appName)
-	testutil.AssertRegexp(t, "image name", pattern, imageName)
+	imageName, ok := args["IMAGE"]
+	if !ok {
+		t.Errorf("Expected Spec.Template.Arguments to have IMAGE")
+	} else {
+		pattern := fmt.Sprintf(`^%s/%s:[0-9]{19}$`, containerRegistry, appName)
+		testutil.AssertRegexp(t, "image name", pattern, imageName)
+	}
 
 	if buildpack != "" {
-		testutil.AssertEqual(t, "Spec.Template.Arguments[1].Name", "BUILDPACK", b.Spec.Template.Arguments[1].Name)
-		testutil.AssertEqual(t, "Spec.Template.Arguments[1].Value", buildpack, b.Spec.Template.Arguments[1].Value)
+		actualBuildpack, ok := args["BUILDPACK"]
+		if !ok {
+			t.Errorf("Expected Spec.Template.Arguments to have BUILDPACK")
+		} else {
+			testutil.AssertEqual(t, "Spec.Template.Arguments['BUILDPACK'].Value", buildpack, actualBuildpack)
+		}
 	}
 
 	return imageName
