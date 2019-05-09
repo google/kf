@@ -1,0 +1,26 @@
+# This file contains options for option-builder.go
+---
+package: builds
+common:
+- name: Namespace
+  type: string
+  description: the Kubernetes namespace to use
+  default: '"default"'
+configs:
+- name: Create
+  imports: ["k8s.io/apimachinery/pkg/apis/meta/v1"]
+  options:
+  - name: SourceImage
+    type: "string"
+    description: a Kontext source image to seed this build with
+  - name: ServiceAccount
+    type: "string"
+    description: the service account to run as
+  - name: Args
+    type: "map[string]string"
+    description: the arguments to the build template
+  - name: Owner
+    type: "*v1.OwnerReference"
+    description: a reference to the owner of this build
+- name: Status
+- name: Delete

@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/builds"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	cbuild "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
@@ -116,10 +117,8 @@ func (t logTailer) buildLogs(ctx context.Context, out io.Writer, appName, resour
 			}
 		}
 
-		for _, condition := range obj.Status.Conditions {
-			if condition.Type == "Succeeded" && condition.Status == "False" {
-				return fmt.Errorf("build failed: %s", condition.Message)
-			}
+		if finished, err := builds.BuildStatus(*obj); finished {
+			return err
 		}
 	}
 
