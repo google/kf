@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
@@ -38,11 +39,13 @@ func TestPushCommand(t *testing.T) {
 		buildpack         string
 		path              string
 		serviceAccount    string
+		sourceImage       string
 		grpc              bool
 		wantErr           error
 		pusherErr         error
 		envVars           []string
 		srcImageBuilder   SrcImageBuilderFunc
+		wantImagePrefix   string
 	}{
 		"uses configured properties": {
 			namespace:         "some-namespace",
@@ -53,6 +56,19 @@ func TestPushCommand(t *testing.T) {
 			grpc:              true,
 			buildpack:         "some-buildpack",
 			envVars:           []string{"env1=val1", "env2=val2"},
+			wantImagePrefix:   "some-reg.io/src-app-name",
+		},
+		"custom-source": {
+			namespace:         "some-namespace",
+			args:              []string{"app-name"},
+			containerRegistry: "some-reg.io",
+			serviceAccount:    "some-service-account",
+			path:              "some-path",
+			grpc:              true,
+			buildpack:         "some-buildpack",
+			envVars:           []string{"env1=val1", "env2=val2"},
+			sourceImage:       "custom-reg.io/source-image:latest",
+			wantImagePrefix:   "custom-reg.io/source-image:latest",
 		},
 		"service create error": {
 			args:              []string{"app-name"},
@@ -61,6 +77,7 @@ func TestPushCommand(t *testing.T) {
 			containerRegistry: "some-reg.io",
 			serviceAccount:    "some-service-account",
 			path:              "some-path",
+			wantImagePrefix:   "some-reg.io/src-app-name",
 		},
 		"container-registry is not provided": {
 			namespace:         "some-namespace",
@@ -97,6 +114,10 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "grpc", tc.grpc, kf.PushOptions(opts).Grpc())
 					testutil.AssertEqual(t, "env vars", tc.envVars, kf.PushOptions(opts).EnvironmentVariables())
 
+					if !strings.HasPrefix(srcImage, tc.wantImagePrefix) {
+						t.Errorf("Wanted srcImage to start with %s got: %s", tc.wantImagePrefix, srcImage)
+					}
+
 					return tc.pusherErr
 				})
 
@@ -115,6 +136,7 @@ func TestPushCommand(t *testing.T) {
 			c.Flags().Set("path", tc.path)
 			c.Flags().Set("grpc", strconv.FormatBool(tc.grpc))
 			c.Flags().Set("buildpack", tc.buildpack)
+			c.Flags().Set("source-image", tc.sourceImage)
 
 			for _, env := range tc.envVars {
 				c.Flags().Set("env", env)

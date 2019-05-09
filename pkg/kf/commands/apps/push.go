@@ -84,7 +84,7 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 					}
 				}
 
-				imageName = fmt.Sprintf("src-%s-%d%d", appName, time.Now().UnixNano(), rand.Uint64())
+				imageName = fmt.Sprintf("%s/src-%s-%d%d", containerRegistry, appName, time.Now().UnixNano(), rand.Uint64())
 				if err := b.BuildSrcImage(path, imageName); err != nil {
 					cmd.SilenceUsage = true
 					return err
