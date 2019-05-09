@@ -26,8 +26,6 @@ type pushConfig struct {
 	Buildpack string
 	// ContainerRegistry is the container registry's URL
 	ContainerRegistry string
-	// DockerImage is the docker image to serve
-	DockerImage string
 	// EnvironmentVariables is set environment variables
 	EnvironmentVariables []string
 	// Grpc is setup the ports for the container to allow gRPC to work.
@@ -36,8 +34,6 @@ type pushConfig struct {
 	Namespace string
 	// Output is the io.Writer to write output such as build logs
 	Output io.Writer
-	// Path is the path of the directory to push
-	Path string
 	// ServiceAccount is the service account to authenticate with
 	ServiceAccount string
 }
@@ -80,12 +76,6 @@ func (opts PushOptions) ContainerRegistry() string {
 	return opts.toConfig().ContainerRegistry
 }
 
-// DockerImage returns the last set value for DockerImage or the empty value
-// if not set.
-func (opts PushOptions) DockerImage() string {
-	return opts.toConfig().DockerImage
-}
-
 // EnvironmentVariables returns the last set value for EnvironmentVariables or the empty value
 // if not set.
 func (opts PushOptions) EnvironmentVariables() []string {
@@ -110,12 +100,6 @@ func (opts PushOptions) Output() io.Writer {
 	return opts.toConfig().Output
 }
 
-// Path returns the last set value for Path or the empty value
-// if not set.
-func (opts PushOptions) Path() string {
-	return opts.toConfig().Path
-}
-
 // ServiceAccount returns the last set value for ServiceAccount or the empty value
 // if not set.
 func (opts PushOptions) ServiceAccount() string {
@@ -133,13 +117,6 @@ func WithPushBuildpack(val string) PushOption {
 func WithPushContainerRegistry(val string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.ContainerRegistry = val
-	}
-}
-
-// WithPushDockerImage creates an Option that sets the docker image to serve
-func WithPushDockerImage(val string) PushOption {
-	return func(cfg *pushConfig) {
-		cfg.DockerImage = val
 	}
 }
 
@@ -168,13 +145,6 @@ func WithPushNamespace(val string) PushOption {
 func WithPushOutput(val io.Writer) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.Output = val
-	}
-}
-
-// WithPushPath creates an Option that sets the path of the directory to push
-func WithPushPath(val string) PushOption {
-	return func(cfg *pushConfig) {
-		cfg.Path = val
 	}
 }
 

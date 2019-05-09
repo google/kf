@@ -27,6 +27,7 @@ require (
 	github.com/imdario/mergo v0.3.6
 	github.com/joho/godotenv v1.3.0
 	github.com/json-iterator/go v0.0.0-20180701071628-ab8a2e0c74be
+	github.com/kisielk/errcheck v1.2.0 // indirect
 	github.com/knative/build v0.5.0
 	github.com/knative/caching v0.0.0-20190102190439-06e978715750
 	github.com/knative/pkg v0.0.0-20190402181056-ff46edef0ae5
@@ -45,6 +46,8 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/poy/kontext v0.0.0-20190322194304-59ced15e96b1
 	github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c
+	github.com/remyoudompheng/bigfft v0.0.0-20190321074620-2f0d2b0e0001 // indirect
+	github.com/segmentio/textio v1.2.0
 	github.com/sergi/go-diff v1.0.0
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3
@@ -53,20 +56,24 @@ require (
 	go.uber.org/multierr v1.1.0
 	go.uber.org/zap v1.9.1
 	golang.org/x/crypto v0.0.0-20190426145343-a29dc8fdc734
-	golang.org/x/net v0.0.0-20190502183928-7f726cade0ab
+	golang.org/x/exp v0.0.0-20190429183610-475c5042d3f1 // indirect
+	golang.org/x/image v0.0.0-20190501045829-6d32002ffd75 // indirect
+	golang.org/x/mobile v0.0.0-20190415191353-3e0bab5405d6 // indirect
+	golang.org/x/net v0.0.0-20190503192946-f4e77d36d62c
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	golang.org/x/sys v0.0.0-20190502175342-a43fa875dd82
 	golang.org/x/text v0.3.2
 	golang.org/x/time v0.0.0-20181108054448-85acf8d2951c
-	golang.org/x/tools v0.0.0-20190501045030-23463209683d
+	golang.org/x/tools v0.0.0-20190503185657-3b6f9c0030f7
+	gonum.org/v1/gonum v0.0.0-20190502212712-4a2eb0188cbc // indirect
 	google.golang.org/appengine v1.5.0
 	gopkg.in/inf.v0 v0.9.1
-	gopkg.in/yaml.v2 v2.2.1
+	gopkg.in/yaml.v2 v2.2.2
 	k8s.io/api v0.0.0-20181121191454-a61488babbd6
 	k8s.io/apimachinery v0.0.0-20181127025237-2b1284ed4c93
 	k8s.io/client-go v2.0.0-alpha.0.0.20190226174127-78295b709ec6+incompatible
-	k8s.io/code-generator v0.0.0-20181117043124-c2090bec4d9b
-	k8s.io/gengo v0.0.0-20181106084056-51747d6e00da
+	k8s.io/code-generator v0.0.0-20190419212335-ff26e7842f9d
+	k8s.io/gengo v0.0.0-20190327210449-e17681d19d3a
 	k8s.io/kube-openapi v0.0.0-20181109181836-c59034cc13d5
 )

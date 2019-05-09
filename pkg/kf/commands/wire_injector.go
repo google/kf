@@ -26,6 +26,7 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	servicebindingscmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/service-bindings"
 	servicescmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/services"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/utils"
 	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
 	"github.com/buildpack/lifecycle/image"
@@ -40,8 +41,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func provideSrcImageBuilder() kf.SrcImageBuilder {
-	return kf.SrcImageBuilderFunc(kontext.BuildImage)
+func provideSrcImageBuilder() apps.SrcImageBuilder {
+	return apps.SrcImageBuilderFunc(kontext.BuildImage)
 }
 
 func provideBuildTailer() kf.BuildTailer {
@@ -52,7 +53,7 @@ func provideBuildTailer() kf.BuildTailer {
 // App Commands //
 /////////////////
 
-func injectPush(p *config.KfParams) *cobra.Command {
+func InjectPush(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		apps.NewPushCommand,
 		kf.NewLister,
@@ -66,7 +67,7 @@ func injectPush(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
-func injectDelete(p *config.KfParams) *cobra.Command {
+func InjectDelete(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		apps.NewDeleteCommand,
 		kf.NewDeleter,
@@ -75,12 +76,12 @@ func injectDelete(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
-func injectApps(p *config.KfParams) *cobra.Command {
+func InjectApps(p *config.KfParams) *cobra.Command {
 	wire.Build(apps.NewAppsCommand, kf.NewLister, config.GetServingClient)
 	return nil
 }
 
-func injectProxy(p *config.KfParams) *cobra.Command {
+func InjectProxy(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		apps.NewProxyCommand,
 		kf.NewLister,
@@ -95,7 +96,7 @@ func injectProxy(p *config.KfParams) *cobra.Command {
 // Environment Variables Commands //
 ///////////////////////////////////
 
-func injectEnv(p *config.KfParams) *cobra.Command {
+func InjectEnv(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		apps.NewEnvCommand,
 		kf.NewLister,
@@ -105,7 +106,7 @@ func injectEnv(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
-func injectSetEnv(p *config.KfParams) *cobra.Command {
+func InjectSetEnv(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		apps.NewSetEnvCommand,
 		kf.NewLister,
@@ -115,7 +116,7 @@ func injectSetEnv(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
-func injectUnsetEnv(p *config.KfParams) *cobra.Command {
+func InjectUnsetEnv(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		apps.NewUnsetEnvCommand,
 		kf.NewLister,
@@ -128,7 +129,7 @@ func injectUnsetEnv(p *config.KfParams) *cobra.Command {
 ////////////////
 // Services //
 /////////////
-func injectCreateService(p *config.KfParams) *cobra.Command {
+func InjectCreateService(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		services.NewClient,
 		servicescmd.NewCreateServiceCommand,
@@ -137,7 +138,7 @@ func injectCreateService(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
-func injectDeleteService(p *config.KfParams) *cobra.Command {
+func InjectDeleteService(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		services.NewClient,
 		servicescmd.NewDeleteServiceCommand,
@@ -146,7 +147,7 @@ func injectDeleteService(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
-func injectGetService(p *config.KfParams) *cobra.Command {
+func InjectGetService(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		services.NewClient,
 		servicescmd.NewGetServiceCommand,
@@ -155,7 +156,7 @@ func injectGetService(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
-func injectListServices(p *config.KfParams) *cobra.Command {
+func InjectListServices(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		services.NewClient,
 		servicescmd.NewListServicesCommand,
@@ -164,7 +165,7 @@ func injectListServices(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
-func injectMarketplace(p *config.KfParams) *cobra.Command {
+func InjectMarketplace(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		services.NewClient,
 		servicescmd.NewMarketplaceCommand,
@@ -176,7 +177,7 @@ func injectMarketplace(p *config.KfParams) *cobra.Command {
 ///////////////////////
 // Service Bindings //
 /////////////////////
-func injectBindingService(p *config.KfParams) *cobra.Command {
+func InjectBindingService(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		servicebindings.NewClient,
 		servicebindingscmd.NewBindServiceCommand,
@@ -186,7 +187,7 @@ func injectBindingService(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
-func injectListBindings(p *config.KfParams) *cobra.Command {
+func InjectListBindings(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		servicebindings.NewClient,
 		servicebindingscmd.NewListBindingsCommand,
@@ -196,7 +197,7 @@ func injectListBindings(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
-func injectUnbindService(p *config.KfParams) *cobra.Command {
+func InjectUnbindService(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		servicebindings.NewClient,
 		servicebindingscmd.NewUnbindServiceCommand,
@@ -206,7 +207,7 @@ func injectUnbindService(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
-func injectVcapServices(p *config.KfParams) *cobra.Command {
+func InjectVcapServices(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		servicebindings.NewClient,
 		servicebindingscmd.NewVcapServicesCommand,
@@ -263,7 +264,7 @@ func provideBuilderCreator() buildpacks.BuilderCreator {
 	})
 }
 
-func injectBuildpacks(p *config.KfParams) *cobra.Command {
+func InjectBuildpacks(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		buildpacks.NewBuildpackLister,
 		cbuildpacks.NewBuildpacks,
@@ -273,12 +274,26 @@ func injectBuildpacks(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
-func injectUploadBuildpacks(p *config.KfParams) *cobra.Command {
+func InjectUploadBuildpacks(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		buildpacks.NewBuildTemplateUploader,
 		cbuildpacks.NewUploadBuildpacks,
 		config.GetBuildClient,
 		provideBuilderCreator,
+	)
+	return nil
+}
+
+////////////////////////
+// Command Overrider //
+//////////////////////
+func InjectOverrider(p *config.KfParams) utils.CommandOverrideFetcher {
+	wire.Build(
+		utils.NewCommandOverrideFetcher,
+		config.GetBuildClient,
+		config.GetKfClient,
+		provideBuildTailer,
+		provideSrcImageBuilder,
 	)
 	return nil
 }
