@@ -18,11 +18,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
-	"os"
 	"path"
 	"time"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/builds"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/kf"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
@@ -36,7 +35,6 @@ import (
 // pusher deploys source code to Knative. It should be created via NewPusher.
 type pusher struct {
 	c   cserving.ServingV1alpha1Interface
-	b   SrcImageBuilder
 	l   AppLister
 	bl  Logs
 	out io.Writer
@@ -61,37 +59,22 @@ type Logs interface {
 // Pusher deploys applications.
 type Pusher interface {
 	// Push deploys an application.
-	Push(appName string, opts ...PushOption) error
-}
-
-// SrcImageBuilder creates and uploads a container image that contains the
-// contents of the argument 'dir'.
-type SrcImageBuilder interface {
-	BuildSrcImage(dir, srcImage string) error
-}
-
-// SrcImageBuilderFunc converts a func into a SrcImageBuilder.
-type SrcImageBuilderFunc func(dir, srcImage string) error
-
-// BuildSrcImage implements SrcImageBuilder.
-func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string) error {
-	return f(dir, srcImage)
+	Push(appName, srcImageName string, opts ...PushOption) error
 }
 
 // NewPusher creates a new Pusher.
-func NewPusher(l AppLister, c cserving.ServingV1alpha1Interface, b SrcImageBuilder, bl Logs) Pusher {
+func NewPusher(l AppLister, c cserving.ServingV1alpha1Interface, bl Logs) Pusher {
 	return &pusher{
 		l:  l,
 		c:  c,
-		b:  b,
 		bl: bl,
 	}
 }
 
 // Push deploys an application to Knative. It can be configured via
 // Options.
-func (p *pusher) Push(appName string, opts ...PushOption) error {
-	cfg, err := p.setupConfig(appName, opts)
+func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
+	cfg, err := p.setupConfig(appName, srcImage, opts)
 	if err != nil {
 		return err
 	}
@@ -110,30 +93,15 @@ func (p *pusher) Push(appName string, opts ...PushOption) error {
 		return err
 	}
 
-	var buildSpec *serving.RawExtension
-	imageName := cfg.DockerImage
-
-	if imageName == "" {
-		// Uploading source code writes to `log.Print`. Prefix this to indicate
-		// the corresponding logs are for uploading the source code.
-		log.SetPrefix("\033[32m[upload-source-code]\033[0m ")
-		srcImage, err := p.uploadSrc(appName, cfg)
-		// Remove the prefix.
-		log.SetPrefix("")
-		if err != nil {
-			return err
-		}
-
-		buildSpec, imageName, err = p.buildSpec(
-			appName,
-			srcImage,
-			cfg.ContainerRegistry,
-			cfg.ServiceAccount,
-			cfg.Buildpack,
-		)
-		if err != nil {
-			return err
-		}
+	buildSpec, imageName, err := p.buildSpec(
+		appName,
+		srcImage,
+		cfg.ContainerRegistry,
+		cfg.ServiceAccount,
+		cfg.Buildpack,
+	)
+	if err != nil {
+		return err
 	}
 
 	if s == nil {
@@ -171,26 +139,14 @@ func (p *pusher) Push(appName string, opts ...PushOption) error {
 	return nil
 }
 
-func (p *pusher) setupConfig(appName string, opts []PushOption) (pushConfig, error) {
+func (p *pusher) setupConfig(appName, srcImage string, opts []PushOption) (pushConfig, error) {
 	cfg := PushOptionDefaults().Extend(opts).toConfig()
-
-	if cfg.Path == "" && cfg.DockerImage == "" {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return pushConfig{}, err
-		}
-		cfg.Path = cwd
-	}
 
 	if appName == "" {
 		return pushConfig{}, kf.ConfigErr{"invalid app name"}
 	}
-	if (cfg.ContainerRegistry == "" && cfg.DockerImage == "") ||
-		(cfg.ContainerRegistry != "" && cfg.DockerImage != "") {
-		return pushConfig{}, kf.ConfigErr{"container registry or docker image must be set (not both)"}
-	}
-	if cfg.Path != "" && cfg.DockerImage != "" {
-		return pushConfig{}, kf.ConfigErr{"path flag is not valid with docker image flag"}
+	if srcImage == "" {
+		return pushConfig{}, kf.ConfigErr{"invalid source image"}
 	}
 
 	return cfg, nil
@@ -216,18 +172,6 @@ func (p *pusher) deployScheme(appName, namespace string) (deployer, *serving.Ser
 	return p.c.Services(namespace).Create, nil, nil
 }
 
-func (p *pusher) uploadSrc(appName string, cfg pushConfig) (string, error) {
-	srcImage := path.Join(
-		cfg.ContainerRegistry,
-		p.imageName(appName, true),
-	)
-	if err := p.b.BuildSrcImage(cfg.Path, srcImage); err != nil {
-		return "", err
-	}
-
-	return srcImage, nil
-}
-
 func (p *pusher) imageName(appName string, srcCodeImage bool) string {
 	var prefix string
 	if srcCodeImage {
@@ -247,44 +191,28 @@ func (p *pusher) buildSpec(
 	serviceAccount string,
 	buildpack string,
 ) (*serving.RawExtension, string, error) {
-	imageName := path.Join(
-		containerRegistry,
-		p.imageName(appName, false),
-	)
+	imageName := path.Join(containerRegistry, p.imageName(appName, false))
 
-	args := []build.ArgumentSpec{
-		{
-			Name:  "IMAGE",
-			Value: imageName,
-		},
+	args := map[string]string{
+		"IMAGE": imageName,
 	}
 
 	if buildpack != "" {
-		args = append(args, build.ArgumentSpec{
-			Name:  "BUILDPACK",
-			Value: buildpack,
-		})
+		args["BUILDPACK"] = buildpack
 	}
 
 	// Knative Build wants a Build, but the RawExtension (used by the
 	// Configuration object) wants a BuildSpec. Therefore, we have to manually
 	// create the required JSON.
-	buildSpec := build.Build{
-		Spec: build.BuildSpec{
-			ServiceAccountName: serviceAccount,
-			Source: &build.SourceSpec{
-				Custom: &corev1.Container{
-					Image: srcImage,
-				},
-			},
-			Template: &build.TemplateInstantiationSpec{
-				Name:      "buildpack",
-				Arguments: args,
-			},
-		},
-	}
-	buildSpec.Kind = "Build"
-	buildSpec.APIVersion = buildAPIVersion
+	buildSpec := builds.PopulateTemplate(
+		"", // no name provided
+		build.TemplateInstantiationSpec{Name: "buildpack"},
+		builds.WithCreateServiceAccount(serviceAccount),
+		builds.WithCreateArgs(args),
+		builds.WithCreateSourceImage(srcImage),
+		builds.WithCreateNamespace(""), // set blank namespace so Knative can choose
+	)
+
 	buildSpecRaw, err := json.Marshal(buildSpec)
 	if err != nil {
 		return nil, "", err

@@ -13,12 +13,6 @@ configs:
   - name: Buildpack
     type: string
     description: skip the detect buildpack step and use the given name
-  - name: DockerImage
-    type: string
-    description: the docker image to serve
-  - name: Path
-    type: string
-    description: the path of the directory to push
   - name: ContainerRegistry
     type: string
     description: the container registry's URL

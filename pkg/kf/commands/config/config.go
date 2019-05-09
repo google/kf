@@ -15,12 +15,11 @@
 package config
 
 import (
-	"fmt"
 	"io"
 	"log"
-	"os"
 	"path/filepath"
 
+	kf "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/secrets"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
 	build "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
@@ -41,6 +40,7 @@ type KfParams struct {
 	Output      io.Writer
 	Namespace   string
 	KubeCfgFile string
+	Verbose     bool
 }
 
 // GetServingClient returns a Serving interface.
@@ -69,6 +69,16 @@ func GetKubernetes(p *KfParams) k8sclient.Interface {
 	c, err := k8sclient.NewForConfig(config)
 	if err != nil {
 		log.Fatalf("failed to create a K8s client: %s", err)
+	}
+	return c
+}
+
+// GetKfClient returns a kf client.
+func GetKfClient(p *KfParams) kf.KfV1alpha1Interface {
+	config := getRestConfig(p)
+	c, err := kf.NewForConfig(config)
+	if err != nil {
+		log.Fatalf("failed to create a kf client: %s", err)
 	}
 	return c
 }
@@ -114,6 +124,11 @@ func GetSvcatApp(p *KfParams) services.SClientFactory {
 }
 
 func getRestConfig(p *KfParams) *rest.Config {
+	config, err := rest.InClusterConfig()
+	if err == nil {
+		return config
+	}
+
 	initKubeConfig(p)
 	c, err := clientcmd.BuildConfigFromFlags("", p.KubeCfgFile)
 	if err != nil {
@@ -126,8 +141,7 @@ func initKubeConfig(p *KfParams) {
 	if p.KubeCfgFile == "" {
 		home, err := homedir.Dir()
 		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+			log.Fatalf("failed to load kubectl config: %s", err)
 		}
 		p.KubeCfgFile = filepath.Join(home, ".kube", "config")
 	}

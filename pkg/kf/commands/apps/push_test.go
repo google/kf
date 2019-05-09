@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"strconv"
 	"testing"
 
@@ -36,7 +35,6 @@ func TestPushCommand(t *testing.T) {
 		args              []string
 		namespace         string
 		containerRegistry string
-		dockerImage       string
 		buildpack         string
 		path              string
 		serviceAccount    string
@@ -44,12 +42,12 @@ func TestPushCommand(t *testing.T) {
 		wantErr           error
 		pusherErr         error
 		envVars           []string
+		srcImageBuilder   SrcImageBuilderFunc
 	}{
 		"uses configured properties": {
 			namespace:         "some-namespace",
 			args:              []string{"app-name"},
 			containerRegistry: "some-reg.io",
-			dockerImage:       "some-docker-image",
 			serviceAccount:    "some-service-account",
 			path:              "some-path",
 			grpc:              true,
@@ -64,26 +62,36 @@ func TestPushCommand(t *testing.T) {
 			serviceAccount:    "some-service-account",
 			path:              "some-path",
 		},
+		"container-registry is not provided": {
+			namespace:         "some-namespace",
+			args:              []string{"app-name"},
+			containerRegistry: "",
+			wantErr:           errors.New("container-registry is required"),
+		},
+		"SrcImageBuilder returns an error": {
+			args:              []string{"app-name"},
+			containerRegistry: "some-reg.io",
+			wantErr:           errors.New("some error"),
+			srcImageBuilder: func(dir, srcImage string) error {
+				return errors.New("some error")
+			},
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
+			if tc.srcImageBuilder == nil {
+				tc.srcImageBuilder = func(dir, srcImage string) error { return nil }
+			}
+
 			ctrl := gomock.NewController(t)
 			fakePusher := fake.NewFakePusher(ctrl)
 
 			fakePusher.
 				EXPECT().
-				Push(gomock.Any(), gomock.Any()).
-				DoAndReturn(func(appName string, opts ...kf.PushOption) error {
-					if p := kf.PushOptions(opts).Path(); filepath.Base(p) != tc.path {
-						t.Fatalf("expected path %s, got %s", filepath.Base(tc.path), p)
-					}
-					if p := kf.PushOptions(opts).Path(); !filepath.IsAbs(p) {
-						t.Fatalf("expected path to be an absolute: %s", p)
-					}
-
+				Push(gomock.Any(), gomock.Any(), gomock.Any()).
+				DoAndReturn(func(appName, srcImage string, opts ...kf.PushOption) error {
 					testutil.AssertEqual(t, "app name", tc.args[0], appName)
 					testutil.AssertEqual(t, "namespace", tc.namespace, kf.PushOptions(opts).Namespace())
 					testutil.AssertEqual(t, "container registry", tc.containerRegistry, kf.PushOptions(opts).ContainerRegistry())
-					testutil.AssertEqual(t, "docker image", tc.dockerImage, kf.PushOptions(opts).DockerImage())
 					testutil.AssertEqual(t, "buildpack", tc.buildpack, kf.PushOptions(opts).Buildpack())
 					testutil.AssertEqual(t, "service account", tc.serviceAccount, kf.PushOptions(opts).ServiceAccount())
 					testutil.AssertEqual(t, "grpc", tc.grpc, kf.PushOptions(opts).Grpc())
@@ -97,10 +105,12 @@ func TestPushCommand(t *testing.T) {
 			c := NewPushCommand(&config.KfParams{
 				Namespace: tc.namespace,
 				Output:    buffer,
-			}, fakePusher)
+			},
+				fakePusher,
+				tc.srcImageBuilder,
+			)
 
 			c.Flags().Set("container-registry", tc.containerRegistry)
-			c.Flags().Set("docker-image", tc.dockerImage)
 			c.Flags().Set("service-account", tc.serviceAccount)
 			c.Flags().Set("path", tc.path)
 			c.Flags().Set("grpc", strconv.FormatBool(tc.grpc))
