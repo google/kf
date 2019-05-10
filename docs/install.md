@@ -41,7 +41,7 @@ If you want to go more in depth installing knative check out [thier docs](knativ
 
 ## Upload buildpacks
 Buildpacks are provided by the operator and can be uploaded to Knative using the
-CLI. A set of buidpacks is included in this repo. Change into the `buildpack-samples`
+CLI. A set of buidpacks is included in this repo. Change into the `samples/buildpacks`
 directory run the following command. 
 
 ```
@@ -73,7 +73,7 @@ kf marketplace
 ## Install a service broker
 Once you have the service catalog you'll want to install a service
 broker. This example uses a broker called "mini-broker" which will
-deploy services as helm charts locally in you r cluster.
+deploy services as helm charts locally in your cluster.
 
 Configure helm in your cluster
 ```
