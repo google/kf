@@ -34,10 +34,11 @@ import (
 
 // pusher deploys source code to Knative. It should be created via NewPusher.
 type pusher struct {
-	c   cserving.ServingV1alpha1Interface
-	l   AppLister
-	bl  Logs
-	out io.Writer
+	c           cserving.ServingV1alpha1Interface
+	l           AppLister
+	bl          Logs
+	out         io.Writer
+	envInjector SystemEnvInjectorInterface
 }
 
 // AppLister lists the deployed apps.
@@ -63,11 +64,12 @@ type Pusher interface {
 }
 
 // NewPusher creates a new Pusher.
-func NewPusher(l AppLister, c cserving.ServingV1alpha1Interface, bl Logs) Pusher {
+func NewPusher(l AppLister, c cserving.ServingV1alpha1Interface, bl Logs, sei SystemEnvInjectorInterface) Pusher {
 	return &pusher{
-		l:  l,
-		c:  c,
-		bl: bl,
+		l:           l,
+		c:           c,
+		bl:          bl,
+		envInjector: sei,
 	}
 }
 
@@ -119,7 +121,9 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 		s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env = envs
 	}
 
-	// TODO(josephlewis42): inject VCAP style environment variables here.
+	if err := p.envInjector.InjectSystemEnv(s); err != nil {
+		return err
+	}
 
 	resourceVersion, err := p.buildAndDeploy(
 		appName,

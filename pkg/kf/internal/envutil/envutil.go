@@ -15,10 +15,12 @@
 package envutil
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
 
+	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -85,4 +87,35 @@ func ParseCLIEnvVars(cliEnv []string) ([]corev1.EnvVar, error) {
 	}
 
 	return MapToEnvVars(out), nil
+}
+
+// DeduplicateEnvVars deduplicates environment variables and returns the
+// canonical version of them (last environment variable takes preccidence).
+func DeduplicateEnvVars(env []corev1.EnvVar) []corev1.EnvVar {
+	return MapToEnvVars(EnvVarsToMap(env))
+}
+
+// NewJSONEnvVar converts a value to a JSON string and sets it on the
+// environment variable.
+func NewJSONEnvVar(key string, value interface{}) (corev1.EnvVar, error) {
+	valueBytes, err := json.Marshal(value)
+	if err != nil {
+		return corev1.EnvVar{}, err
+	}
+
+	return corev1.EnvVar{Name: key, Value: string(valueBytes)}, nil
+}
+
+// GetServiceEnvVars reads the environment variables off a service.
+// Prefer using this function directly rather than accessing nested objects
+// on service so kf can adapt to future changes.
+func GetServiceEnvVars(service *serving.Service) []corev1.EnvVar {
+	return service.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env
+}
+
+// SetServiceEnvVars sets environment variables on a service.
+// Prefer using this function directly rather than accessing nested objects
+// on service so kf can adapt to future changes.
+func SetServiceEnvVars(service *serving.Service, env []corev1.EnvVar) {
+	service.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env = env
 }

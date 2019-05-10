@@ -63,6 +63,7 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 		config.GetBuildClient,
 		provideSrcImageBuilder,
 		provideBuildTailer,
+		provideSystemEnvInjector,
 	)
 	return nil
 }
@@ -122,6 +123,16 @@ func InjectUnsetEnv(p *config.KfParams) *cobra.Command {
 		kf.NewLister,
 		kf.NewEnvironmentClient,
 		config.GetServingClient,
+	)
+	return nil
+}
+
+func provideSystemEnvInjector(p *config.KfParams) kf.SystemEnvInjectorInterface {
+	wire.Build(
+		kf.NewSystemEnvInjector,
+		servicebindings.NewClient,
+		config.GetServiceCatalogClient,
+		config.GetSecretClient,
 	)
 	return nil
 }

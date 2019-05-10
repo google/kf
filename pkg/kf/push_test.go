@@ -22,6 +22,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	kffake "github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
 	kfi "github.com/GoogleCloudPlatform/kf/pkg/kf/internal/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
 	"github.com/golang/mock/gomock"
@@ -63,6 +64,7 @@ func TestPush_BadConfig(t *testing.T) {
 				nil, // AppLister - Should not be used
 				nil, // Client - Should not be used
 				nil, // Logs - Should not be used
+				nil, // EnvInjector - Should not be used
 			)
 
 			gotErr := p.Push(tc.appName, tc.srcImage, tc.opts...)
@@ -116,6 +118,9 @@ func TestPush_Logs(t *testing.T) {
 				).
 				Return(tc.logErr)
 
+			fakeInjector := kffake.NewFakeSystemEnvInjector(ctrl)
+			fakeInjector.EXPECT().InjectSystemEnv(gomock.Any()).AnyTimes()
+
 			fakeServing := &fake.FakeServingV1alpha1{
 				Fake: &ktesting.Fake{},
 			}
@@ -131,6 +136,7 @@ func TestPush_Logs(t *testing.T) {
 				fakeAppLister,
 				fakeServing,
 				fakeLogs,
+				fakeInjector,
 			)
 
 			gotErr := p.Push(
@@ -219,10 +225,14 @@ func TestPush_UpdateApp(t *testing.T) {
 				return false, nil, nil
 			}))
 
+			fakeInjector := kffake.NewFakeSystemEnvInjector(ctrl)
+			fakeInjector.EXPECT().InjectSystemEnv(gomock.Any()).AnyTimes()
+
 			p := kf.NewPusher(
 				fakeAppLister,
 				fakeServing,
 				fakeLogs,
+				fakeInjector,
 			)
 
 			gotErr := p.Push(
@@ -351,10 +361,14 @@ func TestPush_NewApp(t *testing.T) {
 				Tail(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 				AnyTimes()
 
+			fakeInjector := kffake.NewFakeSystemEnvInjector(ctrl)
+			fakeInjector.EXPECT().InjectSystemEnv(gomock.Any()).AnyTimes()
+
 			p := kf.NewPusher(
 				fakeAppLister,
 				fake,
 				fakeLogs,
+				fakeInjector,
 			)
 
 			gotErr := p.Push(tc.appName, tc.srcImage, tc.opts...)
@@ -458,10 +472,7 @@ func TestPush_EnvVars(t *testing.T) {
 
 			fake.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
 				service := action.(ktesting.CreateAction).GetObject().(*serving.Service)
-				envs := map[string]string{}
-				for _, env := range service.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env {
-					envs[env.Name] = env.Value
-				}
+				envs := envutil.EnvVarsToMap(envutil.GetServiceEnvVars(service))
 
 				testutil.AssertEqual(t, "env len", len(tc.expectedEnvs), len(envs))
 				testutil.AssertEqual(t, "envs", tc.expectedEnvs, envs)
@@ -469,10 +480,14 @@ func TestPush_EnvVars(t *testing.T) {
 				return false, nil, nil
 			}))
 
+			fakeInjector := kffake.NewFakeSystemEnvInjector(ctrl)
+			fakeInjector.EXPECT().InjectSystemEnv(gomock.Any()).AnyTimes()
+
 			p := kf.NewPusher(
 				fakeAppLister,
 				fake,
 				fakeLogs,
+				fakeInjector,
 			)
 
 			tc.opts = append(tc.opts, kf.WithPushContainerRegistry("some-reg.io"))
@@ -520,7 +535,7 @@ func testPushReaction(
 		testutil.AssertEqual(t, "service.ResourceVersion (on update)", appName+"-version", service.ResourceVersion)
 	}
 
-	actualEnvs := service.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env
+	actualEnvs := envutil.GetServiceEnvVars(service)
 	testutil.AssertEqual(t, "env len", len(envs), len(actualEnvs))
 	for _, env := range actualEnvs {
 		testutil.AssertEqual(t, "env: "+env.Name, envs[env.Name], env.Value)
