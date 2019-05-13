@@ -14,8 +14,7 @@ store your docker registry details in a an environment variable. This
 install guide uses gcr on gke. 
 
 ```
-export GCP_PROJECT=<PROJECT_ID>
-export KF_REGISTRY=gcr.io/$GCP_PROJECT
+export KF_REGISTRY=gcr.io/<PROJECT_ID>
 ```
 
 ## Install Istio && Knative
@@ -25,17 +24,6 @@ Install istio CRDs and deploy pods and label the default namespace.
 kubectl apply --filename https://github.com/knative/serving/releases/download/v0.5.0/istio-crds.yaml && \
 kubectl apply --filename https://github.com/knative/serving/releases/download/v0.5.0/istio.yaml && \
 kubectl label namespace default istio-injection=enabled
-```
-
-Install knative CRDs.
-```
-kubectl apply --selector knative.dev/crd-install=true \
---filename https://github.com/knative/serving/releases/download/v0.5.0/serving.yaml \
---filename https://github.com/knative/build/releases/download/v0.5.0/build.yaml \
---filename https://github.com/knative/eventing/releases/download/v0.5.0/release.yaml \
---filename https://github.com/knative/eventing-sources/releases/download/v0.5.0/eventing-sources.yaml \
---filename https://github.com/knative/serving/releases/download/v0.5.0/monitoring.yaml \ &&
---filename https://raw.githubusercontent.com/knative/serving/v0.5.0/third_party/config/build/clusterrole.yaml 
 ```
 
 Install Knative PODs
@@ -53,7 +41,7 @@ If you want to go more in depth installing knative check out [thier docs](knativ
 
 ## Upload buildpacks
 Buildpacks are provided by the operator and can be uploaded to Knative using the
-CLI. A set of buidpacks is included in this repo. Change into the `buildpack-samples`
+CLI. A set of buidpacks is included in this repo. Change into the `samples/buildpacks`
 directory run the following command. 
 
 ```
@@ -84,34 +72,10 @@ kf marketplace
 
 ## Install a service broker
 Once you have the service catalog you'll want to install a service
-broker. You can use helm to install the gcp-service-broker from
-the third_party directory. 
+broker. This example uses a broker called "mini-broker" which will
+deploy services as helm charts locally in your cluster.
 
-Configure GCP service account & APIs
-```
-gcloud iam service-accounts create \
-    gcp-service-broker
-
-gcloud iam service-accounts keys \
-    create /tmp/key.json --iam-account \
-    gcp-service-broker@$GCP_PROJECT.iam.gserviceaccount.com
-
-gcloud projects \
-    add-iam-policy-binding \
-    $GCP_PROJECT --member \
-    serviceAccount:gcp-service-broker@$GCP_PROJECT.iam.gserviceaccount.com \
-    --role "roles/owner"
-
-gcloud services enable \
-    cloudresourcemanager.googleapis.com \
-    iam.googleapis.com
-```
-
-Once you have your key.json, copy this in the values.yaml file
-in `/third_party/gcp-service-broker` file. 
-
-
-Configure helm
+Configure helm in your cluster
 ```
 kubectl create serviceaccount --namespace kube-system tiller 
 kubectl create clusterrolebinding tiller-cluster-rule \
@@ -119,10 +83,10 @@ kubectl create clusterrolebinding tiller-cluster-rule \
 helm init --service-account tiller
 ```
 
-Install the gcp-service broker
+Add the chart and install
 ```
-cd ./third_party/gcp-service-broker/
-helm install . --name gcp-service-broker
+helm repo add minibroker https://minibroker.blob.core.windows.net/charts
+helm install --name minibroker --namespace minibroker minibroker/minibroker
 ```
 
 [knative]: https://github.com/knative/docs/tree/master/docs/install
