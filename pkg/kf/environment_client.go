@@ -62,12 +62,7 @@ func (c *environmentClient) List(appName string, opts ...ListEnvOption) (map[str
 		return nil, err
 	}
 
-	results := map[string]string{}
-	for _, env := range s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env {
-		results[env.Name] = env.Value
-	}
-
-	return results, err
+	return envutil.EnvVarsToMap(envutil.GetServiceEnvVars(s)), nil
 }
 
 // Set sets an environment variables for an app.
@@ -82,12 +77,12 @@ func (c *environmentClient) Set(appName string, values map[string]string, opts .
 		return err
 	}
 
-	newValues := envutil.EnvVarsToMap(s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env)
+	newValues := envutil.EnvVarsToMap(envutil.GetServiceEnvVars(s))
 	for k, v := range values {
 		newValues[k] = v
 	}
 
-	s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env = envutil.MapToEnvVars(newValues)
+	envutil.SetServiceEnvVars(s, envutil.MapToEnvVars(newValues))
 	if _, err := c.c.Services(cfg.Namespace).Update(s); err != nil {
 		return err
 	}
@@ -107,12 +102,8 @@ func (c *environmentClient) Unset(appName string, names []string, opts ...UnsetE
 		return err
 	}
 
-	newValues := envutil.RemoveEnvVars(
-		names,
-		s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env,
-	)
-
-	s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env = newValues
+	newValues := envutil.RemoveEnvVars(names, envutil.GetServiceEnvVars(s))
+	envutil.SetServiceEnvVars(s, newValues)
 	if _, err := c.c.Services(cfg.Namespace).Update(s); err != nil {
 		return err
 	}

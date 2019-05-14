@@ -154,3 +154,35 @@ func TestParseCLIEnvVars(t *testing.T) {
 	}
 
 }
+
+func ExampleDeduplicateEnvVars() {
+	envs := []corev1.EnvVar{
+		{Name: "FOO", Value: "2"},
+		{Name: "BAR", Value: "0"},
+		{Name: "BAZZ", Value: "1"},
+		{Name: "BAZZ", Value: "1.5"},
+	}
+
+	out := envutil.DeduplicateEnvVars(envs)
+	for _, e := range out {
+		fmt.Println("Key", e.Name, "Value", e.Value)
+	}
+
+	// Output: Key BAR Value 0
+	// Key BAZZ Value 1.5
+	// Key FOO Value 2
+}
+
+func ExampleNewJSONEnvVar() {
+	env, err := envutil.NewJSONEnvVar("INVENTORY", map[string]bool{
+		"Apples": true,
+		"Bread":  false,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(env.Name, env.Value)
+
+	// Output: INVENTORY {"Apples":true,"Bread":false}
+}

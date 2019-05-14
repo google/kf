@@ -41,7 +41,8 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 	buildV1alpha1Interface := config.GetBuildClient(p)
 	buildTailer := provideBuildTailer()
 	logs := kf.NewLogTailer(buildV1alpha1Interface, servingV1alpha1Interface, buildTailer)
-	pusher := kf.NewPusher(appLister, servingV1alpha1Interface, logs)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	pusher := kf.NewPusher(appLister, servingV1alpha1Interface, logs, systemEnvInjectorInterface)
 	srcImageBuilder := provideSrcImageBuilder()
 	command := apps.NewPushCommand(p, pusher, srcImageBuilder)
 	return command
@@ -92,6 +93,14 @@ func InjectUnsetEnv(p *config.KfParams) *cobra.Command {
 	environmentClient := kf.NewEnvironmentClient(appLister, servingV1alpha1Interface)
 	command := apps.NewUnsetEnvCommand(p, environmentClient)
 	return command
+}
+
+func provideSystemEnvInjector(p *config.KfParams) kf.SystemEnvInjectorInterface {
+	servicecatalogV1beta1Interface := config.GetServiceCatalogClient(p)
+	clientInterface := config.GetSecretClient(p)
+	servicebindingsClientInterface := servicebindings.NewClient(servicecatalogV1beta1Interface, clientInterface)
+	systemEnvInjectorInterface := kf.NewSystemEnvInjector(servicebindingsClientInterface)
+	return systemEnvInjectorInterface
 }
 
 func InjectCreateService(p *config.KfParams) *cobra.Command {
