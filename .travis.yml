@@ -9,4 +9,4 @@ env:
 script:
   - ./scripts/check_go_fmt.sh
   - ./scripts/check_go_generate.sh
-  - go test --race -v ./...
+  - ./scripts/test.sh

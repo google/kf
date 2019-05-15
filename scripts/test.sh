@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+set -x
+go test --race -v ./...
