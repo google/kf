@@ -7,6 +7,6 @@ env:
   - GO111MODULE=on GOPROXY=https://proxy.golang.org GOSUMDB=sum.golang.org
 
 script:
-  - ./ci/check_go_fmt.sh
-  - ./ci/check_go_generate.sh
-  - go test --race -v ./...
+  - ./scripts/check_go_fmt.sh
+  - ./scripts/check_go_generate.sh
+  - ./scripts/test.sh
