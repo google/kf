@@ -80,6 +80,7 @@ func TestBuildpacks(t *testing.T) {
 				fake,
 			)
 			cmd.SetArgs(tc.Args)
+			cmd.SetOutput(&buffer)
 
 			gotErr := cmd.Execute()
 			if gotErr != nil || tc.ExpectedErr != nil {
