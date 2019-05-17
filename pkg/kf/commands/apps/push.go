@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -66,6 +67,7 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 			if containerRegistry == "" {
 				return errors.New("container-registry is required")
 			}
+			cmd.SilenceUsage = true
 
 			// Cobra ensures we are only called with a single argument.
 			appName := args[0]
@@ -75,18 +77,26 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 			case sourceImage != "":
 				imageName = sourceImage
 			default:
+				// As no source image is provided, we'll have to upload one.
 				if path != "" {
+					// Use the given path, but ensure it is an absolute path.
+					// Kontext has to have a absolute path.
 					var err error
 					path, err = filepath.Abs(path)
 					if err != nil {
-						cmd.SilenceUsage = true
 						return err
 					}
+				} else {
+					// No path set, use the current working directory.
+					cwd, err := os.Getwd()
+					if err != nil {
+						return err
+					}
+					path = cwd
 				}
 
 				imageName = fmt.Sprintf("%s/src-%s-%d%d", containerRegistry, appName, time.Now().UnixNano(), rand.Uint64())
 				if err := b.BuildSrcImage(path, imageName); err != nil {
-					cmd.SilenceUsage = true
 					return err
 				}
 			}
