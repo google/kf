@@ -22,7 +22,7 @@ import (
 	ktesting "k8s.io/client-go/testing"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

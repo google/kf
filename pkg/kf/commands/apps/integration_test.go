@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
+	. "github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 )
 
 // TestIntegration_Doctor runs the doctor command. It ensures the cluster the

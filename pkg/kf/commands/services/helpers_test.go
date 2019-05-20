@@ -19,9 +19,9 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services/fake"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"

@@ -28,7 +28,7 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/utils"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	bfake "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1/fake"
 	"github.com/spf13/cobra"

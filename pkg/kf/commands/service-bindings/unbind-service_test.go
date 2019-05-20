@@ -19,9 +19,9 @@ import (
 	"testing"
 
 	servicebindingscmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/service-bindings"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
 	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings/fake"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
 )
 

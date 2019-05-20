@@ -23,7 +23,7 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
 	duckv1alpha1 "github.com/knative/pkg/apis/duck/v1alpha1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"

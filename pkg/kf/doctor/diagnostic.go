@@ -20,7 +20,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 )
 
 // Assert Diagnostic can be used with our internal testing framework.

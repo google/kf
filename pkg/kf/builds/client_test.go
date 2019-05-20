@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/builds"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	testclient "github.com/knative/build/pkg/client/clientset/versioned/fake"
 	"github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
