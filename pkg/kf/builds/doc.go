@@ -17,4 +17,4 @@ package builds
 
 // Generators for the package here.
 
-//go:generate go run ../internal/tools/option-builder/option-builder.go options.yml
+//go:generate go run ../internal/tools/option-builder/option-builder.go options.yml options.go

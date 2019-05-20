@@ -1,6 +1,7 @@
 # This file contains options for option-builder.go
 ---
 package: kf
+imports: {"io":"", "os":""}
 common:
 - name: Namespace
   type: string
@@ -8,7 +9,6 @@ common:
   default: '"default"'
 configs:
 - name: Push
-  imports: ["io", "os"]
   options:
   - name: Buildpack
     type: string

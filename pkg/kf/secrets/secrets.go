@@ -16,12 +16,12 @@ package secrets
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 )
 
-//go:generate go run ../internal/tools/option-builder/option-builder.go options.yml
+//go:generate go run ../internal/tools/option-builder/option-builder.go options.yml options.go
 
 // ClientInterface is a client capable of interacting with Kubernetes secrets.
 type ClientInterface interface {

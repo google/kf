@@ -22,7 +22,7 @@ import (
 	kubernetes "k8s.io/client-go/kubernetes"
 )
 
-//go:generate go run internal/tools/option-builder/option-builder.go istio_client_options.yml
+//go:generate go run internal/tools/option-builder/option-builder.go istio_client_options.yml istio_client_options.go
 
 // IngressLister gets Istio ingresses points for clusters.
 type IngressLister interface {

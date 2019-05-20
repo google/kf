@@ -19,7 +19,7 @@ import (
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
 )
 
-//go:generate go run ../internal/tools/option-builder/option-builder.go options.yml
+//go:generate go run ../internal/tools/option-builder/option-builder.go options.yml options.go
 
 // KfMarketplace contains information to describe the
 // services and plans available in the catalog.

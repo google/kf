@@ -23,7 +23,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//go:generate go run ../internal/tools/option-builder/option-builder.go options.yml
+//go:generate go run ../internal/tools/option-builder/option-builder.go options.yml options.go
 
 // BuildTemplateUploader uploads a build template
 type BuildTemplateUploader interface {
