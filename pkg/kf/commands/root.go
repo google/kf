@@ -16,7 +16,6 @@ package commands
 
 import (
 	"os"
-	"strconv"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/doctor"
@@ -107,7 +106,7 @@ You can get more info by adding the --help flag to any sub-command.
 		}),
 	}
 
-	if !builtIn(rootCmd.PersistentFlags()) {
+	if !builtIn() {
 		// Override the base commands with ones from the CRD.
 		overrides, err := InjectOverrider(p).FetchCommandOverrides()
 		if err != nil {
@@ -135,14 +134,13 @@ const (
 // value if found. It is necessary to parse the flag ahead of time as it
 // determines which commands are loaded and therefore needs to be parsed
 // earlier than pflags normally does.
-func builtIn(flags *pflag.FlagSet) bool {
-	var result bool
+func builtIn() bool {
+	flags := pflag.NewFlagSet("built-in", pflag.ContinueOnError)
+	result := flags.Bool(builtInLong, false, "")
 
-	flags.ParseAll(os.Args, func(flag *pflag.Flag, value string) error {
-		if flag.Name == builtInLong {
-			result, _ = strconv.ParseBool(value)
-		}
-		return nil
-	})
-	return result
+	// We are only configured to look for --built-in. So when we encounter
+	// other flags, we want to keep going.
+	flags.ParseErrorsWhitelist.UnknownFlags = true
+	flags.Parse(os.Args)
+	return *result
 }
