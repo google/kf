@@ -2,16 +2,16 @@
 ## Pre-requisites
 
 This guide is intended to provide you with all the commands you'll
-need to install `kf` in a single place. It assumes you have a the 
-ability to run root containers in a cluster with at least 12 vCPUs 
-and 45G of memory and a minumum of three nodes.
+need to install `kf` in a single place. It assumes you have the
+ability to run root containers in a cluster with at least 12 vCPUs
+and 45G of memory and a minimum of three nodes.
 
-You will also need to provide a docker compatable registry. 
+You will also need to provide a docker compatible registry.
 
 ## Configure your Registry
-In order to make this install simple to walk through we recomend you 
-store your docker registry details in a an environment variable. This
-install guide uses gcr on gke. 
+In order to make this install simple to walk through we recommend you
+store your docker registry details in an environment variable. This
+install guide uses gcr on gke.
 
 ```
 export KF_REGISTRY=gcr.io/<PROJECT_ID>
@@ -19,7 +19,7 @@ export KF_REGISTRY=gcr.io/<PROJECT_ID>
 
 ## Install Istio && Knative
 
-Install istio CRDs and deploy pods and label the default namespace. 
+Install istio CRDs and deploy pods and label the default namespace.
 ```
 kubectl apply --filename https://github.com/knative/serving/releases/download/v0.5.0/istio-crds.yaml && \
 kubectl apply --filename https://github.com/knative/serving/releases/download/v0.5.0/istio.yaml && \
@@ -36,36 +36,32 @@ kubectl apply --filename https://github.com/knative/serving/releases/download/v0
 --filename https://raw.githubusercontent.com/knative/serving/v0.5.0/third_party/config/build/clusterrole.yaml
 ```
 
-If you want to go more in depth installing knative check out [thier docs](knative).
+If you want to go more in depth installing knative check out [their docs][knative].
 
 
 ## Upload buildpacks
 Buildpacks are provided by the operator and can be uploaded to Knative using the
 CLI. A set of buidpacks is included in this repo. Change into the `samples/buildpacks`
-directory run the following command. 
-
+directory and run the following command.
 ```
 kf upload-buildpacks --container-registry $KF_REGISTRY
 ```
 
 ## Push your first app
-At this point you are ready to deploy your first app using `kf`. Run the following command 
-to push your first app. 
-
+At this point you are ready to deploy your first app using `kf`. Run the following command
+to push your first app.
 ```
 kf push helloworld --container-registry $KF_REGISTRY
 ```
 
 ## Install the service catalog
-You can install the service catalog from the third_party directory included 
-in this repo. 
-
+You can install the service catalog from the third_party directory included
+in this repo.
 ```
 kubectl apply -R -f third_party/service-catalog/manifests/catalog/templates
 ```
 
 You should be able to see an empty marketplace at this point by running.
-
 ```
 kf marketplace
 ```
@@ -77,7 +73,7 @@ deploy services as helm charts locally in your cluster.
 
 Configure helm in your cluster
 ```
-kubectl create serviceaccount --namespace kube-system tiller 
+kubectl create serviceaccount --namespace kube-system tiller
 kubectl create clusterrolebinding tiller-cluster-rule \
 --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
 helm init --service-account tiller
