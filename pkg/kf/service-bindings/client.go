@@ -24,7 +24,7 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//go:generate go run ../internal/tools/option-builder/option-builder.go options.yml
+//go:generate go run ../internal/tools/option-builder/option-builder.go options.yml options.go
 
 const (
 	// BindingNameLabel is the label used on bindings to define what VCAP name the secret should be rooted under.

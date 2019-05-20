@@ -1,7 +1,7 @@
 # This file contains options for option-builder.go
 ---
 package: generator
-config:
+configs:
 - name: Register
   options:
   - name: UploadDir

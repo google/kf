@@ -18,7 +18,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"go/format"
 	"io/ioutil"
 	"os"
@@ -26,6 +25,7 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/tools/generator"
 	"gopkg.in/yaml.v2"
 )
 
@@ -39,25 +39,28 @@ type Option struct {
 type OptionsConfig struct {
 	Name    string   `yaml:"name"`
 	Options []Option `yaml:"options"`
-	Imports []string `yaml:"imports"`
 
 	// ConfigName is set by Name. It is modified to ensure its not exported.
 	ConfigName string `yaml:"-"`
-	Package    string `yaml:"-"`
 }
 
 type OptionsFile struct {
-	Package       string          `yaml:"package"`
+	License string            `yaml:"license"`
+	Package string            `yaml:"package"`
+	Imports map[string]string `yaml:"imports"`
+
 	CommonOptions []Option        `yaml:"common"`
 	Configs       []OptionsConfig `yaml:"configs"`
 }
 
 func main() {
-	if len(os.Args) != 2 {
-		panic("use: option-builder.go /path/to/options.yml")
+	if len(os.Args) != 3 {
+		panic("use: option-builder.go /path/to/options.yml output-file.go")
 	}
 
 	optionsPath := os.Args[1]
+	optionsOut := os.Args[2]
+
 	contents, err := ioutil.ReadFile(optionsPath)
 	if err != nil {
 		panic(err)
@@ -78,34 +81,22 @@ func main() {
 
 		// Don't export the config name.
 		cfg.ConfigName = strings.ToLower(string(cfg.Name[0])) + cfg.Name[1:]
-		cfg.Package = of.Package
 
 		configs = append(configs, cfg)
 	}
 
 	// TODO: Read in LICENSE-HEADER file
-	testTemplate := template.Must(template.New("").Funcs(template.FuncMap{}).Parse(`
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     https://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+	headerTemplate := template.Must(template.New("").Funcs(generator.TemplateFuncs()).Parse(`
+{{genlicense}}
 
-// This file was generated with option-builder.go, DO NOT EDIT IT.
+{{gennotice "option-builder.go"}}
 
 package {{.Package}}
-{{ if .Imports }}
-import ({{ range $index, $import := .Imports }}{{ printf "\n\t%q" $import }}{{ end }}{{printf "\n"}})
-{{ end }}
 
+{{genimports .Imports}}
+`))
+
+	testTemplate := template.Must(template.New("").Funcs(generator.TemplateFuncs()).Parse(`
 {{ $typecfg := (printf "%sConfig" .ConfigName) }}
 type {{ $typecfg }} struct {
 {{ range $i, $opt := .Options}}// {{ $opt.Name }} is {{ $opt.Description }}
@@ -172,31 +163,30 @@ func {{$globalName}}OptionDefaults() {{ $typeoptarr }} {
 
 `))
 
-	for _, config := range configs {
-		if err := generateCode(config, testTemplate); err != nil {
-			panic(err)
-		}
-	}
-}
-
-func generateCode(config OptionsConfig, testTemplate *template.Template) error {
-	f, err := os.Create(strings.ToLower(fmt.Sprintf("%s_options.go", config.Name)))
+	f, err := os.Create(optionsOut)
 	if err != nil {
-		return err
+		panic(err)
 	}
 	defer f.Close()
 
 	buf := &bytes.Buffer{}
-	if err := testTemplate.Execute(buf, config); err != nil {
-		return err
+	if err := headerTemplate.Execute(buf, of); err != nil {
+		panic(err)
+	}
+
+	buf.WriteString("\n")
+
+	for _, config := range configs {
+		if err := testTemplate.Execute(buf, config); err != nil {
+			panic(err)
+		}
+		buf.WriteString("\n")
 	}
 
 	formatted, err := format.Source(buf.Bytes())
 	if err != nil {
-		return err
+		panic(err)
 	}
 
 	f.Write(formatted)
-
-	return nil
 }

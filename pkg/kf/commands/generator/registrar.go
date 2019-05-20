@@ -29,7 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//go:generate go run ../../internal/tools/option-builder/option-builder.go options.yml
+//go:generate go run ../../internal/tools/option-builder/option-builder.go options.yml register_options.go
 
 type Command struct {
 	Command *cobra.Command

@@ -30,7 +30,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-//go:generate go run internal/tools/option-builder/option-builder.go options.yml
+//go:generate go run internal/tools/option-builder/option-builder.go options.yml options.go
 
 // pusher deploys source code to Knative. It should be created via NewPusher.
 type pusher struct {

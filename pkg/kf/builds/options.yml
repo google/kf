@@ -1,6 +1,7 @@
 # This file contains options for option-builder.go
 ---
 package: builds
+imports: {"k8s.io/apimachinery/pkg/apis/meta/v1":""}
 common:
 - name: Namespace
   type: string
@@ -8,7 +9,6 @@ common:
   default: '"default"'
 configs:
 - name: Create
-  imports: ["k8s.io/apimachinery/pkg/apis/meta/v1"]
   options:
   - name: SourceImage
     type: "string"
