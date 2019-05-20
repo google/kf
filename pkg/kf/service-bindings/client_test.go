@@ -18,9 +18,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
 	secretsfake "github.com/GoogleCloudPlatform/kf/pkg/kf/secrets/fake"
 	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
 	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	testclient "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/fake"

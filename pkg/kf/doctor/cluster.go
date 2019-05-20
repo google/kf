@@ -15,7 +15,7 @@
 package doctor
 
 import (
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 )

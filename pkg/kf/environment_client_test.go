@@ -21,7 +21,7 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	kffake "github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/testutil"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1/fake"
