@@ -73,6 +73,11 @@ func Convert(containerRegistry, commandSetName string, output io.Writer) {
 			"kind":     "ClusterRole",
 			"name":     "knative-serving-admin",
 		}),
+		clusterRoleBinding("service-catalog-servicecatalog-controller-manager", map[string]interface{}{
+			"apiGroup": "rbac.authorization.k8s.io",
+			"kind":     "ClusterRole",
+			"name":     "servicecatalog.k8s.io:controller-manager",
+		}),
 		jsonToYaml(buildCommandSet(List(), containerRegistry, commandSetName)),
 	} {
 		if err := encoder.Encode(y); err != nil {
