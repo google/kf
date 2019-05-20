@@ -18,6 +18,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -57,6 +59,22 @@ func TestPushCommand(t *testing.T) {
 			buildpack:         "some-buildpack",
 			envVars:           []string{"env1=val1", "env2=val2"},
 			wantImagePrefix:   "some-reg.io/src-app-name",
+			srcImageBuilder: func(dir, srcImage string) error {
+				testutil.AssertEqual(t, "path", true, strings.Contains(dir, "some-path"))
+				testutil.AssertEqual(t, "path is abs", true, filepath.IsAbs(dir))
+				return nil
+			},
+		},
+		"uses current working directory for empty path": {
+			args:              []string{"app-name"},
+			containerRegistry: "some-reg.io",
+			path:              "",
+			srcImageBuilder: func(dir, srcImage string) error {
+				cwd, err := os.Getwd()
+				testutil.AssertNil(t, "cwd err", err)
+				testutil.AssertEqual(t, "path", cwd, dir)
+				return nil
+			},
 		},
 		"custom-source": {
 			namespace:         "some-namespace",
