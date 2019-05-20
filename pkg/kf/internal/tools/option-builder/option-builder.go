@@ -190,26 +190,3 @@ func {{$globalName}}OptionDefaults() {{ $typeoptarr }} {
 
 	f.Write(formatted)
 }
-
-// func generateCode(header []byte, config OptionsConfig, testTemplate *template.Template) error {
-// 	f, err := os.Create(strings.ToLower(fmt.Sprintf("%s_options.go", config.Name)))
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer f.Close()
-//
-// 	buf := &bytes.Buffer{}
-// 	buf.Write(header)
-// 	if err := testTemplate.Execute(buf, config); err != nil {
-// 		return err
-// 	}
-//
-// 	formatted, err := format.Source(buf.Bytes())
-// 	if err != nil {
-// 		return err
-// 	}
-//
-// 	f.Write(formatted)
-//
-// 	return nil
-// }

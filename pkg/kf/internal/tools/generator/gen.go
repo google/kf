@@ -17,6 +17,7 @@ package generator
 import (
 	"bytes"
 	"fmt"
+	"sort"
 	"text/template"
 	"time"
 )
@@ -51,14 +52,22 @@ func GenImports(pathAlias map[string]string) string {
 		return ""
 	}
 
-	out := &bytes.Buffer{}
-	fmt.Fprintln(out, "import (")
-
+	imports := []string{}
 	for path, alias := range pathAlias {
-		fmt.Fprintf(out, "\t%s %q", alias, path)
-		fmt.Fprintln(out)
+		if alias != "" {
+			alias += " "
+		}
+
+		imports = append(imports, fmt.Sprintf("\t%s%q", alias, path))
 	}
 
+	sort.Strings(imports)
+
+	out := &bytes.Buffer{}
+	fmt.Fprintln(out, "import (")
+	for _, i := range imports {
+		fmt.Fprintln(out, i)
+	}
 	fmt.Fprintln(out, ")")
 
 	return out.String()
