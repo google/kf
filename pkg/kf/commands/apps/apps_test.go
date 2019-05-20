@@ -163,6 +163,7 @@ func TestAppsCommand(t *testing.T) {
 				Namespace: tc.namespace,
 				Output:    buffer,
 			}, fakeLister)
+			c.SetOutput(buffer)
 
 			c.SetArgs(tc.args)
 			gotErr := c.Execute()
