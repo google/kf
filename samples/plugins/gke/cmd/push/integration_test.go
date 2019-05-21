@@ -38,7 +38,7 @@ func TestIntegration_Push(t *testing.T) {
 		// Push an app and then clean it up. This pushes the echo app which
 		// replies with the same body that was posted.
 		kf.Push(ctx, appName, map[string]string{
-			"--path": filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
+			"--path": filepath.Join(RootDir(ctx, t), "samples", "apps", "echo"),
 		})
 		defer kf.Delete(ctx, appName)
 
