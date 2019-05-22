@@ -18,8 +18,10 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"go/format"
 	"io/ioutil"
+	"log"
 	"os"
 	"sort"
 	"strings"
@@ -54,21 +56,34 @@ type OptionsFile struct {
 }
 
 func main() {
-	if len(os.Args) != 3 {
-		panic("use: option-builder.go /path/to/options.yml output-file.go")
+	log.SetPrefix("option-builder ")
+	log.Println("starting")
+
+	pkg := flag.String("pkg", "", "overrides the package")
+	flag.Parse()
+	args := flag.Args()
+
+	if flag.NArg() != 2 {
+		log.Fatalln("use: option-builder.go /path/to/options.yml output-file.go")
 	}
 
-	optionsPath := os.Args[1]
-	optionsOut := os.Args[2]
+	optionsPath := args[0]
+	optionsOut := args[1]
+
+	log.Printf("building %s from %s\n", optionsOut, optionsPath)
 
 	contents, err := ioutil.ReadFile(optionsPath)
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 
 	of := &OptionsFile{}
 	if err := yaml.Unmarshal(contents, of); err != nil {
-		panic(err)
+		log.Fatalln(err)
+	}
+
+	if *pkg != "" {
+		of.Package = *pkg
 	}
 
 	var configs []OptionsConfig
@@ -165,27 +180,27 @@ func {{$globalName}}OptionDefaults() {{ $typeoptarr }} {
 
 	f, err := os.Create(optionsOut)
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 	defer f.Close()
 
 	buf := &bytes.Buffer{}
 	if err := headerTemplate.Execute(buf, of); err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 
 	buf.WriteString("\n")
 
 	for _, config := range configs {
 		if err := testTemplate.Execute(buf, config); err != nil {
-			panic(err)
+			log.Fatalln(err)
 		}
 		buf.WriteString("\n")
 	}
 
 	formatted, err := format.Source(buf.Bytes())
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 
 	f.Write(formatted)
