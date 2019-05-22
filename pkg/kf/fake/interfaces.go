@@ -21,6 +21,7 @@ package fake
 //go:generate mockgen --package=fake --copyright_file ../internal/tools/option-builder/LICENSE_HEADER --destination=fake_environment_client.go --mock_names=EnvironmentClient=FakeEnvironmentClient github.com/GoogleCloudPlatform/kf/pkg/kf/fake EnvironmentClient
 //go:generate mockgen --package=fake --copyright_file ../internal/tools/option-builder/LICENSE_HEADER --destination=fake_istio_client.go --mock_names=IstioClient=FakeIstioClient github.com/GoogleCloudPlatform/kf/pkg/kf/fake IstioClient
 //go:generate mockgen --package=fake --copyright_file ../internal/tools/option-builder/LICENSE_HEADER --destination=fake_systemenvinjector.go --mock_names=SystemEnvInjector=FakeSystemEnvInjector github.com/GoogleCloudPlatform/kf/pkg/kf/fake SystemEnvInjector
+//go:generate mockgen --package=fake --copyright_file ../internal/tools/option-builder/LICENSE_HEADER --destination=fake_deployer.go --mock_names=Deployer=FakeDeployer github.com/GoogleCloudPlatform/kf/pkg/kf/fake Deployer
 
 import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
@@ -59,4 +60,9 @@ type IstioClient interface {
 // SystemEnvInjector is implemented by kf.SystemEnvInjector
 type SystemEnvInjector interface {
 	kf.SystemEnvInjectorInterface
+}
+
+// Deployer is implemented by kf.Deployer
+type Deployer interface {
+	kf.Deployer
 }

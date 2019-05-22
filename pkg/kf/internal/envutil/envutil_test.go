@@ -21,6 +21,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
+	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -185,4 +186,29 @@ func ExampleNewJSONEnvVar() {
 	fmt.Println(env.Name, env.Value)
 
 	// Output: INVENTORY {"Apples":true,"Bread":false}
+}
+
+func ExampleGetServiceEnvVars() {
+	var service serving.Service
+	envutil.SetServiceEnvVars(&service, []corev1.EnvVar{
+		{Name: "FOO", Value: "2"},
+		{Name: "BAR", Value: "0"},
+	})
+
+	env := envutil.GetServiceEnvVars(&service)
+
+	for _, e := range env {
+		fmt.Println("Key", e.Name, "Value", e.Value)
+	}
+
+	// Output: Key FOO Value 2
+	// Key BAR Value 0
+}
+
+func ExampleGetServiceEnvVars_EmptyService() {
+	env := envutil.GetServiceEnvVars(nil)
+
+	fmt.Println(env)
+
+	// Output: []
 }
