@@ -110,6 +110,10 @@ func NewJSONEnvVar(key string, value interface{}) (corev1.EnvVar, error) {
 // Prefer using this function directly rather than accessing nested objects
 // on service so kf can adapt to future changes.
 func GetServiceEnvVars(service *serving.Service) []corev1.EnvVar {
+	if service == nil || service.Spec.RunLatest == nil {
+		return nil
+	}
+
 	return service.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env
 }
 
@@ -117,5 +121,9 @@ func GetServiceEnvVars(service *serving.Service) []corev1.EnvVar {
 // Prefer using this function directly rather than accessing nested objects
 // on service so kf can adapt to future changes.
 func SetServiceEnvVars(service *serving.Service, env []corev1.EnvVar) {
+	if service.Spec.RunLatest == nil {
+		service.Spec.RunLatest = &serving.RunLatestType{}
+	}
+
 	service.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env = env
 }

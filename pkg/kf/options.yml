@@ -43,3 +43,4 @@ configs:
 - name: ListEnv
 - name: SetEnv
 - name: UnsetEnv
+- name: Deploy

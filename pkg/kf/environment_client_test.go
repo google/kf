@@ -25,7 +25,6 @@ import (
 	"github.com/golang/mock/gomock"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1/fake"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ktesting "k8s.io/client-go/testing"
@@ -404,23 +403,11 @@ func setupEnvClientTests(t *testing.T, prefix string, f func(c kf.EnvironmentCli
 }
 
 func buildServiceWithEnvs(appName string, envs map[string]string) serving.Service {
-	return serving.Service{
+	s := serving.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: appName,
 		},
-		Spec: serving.ServiceSpec{
-			RunLatest: &serving.RunLatestType{
-				Configuration: serving.ConfigurationSpec{
-					RevisionTemplate: serving.RevisionTemplateSpec{
-						Spec: serving.RevisionSpec{
-							Container: corev1.Container{
-								Env:             envutil.MapToEnvVars(envs),
-								ImagePullPolicy: "Always",
-							},
-						},
-					},
-				},
-			},
-		},
 	}
+	envutil.SetServiceEnvVars(&s, envutil.MapToEnvVars(envs))
+	return s
 }

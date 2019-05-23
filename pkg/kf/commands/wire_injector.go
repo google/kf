@@ -59,6 +59,7 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 		kf.NewLister,
 		kf.NewPusher,
 		kf.NewLogTailer,
+		kf.NewDeployer,
 		config.GetServingClient,
 		config.GetBuildClient,
 		provideSrcImageBuilder,

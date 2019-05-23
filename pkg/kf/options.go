@@ -498,3 +498,54 @@ func UnsetEnvOptionDefaults() UnsetEnvOptions {
 		WithUnsetEnvNamespace("default"),
 	}
 }
+
+type deployConfig struct {
+	// Namespace is the Kubernetes namespace to use
+	Namespace string
+}
+
+// DeployOption is a single option for configuring a deployConfig
+type DeployOption func(*deployConfig)
+
+// DeployOptions is a configuration set defining a deployConfig
+type DeployOptions []DeployOption
+
+// toConfig applies all the options to a new deployConfig and returns it.
+func (opts DeployOptions) toConfig() deployConfig {
+	cfg := deployConfig{}
+
+	for _, v := range opts {
+		v(&cfg)
+	}
+
+	return cfg
+}
+
+// Extend creates a new DeployOptions with the contents of other overriding
+// the values set in this DeployOptions.
+func (opts DeployOptions) Extend(other DeployOptions) DeployOptions {
+	var out DeployOptions
+	out = append(out, opts...)
+	out = append(out, other...)
+	return out
+}
+
+// Namespace returns the last set value for Namespace or the empty value
+// if not set.
+func (opts DeployOptions) Namespace() string {
+	return opts.toConfig().Namespace
+}
+
+// WithDeployNamespace creates an Option that sets the Kubernetes namespace to use
+func WithDeployNamespace(val string) DeployOption {
+	return func(cfg *deployConfig) {
+		cfg.Namespace = val
+	}
+}
+
+// DeployOptionDefaults gets the default values for Deploy.
+func DeployOptionDefaults() DeployOptions {
+	return DeployOptions{
+		WithDeployNamespace("default"),
+	}
+}

@@ -26,28 +26,18 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/kf"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 //go:generate go run internal/tools/option-builder/option-builder.go options.yml options.go
 
 // pusher deploys source code to Knative. It should be created via NewPusher.
 type pusher struct {
-	c           cserving.ServingV1alpha1Interface
-	l           AppLister
+	deployer    Deployer
 	bl          Logs
 	out         io.Writer
 	envInjector SystemEnvInjectorInterface
-}
-
-// AppLister lists the deployed apps.
-type AppLister interface {
-	// List lists the deployed apps.
-	List(opts ...ListOption) ([]serving.Service, error)
-
-	// ListConfigurations the deployed configurations in a namespace.
-	ListConfigurations(...ListConfigurationsOption) ([]serving.Configuration, error)
 }
 
 // Logs handles build and deploy logs.
@@ -64,10 +54,9 @@ type Pusher interface {
 }
 
 // NewPusher creates a new Pusher.
-func NewPusher(l AppLister, c cserving.ServingV1alpha1Interface, bl Logs, sei SystemEnvInjectorInterface) Pusher {
+func NewPusher(d Deployer, bl Logs, sei SystemEnvInjectorInterface) Pusher {
 	return &pusher{
-		l:           l,
-		c:           c,
+		deployer:    d,
 		bl:          bl,
 		envInjector: sei,
 	}
@@ -90,11 +79,6 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 		}
 	}
 
-	d, s, err := p.deployScheme(appName, cfg.Namespace)
-	if err != nil {
-		return err
-	}
-
 	buildSpec, imageName, err := p.buildSpec(
 		appName,
 		srcImage,
@@ -106,9 +90,7 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 		return err
 	}
 
-	if s == nil {
-		s = p.initService(appName, cfg.Namespace, buildSpec)
-	}
+	s := p.initService(appName, cfg.Namespace, buildSpec)
 	s.Spec.RunLatest.Configuration.Build = buildSpec
 	s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Image = imageName
 	s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.ServiceAccountName = cfg.ServiceAccount
@@ -121,21 +103,16 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 		s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env = envs
 	}
 
-	if err := p.envInjector.InjectSystemEnv(s); err != nil {
+	if err := p.envInjector.InjectSystemEnv(&s); err != nil {
 		return err
 	}
 
-	resourceVersion, err := p.buildAndDeploy(
-		appName,
-		cfg.Namespace,
-		d,
-		s,
-	)
+	resultingService, err := p.deployer.Deploy(s, WithDeployNamespace(cfg.Namespace))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to deploy: %s", err)
 	}
 
-	if err := p.bl.Tail(cfg.Output, appName, resourceVersion, cfg.Namespace); err != nil {
+	if err := p.bl.Tail(cfg.Output, appName, resultingService.ResourceVersion, cfg.Namespace); err != nil {
 		return err
 	}
 
@@ -154,26 +131,6 @@ func (p *pusher) setupConfig(appName, srcImage string, opts []PushOption) (pushC
 	}
 
 	return cfg, nil
-}
-
-type deployer func(*serving.Service) (*serving.Service, error)
-
-func (p *pusher) deployScheme(appName, namespace string) (deployer, *serving.Service, error) {
-	apps, err := p.l.List(WithListNamespace(namespace))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// TODO(poy): use WithListAppName
-	// Look to see if an app with the same name exists in this namespace. If
-	// so, we want to update intead of create.
-	for _, app := range apps {
-		if app.Name == appName {
-			return p.c.Services(namespace).Update, &app, nil
-		}
-	}
-
-	return p.c.Services(namespace).Create, nil, nil
 }
 
 func (p *pusher) imageName(appName string, srcCodeImage bool) string {
@@ -227,8 +184,16 @@ func (p *pusher) buildSpec(
 	}, imageName, nil
 }
 
-func (p *pusher) initService(appName, namespace string, build *serving.RawExtension) *serving.Service {
-	s := &serving.Service{
+func (p *pusher) initService(appName, namespace string, build *serving.RawExtension) serving.Service {
+	s := serving.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "serving.knative.dev/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      appName,
+			Namespace: namespace,
+		},
 		Spec: serving.ServiceSpec{
 			RunLatest: &serving.RunLatestType{
 				Configuration: serving.ConfigurationSpec{
@@ -245,29 +210,5 @@ func (p *pusher) initService(appName, namespace string, build *serving.RawExtens
 		},
 	}
 
-	p.initMeta(s, appName, namespace)
-
 	return s
-}
-
-func (p *pusher) initMeta(s *serving.Service, appName, namespace string) {
-	s.Name = appName
-	s.Kind = "Service"
-	s.APIVersion = "serving.knative.dev/v1alpha1"
-	s.Namespace = namespace
-}
-
-func (p *pusher) buildAndDeploy(
-	appName string,
-	namespace string,
-	d deployer,
-	s *serving.Service,
-) (string, error) {
-	p.initMeta(s, appName, namespace)
-	s, err := d(s)
-	if err != nil {
-		return "", err
-	}
-
-	return s.ResourceVersion, nil
 }
