@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"os"
 	"path/filepath"
 	"time"
 
@@ -76,15 +75,8 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 				appName = args[0]
 			}
 
-			var err error
-			if path == "" {
-				path, err = os.Getwd()
-				if err != nil {
-					return err
-				}
-			}
-
 			// Kontext has to have a absolute path.
+			var err error
 			path, err = filepath.Abs(path)
 			if err != nil {
 				return err
@@ -157,10 +149,11 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 		"The service account to enable access to the container registry",
 	)
 
-	pushCmd.Flags().StringVar(
+	pushCmd.Flags().StringVarP(
 		&path,
 		"path",
-		"",
+		"p",
+		".",
 		"The path the source code lives. Defaults to current directory.",
 	)
 
