@@ -23,7 +23,7 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/manifest"
 )
 
-func TestParse(t *testing.T) {
+func TestNewFromReader(t *testing.T) {
 
 	cases := map[string]struct {
 		fileContent string
@@ -50,7 +50,7 @@ applications:
 			if err != nil {
 				t.Error(err)
 			}
-			if !reflect.DeepEqual(actual, tc.expected) {
+			if !reflect.DeepEqual(*actual, tc.expected) {
 				t.Error(fmt.Printf("not equal: %v, %v", tc.expected, actual))
 			}
 		})
