@@ -47,11 +47,11 @@ type ClientParams struct {
 		Name string `yaml:"name"`
 	} `yaml:"cf"`
 
-	// Type is the go type of the resource. This MUST be imported using Imports.
+	// Type is the Go type of the resource. This MUST be imported using Imports.
 	Type string `yaml:"type"`
 
-	// ClientType is the go type of the Kubernetes client. This MUST be imported using Imports.
-	ClientType string `yaml:"clienttype"`
+	// ClientType is the Go type of the Kubernetes client. This MUST be imported using Imports.
+	ClientType string `yaml:"clientType"`
 }
 
 func (f *ClientParams) Render() ([]byte, error) {

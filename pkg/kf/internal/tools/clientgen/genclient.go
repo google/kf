@@ -28,7 +28,7 @@ import (
 
 func main() {
 	if len(os.Args) != 2 {
-		panic("use: genclient.go /path/to/defn.yml")
+		log.Fatal("use: genclient.go /path/to/defn.yml")
 	}
 
 	optionsPath := os.Args[1]

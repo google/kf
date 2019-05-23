@@ -7,6 +7,6 @@ kubernetes:
   version: "v1"
   namespaced: true
 type: "v1.Secret"
-clienttype: "cv1.SecretsGetter"
+clientType: "cv1.SecretsGetter"
 cf:
   name: "OperatorConfig"
