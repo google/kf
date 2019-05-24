@@ -136,6 +136,10 @@ const (
 // earlier than pflags normally does.
 func builtIn() bool {
 	flags := pflag.NewFlagSet("built-in", pflag.ContinueOnError)
+	flags.Usage = func() {
+		// NOP - We don't want a --help to show anything for this FlagSet. The
+		// main FlagSet will take care of it.
+	}
 	result := flags.Bool(builtInLong, false, "")
 
 	// We are only configured to look for --built-in. So when we encounter
