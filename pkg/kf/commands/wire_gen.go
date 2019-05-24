@@ -14,18 +14,23 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	servicebindings2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/service-bindings"
 	services2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/services"
+	spaces2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/spaces"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/utils"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/spaces"
 	"github.com/buildpack/lifecycle/image"
 	"github.com/buildpack/pack"
 	config2 "github.com/buildpack/pack/config"
 	"github.com/buildpack/pack/docker"
 	"github.com/buildpack/pack/fs"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/wire"
 	"github.com/knative/build/pkg/logs"
 	"github.com/poy/kontext"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 import (
@@ -196,6 +201,30 @@ func InjectOverrider(p *config.KfParams) utils.CommandOverrideFetcher {
 	return commandOverrideFetcher
 }
 
+func InjectSpaces(p *config.KfParams) *cobra.Command {
+	kubernetesInterface := config.GetKubernetes(p)
+	namespacesGetter := provideNamespaceGetter(kubernetesInterface)
+	client := spaces.NewClient(namespacesGetter)
+	command := spaces2.NewListSpacesCommand(p, client)
+	return command
+}
+
+func InjectCreateSpace(p *config.KfParams) *cobra.Command {
+	kubernetesInterface := config.GetKubernetes(p)
+	namespacesGetter := provideNamespaceGetter(kubernetesInterface)
+	client := spaces.NewClient(namespacesGetter)
+	command := spaces2.NewCreateSpaceCommand(p, client)
+	return command
+}
+
+func InjectDeleteSpace(p *config.KfParams) *cobra.Command {
+	kubernetesInterface := config.GetKubernetes(p)
+	namespacesGetter := provideNamespaceGetter(kubernetesInterface)
+	client := spaces.NewClient(namespacesGetter)
+	command := spaces2.NewDeleteSpaceCommand(p, client)
+	return command
+}
+
 // wire_injector.go:
 
 func provideSrcImageBuilder() apps.SrcImageBuilder {
@@ -248,4 +277,10 @@ func provideBuilderCreator() buildpacks.BuilderCreator {
 
 		return nil
 	})
+}
+
+var SpacesSet = wire.NewSet(config.GetKubernetes, provideNamespaceGetter, spaces.NewClient)
+
+func provideNamespaceGetter(ki kubernetes.Interface) v1.NamespacesGetter {
+	return ki.CoreV1()
 }

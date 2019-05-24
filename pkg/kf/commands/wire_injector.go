@@ -26,9 +26,11 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	servicebindingscmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/service-bindings"
 	servicescmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/services"
+	cspaces "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/spaces"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/utils"
 	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/spaces"
 	"github.com/buildpack/lifecycle/image"
 	"github.com/buildpack/pack"
 	packconfig "github.com/buildpack/pack/config"
@@ -39,6 +41,8 @@ import (
 	"github.com/knative/build/pkg/logs"
 	"github.com/poy/kontext"
 	"github.com/spf13/cobra"
+	"k8s.io/client-go/kubernetes"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 func provideSrcImageBuilder() apps.SrcImageBuilder {
@@ -307,5 +311,33 @@ func InjectOverrider(p *config.KfParams) utils.CommandOverrideFetcher {
 		provideBuildTailer,
 		provideSrcImageBuilder,
 	)
+	return nil
+}
+
+////////////////////
+// Spaces Command //
+////////////////////
+
+var SpacesSet = wire.NewSet(config.GetKubernetes, provideNamespaceGetter, spaces.NewClient)
+
+func provideNamespaceGetter(ki kubernetes.Interface) v1.NamespacesGetter {
+	return ki.CoreV1()
+}
+
+func InjectSpaces(p *config.KfParams) *cobra.Command {
+	wire.Build(cspaces.NewListSpacesCommand, SpacesSet)
+
+	return nil
+}
+
+func InjectCreateSpace(p *config.KfParams) *cobra.Command {
+	wire.Build(cspaces.NewCreateSpaceCommand, SpacesSet)
+
+	return nil
+}
+
+func InjectDeleteSpace(p *config.KfParams) *cobra.Command {
+	wire.Build(cspaces.NewDeleteSpaceCommand, SpacesSet)
+
 	return nil
 }

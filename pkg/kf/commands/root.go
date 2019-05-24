@@ -96,6 +96,11 @@ You can get more info by adding the --help flag to any sub-command.
 		"buildpacks":        InjectBuildpacks(p),
 		"upload-buildpacks": InjectUploadBuildpacks(p),
 
+		// Spaces
+		"spaces":       InjectSpaces(p),
+		"create-space": InjectCreateSpace(p),
+		"delete-space": InjectDeleteSpace(p),
+
 		// DoctorTests are run in the order they're defined in this list.
 		// Tests will stop as soon as one of these top-level tests fails so they
 		// should be ordered in a logical way e.g. testing apps should come after
