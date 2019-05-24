@@ -82,9 +82,13 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 				return err
 			}
 
-			pushManifest, err := manifest.NewFromFileOrDefault(manifestFile, appName)
-			if err != nil {
-				return err
+			var pushManifest *Manifest
+			if manifestFile != "" {
+				if pushManifest, err = manifest.NewFromFile(manifestFile); err != nil {
+					return fmt.Errorf("supplied manifest file %s resulted in error: %v", manifestFile, err)
+				}
+			} else if pushManifest = manifest.CheckForManifest(path); pushManifest == nil {
+				return fmt.Errorf("no manifest file found in directory %s", path)
 			}
 
 			appsToDeploy := pushManifest.Applications
@@ -113,8 +117,7 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 					}
 				}
 
-				var options []kf.PushOption
-				options = append(options,
+				err := pusher.Push(app.Name, imageName,
 					kf.WithPushNamespace(p.Namespace),
 					kf.WithPushContainerRegistry(containerRegistry),
 					kf.WithPushServiceAccount(serviceAccount),
@@ -123,7 +126,6 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 					kf.WithPushBuildpack(buildpack),
 				)
 
-				err := pusher.Push(app.Name, imageName, options...)
 				cmd.SilenceUsage = !kfi.ConfigError(err)
 
 				if err != nil {

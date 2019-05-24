@@ -15,26 +15,27 @@
 package manifest_test
 
 import (
-	"fmt"
-	"reflect"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/manifest"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 )
 
 func TestNewFromReader(t *testing.T) {
-
 	cases := map[string]struct {
 		fileContent string
-		expected    manifest.Manifest
+		expected    *manifest.Manifest
 	}{
 		"app name": {
 			fileContent: `---
 applications:
 - name: MY-APP
 `,
-			expected: manifest.Manifest{
+			expected: &manifest.Manifest{
 				Applications: []manifest.Application{
 					manifest.Application{
 						Name: "MY-APP",
@@ -47,12 +48,48 @@ applications:
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
 			actual, err := manifest.NewFromReader(strings.NewReader(tc.fileContent))
-			if err != nil {
-				t.Error(err)
-			}
-			if !reflect.DeepEqual(*actual, tc.expected) {
-				t.Error(fmt.Printf("not equal: %v, %v", tc.expected, actual))
-			}
+			testutil.AssertNil(t, "error", err)
+			testutil.AssertEqual(t, "manifest", tc.expected, actual)
+		})
+	}
+}
+
+func TestCheckForManifest(t *testing.T) {
+	cases := map[string]struct {
+		fileName    string
+		fileContent string
+		expected    *manifest.Manifest
+	}{
+		"yml": {
+			fileName: "manifest.yml",
+			fileContent: `---
+applications:
+- name: MY-APP
+`,
+			expected: &manifest.Manifest{
+				Applications: []manifest.Application{
+					manifest.Application{
+						Name: "MY-APP",
+					},
+				},
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			dir, err := ioutil.TempDir("", "kf-manifest-test")
+			testutil.AssertNil(t, "error creating test directory", err)
+			defer func() {
+				testutil.AssertNil(t, "error deleting test directory", os.RemoveAll(dir))
+			}()
+
+			err = ioutil.WriteFile(filepath.Join(dir, tc.fileName), []byte(tc.fileContent), 0644)
+			testutil.AssertNil(t, "error writing manifest file", err)
+
+			actual, err := manifest.CheckForManifest(dir)
+			testutil.AssertNil(t, "error", err)
+			testutil.AssertEqual(t, "manifest", tc.expected, actual)
 		})
 	}
 }

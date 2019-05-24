@@ -20,6 +20,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v2"
 )
@@ -60,23 +61,10 @@ func NewFromReader(reader io.Reader) (*Manifest, error) {
 	return &m, nil
 }
 
-// NewFromFileOrDefault creates a Manifest from a file.
-// A backup appName can be provded if the given file does not exist.
-func NewFromFileOrDefault(manifestFile, appName string) (*Manifest, error) {
-	if manifestFile == "" && appName == "" {
-		return nil, errors.New("manifestFile and appName cannot both be empty")
-	}
-
-	if manifestFile != "" {
-		if _, err := os.Stat(manifestFile); err == nil {
-			return NewFromFile(manifestFile)
-		}
-
-		// Fall through to default Manifest
-	}
-
+// New creates a Manifest for a single app.
+func New(appName string) (*Manifest, error) {
 	if appName == "" {
-		return nil, fmt.Errorf("manifest file %s did not exist. appName required", manifestFile)
+		return nil, errors.New("appName cannot be empty")
 	}
 
 	return &Manifest{
@@ -86,6 +74,28 @@ func NewFromFileOrDefault(manifestFile, appName string) (*Manifest, error) {
 			},
 		},
 	}, nil
+}
+
+// CheckForManifest will optionally return a Manifest given a directory.
+func CheckForManifest(directory string) (*Manifest, error) {
+	dirFile, err := os.Stat(directory)
+	if err != nil {
+		return nil, err
+	}
+
+	if !dirFile.IsDir() {
+		return nil, fmt.Errorf("expected %s to be a directory", directory)
+	}
+
+	for _, fileName := range []string{"manifest.yml", "manifest.yaml"} {
+		filePath := filepath.Join(directory, fileName)
+
+		if _, err := os.Stat(filePath); err == nil {
+			return NewFromFile(filePath)
+		}
+	}
+
+	return nil, nil
 }
 
 // App returns an Application by name.
