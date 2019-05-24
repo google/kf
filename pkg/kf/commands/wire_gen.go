@@ -38,12 +38,12 @@ import (
 func InjectPush(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
 	appLister := kf.NewLister(servingV1alpha1Interface)
-	deployer := kf.NewDeployer(appLister, servingV1alpha1Interface)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	deployer := kf.NewDeployer(appLister, servingV1alpha1Interface, systemEnvInjectorInterface)
 	buildV1alpha1Interface := config.GetBuildClient(p)
 	buildTailer := provideBuildTailer()
 	logs := kf.NewLogTailer(buildV1alpha1Interface, servingV1alpha1Interface, buildTailer)
-	systemEnvInjectorInterface := provideSystemEnvInjector(p)
-	pusher := kf.NewPusher(deployer, logs, systemEnvInjectorInterface)
+	pusher := kf.NewPusher(deployer, logs)
 	srcImageBuilder := provideSrcImageBuilder()
 	command := apps.NewPushCommand(p, pusher, srcImageBuilder)
 	return command

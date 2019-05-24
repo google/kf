@@ -34,10 +34,9 @@ import (
 
 // pusher deploys source code to Knative. It should be created via NewPusher.
 type pusher struct {
-	deployer    Deployer
-	bl          Logs
-	out         io.Writer
-	envInjector SystemEnvInjectorInterface
+	deployer Deployer
+	bl       Logs
+	out      io.Writer
 }
 
 // Logs handles build and deploy logs.
@@ -54,11 +53,10 @@ type Pusher interface {
 }
 
 // NewPusher creates a new Pusher.
-func NewPusher(d Deployer, bl Logs, sei SystemEnvInjectorInterface) Pusher {
+func NewPusher(d Deployer, bl Logs) Pusher {
 	return &pusher{
-		deployer:    d,
-		bl:          bl,
-		envInjector: sei,
+		deployer: d,
+		bl:       bl,
 	}
 }
 
@@ -101,10 +99,6 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 
 	if len(envs) > 0 {
 		s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env = envs
-	}
-
-	if err := p.envInjector.InjectSystemEnv(&s); err != nil {
-		return err
 	}
 
 	resultingService, err := p.deployer.Deploy(s, WithDeployNamespace(cfg.Namespace))
