@@ -4,8 +4,7 @@
 Enter an English description of the concept here and a rough explanation of how
 it's mapped to the Kubernetes model.
 -->
-
-Spaces in CF are mapped to Kubernetes Namespaces. The `kf` namespace is reserved.
+Cloud Foundry Spaces are mapped to Kubernetes Namespaces. The `kf` namespace is reserved.
 
 `kf` will only treat Namespaces with the label `app.kubernetes.io/managed-by=kf`
 as Spaces for the purposes of executing webhooks and listing.
@@ -42,6 +41,8 @@ This list is filled with the valid labels kf supports on the object.
 <!--
 This list is filled with the annotations kf supports on the object.
 -->
+
+* _None_
 
 ### Parent
 

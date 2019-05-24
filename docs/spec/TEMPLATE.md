@@ -5,11 +5,13 @@ Enter an English description of the concept here and a rough explanation of how
 it's mapped to the Kubernetes model.
 -->
 
-ConceptName in CF is mapped to Kubernetes BackingObjects.
+Cloud Foundry ConceptName are mapped to Kubernetes BackingObjects.
 
 <!--
 Populate this table with the action available on the Cloud controller in the
 Action column and the Kubernetes verb and noun in the right hand column.
+
+If an action is not supported in kf, denote it with _not_mapped_.
 
 This table is useful for designing RBAC.
 -->
@@ -38,6 +40,8 @@ This list is filled with the valid labels kf supports on the object.
 This list is filled with the annotations kf supports on the object.
 -->
 
+* _None_
+
 ### Parent
 
 <!--
@@ -56,6 +60,8 @@ created/updated to ensure it remains valid.
 
 These policies must be enforced to ensure the model remains valid.
 
+* _No required policies._
+
 ## Optional Policies
 
 <!--
@@ -65,3 +71,5 @@ situations to enhance customer experience.
 For example, there could be a policy that only docker images from certain
 repositories can be allowed to run.
 -->
+
+* _No optional policies._

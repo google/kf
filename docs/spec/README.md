@@ -17,8 +17,9 @@ in Cloud Foundry through the Cloud Controller and the mapping into `kf`.
 ## Structure
 
 * Spec documents are named after their CF object.
-* Nested objects should be named with an using the `_` as a separator titled using `::` as the separator.
-  For example, `apps_environment.md` and `Apps::Environment`.
+* Nested objects should be named using the `_` as a separator in file names and
+  a `::` separator in titles. For example, `apps_environment.md` and
+  `Apps::Environment`.
 * Specs should form a [DAG](https://en.wikipedia.org/wiki/Directed_acyclic_graph)
-  so the sytem can be built and deployed in layers. For example, a spec describing
-  apps MUST NOT reference the SSH or Logging components.
+  so the system can be built and deployed in layers. For example, a spec
+  describing apps MUST NOT reference the SSH or Logging components.
