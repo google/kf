@@ -48,22 +48,22 @@ func TestNewListSpacesCommand(t *testing.T) {
 					List().
 					Return(list, nil)
 			},
-      expectedStrings: []string{"Name", "Status", "Age"},
+			expectedStrings: []string{"Name", "Status", "Age"},
 		},
-    "contents": {
-      setup: func(t *testing.T, fakeSpaces *fake.FakeClient) {
-        ns := v1.Namespace{}
-        ns.Name = "my-ns"
-        ns.Status.Phase = "TESTING"
+		"contents": {
+			setup: func(t *testing.T, fakeSpaces *fake.FakeClient) {
+				ns := v1.Namespace{}
+				ns.Name = "my-ns"
+				ns.Status.Phase = "TESTING"
 
-        list := []v1.Namespace{ns}
-        fakeSpaces.
-          EXPECT().
-          List().
-          Return(list, nil)
-      },
-      expectedStrings: []string{"my-ns", "TESTING"},
-    },
+				list := []v1.Namespace{ns}
+				fakeSpaces.
+					EXPECT().
+					List().
+					Return(list, nil)
+			},
+			expectedStrings: []string{"my-ns", "TESTING"},
+		},
 		"server failure": {
 			setup: func(t *testing.T, fakeSpaces *fake.FakeClient) {
 				fakeSpaces.
@@ -92,7 +92,7 @@ func TestNewListSpacesCommand(t *testing.T) {
 
 			gotErr := c.Execute()
 			testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
-      testutil.AssertContainsAll(t, buffer.String(), tc.expectedStrings)
+			testutil.AssertContainsAll(t, buffer.String(), tc.expectedStrings)
 
 			ctrl.Finish()
 		})
