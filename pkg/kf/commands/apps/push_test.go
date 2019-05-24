@@ -81,7 +81,6 @@ func TestPushCommand(t *testing.T) {
 			args:              []string{"app-name"},
 			containerRegistry: "some-reg.io",
 			serviceAccount:    "some-service-account",
-			path:              "some-path",
 			grpc:              true,
 			buildpack:         "some-buildpack",
 			envVars:           []string{"env1=val1", "env2=val2"},
@@ -94,7 +93,6 @@ func TestPushCommand(t *testing.T) {
 			pusherErr:         errors.New("some error"),
 			containerRegistry: "some-reg.io",
 			serviceAccount:    "some-service-account",
-			path:              "some-path",
 			wantImagePrefix:   "some-reg.io/src-app-name",
 		},
 		"container-registry is not provided": {
@@ -113,6 +111,12 @@ func TestPushCommand(t *testing.T) {
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
+
+			if tc.path != "" {
+				os.MkdirAll(tc.path, 0755)
+				defer os.RemoveAll(tc.path)
+			}
+
 			if tc.srcImageBuilder == nil {
 				tc.srcImageBuilder = func(dir, srcImage string) error { return nil }
 			}

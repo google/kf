@@ -82,13 +82,23 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 				return err
 			}
 
-			var pushManifest *Manifest
+			var pushManifest *manifest.Manifest
 			if manifestFile != "" {
 				if pushManifest, err = manifest.NewFromFile(manifestFile); err != nil {
 					return fmt.Errorf("supplied manifest file %s resulted in error: %v", manifestFile, err)
 				}
-			} else if pushManifest = manifest.CheckForManifest(path); pushManifest == nil {
-				return fmt.Errorf("no manifest file found in directory %s", path)
+			} else {
+				pushManifest, err = manifest.CheckForManifest(path)
+				if err != nil {
+					return fmt.Errorf("error checking directory %s for manifest file: %v", path, err)
+				}
+
+				if pushManifest == nil {
+					// Use a default manifest
+					if pushManifest, err = manifest.New(appName); err != nil {
+						return errors.New("an app name is required if there is no manifest file")
+					}
+				}
 			}
 
 			appsToDeploy := pushManifest.Applications
@@ -194,7 +204,7 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 		&manifestFile,
 		"manifest",
 		"f",
-		"manifest.yml",
+		"",
 		"Path to manifest",
 	)
 	pushCmd.Flags().MarkHidden("source-image")
