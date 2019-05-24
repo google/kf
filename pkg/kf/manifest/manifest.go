@@ -55,7 +55,7 @@ func NewFromReader(reader io.Reader) (*Manifest, error) {
 	// TODO: validate manifest
 	m := Manifest{}
 	if err = yaml.UnmarshalStrict(bytes, &m); err != nil {
-		fmt.Println(fmt.Errorf("Warning: manifest file contains unsupported config: %v", err))
+		fmt.Fprintf(os.Stderr, "Warning: manifest file contains unsupported config: %v", err)
 	} else if err = yaml.Unmarshal(bytes, &m); err != nil {
 		return nil, err
 	}
