@@ -18,13 +18,13 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	kfi "github.com/GoogleCloudPlatform/kf/pkg/kf/internal/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/manifest"
 	"github.com/spf13/cobra"
 )
 
@@ -47,6 +47,7 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 	var (
 		containerRegistry string
 		sourceImage       string
+		manifestFile      string
 		serviceAccount    string
 		path              string
 		buildpack         string
@@ -62,58 +63,87 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
   kf push myapp --container-registry gcr.io/myproject --buildpack my.special.buildpack # Discover via kf buildpacks
   kf push myapp --container-registry gcr.io/myproject --env FOO=bar --env BAZ=foo
   `,
-		Args: cobra.ExactArgs(1),
+		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if containerRegistry == "" {
 				return errors.New("container-registry is required")
 			}
 			cmd.SilenceUsage = true
 
-			// Cobra ensures we are only called with a single argument.
-			appName := args[0]
-			var imageName string
+			appName := ""
+			if len(args) > 0 {
+				appName = args[0]
+			}
 
-			switch {
-			case sourceImage != "":
-				imageName = sourceImage
-			default:
-				// As no source image is provided, we'll have to upload one.
-				if path != "" {
-					// Use the given path, but ensure it is an absolute path.
-					// Kontext has to have a absolute path.
-					var err error
-					path, err = filepath.Abs(path)
-					if err != nil {
-						return err
-					}
-				} else {
-					// No path set, use the current working directory.
-					cwd, err := os.Getwd()
-					if err != nil {
-						return err
-					}
-					path = cwd
+			// Kontext has to have a absolute path.
+			var err error
+			path, err = filepath.Abs(path)
+			if err != nil {
+				return err
+			}
+
+			var pushManifest *manifest.Manifest
+			if manifestFile != "" {
+				if pushManifest, err = manifest.NewFromFile(manifestFile); err != nil {
+					return fmt.Errorf("supplied manifest file %s resulted in error: %v", manifestFile, err)
+				}
+			} else {
+				pushManifest, err = manifest.CheckForManifest(path)
+				if err != nil {
+					return fmt.Errorf("error checking directory %s for manifest file: %v", path, err)
 				}
 
-				imageName = fmt.Sprintf("%s/src-%s-%d%d", containerRegistry, appName, time.Now().UnixNano(), rand.Uint64())
-				if err := b.BuildSrcImage(path, imageName); err != nil {
+				if pushManifest == nil {
+					// Use a default manifest
+					if pushManifest, err = manifest.New(appName); err != nil {
+						return errors.New("an app name is required if there is no manifest file")
+					}
+				}
+			}
+
+			appsToDeploy := pushManifest.Applications
+			if appName != "" {
+				// deploy one app from the manifest
+				app, err := pushManifest.App(appName)
+				if err != nil {
+					return err
+				}
+
+				appsToDeploy = []manifest.Application{*app}
+			}
+
+			for _, app := range appsToDeploy {
+				var imageName string
+
+				srcPath := filepath.Join(path, app.Path)
+				switch {
+				case sourceImage != "":
+					imageName = sourceImage
+				default:
+					imageName = fmt.Sprintf("%s/src-%s-%d%d", containerRegistry, app.Name, time.Now().UnixNano(), rand.Uint64())
+
+					if err := b.BuildSrcImage(srcPath, imageName); err != nil {
+						return err
+					}
+				}
+
+				err := pusher.Push(app.Name, imageName,
+					kf.WithPushNamespace(p.Namespace),
+					kf.WithPushContainerRegistry(containerRegistry),
+					kf.WithPushServiceAccount(serviceAccount),
+					kf.WithPushEnvironmentVariables(envs),
+					kf.WithPushGrpc(grpc),
+					kf.WithPushBuildpack(buildpack),
+				)
+
+				cmd.SilenceUsage = !kfi.ConfigError(err)
+
+				if err != nil {
 					return err
 				}
 			}
 
-			err := pusher.Push(
-				appName,
-				imageName,
-				kf.WithPushNamespace(p.Namespace),
-				kf.WithPushContainerRegistry(containerRegistry),
-				kf.WithPushServiceAccount(serviceAccount),
-				kf.WithPushEnvironmentVariables(envs),
-				kf.WithPushGrpc(grpc),
-				kf.WithPushBuildpack(buildpack),
-			)
-			cmd.SilenceUsage = !kfi.ConfigError(err)
-
-			return err
+			return nil
 		},
 	}
 
@@ -131,10 +161,11 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 		"The service account to enable access to the container registry",
 	)
 
-	pushCmd.Flags().StringVar(
+	pushCmd.Flags().StringVarP(
 		&path,
 		"path",
-		"",
+		"p",
+		".",
 		"The path the source code lives. Defaults to current directory.",
 	)
 
@@ -166,6 +197,15 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 		"source-image",
 		"",
 		"The kontext image that has the source code.",
+	)
+	pushCmd.Flags().MarkHidden("source-image")
+
+	pushCmd.Flags().StringVarP(
+		&manifestFile,
+		"manifest",
+		"f",
+		"",
+		"Path to manifest",
 	)
 	pushCmd.Flags().MarkHidden("source-image")
 
