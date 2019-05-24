@@ -38,15 +38,21 @@ type Deployer interface {
 }
 
 type deployer struct {
-	client    cserving.ServingV1alpha1Interface
-	appLister AppLister
+	client      cserving.ServingV1alpha1Interface
+	appLister   AppLister
+	envInjector SystemEnvInjectorInterface
 }
 
 // NewDeployer creates a new Deployer.
-func NewDeployer(l AppLister, c cserving.ServingV1alpha1Interface) Deployer {
+func NewDeployer(
+	l AppLister,
+	c cserving.ServingV1alpha1Interface,
+	sei SystemEnvInjectorInterface,
+) Deployer {
 	return &deployer{
-		appLister: l,
-		client:    c,
+		appLister:   l,
+		client:      c,
+		envInjector: sei,
 	}
 }
 
@@ -68,6 +74,10 @@ func (d *deployer) Deploy(s serving.Service, opts ...DeployOption) (serving.Serv
 			s = d.mergeServices(s, service)
 			break
 		}
+	}
+
+	if err := d.envInjector.InjectSystemEnv(&s); err != nil {
+		return serving.Service{}, fmt.Errorf("failed to inject system environment variables: %s", err)
 	}
 
 	service, err := f(&s)

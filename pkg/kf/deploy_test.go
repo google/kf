@@ -37,7 +37,7 @@ func TestDeploy(t *testing.T) {
 	for tn, tc := range map[string]struct {
 		Opts    kf.DeployOptions
 		Service serving.Service
-		Setup   func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1)
+		Setup   func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1, fakeInjector *kffake.FakeSystemEnvInjector)
 		Assert  func(t *testing.T, s serving.Service, err error)
 	}{
 		"AppLister returns an error": {
@@ -46,11 +46,25 @@ func TestDeploy(t *testing.T) {
 					Name: "some-app",
 				},
 			},
-			Setup: func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1) {
+			Setup: func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1, fakeInjector *kffake.FakeSystemEnvInjector) {
 				fakeLister.EXPECT().List(gomock.Any()).Return(nil, errors.New("some-error"))
 			},
 			Assert: func(t *testing.T, s serving.Service, err error) {
 				testutil.AssertErrorsEqual(t, errors.New("failed to list apps: some-error"), err)
+			},
+		},
+		"SystemEnvInjectorInterface returns an error": {
+			Service: serving.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "some-app",
+				},
+			},
+			Setup: func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1, fakeInjector *kffake.FakeSystemEnvInjector) {
+				fakeLister.EXPECT().List(gomock.Any()).Return(nil, nil)
+				fakeInjector.EXPECT().InjectSystemEnv(gomock.Any()).Return(errors.New("some-error"))
+			},
+			Assert: func(t *testing.T, s serving.Service, err error) {
+				testutil.AssertErrorsEqual(t, errors.New("failed to inject system environment variables: some-error"), err)
 			},
 		},
 		"Use service name in AppLister": {
@@ -59,13 +73,14 @@ func TestDeploy(t *testing.T) {
 					Name: "some-app",
 				},
 			},
-			Setup: func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1) {
+			Setup: func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1, fakeInjector *kffake.FakeSystemEnvInjector) {
 				fakeLister.EXPECT().List(gomock.Any()).Do(func(opts ...kf.ListOption) {
 					testutil.AssertEqual(t, "app name", "some-app", kf.ListOptions(opts).AppName())
 				})
 				cfake.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
 					return false, nil, nil
 				}))
+				fakeInjector.EXPECT().InjectSystemEnv(gomock.Any())
 			},
 		},
 		"Creates service when app isn't present": {
@@ -74,7 +89,13 @@ func TestDeploy(t *testing.T) {
 					Name: "some-app",
 				},
 			},
-			Setup: func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1) {
+			Setup: func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1, fakeInjector *kffake.FakeSystemEnvInjector) {
+				expectedService := &serving.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "some-app",
+					},
+				}
+
 				fakeLister.EXPECT().List(gomock.Any()).Do(func(opts ...kf.ListOption) {
 					testutil.AssertEqual(t, "namespace", "default", kf.ListOptions(opts).Namespace())
 				})
@@ -82,13 +103,10 @@ func TestDeploy(t *testing.T) {
 					service := action.(ktesting.CreateAction).GetObject().(*serving.Service)
 					testutil.AssertEqual(t, "verb", "create", action.GetVerb())
 					testutil.AssertEqual(t, "namespace", "default", action.GetNamespace())
-					testutil.AssertEqual(t, "service", &serving.Service{
-						ObjectMeta: metav1.ObjectMeta{
-							Name: "some-app",
-						},
-					}, service)
+					testutil.AssertEqual(t, "service", expectedService, service)
 					return true, service, nil
 				}))
+				fakeInjector.EXPECT().InjectSystemEnv(expectedService)
 			},
 			Assert: func(t *testing.T, s serving.Service, err error) {
 				testutil.AssertNil(t, "err", err)
@@ -105,7 +123,16 @@ func TestDeploy(t *testing.T) {
 					Name: "some-app",
 				},
 			},
-			Setup: func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1) {
+			Setup: func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1, fakeInjector *kffake.FakeSystemEnvInjector) {
+				expectedService := &serving.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "some-app",
+						ResourceVersion: "some-version",
+					},
+				}
+				// Initialize structs to allow proper comparison.
+				envutil.SetServiceEnvVars(expectedService, nil)
+
 				fakeLister.EXPECT().List(gomock.Any()).Return([]serving.Service{
 					{
 						ObjectMeta: metav1.ObjectMeta{
@@ -123,16 +150,11 @@ func TestDeploy(t *testing.T) {
 					service := action.(ktesting.CreateAction).GetObject().(*serving.Service)
 					testutil.AssertEqual(t, "verb", "update", action.GetVerb())
 					testutil.AssertEqual(t, "namespace", "default", action.GetNamespace())
-					expectedService := &serving.Service{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:            "some-app",
-							ResourceVersion: "some-version",
-						},
-					}
 					envutil.SetServiceEnvVars(expectedService, nil)
 					testutil.AssertEqual(t, "service", expectedService, service)
 					return true, service, nil
 				}))
+				fakeInjector.EXPECT().InjectSystemEnv(expectedService)
 			},
 			Assert: func(t *testing.T, s serving.Service, err error) {
 				testutil.AssertNil(t, "err", err)
@@ -155,7 +177,7 @@ func TestDeploy(t *testing.T) {
 			Opts: kf.DeployOptions{
 				kf.WithDeployNamespace("custom-namespace"),
 			},
-			Setup: func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1) {
+			Setup: func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1, fakeInjector *kffake.FakeSystemEnvInjector) {
 				fakeLister.EXPECT().List(gomock.Any()).Do(func(opts ...kf.ListOption) {
 					testutil.AssertEqual(t, "namespace", "custom-namespace", kf.ListOptions(opts).Namespace())
 				})
@@ -163,6 +185,7 @@ func TestDeploy(t *testing.T) {
 					testutil.AssertEqual(t, "namespace", "custom-namespace", action.GetNamespace())
 					return false, nil, nil
 				}))
+				fakeInjector.EXPECT().InjectSystemEnv(gomock.Any())
 			},
 		},
 		"Creating service fails": {
@@ -171,11 +194,12 @@ func TestDeploy(t *testing.T) {
 					Name: "some-app",
 				},
 			},
-			Setup: func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1) {
+			Setup: func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1, fakeInjector *kffake.FakeSystemEnvInjector) {
 				fakeLister.EXPECT().List(gomock.Any()).AnyTimes()
 				cfake.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
 					return true, nil, errors.New("some-error")
 				}))
+				fakeInjector.EXPECT().InjectSystemEnv(gomock.Any())
 			},
 			Assert: func(t *testing.T, s serving.Service, err error) {
 				testutil.AssertErrorsEqual(t, errors.New("failed to create service: some-error"), err)
@@ -186,7 +210,7 @@ func TestDeploy(t *testing.T) {
 				"ENV1": "val1",
 				"ENV2": "val2",
 			}),
-			Setup: func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1) {
+			Setup: func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1, fakeInjector *kffake.FakeSystemEnvInjector) {
 				t.Skip()
 				fakeLister.EXPECT().List(gomock.Any()).Return([]serving.Service{
 					buildServiceWithEnvs("some-app", map[string]string{
@@ -205,6 +229,7 @@ func TestDeploy(t *testing.T) {
 					}, envs)
 					return false, nil, nil
 				}))
+				fakeInjector.EXPECT().InjectSystemEnv(gomock.Any())
 			},
 		},
 		"Leave existing environment variables": {
@@ -212,7 +237,7 @@ func TestDeploy(t *testing.T) {
 				"ENV1": "val1",
 				"ENV2": "val2",
 			}),
-			Setup: func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1) {
+			Setup: func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1, fakeInjector *kffake.FakeSystemEnvInjector) {
 				t.Skip()
 				fakeLister.EXPECT().List(gomock.Any()).Return([]serving.Service{
 					buildServiceWithEnvs("some-app", map[string]string{
@@ -233,12 +258,14 @@ func TestDeploy(t *testing.T) {
 					}, envs)
 					return false, nil, nil
 				}))
+				fakeInjector.EXPECT().InjectSystemEnv(gomock.Any())
 			},
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			if tc.Setup == nil {
-				tc.Setup = func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1) {}
+				tc.Setup = func(t *testing.T, fakeLister *kffake.FakeLister, cfake *fake.FakeServingV1alpha1, fakeInjector *kffake.FakeSystemEnvInjector) {
+				}
 			}
 			if tc.Assert == nil {
 				tc.Assert = func(t *testing.T, s serving.Service, err error) {}
@@ -246,14 +273,15 @@ func TestDeploy(t *testing.T) {
 
 			ctrl := gomock.NewController(t)
 			fakeLister := kffake.NewFakeLister(ctrl)
+			fakeInjector := kffake.NewFakeSystemEnvInjector(ctrl)
 
 			fakec := &fake.FakeServingV1alpha1{
 				Fake: &ktesting.Fake{},
 			}
 
-			tc.Setup(t, fakeLister, fakec)
+			tc.Setup(t, fakeLister, fakec, fakeInjector)
 
-			service, gotErr := kf.NewDeployer(fakeLister, fakec).Deploy(tc.Service, tc.Opts...)
+			service, gotErr := kf.NewDeployer(fakeLister, fakec, fakeInjector).Deploy(tc.Service, tc.Opts...)
 			tc.Assert(t, service, gotErr)
 			if gotErr != nil {
 				ctrl.Finish()

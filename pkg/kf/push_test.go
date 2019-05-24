@@ -68,7 +68,6 @@ func TestPush_BadConfig(t *testing.T) {
 			p := kf.NewPusher(
 				nil, // Deployer - Should not be used
 				nil, // Logs - Should not be used
-				nil, // EnvInjector - Should not be used
 			)
 
 			gotErr := p.Push(tc.appName, tc.srcImage, tc.opts...)
@@ -124,13 +123,9 @@ func TestPush_Logs(t *testing.T) {
 				).
 				Return(tc.logErr)
 
-			fakeInjector := kffake.NewFakeSystemEnvInjector(ctrl)
-			fakeInjector.EXPECT().InjectSystemEnv(gomock.Any()).AnyTimes()
-
 			p := kf.NewPusher(
 				fakeDeployer,
 				fakeLogs,
-				fakeInjector,
 			)
 
 			gotErr := p.Push(
@@ -337,15 +332,11 @@ func TestPush(t *testing.T) {
 				Tail(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 				AnyTimes()
 
-			fakeInjector := kffake.NewFakeSystemEnvInjector(ctrl)
-			fakeInjector.EXPECT().InjectSystemEnv(gomock.Any()).AnyTimes()
-
 			tc.setup(t, fakeDeployer)
 
 			p := kf.NewPusher(
 				fakeDeployer,
 				fakeLogs,
-				fakeInjector,
 			)
 
 			gotErr := p.Push(tc.appName, tc.srcImage, tc.opts...)
