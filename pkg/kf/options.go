@@ -27,7 +27,7 @@ type pushConfig struct {
 	// ContainerRegistry is the container registry's URL
 	ContainerRegistry string
 	// EnvironmentVariables is set environment variables
-	EnvironmentVariables []string
+	EnvironmentVariables map[string]string
 	// Grpc is setup the ports for the container to allow gRPC to work.
 	Grpc bool
 	// Namespace is the Kubernetes namespace to use
@@ -78,7 +78,7 @@ func (opts PushOptions) ContainerRegistry() string {
 
 // EnvironmentVariables returns the last set value for EnvironmentVariables or the empty value
 // if not set.
-func (opts PushOptions) EnvironmentVariables() []string {
+func (opts PushOptions) EnvironmentVariables() map[string]string {
 	return opts.toConfig().EnvironmentVariables
 }
 
@@ -121,7 +121,7 @@ func WithPushContainerRegistry(val string) PushOption {
 }
 
 // WithPushEnvironmentVariables creates an Option that sets set environment variables
-func WithPushEnvironmentVariables(val []string) PushOption {
+func WithPushEnvironmentVariables(val map[string]string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.EnvironmentVariables = val
 	}

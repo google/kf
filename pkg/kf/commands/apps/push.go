@@ -23,9 +23,11 @@ import (
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
 	kfi "github.com/GoogleCloudPlatform/kf/pkg/kf/internal/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/manifest"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // SrcImageBuilder creates and uploads a container image that contains the
@@ -127,11 +129,24 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 					}
 				}
 
+				var envMap map[string]string
+				var envVars []corev1.EnvVar
+				envVars, err = envutil.ParseCLIEnvVars(envs)
+				if err != nil {
+					return err
+				}
+				envMap = envutil.EnvVarsToMap(envVars)
+
+				// Merge cli envs over manifest envs
+				for k, v := range envMap {
+					app.Env[k] = v
+				}
+
 				err := pusher.Push(app.Name, imageName,
 					kf.WithPushNamespace(p.Namespace),
 					kf.WithPushContainerRegistry(containerRegistry),
 					kf.WithPushServiceAccount(serviceAccount),
-					kf.WithPushEnvironmentVariables(envs),
+					kf.WithPushEnvironmentVariables(app.Env),
 					kf.WithPushGrpc(grpc),
 					kf.WithPushBuildpack(buildpack),
 				)
