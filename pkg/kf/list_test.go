@@ -50,37 +50,6 @@ func TestLister_List(t *testing.T) {
 		})
 }
 
-func TestLister_ListConfigurations(t *testing.T) {
-	t.Parallel()
-
-	setupListTest(
-		t,
-		func(s ...string) runtime.Object {
-			return createConfigList(s)
-		},
-		func(l kf.AppLister, opts ...kf.ListOption) ([]string, error) {
-			var copts []kf.ListConfigurationsOption
-			if appName := kf.ListOptions(opts).AppName(); appName != "" {
-				copts = append(copts, kf.WithListConfigurationsAppName(appName))
-			}
-
-			if namespace := kf.ListOptions(opts).Namespace(); namespace != "" {
-				copts = append(copts, kf.WithListConfigurationsNamespace(namespace))
-			}
-
-			x, err := l.ListConfigurations(copts...)
-			if err != nil {
-				return nil, err
-			}
-
-			var names []string
-			for _, s := range x {
-				names = append(names, s.Name)
-			}
-			return names, nil
-		})
-}
-
 func setupListTest(t *testing.T, resultsF func(...string) runtime.Object, listF func(kf.AppLister, ...kf.ListOption) ([]string, error)) {
 	for tn, tc := range map[string]struct {
 		reactor func(t *testing.T, action ktesting.Action) (handled bool, ret runtime.Object, err error)

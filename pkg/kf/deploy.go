@@ -26,9 +26,6 @@ import (
 type AppLister interface {
 	// List lists the deployed apps.
 	List(opts ...ListOption) ([]serving.Service, error)
-
-	// ListConfigurations the deployed configurations in a namespace.
-	ListConfigurations(...ListConfigurationsOption) ([]serving.Configuration, error)
 }
 
 // Deployer deploys an image to Knative. It will either create or update an

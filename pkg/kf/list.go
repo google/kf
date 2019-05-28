@@ -20,7 +20,6 @@ import (
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // lister lists deployed applications. It should be created via NewLister.
@@ -47,29 +46,8 @@ func (l *lister) List(opts ...ListOption) ([]serving.Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	services.GetObjectKind().SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "knative.dev",
-		Version: "v1alpha1",
-		Kind:    "Service",
-	})
 
 	return services.Items, nil
-}
-
-// ListConfigurations lists the deployed Configurations for a given namespace.
-func (l *lister) ListConfigurations(opts ...ListConfigurationsOption) ([]serving.Configuration, error) {
-	cfg := ListConfigurationsOptionDefaults().Extend(opts).toConfig()
-	listOptions, err := l.setupConfiguration(cfg, opts)
-	if err != nil {
-		return nil, err
-	}
-
-	configs, err := l.c.Configurations(cfg.Namespace).List(listOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	return configs.Items, nil
 }
 
 // ExtractOneService is a utility function to wrap AppLister.List. It expects
@@ -88,15 +66,6 @@ func ExtractOneService(services []serving.Service, err error) (*serving.Service,
 }
 
 func (l *lister) setup(cfg listConfig, opts []ListOption) (v1.ListOptions, error) {
-	listOptions := v1.ListOptions{}
-	if cfg.AppName != "" {
-		listOptions.FieldSelector = "metadata.name=" + cfg.AppName
-	}
-
-	return listOptions, nil
-}
-
-func (l *lister) setupConfiguration(cfg listConfigurationsConfig, opts []ListConfigurationsOption) (v1.ListOptions, error) {
 	listOptions := v1.ListOptions{}
 	if cfg.AppName != "" {
 		listOptions.FieldSelector = "metadata.name=" + cfg.AppName

@@ -35,11 +35,6 @@ configs:
   - name: AppName
     type: string
     description: the specific app name to look for
-- name: ListConfigurations
-  options:
-  - name: AppName
-    type: string
-    description: the specific app name to look for
 - name: ListEnv
 - name: SetEnv
 - name: UnsetEnv
