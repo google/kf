@@ -3,9 +3,7 @@
 These documents aim to build a mapping between Kubernetes objects and the
 objects that make up the Cloud Foundry API.
 
-Generally, we prefer mapping CF objects onto Knative primitives use labels to
-preserve metadata. We prefer a strict policy and invariants rather than creating
-CRDs to reduce workload and establish a precedent with.
+CF objects should be mapped to well-known Knative primitives when possible, with labels preserving metadata across the components, as opposed to building new CRDs. This strict usage policy allows kf to be as thin a layer on top of Knative as possible.
 
 Additionally, we attempt to break up these objects into self-contained units
 that form a DAG to prevent tight coupling and feedback loops that are difficult
