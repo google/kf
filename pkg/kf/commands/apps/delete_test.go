@@ -20,9 +20,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps/fake"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
 	"github.com/golang/mock/gomock"
 )
 
@@ -48,17 +47,17 @@ func TestDeleteCommand(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			fakeDeleter := fake.NewFakeDeleter(ctrl)
+			fakeDeleter := fake.NewFakeClient(ctrl)
 
 			fakeRecorder := fakeDeleter.
 				EXPECT().
-				Delete(gomock.Any(), gomock.Any()).
-				DoAndReturn(func(appName string, opts ...kf.DeleteOption) error {
+				DeleteInForeground(gomock.Any(), gomock.Any()).
+				DoAndReturn(func(namespace, appName string) error {
 					if appName != tc.appName {
 						t.Fatalf("wanted appName %s, got %s", tc.appName, appName)
 					}
 
-					if ns := kf.DeleteOptions(opts).Namespace(); ns != tc.namespace {
+					if ns := namespace; ns != tc.namespace {
 						t.Fatalf("expected namespace %s, got %s", tc.namespace, ns)
 					}
 					return tc.deleteErr

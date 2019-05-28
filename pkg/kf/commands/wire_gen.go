@@ -8,6 +8,7 @@ package commands
 import (
 	"context"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	apps2 "github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/apps"
 	buildpacks2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/buildpacks"
@@ -56,8 +57,9 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 
 func InjectDelete(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
-	deleter := kf.NewDeleter(servingV1alpha1Interface)
-	command := apps.NewDeleteCommand(p, deleter)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	client := apps2.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	command := apps.NewDeleteCommand(p, client)
 	return command
 }
 
@@ -234,6 +236,8 @@ func provideSrcImageBuilder() apps.SrcImageBuilder {
 func provideBuildTailer() kf.BuildTailer {
 	return kf.BuildTailerFunc(logs.Tail)
 }
+
+var AppsSet = wire.NewSet(apps2.NewClient, config.GetServingClient, provideSystemEnvInjector)
 
 /////////////////
 // Buildpacks //
