@@ -48,12 +48,6 @@ func TestAppsCommand(t *testing.T) {
 			setup: func(t *testing.T, fakeLister *fake.FakeLister) {
 				fakeLister.
 					EXPECT().
-					ListConfigurations(gomock.Any()).
-					Do(func(opts ...kf.ListConfigurationsOption) {
-						testutil.AssertEqual(t, "namespace", "some-namespace", kf.ListConfigurationsOptions(opts).Namespace())
-					})
-				fakeLister.
-					EXPECT().
 					List(gomock.Any()).
 					Do(func(opts ...kf.ListOption) {
 						testutil.AssertEqual(t, "namespace", "some-namespace", kf.ListOptions(opts).Namespace())
@@ -62,13 +56,6 @@ func TestAppsCommand(t *testing.T) {
 		},
 		"formats multiple services": {
 			setup: func(t *testing.T, fakeLister *fake.FakeLister) {
-				fakeLister.
-					EXPECT().
-					ListConfigurations(gomock.Any()).
-					Return([]serving.Configuration{
-						{ObjectMeta: metav1.ObjectMeta{Name: "service-a"}},
-						{ObjectMeta: metav1.ObjectMeta{Name: "service-b"}},
-					}, nil)
 				fakeLister.
 					EXPECT().
 					List(gomock.Any()).
@@ -87,15 +74,9 @@ func TestAppsCommand(t *testing.T) {
 			setup: func(t *testing.T, fakeLister *fake.FakeLister) {
 				fakeLister.
 					EXPECT().
-					ListConfigurations(gomock.Any()).
-					Return([]serving.Configuration{
-						{ObjectMeta: metav1.ObjectMeta{Name: "service-a", Finalizers: []string{"foregroundDeletion"}}},
-					}, nil)
-				fakeLister.
-					EXPECT().
 					List(gomock.Any()).
 					Return([]serving.Service{
-						{ObjectMeta: metav1.ObjectMeta{Name: "service-a"}},
+						{ObjectMeta: metav1.ObjectMeta{Name: "service-a", Finalizers: []string{"foregroundDeletion"}}},
 					}, nil)
 			},
 			assert: func(t *testing.T, buffer *bytes.Buffer) {
@@ -104,21 +85,9 @@ func TestAppsCommand(t *testing.T) {
 				testutil.AssertContainsAll(t, buffer.String(), []string{header1, header2, "service-a", "Deleting"})
 			},
 		},
-		"list configurations error, returns error": {
-			wantErr: errors.New("some-error"),
-			setup: func(t *testing.T, fakeLister *fake.FakeLister) {
-				fakeLister.
-					EXPECT().
-					ListConfigurations(gomock.Any()).
-					Return(nil, errors.New("some-error"))
-			},
-		},
 		"list applications error, returns error": {
 			wantErr: errors.New("some-error"),
 			setup: func(t *testing.T, fakeLister *fake.FakeLister) {
-				fakeLister.
-					EXPECT().
-					ListConfigurations(gomock.Any())
 				fakeLister.
 					EXPECT().
 					List(gomock.Any()).
@@ -127,13 +96,6 @@ func TestAppsCommand(t *testing.T) {
 		},
 		"filters out configurations without a name": {
 			setup: func(t *testing.T, fakeLister *fake.FakeLister) {
-				fakeLister.
-					EXPECT().
-					ListConfigurations(gomock.Any()).
-					Return([]serving.Configuration{
-						{ObjectMeta: metav1.ObjectMeta{Name: "service-a"}},
-						{ObjectMeta: metav1.ObjectMeta{Name: "service-b"}},
-					}, nil)
 				fakeLister.
 					EXPECT().
 					List(gomock.Any()).

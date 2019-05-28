@@ -20,7 +20,6 @@ import (
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"github.com/spf13/cobra"
 )
 
@@ -34,29 +33,18 @@ func NewAppsCommand(p *config.KfParams, l kf.AppLister) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Fprintf(p.Output, "Getting apps in namespace: %s\n", p.Namespace)
 
-			configs, err := l.ListConfigurations(kf.WithListConfigurationsNamespace(p.Namespace))
-			if err != nil {
-				return err
-			}
-			fmt.Fprintf(p.Output, "Found %d apps in namespace %s\n", len(configs), p.Namespace)
-			fmt.Fprintln(p.Output)
-
 			apps, err := l.List(kf.WithListNamespace(p.Namespace))
 			if err != nil {
 				return err
 			}
-
-			mApps := map[string]serving.Service{}
-			for _, app := range apps {
-				mApps[app.Name] = app
-			}
+			fmt.Fprintf(p.Output, "Found %d apps in namespace %s\n", len(apps), p.Namespace)
+			fmt.Fprintln(p.Output)
 
 			// Emulating:
 			// https://github.com/knative/serving/blob/master/config/300-service.yaml
 			w := tabwriter.NewWriter(p.Output, 8, 4, 1, ' ', tabwriter.StripEscape)
 			fmt.Fprintln(w, "NAME\tDOMAIN\tLATEST CREATED\tLATEST READY\tREADY\tREASON")
-			for _, config := range configs {
-				app := mApps[config.Name]
+			for _, app := range apps {
 				status := ""
 				reason := ""
 				for _, cond := range app.Status.Conditions {
@@ -66,7 +54,7 @@ func NewAppsCommand(p *config.KfParams, l kf.AppLister) *cobra.Command {
 					}
 				}
 
-				for _, finalizer := range config.Finalizers {
+				for _, finalizer := range app.Finalizers {
 					if finalizer == "foregroundDeletion" {
 						reason = "Deleting"
 					}
