@@ -207,7 +207,6 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 		"",
 		"Path to manifest",
 	)
-	pushCmd.Flags().MarkHidden("source-image")
 
 	return pushCmd
 }
