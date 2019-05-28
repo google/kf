@@ -20,8 +20,9 @@ import (
 	"context"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/apps"
+	capps "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/apps"
 	cbuildpacks "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	servicebindingscmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/service-bindings"
@@ -45,8 +46,8 @@ import (
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
-func provideSrcImageBuilder() apps.SrcImageBuilder {
-	return apps.SrcImageBuilderFunc(kontext.BuildImage)
+func provideSrcImageBuilder() capps.SrcImageBuilder {
+	return capps.SrcImageBuilderFunc(kontext.BuildImage)
 }
 
 func provideBuildTailer() kf.BuildTailer {
@@ -57,9 +58,15 @@ func provideBuildTailer() kf.BuildTailer {
 // App Commands //
 /////////////////
 
+var AppsSet = wire.NewSet(
+	apps.NewClient,
+	config.GetServingClient,
+	provideSystemEnvInjector,
+)
+
 func InjectPush(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		apps.NewPushCommand,
+		capps.NewPushCommand,
 		kf.NewLister,
 		kf.NewPusher,
 		kf.NewLogTailer,
@@ -75,21 +82,20 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 
 func InjectDelete(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		apps.NewDeleteCommand,
-		kf.NewDeleter,
-		config.GetServingClient,
+		capps.NewDeleteCommand,
+		AppsSet,
 	)
 	return nil
 }
 
 func InjectApps(p *config.KfParams) *cobra.Command {
-	wire.Build(apps.NewAppsCommand, kf.NewLister, config.GetServingClient)
+	wire.Build(capps.NewAppsCommand, kf.NewLister, config.GetServingClient)
 	return nil
 }
 
 func InjectProxy(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		apps.NewProxyCommand,
+		capps.NewProxyCommand,
 		kf.NewLister,
 		kf.NewIstioClient,
 		config.GetServingClient,
@@ -104,7 +110,7 @@ func InjectProxy(p *config.KfParams) *cobra.Command {
 
 func InjectEnv(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		apps.NewEnvCommand,
+		capps.NewEnvCommand,
 		kf.NewLister,
 		kf.NewEnvironmentClient,
 		config.GetServingClient,
@@ -114,7 +120,7 @@ func InjectEnv(p *config.KfParams) *cobra.Command {
 
 func InjectSetEnv(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		apps.NewSetEnvCommand,
+		capps.NewSetEnvCommand,
 		kf.NewLister,
 		kf.NewEnvironmentClient,
 		config.GetServingClient,
@@ -124,7 +130,7 @@ func InjectSetEnv(p *config.KfParams) *cobra.Command {
 
 func InjectUnsetEnv(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		apps.NewUnsetEnvCommand,
+		capps.NewUnsetEnvCommand,
 		kf.NewLister,
 		kf.NewEnvironmentClient,
 		config.GetServingClient,

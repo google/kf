@@ -1,0 +1,14 @@
+# This file contains options for genfunctional.go
+---
+package: apps
+imports:
+  "github.com/knative/serving/pkg/apis/serving/v1alpha1": "serving"
+  "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1": "cserving"
+kubernetes:
+  kind: "Service"
+  version: "serving.knative.dev/v1alpha1"
+  namespaced: true
+type: "serving.Service"
+clientType: "cserving.ServingV1alpha1Interface"
+cf:
+  name: "App"

@@ -17,13 +17,13 @@ package apps
 import (
 	"log"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/spf13/cobra"
 )
 
 // NewDeleteCommand creates a delete command.
-func NewDeleteCommand(p *config.KfParams, d kf.Deleter) *cobra.Command {
+func NewDeleteCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 	var deleteCmd = &cobra.Command{
 		Use:     "delete APP_NAME",
 		Short:   "Delete an existing app",
@@ -36,7 +36,7 @@ func NewDeleteCommand(p *config.KfParams, d kf.Deleter) *cobra.Command {
 			// Cobra ensures we are only called with a single argument.
 			appName := args[0]
 
-			if err := d.Delete(appName, kf.WithDeleteNamespace(p.Namespace)); err != nil {
+			if err := appsClient.DeleteInForeground(p.Namespace, appName); err != nil {
 				return err
 			}
 
