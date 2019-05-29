@@ -129,15 +129,15 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 					}
 				}
 
-				var envMap map[string]string
+				// Read environment variables from cli args
 				var envVars []corev1.EnvVar
 				envVars, err = envutil.ParseCLIEnvVars(envs)
 				if err != nil {
 					return err
 				}
-				envMap = envutil.EnvVarsToMap(envVars)
+				envMap := envutil.EnvVarsToMap(envVars)
 
-				// Merge cli envs over manifest envs
+				// Merge cli arg environment variables over manifest ones
 				if app.Env == nil {
 					app.Env = envMap
 				} else {
