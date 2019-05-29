@@ -50,8 +50,7 @@ func TestBuildpackLister(t *testing.T) {
 		"list only buildpack build template": {
 			HandleListAction: func(t *testing.T, action ktesting.Action) {
 				testutil.AssertEqual(t, "Verb", "list", action.GetVerb())
-				testutil.AssertEqual(t, "Resource", "buildtemplates", action.GetResource().Resource)
-				testutil.AssertEqual(t, "namespace", "default", action.GetNamespace())
+				testutil.AssertEqual(t, "Resource", "clusterbuildtemplates", action.GetResource().Resource)
 				testutil.AssertEqual(t, "FieldSelector Field", "metadata.name", action.(ktesting.ListActionImpl).ListRestrictions.Fields.Requirements()[0].Field)
 				testutil.AssertEqual(t, "FieldSelector Value", "buildpack", action.(ktesting.ListActionImpl).ListRestrictions.Fields.Requirements()[0].Value)
 			},
@@ -162,13 +161,13 @@ func TestBuildpackLister(t *testing.T) {
 	}
 }
 
-func buildTemplateList(empty bool) *build.BuildTemplateList {
+func buildTemplateList(empty bool) *build.ClusterBuildTemplateList {
 	if empty {
-		return &build.BuildTemplateList{}
+		return &build.ClusterBuildTemplateList{}
 	}
 	builderImageDefault := "some-image"
-	return &build.BuildTemplateList{
-		Items: []build.BuildTemplate{{
+	return &build.ClusterBuildTemplateList{
+		Items: []build.ClusterBuildTemplate{{
 			Spec: build.BuildTemplateSpec{
 				Parameters: []build.ParameterSpec{
 					{

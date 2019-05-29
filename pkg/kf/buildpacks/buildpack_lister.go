@@ -32,7 +32,7 @@ import (
 // BuildpackLister lists the buildpacks available.
 type BuildpackLister interface {
 	// List lists the buildpacks available.
-	List(opts ...BuildpackListOption) ([]string, error)
+	List() ([]string, error)
 }
 
 // buildpackLister lists the available buildpacks. It should be created via
@@ -55,9 +55,8 @@ func NewBuildpackLister(c cbuild.BuildV1alpha1Interface, rif RemoteImageFetcher)
 }
 
 // List lists the available buildpacks.
-func (l *buildpackLister) List(opts ...BuildpackListOption) ([]string, error) {
-	cfg := BuildpackListOptionDefaults().Extend(opts).toConfig()
-	templates, err := l.c.BuildTemplates(cfg.Namespace).List(metav1.ListOptions{
+func (l *buildpackLister) List() ([]string, error) {
+	templates, err := l.c.ClusterBuildTemplates().List(metav1.ListOptions{
 		FieldSelector: "metadata.name=buildpack",
 	})
 	if err != nil {

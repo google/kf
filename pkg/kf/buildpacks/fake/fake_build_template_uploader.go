@@ -20,7 +20,6 @@
 package fake
 
 import (
-	buildpacks "github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -49,20 +48,15 @@ func (m *FakeBuildTemplateUploader) EXPECT() *FakeBuildTemplateUploaderMockRecor
 }
 
 // UploadBuildTemplate mocks base method
-func (m *FakeBuildTemplateUploader) UploadBuildTemplate(arg0 string, arg1 ...buildpacks.UploadBuildTemplateOption) error {
+func (m *FakeBuildTemplateUploader) UploadBuildTemplate(arg0 string) error {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0}
-	for _, a := range arg1 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "UploadBuildTemplate", varargs...)
+	ret := m.ctrl.Call(m, "UploadBuildTemplate", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UploadBuildTemplate indicates an expected call of UploadBuildTemplate
-func (mr *FakeBuildTemplateUploaderMockRecorder) UploadBuildTemplate(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+func (mr *FakeBuildTemplateUploaderMockRecorder) UploadBuildTemplate(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0}, arg1...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadBuildTemplate", reflect.TypeOf((*FakeBuildTemplateUploader)(nil).UploadBuildTemplate), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadBuildTemplate", reflect.TypeOf((*FakeBuildTemplateUploader)(nil).UploadBuildTemplate), arg0)
 }

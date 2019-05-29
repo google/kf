@@ -23,13 +23,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-//go:generate go run ../internal/tools/option-builder/option-builder.go options.yml options.go
-
 // BuildTemplateUploader uploads a build template
 type BuildTemplateUploader interface {
 	// UploadBuildTemplate uploads a buildpack build template with the name
 	// "buildpack".
-	UploadBuildTemplate(imageName string, opts ...UploadBuildTemplateOption) error
+	UploadBuildTemplate(imageName string) error
 }
 
 // buildTemplateUploader uploads a new buildpack build template. It should be
@@ -47,18 +45,16 @@ func NewBuildTemplateUploader(c cbuild.BuildV1alpha1Interface) BuildTemplateUplo
 
 // UploadBuildTemplate uploads a buildpack build template with the name
 // "buildpack".
-func (u *buildTemplateUploader) UploadBuildTemplate(imageName string, opts ...UploadBuildTemplateOption) error {
+func (u *buildTemplateUploader) UploadBuildTemplate(imageName string) error {
 	if imageName == "" {
 		return errors.New("image name must not be empty")
 	}
 
-	cfg := UploadBuildTemplateOptionDefaults().Extend(opts).toConfig()
-
 	// TODO: It would be nice if we generated this instead.
-	if _, err := u.deployer(cfg.Namespace)(&build.BuildTemplate{
+	if _, err := u.deployer()(&build.ClusterBuildTemplate{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "build.knative.dev/v1alpha1",
-			Kind:       "BuildTemplate",
+			Kind:       "ClusterBuildTemplate",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "buildpack",
@@ -210,30 +206,30 @@ fi`,
 	return nil
 }
 
-type deployer func(*build.BuildTemplate) (*build.BuildTemplate, error)
+type deployer func(*build.ClusterBuildTemplate) (*build.ClusterBuildTemplate, error)
 
-func (u *buildTemplateUploader) deployer(namespace string) deployer {
-	builds, err := u.c.BuildTemplates(namespace).List(metav1.ListOptions{
+func (u *buildTemplateUploader) deployer() deployer {
+	builds, err := u.c.ClusterBuildTemplates().List(metav1.ListOptions{
 		FieldSelector: "metadata.name=buildpack",
 	})
 
 	if err != nil {
 		// Simplify workflow and just return a deployer that will fail with the
 		// given error.
-		return func(t *build.BuildTemplate) (*build.BuildTemplate, error) {
+		return func(t *build.ClusterBuildTemplate) (*build.ClusterBuildTemplate, error) {
 			return nil, err
 		}
 	}
 
 	if len(builds.Items) == 0 {
-		return func(t *build.BuildTemplate) (*build.BuildTemplate, error) {
-			return u.c.BuildTemplates(namespace).Create(t)
+		return func(t *build.ClusterBuildTemplate) (*build.ClusterBuildTemplate, error) {
+			return u.c.ClusterBuildTemplates().Create(t)
 		}
 	}
 
-	return func(t *build.BuildTemplate) (*build.BuildTemplate, error) {
+	return func(t *build.ClusterBuildTemplate) (*build.ClusterBuildTemplate, error) {
 		t.ResourceVersion = builds.Items[0].ResourceVersion
-		return u.c.BuildTemplates(namespace).Update(t)
+		return u.c.ClusterBuildTemplates().Update(t)
 	}
 }
 

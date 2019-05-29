@@ -20,7 +20,6 @@
 package fake
 
 import (
-	buildpacks "github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -49,20 +48,16 @@ func (m *FakeBuildpackLister) EXPECT() *FakeBuildpackListerMockRecorder {
 }
 
 // List mocks base method
-func (m *FakeBuildpackLister) List(arg0 ...buildpacks.BuildpackListOption) ([]string, error) {
+func (m *FakeBuildpackLister) List() ([]string, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{}
-	for _, a := range arg0 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "List", varargs...)
+	ret := m.ctrl.Call(m, "List")
 	ret0, _ := ret[0].([]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // List indicates an expected call of List
-func (mr *FakeBuildpackListerMockRecorder) List(arg0 ...interface{}) *gomock.Call {
+func (mr *FakeBuildpackListerMockRecorder) List() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*FakeBuildpackLister)(nil).List), arg0...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*FakeBuildpackLister)(nil).List))
 }

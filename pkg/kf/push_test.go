@@ -239,6 +239,7 @@ func TestPush(t *testing.T) {
 						testutil.AssertEqual(t, "Spec.ServiceAccountName", "some-service-account", b.Spec.ServiceAccountName)
 						testutil.AssertEqual(t, "image", "some-image", b.Spec.Source.Custom.Image)
 						testutil.AssertEqual(t, "Spec.Template.Name", "buildpack", b.Spec.Template.Name)
+						testutil.AssertEqual(t, "Spec.Template.Kind", build.ClusterBuildTemplateKind, b.Spec.Template.Kind)
 
 						args := make(map[string]string)
 						for _, arg := range b.Spec.Template.Arguments {
