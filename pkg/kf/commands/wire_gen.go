@@ -72,10 +72,11 @@ func InjectApps(p *config.KfParams) *cobra.Command {
 
 func InjectProxy(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
-	appLister := kf.NewLister(servingV1alpha1Interface)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	client := apps2.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
 	kubernetesInterface := config.GetKubernetes(p)
 	ingressLister := kf.NewIstioClient(kubernetesInterface)
-	command := apps.NewProxyCommand(p, appLister, ingressLister)
+	command := apps.NewProxyCommand(p, client, ingressLister)
 	return command
 }
 

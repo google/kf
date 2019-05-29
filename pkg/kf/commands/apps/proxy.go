@@ -22,12 +22,13 @@ import (
 	"net/http/httputil"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/spf13/cobra"
 )
 
-// NewProxyCommand creates a proxy command.
-func NewProxyCommand(p *config.KfParams, l kf.AppLister, ingressLister kf.IngressLister) *cobra.Command {
+// NewProxyCommand creates a command capable of proxying a remote server locally.
+func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister kf.IngressLister) *cobra.Command {
 	var (
 		gateway string
 		port    int
@@ -60,7 +61,7 @@ func NewProxyCommand(p *config.KfParams, l kf.AppLister, ingressLister kf.Ingres
 				gateway = ingress
 			}
 
-			app, err := kf.ExtractOneService(l.List(kf.WithListNamespace(p.Namespace), kf.WithListAppName(appName)))
+			app, err := appsClient.Get(p.Namespace, appName)
 			if err != nil {
 				return err
 			}

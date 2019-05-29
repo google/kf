@@ -19,6 +19,7 @@ import (
 	"errors"
 	"testing"
 
+	fakeapps "github.com/GoogleCloudPlatform/kf/pkg/kf/apps/fake"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
@@ -36,7 +37,7 @@ func TestNewProxyCommand(t *testing.T) {
 		Args            []string
 		ExpectedStrings []string
 		ExpectedErr     error
-		Setup           func(t *testing.T, lister *fake.FakeLister, istio *fake.FakeIstioClient)
+		Setup           func(t *testing.T, lister *fakeapps.FakeClient, istio *fake.FakeIstioClient)
 	}{
 		"no app name": {
 			Namespace:   "default",
@@ -47,16 +48,16 @@ func TestNewProxyCommand(t *testing.T) {
 			Namespace:   "default",
 			Args:        []string{"my-app", "--no-start=true"},
 			ExpectedErr: nil,
-			Setup: func(t *testing.T, lister *fake.FakeLister, istio *fake.FakeIstioClient) {
+			Setup: func(t *testing.T, lister *fakeapps.FakeClient, istio *fake.FakeIstioClient) {
 				istio.EXPECT().ListIngresses(gomock.Any()).Return([]corev1.LoadBalancerIngress{{IP: "8.8.8.8"}}, nil)
-				lister.EXPECT().List(gomock.Any()).Return([]serving.Service{{}}, nil)
+				lister.EXPECT().Get("default", "my-app").Return(&serving.Service{}, nil)
 			},
 		},
 		"autodetect failure": {
 			Namespace:   "default",
 			Args:        []string{"my-app"},
 			ExpectedErr: errors.New("istio-failure"),
-			Setup: func(t *testing.T, lister *fake.FakeLister, istio *fake.FakeIstioClient) {
+			Setup: func(t *testing.T, lister *fakeapps.FakeClient, istio *fake.FakeIstioClient) {
 				istio.EXPECT().ListIngresses(gomock.Any()).Return(nil, errors.New("istio-failure"))
 			},
 		},
@@ -65,11 +66,11 @@ func TestNewProxyCommand(t *testing.T) {
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			fakeLister := fake.NewFakeLister(ctrl)
+			fakeAppClient := fakeapps.NewFakeClient(ctrl)
 			fakeIstio := fake.NewFakeIstioClient(ctrl)
 
 			if tc.Setup != nil {
-				tc.Setup(t, fakeLister, fakeIstio)
+				tc.Setup(t, fakeAppClient, fakeIstio)
 			}
 
 			buf := new(bytes.Buffer)
@@ -78,7 +79,7 @@ func TestNewProxyCommand(t *testing.T) {
 				Namespace: tc.Namespace,
 			}
 
-			cmd := NewProxyCommand(p, fakeLister, fakeIstio)
+			cmd := NewProxyCommand(p, fakeAppClient, fakeIstio)
 			cmd.SetOutput(buf)
 			cmd.SetArgs(tc.Args)
 			_, actualErr := cmd.ExecuteC()

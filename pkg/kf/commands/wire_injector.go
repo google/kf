@@ -96,9 +96,8 @@ func InjectApps(p *config.KfParams) *cobra.Command {
 func InjectProxy(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		capps.NewProxyCommand,
-		kf.NewLister,
+		AppsSet,
 		kf.NewIstioClient,
-		config.GetServingClient,
 		config.GetKubernetes,
 	)
 	return nil
