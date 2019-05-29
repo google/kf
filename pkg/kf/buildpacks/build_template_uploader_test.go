@@ -36,7 +36,6 @@ func TestBuildTemplateUploader(t *testing.T) {
 		BuildTemplateErr     error
 		BuildTemplateItems   []string
 		ListBuildTemplateErr error
-		Opts                 []buildpacks.UploadBuildTemplateOption
 		HandleDeployAction   func(t *testing.T, action ktesting.Action)
 		HandleListAction     func(t *testing.T, action ktesting.Action)
 	}{
@@ -44,8 +43,7 @@ func TestBuildTemplateUploader(t *testing.T) {
 			ImageName: "some-image",
 			HandleListAction: func(t *testing.T, action ktesting.Action) {
 				testutil.AssertEqual(t, "Verb", "list", action.GetVerb())
-				testutil.AssertEqual(t, "Resource", "buildtemplates", action.GetResource().Resource)
-				testutil.AssertEqual(t, "namespace", "default", action.GetNamespace())
+				testutil.AssertEqual(t, "Resource", "clusterbuildtemplates", action.GetResource().Resource)
 				testutil.AssertEqual(t, "FieldSelector Field", "metadata.name", action.(ktesting.ListActionImpl).ListRestrictions.Fields.Requirements()[0].Field)
 				testutil.AssertEqual(t, "FieldSelector Value", "buildpack", action.(ktesting.ListActionImpl).ListRestrictions.Fields.Requirements()[0].Value)
 			},
@@ -54,11 +52,11 @@ func TestBuildTemplateUploader(t *testing.T) {
 			ImageName: "some-image",
 			HandleDeployAction: func(t *testing.T, action ktesting.Action) {
 				testutil.AssertEqual(t, "Verb", "create", action.GetVerb())
-				testutil.AssertEqual(t, "Resource", "buildtemplates", action.GetResource().Resource)
+				testutil.AssertEqual(t, "Resource", "clusterbuildtemplates", action.GetResource().Resource)
 
-				bt := action.(ktesting.CreateActionImpl).Object.(*build.BuildTemplate)
+				bt := action.(ktesting.CreateActionImpl).Object.(*build.ClusterBuildTemplate)
 				testutil.AssertEqual(t, "apiVersion", "build.knative.dev/v1alpha1", bt.APIVersion)
-				testutil.AssertEqual(t, "kind", "BuildTemplate", bt.Kind)
+				testutil.AssertEqual(t, "kind", "ClusterBuildTemplate", bt.Kind)
 				testutil.AssertEqual(t, "Name", "buildpack", bt.Name)
 			},
 		},
@@ -67,16 +65,16 @@ func TestBuildTemplateUploader(t *testing.T) {
 			BuildTemplateItems: []string{"template-1"},
 			HandleDeployAction: func(t *testing.T, action ktesting.Action) {
 				testutil.AssertEqual(t, "Verb", "update", action.GetVerb())
-				testutil.AssertEqual(t, "Resource", "buildtemplates", action.GetResource().Resource)
+				testutil.AssertEqual(t, "Resource", "clusterbuildtemplates", action.GetResource().Resource)
 
-				bt := action.(ktesting.UpdateActionImpl).Object.(*build.BuildTemplate)
+				bt := action.(ktesting.UpdateActionImpl).Object.(*build.ClusterBuildTemplate)
 				testutil.AssertEqual(t, "Resource", "template-1-version", bt.ResourceVersion)
 			},
 		},
 		"sets the step parameters": {
 			ImageName: "some-image",
 			HandleDeployAction: func(t *testing.T, action ktesting.Action) {
-				bt := action.(ktesting.CreateActionImpl).Object.(*build.BuildTemplate)
+				bt := action.(ktesting.CreateActionImpl).Object.(*build.ClusterBuildTemplate)
 				params := map[interface{}]interface{}{}
 				for _, p := range bt.Spec.Parameters {
 					if p.Default == nil {
@@ -100,7 +98,7 @@ func TestBuildTemplateUploader(t *testing.T) {
 		"step prepare": {
 			ImageName: "some-image",
 			HandleDeployAction: func(t *testing.T, action ktesting.Action) {
-				step := action.(ktesting.CreateActionImpl).Object.(*build.BuildTemplate).Spec.Steps[0]
+				step := action.(ktesting.CreateActionImpl).Object.(*build.ClusterBuildTemplate).Spec.Steps[0]
 				testutil.AssertEqual(t, "Name", "prepare", step.Name)
 				testutil.AssertEqual(t, "Image", "alpine", step.Image)
 				testutil.AssertEqual(t, "Command", []string{"/bin/sh"}, step.Command)
@@ -118,7 +116,7 @@ func TestBuildTemplateUploader(t *testing.T) {
 		"step detect": {
 			ImageName: "some-image",
 			HandleDeployAction: func(t *testing.T, action ktesting.Action) {
-				step := action.(ktesting.CreateActionImpl).Object.(*build.BuildTemplate).Spec.Steps[1]
+				step := action.(ktesting.CreateActionImpl).Object.(*build.ClusterBuildTemplate).Spec.Steps[1]
 				testutil.AssertEqual(t, "Name", "detect", step.Name)
 				testutil.AssertEqual(t, "Image", "${BUILDER_IMAGE}", step.Image)
 				testutil.AssertEqual(t, "Command", []string{"/bin/bash"}, step.Command)
@@ -130,7 +128,7 @@ func TestBuildTemplateUploader(t *testing.T) {
 		"step analyze": {
 			ImageName: "some-image",
 			HandleDeployAction: func(t *testing.T, action ktesting.Action) {
-				step := action.(ktesting.CreateActionImpl).Object.(*build.BuildTemplate).Spec.Steps[2]
+				step := action.(ktesting.CreateActionImpl).Object.(*build.ClusterBuildTemplate).Spec.Steps[2]
 				testutil.AssertEqual(t, "Name", "analyze", step.Name)
 				testutil.AssertEqual(t, "Image", "${BUILDER_IMAGE}", step.Image)
 				testutil.AssertEqual(t, "Command", []string{"/lifecycle/analyzer"}, step.Command)
@@ -148,7 +146,7 @@ func TestBuildTemplateUploader(t *testing.T) {
 		"step build": {
 			ImageName: "some-image",
 			HandleDeployAction: func(t *testing.T, action ktesting.Action) {
-				step := action.(ktesting.CreateActionImpl).Object.(*build.BuildTemplate).Spec.Steps[3]
+				step := action.(ktesting.CreateActionImpl).Object.(*build.ClusterBuildTemplate).Spec.Steps[3]
 				testutil.AssertEqual(t, "Name", "build", step.Name)
 				testutil.AssertEqual(t, "Image", "${BUILDER_IMAGE}", step.Image)
 				testutil.AssertEqual(t, "Command", []string{"/lifecycle/builder"}, step.Command)
@@ -166,7 +164,7 @@ func TestBuildTemplateUploader(t *testing.T) {
 		"step export": {
 			ImageName: "some-image",
 			HandleDeployAction: func(t *testing.T, action ktesting.Action) {
-				step := action.(ktesting.CreateActionImpl).Object.(*build.BuildTemplate).Spec.Steps[4]
+				step := action.(ktesting.CreateActionImpl).Object.(*build.ClusterBuildTemplate).Spec.Steps[4]
 				testutil.AssertEqual(t, "Name", "export", step.Name)
 				testutil.AssertEqual(t, "Image", "${BUILDER_IMAGE}", step.Image)
 				testutil.AssertEqual(t, "Command", []string{"/lifecycle/exporter"}, step.Command)
@@ -186,23 +184,8 @@ func TestBuildTemplateUploader(t *testing.T) {
 		"volumes": {
 			ImageName: "some-image",
 			HandleDeployAction: func(t *testing.T, action ktesting.Action) {
-				volumes := action.(ktesting.CreateActionImpl).Object.(*build.BuildTemplate).Spec.Volumes
+				volumes := action.(ktesting.CreateActionImpl).Object.(*build.ClusterBuildTemplate).Spec.Volumes
 				testutil.AssertEqual(t, "Volumes.Name", "empty-dir", volumes[0].Name)
-			},
-		},
-		"default namespace": {
-			ImageName: "some-image",
-			HandleDeployAction: func(t *testing.T, action ktesting.Action) {
-				testutil.AssertEqual(t, "Namespace", "default", action.GetNamespace())
-			},
-		},
-		"uses custom namespace": {
-			ImageName: "some-image",
-			Opts: []buildpacks.UploadBuildTemplateOption{
-				buildpacks.WithUploadBuildTemplateNamespace("some-namespace"),
-			},
-			HandleDeployAction: func(t *testing.T, action ktesting.Action) {
-				testutil.AssertEqual(t, "Namespace", "some-namespace", action.GetNamespace())
 			},
 		},
 		"empty image name returns an error": {
@@ -234,9 +217,9 @@ func TestBuildTemplateUploader(t *testing.T) {
 					}
 
 					if len(tc.BuildTemplateItems) > 0 {
-						var bt build.BuildTemplateList
+						var bt build.ClusterBuildTemplateList
 						for _, name := range tc.BuildTemplateItems {
-							bt.Items = append(bt.Items, build.BuildTemplate{
+							bt.Items = append(bt.Items, build.ClusterBuildTemplate{
 								ObjectMeta: metav1.ObjectMeta{
 									Name:            name,
 									ResourceVersion: name + "-version",
@@ -259,7 +242,7 @@ func TestBuildTemplateUploader(t *testing.T) {
 			}))
 
 			u := buildpacks.NewBuildTemplateUploader(fake)
-			gotErr := u.UploadBuildTemplate(tc.ImageName, tc.Opts...)
+			gotErr := u.UploadBuildTemplate(tc.ImageName)
 			if gotErr != nil || tc.ExpectedErr != nil {
 				testutil.AssertErrorsEqual(t, tc.ExpectedErr, gotErr)
 				return

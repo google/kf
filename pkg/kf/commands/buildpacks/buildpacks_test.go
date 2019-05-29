@@ -19,7 +19,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks/fake"
 	cbuildpacks "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
@@ -43,20 +42,12 @@ func TestBuildpacks(t *testing.T) {
 		"listing failes": {
 			ExpectedErr: errors.New("some-error"),
 			Setup: func(t *testing.T, fake *fake.FakeBuildpackLister) {
-				fake.EXPECT().List(gomock.Any()).Return(nil, errors.New("some-error"))
-			},
-		},
-		"custom namespace": {
-			Namespace: "some-namespace",
-			Setup: func(t *testing.T, fake *fake.FakeBuildpackLister) {
-				fake.EXPECT().List(gomock.Any()).Do(func(opts ...buildpacks.BuildpackListOption) {
-					testutil.AssertEqual(t, "namespace", "some-namespace", buildpacks.BuildpackListOptions(opts).Namespace())
-				})
+				fake.EXPECT().List().Return(nil, errors.New("some-error"))
 			},
 		},
 		"lists each buildpack": {
 			Setup: func(t *testing.T, fake *fake.FakeBuildpackLister) {
-				fake.EXPECT().List(gomock.Any()).Return([]string{"bp-1", "bp-2"}, nil)
+				fake.EXPECT().List().Return([]string{"bp-1", "bp-2"}, nil)
 			},
 			BufferF: func(t *testing.T, buffer *bytes.Buffer) {
 				testutil.AssertContainsAll(t, buffer.String(), []string{"bp-1", "bp-2"})

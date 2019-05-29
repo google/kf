@@ -32,9 +32,10 @@ func NewBuildpacks(p *config.KfParams, l buildpacks.BuildpackLister) *cobra.Comm
 		Args:  cobra.ExactArgs(0),
 		Long:  ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			bps, err := l.List(
-				buildpacks.WithBuildpackListNamespace(p.Namespace),
-			)
+			if p.Namespace != "default" && p.Namespace != "" {
+				fmt.Fprintf(cmd.OutOrStderr(), "NOTE: Buildpacks are global and are available to all spaces.")
+			}
+			bps, err := l.List()
 			if err != nil {
 				cmd.SilenceUsage = !kf.ConfigError(err)
 				return err

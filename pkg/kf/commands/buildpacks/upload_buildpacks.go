@@ -15,6 +15,7 @@
 package buildpacks
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -36,6 +37,10 @@ func NewUploadBuildpacks(p *config.KfParams, c buildpacks.BuilderCreator, u buil
 		Args:  cobra.ExactArgs(0),
 		Long:  ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if p.Namespace != "default" && p.Namespace != "" {
+				fmt.Fprintf(cmd.OutOrStderr(), "NOTE: Buildpacks are global and are available to all spaces.")
+			}
+
 			if path != "" {
 				var err error
 				path, err = filepath.Abs(path)
@@ -56,7 +61,7 @@ func NewUploadBuildpacks(p *config.KfParams, c buildpacks.BuilderCreator, u buil
 				return err
 			}
 
-			if err := u.UploadBuildTemplate(image, buildpacks.WithUploadBuildTemplateNamespace(p.Namespace)); err != nil {
+			if err := u.UploadBuildTemplate(image); err != nil {
 				cmd.SilenceUsage = !kf.ConfigError(err)
 				return err
 			}

@@ -49,11 +49,16 @@ func BuildStatus(build build.Build) (finished bool, err error) {
 // PopulateTemplate populates a build template for Client.Create.
 // This method is public for debugging purposes so we can dry-run builds for
 // users.
-func PopulateTemplate(name string, template build.TemplateInstantiationSpec, opts ...CreateOption) *build.Build {
+func PopulateTemplate(
+	name string,
+	template build.TemplateInstantiationSpec,
+	opts ...CreateOption,
+) *build.Build {
 	cfg := CreateOptionDefaults().Extend(opts).toConfig()
 
 	// XXX: other types of sources are supported, notably git.
-	// Adding in flags for git could be a quick win to support git-ops workflows.
+	// Adding in flags for git could be a quick win to support git-ops
+	// workflows.
 	var source *build.SourceSpec
 	if cfg.SourceImage != "" {
 		source = &build.SourceSpec{

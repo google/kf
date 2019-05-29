@@ -21,7 +21,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks/fake"
 	cbuildpacks "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
@@ -43,7 +42,7 @@ func TestUploadBuildpacks(t *testing.T) {
 				c.Flags().Set("path", "/some-path")
 				c.Flags().Set("container-registry", "some-registry.io")
 				fakeBuilderCreator.EXPECT().Create("/some-path", "some-registry.io").Return("some-image", nil)
-				fakeBuildTemplateUploader.EXPECT().UploadBuildTemplate("some-image", gomock.Any())
+				fakeBuildTemplateUploader.EXPECT().UploadBuildTemplate("some-image")
 			},
 		},
 		"converts relative path to absolute": {
@@ -54,7 +53,7 @@ func TestUploadBuildpacks(t *testing.T) {
 						t.Fatalf("expetec path to be absolute: %s", path)
 					}
 				})
-				fakeBuildTemplateUploader.EXPECT().UploadBuildTemplate(gomock.Any(), gomock.Any())
+				fakeBuildTemplateUploader.EXPECT().UploadBuildTemplate(gomock.Any())
 			},
 		},
 		"converts empty path to current directory": {
@@ -64,16 +63,7 @@ func TestUploadBuildpacks(t *testing.T) {
 					t.Fatal(err)
 				}
 				fakeBuilderCreator.EXPECT().Create(cwd, gomock.Any())
-				fakeBuildTemplateUploader.EXPECT().UploadBuildTemplate(gomock.Any(), gomock.Any())
-			},
-		},
-		"passes namespace": {
-			Namespace: "some-namespace",
-			Setup: func(t *testing.T, c *cobra.Command, fakeBuilderCreator *fake.FakeBuilderCreator, fakeBuildTemplateUploader *fake.FakeBuildTemplateUploader) {
-				fakeBuilderCreator.EXPECT().Create(gomock.Any(), gomock.Any())
-				fakeBuildTemplateUploader.EXPECT().UploadBuildTemplate(gomock.Any(), gomock.Any()).Do(func(imageName string, opts ...buildpacks.UploadBuildTemplateOption) {
-					testutil.AssertEqual(t, "namespace", "some-namespace", buildpacks.UploadBuildTemplateOptions(opts).Namespace())
-				})
+				fakeBuildTemplateUploader.EXPECT().UploadBuildTemplate(gomock.Any())
 			},
 		},
 		"returns error when upload fails": {
@@ -82,7 +72,7 @@ func TestUploadBuildpacks(t *testing.T) {
 				c.Flags().Set("path", "/some-path")
 				c.Flags().Set("container-registry", "some-registry.io")
 				fakeBuilderCreator.EXPECT().Create("/some-path", "some-registry.io")
-				fakeBuildTemplateUploader.EXPECT().UploadBuildTemplate(gomock.Any(), gomock.Any()).Return(errors.New("some-error"))
+				fakeBuildTemplateUploader.EXPECT().UploadBuildTemplate(gomock.Any()).Return(errors.New("some-error"))
 			},
 		},
 		"returns error when create fails": {

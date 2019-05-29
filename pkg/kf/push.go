@@ -161,7 +161,7 @@ func (p *pusher) buildSpec(
 	// create the required JSON.
 	buildSpec := builds.PopulateTemplate(
 		"", // no name provided
-		build.TemplateInstantiationSpec{Name: "buildpack"},
+		build.TemplateInstantiationSpec{Name: "buildpack", Kind: build.ClusterBuildTemplateKind},
 		builds.WithCreateServiceAccount(serviceAccount),
 		builds.WithCreateArgs(args),
 		builds.WithCreateSourceImage(srcImage),
