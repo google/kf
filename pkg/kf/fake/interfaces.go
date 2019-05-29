@@ -17,7 +17,6 @@ package fake
 //go:generate mockgen --package=fake --copyright_file ../internal/tools/option-builder/LICENSE_HEADER --destination=fake_lister.go --mock_names=Lister=FakeLister github.com/GoogleCloudPlatform/kf/pkg/kf/fake Lister
 //go:generate mockgen --package=fake --copyright_file ../internal/tools/option-builder/LICENSE_HEADER --destination=fake_pusher.go --mock_names=Pusher=FakePusher github.com/GoogleCloudPlatform/kf/pkg/kf/fake Pusher
 //go:generate mockgen --package=fake --copyright_file ../internal/tools/option-builder/LICENSE_HEADER --destination=fake_log_tailer.go --mock_names=LogTailer=FakeLogTailer github.com/GoogleCloudPlatform/kf/pkg/kf/fake LogTailer
-//go:generate mockgen --package=fake --copyright_file ../internal/tools/option-builder/LICENSE_HEADER --destination=fake_environment_client.go --mock_names=EnvironmentClient=FakeEnvironmentClient github.com/GoogleCloudPlatform/kf/pkg/kf/fake EnvironmentClient
 //go:generate mockgen --package=fake --copyright_file ../internal/tools/option-builder/LICENSE_HEADER --destination=fake_istio_client.go --mock_names=IstioClient=FakeIstioClient github.com/GoogleCloudPlatform/kf/pkg/kf/fake IstioClient
 //go:generate mockgen --package=fake --copyright_file ../internal/tools/option-builder/LICENSE_HEADER --destination=fake_systemenvinjector.go --mock_names=SystemEnvInjector=FakeSystemEnvInjector github.com/GoogleCloudPlatform/kf/pkg/kf/fake SystemEnvInjector
 //go:generate mockgen --package=fake --copyright_file ../internal/tools/option-builder/LICENSE_HEADER --destination=fake_deployer.go --mock_names=Deployer=FakeDeployer github.com/GoogleCloudPlatform/kf/pkg/kf/fake Deployer
@@ -39,11 +38,6 @@ type Pusher interface {
 // LogTailer is implemented by kf.LogTailer.
 type LogTailer interface {
 	kf.Logs
-}
-
-// EnvironmentClient is implemented by kf.EnvironmentClient.
-type EnvironmentClient interface {
-	kf.EnvironmentClient
 }
 
 // IstioClient is implemented by kf.IstioClient.

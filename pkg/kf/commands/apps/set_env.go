@@ -15,13 +15,15 @@
 package apps
 
 import (
-	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
+	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // NewSetEnvCommand creates a SetEnv command.
-func NewSetEnvCommand(p *config.KfParams, c kf.EnvironmentClient) *cobra.Command {
+func NewSetEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command {
 	var envCmd = &cobra.Command{
 		Use:     "set-env APP_NAME ENV_VAR_NAME ENV_VAR_VALUE",
 		Short:   "Set an environment variable for an app",
@@ -34,16 +36,16 @@ func NewSetEnvCommand(p *config.KfParams, c kf.EnvironmentClient) *cobra.Command
 
 			cmd.SilenceUsage = true
 
-			err := c.Set(
-				appName,
-				map[string]string{name: value},
-				kf.WithSetEnvNamespace(p.Namespace),
-			)
-			if err != nil {
-				return err
+			toSet := []corev1.EnvVar{
+				{Name: name, Value: value},
 			}
 
-			return nil
+			return appClient.Transform(p.Namespace, appName, func(app *serving.Service) error {
+				kfapp := (*apps.KfApp)(app)
+				kfapp.MergeEnvVars(toSet)
+
+				return nil
+			})
 		},
 	}
 

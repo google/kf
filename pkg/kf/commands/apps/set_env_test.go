@@ -19,11 +19,13 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps/fake"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
+	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 )
 
 func TestSetEnvCommand(t *testing.T) {
@@ -34,7 +36,7 @@ func TestSetEnvCommand(t *testing.T) {
 		Args            []string
 		ExpectedStrings []string
 		ExpectedErr     error
-		Setup           func(t *testing.T, fake *fake.FakeEnvironmentClient)
+		Setup           func(t *testing.T, fake *fake.FakeClient)
 	}{
 		"wrong number of params": {
 			Args:        []string{},
@@ -43,29 +45,35 @@ func TestSetEnvCommand(t *testing.T) {
 		"setting variables fails": {
 			Args:        []string{"app-name", "NAME", "VALUE"},
 			ExpectedErr: errors.New("some-error"),
-			Setup: func(t *testing.T, fake *fake.FakeEnvironmentClient) {
-				fake.EXPECT().Set("app-name", gomock.Any(), gomock.Any()).Return(errors.New("some-error"))
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Transform(gomock.Any(), "app-name", gomock.Any()).Return(errors.New("some-error"))
 			},
 		},
 		"custom namespace": {
 			Args:      []string{"app-name", "NAME", "VALUE"},
 			Namespace: "some-namespace",
-			Setup: func(t *testing.T, fake *fake.FakeEnvironmentClient) {
-				fake.EXPECT().Set(gomock.Any(), gomock.Any(), gomock.Any()).Do(func(appName string, values map[string]string, opts ...kf.SetEnvOption) {
-					testutil.AssertEqual(t, "namespace", "some-namespace", kf.SetEnvOptions(opts).Namespace())
-				})
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Transform("some-namespace", "app-name", gomock.Any())
 			},
 		},
 		"sets values": {
 			Args: []string{"app-name", "NAME", "VALUE"},
-			Setup: func(t *testing.T, fake *fake.FakeEnvironmentClient) {
-				fake.EXPECT().Set("app-name", map[string]string{"NAME": "VALUE"}, gomock.Any())
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Transform(gomock.Any(), "app-name", gomock.Any()).Do(func(namespace, appName string, mutator apps.Mutator) {
+					out := &serving.Service{}
+					err := mutator(out)
+					testutil.AssertNil(t, "mutator err", err)
+
+					app := (*apps.KfApp)(out)
+					actualVars := envutil.EnvVarsToMap(app.GetEnvVars())
+					testutil.AssertEqual(t, "env vars", map[string]string{"NAME": "VALUE"}, actualVars)
+				})
 			},
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			fake := fake.NewFakeEnvironmentClient(ctrl)
+			fake := fake.NewFakeClient(ctrl)
 
 			if tc.Setup != nil {
 				tc.Setup(t, fake)
