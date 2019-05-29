@@ -79,9 +79,8 @@ func RunIntegrationTest(t *testing.T, test func(ctx context.Context, t *testing.
 
 // KfTestConfig is a configuration for a Kf Test.
 type KfTestConfig struct {
-	Args       []string
-	Env        map[string]string
-	WorkingDir string
+	Args []string
+	Env  map[string]string
 }
 
 // KfTestOutput is the output from `kf`. Note, this output is while kf is
@@ -95,18 +94,6 @@ type KfTestOutput struct {
 
 func kf(ctx context.Context, t *testing.T, binaryPath string, cfg KfTestConfig) (KfTestOutput, <-chan error) {
 	t.Helper()
-
-	if cfg.WorkingDir != "" {
-		absPath, err := filepath.Abs(filepath.Join(RootDir(ctx, t), cfg.WorkingDir))
-		if err != nil {
-			t.Fatalf("failed to change dir: %s", err)
-		}
-
-		err = os.Chdir(absPath)
-		if err != nil {
-			t.Fatalf("failed to change dir: %s", err)
-		}
-	}
 
 	cmd := exec.CommandContext(ctx, binaryPath, cfg.Args...)
 	for name, value := range cfg.Env {
@@ -395,7 +382,7 @@ func KF(t *testing.T, kf KfInvoker) *Kf {
 }
 
 // Push pushes an application.
-func (k *Kf) Push(ctx context.Context, appName, workingDir string, flags map[string]string) {
+func (k *Kf) Push(ctx context.Context, appName string, flags map[string]string) {
 	k.t.Helper()
 	Logf(k.t, "pushing app %q...", appName)
 	defer Logf(k.t, "done pushing app %q.", appName)
@@ -415,8 +402,7 @@ func (k *Kf) Push(ctx context.Context, appName, workingDir string, flags map[str
 	}
 
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
-		Args:       args,
-		WorkingDir: workingDir,
+		Args: args,
 	})
 	PanicOnError(ctx, k.t, fmt.Sprintf("push %q", appName), errs)
 	StreamOutput(ctx, k.t, output)

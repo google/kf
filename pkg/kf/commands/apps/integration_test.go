@@ -47,7 +47,7 @@ func TestIntegration_Push(t *testing.T) {
 
 		// Push an app and then clean it up. This pushes the echo app which
 		// replies with the same body that was posted.
-		kf.Push(ctx, appName, "", map[string]string{
+		kf.Push(ctx, appName, map[string]string{
 			"--built-in":           "",
 			"--path":               filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
 			"--container-registry": fmt.Sprintf("gcr.io/%s", GCPProjectID()),
@@ -92,7 +92,8 @@ func TestIntegration_Push_manifest(t *testing.T) {
 		appName := "manifest-app"
 
 		// Push an app with a manifest file.
-		kf.Push(ctx, appName, "./samples/apps/manifest", map[string]string{
+		kf.Push(ctx, appName, map[string]string{
+			"--path":               filepath.Join(RootDir(ctx, t), "samples", "apps", "manifest"),
 			"--container-registry": fmt.Sprintf("gcr.io/%s", GCPProjectID()),
 		})
 		defer kf.Delete(ctx, appName)
@@ -126,7 +127,7 @@ func TestIntegration_Delete(t *testing.T) {
 
 		// Push an app and then clean it up. This pushes the echo app which
 		// simplies replies with the same body that was posted.
-		kf.Push(ctx, appName, "", map[string]string{
+		kf.Push(ctx, appName, map[string]string{
 			"--built-in":           "",
 			"--path":               filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
 			"--container-registry": fmt.Sprintf("gcr.io/%s", GCPProjectID()),
@@ -164,7 +165,7 @@ func TestIntegration_Envs(t *testing.T) {
 		// Push an app and then clean it up. This pushes the envs app which
 		// returns the set environment variables via JSON. Set two environment
 		// variables (ENV1 and ENV2).
-		kf.Push(ctx, appName, "", map[string]string{
+		kf.Push(ctx, appName, map[string]string{
 			"--built-in":           "",
 			"--path":               filepath.Join(RootDir(ctx, t), "./samples/apps/envs"),
 			"--container-registry": fmt.Sprintf("gcr.io/%s", GCPProjectID()),
