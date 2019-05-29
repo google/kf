@@ -47,6 +47,7 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 		containerRegistry string
 		sourceImage       string
 		manifestFile      string
+		instances         int
 		serviceAccount    string
 		path              string
 		buildpack         string
@@ -149,6 +150,7 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 					kf.WithPushEnvironmentVariables(app.Env),
 					kf.WithPushGrpc(grpc),
 					kf.WithPushBuildpack(buildpack),
+					kf.WithPushInstaces(instances),
 				)
 
 				cmd.SilenceUsage = !kfi.ConfigError(err)
@@ -221,6 +223,14 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 		"f",
 		"",
 		"Path to manifest",
+	)
+
+	pushCmd.Flags().IntVarP(
+		&instances,
+		"instances",
+		"i",
+		1,
+		"Number of instances",
 	)
 
 	return pushCmd

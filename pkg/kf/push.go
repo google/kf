@@ -18,6 +18,9 @@ import (
 	"fmt"
 	"time"
 
+	build "github.com/knative/build/pkg/apis/build/v1alpha1"
+	autoscaling "github.com/knative/serving/pkg/apis/autoscaling"
+	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/builds"
 	"github.com/google/kf/pkg/kf/internal/envutil"
@@ -83,6 +86,13 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 	s.SetNamespace(cfg.Namespace)
 	s.SetImage(imageName)
 	s.SetServiceAccount(cfg.ServiceAccount)
+
+	if cfg.Instances != 0 {
+		s.Spec.RunLatest.Configuration.RevisionTemplate.Annotations = map[string]string{
+			autoscaling.MinScaleAnnotationKey: string(cfg.Instances),
+			autoscaling.MaxScaleAnnotationKey: string(cfg.Instances),
+		}
+	}
 
 	if cfg.Grpc {
 		s.SetContainerPorts([]corev1.ContainerPort{{Name: "h2c", ContainerPort: 8080}})

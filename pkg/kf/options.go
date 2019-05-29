@@ -36,6 +36,8 @@ type pushConfig struct {
 	Output io.Writer
 	// ServiceAccount is the service account to authenticate with
 	ServiceAccount string
+	// Instances is the number of pods
+	Instances int
 }
 
 // PushOption is a single option for configuring a pushConfig
@@ -152,6 +154,13 @@ func WithPushOutput(val io.Writer) PushOption {
 func WithPushServiceAccount(val string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.ServiceAccount = val
+	}
+}
+
+// WithPushInstaces creates an Option that sets Number of instances
+func WithPushInstaces(val int) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.Instances = val
 	}
 }
 
