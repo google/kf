@@ -79,8 +79,9 @@ func RunIntegrationTest(t *testing.T, test func(ctx context.Context, t *testing.
 
 // KfTestConfig is a configuration for a Kf Test.
 type KfTestConfig struct {
-	Args []string
-	Env  map[string]string
+	Args       []string
+	Env        map[string]string
+	WorkingDir string
 }
 
 // KfTestOutput is the output from `kf`. Note, this output is while kf is
@@ -94,6 +95,18 @@ type KfTestOutput struct {
 
 func kf(ctx context.Context, t *testing.T, binaryPath string, cfg KfTestConfig) (KfTestOutput, <-chan error) {
 	t.Helper()
+
+	if cfg.WorkingDir != "" {
+		absPath, err := filepath.Abs(filepath.Join(RootDir(ctx, t), cfg.WorkingDir))
+		if err != nil {
+			t.Fatalf("failed to change dir: %s", err)
+		}
+
+		err = os.Chdir(absPath)
+		if err != nil {
+			t.Fatalf("failed to change dir: %s", err)
+		}
+	}
 
 	cmd := exec.CommandContext(ctx, binaryPath, cfg.Args...)
 	for name, value := range cfg.Env {
@@ -137,7 +150,7 @@ type KfInvoker func(context.Context, *testing.T, KfTestConfig) (KfTestOutput, <-
 // KfTest is a test ran by RunKfTest.
 type KfTest func(ctx context.Context, t *testing.T, kf *Kf)
 
-// RunKfTest runs 'kf' for integration tests. It first copmiles 'kf' and then
+// RunKfTest runs 'kf' for integration tests. It first compiles 'kf' and then
 // launches it as a sub-process. It will set the args and environment
 // variables accordingly. It will run the given test with the resulting
 // STDOUT, STDERR and STDIN. It will cleanup the sub-process on completion via
@@ -382,7 +395,7 @@ func KF(t *testing.T, kf KfInvoker) *Kf {
 }
 
 // Push pushes an application.
-func (k *Kf) Push(ctx context.Context, appName string, flags map[string]string) {
+func (k *Kf) Push(ctx context.Context, appName, workingDir string, flags map[string]string) {
 	k.t.Helper()
 	Logf(k.t, "pushing app %q...", appName)
 	defer Logf(k.t, "done pushing app %q.", appName)
@@ -402,7 +415,8 @@ func (k *Kf) Push(ctx context.Context, appName string, flags map[string]string) 
 	}
 
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
-		Args: args,
+		Args:       args,
+		WorkingDir: workingDir,
 	})
 	PanicOnError(ctx, k.t, fmt.Sprintf("push %q", appName), errs)
 	StreamOutput(ctx, k.t, output)

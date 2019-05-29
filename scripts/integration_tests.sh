@@ -18,3 +18,11 @@ set -x
 
 export GCP_PROJECT_ID=$(gcloud config get-value project)
 go test --race -v ./...
+ret=$?
+if [ $ret -eq 0 ]; then
+  echo -e "\e[32mSuccess\e[0m"
+  exit 0
+else
+  echo -e "\e[31mFailure\e[0m"
+  exit $ret
+fi
