@@ -18,13 +18,13 @@ import (
 	"fmt"
 	"text/tabwriter"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/spf13/cobra"
 )
 
 // NewAppsCommand creates a apps command.
-func NewAppsCommand(p *config.KfParams, l kf.AppLister) *cobra.Command {
+func NewAppsCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 	var apps = &cobra.Command{
 		Use:     "apps",
 		Short:   "List pushed apps",
@@ -33,7 +33,7 @@ func NewAppsCommand(p *config.KfParams, l kf.AppLister) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Fprintf(p.Output, "Getting apps in namespace: %s\n", p.Namespace)
 
-			apps, err := l.List(kf.WithListNamespace(p.Namespace))
+			apps, err := appsClient.List(p.Namespace)
 			if err != nil {
 				return err
 			}
