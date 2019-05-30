@@ -130,8 +130,7 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 				}
 
 				// Read environment variables from cli args
-				var envVars []corev1.EnvVar
-				envVars, err = envutil.ParseCLIEnvVars(envs)
+				envVars, err := envutil.ParseCLIEnvVars(envs)
 				if err != nil {
 					return err
 				}
@@ -146,7 +145,7 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 					app.Env[k] = v
 				}
 
-				err := pusher.Push(app.Name, imageName,
+				err = pusher.Push(app.Name, imageName,
 					kf.WithPushNamespace(p.Namespace),
 					kf.WithPushContainerRegistry(containerRegistry),
 					kf.WithPushServiceAccount(serviceAccount),

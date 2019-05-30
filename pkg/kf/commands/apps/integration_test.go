@@ -88,21 +88,10 @@ func TestIntegration_Push_manifest(t *testing.T) {
 		appName := fmt.Sprintf("integration-manifest-%d", currentTime)
 		appPath := filepath.Join(RootDir(ctx, t), "samples", "apps", "manifest")
 
-		// Create a manifest file for this test.
-		// This is so the appName is unique
-		manifestBytes, err := ioutil.ReadFile(filepath.Join(appPath, "manifest.yml"))
-		AssertNil(t, "manifest read error", err)
-		var manifest manifest.Manifest
-		err = yaml.Unmarshal(manifestBytes, &manifest)
-		AssertNil(t, "manifest marshal error", err)
-		manifest.Applications[0].Name = appName
-		var newManifestBytes []byte
-		newManifestBytes, err = yaml.Marshal(manifest)
-		AssertNil(t, "manifest marshal error", err)
-		newManifestFile := filepath.Join(appPath, fmt.Sprintf("manifest-integration-%d.yml", currentTime))
-		err = ioutil.WriteFile(newManifestFile, newManifestBytes, 0644)
-		AssertNil(t, "manifest write error", err)
-		defer os.Remove(newManifestFile)
+		// Create a custom manifest file for this test.
+		newManifestFile, manifestCleanup, err := copyManifest(appName, appPath, currentTime)
+		AssertNil(t, "app manifest copy error", err)
+		defer manifestCleanup()
 
 		// Push an app with a manifest file.
 		kf.Push(ctx, appName,
@@ -130,6 +119,44 @@ func TestIntegration_Push_manifest(t *testing.T) {
 			"WHATNOW": "BROWNCOW",
 		}, nil)
 	})
+}
+
+// copyManifest copies the manifest.yml file in a given appPath.
+// The copy is edited such that the 1st app is renamed with the given appName.
+// The filename of the new manifest is returned, along with a cleanup function.
+func copyManifest(appName, appPath string, currentTime int64) (string, func(), error) {
+	manifestPath := filepath.Join(appPath, "manifest.yml")
+	manifestBytes, err := ioutil.ReadFile(manifestPath)
+	if err != nil {
+		return "", nil, err
+	}
+
+	var manifest manifest.Manifest
+	err = yaml.Unmarshal(manifestBytes, &manifest)
+	if err != nil {
+		return "", nil, err
+	}
+
+	if len(manifest.Applications) < 1 {
+		return "", nil, fmt.Errorf("No applications in manifest file %s", manifestPath)
+	}
+
+	manifest.Applications[0].Name = appName
+	var newManifestBytes []byte
+	newManifestBytes, err = yaml.Marshal(manifest)
+	if err != nil {
+		return "", nil, err
+	}
+
+	newManifestFile := filepath.Join(appPath, fmt.Sprintf("manifest-integration-%d.yml", currentTime))
+	err = ioutil.WriteFile(newManifestFile, newManifestBytes, 0644)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return newManifestFile, func() {
+		os.Remove(newManifestFile)
+	}, nil
 }
 
 // TestIntegration_Delete pushes an app and then deletes it. It then makes
