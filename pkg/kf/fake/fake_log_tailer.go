@@ -48,16 +48,16 @@ func (m *FakeLogTailer) EXPECT() *FakeLogTailerMockRecorder {
 	return m.recorder
 }
 
-// Tail mocks base method
-func (m *FakeLogTailer) Tail(arg0 io.Writer, arg1, arg2, arg3 string) error {
+// DeployLogs mocks base method
+func (m *FakeLogTailer) DeployLogs(arg0 io.Writer, arg1, arg2, arg3 string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Tail", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "DeployLogs", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Tail indicates an expected call of Tail
-func (mr *FakeLogTailerMockRecorder) Tail(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+// DeployLogs indicates an expected call of DeployLogs
+func (mr *FakeLogTailerMockRecorder) DeployLogs(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Tail", reflect.TypeOf((*FakeLogTailer)(nil).Tail), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeployLogs", reflect.TypeOf((*FakeLogTailer)(nil).DeployLogs), arg0, arg1, arg2, arg3)
 }

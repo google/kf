@@ -37,7 +37,7 @@ import (
 
 //go:generate mockgen --package kf_test --destination fake_watcher_test.go --mock_names=Interface=FakeWatcher --copyright_file internal/tools/option-builder/LICENSE_HEADER k8s.io/apimachinery/pkg/watch Interface
 
-func TestLogTailer_ServiceLogs(t *testing.T) {
+func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 	t.Parallel()
 
 	for tn, tc := range map[string]struct {
@@ -100,7 +100,7 @@ func TestLogTailer_ServiceLogs(t *testing.T) {
 			)
 
 			var buffer bytes.Buffer
-			gotErr := lt.Tail(&buffer, tc.appName, tc.resourceVersion, tc.namespace)
+			gotErr := lt.DeployLogs(&buffer, tc.appName, tc.resourceVersion, tc.namespace)
 			if tc.wantErr != nil || gotErr != nil {
 				testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
 				return
@@ -123,7 +123,7 @@ func TestLogTailer_ServiceLogs(t *testing.T) {
 	}
 }
 
-func TestLogTailer_BuildLogs(t *testing.T) {
+func TestLogTailer_DeployLogs_BuildLogs(t *testing.T) {
 	t.Parallel()
 
 	for tn, tc := range map[string]struct {
@@ -232,7 +232,7 @@ func TestLogTailer_BuildLogs(t *testing.T) {
 				tc.tailF(t),
 			)
 
-			gotErr := lt.Tail(&buffer, tc.appName, tc.resourceVersion, tc.namespace)
+			gotErr := lt.DeployLogs(&buffer, tc.appName, tc.resourceVersion, tc.namespace)
 			if tc.wantErr != nil || gotErr != nil {
 				testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
 				return

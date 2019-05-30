@@ -115,7 +115,7 @@ func TestPush_Logs(t *testing.T) {
 
 			fakeLogs := kffake.NewFakeLogTailer(ctrl)
 			fakeLogs.EXPECT().
-				Tail(
+				DeployLogs(
 					gomock.Not(gomock.Nil()), // out,
 					tc.appName,               // appName
 					tc.appName+"-version",    // resourceVersion
@@ -330,7 +330,7 @@ func TestPush(t *testing.T) {
 
 			fakeLogs := kffake.NewFakeLogTailer(ctrl)
 			fakeLogs.EXPECT().
-				Tail(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+				DeployLogs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 				AnyTimes()
 
 			tc.setup(t, fakeDeployer)

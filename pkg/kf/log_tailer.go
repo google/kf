@@ -28,6 +28,13 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
+// Logs handles build and deploy logs.
+type Logs interface {
+	// DeployLogs writes the logs for the build and deploy stage to the given
+	// out.  The method exits once the logs are done streaming.
+	DeployLogs(out io.Writer, appName, resourceVersion, namespace string) error
+}
+
 // BuildTailer writes the build logs to out.
 type BuildTailer interface {
 	Tail(ctx context.Context, out io.Writer, buildName, namespace string) error
@@ -62,9 +69,9 @@ func NewLogTailer(
 	}
 }
 
-// Tail writes the logs for the build and deploy step for the resourceVersion
+// DeployLogs writes the logs for the build and deploy step for the resourceVersion
 // to out. It blocks until the operation has completed.
-func (t logTailer) Tail(out io.Writer, appName, resourceVersion, namespace string) error {
+func (t logTailer) DeployLogs(out io.Writer, appName, resourceVersion, namespace string) error {
 	errs := make(chan error, 2)
 
 	ctx, cancel := context.WithCancel(context.Background())

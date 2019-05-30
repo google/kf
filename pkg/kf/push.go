@@ -39,13 +39,6 @@ type pusher struct {
 	out      io.Writer
 }
 
-// Logs handles build and deploy logs.
-type Logs interface {
-	// Tail writes the logs for the build and deploy stage to the given out.
-	// The method exits once the logs are done streaming.
-	Tail(out io.Writer, appName, resourceVersion, namespace string) error
-}
-
 // Pusher deploys applications.
 type Pusher interface {
 	// Push deploys an application.
@@ -106,7 +99,7 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 		return fmt.Errorf("failed to deploy: %s", err)
 	}
 
-	if err := p.bl.Tail(cfg.Output, appName, resultingService.ResourceVersion, cfg.Namespace); err != nil {
+	if err := p.bl.DeployLogs(cfg.Output, appName, resultingService.ResourceVersion, cfg.Namespace); err != nil {
 		return err
 	}
 
