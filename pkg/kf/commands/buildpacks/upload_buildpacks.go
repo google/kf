@@ -26,7 +26,7 @@ import (
 )
 
 // NewUploadBuildpacks creates a UploadBuildpacks command.
-func NewUploadBuildpacks(p *config.KfParams, c buildpacks.BuilderCreator, u buildpacks.BuildTemplateUploader) *cobra.Command {
+func NewUploadBuildpacks(p *config.KfParams, c buildpacks.Client) *cobra.Command {
 	var (
 		containerRegistry string
 		path              string
@@ -61,7 +61,7 @@ func NewUploadBuildpacks(p *config.KfParams, c buildpacks.BuilderCreator, u buil
 				return err
 			}
 
-			if err := u.UploadBuildTemplate(image); err != nil {
+			if err := c.UploadBuildTemplate(image); err != nil {
 				cmd.SilenceUsage = !kf.ConfigError(err)
 				return err
 			}

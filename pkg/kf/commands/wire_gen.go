@@ -183,16 +183,18 @@ func InjectVcapServices(p *config.KfParams) *cobra.Command {
 func InjectBuildpacks(p *config.KfParams) *cobra.Command {
 	buildV1alpha1Interface := config.GetBuildClient(p)
 	remoteImageFetcher := provideRemoteImageFetcher()
-	buildpackLister := buildpacks.NewBuildpackLister(buildV1alpha1Interface, remoteImageFetcher)
-	command := buildpacks2.NewBuildpacks(p, buildpackLister)
+	builderFactoryCreate := provideBuilderCreate()
+	client := buildpacks.NewClient(buildV1alpha1Interface, remoteImageFetcher, builderFactoryCreate)
+	command := buildpacks2.NewBuildpacks(p, client)
 	return command
 }
 
 func InjectUploadBuildpacks(p *config.KfParams) *cobra.Command {
-	builderCreator := provideBuilderCreator()
 	buildV1alpha1Interface := config.GetBuildClient(p)
-	buildTemplateUploader := buildpacks.NewBuildTemplateUploader(buildV1alpha1Interface)
-	command := buildpacks2.NewUploadBuildpacks(p, builderCreator, buildTemplateUploader)
+	remoteImageFetcher := provideRemoteImageFetcher()
+	builderFactoryCreate := provideBuilderCreate()
+	client := buildpacks.NewClient(buildV1alpha1Interface, remoteImageFetcher, builderFactoryCreate)
+	command := buildpacks2.NewUploadBuildpacks(p, client)
 	return command
 }
 
@@ -248,8 +250,8 @@ func provideRemoteImageFetcher() buildpacks.RemoteImageFetcher {
 	return remote.Image
 }
 
-func provideBuilderCreator() buildpacks.BuilderCreator {
-	return buildpacks.NewBuilderCreator(func(flags pack.CreateBuilderFlags) error {
+func provideBuilderCreate() buildpacks.BuilderFactoryCreate {
+	return func(flags pack.CreateBuilderFlags) error {
 		factory, err := image.NewFactory()
 		if err != nil {
 			return err
@@ -282,7 +284,7 @@ func provideBuilderCreator() buildpacks.BuilderCreator {
 		}
 
 		return nil
-	})
+	}
 }
 
 var SpacesSet = wire.NewSet(config.GetKubernetes, provideNamespaceGetter, spaces.NewClient)
