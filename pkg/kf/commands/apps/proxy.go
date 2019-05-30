@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/http/httputil"
 
@@ -66,14 +67,19 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister k
 				return err
 			}
 
-			fmt.Fprintf(p.Output, "Forwarding requests from http://localhost:%d to http://%s\n", port, gateway)
+			listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+			if err != nil {
+				return err
+			}
+
+			fmt.Fprintf(p.Output, "Forwarding requests from http://%s to http://%s\n", listener.Addr(), gateway)
 
 			if noStart {
 				fmt.Fprintln(p.Output, "exiting because no-start flag was provided")
 				return nil
 			}
 
-			return http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), createProxy(p.Output, app.Status.Domain, gateway))
+			return http.Serve(listener, createProxy(p.Output, app.Status.Domain, gateway))
 		},
 	}
 
