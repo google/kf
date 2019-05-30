@@ -18,13 +18,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/manifest"
 	. "github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 )
 
@@ -89,12 +92,31 @@ func TestIntegration_Push(t *testing.T) {
 func TestIntegration_Push_manifest(t *testing.T) {
 	t.Parallel()
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
-		appName := "manifest-app"
+		currentTime := time.Now().UnixNano()
+		appName := fmt.Sprintf("integration-manifest-%d", currentTime)
+		appPath := filepath.Join(RootDir(ctx, t), "samples", "apps", "manifest")
+
+		// Create a manifest file for this test.
+		// This is so the appName is unique
+		manifestBytes, err := ioutil.ReadFile(filepath.Join(appPath, "manifest.yml"))
+		AssertNil(t, "manifest read error", err)
+		var manifest manifest.Manifest
+		err = yaml.Unmarshal(manifestBytes, &manifest)
+		AssertNil(t, "manifest marshal error", err)
+		manifest.Applications[0].Name = appName
+		var newManifestBytes []byte
+		newManifestBytes, err = yaml.Marshal(manifest)
+		AssertNil(t, "manifest marshal error", err)
+		newManifestFile := filepath.Join(appPath, fmt.Sprintf("manifest-integration-%d.yml", currentTime))
+		err = ioutil.WriteFile(newManifestFile, newManifestBytes, 0644)
+		AssertNil(t, "manifest write error", err)
+		defer os.Remove(newManifestFile)
 
 		// Push an app with a manifest file.
 		kf.Push(ctx, appName, map[string]string{
-			"--path":               filepath.Join(RootDir(ctx, t), "samples", "apps", "manifest"),
+			"--path":               appPath,
 			"--container-registry": fmt.Sprintf("gcr.io/%s", GCPProjectID()),
+			"--manifest":           newManifestFile,
 		})
 		defer kf.Delete(ctx, appName)
 
