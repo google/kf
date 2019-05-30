@@ -65,8 +65,9 @@ func InjectDelete(p *config.KfParams) *cobra.Command {
 
 func InjectApps(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
-	appLister := kf.NewLister(servingV1alpha1Interface)
-	command := apps.NewAppsCommand(p, appLister)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	client := apps2.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	command := apps.NewAppsCommand(p, client)
 	return command
 }
 

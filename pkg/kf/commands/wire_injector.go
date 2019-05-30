@@ -81,15 +81,14 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 }
 
 func InjectDelete(p *config.KfParams) *cobra.Command {
-	wire.Build(
-		capps.NewDeleteCommand,
-		AppsSet,
-	)
+	wire.Build(capps.NewDeleteCommand, AppsSet)
+
 	return nil
 }
 
 func InjectApps(p *config.KfParams) *cobra.Command {
-	wire.Build(capps.NewAppsCommand, kf.NewLister, config.GetServingClient)
+	wire.Build(capps.NewAppsCommand, AppsSet)
+
 	return nil
 }
 
