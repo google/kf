@@ -18,16 +18,18 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/http/httputil"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/spf13/cobra"
 )
 
-// NewProxyCommand creates a proxy command.
-func NewProxyCommand(p *config.KfParams, l kf.AppLister, ingressLister kf.IngressLister) *cobra.Command {
+// NewProxyCommand creates a command capable of proxying a remote server locally.
+func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister kf.IngressLister) *cobra.Command {
 	var (
 		gateway string
 		port    int
@@ -60,19 +62,24 @@ func NewProxyCommand(p *config.KfParams, l kf.AppLister, ingressLister kf.Ingres
 				gateway = ingress
 			}
 
-			app, err := kf.ExtractOneService(l.List(kf.WithListNamespace(p.Namespace), kf.WithListAppName(appName)))
+			app, err := appsClient.Get(p.Namespace, appName)
 			if err != nil {
 				return err
 			}
 
-			fmt.Fprintf(p.Output, "Forwarding requests from http://localhost:%d to http://%s\n", port, gateway)
+			listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+			if err != nil {
+				return err
+			}
+
+			fmt.Fprintf(p.Output, "Forwarding requests from http://%s to http://%s\n", listener.Addr(), gateway)
 
 			if noStart {
 				fmt.Fprintln(p.Output, "exiting because no-start flag was provided")
 				return nil
 			}
 
-			return http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), createProxy(p.Output, app.Status.Domain, gateway))
+			return http.Serve(listener, createProxy(p.Output, app.Status.Domain, gateway))
 		},
 	}
 

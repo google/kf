@@ -16,21 +16,9 @@ package fake
 
 import "github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
 
-//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_builder_creator.go --mock_names=BuilderCreator=FakeBuilderCreator github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks/fake BuilderCreator
-//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_build_template_uploader.go --mock_names=BuildTemplateUploader=FakeBuildTemplateUploader github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks/fake BuildTemplateUploader
-//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_buildpack_lister.go --mock_names=BuildpackLister=FakeBuildpackLister github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks/fake BuildpackLister
+//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_client.go --mock_names=Client=FakeClient github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks/fake Client
 
-// BuilderFactory is implemented by buildpacks.BuilderFactory.
-type BuilderCreator interface {
-	buildpacks.BuilderCreator
-}
-
-// BuildTemplateUploader is implemented by buildpacks.BuildTemplateUploader.
-type BuildTemplateUploader interface {
-	buildpacks.BuildTemplateUploader
-}
-
-// BuildpackLister is implemented by buildpacks.BuildpackLister.
-type BuildpackLister interface {
-	buildpacks.BuildpackLister
+// Client is implemented by buildpacks.Client.
+type Client interface {
+	buildpacks.Client
 }

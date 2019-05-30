@@ -19,11 +19,13 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps/fake"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
+	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 )
 
 func TestEnvCommand(t *testing.T) {
@@ -34,49 +36,53 @@ func TestEnvCommand(t *testing.T) {
 		Args            []string
 		ExpectedStrings []string
 		ExpectedErr     error
-		Setup           func(t *testing.T, fake *fake.FakeEnvironmentClient)
+		Setup           func(t *testing.T, fake *fake.FakeClient)
 	}{
 		"wrong number of params": {
 			Args:        []string{},
 			ExpectedErr: errors.New("accepts 1 arg(s), received 0"),
 		},
 		"listing variables fails": {
+			Namespace:   "default",
 			Args:        []string{"app-name"},
 			ExpectedErr: errors.New("some-error"),
-			Setup: func(t *testing.T, fake *fake.FakeEnvironmentClient) {
-				fake.EXPECT().List("app-name", gomock.Any()).Return(nil, errors.New("some-error"))
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Get("default", "app-name").Return(nil, errors.New("some-error"))
 			},
 		},
 		"custom namespace": {
 			Args:      []string{"app-name"},
 			Namespace: "some-namespace",
-			Setup: func(t *testing.T, fake *fake.FakeEnvironmentClient) {
-				fake.EXPECT().List(gomock.Any(), gomock.Any()).Do(func(appName string, opts ...kf.ListEnvOption) {
-					testutil.AssertEqual(t, "namespace", "some-namespace", kf.ListEnvOptions(opts).Namespace())
-				})
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Get("some-namespace", "app-name").Return(&serving.Service{}, nil)
 			},
 		},
 		"empty results": {
-			Args: []string{"app-name"},
-			Setup: func(t *testing.T, fake *fake.FakeEnvironmentClient) {
-				fake.EXPECT().List("app-name", gomock.Any()).Return(nil, nil)
+			Namespace: "default",
+			Args:      []string{"app-name"},
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Get("default", "app-name").Return(&serving.Service{}, nil)
 			},
 			ExpectedErr: nil, // explicitly expecting no failure with zero length list
 		},
 		"with results": {
-			Args: []string{"app-name"},
-			Setup: func(t *testing.T, fake *fake.FakeEnvironmentClient) {
-				fake.EXPECT().List("app-name", gomock.Any()).Return(map[string]string{
+			Namespace: "default",
+			Args:      []string{"app-name"},
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				out := apps.NewKfApp()
+				out.SetEnvVars(envutil.MapToEnvVars(map[string]string{
 					"name-1": "value-1",
 					"name-2": "value-2",
-				}, nil)
+				}))
+
+				fake.EXPECT().Get("default", "app-name").Return(out.ToService(), nil)
 			},
 			ExpectedStrings: []string{"name-1", "value-1", "name-2", "value-2"},
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			fake := fake.NewFakeEnvironmentClient(ctrl)
+			fake := fake.NewFakeClient(ctrl)
 
 			if tc.Setup != nil {
 				tc.Setup(t, fake)

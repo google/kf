@@ -15,7 +15,9 @@
 package apps
 
 import (
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // KfApp provides a facade around Knative services for accessing and mutating its
@@ -30,6 +32,35 @@ func (k *KfApp) GetName() string {
 // SetName sets the name of the app.
 func (k *KfApp) SetName(name string) {
 	k.Name = name
+}
+
+// GetEnvVars reads the environment variables off an app.
+func (k *KfApp) GetEnvVars() []corev1.EnvVar {
+	if k == nil || k.Spec.RunLatest == nil {
+		return nil
+	}
+
+	return k.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env
+}
+
+// SetEnvVars sets environment variables on an app.
+func (k *KfApp) SetEnvVars(env []corev1.EnvVar) {
+	if k.Spec.RunLatest == nil {
+		k.Spec.RunLatest = &serving.RunLatestType{}
+	}
+
+	k.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env = env
+}
+
+// MergeEnvVars adds the environment variables listed to the existing ones,
+// overwriting duplicates by key.
+func (k *KfApp) MergeEnvVars(env []corev1.EnvVar) {
+	k.SetEnvVars(envutil.DeduplicateEnvVars(append(k.GetEnvVars(), env...)))
+}
+
+// DeleteEnvVars removes environment variables with the given key.
+func (k *KfApp) DeleteEnvVars(names []string) {
+	k.SetEnvVars(envutil.RemoveEnvVars(names, k.GetEnvVars()))
 }
 
 // ToService casts this alias back into a Service.

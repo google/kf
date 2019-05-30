@@ -81,24 +81,22 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 }
 
 func InjectDelete(p *config.KfParams) *cobra.Command {
-	wire.Build(
-		capps.NewDeleteCommand,
-		AppsSet,
-	)
+	wire.Build(capps.NewDeleteCommand, AppsSet)
+
 	return nil
 }
 
 func InjectApps(p *config.KfParams) *cobra.Command {
-	wire.Build(capps.NewAppsCommand, kf.NewLister, config.GetServingClient)
+	wire.Build(capps.NewAppsCommand, AppsSet)
+
 	return nil
 }
 
 func InjectProxy(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		capps.NewProxyCommand,
-		kf.NewLister,
+		AppsSet,
 		kf.NewIstioClient,
-		config.GetServingClient,
 		config.GetKubernetes,
 	)
 	return nil
@@ -109,32 +107,20 @@ func InjectProxy(p *config.KfParams) *cobra.Command {
 ///////////////////////////////////
 
 func InjectEnv(p *config.KfParams) *cobra.Command {
-	wire.Build(
-		capps.NewEnvCommand,
-		kf.NewLister,
-		kf.NewEnvironmentClient,
-		config.GetServingClient,
-	)
+	wire.Build(capps.NewEnvCommand, AppsSet)
+
 	return nil
 }
 
 func InjectSetEnv(p *config.KfParams) *cobra.Command {
-	wire.Build(
-		capps.NewSetEnvCommand,
-		kf.NewLister,
-		kf.NewEnvironmentClient,
-		config.GetServingClient,
-	)
+	wire.Build(capps.NewSetEnvCommand, AppsSet)
+
 	return nil
 }
 
 func InjectUnsetEnv(p *config.KfParams) *cobra.Command {
-	wire.Build(
-		capps.NewUnsetEnvCommand,
-		kf.NewLister,
-		kf.NewEnvironmentClient,
-		config.GetServingClient,
-	)
+	wire.Build(capps.NewUnsetEnvCommand, AppsSet)
+
 	return nil
 }
 
@@ -246,8 +232,8 @@ func provideRemoteImageFetcher() buildpacks.RemoteImageFetcher {
 	return remote.Image
 }
 
-func provideBuilderCreator() buildpacks.BuilderCreator {
-	return buildpacks.NewBuilderCreator(func(flags pack.CreateBuilderFlags) error {
+func provideBuilderCreate() buildpacks.BuilderFactoryCreate {
+	return func(flags pack.CreateBuilderFlags) error {
 		factory, err := image.NewFactory()
 		if err != nil {
 			return err
@@ -283,25 +269,27 @@ func provideBuilderCreator() buildpacks.BuilderCreator {
 		}
 
 		return nil
-	})
+	}
 }
 
 func InjectBuildpacks(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		buildpacks.NewBuildpackLister,
+		buildpacks.NewClient,
 		cbuildpacks.NewBuildpacks,
 		config.GetBuildClient,
 		provideRemoteImageFetcher,
+		provideBuilderCreate,
 	)
 	return nil
 }
 
 func InjectUploadBuildpacks(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		buildpacks.NewBuildTemplateUploader,
+		buildpacks.NewClient,
 		cbuildpacks.NewUploadBuildpacks,
 		config.GetBuildClient,
-		provideBuilderCreator,
+		provideBuilderCreate,
+		provideRemoteImageFetcher,
 	)
 	return nil
 }

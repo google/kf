@@ -25,7 +25,7 @@ import (
 )
 
 // NewUploadBuildpacks creates a UploadBuildpacks command.
-func NewBuildpacks(p *config.KfParams, l buildpacks.BuildpackLister) *cobra.Command {
+func NewBuildpacks(p *config.KfParams, l buildpacks.Client) *cobra.Command {
 	var buildpacksCmd = &cobra.Command{
 		Use:   "buildpacks",
 		Short: "List buildpacks in current builder.",

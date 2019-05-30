@@ -20,6 +20,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func ExampleKfApp() {
@@ -42,4 +43,70 @@ func TestKfApp_ToService(t *testing.T) {
 	expected.Name = "foo"
 
 	testutil.AssertEqual(t, "generated service", expected, actual)
+}
+
+func ExampleKfApp_GetEnvVars() {
+	myApp := NewKfApp()
+	myApp.SetEnvVars([]corev1.EnvVar{
+		{Name: "FOO", Value: "2"},
+		{Name: "BAR", Value: "0"},
+	})
+
+	env := myApp.GetEnvVars()
+
+	for _, e := range env {
+		fmt.Println("Key", e.Name, "Value", e.Value)
+	}
+
+	// Output: Key FOO Value 2
+	// Key BAR Value 0
+}
+
+func ExampleKfApp_GetEnvVars_emptyService() {
+	myApp := NewKfApp()
+
+	env := myApp.GetEnvVars()
+
+	fmt.Println(env)
+
+	// Output: []
+}
+
+func ExampleKfApp_MergeEnvVars() {
+	myApp := NewKfApp()
+	myApp.SetEnvVars([]corev1.EnvVar{
+		{Name: "FOO", Value: "0"},
+		{Name: "BAR", Value: "0"},
+	})
+
+	myApp.MergeEnvVars([]corev1.EnvVar{
+		{Name: "FOO", Value: "1"},  // will replace old
+		{Name: "BAZZ", Value: "0"}, // will be added
+	})
+
+	env := myApp.GetEnvVars()
+
+	for _, e := range env {
+		fmt.Println("Key", e.Name, "Value", e.Value)
+	}
+
+	// Output: Key BAR Value 0
+	// Key BAZZ Value 0
+	// Key FOO Value 1
+}
+
+func ExampleKfApp_DeleteEnvVars() {
+	myApp := NewKfApp()
+	myApp.SetEnvVars([]corev1.EnvVar{
+		{Name: "FOO", Value: "0"},
+		{Name: "BAR", Value: "0"},
+	})
+
+	myApp.DeleteEnvVars([]string{"FOO", "DOES_NOT_EXIST"})
+
+	for _, e := range myApp.GetEnvVars() {
+		fmt.Println("Key", e.Name, "Value", e.Value)
+	}
+
+	// Output: Key BAR Value 0
 }

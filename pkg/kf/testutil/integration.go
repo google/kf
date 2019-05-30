@@ -382,7 +382,7 @@ func KF(t *testing.T, kf KfInvoker) *Kf {
 }
 
 // Push pushes an application.
-func (k *Kf) Push(ctx context.Context, appName string, flags map[string]string) {
+func (k *Kf) Push(ctx context.Context, appName string, extraArgs ...string) {
 	k.t.Helper()
 	Logf(k.t, "pushing app %q...", appName)
 	defer Logf(k.t, "done pushing app %q.", appName)
@@ -392,17 +392,8 @@ func (k *Kf) Push(ctx context.Context, appName string, flags map[string]string) 
 		appName,
 	}
 
-	for k, v := range flags {
-		if v == "" {
-			args = append(args, k)
-			continue
-		}
-
-		args = append(args, fmt.Sprintf("%s=%s", k, v))
-	}
-
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
-		Args: args,
+		Args: append(args, extraArgs...),
 	})
 	PanicOnError(ctx, k.t, fmt.Sprintf("push %q", appName), errs)
 	StreamOutput(ctx, k.t, output)
@@ -570,4 +561,36 @@ func (k *Kf) Doctor(ctx context.Context) {
 	})
 	PanicOnError(ctx, k.t, "doctor", errs)
 	StreamOutput(ctx, k.t, output)
+}
+
+// UploadBuildpacks runs the upload-buildpacks command.
+func (k *Kf) UploadBuildpacks(ctx context.Context, extraArgs ...string) {
+	k.t.Helper()
+	Logf(k.t, "running upload-buildpacks...")
+	defer Logf(k.t, "done running upload-buildpacks.")
+
+	args := []string{
+		"upload-buildpacks",
+	}
+
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: append(args, extraArgs...),
+	})
+	PanicOnError(ctx, k.t, "upload-buildpacks", errs)
+	StreamOutput(ctx, k.t, output)
+}
+
+// Buildpacks runs the buildpacks command.
+func (k *Kf) Buildpacks(ctx context.Context) []string {
+	k.t.Helper()
+	Logf(k.t, "running buildpacks...")
+	defer Logf(k.t, "done running buildpacks.")
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: []string{
+			"buildpacks",
+			"--built-in",
+		},
+	})
+	PanicOnError(ctx, k.t, "buildpacks", errs)
+	return CombineOutputStr(ctx, k.t, output)
 }

@@ -24,6 +24,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -31,30 +32,21 @@ import (
 	. "github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 )
 
-// TestIntegration_Doctor runs the doctor command. It ensures the cluster the
-// tests are running against is in good shape.
-func TestIntegration_Doctor(t *testing.T) {
-	t.Parallel()
-	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
-		kf.Doctor(ctx)
-	})
-}
-
 // TestIntegration_Push pushes the echo app (via --built-in command), lists it
 // to ensure it can find a domain, uses the proxy command and then posts to
 // it. It finally deletes the app.
 func TestIntegration_Push(t *testing.T) {
-	t.Parallel()
+	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		appName := fmt.Sprintf("integration-echo-%d", time.Now().UnixNano())
 
 		// Push an app and then clean it up. This pushes the echo app which
 		// replies with the same body that was posted.
-		kf.Push(ctx, appName, map[string]string{
-			"--built-in":           "",
-			"--path":               filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
-			"--container-registry": fmt.Sprintf("gcr.io/%s", GCPProjectID()),
-		})
+		kf.Push(ctx, appName,
+			"--built-in",
+			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
+			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
+		)
 		defer kf.Delete(ctx, appName)
 
 		// List the apps and make sure we can find a domain.
@@ -113,11 +105,11 @@ func TestIntegration_Push_manifest(t *testing.T) {
 		defer os.Remove(newManifestFile)
 
 		// Push an app with a manifest file.
-		kf.Push(ctx, appName, map[string]string{
-			"--path":               appPath,
-			"--container-registry": fmt.Sprintf("gcr.io/%s", GCPProjectID()),
-			"--manifest":           newManifestFile,
-		})
+		kf.Push(ctx, appName,
+			"--path", appPath,
+			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
+			"--manifest", newManifestFile,
+		)
 		defer kf.Delete(ctx, appName)
 
 		// List the apps and make sure we can find a domain.
@@ -143,17 +135,17 @@ func TestIntegration_Push_manifest(t *testing.T) {
 // TestIntegration_Delete pushes an app and then deletes it. It then makes
 // sure it is marked as "Deleting".
 func TestIntegration_Delete(t *testing.T) {
-	t.Parallel()
+	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		appName := fmt.Sprintf("integration-echo-%d", time.Now().UnixNano())
 
 		// Push an app and then clean it up. This pushes the echo app which
 		// simplies replies with the same body that was posted.
-		kf.Push(ctx, appName, map[string]string{
-			"--built-in":           "",
-			"--path":               filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
-			"--container-registry": fmt.Sprintf("gcr.io/%s", GCPProjectID()),
-		})
+		kf.Push(ctx, appName,
+			"--built-in",
+			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
+			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
+		)
 
 		// This is only in place for cleanup if the test fails.
 		defer kf.Delete(ctx, appName)
@@ -180,20 +172,20 @@ func TestIntegration_Delete(t *testing.T) {
 // pushing, and another via SetEnv. It then reads them via Env. It then unsets
 // one via Unset and reads them again via Env.
 func TestIntegration_Envs(t *testing.T) {
-	t.Parallel()
+	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		appName := fmt.Sprintf("integration-envs-%d", time.Now().UnixNano())
 
 		// Push an app and then clean it up. This pushes the envs app which
 		// returns the set environment variables via JSON. Set two environment
 		// variables (ENV1 and ENV2).
-		kf.Push(ctx, appName, map[string]string{
-			"--built-in":           "",
-			"--path":               filepath.Join(RootDir(ctx, t), "./samples/apps/envs"),
-			"--container-registry": fmt.Sprintf("gcr.io/%s", GCPProjectID()),
-			"--env":                "ENV1=VALUE1",
-			"--env=ENV2=VALUE2":    "",
-		})
+		kf.Push(ctx, appName,
+			"--built-in",
+			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/envs"),
+			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
+			"--env", "ENV1=VALUE1",
+			"--env=ENV2=VALUE2",
+		)
 
 		// This is only in place for cleanup if the test fails.
 		defer kf.Delete(ctx, appName)
@@ -285,4 +277,42 @@ func checkVars(ctx context.Context, t *testing.T, kf *Kf, appName string, proxyP
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
+}
+
+var checkOnce sync.Once
+
+func checkClusterStatus(t *testing.T) {
+	checkOnce.Do(func() {
+		testIntegration_Buildpacks(t)
+		testIntegration_Doctor(t)
+	})
+}
+
+// testIntegration_Buildpacks uploads the sample buildpacks and then lists
+// them. It ensures the ablity to upload and list buildpacks along with
+// preparing the cluster for the rest of the integration tests (which require
+// the buildpacks).
+func testIntegration_Buildpacks(t *testing.T) {
+	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+		kf.UploadBuildpacks(ctx,
+			"--path", filepath.Join(RootDir(ctx, t), "./samples/buildpacks"),
+			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
+			"--built-in",
+		)
+
+		buildpacks := kf.Buildpacks(ctx)
+		AssertContainsAll(t, strings.Join(buildpacks, "\n"), []string{
+			"io.buildpacks.samples.nodejs",
+			"io.buildpacks.samples.go",
+			"io.buildpacks.samples.java",
+		})
+	})
+}
+
+// testIntegration_Doctor runs the doctor command. It ensures the cluster the
+// tests are running against is in good shape.
+func testIntegration_Doctor(t *testing.T) {
+	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+		kf.Doctor(ctx)
+	})
 }

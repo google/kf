@@ -20,9 +20,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps/fake"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
 	duckv1alpha1 "github.com/knative/pkg/apis/duck/v1alpha1"
@@ -36,7 +35,7 @@ func TestAppsCommand(t *testing.T) {
 		namespace string
 		wantErr   error
 		args      []string
-		setup     func(t *testing.T, fakeLister *fake.FakeLister)
+		setup     func(t *testing.T, fakeLister *fake.FakeClient)
 		assert    func(t *testing.T, buffer *bytes.Buffer)
 	}{
 		"invalid number of args": {
@@ -45,17 +44,14 @@ func TestAppsCommand(t *testing.T) {
 		},
 		"configured namespace": {
 			namespace: "some-namespace",
-			setup: func(t *testing.T, fakeLister *fake.FakeLister) {
+			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
 				fakeLister.
 					EXPECT().
-					List(gomock.Any()).
-					Do(func(opts ...kf.ListOption) {
-						testutil.AssertEqual(t, "namespace", "some-namespace", kf.ListOptions(opts).Namespace())
-					})
+					List("some-namespace")
 			},
 		},
 		"formats multiple services": {
-			setup: func(t *testing.T, fakeLister *fake.FakeLister) {
+			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
 				fakeLister.
 					EXPECT().
 					List(gomock.Any()).
@@ -71,7 +67,7 @@ func TestAppsCommand(t *testing.T) {
 			},
 		},
 		"shows app as deleting": {
-			setup: func(t *testing.T, fakeLister *fake.FakeLister) {
+			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
 				fakeLister.
 					EXPECT().
 					List(gomock.Any()).
@@ -87,7 +83,7 @@ func TestAppsCommand(t *testing.T) {
 		},
 		"list applications error, returns error": {
 			wantErr: errors.New("some-error"),
-			setup: func(t *testing.T, fakeLister *fake.FakeLister) {
+			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
 				fakeLister.
 					EXPECT().
 					List(gomock.Any()).
@@ -95,7 +91,7 @@ func TestAppsCommand(t *testing.T) {
 			},
 		},
 		"filters out configurations without a name": {
-			setup: func(t *testing.T, fakeLister *fake.FakeLister) {
+			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
 				fakeLister.
 					EXPECT().
 					List(gomock.Any()).
@@ -113,7 +109,7 @@ func TestAppsCommand(t *testing.T) {
 	} {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			fakeLister := fake.NewFakeLister(ctrl)
+			fakeLister := fake.NewFakeClient(ctrl)
 
 			if tc.setup != nil {
 				tc.setup(t, fakeLister)

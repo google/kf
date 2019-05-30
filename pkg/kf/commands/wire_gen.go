@@ -65,41 +65,43 @@ func InjectDelete(p *config.KfParams) *cobra.Command {
 
 func InjectApps(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
-	appLister := kf.NewLister(servingV1alpha1Interface)
-	command := apps.NewAppsCommand(p, appLister)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	client := apps2.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	command := apps.NewAppsCommand(p, client)
 	return command
 }
 
 func InjectProxy(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
-	appLister := kf.NewLister(servingV1alpha1Interface)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	client := apps2.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
 	kubernetesInterface := config.GetKubernetes(p)
 	ingressLister := kf.NewIstioClient(kubernetesInterface)
-	command := apps.NewProxyCommand(p, appLister, ingressLister)
+	command := apps.NewProxyCommand(p, client, ingressLister)
 	return command
 }
 
 func InjectEnv(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
-	appLister := kf.NewLister(servingV1alpha1Interface)
-	environmentClient := kf.NewEnvironmentClient(appLister, servingV1alpha1Interface)
-	command := apps.NewEnvCommand(p, environmentClient)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	client := apps2.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	command := apps.NewEnvCommand(p, client)
 	return command
 }
 
 func InjectSetEnv(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
-	appLister := kf.NewLister(servingV1alpha1Interface)
-	environmentClient := kf.NewEnvironmentClient(appLister, servingV1alpha1Interface)
-	command := apps.NewSetEnvCommand(p, environmentClient)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	client := apps2.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	command := apps.NewSetEnvCommand(p, client)
 	return command
 }
 
 func InjectUnsetEnv(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
-	appLister := kf.NewLister(servingV1alpha1Interface)
-	environmentClient := kf.NewEnvironmentClient(appLister, servingV1alpha1Interface)
-	command := apps.NewUnsetEnvCommand(p, environmentClient)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	client := apps2.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	command := apps.NewUnsetEnvCommand(p, client)
 	return command
 }
 
@@ -181,16 +183,18 @@ func InjectVcapServices(p *config.KfParams) *cobra.Command {
 func InjectBuildpacks(p *config.KfParams) *cobra.Command {
 	buildV1alpha1Interface := config.GetBuildClient(p)
 	remoteImageFetcher := provideRemoteImageFetcher()
-	buildpackLister := buildpacks.NewBuildpackLister(buildV1alpha1Interface, remoteImageFetcher)
-	command := buildpacks2.NewBuildpacks(p, buildpackLister)
+	builderFactoryCreate := provideBuilderCreate()
+	client := buildpacks.NewClient(buildV1alpha1Interface, remoteImageFetcher, builderFactoryCreate)
+	command := buildpacks2.NewBuildpacks(p, client)
 	return command
 }
 
 func InjectUploadBuildpacks(p *config.KfParams) *cobra.Command {
-	builderCreator := provideBuilderCreator()
 	buildV1alpha1Interface := config.GetBuildClient(p)
-	buildTemplateUploader := buildpacks.NewBuildTemplateUploader(buildV1alpha1Interface)
-	command := buildpacks2.NewUploadBuildpacks(p, builderCreator, buildTemplateUploader)
+	remoteImageFetcher := provideRemoteImageFetcher()
+	builderFactoryCreate := provideBuilderCreate()
+	client := buildpacks.NewClient(buildV1alpha1Interface, remoteImageFetcher, builderFactoryCreate)
+	command := buildpacks2.NewUploadBuildpacks(p, client)
 	return command
 }
 
@@ -246,8 +250,8 @@ func provideRemoteImageFetcher() buildpacks.RemoteImageFetcher {
 	return remote.Image
 }
 
-func provideBuilderCreator() buildpacks.BuilderCreator {
-	return buildpacks.NewBuilderCreator(func(flags pack.CreateBuilderFlags) error {
+func provideBuilderCreate() buildpacks.BuilderFactoryCreate {
+	return func(flags pack.CreateBuilderFlags) error {
 		factory, err := image.NewFactory()
 		if err != nil {
 			return err
@@ -280,7 +284,7 @@ func provideBuilderCreator() buildpacks.BuilderCreator {
 		}
 
 		return nil
-	})
+	}
 }
 
 var SpacesSet = wire.NewSet(config.GetKubernetes, provideNamespaceGetter, spaces.NewClient)
