@@ -20,6 +20,7 @@
 package fake
 
 import (
+	doctor "github.com/GoogleCloudPlatform/kf/pkg/kf/doctor"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
@@ -60,6 +61,18 @@ func (m *FakeClient) Create(arg0, arg1 string) (string, error) {
 func (mr *FakeClientMockRecorder) Create(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*FakeClient)(nil).Create), arg0, arg1)
+}
+
+// Diagnose mocks base method
+func (m *FakeClient) Diagnose(arg0 *doctor.Diagnostic) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Diagnose", arg0)
+}
+
+// Diagnose indicates an expected call of Diagnose
+func (mr *FakeClientMockRecorder) Diagnose(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Diagnose", reflect.TypeOf((*FakeClient)(nil).Diagnose), arg0)
 }
 
 // List mocks base method

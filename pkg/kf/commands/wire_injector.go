@@ -272,10 +272,9 @@ func provideBuilderCreate() buildpacks.BuilderFactoryCreate {
 	}
 }
 
-func InjectBuildpacks(p *config.KfParams) *cobra.Command {
+func InjectBuildpacksClient(p *config.KfParams) buildpacks.Client {
 	wire.Build(
 		buildpacks.NewClient,
-		cbuildpacks.NewBuildpacks,
 		config.GetBuildClient,
 		provideRemoteImageFetcher,
 		provideBuilderCreate,
@@ -283,13 +282,18 @@ func InjectBuildpacks(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
+func InjectBuildpacks(p *config.KfParams) *cobra.Command {
+	wire.Build(
+		cbuildpacks.NewBuildpacks,
+		InjectBuildpacksClient,
+	)
+	return nil
+}
+
 func InjectUploadBuildpacks(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		buildpacks.NewClient,
 		cbuildpacks.NewUploadBuildpacks,
-		config.GetBuildClient,
-		provideBuilderCreate,
-		provideRemoteImageFetcher,
+		InjectBuildpacksClient,
 	)
 	return nil
 }

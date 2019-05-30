@@ -180,20 +180,22 @@ func InjectVcapServices(p *config.KfParams) *cobra.Command {
 	return command
 }
 
-func InjectBuildpacks(p *config.KfParams) *cobra.Command {
+func InjectBuildpacksClient(p *config.KfParams) buildpacks.Client {
 	buildV1alpha1Interface := config.GetBuildClient(p)
 	remoteImageFetcher := provideRemoteImageFetcher()
 	builderFactoryCreate := provideBuilderCreate()
 	client := buildpacks.NewClient(buildV1alpha1Interface, remoteImageFetcher, builderFactoryCreate)
+	return client
+}
+
+func InjectBuildpacks(p *config.KfParams) *cobra.Command {
+	client := InjectBuildpacksClient(p)
 	command := buildpacks2.NewBuildpacks(p, client)
 	return command
 }
 
 func InjectUploadBuildpacks(p *config.KfParams) *cobra.Command {
-	buildV1alpha1Interface := config.GetBuildClient(p)
-	remoteImageFetcher := provideRemoteImageFetcher()
-	builderFactoryCreate := provideBuilderCreate()
-	client := buildpacks.NewClient(buildV1alpha1Interface, remoteImageFetcher, builderFactoryCreate)
+	client := InjectBuildpacksClient(p)
 	command := buildpacks2.NewUploadBuildpacks(p, client)
 	return command
 }

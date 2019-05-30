@@ -108,6 +108,7 @@ You can get more info by adding the --help flag to any sub-command.
 		// app tests will fail.
 		"doctor": doctor.NewDoctorCommand(p, []doctor.DoctorTest{
 			{Name: "cluster", Test: pkgdoctor.NewClusterDiagnostic(config.GetKubernetes(p))},
+			{Name: "buildpacks", Test: InjectBuildpacksClient(p)},
 		}),
 	}
 
