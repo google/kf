@@ -16,14 +16,13 @@
 
 set -x
 
-go test --race -v ./...
-
+cat fawoidjowijdowidjwoidj
 ret=$?
 set +x
 if [ $ret -eq 0 ]; then
-  echo "\e[32mSuccess\e[0m" 1>&2
+  echo "\e[32mSuccess\e[0m"
   exit 0
 else
-  echo "\e[31mFailure\e[0m: $ret" 1>&2
+  echo "\e[31mFailure\e[0m: $ret"
   exit $ret
 fi
