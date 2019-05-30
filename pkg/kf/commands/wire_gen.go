@@ -82,25 +82,25 @@ func InjectProxy(p *config.KfParams) *cobra.Command {
 
 func InjectEnv(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
-	appLister := kf.NewLister(servingV1alpha1Interface)
-	environmentClient := kf.NewEnvironmentClient(appLister, servingV1alpha1Interface)
-	command := apps.NewEnvCommand(p, environmentClient)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	client := apps2.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	command := apps.NewEnvCommand(p, client)
 	return command
 }
 
 func InjectSetEnv(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
-	appLister := kf.NewLister(servingV1alpha1Interface)
-	environmentClient := kf.NewEnvironmentClient(appLister, servingV1alpha1Interface)
-	command := apps.NewSetEnvCommand(p, environmentClient)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	client := apps2.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	command := apps.NewSetEnvCommand(p, client)
 	return command
 }
 
 func InjectUnsetEnv(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
-	appLister := kf.NewLister(servingV1alpha1Interface)
-	environmentClient := kf.NewEnvironmentClient(appLister, servingV1alpha1Interface)
-	command := apps.NewUnsetEnvCommand(p, environmentClient)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	client := apps2.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	command := apps.NewUnsetEnvCommand(p, client)
 	return command
 }
 

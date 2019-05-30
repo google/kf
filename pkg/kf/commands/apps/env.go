@@ -18,13 +18,13 @@ import (
 	"fmt"
 	"text/tabwriter"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/spf13/cobra"
 )
 
 // NewEnvCommand creates a Env command.
-func NewEnvCommand(p *config.KfParams, c kf.EnvironmentClient) *cobra.Command {
+func NewEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command {
 	var envCmd = &cobra.Command{
 		Use:     "env APP_NAME",
 		Short:   "List the names and values of the environment variables for an app",
@@ -35,18 +35,17 @@ func NewEnvCommand(p *config.KfParams, c kf.EnvironmentClient) *cobra.Command {
 			appName := args[0]
 			cmd.SilenceUsage = true
 
-			values, err := c.List(
-				appName,
-				kf.WithListEnvNamespace(p.Namespace),
-			)
+			app, err := appClient.Get(p.Namespace, appName)
 			if err != nil {
 				return err
 			}
 
+			kfapp := (*apps.KfApp)(app)
+
 			w := tabwriter.NewWriter(p.Output, 8, 4, 1, ' ', tabwriter.StripEscape)
 			fmt.Fprintln(w, "NAME\tVALUE")
-			for name, value := range values {
-				fmt.Fprintf(w, "%s\t%s\n", name, value)
+			for _, env := range kfapp.GetEnvVars() {
+				fmt.Fprintf(w, "%s\t%s\n", env.Name, env.Value)
 			}
 			w.Flush()
 

@@ -289,3 +289,13 @@ func TestDeploy(t *testing.T) {
 		})
 	}
 }
+
+func buildServiceWithEnvs(appName string, envs map[string]string) serving.Service {
+	s := serving.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: appName,
+		},
+	}
+	envutil.SetServiceEnvVars(&s, envutil.MapToEnvVars(envs))
+	return s
+}

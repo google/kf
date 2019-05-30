@@ -15,13 +15,14 @@
 package apps
 
 import (
-	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
+	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"github.com/spf13/cobra"
 )
 
 // NewUnsetEnvCommand creates a SetEnv command.
-func NewUnsetEnvCommand(p *config.KfParams, c kf.EnvironmentClient) *cobra.Command {
+func NewUnsetEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command {
 	var envCmd = &cobra.Command{
 		Use:     "unset-env APP_NAME ENV_VAR_NAME",
 		Short:   "Unset an environment variable for an app",
@@ -33,16 +34,12 @@ func NewUnsetEnvCommand(p *config.KfParams, c kf.EnvironmentClient) *cobra.Comma
 
 			cmd.SilenceUsage = true
 
-			err := c.Unset(
-				appName,
-				[]string{name},
-				kf.WithUnsetEnvNamespace(p.Namespace),
-			)
-			if err != nil {
-				return err
-			}
+			return appClient.Transform(p.Namespace, appName, func(app *serving.Service) error {
+				kfapp := (*apps.KfApp)(app)
+				kfapp.DeleteEnvVars([]string{name})
 
-			return nil
+				return nil
+			})
 		},
 	}
 

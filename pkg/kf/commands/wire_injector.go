@@ -108,32 +108,20 @@ func InjectProxy(p *config.KfParams) *cobra.Command {
 ///////////////////////////////////
 
 func InjectEnv(p *config.KfParams) *cobra.Command {
-	wire.Build(
-		capps.NewEnvCommand,
-		kf.NewLister,
-		kf.NewEnvironmentClient,
-		config.GetServingClient,
-	)
+	wire.Build(capps.NewEnvCommand, AppsSet)
+
 	return nil
 }
 
 func InjectSetEnv(p *config.KfParams) *cobra.Command {
-	wire.Build(
-		capps.NewSetEnvCommand,
-		kf.NewLister,
-		kf.NewEnvironmentClient,
-		config.GetServingClient,
-	)
+	wire.Build(capps.NewSetEnvCommand, AppsSet)
+
 	return nil
 }
 
 func InjectUnsetEnv(p *config.KfParams) *cobra.Command {
-	wire.Build(
-		capps.NewUnsetEnvCommand,
-		kf.NewLister,
-		kf.NewEnvironmentClient,
-		config.GetServingClient,
-	)
+	wire.Build(capps.NewUnsetEnvCommand, AppsSet)
+
 	return nil
 }
 
