@@ -137,7 +137,7 @@ type KfInvoker func(context.Context, *testing.T, KfTestConfig) (KfTestOutput, <-
 // KfTest is a test ran by RunKfTest.
 type KfTest func(ctx context.Context, t *testing.T, kf *Kf)
 
-// RunKfTest runs 'kf' for integration tests. It first copmiles 'kf' and then
+// RunKfTest runs 'kf' for integration tests. It first compiles 'kf' and then
 // launches it as a sub-process. It will set the args and environment
 // variables accordingly. It will run the given test with the resulting
 // STDOUT, STDERR and STDIN. It will cleanup the sub-process on completion via

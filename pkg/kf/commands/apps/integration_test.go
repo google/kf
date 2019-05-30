@@ -18,14 +18,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/manifest"
 	. "github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 )
 
@@ -75,6 +78,87 @@ func TestIntegration_Push(t *testing.T) {
 	})
 }
 
+// TestIntegration_Push_manifest pushes the manifest app, using a manifest.yml
+// file. The app is identical to the echo app, and this fact is used to also
+// test manifest file environment variables. It finally deletes the app.
+func TestIntegration_Push_manifest(t *testing.T) {
+	t.Parallel()
+	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+		currentTime := time.Now().UnixNano()
+		appName := fmt.Sprintf("integration-manifest-%d", currentTime)
+		appPath := filepath.Join(RootDir(ctx, t), "samples", "apps", "manifest")
+
+		// Create a custom manifest file for this test.
+		newManifestFile, manifestCleanup, err := copyManifest(appName, appPath, currentTime)
+		AssertNil(t, "app manifest copy error", err)
+		defer manifestCleanup()
+
+		// Push an app with a manifest file.
+		kf.Push(ctx, appName,
+			"--path", appPath,
+			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
+			"--manifest", newManifestFile,
+		)
+		defer kf.Delete(ctx, appName)
+
+		// List the apps and make sure we can find a domain.
+		Logf(t, "ensuring app has domain...")
+		apps := kf.Apps(ctx)
+		if apps[appName].Domain == "" {
+			t.Fatalf("empty domain")
+		}
+		Logf(t, "done ensuring manifest-app has domain.")
+
+		// TODO: Use port 0 so that we don't have to worry about port
+		// collisions. This doesn't work yet:
+		// https://github.com/poy/kf/issues/46
+		go kf.Proxy(ctx, appName, 8080)
+
+		// Check manifest file environment variables by curling the app
+		checkVars(ctx, t, kf, appName, 8080, map[string]string{
+			"WHATNOW": "BROWNCOW",
+		}, nil)
+	})
+}
+
+// copyManifest copies the manifest.yml file in a given appPath.
+// The copy is edited such that the 1st app is renamed with the given appName.
+// The filename of the new manifest is returned, along with a cleanup function.
+func copyManifest(appName, appPath string, currentTime int64) (string, func(), error) {
+	manifestPath := filepath.Join(appPath, "manifest.yml")
+	manifestBytes, err := ioutil.ReadFile(manifestPath)
+	if err != nil {
+		return "", nil, err
+	}
+
+	var manifest manifest.Manifest
+	err = yaml.Unmarshal(manifestBytes, &manifest)
+	if err != nil {
+		return "", nil, err
+	}
+
+	if len(manifest.Applications) < 1 {
+		return "", nil, fmt.Errorf("No applications in manifest file %s", manifestPath)
+	}
+
+	manifest.Applications[0].Name = appName
+	var newManifestBytes []byte
+	newManifestBytes, err = yaml.Marshal(manifest)
+	if err != nil {
+		return "", nil, err
+	}
+
+	newManifestFile := filepath.Join(appPath, fmt.Sprintf("manifest-integration-%d.yml", currentTime))
+	err = ioutil.WriteFile(newManifestFile, newManifestBytes, 0644)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return newManifestFile, func() {
+		os.Remove(newManifestFile)
+	}, nil
+}
+
 // TestIntegration_Delete pushes an app and then deletes it. It then makes
 // sure it is marked as "Deleting".
 func TestIntegration_Delete(t *testing.T) {
@@ -119,72 +203,6 @@ func TestIntegration_Envs(t *testing.T) {
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		appName := fmt.Sprintf("integration-envs-%d", time.Now().UnixNano())
 
-		// CheckVars uses Env and the output of the app to ensure the expected
-		// variables. It will retry for 5 seconds if the environment variables
-		// aren't returning the correct values. This is to give the
-		// enventually consistent system time to catch-up.
-		checkVars := func(expectedVars map[string]string, absentVars []string) {
-			ctx, _ = context.WithTimeout(ctx, 30*time.Second)
-			var success bool
-			for !success {
-				select {
-				case <-ctx.Done():
-					t.Fatalf("context cancelled before reaching sucessful check")
-				default:
-				}
-
-				// List the environment variables and ensure they are all
-				// present.
-				envs := kf.Env(ctx, appName)
-
-				// The envs app will return all its environment variables as
-				// JSON. This checks to make sure everything is ACTUALLY being
-				// set from the app's perspective.
-				Logf(t, "hitting env app to check the envs...")
-				resp := RetryPost(ctx, t, "http://localhost:8081", 5*time.Second, nil)
-				defer resp.Body.Close()
-				AssertEqual(t, "status code", http.StatusOK, resp.StatusCode)
-				var appEnvs map[string]string
-				AssertNil(t, "json", json.NewDecoder(resp.Body).Decode(&appEnvs))
-				Logf(t, "done hitting env app to check the envs.")
-
-				// Check all the environment variables.
-				success = true
-				for k, v := range expectedVars {
-					if envs[k] != v {
-						Logf(t, "wrong: %s != %s", envs[k], v)
-						success = false
-						break
-					}
-					if appEnvs[k] != v {
-						Logf(t, "wrong: %s != %s", appEnvs[k], v)
-						success = false
-						break
-					}
-				}
-
-				// Ensure all of the absentVars are NOT there (used to test
-				// unset-env).
-				for _, k := range absentVars {
-					if _, ok := envs[k]; ok {
-						Logf(t, "wrong: %s still is present", k)
-						success = false
-						break
-					}
-					if _, ok := appEnvs[k]; ok {
-						Logf(t, "wrong: %s still is present", k)
-						success = false
-						break
-					}
-				}
-
-				// No need to bombard it.
-				if !success {
-					time.Sleep(100 * time.Millisecond)
-				}
-			}
-		}
-
 		// Push an app and then clean it up. This pushes the envs app which
 		// returns the set environment variables via JSON. Set two environment
 		// variables (ENV1 and ENV2).
@@ -204,7 +222,7 @@ func TestIntegration_Envs(t *testing.T) {
 		// https://github.com/poy/kf/issues/46
 		go kf.Proxy(ctx, appName, 8081)
 
-		checkVars(map[string]string{
+		checkVars(ctx, t, kf, appName, 8081, map[string]string{
 			"ENV1": "VALUE1", // Set on push
 			"ENV2": "VALUE2", // Set on push
 		}, nil)
@@ -215,10 +233,77 @@ func TestIntegration_Envs(t *testing.T) {
 		// Overwrite ENV2 via set-env
 		kf.SetEnv(ctx, appName, "ENV2", "OVERWRITE2")
 
-		checkVars(map[string]string{
+		checkVars(ctx, t, kf, appName, 8081, map[string]string{
 			"ENV2": "OVERWRITE2", // Set on push and overwritten via set-env
 		}, []string{"ENV1"})
 	})
+}
+
+// CheckVars uses Env and the output of the app to ensure the expected
+// variables. It will retry for 5 seconds if the environment variables
+// aren't returning the correct values. This is to give the
+// enventually consistent system time to catch-up.
+func checkVars(ctx context.Context, t *testing.T, kf *Kf, appName string, proxyPort int, expectedVars map[string]string, absentVars []string) {
+
+	ctx, _ = context.WithTimeout(ctx, 90*time.Second)
+	var success bool
+	for !success {
+		select {
+		case <-ctx.Done():
+			t.Fatalf("context cancelled before reaching sucessful check")
+		default:
+		}
+
+		// List the environment variables and ensure they are all
+		// present.
+		envs := kf.Env(ctx, appName)
+
+		// The envs app will return all its environment variables as
+		// JSON. This checks to make sure everything is ACTUALLY being
+		// set from the app's perspective.
+		Logf(t, "hitting app %s to check the envs...", appName)
+		resp := RetryPost(ctx, t, fmt.Sprintf("http://localhost:%d", proxyPort), 5*time.Second, nil)
+		defer resp.Body.Close()
+		AssertEqual(t, "status code", http.StatusOK, resp.StatusCode)
+		var appEnvs map[string]string
+		AssertNil(t, "json", json.NewDecoder(resp.Body).Decode(&appEnvs))
+		Logf(t, "done hitting %s app to check the envs.", appName)
+
+		// Check all the environment variables.
+		success = true
+		for k, v := range expectedVars {
+			if envs[k] != v {
+				Logf(t, "wrong: %s != %s", envs[k], v)
+				success = false
+				break
+			}
+			if appEnvs[k] != v {
+				Logf(t, "wrong: %s != %s", appEnvs[k], v)
+				success = false
+				break
+			}
+		}
+
+		// Ensure all of the absentVars are NOT there (used to test
+		// unset-env).
+		for _, k := range absentVars {
+			if _, ok := envs[k]; ok {
+				Logf(t, "wrong: %s still is present", k)
+				success = false
+				break
+			}
+			if _, ok := appEnvs[k]; ok {
+				Logf(t, "wrong: %s still is present", k)
+				success = false
+				break
+			}
+		}
+
+		// No need to bombard it.
+		if !success {
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
 }
 
 var checkOnce sync.Once

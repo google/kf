@@ -15,4 +15,5 @@
 # limitations under the License.
 
 set -x
+rm -f kf
 go build ./cmd/...

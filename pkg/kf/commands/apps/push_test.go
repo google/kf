@@ -46,6 +46,7 @@ func TestPushCommand(t *testing.T) {
 		wantErr           error
 		pusherErr         error
 		envVars           []string
+		wantEnvMap        map[string]string
 		srcImageBuilder   SrcImageBuilderFunc
 		wantImagePrefix   string
 	}{
@@ -58,6 +59,7 @@ func TestPushCommand(t *testing.T) {
 			grpc:              true,
 			buildpack:         "some-buildpack",
 			envVars:           []string{"env1=val1", "env2=val2"},
+			wantEnvMap:        map[string]string{"env1": "val1", "env2": "val2"},
 			wantImagePrefix:   "some-reg.io/src-app-name",
 			srcImageBuilder: func(dir, srcImage string) error {
 				testutil.AssertEqual(t, "path", true, strings.Contains(dir, "some-path"))
@@ -84,6 +86,7 @@ func TestPushCommand(t *testing.T) {
 			grpc:              true,
 			buildpack:         "some-buildpack",
 			envVars:           []string{"env1=val1", "env2=val2"},
+			wantEnvMap:        map[string]string{"env1": "val1", "env2": "val2"},
 			sourceImage:       "custom-reg.io/source-image:latest",
 			wantImagePrefix:   "custom-reg.io/source-image:latest",
 		},
@@ -108,6 +111,12 @@ func TestPushCommand(t *testing.T) {
 			srcImageBuilder: func(dir, srcImage string) error {
 				return errors.New("some error")
 			},
+		},
+		"invalid environment variable, returns error": {
+			args:              []string{"app-name"},
+			envVars:           []string{"invalid"},
+			containerRegistry: "some-reg.io",
+			wantErr:           errors.New("malformed environment variable: invalid"),
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
@@ -134,7 +143,7 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "buildpack", tc.buildpack, kf.PushOptions(opts).Buildpack())
 					testutil.AssertEqual(t, "service account", tc.serviceAccount, kf.PushOptions(opts).ServiceAccount())
 					testutil.AssertEqual(t, "grpc", tc.grpc, kf.PushOptions(opts).Grpc())
-					testutil.AssertEqual(t, "env vars", tc.envVars, kf.PushOptions(opts).EnvironmentVariables())
+					testutil.AssertEqual(t, "env vars", tc.wantEnvMap, kf.PushOptions(opts).EnvironmentVariables())
 
 					if !strings.HasPrefix(srcImage, tc.wantImagePrefix) {
 						t.Errorf("Wanted srcImage to start with %s got: %s", tc.wantImagePrefix, srcImage)

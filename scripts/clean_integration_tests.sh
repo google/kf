@@ -14,16 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -x
-
-go test --race -v ./...
-
-ret=$?
-set +x
-if [ $ret -eq 0 ]; then
-  echo "\e[32mSuccess\e[0m" 1>&2
-  exit 0
-else
-  echo "\e[31mFailure\e[0m: $ret" 1>&2
-  exit $ret
+apps=$(kf apps | awk '{print $1}' | grep integration-)
+if [ "$apps" = "" ]; then
+  exit
 fi
+
+echo "The following apps will be deleted:"
+echo $apps
+echo
+echo "Press anything to continue"
+read nothing
+echo $apps | xargs -n1 kf delete

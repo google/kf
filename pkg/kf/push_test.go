@@ -54,15 +54,6 @@ func TestPush_BadConfig(t *testing.T) {
 				kf.WithPushContainerRegistry("some-reg.io"),
 			},
 		},
-		"invalid environment variable, returns error": {
-			appName:  "some-app",
-			srcImage: "some-image",
-			wantErr:  errors.New("malformed environment variable: invalid"),
-			opts: kf.PushOptions{
-				kf.WithPushContainerRegistry("some-reg.io"),
-				kf.WithPushEnvironmentVariables([]string{"invalid"}),
-			},
-		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			p := kf.NewPusher(
@@ -257,7 +248,7 @@ func TestPush(t *testing.T) {
 			buildpack: "some-buildpack",
 			opts: kf.PushOptions{
 				kf.WithPushContainerRegistry("some-reg.io"),
-				kf.WithPushEnvironmentVariables([]string{"ENV1=val1", "ENV2=val2"}),
+				kf.WithPushEnvironmentVariables(map[string]string{"ENV1": "val1", "ENV2": "val2"}),
 			},
 			setup: func(t *testing.T, fakeDeployer *kffake.FakeDeployer) {
 				fakeDeployer.EXPECT().

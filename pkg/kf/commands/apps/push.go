@@ -23,6 +23,7 @@ import (
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
 	kfi "github.com/GoogleCloudPlatform/kf/pkg/kf/internal/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/manifest"
 	"github.com/spf13/cobra"
@@ -127,11 +128,27 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 					}
 				}
 
-				err := pusher.Push(app.Name, imageName,
+				// Read environment variables from cli args
+				envVars, err := envutil.ParseCLIEnvVars(envs)
+				if err != nil {
+					return err
+				}
+				envMap := envutil.EnvVarsToMap(envVars)
+
+				if app.Env == nil {
+					app.Env = make(map[string]string)
+				}
+
+				// Merge cli arg environment variables over manifest ones
+				for k, v := range envMap {
+					app.Env[k] = v
+				}
+
+				err = pusher.Push(app.Name, imageName,
 					kf.WithPushNamespace(p.Namespace),
 					kf.WithPushContainerRegistry(containerRegistry),
 					kf.WithPushServiceAccount(serviceAccount),
-					kf.WithPushEnvironmentVariables(envs),
+					kf.WithPushEnvironmentVariables(app.Env),
 					kf.WithPushGrpc(grpc),
 					kf.WithPushBuildpack(buildpack),
 				)

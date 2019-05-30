@@ -24,7 +24,7 @@ configs:
     description: the io.Writer to write output such as build logs
     default: "os.Stdout"
   - name: EnvironmentVariables
-    type: "[]string"
+    type: "map[string]string"
     description: set environment variables
   - name: Grpc
     type: bool
