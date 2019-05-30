@@ -33,7 +33,7 @@ func TestBuildpacks(t *testing.T) {
 		Namespace   string
 		ExpectedErr error
 		Args        []string
-		Setup       func(t *testing.T, fake *fake.FakeBuildpackLister)
+		Setup       func(t *testing.T, fake *fake.FakeClient)
 		BufferF     func(t *testing.T, buffer *bytes.Buffer)
 	}{
 		"wrong number of args": {ExpectedErr: errors.New("accepts 0 arg(s), received 1"),
@@ -41,12 +41,12 @@ func TestBuildpacks(t *testing.T) {
 		},
 		"listing failes": {
 			ExpectedErr: errors.New("some-error"),
-			Setup: func(t *testing.T, fake *fake.FakeBuildpackLister) {
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().List().Return(nil, errors.New("some-error"))
 			},
 		},
 		"lists each buildpack": {
-			Setup: func(t *testing.T, fake *fake.FakeBuildpackLister) {
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().List().Return([]string{"bp-1", "bp-2"}, nil)
 			},
 			BufferF: func(t *testing.T, buffer *bytes.Buffer) {
@@ -56,7 +56,7 @@ func TestBuildpacks(t *testing.T) {
 	} {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			fake := fake.NewFakeBuildpackLister(ctrl)
+			fake := fake.NewFakeClient(ctrl)
 
 			if tc.Setup != nil {
 				tc.Setup(t, fake)

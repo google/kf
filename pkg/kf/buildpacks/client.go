@@ -15,43 +15,169 @@
 package buildpacks
 
 import (
+	"archive/tar"
 	"errors"
+	"fmt"
+	"io"
+	"path"
+	"path/filepath"
+	"time"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/kf"
+	"github.com/buildpack/lifecycle"
+	"github.com/buildpack/pack"
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/name"
+	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	cbuild "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
+	toml "github.com/pelletier/go-toml"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// BuildTemplateUploader uploads a build template
-type BuildTemplateUploader interface {
+// Client is the main interface for interacting with Buildpacks.
+type Client interface {
 	// UploadBuildTemplate uploads a buildpack build template with the name
 	// "buildpack".
 	UploadBuildTemplate(imageName string) error
+
+	// Create creates and publishes a builder image.
+	Create(dir, containerRegistry string) (string, error)
+
+	// List lists the buildpacks available.
+	List() ([]string, error)
 }
 
-// buildTemplateUploader uploads a new buildpack build template. It should be
-// created via NewBuildTemplateUploader.
-type buildTemplateUploader struct {
-	c cbuild.BuildV1alpha1Interface
+// BuilderFactory creates and publishes new builde image.
+type BuilderFactoryCreate func(flags pack.CreateBuilderFlags) error
+
+// RemoteImageFetcher is implemented by
+// github.com/google/go-containerregistry/pkg/v1/remote.Image
+type RemoteImageFetcher func(ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error)
+
+type client struct {
+	build         cbuild.BuildV1alpha1Interface
+	imageFetcher  RemoteImageFetcher
+	builderCreate BuilderFactoryCreate
 }
 
-// NewBuildTemplateUploader creates a new BuildTemplateUploader.
-func NewBuildTemplateUploader(c cbuild.BuildV1alpha1Interface) BuildTemplateUploader {
-	return &buildTemplateUploader{
-		c: c,
+// NewClient creates a new Client.
+func NewClient(
+	b cbuild.BuildV1alpha1Interface,
+	imageFetcher RemoteImageFetcher,
+	builderCreate BuilderFactoryCreate,
+) Client {
+	return &client{
+		build:         b,
+		imageFetcher:  imageFetcher,
+		builderCreate: builderCreate,
 	}
+}
+
+// List lists the available buildpacks.
+func (c *client) List() ([]string, error) {
+	templates, err := c.build.ClusterBuildTemplates().List(metav1.ListOptions{
+		FieldSelector: "metadata.name=buildpack",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(templates.Items) == 0 {
+		return nil, nil
+	}
+
+	builderImage := c.fetchBuilderImageName(templates.Items[0].Spec.Parameters)
+
+	imageRef, err := name.ParseReference(builderImage, name.WeakValidation)
+	if err != nil {
+		return nil, err
+	}
+
+	image, err := c.imageFetcher(imageRef, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+	if err != nil {
+		return nil, err
+	}
+
+	ls, err := image.Layers()
+	if err != nil {
+		return nil, err
+	}
+
+	for i := len(ls) - 1; i >= 0; i-- {
+		layer := ls[i]
+		tr, closer, err := c.fetchImageTar(layer)
+		if err != nil {
+			return nil, err
+		}
+		defer closer.Close()
+
+		for {
+			header, err := tr.Next()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return nil, err
+			}
+
+			if header.Name == "/buildpacks/order.toml" {
+				return c.readOrder(tr)
+			}
+		}
+	}
+
+	return nil, nil
+}
+
+func (c *client) readOrder(reader io.Reader) ([]string, error) {
+	var buildpackIDs []string
+	var order struct {
+		Groups []lifecycle.BuildpackGroup `toml:"groups"`
+	}
+	if err := toml.NewDecoder(reader).Decode(&order); err != nil {
+		return nil, err
+	}
+
+	for _, group := range order.Groups {
+		for _, bp := range group.Buildpacks {
+			buildpackIDs = append(buildpackIDs, bp.ID)
+		}
+	}
+
+	return buildpackIDs, nil
+}
+
+func (c *client) fetchImageTar(layer gcrv1.Layer) (*tar.Reader, io.Closer, error) {
+	ucl, err := layer.Uncompressed()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return tar.NewReader(ucl), ucl, nil
+}
+
+func (c *client) fetchBuilderImageName(params []build.ParameterSpec) string {
+	for _, p := range params {
+		if p.Name == "BUILDER_IMAGE" && p.Default != nil {
+			return *p.Default
+		}
+	}
+
+	return ""
 }
 
 // UploadBuildTemplate uploads a buildpack build template with the name
 // "buildpack".
-func (u *buildTemplateUploader) UploadBuildTemplate(imageName string) error {
+func (c *client) UploadBuildTemplate(imageName string) error {
 	if imageName == "" {
 		return errors.New("image name must not be empty")
 	}
 
 	// TODO: It would be nice if we generated this instead.
-	if _, err := u.deployer()(&build.ClusterBuildTemplate{
+	if _, err := c.deployer()(&build.ClusterBuildTemplate{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "build.knative.dev/v1alpha1",
 			Kind:       "ClusterBuildTemplate",
@@ -68,37 +194,37 @@ func (u *buildTemplateUploader) UploadBuildTemplate(imageName string) error {
 				{
 					Name:        "RUN_IMAGE",
 					Description: `The run image buildpacks will use as the base for IMAGE.`,
-					Default:     u.strToPtr("packs/run:v3alpha2"),
+					Default:     c.strToPtr("packs/run:v3alpha2"),
 				},
 				{
 					Name:        "BUILDER_IMAGE",
 					Description: `The builder image (must include v3 lifecycle and compatible buildpacks).`,
-					Default:     u.strToPtr(imageName),
+					Default:     c.strToPtr(imageName),
 				},
 				{
 					Name:        "USE_CRED_HELPERS",
 					Description: `Use Docker credential helpers for Google's GCR, Amazon's ECR, or Microsoft's ACR.`,
-					Default:     u.strToPtr("true"),
+					Default:     c.strToPtr("true"),
 				},
 				{
 					Name:        "CACHE",
 					Description: `The name of the persistent app cache volume`,
-					Default:     u.strToPtr("empty-dir"),
+					Default:     c.strToPtr("empty-dir"),
 				},
 				{
 					Name:        "USER_ID",
 					Description: `The user ID of the builder image user`,
-					Default:     u.strToPtr("1000"),
+					Default:     c.strToPtr("1000"),
 				},
 				{
 					Name:        "GROUP_ID",
 					Description: `The group ID of the builder image user`,
-					Default:     u.strToPtr("1000"),
+					Default:     c.strToPtr("1000"),
 				},
 				{
 					Name:        "BUILDPACK",
 					Description: `When set, skip the detect step and use the given buildpack.`,
-					Default:     u.strToPtr(""),
+					Default:     c.strToPtr(""),
 				},
 			},
 			Steps: []corev1.Container{
@@ -208,8 +334,8 @@ fi`,
 
 type deployer func(*build.ClusterBuildTemplate) (*build.ClusterBuildTemplate, error)
 
-func (u *buildTemplateUploader) deployer() deployer {
-	builds, err := u.c.ClusterBuildTemplates().List(metav1.ListOptions{
+func (c *client) deployer() deployer {
+	builds, err := c.build.ClusterBuildTemplates().List(metav1.ListOptions{
 		FieldSelector: "metadata.name=buildpack",
 	})
 
@@ -223,16 +349,41 @@ func (u *buildTemplateUploader) deployer() deployer {
 
 	if len(builds.Items) == 0 {
 		return func(t *build.ClusterBuildTemplate) (*build.ClusterBuildTemplate, error) {
-			return u.c.ClusterBuildTemplates().Create(t)
+			return c.build.ClusterBuildTemplates().Create(t)
 		}
 	}
 
 	return func(t *build.ClusterBuildTemplate) (*build.ClusterBuildTemplate, error) {
 		t.ResourceVersion = builds.Items[0].ResourceVersion
-		return u.c.ClusterBuildTemplates().Update(t)
+		return c.build.ClusterBuildTemplates().Update(t)
 	}
 }
 
-func (u *buildTemplateUploader) strToPtr(s string) *string {
+func (c *client) strToPtr(s string) *string {
 	return &s
+}
+
+// Create creates and publishes a builder image.
+func (c *client) Create(dir, containerRegistry string) (string, error) {
+	if dir == "" {
+		return "", kf.ConfigErr{"dir must not be empty"}
+	}
+	if containerRegistry == "" {
+		return "", kf.ConfigErr{"containerRegistry must not be empty"}
+	}
+
+	if filepath.Base(dir) != "builder.toml" {
+		dir = filepath.Join(dir, "builder.toml")
+	}
+
+	imageName := path.Join(containerRegistry, fmt.Sprintf("buildpack-builder:%d", time.Now().UnixNano()))
+	if err := c.builderCreate(pack.CreateBuilderFlags{
+		Publish:         true,
+		BuilderTomlPath: dir,
+		RepoName:        imageName,
+	}); err != nil {
+		return "", err
+	}
+
+	return imageName, nil
 }

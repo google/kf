@@ -35,69 +35,67 @@ func TestUploadBuildpacks(t *testing.T) {
 	for tn, tc := range map[string]struct {
 		Namespace   string
 		ExpectedErr error
-		Setup       func(t *testing.T, c *cobra.Command, fakeBuilderCreator *fake.FakeBuilderCreator, fakeBuildTemplateUploader *fake.FakeBuildTemplateUploader)
+		Setup       func(t *testing.T, c *cobra.Command, fakeClient *fake.FakeClient)
 	}{
 		"uses correct container registry and path": {
-			Setup: func(t *testing.T, c *cobra.Command, fakeBuilderCreator *fake.FakeBuilderCreator, fakeBuildTemplateUploader *fake.FakeBuildTemplateUploader) {
+			Setup: func(t *testing.T, c *cobra.Command, fakeClient *fake.FakeClient) {
 				c.Flags().Set("path", "/some-path")
 				c.Flags().Set("container-registry", "some-registry.io")
-				fakeBuilderCreator.EXPECT().Create("/some-path", "some-registry.io").Return("some-image", nil)
-				fakeBuildTemplateUploader.EXPECT().UploadBuildTemplate("some-image")
+				fakeClient.EXPECT().Create("/some-path", "some-registry.io").Return("some-image", nil)
+				fakeClient.EXPECT().UploadBuildTemplate("some-image")
 			},
 		},
 		"converts relative path to absolute": {
-			Setup: func(t *testing.T, c *cobra.Command, fakeBuilderCreator *fake.FakeBuilderCreator, fakeBuildTemplateUploader *fake.FakeBuildTemplateUploader) {
+			Setup: func(t *testing.T, c *cobra.Command, fakeClient *fake.FakeClient) {
 				c.Flags().Set("path", "some-path")
-				fakeBuilderCreator.EXPECT().Create(gomock.Any(), gomock.Any()).Do(func(path, containerRegistry string) {
+				fakeClient.EXPECT().Create(gomock.Any(), gomock.Any()).Do(func(path, containerRegistry string) {
 					if !filepath.IsAbs(path) {
 						t.Fatalf("expetec path to be absolute: %s", path)
 					}
 				})
-				fakeBuildTemplateUploader.EXPECT().UploadBuildTemplate(gomock.Any())
+				fakeClient.EXPECT().UploadBuildTemplate(gomock.Any())
 			},
 		},
 		"converts empty path to current directory": {
-			Setup: func(t *testing.T, c *cobra.Command, fakeBuilderCreator *fake.FakeBuilderCreator, fakeBuildTemplateUploader *fake.FakeBuildTemplateUploader) {
+			Setup: func(t *testing.T, c *cobra.Command, fakeClient *fake.FakeClient) {
 				cwd, err := os.Getwd()
 				if err != nil {
 					t.Fatal(err)
 				}
-				fakeBuilderCreator.EXPECT().Create(cwd, gomock.Any())
-				fakeBuildTemplateUploader.EXPECT().UploadBuildTemplate(gomock.Any())
+				fakeClient.EXPECT().Create(cwd, gomock.Any())
+				fakeClient.EXPECT().UploadBuildTemplate(gomock.Any())
 			},
 		},
 		"returns error when upload fails": {
 			ExpectedErr: errors.New("some-error"),
-			Setup: func(t *testing.T, c *cobra.Command, fakeBuilderCreator *fake.FakeBuilderCreator, fakeBuildTemplateUploader *fake.FakeBuildTemplateUploader) {
+			Setup: func(t *testing.T, c *cobra.Command, fakeClient *fake.FakeClient) {
 				c.Flags().Set("path", "/some-path")
 				c.Flags().Set("container-registry", "some-registry.io")
-				fakeBuilderCreator.EXPECT().Create("/some-path", "some-registry.io")
-				fakeBuildTemplateUploader.EXPECT().UploadBuildTemplate(gomock.Any()).Return(errors.New("some-error"))
+				fakeClient.EXPECT().Create("/some-path", "some-registry.io")
+				fakeClient.EXPECT().UploadBuildTemplate(gomock.Any()).Return(errors.New("some-error"))
 			},
 		},
 		"returns error when create fails": {
 			ExpectedErr: errors.New("some-error"),
-			Setup: func(t *testing.T, c *cobra.Command, fakeBuilderCreator *fake.FakeBuilderCreator, fakeBuildTemplateUploader *fake.FakeBuildTemplateUploader) {
-				fakeBuilderCreator.EXPECT().Create(gomock.Any(), gomock.Any()).Return("", errors.New("some-error"))
+			Setup: func(t *testing.T, c *cobra.Command, fakeClient *fake.FakeClient) {
+				fakeClient.EXPECT().Create(gomock.Any(), gomock.Any()).Return("", errors.New("some-error"))
 			},
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			fakeBuilderCreator := fake.NewFakeBuilderCreator(ctrl)
-			fakeBuildTemplateUploader := fake.NewFakeBuildTemplateUploader(ctrl)
+			fakeClient := fake.NewFakeClient(ctrl)
 
 			c := cbuildpacks.NewUploadBuildpacks(
 				&config.KfParams{
 					Namespace: tc.Namespace,
 					Output:    &bytes.Buffer{},
 				},
-				fakeBuilderCreator,
-				fakeBuildTemplateUploader,
+				fakeClient,
 			)
 
 			if tc.Setup != nil {
-				tc.Setup(t, c, fakeBuilderCreator, fakeBuildTemplateUploader)
+				tc.Setup(t, c, fakeClient)
 			}
 
 			gotErr := c.Execute()

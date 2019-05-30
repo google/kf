@@ -245,8 +245,8 @@ func provideRemoteImageFetcher() buildpacks.RemoteImageFetcher {
 	return remote.Image
 }
 
-func provideBuilderCreator() buildpacks.BuilderCreator {
-	return buildpacks.NewBuilderCreator(func(flags pack.CreateBuilderFlags) error {
+func provideBuilderCreate() buildpacks.BuilderFactoryCreate {
+	return func(flags pack.CreateBuilderFlags) error {
 		factory, err := image.NewFactory()
 		if err != nil {
 			return err
@@ -282,25 +282,27 @@ func provideBuilderCreator() buildpacks.BuilderCreator {
 		}
 
 		return nil
-	})
+	}
 }
 
 func InjectBuildpacks(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		buildpacks.NewBuildpackLister,
+		buildpacks.NewClient,
 		cbuildpacks.NewBuildpacks,
 		config.GetBuildClient,
 		provideRemoteImageFetcher,
+		provideBuilderCreate,
 	)
 	return nil
 }
 
 func InjectUploadBuildpacks(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		buildpacks.NewBuildTemplateUploader,
+		buildpacks.NewClient,
 		cbuildpacks.NewUploadBuildpacks,
 		config.GetBuildClient,
-		provideBuilderCreator,
+		provideBuilderCreate,
+		provideRemoteImageFetcher,
 	)
 	return nil
 }
