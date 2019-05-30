@@ -137,13 +137,13 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 				}
 				envMap := envutil.EnvVarsToMap(envVars)
 
-				// Merge cli arg environment variables over manifest ones
 				if app.Env == nil {
-					app.Env = envMap
-				} else {
-					for k, v := range envMap {
-						app.Env[k] = v
-					}
+					app.Env = make(map[string]string)
+				}
+
+				// Merge cli arg environment variables over manifest ones
+				for k, v := range envMap {
+					app.Env[k] = v
 				}
 
 				err := pusher.Push(app.Name, imageName,
