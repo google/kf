@@ -15,7 +15,9 @@
 package commands
 
 import (
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/doctor"
@@ -109,6 +111,8 @@ You can get more info by adding the --help flag to any sub-command.
 		"doctor": doctor.NewDoctorCommand(p, []doctor.DoctorTest{
 			{Name: "cluster", Test: pkgdoctor.NewClusterDiagnostic(config.GetKubernetes(p))},
 		}),
+
+		"completion": completionCommand(rootCmd),
 	}
 
 	if !builtIn() {
@@ -152,4 +156,26 @@ func builtIn() bool {
 	flags.ParseErrorsWhitelist.UnknownFlags = true
 	flags.Parse(os.Args)
 	return *result
+}
+
+func completionCommand(rootCmd *cobra.Command) *cobra.Command {
+	return &cobra.Command{
+		Use: "completion bash|zsh",
+		Example: `
+  eval "$(kf completion bash)"
+  eval "$(kf completion zsh)"
+		`,
+		Long: `completion is used to create set up bash/zsh auto-completion for kf commands.`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			switch shell := strings.ToLower(args[0]); shell {
+			case "bash":
+				return rootCmd.GenBashCompletion(os.Stdout)
+			case "zsh":
+				return rootCmd.GenZshCompletion(os.Stdout)
+			default:
+				return fmt.Errorf("unknown shell %q. Only bash and zsh are supported.", shell)
+			}
+		},
+	}
 }
