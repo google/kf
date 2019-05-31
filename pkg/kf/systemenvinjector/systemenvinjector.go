@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package kf
+package systemenvinjector
 
 import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/cfutil"

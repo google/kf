@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/systemenvinjector"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 )
@@ -37,14 +38,14 @@ type Deployer interface {
 type deployer struct {
 	client      cserving.ServingV1alpha1Interface
 	appLister   AppLister
-	envInjector SystemEnvInjectorInterface
+	envInjector systemenvinjector.SystemEnvInjectorInterface
 }
 
 // NewDeployer creates a new Deployer.
 func NewDeployer(
 	l AppLister,
 	c cserving.ServingV1alpha1Interface,
-	sei SystemEnvInjectorInterface,
+	sei systemenvinjector.SystemEnvInjectorInterface,
 ) Deployer {
 	return &deployer{
 		appLister:   l,

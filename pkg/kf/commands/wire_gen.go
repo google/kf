@@ -20,6 +20,7 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/spaces"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/systemenvinjector"
 	"github.com/buildpack/lifecycle/image"
 	"github.com/buildpack/pack"
 	config2 "github.com/buildpack/pack/config"
@@ -105,11 +106,11 @@ func InjectUnsetEnv(p *config.KfParams) *cobra.Command {
 	return command
 }
 
-func provideSystemEnvInjector(p *config.KfParams) kf.SystemEnvInjectorInterface {
+func provideSystemEnvInjector(p *config.KfParams) systemenvinjector.SystemEnvInjectorInterface {
 	servicecatalogV1beta1Interface := config.GetServiceCatalogClient(p)
 	clientInterface := config.GetSecretClient(p)
 	servicebindingsClientInterface := servicebindings.NewClient(servicecatalogV1beta1Interface, clientInterface)
-	systemEnvInjectorInterface := kf.NewSystemEnvInjector(servicebindingsClientInterface)
+	systemEnvInjectorInterface := systemenvinjector.NewSystemEnvInjector(servicebindingsClientInterface)
 	return systemEnvInjectorInterface
 }
 
