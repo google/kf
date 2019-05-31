@@ -258,3 +258,82 @@ func TestClient_Delete(t *testing.T) {
 		})
 	}
 }
+
+func TestClient_Upsert(t *testing.T) {
+	fakeSecret := func(name string, value string) *v1.Secret {
+		s := &v1.Secret{}
+		s.Name = name
+		s.StringData = map[string]string{"value": value}
+
+		return s
+	}
+	cases := map[string]struct {
+		Namespace   string
+		PreExisting []*v1.Secret
+		ToUpsert    *v1.Secret
+		Merger      Merger
+		ExpectErr   error
+		Validate    func(t *testing.T, mockK8s cv1.SecretsGetter)
+	}{
+		"inserts if not found": {
+			Namespace: "default",
+			ToUpsert:  fakeSecret("foo", "new"),
+			Merger:    nil, // should not be called
+			Validate: func(t *testing.T, mockK8s cv1.SecretsGetter) {
+				secret, err := mockK8s.Secrets("default").Get("foo", metav1.GetOptions{})
+				testutil.AssertNil(t, "secrets err", err)
+				testutil.AssertEqual(t, "value", "new", secret.StringData["value"])
+			},
+		},
+		"update if found": {
+			PreExisting: []*v1.Secret{fakeSecret("foo", "old")},
+			Namespace:   "testing",
+			ToUpsert:    fakeSecret("foo", "new"),
+			Merger:      func(n, o *v1.Secret) *v1.Secret { return n },
+			Validate: func(t *testing.T, mockK8s cv1.SecretsGetter) {
+				secret, err := mockK8s.Secrets("testing").Get("foo", metav1.GetOptions{})
+				testutil.AssertNil(t, "secrets err", err)
+				testutil.AssertEqual(t, "value", "new", secret.StringData["value"])
+			},
+		},
+		"calls merge with right order": {
+			Namespace:   "default",
+			PreExisting: []*v1.Secret{fakeSecret("foo", "old")},
+			ToUpsert:    fakeSecret("foo", "new"),
+			Merger: func(n, o *v1.Secret) *v1.Secret {
+				n.StringData["value"] = n.StringData["value"] + "-" + o.StringData["value"]
+				return n
+			},
+			ExpectErr: nil,
+			Validate: func(t *testing.T, mockK8s cv1.SecretsGetter) {
+				secret, err := mockK8s.Secrets("default").Get("foo", metav1.GetOptions{})
+				testutil.AssertNil(t, "secrets err", err)
+				testutil.AssertEqual(t, "value", "new-old", secret.StringData["value"])
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			mockK8s := testclient.NewSimpleClientset().CoreV1()
+
+			secretsClient := NewExampleClient(mockK8s)
+
+			for _, v := range tc.PreExisting {
+				_, err := secretsClient.Create(tc.Namespace, v)
+				testutil.AssertNil(t, "creating preexisting secrets", err)
+			}
+
+			_, actualErr := secretsClient.Upsert(tc.Namespace, tc.ToUpsert, tc.Merger)
+			if tc.ExpectErr != nil || actualErr != nil {
+				testutil.AssertErrorsEqual(t, tc.ExpectErr, actualErr)
+
+				return
+			}
+
+			if tc.Validate != nil {
+				tc.Validate(t, mockK8s)
+			}
+		})
+	}
+}

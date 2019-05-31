@@ -131,6 +131,7 @@ type Client interface {
 	Get(namespace string, name string, opts ...GetOption) (*serving.Service, error)
 	Delete(namespace string, name string, opts ...DeleteOption) error
 	List(namespace string, opts ...ListOption) ([]serving.Service, error)
+	Upsert(namespace string, newObj *serving.Service, merge Merger) (*serving.Service, error)
 
 	// ClientExtension can be used by the developer to extend the client.
 	ClientExtension
@@ -250,12 +251,34 @@ func (core *coreClient) List(namespace string, opts ...ListOption) ([]serving.Se
 
 func (cfg listConfig) ToListOptions() (resp metav1.ListOptions) {
 	if cfg.fieldSelector != nil {
-		resp.FieldSelector = metav1.SetAsLabelSelector(cfg.fieldSelector).String()
+		resp.FieldSelector = metav1.FormatLabelSelector(metav1.SetAsLabelSelector(cfg.fieldSelector))
 	}
 
 	if cfg.labelSelector != nil {
-		resp.LabelSelector = metav1.SetAsLabelSelector(cfg.labelSelector).String()
+		resp.LabelSelector = metav1.FormatLabelSelector(metav1.SetAsLabelSelector(cfg.labelSelector))
 	}
 
 	return
+}
+
+// Merger is a type to merge an existing value with a new one.
+type Merger func(newObj, oldObj *serving.Service) *serving.Service
+
+// Upsert inerts the object into the cluster if it doesn't already exist, or else
+// calls the merge function to merge the existing and new then performs an Update.
+func (core *coreClient) Upsert(namespace string, newObj *serving.Service, merge Merger) (*serving.Service, error) {
+	// NOTE: the field selector may be ignored by some Kubernetes resources
+	// so we double check down below.
+	existing, err := core.List(namespace, WithListfieldSelector(map[string]string{"metadata.name": newObj.Name}))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, oldObj := range existing {
+		if oldObj.Name == newObj.Name {
+			return core.Update(namespace, merge(newObj, &oldObj))
+		}
+	}
+
+	return core.Create(namespace, newObj)
 }

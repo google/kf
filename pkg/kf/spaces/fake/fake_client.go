@@ -160,3 +160,18 @@ func (mr *FakeClientMockRecorder) Update(arg0 interface{}, arg1 ...interface{}) 
 	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*FakeClient)(nil).Update), varargs...)
 }
+
+// Upsert mocks base method
+func (m *FakeClient) Upsert(arg0 *v1.Namespace, arg1 spaces.Merger) (*v1.Namespace, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Upsert", arg0, arg1)
+	ret0, _ := ret[0].(*v1.Namespace)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Upsert indicates an expected call of Upsert
+func (mr *FakeClientMockRecorder) Upsert(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*FakeClient)(nil).Upsert), arg0, arg1)
+}
