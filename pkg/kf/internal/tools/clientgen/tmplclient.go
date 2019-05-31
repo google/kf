@@ -178,7 +178,7 @@ func (cfg listConfig) ToListOptions() (resp metav1.ListOptions) {
 // Merger is a type to merge an existing value with a new one.
 type Merger func(newObj, oldObj *{{.Type}}) *{{.Type}}
 
-// Upsert inerts the object into the cluster if it doesn't already exist, or else
+// Upsert inserts the object into the cluster if it doesn't already exist, or else
 // calls the merge function to merge the existing and new then performs an Update.
 func (core *coreClient) Upsert({{ $nssig }} newObj *{{.Type}}, merge Merger) (*{{.Type}}, error) {
 	// NOTE: the field selector may be ignored by some Kubernetes resources
