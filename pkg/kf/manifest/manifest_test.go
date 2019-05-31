@@ -37,7 +37,7 @@ applications:
 `,
 			expected: &manifest.Manifest{
 				Applications: []manifest.Application{
-					manifest.Application{
+					{
 						Name: "MY-APP",
 					},
 				},
@@ -68,7 +68,7 @@ applications:
 `,
 			expected: &manifest.Manifest{
 				Applications: []manifest.Application{
-					manifest.Application{
+					{
 						Name: "MY-APP",
 					},
 				},

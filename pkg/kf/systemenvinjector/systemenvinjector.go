@@ -29,7 +29,7 @@ type SystemEnvInjectorInterface interface {
 }
 
 // NewSystemEnvInjector creates a utility used to update serving.Services with
-// CF style sytem environment variables like VCAP_SERVICES.
+// CF style system environment variables like VCAP_SERVICES.
 func NewSystemEnvInjector(bindingsClient servicebindings.ClientInterface) SystemEnvInjectorInterface {
 	return &SystemEnvInjector{
 		bindingsClient: bindingsClient,
@@ -37,7 +37,7 @@ func NewSystemEnvInjector(bindingsClient servicebindings.ClientInterface) System
 }
 
 // SystemEnvInjector is a utility used to update serving.Services with
-// CF style sytem environment variables like VCAP_SERVICES.
+// CF style system environment variables like VCAP_SERVICES.
 type SystemEnvInjector struct {
 	bindingsClient servicebindings.ClientInterface
 }

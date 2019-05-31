@@ -195,9 +195,9 @@ func TestClient_List(t *testing.T) {
 					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
 					Return(&apiv1beta1.ServiceBindingList{
 						Items: []apiv1beta1.ServiceBinding{
-							apiv1beta1.ServiceBinding{},
-							apiv1beta1.ServiceBinding{},
-							apiv1beta1.ServiceBinding{},
+							{},
+							{},
+							{},
 						},
 					}, nil)
 

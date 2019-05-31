@@ -205,7 +205,7 @@ func ExampleGetServiceEnvVars() {
 	// Key BAR Value 0
 }
 
-func ExampleGetServiceEnvVars_EmptyService() {
+func ExampleGetServiceEnvVars_emptyService() {
 	env := envutil.GetServiceEnvVars(nil)
 
 	fmt.Println(env)

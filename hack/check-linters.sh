@@ -18,10 +18,17 @@
 
 set -euo pipefail
 
-GOFMT_DIFF=$(IFS=$'\n'; gofmt -d $( find . -type f -name '*.go' ) )
+# gofmt -s -d
+GOFMT_DIFF=$(IFS=$'\n'; gofmt -s -d $( find . -type f -name '*.go' ) )
 if [[ -n "${GOFMT_DIFF}" ]]; then
     echo "${GOFMT_DIFF}"
     echo
     echo "The go source files aren't gofmt formatted."
     exit 1
 fi
+
+go vet ./...
+
+# Checking for misspelled words
+GO111MODULE=off go get -u github.com/client9/misspell/cmd/misspell
+misspell -error .

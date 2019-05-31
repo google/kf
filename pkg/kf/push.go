@@ -111,10 +111,10 @@ func (p *pusher) setupConfig(appName, srcImage string, opts []PushOption) (pushC
 	cfg := PushOptionDefaults().Extend(opts).toConfig()
 
 	if appName == "" {
-		return pushConfig{}, kf.ConfigErr{"invalid app name"}
+		return pushConfig{}, kf.ConfigErr{Reason: "invalid app name"}
 	}
 	if srcImage == "" {
-		return pushConfig{}, kf.ConfigErr{"invalid source image"}
+		return pushConfig{}, kf.ConfigErr{Reason: "invalid source image"}
 	}
 
 	return cfg, nil
