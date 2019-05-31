@@ -369,10 +369,10 @@ func (c *client) strToPtr(s string) *string {
 // Create creates and publishes a builder image.
 func (c *client) Create(dir, containerRegistry string) (string, error) {
 	if dir == "" {
-		return "", kf.ConfigErr{"dir must not be empty"}
+		return "", kf.ConfigErr{Reason: "dir must not be empty"}
 	}
 	if containerRegistry == "" {
-		return "", kf.ConfigErr{"containerRegistry must not be empty"}
+		return "", kf.ConfigErr{Reason: "containerRegistry must not be empty"}
 	}
 
 	if filepath.Base(dir) != "builder.toml" {

@@ -212,7 +212,9 @@ func Compile(ctx context.Context, t *testing.T, codePath string) string {
 func RootDir(ctx context.Context, t *testing.T) string {
 	t.Helper()
 
-	ctx, _ = context.WithTimeout(ctx, 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
 	cmd := exec.CommandContext(ctx, "git", "rev-parse", "--show-toplevel")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -339,7 +341,8 @@ func StreamOutput(ctx context.Context, t *testing.T, out KfTestOutput) {
 // RetryPost will post until successful, duration has been reached or context is
 // done.
 func RetryPost(ctx context.Context, t *testing.T, addr string, duration time.Duration, body io.Reader) *http.Response {
-	ctx, _ = context.WithTimeout(ctx, duration)
+	ctx, cancel := context.WithTimeout(ctx, duration)
+	defer cancel()
 
 	for {
 		select {
@@ -363,8 +366,6 @@ func RetryPost(ctx context.Context, t *testing.T, addr string, duration time.Dur
 
 		return resp
 	}
-
-	return nil
 }
 
 // Kf provides a DSL for running integration tests.

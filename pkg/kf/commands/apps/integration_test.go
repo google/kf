@@ -18,7 +18,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -27,6 +26,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"gopkg.in/yaml.v2"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/manifest"
 	. "github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
@@ -180,7 +181,7 @@ func TestIntegration_Delete(t *testing.T) {
 		// List the apps and make sure we can find the app.
 		Logf(t, "ensuring app is there...")
 		_, ok := kf.Apps(ctx)[appName]
-		AssertEqual(t, "app presense", true, ok)
+		AssertEqual(t, "app presence", true, ok)
 		Logf(t, "done ensuring app is there.")
 
 		// Delete the app.
@@ -244,13 +245,14 @@ func TestIntegration_Envs(t *testing.T) {
 // aren't returning the correct values. This is to give the
 // enventually consistent system time to catch-up.
 func checkVars(ctx context.Context, t *testing.T, kf *Kf, appName string, proxyPort int, expectedVars map[string]string, absentVars []string) {
+	ctx, cancel := context.WithTimeout(ctx, 90*time.Second)
+	defer cancel()
 
-	ctx, _ = context.WithTimeout(ctx, 90*time.Second)
 	var success bool
 	for !success {
 		select {
 		case <-ctx.Done():
-			t.Fatalf("context cancelled before reaching sucessful check")
+			t.Fatalf("context cancelled before reaching successful check")
 		default:
 		}
 

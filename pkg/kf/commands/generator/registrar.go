@@ -124,7 +124,7 @@ func clusterRoleBinding(name string, roleRef map[string]interface{}) map[string]
 		},
 		"roleRef": roleRef,
 		"subjects": []map[string]interface{}{
-			map[string]interface{}{
+			{
 				"kind":      "ServiceAccount",
 				"name":      "default",
 				"namespace": "default",
@@ -168,17 +168,17 @@ func buildTemplate(containerRegistry string, cmd Command) map[string]interface{}
 		},
 		"spec": map[string]interface{}{
 			"parameters": []map[string]interface{}{
-				map[string]interface{}{
+				{
 					"name":        "ARGS",
 					"description": "The args JSON encoded (type []string)",
 				},
-				map[string]interface{}{
+				{
 					"name":        "FLAGS",
 					"description": "The flags JSON encoded (type map[string]interface{})",
 				},
 			},
 			"steps": []map[string]interface{}{
-				map[string]interface{}{
+				{
 					"args": []string{
 						"${ARGS}",
 						"${FLAGS}",

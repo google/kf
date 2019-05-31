@@ -195,11 +195,11 @@ func TestExtractOneService(t *testing.T) {
 			expectErr: errors.New("expected 1 app, but found 0"),
 		},
 		"too many services": {
-			services:  []v1alpha1.Service{v1alpha1.Service{}, v1alpha1.Service{}},
+			services:  []v1alpha1.Service{{}, {}},
 			expectErr: errors.New("expected 1 app, but found 2"),
 		},
 		"just right": {
-			services: []v1alpha1.Service{v1alpha1.Service{}},
+			services: []v1alpha1.Service{{}},
 		},
 	}
 

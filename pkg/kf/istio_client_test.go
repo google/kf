@@ -99,12 +99,12 @@ func TestExtractIngressFromList(t *testing.T) {
 			expectErr: errors.New("no ingresses were found"),
 		},
 		"ingresses without IP": {
-			ingresses: []corev1.LoadBalancerIngress{corev1.LoadBalancerIngress{}},
+			ingresses: []corev1.LoadBalancerIngress{{}},
 			expectErr: errors.New("no ingresses had IP addresses listed"),
 		},
 		"ingress with IP": {
 			ingresses: []corev1.LoadBalancerIngress{
-				corev1.LoadBalancerIngress{IP: "8.8.8.8"},
+				{IP: "8.8.8.8"},
 			},
 			expectIngress: "8.8.8.8",
 		},

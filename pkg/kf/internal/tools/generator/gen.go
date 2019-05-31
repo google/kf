@@ -78,7 +78,7 @@ func GenNotice(file string) string {
 	return fmt.Sprintf("// This file was generated with %s, DO NOT EDIT IT.", file)
 }
 
-// TemplateFuncs returns the functions provided by generator availble for
+// TemplateFuncs returns the functions provided by generator available for
 // consumption in a template.
 func TemplateFuncs() template.FuncMap {
 	return template.FuncMap{
