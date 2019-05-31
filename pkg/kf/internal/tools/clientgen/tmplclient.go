@@ -44,6 +44,7 @@ type Client interface {
 	Get({{ $nssig }} name string, opts ...GetOption) (*{{.Type}}, error)
 	Delete({{ $nssig }} name string, opts ...DeleteOption) error
 	List({{ $nssig }} opts ...ListOption) ([]{{.Type}}, error)
+	Upsert({{ $nssig }} newObj *{{.Type}}, merge Merger) (*{{.Type}}, error)
 
 	// ClientExtension can be used by the developer to extend the client.
 	ClientExtension
@@ -163,14 +164,36 @@ func (core *coreClient) List({{ $nssig }} opts ...ListOption) ([]{{.Type}}, erro
 
 func (cfg listConfig) ToListOptions() (resp metav1.ListOptions) {
 	if cfg.fieldSelector != nil {
-		resp.FieldSelector = metav1.SetAsLabelSelector(cfg.fieldSelector).String()
+		resp.FieldSelector = metav1.FormatLabelSelector(metav1.SetAsLabelSelector(cfg.fieldSelector))
 	}
 
 	if cfg.labelSelector != nil {
-		resp.LabelSelector = metav1.SetAsLabelSelector(cfg.labelSelector).String()
+		resp.LabelSelector = metav1.FormatLabelSelector(metav1.SetAsLabelSelector(cfg.labelSelector))
 	}
 
 	return
 }
 
+
+// Merger is a type to merge an existing value with a new one.
+type Merger func(newObj, oldObj *{{.Type}}) *{{.Type}}
+
+// Upsert inserts the object into the cluster if it doesn't already exist, or else
+// calls the merge function to merge the existing and new then performs an Update.
+func (core *coreClient) Upsert({{ $nssig }} newObj *{{.Type}}, merge Merger) (*{{.Type}}, error) {
+	// NOTE: the field selector may be ignored by some Kubernetes resources
+	// so we double check down below.
+	existing, err := core.List({{ $nsparam }} WithListfieldSelector(map[string]string{"metadata.name": newObj.Name}))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, oldObj := range existing {
+		if oldObj.Name == newObj.Name {
+			return core.Update({{ $nsparam }} merge(newObj, &oldObj))
+		}
+	}
+
+	return core.Create({{ $nsparam }} newObj)
+}
 `))
