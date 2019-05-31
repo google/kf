@@ -4,9 +4,9 @@ go:
   - 1.12.x
 
 env:
-  - GO111MODULE=on GOPROXY=https://proxy.golang.org GOSUMDB=sum.golang.org
+  - SKIP_INTEGRATION=true GO111MODULE=on GOPROXY=https://proxy.golang.org GOSUMDB=sum.golang.org
 
 script:
-  - ./scripts/check_go_fmt.sh
-  - ./scripts/check_go_generate.sh
-  - ./scripts/test.sh
+  - ./hack/check-go-fmt.sh
+  - ./hack/check-go-generate.sh
+  - ./hack/test.sh
