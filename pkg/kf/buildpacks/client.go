@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/doctor"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/kf"
 	"github.com/buildpack/lifecycle"
 	"github.com/buildpack/pack"
@@ -39,6 +40,8 @@ import (
 
 // Client is the main interface for interacting with Buildpacks.
 type Client interface {
+	doctor.Diagnosable
+
 	// UploadBuildTemplate uploads a buildpack build template with the name
 	// "buildpack".
 	UploadBuildTemplate(imageName string) error
@@ -386,4 +389,17 @@ func (c *client) Create(dir, containerRegistry string) (string, error) {
 	}
 
 	return imageName, nil
+}
+
+// Diagnose checks to see if the cluster has buildpacks.
+func (c *client) Diagnose(d *doctor.Diagnostic) {
+	d.Run("Buildpacks", func(d *doctor.Diagnostic) {
+		buildpacks, err := c.List()
+		if err != nil {
+			d.Fatalf("Error fetching Buildpacks: %s", err)
+		}
+		if len(buildpacks) == 0 {
+			d.Fatal("Expected to find at least one buildpack")
+		}
+	})
 }
