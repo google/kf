@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # Copyright 2019 Google LLC
 #
@@ -14,16 +14,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -x
+if [ "${SKIP_INTEGRATION:-false}" == "true" ]; then
+    echo "SKIP_INTEGRATION set to 'true'. Skipping integration tests..."
+else
+    export GCP_PROJECT_ID=$(gcloud config get-value project)
+fi
 
-export GCP_PROJECT_ID=$(gcloud config get-value project)
+function green {
+    echo -e "\033[32m$1\033[0m"
+}
+
+function red {
+    echo -e "\033[31m$1\033[0m"
+}
+
 go test --race -v ./...
 ret=$?
 set +x
 if [ $ret -eq 0 ]; then
-  echo "\e[32mSuccess\e[0m" 1>&2
+  green Success
   exit 0
 else
-  echo "\e[31mFailure\e[0m: $ret" 1>&2
+  red Failure
   exit $ret
 fi
