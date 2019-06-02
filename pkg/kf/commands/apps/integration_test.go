@@ -69,8 +69,9 @@ func TestIntegration_Push(t *testing.T) {
 		// collisions. This doesn't work yet:
 		// https://github.com/poy/kf/issues/46
 		go kf.Proxy(ctx, appName, 8080)
-		resp := RetryPost(ctx, t, "http://localhost:8080", 5*time.Second, strings.NewReader("testing"))
+		resp, respCancel := RetryPost(ctx, t, "http://localhost:8080", 5*time.Second, strings.NewReader("testing"))
 		defer resp.Body.Close()
+		defer respCancel()
 		AssertEqual(t, "status code", http.StatusOK, resp.StatusCode)
 		data, err := ioutil.ReadAll(resp.Body)
 		AssertNil(t, "body error", err)
@@ -113,10 +114,10 @@ func TestIntegration_Push_manifest(t *testing.T) {
 		// TODO: Use port 0 so that we don't have to worry about port
 		// collisions. This doesn't work yet:
 		// https://github.com/poy/kf/issues/46
-		go kf.Proxy(ctx, appName, 8080)
+		go kf.Proxy(ctx, appName, 8082)
 
 		// Check manifest file environment variables by curling the app
-		checkVars(ctx, t, kf, appName, 8080, map[string]string{
+		checkVars(ctx, t, kf, appName, 8082, map[string]string{
 			"WHATNOW": "BROWNCOW",
 		}, nil)
 	})
@@ -264,11 +265,21 @@ func checkVars(ctx context.Context, t *testing.T, kf *Kf, appName string, proxyP
 		// JSON. This checks to make sure everything is ACTUALLY being
 		// set from the app's perspective.
 		Logf(t, "hitting app %s to check the envs...", appName)
-		resp := RetryPost(ctx, t, fmt.Sprintf("http://localhost:%d", proxyPort), 5*time.Second, nil)
+		resp, respCancel := RetryPost(ctx, t, fmt.Sprintf("http://localhost:%d", proxyPort), 5*time.Second, nil)
 		defer resp.Body.Close()
-		AssertEqual(t, "status code", http.StatusOK, resp.StatusCode)
+		defer respCancel()
+		if resp.StatusCode != http.StatusOK {
+			Logf(t, "status code %d", resp.StatusCode)
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
 		var appEnvs map[string]string
-		AssertNil(t, "json", json.NewDecoder(resp.Body).Decode(&appEnvs))
+		if err := json.NewDecoder(resp.Body).Decode(&appEnvs); err != nil {
+			Logf(t, "err serializing envs: %s", err)
+			Logf(t, "%s", appEnvs)
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
 		Logf(t, "done hitting %s app to check the envs.", appName)
 
 		// Check all the environment variables.
@@ -305,6 +316,10 @@ func checkVars(ctx context.Context, t *testing.T, kf *Kf, appName string, proxyP
 		if !success {
 			time.Sleep(100 * time.Millisecond)
 		}
+	}
+
+	if !success {
+		t.Fatalf("unsuccessful in checking env vars")
 	}
 }
 
