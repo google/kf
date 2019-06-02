@@ -36,8 +36,10 @@ type pushConfig struct {
 	Output io.Writer
 	// ServiceAccount is the service account to authenticate with
 	ServiceAccount string
-	// Instances is the number of pods
-	Instances int
+	// MinScale is the lower scale bound
+	MinScale int
+	// MaxScale os the upper scale bound
+	MaxScale int
 }
 
 // PushOption is a single option for configuring a pushConfig
@@ -157,10 +159,11 @@ func WithPushServiceAccount(val string) PushOption {
 	}
 }
 
-// WithPushInstaces creates an Option that sets Number of instances
-func WithPushInstaces(val int) PushOption {
+// WithPushScaleBounds creates an Option that sets scale bounds
+func WithPushScaleBounds(minScale int, maxScale int) PushOption {
 	return func(cfg *pushConfig) {
-		cfg.Instances = val
+		cfg.MinScale = minScale
+		cfg.MaxScale = maxScale
 	}
 }
 

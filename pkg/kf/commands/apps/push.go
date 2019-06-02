@@ -112,7 +112,14 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 				appsToDeploy = []manifest.Application{*app}
 			}
 
+			var minScale int
+			var maxScale int
 			for _, app := range appsToDeploy {
+				minScale, maxScale, err = calculateScaleBounds(instances, app.MinScale, app.MaxScale)
+				if err != nil {
+					return err
+				}
+
 				var imageName string
 
 				srcPath := filepath.Join(path, app.Path)
@@ -150,7 +157,7 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 					kf.WithPushEnvironmentVariables(app.Env),
 					kf.WithPushGrpc(grpc),
 					kf.WithPushBuildpack(buildpack),
-					kf.WithPushInstaces(instances),
+					kf.WithPushScaleBounds(minScale, maxScale),
 				)
 
 				cmd.SilenceUsage = !kfi.ConfigError(err)
@@ -229,9 +236,31 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 		&instances,
 		"instances",
 		"i",
-		1,
-		"Number of instances",
+		-1,
+		"the number of instances(set both the lower and upper scale bound on the number of pods)",
 	)
 
 	return pushCmd
+}
+
+func calculateScaleBounds(instances int, minScale, maxScale *int) (int, int, error) {
+	var min int
+	var max int
+
+	if instances != -1 {
+		if minScale != nil || maxScale != nil {
+			return min, max, errors.New("couldn't set the -i flag and the minScale/maxScale flags in manifest together")
+		}
+		min = instances
+		max = instances
+	} else {
+		if minScale != nil || maxScale != nil {
+			min = *minScale
+			max = *maxScale
+			return min, max, nil
+		}
+	}
+
+	// default bounds is 1 pod
+	return 1, 1, nil
 }

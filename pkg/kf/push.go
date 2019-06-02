@@ -87,12 +87,13 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 	s.SetImage(imageName)
 	s.SetServiceAccount(cfg.ServiceAccount)
 
-	if cfg.Instances != 0 {
-		s.Spec.RunLatest.Configuration.RevisionTemplate.Annotations = map[string]string{
-			autoscaling.MinScaleAnnotationKey: string(cfg.Instances),
-			autoscaling.MaxScaleAnnotationKey: string(cfg.Instances),
-		}
+	if s.Spec.RunLatest.Configuration.RevisionTemplate.Annotations == nil {
+		s.Spec.RunLatest.Configuration.RevisionTemplate.Annotations = map[string]string{}
 	}
+
+	// The value of 0 for any of min or max means the bound is not set
+	s.Spec.RunLatest.Configuration.RevisionTemplate.Annotations[autoscaling.MinScaleAnnotationKey] = string(cfg.MinScale)
+	s.Spec.RunLatest.Configuration.RevisionTemplate.Annotations[autoscaling.MaxScaleAnnotationKey] = string(cfg.MaxScale)
 
 	if cfg.Grpc {
 		s.SetContainerPorts([]corev1.ContainerPort{{Name: "h2c", ContainerPort: 8080}})
