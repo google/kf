@@ -114,10 +114,10 @@ func TestIntegration_Push_manifest(t *testing.T) {
 		// TODO: Use port 0 so that we don't have to worry about port
 		// collisions. This doesn't work yet:
 		// https://github.com/poy/kf/issues/46
-		go kf.Proxy(ctx, appName, 8080)
+		go kf.Proxy(ctx, appName, 8082)
 
 		// Check manifest file environment variables by curling the app
-		checkVars(ctx, t, kf, appName, 8080, map[string]string{
+		checkVars(ctx, t, kf, appName, 8082, map[string]string{
 			"WHATNOW": "BROWNCOW",
 		}, nil)
 	})
