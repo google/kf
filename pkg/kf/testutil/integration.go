@@ -339,20 +339,21 @@ func StreamOutput(ctx context.Context, t *testing.T, out KfTestOutput) {
 }
 
 // RetryPost will post until successful, duration has been reached or context is
-// done.
-func RetryPost(ctx context.Context, t *testing.T, addr string, duration time.Duration, body io.Reader) *http.Response {
+// done. A close function is returned for closing the sub-context.
+func RetryPost(ctx context.Context, t *testing.T, addr string, duration time.Duration, body io.Reader) (*http.Response, func()) {
 	ctx, cancel := context.WithTimeout(ctx, duration)
-	defer cancel()
 
 	for {
 		select {
 		case <-ctx.Done():
+			cancel()
 			t.Fatalf("context cancelled")
 		default:
 		}
 
 		req, err := http.NewRequest(http.MethodPost, addr, body)
 		if err != nil {
+			cancel()
 			t.Fatalf("failed to create request: %s", err)
 		}
 		req = req.WithContext(ctx)
@@ -364,7 +365,9 @@ func RetryPost(ctx context.Context, t *testing.T, addr string, duration time.Dur
 			continue
 		}
 
-		return resp
+		return resp, func() {
+			cancel()
+		}
 	}
 }
 
