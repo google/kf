@@ -16,7 +16,7 @@
 
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -eu
 
 readonly target=${1:?Error: Please supply a target}
 shift

@@ -16,11 +16,11 @@
 
 # This script is used by the CI to check if the code is gofmt formatted.
 
-set -euo pipefail
+set -eu
 
 # gofmt -s -d
-GOFMT_DIFF=$(IFS=$'\n'; gofmt -s -d $( find . -type f -name '*.go' ) )
-if [[ -n "${GOFMT_DIFF}" ]]; then
+GOFMT_DIFF=$(IFS=$'\n' gofmt -s -d $( find . -type f -name '*.go' ) )
+if [ -n "${GOFMT_DIFF}" ]; then
     echo "${GOFMT_DIFF}"
     echo
     echo "The go source files aren't gofmt formatted."

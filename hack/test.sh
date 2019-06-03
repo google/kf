@@ -14,21 +14,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if [ "${SKIP_INTEGRATION:-false}" == "true" ]; then
+set -eu
+
+if [ "${SKIP_INTEGRATION:-false}" = "true" ]; then
     echo "SKIP_INTEGRATION set to 'true'. Skipping integration tests..."
 else
     export GCP_PROJECT_ID=$(gcloud config get-value project)
 fi
 
-function green {
+green() {
     echo -e "\033[32m$1\033[0m"
 }
 
-function red {
+red() {
     echo -e "\033[31m$1\033[0m"
 }
 
-go test --race -v ./...
+args="-v"
+if [ ! "${NO_RACE:-false}" = "true" ]; then
+  echo disabling race
+  args="--race $args"
+fi
+
+go test $args ./...
 ret=$?
 set +x
 if [ $ret -eq 0 ]; then
