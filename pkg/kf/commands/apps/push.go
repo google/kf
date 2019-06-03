@@ -236,31 +236,36 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 		&instances,
 		"instances",
 		"i",
-		-1,
-		"the number of instances(set both the lower and upper scale bound on the number of pods)",
+		-1, // -1 represents non-user input
+		"the number of instances(default is 1)",
 	)
 
 	return pushCmd
 }
 
 func calculateScaleBounds(instances int, minScale, maxScale *int) (int, int, error) {
-	var min int
-	var max int
-
+	zero := 0
 	if instances != -1 {
 		if minScale != nil || maxScale != nil {
-			return min, max, errors.New("couldn't set the -i flag and the minScale/maxScale flags in manifest together")
+			return -1, -1, errors.New("couldn't set the -i flag and the minScale/maxScale flags in manifest together")
 		}
-		min = instances
-		max = instances
+		return instances, instances, nil
 	} else {
-		if minScale != nil || maxScale != nil {
-			min = *minScale
-			max = *maxScale
-			return min, max, nil
+		if minScale == nil && maxScale == nil {
+			// both default bounds are 1
+			return 1, 1, nil
 		}
+
+		// Set 0 as default value(unbound) if one of min or max is not set
+		if minScale == nil {
+			minScale = &zero
+		}
+
+		if maxScale == nil {
+			maxScale = &zero
+		}
+
+		return *minScale, *maxScale, nil
 	}
 
-	// default bounds is 1 pod
-	return 1, 1, nil
 }

@@ -110,6 +110,16 @@ func (opts PushOptions) ServiceAccount() string {
 	return opts.toConfig().ServiceAccount
 }
 
+// MinScaleBound returns min scale bound
+func (opts PushOptions) MinScaleBound() int {
+	return opts.toConfig().MinScale
+}
+
+// MaxScaleBound returns max scale bound
+func (opts PushOptions) MaxScaleBound() int {
+	return opts.toConfig().MaxScale
+}
+
 // WithPushBuildpack creates an Option that sets skip the detect buildpack step and use the given name
 func WithPushBuildpack(val string) PushOption {
 	return func(cfg *pushConfig) {
