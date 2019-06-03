@@ -97,6 +97,7 @@ func TestIntegration_Push_manifest(t *testing.T) {
 
 		// Push an app with a manifest file.
 		kf.Push(ctx, appName,
+			"--built-in",
 			"--path", appPath,
 			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
 			"--manifest", newManifestFile,
