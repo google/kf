@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -eu
+set -e
 
 if [ "${SKIP_INTEGRATION:-false}" = "true" ]; then
     echo "SKIP_INTEGRATION set to 'true'. Skipping integration tests..."
