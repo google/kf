@@ -68,15 +68,13 @@ var AppsSet = wire.NewSet(
 func InjectPush(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		capps.NewPushCommand,
-		kf.NewLister,
 		kf.NewPusher,
 		kf.NewLogTailer,
 		kf.NewDeployer,
-		config.GetServingClient,
 		config.GetBuildClient,
 		provideSrcImageBuilder,
 		provideBuildTailer,
-		provideSystemEnvInjector,
+		AppsSet,
 	)
 	return nil
 }

@@ -245,8 +245,7 @@ func TestIntegration_Envs(t *testing.T) {
 // aren't returning the correct values. This is to give the
 // enventually consistent system time to catch-up.
 func checkVars(ctx context.Context, t *testing.T, kf *Kf, appName string, proxyPort int, expectedVars map[string]string, absentVars []string) {
-	ctx, cancel := context.WithTimeout(ctx, 90*time.Second)
-	defer cancel()
+	ctx, _ = context.WithTimeout(ctx, 90*time.Second)
 
 	var success bool
 	for !success {

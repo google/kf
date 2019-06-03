@@ -50,14 +50,14 @@ func (m *FakeDeployer) EXPECT() *FakeDeployerMockRecorder {
 }
 
 // Deploy mocks base method
-func (m *FakeDeployer) Deploy(arg0 v1alpha1.Service, arg1 ...kf.DeployOption) (v1alpha1.Service, error) {
+func (m *FakeDeployer) Deploy(arg0 v1alpha1.Service, arg1 ...kf.DeployOption) (*v1alpha1.Service, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Deploy", varargs...)
-	ret0, _ := ret[0].(v1alpha1.Service)
+	ret0, _ := ret[0].(*v1alpha1.Service)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

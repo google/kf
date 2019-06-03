@@ -8,9 +8,9 @@ package commands
 import (
 	"context"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
-	apps2 "github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/apps"
+	apps2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/apps"
 	buildpacks2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	servicebindings2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/service-bindings"
@@ -44,65 +44,65 @@ import (
 
 func InjectPush(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
-	appLister := kf.NewLister(servingV1alpha1Interface)
 	systemEnvInjectorInterface := provideSystemEnvInjector(p)
-	deployer := kf.NewDeployer(appLister, servingV1alpha1Interface, systemEnvInjectorInterface)
+	client := apps.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	deployer := kf.NewDeployer(client)
 	buildV1alpha1Interface := config.GetBuildClient(p)
 	buildTailer := provideBuildTailer()
 	logs := kf.NewLogTailer(buildV1alpha1Interface, servingV1alpha1Interface, buildTailer)
 	pusher := kf.NewPusher(deployer, logs)
 	srcImageBuilder := provideSrcImageBuilder()
-	command := apps.NewPushCommand(p, pusher, srcImageBuilder)
+	command := apps2.NewPushCommand(p, pusher, srcImageBuilder)
 	return command
 }
 
 func InjectDelete(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
 	systemEnvInjectorInterface := provideSystemEnvInjector(p)
-	client := apps2.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
-	command := apps.NewDeleteCommand(p, client)
+	client := apps.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	command := apps2.NewDeleteCommand(p, client)
 	return command
 }
 
 func InjectApps(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
 	systemEnvInjectorInterface := provideSystemEnvInjector(p)
-	client := apps2.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
-	command := apps.NewAppsCommand(p, client)
+	client := apps.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	command := apps2.NewAppsCommand(p, client)
 	return command
 }
 
 func InjectProxy(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
 	systemEnvInjectorInterface := provideSystemEnvInjector(p)
-	client := apps2.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	client := apps.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
 	kubernetesInterface := config.GetKubernetes(p)
 	ingressLister := kf.NewIstioClient(kubernetesInterface)
-	command := apps.NewProxyCommand(p, client, ingressLister)
+	command := apps2.NewProxyCommand(p, client, ingressLister)
 	return command
 }
 
 func InjectEnv(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
 	systemEnvInjectorInterface := provideSystemEnvInjector(p)
-	client := apps2.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
-	command := apps.NewEnvCommand(p, client)
+	client := apps.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	command := apps2.NewEnvCommand(p, client)
 	return command
 }
 
 func InjectSetEnv(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
 	systemEnvInjectorInterface := provideSystemEnvInjector(p)
-	client := apps2.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
-	command := apps.NewSetEnvCommand(p, client)
+	client := apps.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	command := apps2.NewSetEnvCommand(p, client)
 	return command
 }
 
 func InjectUnsetEnv(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
 	systemEnvInjectorInterface := provideSystemEnvInjector(p)
-	client := apps2.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
-	command := apps.NewUnsetEnvCommand(p, client)
+	client := apps.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	command := apps2.NewUnsetEnvCommand(p, client)
 	return command
 }
 
@@ -236,15 +236,15 @@ func InjectDeleteSpace(p *config.KfParams) *cobra.Command {
 
 // wire_injector.go:
 
-func provideSrcImageBuilder() apps.SrcImageBuilder {
-	return apps.SrcImageBuilderFunc(kontext.BuildImage)
+func provideSrcImageBuilder() apps2.SrcImageBuilder {
+	return apps2.SrcImageBuilderFunc(kontext.BuildImage)
 }
 
 func provideBuildTailer() kf.BuildTailer {
 	return kf.BuildTailerFunc(logs.Tail)
 }
 
-var AppsSet = wire.NewSet(apps2.NewClient, config.GetServingClient, provideSystemEnvInjector)
+var AppsSet = wire.NewSet(apps.NewClient, config.GetServingClient, provideSystemEnvInjector)
 
 /////////////////
 // Buildpacks //
