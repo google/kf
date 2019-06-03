@@ -19,7 +19,9 @@ set -eu
 if [ "${SKIP_INTEGRATION:-false}" = "true" ]; then
     echo "SKIP_INTEGRATION set to 'true'. Skipping integration tests..."
 else
+  if [ "${GCP_PROJECT_ID}" = "" ]; then
     export GCP_PROJECT_ID=$(gcloud config get-value project)
+  fi
 fi
 
 green() {
