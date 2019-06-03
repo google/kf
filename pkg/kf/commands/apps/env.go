@@ -42,7 +42,7 @@ func NewEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command {
 
 			kfapp := (*apps.KfApp)(app)
 
-			w := tabwriter.NewWriter(p.Output, 8, 4, 1, ' ', tabwriter.StripEscape)
+			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 1, ' ', tabwriter.StripEscape)
 			fmt.Fprintln(w, "NAME\tVALUE")
 			for _, env := range kfapp.GetEnvVars() {
 				fmt.Fprintf(w, "%s\t%s\n", env.Name, env.Value)

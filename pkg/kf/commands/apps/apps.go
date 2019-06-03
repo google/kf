@@ -31,18 +31,18 @@ func NewAppsCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 		Example: `  kf apps`,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Fprintf(p.Output, "Getting apps in namespace: %s\n", p.Namespace)
+			fmt.Fprintf(cmd.OutOrStdout(), "Getting apps in namespace: %s\n", p.Namespace)
 
 			apps, err := appsClient.List(p.Namespace)
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(p.Output, "Found %d apps in namespace %s\n", len(apps), p.Namespace)
-			fmt.Fprintln(p.Output)
+			fmt.Fprintf(cmd.OutOrStdout(), "Found %d apps in namespace %s\n", len(apps), p.Namespace)
+			fmt.Fprintln(cmd.OutOrStdout())
 
 			// Emulating:
 			// https://github.com/knative/serving/blob/master/config/300-service.yaml
-			w := tabwriter.NewWriter(p.Output, 8, 4, 1, ' ', tabwriter.StripEscape)
+			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 1, ' ', tabwriter.StripEscape)
 			fmt.Fprintln(w, "NAME\tDOMAIN\tLATEST CREATED\tLATEST READY\tREADY\tREASON")
 			for _, app := range apps {
 				status := ""

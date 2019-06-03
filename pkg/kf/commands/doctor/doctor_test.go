@@ -84,9 +84,9 @@ func TestNewDoctorCommand(t *testing.T) {
 
 			c := NewDoctorCommand(&config.KfParams{
 				Namespace: tc.namespace,
-				Output:    buffer,
 			}, tc.diagnostics)
 
+			c.SetOutput(buffer)
 			c.SetArgs(tc.args)
 			gotErr := c.Execute()
 			if tc.wantErr != nil || gotErr != nil {

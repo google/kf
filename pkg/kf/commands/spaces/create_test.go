@@ -72,7 +72,7 @@ func TestNewCreateSpaceCommand(t *testing.T) {
 
 			buffer := &bytes.Buffer{}
 
-			c := NewCreateSpaceCommand(&config.KfParams{Namespace: "default", Output: buffer}, fakeSpaces)
+			c := NewCreateSpaceCommand(&config.KfParams{Namespace: "default"}, fakeSpaces)
 			c.SetOutput(buffer)
 			c.SetArgs(tc.args)
 

@@ -152,15 +152,14 @@ func TestPushCommand(t *testing.T) {
 					return tc.pusherErr
 				})
 
-			buffer := &bytes.Buffer{}
-
 			c := NewPushCommand(&config.KfParams{
 				Namespace: tc.namespace,
-				Output:    buffer,
 			},
 				fakePusher,
 				tc.srcImageBuilder,
 			)
+			buffer := &bytes.Buffer{}
+			c.SetOutput(buffer)
 
 			c.Flags().Set("container-registry", tc.containerRegistry)
 			c.Flags().Set("service-account", tc.serviceAccount)

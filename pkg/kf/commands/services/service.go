@@ -41,9 +41,9 @@ func NewGetServiceCommand(p *config.KfParams, client services.ClientInterface) *
 			}
 
 			if instance == nil {
-				fmt.Fprintf(p.Output, "service %s not found", instanceName)
+				fmt.Fprintf(cmd.OutOrStdout(), "service %s not found", instanceName)
 			} else {
-				output.WriteInstance(p.Output, "table", *instance)
+				output.WriteInstance(cmd.OutOrStdout(), "table", *instance)
 			}
 
 			return nil

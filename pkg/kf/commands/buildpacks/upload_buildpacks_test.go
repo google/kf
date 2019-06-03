@@ -89,10 +89,11 @@ func TestUploadBuildpacks(t *testing.T) {
 			c := cbuildpacks.NewUploadBuildpacks(
 				&config.KfParams{
 					Namespace: tc.Namespace,
-					Output:    &bytes.Buffer{},
 				},
 				fakeClient,
 			)
+			buffer := &bytes.Buffer{}
+			c.SetOutput(buffer)
 
 			if tc.Setup != nil {
 				tc.Setup(t, c, fakeClient)

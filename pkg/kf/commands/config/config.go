@@ -15,7 +15,6 @@
 package config
 
 import (
-	"io"
 	"log"
 	"path/filepath"
 
@@ -37,7 +36,6 @@ import (
 
 // KfParams stores everything needed to interact with the user and Knative.
 type KfParams struct {
-	Output      io.Writer
 	Namespace   string
 	KubeCfgFile string
 	Verbose     bool

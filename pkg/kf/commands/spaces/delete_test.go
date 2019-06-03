@@ -68,7 +68,7 @@ func TestNewDeleteSpaceCommand(t *testing.T) {
 
 			buffer := &bytes.Buffer{}
 
-			c := NewDeleteSpaceCommand(&config.KfParams{Namespace: "default", Output: buffer}, fakeSpaces)
+			c := NewDeleteSpaceCommand(&config.KfParams{Namespace: "default"}, fakeSpaces)
 			c.SetOutput(buffer)
 			c.SetArgs(tc.args)
 

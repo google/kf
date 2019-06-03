@@ -75,7 +75,6 @@ func TestNewProxyCommand(t *testing.T) {
 
 			buf := new(bytes.Buffer)
 			p := &config.KfParams{
-				Output:    buf,
 				Namespace: tc.Namespace,
 			}
 

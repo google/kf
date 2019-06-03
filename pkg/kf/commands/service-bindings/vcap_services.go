@@ -45,7 +45,7 @@ func NewVcapServicesCommand(p *config.KfParams, client servicebindings.ClientInt
 				return err
 			}
 
-			fmt.Fprintln(p.Output, string(out))
+			fmt.Fprintln(cmd.OutOrStdout(), string(out))
 
 			return nil
 		},
