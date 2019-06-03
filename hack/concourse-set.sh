@@ -14,27 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if [ "${SKIP_INTEGRATION:-false}" == "true" ]; then
-    echo "SKIP_INTEGRATION set to 'true'. Skipping integration tests..."
-else
-    export GCP_PROJECT_ID=$(gcloud config get-value project)
-fi
+#!/usr/bin/env bash
 
-function green {
-    echo -e "\033[32m$1\033[0m"
-}
+set -euo pipefail
 
-function red {
-    echo -e "\033[31m$1\033[0m"
-}
+readonly target=${1:?Error: Please supply a target}
+shift
 
-go test --race -v ./...
-ret=$?
-set +x
-if [ $ret -eq 0 ]; then
-  green Success
-  exit 0
-else
-  red Failure
-  exit $ret
-fi
+set -x
+
+pipeline=kf
+config=ci/concourse/kf-pipeline.yml
+secrets="-l ci/concourse/config.yml"
+
+fly -t $target set-pipeline -p $pipeline -c $config $secrets

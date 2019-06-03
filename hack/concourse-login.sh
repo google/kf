@@ -14,27 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if [ "${SKIP_INTEGRATION:-false}" == "true" ]; then
-    echo "SKIP_INTEGRATION set to 'true'. Skipping integration tests..."
-else
-    export GCP_PROJECT_ID=$(gcloud config get-value project)
-fi
+set -euo pipefail
 
-function green {
-    echo -e "\033[32m$1\033[0m"
-}
+readonly target=${1:?Error: Please supply a target}
 
-function red {
-    echo -e "\033[31m$1\033[0m"
-}
+concourse_url=https://sunrisecafe.ci.cloud-graphite.com/
+team="-n kf"
 
-go test --race -v ./...
-ret=$?
-set +x
-if [ $ret -eq 0 ]; then
-  green Success
-  exit 0
-else
-  red Failure
-  exit $ret
-fi
+echo fly login -t $target -c $concourse_url $team
+fly login -t $target -c $concourse_url $team
