@@ -84,7 +84,6 @@ func TestIntegration_Push(t *testing.T) {
 // file. The app is identical to the echo app, and this fact is used to also
 // test manifest file environment variables. It finally deletes the app.
 func TestIntegration_Push_manifest(t *testing.T) {
-	t.Parallel()
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		currentTime := time.Now().UnixNano()
 		appName := fmt.Sprintf("integration-manifest-%d", currentTime)

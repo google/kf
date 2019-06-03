@@ -61,7 +61,7 @@ func NewBindServiceCommand(p *config.KfParams, client servicebindings.ClientInte
 				return err
 			}
 
-			output.WriteBindingDetails(p.Output, binding)
+			output.WriteBindingDetails(cmd.OutOrStdout(), binding)
 			return nil
 		},
 	}
@@ -80,6 +80,5 @@ func NewBindServiceCommand(p *config.KfParams, client servicebindings.ClientInte
 		"",
 		"name to expose service instance to app process with (default: service instance name)")
 
-	createCmd.SetOutput(p.Output)
 	return createCmd
 }

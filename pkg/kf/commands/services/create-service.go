@@ -56,7 +56,7 @@ func NewCreateServiceCommand(p *config.KfParams, client services.ClientInterface
 				return err
 			}
 
-			output.WriteInstanceDetails(p.Output, instance)
+			output.WriteInstanceDetails(cmd.OutOrStdout(), instance)
 			return nil
 		},
 	}
@@ -68,6 +68,5 @@ func NewCreateServiceCommand(p *config.KfParams, client services.ClientInterface
 		"{}",
 		"Valid JSON object containing service-specific configuration parameters, provided in-line or in a file.")
 
-	createCmd.SetOutput(p.Output)
 	return createCmd
 }

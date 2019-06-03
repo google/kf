@@ -45,7 +45,7 @@ func NewListBindingsCommand(p *config.KfParams, client servicebindings.ClientInt
 				return err
 			}
 
-			w := tabwriter.NewWriter(p.Output, 8, 4, 1, ' ', tabwriter.StripEscape)
+			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 1, ' ', tabwriter.StripEscape)
 			fmt.Fprintln(w, "NAME\tAPP\tBINDING NAME\tSERVICE\tSECRET\tREADY\tREASON")
 			for _, b := range bindings {
 				status := ""
@@ -83,6 +83,5 @@ func NewListBindingsCommand(p *config.KfParams, client servicebindings.ClientInt
 		"",
 		"service instance to display bindings for")
 
-	listCmd.SetOutput(p.Output)
 	return listCmd
 }

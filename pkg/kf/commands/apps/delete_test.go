@@ -66,8 +66,8 @@ func TestDeleteCommand(t *testing.T) {
 			buffer := &bytes.Buffer{}
 			c := NewDeleteCommand(&config.KfParams{
 				Namespace: tc.namespace,
-				Output:    buffer,
 			}, fakeDeleter)
+			c.SetOutput(buffer)
 
 			gotErr := c.RunE(c, []string{tc.appName})
 			if tc.wantErr != nil || gotErr != nil {

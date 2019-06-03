@@ -38,7 +38,7 @@ func NewListServicesCommand(p *config.KfParams, client services.ClientInterface)
 				return err
 			}
 
-			output.WriteInstanceList(p.Output, "table", instances)
+			output.WriteInstanceList(cmd.OutOrStdout(), "table", instances)
 
 			return nil
 		},

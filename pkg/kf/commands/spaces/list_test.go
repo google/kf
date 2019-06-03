@@ -86,7 +86,7 @@ func TestNewListSpacesCommand(t *testing.T) {
 
 			buffer := &bytes.Buffer{}
 
-			c := NewListSpacesCommand(&config.KfParams{Namespace: "default", Output: buffer}, fakeSpaces)
+			c := NewListSpacesCommand(&config.KfParams{Namespace: "default"}, fakeSpaces)
 			c.SetOutput(buffer)
 			c.SetArgs(tc.args)
 

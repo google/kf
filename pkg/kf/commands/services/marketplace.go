@@ -44,7 +44,7 @@ func NewMarketplaceCommand(p *config.KfParams, client services.ClientInterface) 
 
 			// We use a custom tabwriter rather than svcat outputs because the
 			// headings on there don't make sense for our target audience.
-			w := tabwriter.NewWriter(p.Output, 8, 4, 2, ' ', 0)
+			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 2, ' ', 0)
 
 			if serviceName == "" {
 				fmt.Fprintf(w, "%d services can be used in namespace %q, use the --service flag to list the plans for a service\n", len(marketplace.Services), p.Namespace)

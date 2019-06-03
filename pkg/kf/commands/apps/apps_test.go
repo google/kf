@@ -119,7 +119,6 @@ func TestAppsCommand(t *testing.T) {
 
 			c := NewAppsCommand(&config.KfParams{
 				Namespace: tc.namespace,
-				Output:    buffer,
 			}, fakeLister)
 			c.SetOutput(buffer)
 

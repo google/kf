@@ -41,7 +41,7 @@ func NewBuildpacks(p *config.KfParams, l buildpacks.Client) *cobra.Command {
 				return err
 			}
 
-			w := tabwriter.NewWriter(p.Output, 8, 4, 1, ' ', tabwriter.StripEscape)
+			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 1, ' ', tabwriter.StripEscape)
 			fmt.Fprintln(w, "NAME\tPOSITION\tENABLED")
 			for i, bp := range bps {
 				fmt.Fprintf(w, "%s\t%d\t%v\n", bp, i, true)

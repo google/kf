@@ -31,9 +31,7 @@ import (
 
 // NewKfCommand creates the root kf command.
 func NewKfCommand() *cobra.Command {
-	p := &config.KfParams{
-		Output: os.Stdout,
-	}
+	p := &config.KfParams{}
 
 	var rootCmd = &cobra.Command{
 		Use:   "kf",

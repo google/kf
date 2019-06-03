@@ -66,7 +66,6 @@ func TestBuildpacks(t *testing.T) {
 			cmd := cbuildpacks.NewBuildpacks(
 				&config.KfParams{
 					Namespace: tc.Namespace,
-					Output:    &buffer,
 				},
 				fake,
 			)

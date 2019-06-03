@@ -39,7 +39,7 @@ func NewListSpacesCommand(p *config.KfParams, client spaces.Client) *cobra.Comma
 				return err
 			}
 
-			w := tabwriter.NewWriter(p.Output, 8, 4, 1, ' ', tabwriter.StripEscape)
+			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 1, ' ', tabwriter.StripEscape)
 			defer w.Flush()
 
 			// Status is important here as spaces may be in a deleting status.

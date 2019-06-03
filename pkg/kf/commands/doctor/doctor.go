@@ -91,6 +91,5 @@ Possible components are: ` + strings.Join(knownTestNames, ", "),
 		},
 	}
 
-	doctorCmd.SetOutput(p.Output)
 	return doctorCmd
 }

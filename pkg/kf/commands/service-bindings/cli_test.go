@@ -57,7 +57,6 @@ func runTest(t *testing.T, tc serviceTest, newCommand commandFactory) {
 
 	buf := new(bytes.Buffer)
 	p := &config.KfParams{
-		Output:    buf,
 		Namespace: tc.Namespace,
 	}
 

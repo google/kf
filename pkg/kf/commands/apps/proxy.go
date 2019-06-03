@@ -53,7 +53,7 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister k
 			cmd.SilenceUsage = true
 
 			if gateway == "" {
-				fmt.Fprintln(p.Output, "Autodetecting app gateway. Specify a custom gateway using the --gateway flag.")
+				fmt.Fprintln(cmd.OutOrStdout(), "Autodetecting app gateway. Specify a custom gateway using the --gateway flag.")
 
 				ingress, err := kf.ExtractIngressFromList(ingressLister.ListIngresses())
 				if err != nil {
@@ -72,14 +72,14 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister k
 				return err
 			}
 
-			fmt.Fprintf(p.Output, "Forwarding requests from http://%s to http://%s\n", listener.Addr(), gateway)
+			fmt.Fprintf(cmd.OutOrStdout(), "Forwarding requests from http://%s to http://%s\n", listener.Addr(), gateway)
 
 			if noStart {
-				fmt.Fprintln(p.Output, "exiting because no-start flag was provided")
+				fmt.Fprintln(cmd.OutOrStdout(), "exiting because no-start flag was provided")
 				return nil
 			}
 
-			return http.Serve(listener, createProxy(p.Output, app.Status.Domain, gateway))
+			return http.Serve(listener, createProxy(cmd.OutOrStdout(), app.Status.Domain, gateway))
 		},
 	}
 
