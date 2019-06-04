@@ -157,7 +157,8 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 					kf.WithPushEnvironmentVariables(app.Env),
 					kf.WithPushGrpc(grpc),
 					kf.WithPushBuildpack(buildpack),
-					kf.WithPushScaleBounds(minScale, maxScale),
+					kf.WithPushMinScale(minScale),
+					kf.WithPushMaxScale(maxScale),
 				)
 
 				cmd.SilenceUsage = !kfi.ConfigError(err)
@@ -237,7 +238,7 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 		"instances",
 		"i",
 		-1, // -1 represents non-user input
-		"the number of instances(default is 1)",
+		"the number of instances (default is 1)",
 	)
 
 	return pushCmd

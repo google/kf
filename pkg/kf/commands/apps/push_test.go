@@ -166,8 +166,8 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "service account", tc.serviceAccount, kf.PushOptions(opts).ServiceAccount())
 					testutil.AssertEqual(t, "grpc", tc.grpc, kf.PushOptions(opts).Grpc())
 					testutil.AssertEqual(t, "env vars", tc.wantEnvMap, kf.PushOptions(opts).EnvironmentVariables())
-					testutil.AssertEqual(t, "min scale bound", tc.instances, kf.PushOptions(opts).MinScaleBound())
-					testutil.AssertEqual(t, "max scale bound", tc.instances, kf.PushOptions(opts).MaxScaleBound())
+					testutil.AssertEqual(t, "min scale bound", tc.instances, kf.PushOptions(opts).MaxScale())
+					testutil.AssertEqual(t, "max scale bound", tc.instances, kf.PushOptions(opts).MaxScale())
 
 					if !strings.HasPrefix(srcImage, tc.wantImagePrefix) {
 						t.Errorf("Wanted srcImage to start with %s got: %s", tc.wantImagePrefix, srcImage)

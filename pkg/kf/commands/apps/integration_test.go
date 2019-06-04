@@ -462,8 +462,9 @@ func TestIntegration_Push_Instances(t *testing.T) {
 		// collisions. This doesn't work yet:
 		// https://github.com/poy/kf/issues/46
 		go kf.Proxy(ctx, appName, 8080)
-		resp := RetryPost(ctx, t, "http://localhost:8080", 5*time.Second, strings.NewReader("testing"))
+		resp, respCancel := RetryPost(ctx, t, "http://localhost:8080", 5*time.Second, strings.NewReader("testing"))
 		defer resp.Body.Close()
+		defer respCancel()
 		AssertEqual(t, "status code", http.StatusOK, resp.StatusCode)
 		data, err := ioutil.ReadAll(resp.Body)
 		AssertNil(t, "body error", err)

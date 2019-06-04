@@ -16,15 +16,14 @@ package kf
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
-	build "github.com/knative/build/pkg/apis/build/v1alpha1"
-	autoscaling "github.com/knative/serving/pkg/apis/autoscaling"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/builds"
 	"github.com/google/kf/pkg/kf/internal/envutil"
 	"github.com/google/kf/pkg/kf/internal/kf"
+	"github.com/knative/serving/pkg/apis/autoscaling"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -87,13 +86,13 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 	s.SetImage(imageName)
 	s.SetServiceAccount(cfg.ServiceAccount)
 
-	if s.Spec.RunLatest.Configuration.RevisionTemplate.Annotations == nil {
-		s.Spec.RunLatest.Configuration.RevisionTemplate.Annotations = map[string]string{}
+	if s.Spec.ConfigurationSpec.Template.Annotations == nil {
+		s.Spec.ConfigurationSpec.Template.Annotations = map[string]string{}
 	}
 
 	// The value of 0 for any of min or max means the bound is not set
-	s.Spec.RunLatest.Configuration.RevisionTemplate.Annotations[autoscaling.MinScaleAnnotationKey] = string(cfg.MinScale)
-	s.Spec.RunLatest.Configuration.RevisionTemplate.Annotations[autoscaling.MaxScaleAnnotationKey] = string(cfg.MaxScale)
+	s.Spec.ConfigurationSpec.Template.Annotations[autoscaling.MinScaleAnnotationKey] = strconv.Itoa(cfg.MinScale)
+	s.Spec.ConfigurationSpec.Template.Annotations[autoscaling.MaxScaleAnnotationKey] = strconv.Itoa(cfg.MaxScale)
 
 	if cfg.Grpc {
 		s.SetContainerPorts([]corev1.ContainerPort{{Name: "h2c", ContainerPort: 8080}})
@@ -112,7 +111,10 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 		return err
 	}
 
-	fmt.Fprintf(cfg.Output, "%q successfully deployed\n", appName)
+	_, err = fmt.Fprintf(cfg.Output, "%q successfully deployed\n", appName)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
