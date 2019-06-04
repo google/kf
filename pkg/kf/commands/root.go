@@ -44,6 +44,7 @@ Apps:
   kf push
   kf delete <app>
   kf apps
+  kf logs
 
 Services:
   kf marketplace
@@ -73,6 +74,7 @@ You can get more info by adding the --help flag to any sub-command.
 		"delete": InjectDelete(p),
 		"apps":   InjectApps(p),
 		"proxy":  InjectProxy(p),
+		"logs":   InjectLogs(p),
 
 		// Environment Variables
 		"env":       InjectEnv(p),

@@ -241,7 +241,64 @@ func TestIntegration_Envs(t *testing.T) {
 	})
 }
 
-// CheckVars uses Env and the output of the app to ensure the expected
+// TestIntegration_Logs pushes the echo app (via --built-in command), tails
+// it's logs and then posts to it. It then waits for the expected logs. It
+// finally deletes the app.
+func TestIntegration_Logs(t *testing.T) {
+	checkClusterStatus(t)
+	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+		appName := fmt.Sprintf("integration-echo-%d", time.Now().UnixNano())
+
+		// Push an app and then clean it up. This pushes the echo app which
+		// replies with the same body that was posted.
+		kf.Push(ctx, appName,
+			"--built-in",
+			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
+			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
+		)
+		defer kf.Delete(ctx, appName)
+
+		logOutput := kf.Logs(ctx, appName, "-n=30", "-f")
+
+		// Hit the app via the proxy. This makes sure the app is handling
+		// traffic as expected and ensures the proxy works. We use the proxy
+		// for two reasons:
+		// 1. Test the proxy.
+		// 2. Tests work even if a domain isn't setup.
+
+		// TODO: Use port 0 so that we don't have to worry about port
+		// collisions. This doesn't work yet:
+		// https://github.com/poy/kf/issues/46
+		go kf.Proxy(ctx, appName, 8083)
+
+		// Write out an expected log line until the test dies. We do this more
+		// than once because we can't guarantee much about logs.
+		expectedLogLine := fmt.Sprintf("testing-%d", time.Now().UnixNano())
+		for i := 0; i < 10; i++ {
+			resp, respCancel := RetryPost(ctx, t, "http://localhost:8083", 5*time.Second, strings.NewReader(expectedLogLine))
+			resp.Body.Close()
+			respCancel()
+		}
+
+		// Wait around for the log to stream out. If it doesn't after a while,
+		// fail the test.
+		timer := time.NewTimer(30 * time.Second)
+		for {
+			select {
+			case <-ctx.Done():
+				t.Fatal("context cancelled")
+			case <-timer.C:
+				t.Fatal("timed out waiting for log line")
+			case line := <-logOutput:
+				if line == expectedLogLine {
+					return
+				}
+			}
+		}
+	})
+}
+
+// checkVars uses Env and the output of the app to ensure the expected
 // variables. It will retry for 5 seconds if the environment variables
 // aren't returning the correct values. This is to give the
 // enventually consistent system time to catch-up.

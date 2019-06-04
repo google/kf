@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -10,7 +12,14 @@ import (
 
 func main() {
 	log.Fatal(http.ListenAndServe(hostPort(), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.Copy(w, r.Body)
+		data, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Printf("failed to read body: %s", err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		fmt.Println(string(data))
+		io.Copy(w, bytes.NewReader(data))
 	})))
 }
 
