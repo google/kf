@@ -403,6 +403,24 @@ func (k *Kf) Push(ctx context.Context, appName string, extraArgs ...string) {
 	StreamOutput(ctx, k.t, output)
 }
 
+// Logs displays the logs of an application.
+func (k *Kf) Logs(ctx context.Context, appName string, extraArgs ...string) <-chan string {
+	k.t.Helper()
+	Logf(k.t, "displaying logs of app %q...", appName)
+	defer Logf(k.t, "done displaying logs of app %q.", appName)
+
+	args := []string{
+		"logs",
+		appName,
+	}
+
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: append(args, extraArgs...),
+	})
+	PanicOnError(ctx, k.t, fmt.Sprintf("logs %q", appName), errs)
+	return CombineOutput(ctx, k.t, output)
+}
+
 // AppInfo is the information returned by listing an app. It is returned by
 // ListApp.
 type AppInfo struct {

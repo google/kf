@@ -1,0 +1,18 @@
+# This file contains options for option-builder.go
+---
+package: logs
+common:
+- name: Namespace
+  type: string
+  description: the Kubernetes namespace to use
+  default: '"default"'
+configs:
+- name: Tail
+  options:
+  - name: NumberLines
+    type: int
+    description: number of lines
+    default: 10
+  - name: Follow
+    type: bool
+    description: stream the logs

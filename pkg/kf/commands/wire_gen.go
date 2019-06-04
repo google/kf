@@ -17,6 +17,7 @@ import (
 	services2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/services"
 	spaces2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/spaces"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/utils"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/logs"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/spaces"
@@ -28,7 +29,7 @@ import (
 	"github.com/buildpack/pack/fs"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/wire"
-	"github.com/knative/build/pkg/logs"
+	logs2 "github.com/knative/build/pkg/logs"
 	"github.com/poy/kontext"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
@@ -79,6 +80,13 @@ func InjectProxy(p *config.KfParams) *cobra.Command {
 	kubernetesInterface := config.GetKubernetes(p)
 	ingressLister := kf.NewIstioClient(kubernetesInterface)
 	command := apps2.NewProxyCommand(p, client, ingressLister)
+	return command
+}
+
+func InjectLogs(p *config.KfParams) *cobra.Command {
+	coreV1Interface := provideCoreV1(p)
+	tailer := logs.NewTailer(coreV1Interface)
+	command := apps.NewLogsCommand(p, tailer)
 	return command
 }
 
@@ -241,10 +249,14 @@ func provideSrcImageBuilder() apps2.SrcImageBuilder {
 }
 
 func provideBuildTailer() kf.BuildTailer {
-	return kf.BuildTailerFunc(logs.Tail)
+	return kf.BuildTailerFunc(logs2.Tail)
 }
 
 var AppsSet = wire.NewSet(apps.NewClient, config.GetServingClient, provideSystemEnvInjector)
+
+func provideCoreV1(p *config.KfParams) v1.CoreV1Interface {
+	return config.GetKubernetes(p).CoreV1()
+}
 
 /////////////////
 // Buildpacks //

@@ -29,6 +29,7 @@ import (
 	servicescmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/services"
 	cspaces "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/spaces"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/utils"
+	kflogs "github.com/GoogleCloudPlatform/kf/pkg/kf/logs"
 	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/spaces"
@@ -44,6 +45,7 @@ import (
 	"github.com/poy/kontext"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
@@ -99,6 +101,19 @@ func InjectProxy(p *config.KfParams) *cobra.Command {
 		config.GetKubernetes,
 	)
 	return nil
+}
+
+func InjectLogs(p *config.KfParams) *cobra.Command {
+	wire.Build(
+		capps.NewLogsCommand,
+		kflogs.NewTailer,
+		provideCoreV1,
+	)
+	return nil
+}
+
+func provideCoreV1(p *config.KfParams) corev1.CoreV1Interface {
+	return config.GetKubernetes(p).CoreV1()
 }
 
 /////////////////////////////////////
