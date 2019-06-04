@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"time"
 
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -84,16 +85,36 @@ func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, ou
 	if err != nil {
 		return err
 	}
-	for e := range w.ResultChan() {
-		if e.Type != watch.Added {
-			continue
-		}
-		go func(e watch.Event) {
-			t.readLogs(ctx, e.Object.(*v1.Pod).Name, namespace, out, opts)
-			w.Stop()
-		}(e)
+
+	defer w.Stop()
+
+	// We will only wait a second for the first log. If nothing happens after
+	// that period of time and we're not following, then stop.
+	initTimer := time.NewTimer(time.Second)
+	if opts.Follow {
+		initTimer.Stop()
 	}
-	return nil
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-initTimer.C:
+			// Time out waiting for a log.
+			return nil
+		case e := <-w.ResultChan():
+			if e.Type != watch.Added {
+				continue
+			}
+			go func(e watch.Event) {
+				t.readLogs(ctx, e.Object.(*v1.Pod).Name, namespace, out, opts)
+				cancel()
+			}(e)
+		}
+	}
 }
 
 func (t *tailer) readLogs(ctx context.Context, name, namespace string, out io.Writer, opts v1.PodLogOptions) {

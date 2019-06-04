@@ -298,6 +298,33 @@ func TestIntegration_Logs(t *testing.T) {
 	})
 }
 
+// TestIntegration_LogsNoContainer tests that the logs command exits in a
+// reasonable amount of time when logging an application that doesn't have a
+// container (scaled to 0).
+func TestIntegration_LogsNoContainer(t *testing.T) {
+	checkClusterStatus(t)
+	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+		appName := fmt.Sprintf("integration-echo-%d", time.Now().UnixNano())
+
+		output := kf.Logs(ctx, appName)
+
+		timer := time.NewTimer(5 * time.Second)
+		for {
+			select {
+			case <-timer.C:
+				t.Fatal("expected kf logs to exit")
+			case _, ok := <-output:
+				if !ok {
+					// Success
+					return
+				}
+
+				// Not closed, command still going.
+			}
+		}
+	})
+}
+
 // checkVars uses Env and the output of the app to ensure the expected
 // variables. It will retry for 5 seconds if the environment variables
 // aren't returning the correct values. This is to give the
