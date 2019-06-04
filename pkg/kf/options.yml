@@ -29,12 +29,4 @@ configs:
   - name: Grpc
     type: bool
     description: setup the ports for the container to allow gRPC to work.
-- name: List
-  options:
-  - name: AppName
-    type: string
-    description: the specific app name to look for
-- name: ListEnv
-- name: SetEnv
-- name: UnsetEnv
 - name: Deploy

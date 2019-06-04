@@ -17,78 +17,43 @@ package kf
 import (
 	"fmt"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/systemenvinjector"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 )
-
-// AppLister lists the deployed apps.
-type AppLister interface {
-	// List lists the deployed apps.
-	List(opts ...ListOption) ([]serving.Service, error)
-}
 
 // Deployer deploys an image to Knative. It will either create or update an
 // existing service. It should be created via NewDeployer().
 type Deployer interface {
-	Deploy(s serving.Service, opts ...DeployOption) (serving.Service, error)
+	Deploy(s serving.Service, opts ...DeployOption) (*serving.Service, error)
 }
 
 type deployer struct {
-	client      cserving.ServingV1alpha1Interface
-	appLister   AppLister
-	envInjector systemenvinjector.SystemEnvInjectorInterface
+	appsClient apps.Client
 }
 
 // NewDeployer creates a new Deployer.
-func NewDeployer(
-	l AppLister,
-	c cserving.ServingV1alpha1Interface,
-	sei systemenvinjector.SystemEnvInjectorInterface,
-) Deployer {
+func NewDeployer(appsClient apps.Client) Deployer {
 	return &deployer{
-		appLister:   l,
-		client:      c,
-		envInjector: sei,
+		appsClient: appsClient,
 	}
 }
 
 // Deploy deploys an image to Knative.
-func (d *deployer) Deploy(s serving.Service, opts ...DeployOption) (serving.Service, error) {
+func (d *deployer) Deploy(s serving.Service, opts ...DeployOption) (*serving.Service, error) {
 	namespace := DeployOptionDefaults().Extend(opts).Namespace()
-	services, err := d.appLister.List(
-		WithListAppName(s.Name),
-		WithListNamespace(namespace),
-	)
+
+	service, err := d.appsClient.Upsert(namespace, &s, d.mergeServices)
 	if err != nil {
-		return serving.Service{}, fmt.Errorf("failed to list apps: %s", err)
+		return nil, fmt.Errorf("failed to create service: %s", err)
 	}
-
-	f := d.client.Services(namespace).Create
-	for _, service := range services {
-		if service.Name == s.Name {
-			f = d.client.Services(namespace).Update
-			s = d.mergeServices(s, service)
-			break
-		}
-	}
-
-	if err := d.envInjector.InjectSystemEnv(&s); err != nil {
-		return serving.Service{}, fmt.Errorf("failed to inject system environment variables: %s", err)
-	}
-
-	service, err := f(&s)
-	if err != nil {
-		return serving.Service{}, fmt.Errorf("failed to create service: %s", err)
-	}
-	return *service, nil
+	return service, nil
 }
 
-func (d *deployer) mergeServices(newService, oldService serving.Service) serving.Service {
+func (*deployer) mergeServices(newService, oldService *serving.Service) *serving.Service {
 	newService.ResourceVersion = oldService.ResourceVersion
-	newEnvs := envutil.GetServiceEnvVars(&newService)
-	oldEnvs := envutil.GetServiceEnvVars(&oldService)
-	envutil.SetServiceEnvVars(&newService, envutil.DeduplicateEnvVars(append(oldEnvs, newEnvs...)))
+	newEnvs := envutil.GetServiceEnvVars(newService)
+	oldEnvs := envutil.GetServiceEnvVars(oldService)
+	envutil.SetServiceEnvVars(newService, envutil.DeduplicateEnvVars(append(oldEnvs, newEnvs...)))
 	return newService
 }
