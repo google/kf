@@ -15,3 +15,5 @@ RUN curl -LOJ https://storage.googleapis.com/kubernetes-release/release/v${k8s_v
 
 RUN pip install yamllint yq
 RUN apt install -y curl jq
+
+RUN gcloud components install docker-credential-gcr
