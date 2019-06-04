@@ -86,7 +86,7 @@ func InjectProxy(p *config.KfParams) *cobra.Command {
 func InjectLogs(p *config.KfParams) *cobra.Command {
 	coreV1Interface := provideCoreV1(p)
 	tailer := logs.NewTailer(coreV1Interface)
-	command := apps.NewLogsCommand(p, tailer)
+	command := apps2.NewLogsCommand(p, tailer)
 	return command
 }
 
