@@ -22,11 +22,11 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/doctor"
 	pkgdoctor "github.com/GoogleCloudPlatform/kf/pkg/kf/doctor"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
+	"k8s.io/kubernetes/pkg/kubectl/util/templates"
 )
 
 // NewKfCommand creates the root kf command.
@@ -36,30 +36,11 @@ func NewKfCommand() *cobra.Command {
 	var rootCmd = &cobra.Command{
 		Use:   "kf",
 		Short: "kf is like cf for Knative",
-		Long: `kf is like cf for Knative
-
-kf supports the following sub-commands:
-
-Apps:
-  kf push
-  kf delete <app>
-  kf apps
-  kf logs
-
-Services:
-  kf marketplace
-  kf create-service
-  kf delete-service
-  kf service <instance-name>
-  kf services
-	kf bindings
-	kf bind-service <app> <instance-name>
-	kf unbind-service <app> <instance-name>
-
-You can get more info by adding the --help flag to any sub-command.
-`,
+		Long: templates.LongDesc(`
+      kf is like cf for Knative
+      `),
 		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Usage()
+			cmd.Help()
 		},
 	}
 
@@ -89,10 +70,10 @@ You can get more info by adding the --help flag to any sub-command.
 		"marketplace":    InjectMarketplace(p),
 
 		// Service Bindings
-		"bind-service":  InjectBindingService(p),
-		"bindings":      InjectListBindings(p),
-		"ubind-service": InjectUnbindService(p),
-		"vcap-services": InjectVcapServices(p),
+		"bind-service":   InjectBindingService(p),
+		"bindings":       InjectListBindings(p),
+		"unbind-service": InjectUnbindService(p),
+		"vcap-services":  InjectVcapServices(p),
 
 		// Buildpacks
 		"buildpacks":        InjectBuildpacks(p),
@@ -129,11 +110,41 @@ You can get more info by adding the --help flag to any sub-command.
 		}
 	}
 
+	groups := templates.CommandGroups{}
+	groups = append(groups, createGroup(commands, "App Management", "push", "delete", "apps", "logs"))
+	groups = append(groups, createGroup(commands, "Environment Variables", "env", "set-env", "unset-env"))
+	groups = append(groups, createGroup(commands, "Services", "create-service", "delete-service", "service", "services", "marketplace"))
+	groups = append(groups, createGroup(commands, "Service Bindings", "bind-service", "bindings", "unbind-service", "vcap-services"))
+	groups = append(groups, createGroup(commands, "Buildpacks", "buildpacks", "upload-buildpacks"))
+	groups = append(groups, createGroup(commands, "Spaces", "spaces", "create-space", "delete-space"))
+
+	// This will add the rest to a group under "Other Commands".
 	for _, cmd := range commands {
 		rootCmd.AddCommand(cmd)
 	}
+	groups.Add(rootCmd)
+	templates.ActsAsRootCommand(rootCmd, nil, groups...)
 
 	return rootCmd
+}
+
+// createGroup creates a template.CommandGroup for the listed command names.
+// It then removes those from the map. If the requested command is not there,
+// it panics.
+func createGroup(commands map[string]*cobra.Command, msg string, commandNames ...string) templates.CommandGroup {
+	g := templates.CommandGroup{
+		Message: msg,
+	}
+	for _, name := range commandNames {
+		cmd, ok := commands[name]
+		if !ok {
+			panic("unknown command: " + name)
+		}
+		g.Commands = append(g.Commands, cmd)
+		delete(commands, name)
+	}
+
+	return g
 }
 
 const (

@@ -60,7 +60,7 @@ func (t *tailer) Tail(ctx context.Context, appName string, out io.Writer, opts .
 	namespace := cfg.Namespace
 	logOpts := v1.PodLogOptions{
 		// We need to specify which container we want to use. 'user-container'
-		// is the container where the user's applicaiton is ran (as opposed to
+		// is the container where the user's application is ran (as opposed to
 		// a side-car such as istio-proxy).
 		Container: "user-container",
 		Follow:    cfg.Follow,
