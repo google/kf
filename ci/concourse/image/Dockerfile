@@ -4,10 +4,8 @@ RUN apt update && apt install -y python3
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3
 
 RUN curl -LOJ https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-242.0.0-linux-x86_64.tar.gz \
- && tar xfz google-cloud-sdk-242.0.0-linux-x86_64.tar.gz \
- && ./google-cloud-sdk/install.sh \
- && echo "source /google-cloud-sdk/path.bash.inc" >> ~/.bashrc \
- && echo "source /google-cloud-sdk/completion.bash.inc" >> ~/.bashrc \
+ && tar xfz google-cloud-sdk-242.0.0-linux-x86_64.tar.gz -C / \
+ && /google-cloud-sdk/install.sh \
  && cd /usr/bin && ln -s /google-cloud-sdk/bin/gcloud gcloud
 
 ARG k8s_version=1.14.1
