@@ -38,16 +38,13 @@ cd $(go env GOPATH)/src/k8s.io/code-generator
 # The generator wants to use a codec that is only available in a version of
 # k8s.io/apimachinery that we can't yet use.
 os_friendly_sed () {
-    sed_args=()
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        sed_args+=('-i')
-        sed_args+=('')
-    fi
-
-    sed_args+=("$1")
-    sed_args+=("$2")
-    sed "${sed_args[@]}"
+  echo "Applying $1 to $2"
+  sed "$1" "$2" > "$2.new"
+  mv "$2.new" "$2"
 }
 
-os_friendly_sed 's/scheme.Codecs.WithoutConversion()/scheme.Codecs/g' "$(go env GOPATH)/src/${ROOT_PACKAGE}/pkg/client/clientset/versioned/typed/kf/v1alpha1/kf_client.go"
-os_friendly_sed 's/pt, //g' "$(go env GOPATH)/src/${ROOT_PACKAGE}/pkg/client/clientset/versioned/typed/kf/v1alpha1/fake/fake_commandset.go"
+TYPES=("kf_client" "kfspace")
+for type in ${TYPES[*]}; do
+  os_friendly_sed 's/scheme.Codecs.WithoutConversion()/scheme.Codecs/g' "$(go env GOPATH)/src/${ROOT_PACKAGE}/pkg/client/clientset/versioned/typed/kf/v1alpha1/${type}.go"
+  os_friendly_sed 's/pt, //g' "$(go env GOPATH)/src/${ROOT_PACKAGE}/pkg/client/clientset/versioned/typed/kf/v1alpha1/fake/fake_${type}.go"
+done
