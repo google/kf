@@ -25,6 +25,7 @@ import (
 type KfV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	CommandSetsGetter
+	KfSpacesGetter
 }
 
 // KfV1alpha1Client is used to interact with features provided by the kf.dev group.
@@ -34,6 +35,10 @@ type KfV1alpha1Client struct {
 
 func (c *KfV1alpha1Client) CommandSets(namespace string) CommandSetInterface {
 	return newCommandSets(c, namespace)
+}
+
+func (c *KfV1alpha1Client) KfSpaces() KfSpaceInterface {
+	return newKfSpaces(c)
 }
 
 // NewForConfig creates a new KfV1alpha1Client for the given config.
@@ -68,7 +73,7 @@ func setConfigDefaults(config *rest.Config) error {
 	gv := v1alpha1.SchemeGroupVersion
 	config.GroupVersion = &gv
 	config.APIPath = "/apis"
-	config.NegotiatedSerializer = scheme.Codecs
+	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
 
 	if config.UserAgent == "" {
 		config.UserAgent = rest.DefaultKubernetesUserAgent()
