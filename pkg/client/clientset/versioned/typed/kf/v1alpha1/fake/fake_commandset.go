@@ -117,7 +117,7 @@ func (c *FakeCommandSets) DeleteCollection(options *v1.DeleteOptions, listOption
 // Patch applies the patch and returns the patched commandSet.
 func (c *FakeCommandSets) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.CommandSet, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(commandsetsResource, c.ns, name, pt, data, subresources...), &v1alpha1.CommandSet{})
+		Invokes(testing.NewPatchSubresourceAction(commandsetsResource, c.ns, name, data, subresources...), &v1alpha1.CommandSet{})
 
 	if obj == nil {
 		return nil, err

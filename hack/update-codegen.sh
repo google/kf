@@ -43,7 +43,7 @@ os_friendly_sed () {
   mv "$2.new" "$2"
 }
 
-TYPES=("kf_client" "kfspace")
+TYPES=("kf_client" "kfspace" "commandset")
 for type in ${TYPES[*]}; do
   os_friendly_sed 's/scheme.Codecs.WithoutConversion()/scheme.Codecs/g' "$(go env GOPATH)/src/${ROOT_PACKAGE}/pkg/client/clientset/versioned/typed/kf/v1alpha1/${type}.go"
   os_friendly_sed 's/pt, //g' "$(go env GOPATH)/src/${ROOT_PACKAGE}/pkg/client/clientset/versioned/typed/kf/v1alpha1/fake/fake_${type}.go"
