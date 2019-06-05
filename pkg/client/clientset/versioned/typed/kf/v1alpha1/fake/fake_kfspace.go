@@ -92,6 +92,17 @@ func (c *FakeKfSpaces) Update(kfSpace *v1alpha1.KfSpace) (result *v1alpha1.KfSpa
 	return obj.(*v1alpha1.KfSpace), err
 }
 
+// UpdateStatus was generated because the type contains a Status member.
+// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+func (c *FakeKfSpaces) UpdateStatus(kfSpace *v1alpha1.KfSpace) (*v1alpha1.KfSpace, error) {
+	obj, err := c.Fake.
+		Invokes(testing.NewRootUpdateSubresourceAction(kfspacesResource, "status", kfSpace), &v1alpha1.KfSpace{})
+	if obj == nil {
+		return nil, err
+	}
+	return obj.(*v1alpha1.KfSpace), err
+}
+
 // Delete takes name of the kfSpace and deletes it. Returns an error if one occurs.
 func (c *FakeKfSpaces) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
@@ -110,7 +121,7 @@ func (c *FakeKfSpaces) DeleteCollection(options *v1.DeleteOptions, listOptions v
 // Patch applies the patch and returns the patched kfSpace.
 func (c *FakeKfSpaces) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.KfSpace, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(kfspacesResource, name, pt, data, subresources...), &v1alpha1.KfSpace{})
+		Invokes(testing.NewRootPatchSubresourceAction(kfspacesResource, name, data, subresources...), &v1alpha1.KfSpace{})
 	if obj == nil {
 		return nil, err
 	}

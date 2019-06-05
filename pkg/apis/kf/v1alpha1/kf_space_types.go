@@ -20,7 +20,6 @@ import duckv1beta1 "github.com/knative/pkg/apis/duck/v1beta1"
 
 // +genclient
 // +genclient:nonNamespaced
-// +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // KfSpace is a KfSpace.
@@ -99,4 +98,14 @@ type KfSpaceSpecExecution struct {
 type KfSpaceStatus struct {
 	// Pull in the fields from Knative's duckv1beta1 status field.
 	duckv1beta1.Status `json:",inline"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// KfSpaceList is a list of KfSpace resources
+type KfSpaceList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []KfSpace `json:"items"`
 }
