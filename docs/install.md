@@ -2,32 +2,43 @@
 ## Pre-requisites
 
 This guide is intended to provide you with all the commands you'll
-need to install `kf` in a single place. It assumes you have the
-ability to run root containers in a cluster with at least 12 vCPUs
-and 45G of memory and a minimum of three nodes.
+need to install `kf` into an existing Kubernetes cluster.
 
-You will also need to provide a docker compatible registry.
+It assumes you have:
 
-## Configure your Registry
+* A Kubernetes cluster that:
+  * Can run containers as root.
+  * Has at least 12 vCPUs.
+  * Has at least 45G of memory.
+  * Has a minimum of three nodes.
+* A Docker compatible container registry that you can write to.
+
+## Configure your registry
+
 In order to make this install simple to walk through we recommend you
-store your docker registry details in an environment variable. This
-install guide uses gcr on gke.
+store your Docker registry details in an environment variable. This
+install guide uses Google Container Registry (GCR) on GKE.
 
 ```
 export KF_REGISTRY=gcr.io/<PROJECT_ID>
 ```
 
-## Install Istio && Knative
+## Install dependencies
 
-Install istio CRDs and deploy pods and label the default namespace.
-```
+`kf` uses Istio to route HTTP requests to the running applications and Knative
+to deploy and scale applications.
+
+Install Istio:
+
+```.sh
 kubectl apply --filename https://github.com/knative/serving/releases/download/v0.5.0/istio-crds.yaml && \
 kubectl apply --filename https://github.com/knative/serving/releases/download/v0.5.0/istio.yaml && \
 kubectl label namespace default istio-injection=enabled
 ```
 
-Install Knative PODs
-```
+Install Knative:
+
+```.sh
 kubectl apply --filename https://github.com/knative/serving/releases/download/v0.5.0/serving.yaml \
 --filename https://github.com/knative/build/releases/download/v0.5.0/build.yaml \
 --filename https://github.com/knative/eventing/releases/download/v0.5.0/release.yaml \
@@ -36,53 +47,132 @@ kubectl apply --filename https://github.com/knative/serving/releases/download/v0
 --filename https://raw.githubusercontent.com/knative/serving/v0.5.0/third_party/config/build/clusterrole.yaml
 ```
 
-If you want to go more in depth installing knative check out [their docs][knative].
+If you want to go more in depth installing Knative check out [their docs][knative].
+
+Install the service catalog from the `third_party` directory included in this repo:
+
+```.sh
+kubectl apply -R -f third_party/service-catalog/manifests/catalog/templates
+```
 
 
 ## Upload buildpacks
+
 Buildpacks are provided by the operator and can be uploaded to Knative using the
 CLI. A set of buidpacks is included in this repo. Change into the `samples/buildpacks`
-directory and run the following command.
-```
+directory and run the following command:
+
+```.sh
 kf upload-buildpacks --container-registry $KF_REGISTRY
 ```
 
-## Push your first app
-At this point you are ready to deploy your first app using `kf`. Run the following command
-to push your first app.
-```
-kf push helloworld --container-registry $KF_REGISTRY
-```
-
 ## Install the service catalog
-You can install the service catalog from the third_party directory included
-in this repo.
-```
+
+You can install the service catalog from the `third_party` directory included
+in this repo:
+
+```.sh
 kubectl apply -R -f third_party/service-catalog/manifests/catalog/templates
 ```
 
 You should be able to see an empty marketplace at this point by running.
-```
+
+```.sh
 kf marketplace
 ```
 
-## Install a service broker
-Once you have the service catalog you'll want to install a service
-broker. This example uses a broker called "mini-broker" which will
-deploy services as helm charts locally in your cluster.
+## Test your installation
 
-Configure helm in your cluster
+At this point, your installation is set up and ready for use with `kf`.
+
+Run `kf doctor` to validate it. You should see output like the following:
+
 ```
+=== RUN	doctor/cluster
+--- PASS: doctor/cluster
+    --- PASS: doctor/cluster/Version
+    --- PASS: doctor/cluster/Components
+        --- PASS: doctor/cluster/Components/Kubernetes V1
+            --- PASS: doctor/cluster/Components/Kubernetes V1/configmaps
+            --- PASS: doctor/cluster/Components/Kubernetes V1/secrets
+        --- PASS: doctor/cluster/Components/Knative Serving
+            --- PASS: doctor/cluster/Components/Knative Serving/configurations
+            --- PASS: doctor/cluster/Components/Knative Serving/routes
+            --- PASS: doctor/cluster/Components/Knative Serving/revisions
+            --- PASS: doctor/cluster/Components/Knative Serving/services
+        --- PASS: doctor/cluster/Components/Service Catalog
+            --- PASS: doctor/cluster/Components/Service Catalog/clusterservicebrokers
+=== RUN	doctor/buildpacks
+=== RUN	doctor/buildpacks/Buildpacks
+--- PASS: doctor/buildpacks
+    --- PASS: doctor/buildpacks/Buildpacks
+PASS
+```
+
+If the result is a failure, re-run the commands in the previous sections.
+
+## Push your first app
+
+Now you can deploy your first app using `kf`.
+Run the following command to push it:
+
+```.sh
+kf push helloworld --container-registry $KF_REGISTRY
+```
+
+## (Optional) Install a service broker
+
+You can install [Open Service Broker](https://www.openservicebrokerapi.org/)
+compatible service brokers into your cluster now to allow users to create and
+bind services.
+
+You should be able to see an empty marketplace at this point by running.
+
+```.sh
+kf marketplace
+```
+
+Most Cloud Foundry service brokers comply with the OSB specification.
+The following steps will guide you through installing a broker called
+"mini-broker" which will deploy services as helm charts directly into your cluster.
+
+It provides the following services:
+
+* MariaDB
+* MongoDB
+* MySQL
+* PostgreSQL
+* Redis
+
+Configure helm in your cluster:
+
+```.sh
 kubectl create serviceaccount --namespace kube-system tiller
 kubectl create clusterrolebinding tiller-cluster-rule \
 --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
 helm init --service-account tiller
 ```
 
-Add the chart and install
-```
+Add the chart and install:
+
+```.sh
 helm repo add minibroker https://minibroker.blob.core.windows.net/charts
 helm install --name minibroker --namespace minibroker minibroker/minibroker
+```
+
+It will take a while to start and register itself, after it's done you can
+run kf marketplace again to see the services:
+
+```
+$ kf marketplace
+5 services can be used in namespace "default", use the --service flag to list the plans for a service
+
+BROKER              NAME                           NAMESPACE  STATUS  DESCRIPTION
+minibroker          mariadb                                   Active  Helm Chart for mariadb
+minibroker          mongodb                                   Active  Helm Chart for mongodb
+minibroker          mysql                                     Active  Helm Chart for mysql
+minibroker          postgresql                                Active  Helm Chart for postgresql
+minibroker          redis                                     Active  Helm Chart for redis
 ```
 
 [knative]: https://github.com/knative/docs/tree/master/docs/install
