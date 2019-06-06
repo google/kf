@@ -2,16 +2,22 @@
 ## Pre-requisites
 
 This guide is intended to provide you with all the commands you'll
-need to install `kf` in a single place. It assumes you have the
-ability to run root containers in a cluster with at least 12 vCPUs
-and 45G of memory and a minimum of three nodes.
+need to install `kf` into an existing Kubernetes cluster.
 
-You will also need to provide a docker compatible registry.
+It assumes you have:
+
+* A Kubernetes cluster that:
+  * Can run containers as root.
+  * Has at least 12 vCPUs.
+  * Has at least 45G of memory.
+  * Has a minimum of three nodes.
+* A Docker compatible container registry that you can write to.
 
 ## Configure your registry
+
 In order to make this install simple to walk through we recommend you
-store your docker registry details in an environment variable. This
-install guide uses gcr on gke.
+store your Docker registry details in an environment variable. This
+install guide uses Google Container Registry (GCR) on GKE.
 
 ```
 export KF_REGISTRY=gcr.io/<PROJECT_ID>
