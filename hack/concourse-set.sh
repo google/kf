@@ -25,6 +25,5 @@ set -x
 
 pipeline=kf
 config=ci/concourse/kf-pipeline.yml
-secrets="-l ci/concourse/config.yml"
 
-fly -t $target set-pipeline -p $pipeline -c $config $secrets
+fly -t $target set-pipeline -p $pipeline -c $config

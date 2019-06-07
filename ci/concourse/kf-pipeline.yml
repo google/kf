@@ -1,0 +1,163 @@
+---
+# Store these in your credential manager.
+vars:
+- &github_repo ((github_repo))
+- &git_uri ((git_uri))
+- &git_branch ((git_branch))
+- &github_access_token ((github_access_token))
+- &github_webhook_token ((github_webhook_token))
+- &service_account_json ((service_account_json))
+- &ci_image_uri ((ci_image_uri))
+- &pr_comment ((pr_comment))
+
+# Each task which runs go commands inherits these environment variables.
+- &go_task_params
+  GOPROXY: https://proxy.golang.org
+  GOSUMDB: sum.golang.org
+  SERVICE_ACCOUNT_JSON: *service_account_json
+
+resource_types:
+- name: pull-request
+  type: docker-image
+  source:
+    repository: teliaoss/github-pr-resource
+
+resources:
+- name: src
+  type: pull-request
+  check_every: 1m
+  webhook_token: wow
+  source:
+    repository: *github_repo
+    access_token: *github_access_token
+- name: ci-image-src
+  type: git
+  source:
+    branch: *git_branch
+    uri: *git_uri
+    paths:
+    - ci/concourse/image
+- name: ci-image
+  type: docker-image
+  source: &ci-image-source
+    repository: *ci_image_uri
+    username: _json_key
+    password: *service_account_json
+
+jobs:
+- name: ci-image
+  plan:
+  - get: ci-image-src
+    trigger: true
+  - put: ci-image
+    params:
+      build: ci-image-src/ci/concourse/image
+- name: pr-start
+  plan:
+  - get: src
+    version: every
+  - put: src
+    params:
+      path: src
+      status: pending
+      comment: *pr_comment
+- name: check
+  plan:
+  - get: src
+    trigger: true
+    passed: [pr-start]
+  - get: ci-image
+  - task: check
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: *ci-image-source
+      inputs:
+      - name: src
+      params: *go_task_params
+      run:
+        dir: src
+        path: sh
+        args:
+        - -exc
+        - |
+          hack/check-linters.sh
+          hack/check-go-generate.sh
+    on_failure:
+      put: src
+      params:
+        path: src
+        status: failure
+- name: build
+  plan:
+  - get: src
+    trigger: true
+    passed: [pr-start]
+  - get: ci-image
+  - task: build
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: *ci-image-source
+      inputs:
+      - name: src
+      outputs:
+      - name: bin
+      params: *go_task_params
+      run:
+        dir: src
+        path: sh
+        args:
+        - exc
+        - hack/build.sh
+          mv kf ../bin
+    on_failure:
+      put: src
+      params:
+        path: src
+        status: failure
+- name: test
+  plan:
+  - get: src
+    trigger: true
+    passed: [pr-start]
+  - get: ci-image
+  - task: test
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: *ci-image-source
+      inputs:
+      - name: src
+      params: *go_task_params
+      run:
+        dir: src
+        path: sh
+        args:
+        - -exc
+        - |
+          set +x
+          echo "$SERVICE_ACCOUNT_JSON" > key.json
+          set -x
+          gcloud auth activate-service-account --key-file key.json
+          gcloud config set project kf-source
+          gcloud container clusters get-credentials kf-2 --zone us-central1-c --project kf-source
+          echo 'y' | gcloud auth configure-docker
+          NO_RACE=true hack/test.sh
+    on_failure:
+      put: src
+      params:
+        path: src
+        status: failure
+- name: success
+  plan:
+  - get: src
+    trigger: true
+    passed: [check, build, test]
+  - put: src
+    params:
+      path: src
+      status: success
