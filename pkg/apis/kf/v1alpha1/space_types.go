@@ -22,40 +22,41 @@ import duckv1beta1 "github.com/knative/pkg/apis/duck/v1beta1"
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// KfSpace is a KfSpace.
-type KfSpace struct {
+// Space is a high level structure that encompasses a namespace, permissions on
+// it and configuration applied to it.
+type Space struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	// +optional
-	Spec KfSpaceSpec `json:"spec"`
+	Spec SpaceSpec `json:"spec,omitempty"`
 
 	// +optional
-	Status KfSpaceStatus `json:"status"`
+	Status SpaceStatus `json:"status,omitempty"`
 }
 
-// KfSpaceSpec contains the specification for a space.
-type KfSpaceSpec struct {
+// SpaceSpec contains the specification for a space.
+type SpaceSpec struct {
 	// Security contains config for RBAC roles that will be created for the
 	// space.
 	// +optional
-	Security KfSpaceSpecSecurity `json:"security,omitempty"`
+	Security SpaceSpecSecurity `json:"security,omitempty"`
 
 	// BuildpackBuild contains config for the build pipelines.
 	// Currently, this is the only way to build source -> container workflows, but
 	// in the future additional types may be added. For example DockerBuild or
 	// WebhookBuild to execute a build via webhook.
 	// +optional
-	BuildpackBuild KfSpaceSpecBuildpackBuild `json:"buildpackBuild,omitempty"`
+	BuildpackBuild SpaceSpecBuildpackBuild `json:"buildpackBuild,omitempty"`
 
 	// Execution contains settings for the execution environment.
 	// +optional
-	Execution KfSpaceSpecExecution `json:"execution,omitempty"`
+	Execution SpaceSpecExecution `json:"execution,omitempty"`
 }
 
-// KfSpaceSpecSecurity holds fields for creating RBAC in the space.
-type KfSpaceSpecSecurity struct {
+// SpaceSpecSecurity holds fields for creating RBAC in the space.
+type SpaceSpecSecurity struct {
 	// NOTE: The false value for each field should be the default and safe.
 
 	// EnableDeveloperLogsAccess allows developers to access pod logging endpoints.
@@ -63,8 +64,8 @@ type KfSpaceSpecSecurity struct {
 	EnableDeveloperLogsAccess bool `json:"enableDeveloperLogsAccess,omitempty"`
 }
 
-// KfSpaceSpecBuildpackBuild holds fields for managing building via buildpacks.
-type KfSpaceSpecBuildpackBuild struct {
+// SpaceSpecBuildpackBuild holds fields for managing building via buildpacks.
+type SpaceSpecBuildpackBuild struct {
 	// NOTE: The false value for each field should be the default and safe.
 
 	// BuilderImage is a buildpacks.io builder image.
@@ -84,8 +85,8 @@ type KfSpaceSpecBuildpackBuild struct {
 	Env []corev1.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name" `
 }
 
-// KfSpaceSpecExecution contains settings for the execution environment.
-type KfSpaceSpecExecution struct {
+// SpaceSpecExecution contains settings for the execution environment.
+type SpaceSpecExecution struct {
 	// Env sets default environment variables on kf applications for the whole
 	// space.
 	// +optional
@@ -94,18 +95,18 @@ type KfSpaceSpecExecution struct {
 	Env []corev1.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
 }
 
-// KfSpaceStatus represents information about the status of a KfSpace.
-type KfSpaceStatus struct {
+// SpaceStatus represents information about the status of a KfSpace.
+type SpaceStatus struct {
 	// Pull in the fields from Knative's duckv1beta1 status field.
 	duckv1beta1.Status `json:",inline"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// KfSpaceList is a list of KfSpace resources
-type KfSpaceList struct {
+// SpaceList is a list of KfSpace resources
+type SpaceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []KfSpace `json:"items"`
+	Items []Space `json:"items"`
 }

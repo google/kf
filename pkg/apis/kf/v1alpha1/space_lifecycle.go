@@ -19,6 +19,6 @@ import (
 )
 
 // GetGroupVersionKind returns the GroupVersionKind.
-func (r *KfSpace) GetGroupVersionKind() schema.GroupVersionKind {
+func (r *Space) GetGroupVersionKind() schema.GroupVersionKind {
 	return SchemeGroupVersion.WithKind("kfspace")
 }

@@ -48,7 +48,7 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(
 		SchemeGroupVersion,
 		&CommandSet{},
-		&KfSpace{},
+		&Space{},
 		&metav1.Status{},
 	)
 

@@ -24,6 +24,6 @@ type CommandSetListerExpansion interface{}
 // CommandSetNamespaceLister.
 type CommandSetNamespaceListerExpansion interface{}
 
-// KfSpaceListerExpansion allows custom methods to be added to
-// KfSpaceLister.
-type KfSpaceListerExpansion interface{}
+// SpaceListerExpansion allows custom methods to be added to
+// SpaceLister.
+type SpaceListerExpansion interface{}

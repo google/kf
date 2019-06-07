@@ -24,8 +24,8 @@ import (
 type Interface interface {
 	// CommandSets returns a CommandSetInformer.
 	CommandSets() CommandSetInformer
-	// KfSpaces returns a KfSpaceInformer.
-	KfSpaces() KfSpaceInformer
+	// Spaces returns a SpaceInformer.
+	Spaces() SpaceInformer
 }
 
 type version struct {
@@ -44,7 +44,7 @@ func (v *version) CommandSets() CommandSetInformer {
 	return &commandSetInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// KfSpaces returns a KfSpaceInformer.
-func (v *version) KfSpaces() KfSpaceInformer {
-	return &kfSpaceInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+// Spaces returns a SpaceInformer.
+func (v *version) Spaces() SpaceInformer {
+	return &spaceInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }

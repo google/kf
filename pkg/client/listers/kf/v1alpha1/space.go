@@ -23,41 +23,41 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-// KfSpaceLister helps list KfSpaces.
-type KfSpaceLister interface {
-	// List lists all KfSpaces in the indexer.
-	List(selector labels.Selector) (ret []*v1alpha1.KfSpace, err error)
-	// Get retrieves the KfSpace from the index for a given name.
-	Get(name string) (*v1alpha1.KfSpace, error)
-	KfSpaceListerExpansion
+// SpaceLister helps list Spaces.
+type SpaceLister interface {
+	// List lists all Spaces in the indexer.
+	List(selector labels.Selector) (ret []*v1alpha1.Space, err error)
+	// Get retrieves the Space from the index for a given name.
+	Get(name string) (*v1alpha1.Space, error)
+	SpaceListerExpansion
 }
 
-// kfSpaceLister implements the KfSpaceLister interface.
-type kfSpaceLister struct {
+// spaceLister implements the SpaceLister interface.
+type spaceLister struct {
 	indexer cache.Indexer
 }
 
-// NewKfSpaceLister returns a new KfSpaceLister.
-func NewKfSpaceLister(indexer cache.Indexer) KfSpaceLister {
-	return &kfSpaceLister{indexer: indexer}
+// NewSpaceLister returns a new SpaceLister.
+func NewSpaceLister(indexer cache.Indexer) SpaceLister {
+	return &spaceLister{indexer: indexer}
 }
 
-// List lists all KfSpaces in the indexer.
-func (s *kfSpaceLister) List(selector labels.Selector) (ret []*v1alpha1.KfSpace, err error) {
+// List lists all Spaces in the indexer.
+func (s *spaceLister) List(selector labels.Selector) (ret []*v1alpha1.Space, err error) {
 	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.KfSpace))
+		ret = append(ret, m.(*v1alpha1.Space))
 	})
 	return ret, err
 }
 
-// Get retrieves the KfSpace from the index for a given name.
-func (s *kfSpaceLister) Get(name string) (*v1alpha1.KfSpace, error) {
+// Get retrieves the Space from the index for a given name.
+func (s *spaceLister) Get(name string) (*v1alpha1.Space, error) {
 	obj, exists, err := s.indexer.GetByKey(name)
 	if err != nil {
 		return nil, err
 	}
 	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("kfspace"), name)
+		return nil, errors.NewNotFound(v1alpha1.Resource("space"), name)
 	}
-	return obj.(*v1alpha1.KfSpace), nil
+	return obj.(*v1alpha1.Space), nil
 }

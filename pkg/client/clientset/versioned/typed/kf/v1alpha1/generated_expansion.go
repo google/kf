@@ -18,4 +18,4 @@ package v1alpha1
 
 type CommandSetExpansion interface{}
 
-type KfSpaceExpansion interface{}
+type SpaceExpansion interface{}

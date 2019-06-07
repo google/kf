@@ -29,58 +29,58 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// KfSpaceInformer provides access to a shared informer and lister for
-// KfSpaces.
-type KfSpaceInformer interface {
+// SpaceInformer provides access to a shared informer and lister for
+// Spaces.
+type SpaceInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.KfSpaceLister
+	Lister() v1alpha1.SpaceLister
 }
 
-type kfSpaceInformer struct {
+type spaceInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 }
 
-// NewKfSpaceInformer constructs a new informer for KfSpace type.
+// NewSpaceInformer constructs a new informer for Space type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewKfSpaceInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredKfSpaceInformer(client, resyncPeriod, indexers, nil)
+func NewSpaceInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredSpaceInformer(client, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredKfSpaceInformer constructs a new informer for KfSpace type.
+// NewFilteredSpaceInformer constructs a new informer for Space type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredKfSpaceInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredSpaceInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.KfV1alpha1().KfSpaces().List(options)
+				return client.KfV1alpha1().Spaces().List(options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.KfV1alpha1().KfSpaces().Watch(options)
+				return client.KfV1alpha1().Spaces().Watch(options)
 			},
 		},
-		&kfv1alpha1.KfSpace{},
+		&kfv1alpha1.Space{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *kfSpaceInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredKfSpaceInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *spaceInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredSpaceInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *kfSpaceInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&kfv1alpha1.KfSpace{}, f.defaultInformer)
+func (f *spaceInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&kfv1alpha1.Space{}, f.defaultInformer)
 }
 
-func (f *kfSpaceInformer) Lister() v1alpha1.KfSpaceLister {
-	return v1alpha1.NewKfSpaceLister(f.Informer().GetIndexer())
+func (f *spaceInformer) Lister() v1alpha1.SpaceLister {
+	return v1alpha1.NewSpaceLister(f.Informer().GetIndexer())
 }

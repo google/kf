@@ -17,11 +17,11 @@ package v1alpha1
 import "context"
 
 // SetDefaults implements apis.Defaultable
-func (k *KfSpace) SetDefaults(ctx context.Context) {
+func (k *Space) SetDefaults(ctx context.Context) {
 	k.Spec.SetDefaults(ctx)
 }
 
 // SetDefaults implements apis.Defaultable
-func (k *KfSpaceSpec) SetDefaults(ctx context.Context) {
+func (k *SpaceSpec) SetDefaults(ctx context.Context) {
 	// XXX: currently no defaults to set
 }
