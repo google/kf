@@ -24,6 +24,8 @@ import (
 type Interface interface {
 	// CommandSets returns a CommandSetInformer.
 	CommandSets() CommandSetInformer
+	// Spaces returns a SpaceInformer.
+	Spaces() SpaceInformer
 }
 
 type version struct {
@@ -40,4 +42,9 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 // CommandSets returns a CommandSetInformer.
 func (v *version) CommandSets() CommandSetInformer {
 	return &commandSetInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// Spaces returns a SpaceInformer.
+func (v *version) Spaces() SpaceInformer {
+	return &spaceInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }

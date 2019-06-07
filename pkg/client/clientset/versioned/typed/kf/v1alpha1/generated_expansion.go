@@ -17,3 +17,5 @@
 package v1alpha1
 
 type CommandSetExpansion interface{}
+
+type SpaceExpansion interface{}

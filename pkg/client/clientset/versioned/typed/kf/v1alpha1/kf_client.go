@@ -25,6 +25,7 @@ import (
 type KfV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	CommandSetsGetter
+	SpacesGetter
 }
 
 // KfV1alpha1Client is used to interact with features provided by the kf.dev group.
@@ -34,6 +35,10 @@ type KfV1alpha1Client struct {
 
 func (c *KfV1alpha1Client) CommandSets(namespace string) CommandSetInterface {
 	return newCommandSets(c, namespace)
+}
+
+func (c *KfV1alpha1Client) Spaces() SpaceInterface {
+	return newSpaces(c)
 }
 
 // NewForConfig creates a new KfV1alpha1Client for the given config.

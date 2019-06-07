@@ -53,6 +53,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	// Group=kf.dev, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithResource("commandsets"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kf().V1alpha1().CommandSets().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("spaces"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Kf().V1alpha1().Spaces().Informer()}, nil
 
 	}
 

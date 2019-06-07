@@ -30,6 +30,10 @@ func (c *FakeKfV1alpha1) CommandSets(namespace string) v1alpha1.CommandSetInterf
 	return &FakeCommandSets{c, namespace}
 }
 
+func (c *FakeKfV1alpha1) Spaces() v1alpha1.SpaceInterface {
+	return &FakeSpaces{c}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeKfV1alpha1) RESTClient() rest.Interface {

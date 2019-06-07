@@ -48,17 +48,10 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(
 		SchemeGroupVersion,
 		&CommandSet{},
-	)
-
-	scheme.AddKnownTypes(
-		SchemeGroupVersion,
+		&Space{},
 		&metav1.Status{},
 	)
 
-	metav1.AddToGroupVersion(
-		scheme,
-		SchemeGroupVersion,
-	)
-
+	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
 }
