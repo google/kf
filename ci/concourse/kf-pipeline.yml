@@ -26,7 +26,7 @@ resources:
 - name: src
   type: pull-request
   check_every: 1m
-  webhook_token: wow
+  webhook_token: *github_webhook_token
   source:
     repository: *github_repo
     access_token: *github_access_token
