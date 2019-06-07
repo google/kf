@@ -8,28 +8,28 @@ database, CRDs are table definitions, and controllers are like triggers.
 
 A controller is a process that runs in a pod and watches for changes. The
 controller needs the ability to watch for changes and write back to the
-Kubernetes API. When it starts, the controller tells Kuberntes what events
+Kubernetes API. When it starts, the controller tells Kubernetes what events
 it's interested in. Kubernetes will tell the controller the name of objects that
 have changed.
 
 Internally, the controller should queue up these objects. For each object it
-will run a reconciliation loop that looks something like this:
+will run a reconciliation loop that looks something like the following pseudocode:
 
-```.python
+``` python
 def reconcile(object_name):
     # First, get the contents of the object
     try:
       obj = kubernetes.get_object_by_name(object_name)
-    catch DoesNotExist:
+    except DoesNotExist:
       # the update was a delete, or the object was deleted after the update
       # entered the queue, ignore.
       return
 
-    if object.is_deleting():
+    if obj.is_deleting():
       return # ignore
 
     # copy the object so we can tell if it needs an update or not
-    new_obj = reconcile_object(copy(object))
+    new_obj = reconcile_object(copy(obj))
 
     # if the reconciliation changed the system, update it
     if new_obj.status != obj.status:
@@ -39,7 +39,7 @@ def reconcile(object_name):
 To reconcile the fully populated object each sub-resource is reconciled
 similarly to how the parent was:
 
-```.python
+``` python
 def reconcile_object(obj):
   obj = apply_defaults(obj)
   obj.status.initialize_conditions() # set all unset conditions to unknown
@@ -55,7 +55,7 @@ def reconcile_object(obj):
       continue
 
     reconcile_sub_resource(srobj)
-  catch DoesNotExist:
+  except DoesNotExist:
     # create the sub-resource based on properties from the object
     srobj = init_subresource(obj)
     kubernetes.create_object(srobj)
