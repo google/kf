@@ -28,20 +28,12 @@ resources:
   source:
     branch: *git_branch
     uri: *git_uri
-- name: ci-image-src
+- name: ci-src
   type: git
   source:
     branch: *git_branch
     uri: *git_uri
-    paths:
-    - ci/concourse/image
-- name: ci-image-src
-  type: git
-  source:
-    branch: *git_branch
-    uri: *git_uri
-    paths:
-    - ci/concourse/image
+    path: ci/concourse
 - name: ci-image
   type: docker-image
   source: &ci-image-source
@@ -55,6 +47,7 @@ jobs:
   - get: src
     trigger: true
   - get: ci-image
+  - get: ci-src
   - task: check
     config:
       platform: linux
@@ -77,8 +70,8 @@ jobs:
   plan:
   - get: src
     trigger: true
-    passed: [pr-start]
   - get: ci-image
+  - get: ci-src
   - task: build
     config:
       platform: linux
@@ -94,16 +87,17 @@ jobs:
         dir: src
         path: sh
         args:
-        - exc
-        - hack/build.sh
+        - -exc
+        - |
+          hack/build.sh
           mv kf ../bin
     on_failure: *on_failure
 - name: test
   plan:
   - get: src
     trigger: true
-    passed: [pr-start]
   - get: ci-image
+  - get: ci-src
   - task: test
     config:
       platform: linux
@@ -112,6 +106,7 @@ jobs:
         source: *ci-image-source
       inputs:
       - name: src
+      - name: ci-src
       params: *go_task_params
       run:
         dir: src
@@ -120,22 +115,22 @@ jobs:
         - -exc
         - |
           set +x
-          echo "$SERVICE_ACCOUNT_JSON" > key.json
+          /bin/echo "$SERVICE_ACCOUNT_JSON" > key.json
           set -x
           gcloud auth activate-service-account --key-file key.json
           gcloud config set project kf-source
           gcloud container clusters get-credentials kf-2 --zone us-central1-c --project kf-source
-          echo 'y' | gcloud auth configure-docker
+          /bin/echo 'y' | gcloud auth configure-docker
           NO_RACE=true hack/test.sh
     on_failure: *on_failure
 - name: success
   plan:
+  - get: ci-src
   - get: src
     trigger: true
     passed: [check, build, test]
-  - get: ci
   - task: set-ok
-    file: ci/ci/concourse/tasks/set-status.yml
+    file: ci-src/ci/concourse/tasks/set-status.yml
     params:
       GITHUB_REPO_OWNER: *github_repo
       GITHUB_STATUS_SHA: *github_status_sha
@@ -143,13 +138,9 @@ jobs:
       GITHUB_TOKEN: *github_access_token
     on_failure: &on_failure
       task: set-failure
-      file: ci/ci/concourse/tasks/set-status.yml
+      file: ci-src/ci/concourse/tasks/set-status.yml
       params:
         GITHUB_REPO_OWNER: *github_repo
         GITHUB_STATUS_SHA: *github_status_sha
         GITHUB_STATUS_VALUE: failure
         GITHUB_TOKEN: *github_access_token
-  - put: src
-    params:
-      path: src
-      status: success

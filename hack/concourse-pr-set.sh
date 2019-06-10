@@ -20,10 +20,13 @@ set -eu
 
 readonly target=${1:?Error: Please supply a target}
 shift
+readonly pipeline=${1:?Error: Please supply a pr number}
+shift
+readonly branch=${1:?Error: Please supply a git branch}
+shift
 
 set -x
 
-pipeline=kf
-config=ci/concourse/pipelines/kf-pipeline.yml
+config=ci/concourse/pipelines/pr-pipeline.yml
 
-fly -t $target set-pipeline -p $pipeline -c $config
+fly -t $target set-pipeline -p $pipeline -c $config -v pr_number=$pipeline -v git_branch=$branch

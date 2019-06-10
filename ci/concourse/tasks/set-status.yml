@@ -6,7 +6,8 @@ image_resource:
     repository: ubuntu
 
 inputs:
-- src
+- name: src
+- name: ci-src
 
 params:
   GITHUB_REPO_OWNER:
