@@ -1,0 +1,23 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: ubuntu
+
+inputs:
+- src
+
+params:
+  GITHUB_REPO_OWNER:
+  GITHUB_STATUS_VALUE:
+  GITHUB_TOKEN:
+
+run:
+  path: sh
+  dir: src
+  args:
+  - exc
+  - |
+    sha=$(git rev-parse HEAD)
+    curl -H "Authorization: token ${GITHUB_TOKEN}" -X POST --data "{\"state\":\"${GITHUB_STATUS_VALUE}\",\"context\":\"concourse-ci/status\"}" https://api.github.com/repos/${GITHUB_REPO_OWNER}/kf/statuses/$sha

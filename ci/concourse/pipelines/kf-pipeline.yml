@@ -35,6 +35,13 @@ resources:
   source:
     repository: *github_repo
     access_token: *github_access_token
+- name: ci-pipelines-src
+  type: git
+  source:
+    branch: *git_branch
+    uri: *git_uri
+    paths:
+    - ci/concourse/pipelines
 - name: ci-image-src
   type: git
   source:
@@ -66,6 +73,7 @@ jobs:
       path: src
       status: pending
       comment: *pr_comment
+  - get: ci-pipelines-src
   - task: fly-set-pipeline
     config:
       platform: linux
@@ -73,7 +81,7 @@ jobs:
         type: docker-image
         source: *ci-image-source
       inputs:
-      - name: src
+      - name: ci-pipelines-src
       params:
         FLY_TARGET: *fly_target
         FLY_USER: *fly_user
@@ -81,7 +89,7 @@ jobs:
         FLY_URL: *fly_url
         FLY_TEAM: *fly_team
       run:
-        dir: src
+        dir: ci-pipelines-src
         path: sh
         args:
         - -exc
@@ -92,7 +100,7 @@ jobs:
           echo fly login -t "$FLY_TARGET" -c "$FLY_URL" -n "$FLY_TEAM"
           ./fly login -t "$FLY_TARGET" -c "$FLY_URL" -n "$FLY_TEAM" -u "$FLY_USER" -p "$FLY_PASSWORD"
           set -x
-          ./fly -t "$FLY_TARGET" set-pipeline -p $(cat .git/resource/version.json | jq .pr) -c ci/concourse/pr-pipeline.yml
+          ./fly -t "$FLY_TARGET" set-pipeline -p $(cat ../src/.git/resource/version.json | jq -r .pr) -c ci/concourse/pr-pipeline.yml --var=git_branch=$(cat ../src/.git/resource/metadata.json | jq -r .head_name)
     on_failure:
       put: src
       params:
@@ -103,6 +111,8 @@ jobs:
   plan:
   - get: src
     passed: [pr-start]
+  - get: ci-pipelines-src
+    passed: [pr-start]
   - task: fly-set-pipeline
     config:
       platform: linux
@@ -110,7 +120,7 @@ jobs:
         type: docker-image
         source: *ci-image-source
       inputs:
-      - name: src
+      - name: ci-pipelines-src
       params:
         FLY_TARGET: *fly_target
         FLY_USER: *fly_user
@@ -118,7 +128,7 @@ jobs:
         FLY_URL: *fly_url
         FLY_TEAM: *fly_team
       run:
-        dir: src
+        dir: ci-pipelines-src
         path: sh
         args:
         - -ec
@@ -129,7 +139,7 @@ jobs:
           echo fly login -t "$FLY_TARGET" -c "$FLY_URL" -n "$FLY_TEAM"
           ./fly login -t "$FLY_TARGET" -c "$FLY_URL" -n "$FLY_TEAM" -u "$FLY_USER" -p "$FLY_PASSWORD"
           set -x
-          echo "y" | ./fly -t "$FLY_TARGET" destroy-pipeline -p $(cat .git/resource/version.json | jq .pr)
+          echo "y" | ./fly -t "$FLY_TARGET" destroy-pipeline -p $(cat ../src/.git/resource/version.json | jq -r .pr)
   - put: src
     params:
       path: src

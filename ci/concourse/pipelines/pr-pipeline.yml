@@ -3,14 +3,12 @@
 vars:
 - &github_repo ((github_repo))
 - &git_uri ((git_uri))
-- &git_branch ((git_branch))
+- &git_branch {{git_branch}}
 - &github_access_token ((github_access_token))
-- &github_webhook_token ((github_webhook_token))
+- &pr_number {{pr_number}}
 - &service_account_json ((service_account_json))
 - &ci_image_uri ((ci_image_uri))
-- &pr_comment ((pr_comment))
-- &fly_user ((fly_user))
-- &fly_password ((fly_password))
+- &github_status_sha
 
 # Each task which runs go commands inherits these environment variables.
 - &go_task_params
@@ -26,12 +24,17 @@ resource_types:
 
 resources:
 - name: src
-  type: pull-request
-  check_every: 1m
-  webhook_token: *github_webhook_token
+  type: git
   source:
-    repository: *github_repo
-    access_token: *github_access_token
+    branch: *git_branch
+    uri: *git_uri
+- name: ci-image-src
+  type: git
+  source:
+    branch: *git_branch
+    uri: *git_uri
+    paths:
+    - ci/concourse/image
 - name: ci-image-src
   type: git
   source:
@@ -47,27 +50,10 @@ resources:
     password: *service_account_json
 
 jobs:
-- name: ci-image
-  plan:
-  - get: ci-image-src
-    trigger: true
-  - put: ci-image
-    params:
-      build: ci-image-src/ci/concourse/image
-- name: pr-start
-  plan:
-  - get: src
-    version: every
-  - put: src
-    params:
-      path: src
-      status: pending
-      comment: *pr_comment
 - name: check
   plan:
   - get: src
     trigger: true
-    passed: [pr-start]
   - get: ci-image
   - task: check
     config:
@@ -86,11 +72,7 @@ jobs:
         - |
           hack/check-linters.sh
           hack/check-go-generate.sh
-    on_failure:
-      put: src
-      params:
-        path: src
-        status: failure
+    on_failure: *on_failure
 - name: build
   plan:
   - get: src
@@ -115,11 +97,7 @@ jobs:
         - exc
         - hack/build.sh
           mv kf ../bin
-    on_failure:
-      put: src
-      params:
-        path: src
-        status: failure
+    on_failure: *on_failure
 - name: test
   plan:
   - get: src
@@ -149,16 +127,28 @@ jobs:
           gcloud container clusters get-credentials kf-2 --zone us-central1-c --project kf-source
           echo 'y' | gcloud auth configure-docker
           NO_RACE=true hack/test.sh
-    on_failure:
-      put: src
-      params:
-        path: src
-        status: failure
+    on_failure: *on_failure
 - name: success
   plan:
   - get: src
     trigger: true
     passed: [check, build, test]
+  - get: ci
+  - task: set-ok
+    file: ci/ci/concourse/tasks/set-status.yml
+    params:
+      GITHUB_REPO_OWNER: *github_repo
+      GITHUB_STATUS_SHA: *github_status_sha
+      GITHUB_STATUS_VALUE: success
+      GITHUB_TOKEN: *github_access_token
+    on_failure: &on_failure
+      task: set-failure
+      file: ci/ci/concourse/tasks/set-status.yml
+      params:
+        GITHUB_REPO_OWNER: *github_repo
+        GITHUB_STATUS_SHA: *github_status_sha
+        GITHUB_STATUS_VALUE: failure
+        GITHUB_TOKEN: *github_access_token
   - put: src
     params:
       path: src
