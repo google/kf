@@ -144,14 +144,15 @@ jobs:
         - |
           # Login to Kubernetes
           set +x
+          /bin/echo Authenticating to kubernetes...
           /bin/echo "$SERVICE_ACCOUNT_JSON" > key.json
-          set -x
           gcloud auth activate-service-account --key-file key.json
-          gcloud config set project kf-source
-          gcloud container clusters get-credentials kf-2 \
-            --zone us-central1-c \
-            --project kf-source
+          gcloud config set project ((project_id))
+          gcloud container clusters get-credentials ((k8s_cluster_name)) \
+            --zone ((k8s_cluster_zone)) \
+            --project ((project_id))
           /bin/echo 'y' | gcloud auth configure-docker
+          set -x
 
           # Run all tests
           NO_RACE=true hack/test.sh
