@@ -1,3 +1,17 @@
+# Copyright 2019 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the License);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an AS IS BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 ---
 # Store these in your credential manager.
 vars:
@@ -68,6 +82,7 @@ jobs:
   plan:
   - get: src
     version: every
+    trigger: true
   - put: src
     params:
       path: src
@@ -82,6 +97,7 @@ jobs:
         source: *ci-image-source
       inputs:
       - name: ci-pipelines-src
+      - name: src
       params:
         FLY_TARGET: *fly_target
         FLY_USER: *fly_user
@@ -97,50 +113,28 @@ jobs:
           wget "${FLY_URL}/api/v1/cli?arch=amd64&platform=linux" -O fly
           chmod +x ./fly
           set +x
-          echo fly login -t "$FLY_TARGET" -c "$FLY_URL" -n "$FLY_TEAM"
-          ./fly login -t "$FLY_TARGET" -c "$FLY_URL" -n "$FLY_TEAM" -u "$FLY_USER" -p "$FLY_PASSWORD"
+          echo fly login...
+          ./fly login\
+            -t "$FLY_TARGET" \
+            -c "$FLY_URL" \
+            -n "$FLY_TEAM" \
+            -u "$FLY_USER" \
+            -p "$FLY_PASSWORD"
           set -x
-          ./fly -t "$FLY_TARGET" set-pipeline -p $(cat ../src/.git/resource/version.json | jq -r .pr) -c ci/concourse/pr-pipeline.yml --var=git_branch=$(cat ../src/.git/resource/metadata.json | jq -r .head_name)
+          metadata=../src/.git/resource/metadata.json
+          jq_for {
+            jq -r ".[] | select(.name == \"$1\") | .value"
+          }
+          pr_number=$(cat "$metadata" | jq_for pr)
+          git_branch=$(cat "$metadata" | jq_for head_name)
+          ./fly -t "$FLY_TARGET" set-pipeline \
+            -n \
+            -p "$pr_number" \
+            -c ci/concourse/pipelines/pr-pipeline.yml \
+            -v git_branch="$git_branch" \
+            -v pr_number="$pr_number"
     on_failure:
       put: src
       params:
         path: src
         status: failure
-
-- name: pr-success
-  plan:
-  - get: src
-    passed: [pr-start]
-  - get: ci-pipelines-src
-    passed: [pr-start]
-  - task: fly-set-pipeline
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source: *ci-image-source
-      inputs:
-      - name: ci-pipelines-src
-      params:
-        FLY_TARGET: *fly_target
-        FLY_USER: *fly_user
-        FLY_PASSWORD: *fly_password
-        FLY_URL: *fly_url
-        FLY_TEAM: *fly_team
-      run:
-        dir: ci-pipelines-src
-        path: sh
-        args:
-        - -ec
-        - |
-          wget "${FLY_URL}/api/v1/cli?arch=amd64&platform=linux" -O fly
-          chmod +x ./fly
-          set +x
-          echo fly login -t "$FLY_TARGET" -c "$FLY_URL" -n "$FLY_TEAM"
-          ./fly login -t "$FLY_TARGET" -c "$FLY_URL" -n "$FLY_TEAM" -u "$FLY_USER" -p "$FLY_PASSWORD"
-          set -x
-          echo "y" | ./fly -t "$FLY_TARGET" destroy-pipeline -p $(cat ../src/.git/resource/version.json | jq -r .pr)
-  - put: src
-    params:
-      path: src
-      status: success
