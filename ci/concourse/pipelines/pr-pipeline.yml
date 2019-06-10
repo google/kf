@@ -41,10 +41,29 @@ resources:
     password: *service_account_json
 
 jobs:
+- name: pending
+  plan:
+  - get: src
+    trigger: true
+  - get: ci-src
+  - task: set-pending
+    file: ci-src/ci/concourse/tasks/set-status.yml
+    params:
+      GITHUB_REPO_OWNER: *github_repo
+      GITHUB_STATUS_VALUE: pending
+      GITHUB_TOKEN: *github_access_token
+    on_failure: &on_failure
+      task: set-failure
+      file: ci-src/ci/concourse/tasks/set-status.yml
+      params:
+        GITHUB_REPO_OWNER: *github_repo
+        GITHUB_STATUS_VALUE: failure
+        GITHUB_TOKEN: *github_access_token
 - name: check
   plan:
   - get: src
     trigger: true
+    passed: [pending]
   - get: ci-image
   - get: ci-src
   - task: check
@@ -68,6 +87,7 @@ jobs:
 - name: build
   plan:
   - get: src
+    passed: [pending]
     trigger: true
   - get: ci-image
   - get: ci-src
@@ -94,6 +114,7 @@ jobs:
 - name: test
   plan:
   - get: src
+    passed: [pending]
     trigger: true
   - get: ci-image
   - get: ci-src
