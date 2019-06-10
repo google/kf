@@ -15,25 +15,29 @@
 ---
 # Store these in your credential manager.
 vars:
+
+  # pull request vars
 - &github_repo ((github_repo))
-- &git_uri ((git_uri))
-- &git_branch ((git_branch))
 - &github_access_token ((github_access_token))
 - &github_webhook_token ((github_webhook_token))
-- &service_account_json ((service_account_json))
-- &ci_image_uri ((ci_image_uri))
 - &pr_comment ((pr_comment))
+
+  # ci config vars
+- &ci_git_uri ((ci_git_uri))
+- &ci_git_branch ((ci_git_branch))
+- &ci_image_uri ((ci_image_uri))
 - &fly_user ((fly_user))
 - &fly_password ((fly_password))
 - &fly_target ((fly_target))
 - &fly_url ((fly_url))
 - &fly_team ((fly_team))
+- &service_account_json ((service_account_json))
 
-# Each task which runs go commands inherits these environment variables.
-- &go_task_params
-  GOPROXY: https://proxy.golang.org
-  GOSUMDB: sum.golang.org
-  SERVICE_ACCOUNT_JSON: *service_account_json
+  # git src vars
+- &git_uri ((git_uri))
+- &git_branch ((git_branch))
+
+# ---- end vars ----
 
 resource_types:
 - name: pull-request
@@ -52,15 +56,15 @@ resources:
 - name: ci-pipelines-src
   type: git
   source:
-    branch: *git_branch
-    uri: *git_uri
+    branch: *ci_git_branch
+    uri: *ci_git_uri
     paths:
     - ci/concourse/pipelines
 - name: ci-image-src
   type: git
   source:
-    branch: *git_branch
-    uri: *git_uri
+    branch: *ci_git_branch
+    uri: *ci_git_uri
     paths:
     - ci/concourse/image
 - name: ci-image
@@ -71,6 +75,7 @@ resources:
     password: *service_account_json
 
 jobs:
+# builds the ci image for later steps/other pipelines
 - name: ci-image
   plan:
   - get: ci-image-src
@@ -78,16 +83,13 @@ jobs:
   - put: ci-image
     params:
       build: ci-image-src/ci/concourse/image
+
+# creates a pipeline for each pr
 - name: pr-start
   plan:
   - get: src
     version: every
     trigger: true
-  - put: src
-    params:
-      path: src
-      status: pending
-      comment: *pr_comment
   - get: ci-pipelines-src
   - task: fly-set-pipeline
     config:
@@ -110,8 +112,11 @@ jobs:
         args:
         - -exc
         - |
+          # Download the fly executable for the given concourse server
           wget "${FLY_URL}/api/v1/cli?arch=amd64&platform=linux" -O fly
           chmod +x ./fly
+
+          # Login
           set +x
           echo fly login...
           ./fly login\
@@ -121,12 +126,16 @@ jobs:
             -u "$FLY_USER" \
             -p "$FLY_PASSWORD"
           set -x
+
+          # Read PR number and branch from the PR resource
           metadata=../src/.git/resource/metadata.json
           jq_for() {
             jq -r ".[] | select(.name == \"$1\") | .value"
           }
           pr_number=$(cat "$metadata" | jq_for pr)
           git_branch=$(cat "$metadata" | jq_for head_name)
+
+          # Create the pipeline
           ./fly -t "$FLY_TARGET" set-pipeline \
             -n \
             -p "$pr_number" \
@@ -138,3 +147,7 @@ jobs:
       params:
         path: src
         status: failure
+  - put: src
+    params:
+      path: src
+      comment: *pr_comment
