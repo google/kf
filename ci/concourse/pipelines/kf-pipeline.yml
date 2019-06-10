@@ -122,7 +122,7 @@ jobs:
             -p "$FLY_PASSWORD"
           set -x
           metadata=../src/.git/resource/metadata.json
-          jq_for {
+          jq_for() {
             jq -r ".[] | select(.name == \"$1\") | .value"
           }
           pr_number=$(cat "$metadata" | jq_for pr)
