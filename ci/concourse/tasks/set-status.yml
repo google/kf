@@ -18,7 +18,7 @@ run:
   path: sh
   dir: src
   args:
-  - -exc
+  - -ec
   - |
     sha=$(git rev-parse HEAD)
-    curl -H "Authorization: token ${GITHUB_TOKEN}" -X POST --data "{\"state\":\"${GITHUB_STATUS_VALUE}\",\"context\":\"concourse-ci/status\"}" https://api.github.com/repos/${GITHUB_REPO_OWNER}/kf/statuses/$sha
+    curl -H "Authorization: token ${GITHUB_TOKEN}" -X POST --data "{\"state\":\"${GITHUB_STATUS_VALUE}\",\"context\":\"concourse-ci/status\"}" https://api.github.com/repos/${GITHUB_REPO_OWNER}/statuses/$sha
