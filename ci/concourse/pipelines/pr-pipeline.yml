@@ -29,11 +29,17 @@ vars:
 - &github_access_token ((github_access_token))
 - &service_account_json ((service_account_json))
 
+  # k8s config
+- &gcp_project_id ((gcp_project_id))
+- &k8s_cluster_name ((k8s_cluster_name))
+- &k8s_cluster_zone ((k8s_cluster_zone))
+
+  # go config
+- &go_proxy https://proxy.golang.org
+- &go_sum_db sum.golang.org
+
 # Each task which runs go commands inherits these environment variables.
 - &go_task_params
-  GOPROXY: https://proxy.golang.org
-  GOSUMDB: sum.golang.org
-  SERVICE_ACCOUNT_JSON: *service_account_json
 
 resources:
 - name: src
@@ -82,7 +88,10 @@ jobs:
         source: *ci-image-source
       inputs:
       - name: src
-      params: *go_task_params
+      params:
+        GOPROXY: *go_proxy
+        GOSUMDB: *go_sum_db
+        SERVICE_ACCOUNT_JSON: *service_account_json
       run:
         dir: src
         path: sh
@@ -109,7 +118,10 @@ jobs:
       - name: src
       outputs:
       - name: bin
-      params: *go_task_params
+      params:
+        GOPROXY: *go_proxy
+        GOSUMDB: *go_sum_db
+        SERVICE_ACCOUNT_JSON: *service_account_json
       run:
         dir: src
         path: sh
@@ -135,7 +147,13 @@ jobs:
       inputs:
       - name: src
       - name: ci-src
-      params: *go_task_params
+      params:
+        GOPROXY: *go_proxy
+        GOSUMDB: *go_sum_db
+        SERVICE_ACCOUNT_JSON: *service_account_json
+        GCP_PROJECT_ID: *gcp_project_id
+        K8s_CLUSTER_NAME: *k8s_cluster_name
+        K8s_CLUSTER_ZONE: *k8s_cluster_zone
       run:
         dir: src
         path: sh
@@ -146,12 +164,12 @@ jobs:
           set +x
           /bin/echo Authenticating to kubernetes...
           /bin/echo "$SERVICE_ACCOUNT_JSON" > key.json
-          gcloud auth activate-service-account --key-file key.json
-          gcloud config set project ((project_id))
-          gcloud container clusters get-credentials ((k8s_cluster_name)) \
-            --zone ((k8s_cluster_zone)) \
-            --project ((project_id))
-          /bin/echo 'y' | gcloud auth configure-docker
+          gcloud auth activate-service-account --key-file key.json &>/dev/null
+          gcloud config set project "$GCP_PROJECT_ID" &>/dev/null
+          gcloud container clusters get-credentials "$K8s_CLUSTER_NAME" \
+            --zone "$K8s_CLUSTER_ZONE" \
+            --project "$GCP_PROJECT_ID" &>/dev/null
+          /bin/echo 'y' | gcloud auth configure-docker &>/dev/null
           set -x
 
           # Run all tests
