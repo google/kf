@@ -11,9 +11,6 @@ vars:
 - &pr_comment ((pr_comment))
 - &fly_user ((fly_user))
 - &fly_password ((fly_password))
-- &fly_target ((fly_target))
-- &fly_url ((fly_url))
-- &fly_team ((fly_team))
 
 # Each task which runs go commands inherits these environment variables.
 - &go_task_params
@@ -66,7 +63,13 @@ jobs:
       path: src
       status: pending
       comment: *pr_comment
-  - task: fly-set-pipeline
+- name: check
+  plan:
+  - get: src
+    trigger: true
+    passed: [pr-start]
+  - get: ci-image
+  - task: check
     config:
       platform: linux
       image_resource:
@@ -74,36 +77,27 @@ jobs:
         source: *ci-image-source
       inputs:
       - name: src
-      params:
-        FLY_TARGET: *fly_target
-        FLY_USER: *fly_user
-        FLY_PASSWORD: *fly_password
-        FLY_URL: *fly_url
-        FLY_TEAM: *fly_team
+      params: *go_task_params
       run:
         dir: src
         path: sh
         args:
         - -exc
         - |
-          wget "${FLY_URL}/api/v1/cli?arch=amd64&platform=linux" -O fly
-          chmod +x ./fly
-          set +x
-          echo fly login -t "$FLY_TARGET" -c "$FLY_URL" -n "$FLY_TEAM"
-          ./fly login -t "$FLY_TARGET" -c "$FLY_URL" -n "$FLY_TEAM" -u "$FLY_USER" -p "$FLY_PASSWORD"
-          set -x
-          ./fly -t "$FLY_TARGET" set-pipeline -p $(cat .git/resource/version.json | jq .pr) -c ci/concourse/pr-pipeline.yml
+          hack/check-linters.sh
+          hack/check-go-generate.sh
     on_failure:
       put: src
       params:
         path: src
         status: failure
-
-- name: pr-success
+- name: build
   plan:
   - get: src
+    trigger: true
     passed: [pr-start]
-  - task: fly-set-pipeline
+  - get: ci-image
+  - task: build
     config:
       platform: linux
       image_resource:
@@ -111,25 +105,60 @@ jobs:
         source: *ci-image-source
       inputs:
       - name: src
-      params:
-        FLY_TARGET: *fly_target
-        FLY_USER: *fly_user
-        FLY_PASSWORD: *fly_password
-        FLY_URL: *fly_url
-        FLY_TEAM: *fly_team
+      outputs:
+      - name: bin
+      params: *go_task_params
       run:
         dir: src
         path: sh
         args:
-        - -ec
+        - exc
+        - hack/build.sh
+          mv kf ../bin
+    on_failure:
+      put: src
+      params:
+        path: src
+        status: failure
+- name: test
+  plan:
+  - get: src
+    trigger: true
+    passed: [pr-start]
+  - get: ci-image
+  - task: test
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: *ci-image-source
+      inputs:
+      - name: src
+      params: *go_task_params
+      run:
+        dir: src
+        path: sh
+        args:
+        - -exc
         - |
-          wget "${FLY_URL}/api/v1/cli?arch=amd64&platform=linux" -O fly
-          chmod +x ./fly
           set +x
-          echo fly login -t "$FLY_TARGET" -c "$FLY_URL" -n "$FLY_TEAM"
-          ./fly login -t "$FLY_TARGET" -c "$FLY_URL" -n "$FLY_TEAM" -u "$FLY_USER" -p "$FLY_PASSWORD"
+          echo "$SERVICE_ACCOUNT_JSON" > key.json
           set -x
-          echo "y" | ./fly -t "$FLY_TARGET" destroy-pipeline -p $(cat .git/resource/version.json | jq .pr)
+          gcloud auth activate-service-account --key-file key.json
+          gcloud config set project kf-source
+          gcloud container clusters get-credentials kf-2 --zone us-central1-c --project kf-source
+          echo 'y' | gcloud auth configure-docker
+          NO_RACE=true hack/test.sh
+    on_failure:
+      put: src
+      params:
+        path: src
+        status: failure
+- name: success
+  plan:
+  - get: src
+    trigger: true
+    passed: [check, build, test]
   - put: src
     params:
       path: src
