@@ -3,7 +3,7 @@ platform: linux
 image_resource:
   type: docker-image
   source:
-    repository: ubuntu
+    repository: prontotools/alpine-git-curl
 
 inputs:
 - name: src
