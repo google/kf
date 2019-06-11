@@ -17,8 +17,8 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7 // indirect
 	github.com/imdario/mergo v0.3.6 // indirect
 	github.com/knative/build v0.5.0
-	github.com/knative/pkg v0.0.0-20190402181056-ff46edef0ae5
-	github.com/knative/serving v0.5.0
+	github.com/knative/pkg v0.0.0-20190610153941-28f181241cdb
+	github.com/knative/serving v0.6.1
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
