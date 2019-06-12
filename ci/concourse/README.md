@@ -36,7 +36,7 @@ If any step fails, the PR check is set to `failure`.
 The following variables should be stored in your credential manager.
 
 | Name                 | Description                                              | kf-pipeline | pr-pipeline |
-| -------------------- | -----------                                              | ✅          |             |
+| -------------------- | -------------------------------------------------------- | ----------- | ----------- |
 | github_repo          | Github repo name                                         | ✅          |             |
 | github_access_token  | Github access token for setting PR status checks         | ✅          |             |
 | github_webhook_token | Github webhook argument. See [this][3]                   | ✅          |             |
