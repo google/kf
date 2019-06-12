@@ -39,7 +39,7 @@ if [ ! "${RACE:-true}" = "true" ]; then
   args="--race $args"
 fi
 
-go test $args ./...
+go test -timeout 30m $args ./...
 ret=$?
 set +x
 if [ $ret -eq 0 ]; then
