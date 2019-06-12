@@ -139,6 +139,7 @@ jobs:
   - get: ci-image
   - get: ci-src
   - task: test
+    timeout: 1h30m
     config:
       platform: linux
       image_resource:
@@ -173,7 +174,7 @@ jobs:
           /bin/echo 'y' | gcloud auth configure-docker
 
           # Run all tests
-          NO_RACE=true hack/test.sh
+          RACE=false hack/test.sh
     on_failure: *on_failure
 - name: success
   plan:
