@@ -34,7 +34,7 @@ red() {
 }
 
 args="-v"
-if [ ! "${RACE:-true}" = "true" ]; then
+if [ "${RACE:-true}" = "true" ]; then
   echo enabling race
   args="--race $args"
 fi
