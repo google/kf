@@ -411,29 +411,7 @@ var checkOnce sync.Once
 
 func checkClusterStatus(t *testing.T) {
 	checkOnce.Do(func() {
-		testIntegration_Buildpacks(t)
 		testIntegration_Doctor(t)
-	})
-}
-
-// testIntegration_Buildpacks uploads the sample buildpacks and then lists
-// them. It ensures the ablity to upload and list buildpacks along with
-// preparing the cluster for the rest of the integration tests (which require
-// the buildpacks).
-func testIntegration_Buildpacks(t *testing.T) {
-	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
-		kf.UploadBuildpacks(ctx,
-			"--path", filepath.Join(RootDir(ctx, t), "./samples/buildpacks"),
-			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
-			"--built-in",
-		)
-
-		buildpacks := kf.Buildpacks(ctx)
-		AssertContainsAll(t, strings.Join(buildpacks, "\n"), []string{
-			"io.buildpacks.samples.nodejs",
-			"io.buildpacks.samples.go",
-			"io.buildpacks.samples.java",
-		})
 	})
 }
 

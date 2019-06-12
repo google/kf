@@ -6,7 +6,6 @@
 package commands
 
 import (
-	"context"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
@@ -22,11 +21,6 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/spaces"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/systemenvinjector"
-	"github.com/buildpack/lifecycle/image"
-	"github.com/buildpack/pack"
-	config2 "github.com/buildpack/pack/config"
-	"github.com/buildpack/pack/docker"
-	"github.com/buildpack/pack/fs"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/wire"
 	logs2 "github.com/knative/build/pkg/logs"
@@ -192,20 +186,13 @@ func InjectVcapServices(p *config.KfParams) *cobra.Command {
 func InjectBuildpacksClient(p *config.KfParams) buildpacks.Client {
 	buildV1alpha1Interface := config.GetBuildClient(p)
 	remoteImageFetcher := provideRemoteImageFetcher()
-	builderFactoryCreate := provideBuilderCreate()
-	client := buildpacks.NewClient(buildV1alpha1Interface, remoteImageFetcher, builderFactoryCreate)
+	client := buildpacks.NewClient(buildV1alpha1Interface, remoteImageFetcher)
 	return client
 }
 
 func InjectBuildpacks(p *config.KfParams) *cobra.Command {
 	client := InjectBuildpacksClient(p)
 	command := buildpacks2.NewBuildpacks(p, client)
-	return command
-}
-
-func InjectUploadBuildpacks(p *config.KfParams) *cobra.Command {
-	client := InjectBuildpacksClient(p)
-	command := buildpacks2.NewUploadBuildpacks(p, client)
 	return command
 }
 
@@ -263,43 +250,6 @@ func provideCoreV1(p *config.KfParams) v1.CoreV1Interface {
 ///////////////
 func provideRemoteImageFetcher() buildpacks.RemoteImageFetcher {
 	return remote.Image
-}
-
-func provideBuilderCreate() buildpacks.BuilderFactoryCreate {
-	return func(flags pack.CreateBuilderFlags) error {
-		factory, err := image.NewFactory()
-		if err != nil {
-			return err
-		}
-
-		dockerClient, err := docker.New()
-		if err != nil {
-			return err
-		}
-
-		cfg, err := config2.NewDefault()
-		if err != nil {
-			return err
-		}
-		builderFactory := pack.BuilderFactory{
-			FS:     &fs.FS{},
-			Config: cfg,
-			Fetcher: &pack.ImageFetcher{
-				Factory: factory,
-				Docker:  dockerClient,
-			},
-		}
-		builderConfig, err := builderFactory.BuilderConfigFromFlags(context.Background(), flags)
-		if err != nil {
-			return err
-		}
-
-		if err := builderFactory.Create(builderConfig); err != nil {
-			return err
-		}
-
-		return nil
-	}
 }
 
 var SpacesSet = wire.NewSet(config.GetKubernetes, provideNamespaceGetter, spaces.NewClient)

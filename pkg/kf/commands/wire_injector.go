@@ -17,8 +17,6 @@
 package commands
 
 import (
-	"context"
-
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
@@ -34,11 +32,6 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/spaces"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/systemenvinjector"
-	"github.com/buildpack/lifecycle/image"
-	"github.com/buildpack/pack"
-	packconfig "github.com/buildpack/pack/config"
-	"github.com/buildpack/pack/docker"
-	"github.com/buildpack/pack/fs"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/wire"
 	"github.com/knative/build/pkg/logs"
@@ -246,52 +239,11 @@ func provideRemoteImageFetcher() buildpacks.RemoteImageFetcher {
 	return remote.Image
 }
 
-func provideBuilderCreate() buildpacks.BuilderFactoryCreate {
-	return func(flags pack.CreateBuilderFlags) error {
-		factory, err := image.NewFactory()
-		if err != nil {
-			return err
-		}
-
-		dockerClient, err := docker.New()
-		if err != nil {
-			return err
-		}
-
-		cfg, err := packconfig.NewDefault()
-		if err != nil {
-			return err
-		}
-		builderFactory := pack.BuilderFactory{
-			FS:     &fs.FS{},
-			Config: cfg,
-			Fetcher: &pack.ImageFetcher{
-				Factory: factory,
-				Docker:  dockerClient,
-			},
-		}
-		builderConfig, err := builderFactory.BuilderConfigFromFlags(
-			context.Background(),
-			flags,
-		)
-		if err != nil {
-			return err
-		}
-
-		if err := builderFactory.Create(builderConfig); err != nil {
-			return err
-		}
-
-		return nil
-	}
-}
-
 func InjectBuildpacksClient(p *config.KfParams) buildpacks.Client {
 	wire.Build(
 		buildpacks.NewClient,
 		config.GetBuildClient,
 		provideRemoteImageFetcher,
-		provideBuilderCreate,
 	)
 	return nil
 }
@@ -299,14 +251,6 @@ func InjectBuildpacksClient(p *config.KfParams) buildpacks.Client {
 func InjectBuildpacks(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		cbuildpacks.NewBuildpacks,
-		InjectBuildpacksClient,
-	)
-	return nil
-}
-
-func InjectUploadBuildpacks(p *config.KfParams) *cobra.Command {
-	wire.Build(
-		cbuildpacks.NewUploadBuildpacks,
 		InjectBuildpacksClient,
 	)
 	return nil
