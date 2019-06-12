@@ -33,10 +33,6 @@ vars:
 - &fly_team ((fly_team))
 - &service_account_json ((service_account_json))
 
-  # git src vars
-- &git_uri ((git_uri))
-- &git_branch ((git_branch))
-
 # ---- end vars ----
 
 resource_types:
