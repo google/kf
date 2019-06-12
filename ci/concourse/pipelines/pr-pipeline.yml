@@ -162,15 +162,15 @@ jobs:
         - |
           # Login to Kubernetes
           set +x
-          /bin/echo Authenticating to kubernetes...
           /bin/echo "$SERVICE_ACCOUNT_JSON" > key.json
-          gcloud auth activate-service-account --key-file key.json &>/dev/null
-          gcloud config set project "$GCP_PROJECT_ID" &>/dev/null
+          set -x
+          /bin/echo Authenticating to kubernetes...
+          gcloud auth activate-service-account --key-file key.json
+          gcloud config set project "$GCP_PROJECT_ID"
           gcloud container clusters get-credentials "$K8S_CLUSTER_NAME" \
             --zone "$K8S_CLUSTER_ZONE" \
-            --project "$GCP_PROJECT_ID" &>/dev/null
-          /bin/echo 'y' | gcloud auth configure-docker &>/dev/null
-          set -x
+            --project "$GCP_PROJECT_ID"
+          /bin/echo 'y' | gcloud auth configure-docker
 
           # Run all tests
           NO_RACE=true hack/test.sh
