@@ -10,6 +10,7 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/builds"
 	apps2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/apps"
 	buildpacks2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
@@ -48,10 +49,11 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 	systemEnvInjectorInterface := provideSystemEnvInjector(p)
 	client := apps.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
 	deployer := kf.NewDeployer(client)
+	logs := kf.NewLogTailer(servingV1alpha1Interface)
 	buildV1alpha1Interface := config.GetBuildClient(p)
 	buildTailer := provideBuildTailer()
-	logs := kf.NewLogTailer(buildV1alpha1Interface, servingV1alpha1Interface, buildTailer)
-	pusher := kf.NewPusher(deployer, logs)
+	clientInterface := builds.NewClient(buildV1alpha1Interface, buildTailer)
+	pusher := kf.NewPusher(deployer, logs, clientInterface)
 	srcImageBuilder := provideSrcImageBuilder()
 	command := apps2.NewPushCommand(p, pusher, srcImageBuilder)
 	return command
@@ -248,8 +250,8 @@ func provideSrcImageBuilder() apps2.SrcImageBuilder {
 	return apps2.SrcImageBuilderFunc(kontext.BuildImage)
 }
 
-func provideBuildTailer() kf.BuildTailer {
-	return kf.BuildTailerFunc(logs2.Tail)
+func provideBuildTailer() builds.BuildTailer {
+	return builds.BuildTailerFunc(logs2.Tail)
 }
 
 var AppsSet = wire.NewSet(apps.NewClient, config.GetServingClient, provideSystemEnvInjector)

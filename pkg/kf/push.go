@@ -15,16 +15,12 @@
 package kf
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"path"
 	"time"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/builds"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/kf"
-	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,9 +30,9 @@ import (
 
 // pusher deploys source code to Knative. It should be created via NewPusher.
 type pusher struct {
-	deployer Deployer
-	bl       Logs
-	out      io.Writer
+	deployer    Deployer
+	bl          Logs
+	buildClient builds.ClientInterface
 }
 
 // Pusher deploys applications.
@@ -46,10 +42,11 @@ type Pusher interface {
 }
 
 // NewPusher creates a new Pusher.
-func NewPusher(d Deployer, bl Logs) Pusher {
+func NewPusher(d Deployer, bl Logs, buildClient builds.ClientInterface) Pusher {
 	return &pusher{
-		deployer: d,
-		bl:       bl,
+		deployer:    d,
+		bl:          bl,
+		buildClient: buildClient,
 	}
 }
 
@@ -70,7 +67,8 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 		}
 	}
 
-	buildSpec, imageName, err := p.buildSpec(
+	imageName, err := p.buildSpec(
+		cfg.Namespace,
 		appName,
 		srcImage,
 		cfg.ContainerRegistry,
@@ -81,8 +79,7 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 		return err
 	}
 
-	s := p.initService(appName, cfg.Namespace, buildSpec)
-	s.Spec.RunLatest.Configuration.Build = buildSpec
+	s := p.initService(appName, cfg.Namespace)
 	s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Image = imageName
 	s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.ServiceAccountName = cfg.ServiceAccount
 
@@ -120,58 +117,71 @@ func (p *pusher) setupConfig(appName, srcImage string, opts []PushOption) (pushC
 	return cfg, nil
 }
 
-func (p *pusher) imageName(appName string, srcCodeImage bool) string {
-	var prefix string
-	if srcCodeImage {
-		prefix = "src-"
-	}
-	return fmt.Sprintf("%s%s:%d", prefix, appName, time.Now().UnixNano())
+// AppImageName gets the image name for an application.
+func AppImageName(namespace, appName string) string {
+	return fmt.Sprintf("app-%s-%s:%d", namespace, appName, time.Now().UnixNano())
 }
 
-const (
-	buildAPIVersion = "build.knative.dev/v1alpha1"
-)
+// SourceImageName gets the image name for source code for an application.
+func SourceImageName(namespace, appName string) string {
+	return fmt.Sprintf("src-%s-%s:%d", namespace, appName, time.Now().UnixNano())
+}
+
+// JoinRepositoryImage joins a repository and image name.
+func JoinRepositoryImage(repository, imageName string) string {
+	return fmt.Sprintf("%s/%s", repository, imageName)
+}
+
+// BuildName gets a build name based on the current time.
+// Build names are limited by Knative to be 64 characters long.
+func BuildName() string {
+	return fmt.Sprintf("build-%d", time.Now().UnixNano())
+}
 
 func (p *pusher) buildSpec(
+	namespace string,
 	appName string,
 	srcImage string,
 	containerRegistry string,
 	serviceAccount string,
 	buildpack string,
-) (*serving.RawExtension, string, error) {
-	imageName := path.Join(containerRegistry, p.imageName(appName, false))
+) (string, error) {
+	appImageName := AppImageName(namespace, appName)
+	imageDestination := JoinRepositoryImage(containerRegistry, appImageName)
 
 	args := map[string]string{
-		"IMAGE": imageName,
+		"IMAGE": imageDestination,
 	}
 
 	if buildpack != "" {
 		args["BUILDPACK"] = buildpack
 	}
 
-	// Knative Build wants a Build, but the RawExtension (used by the
-	// Configuration object) wants a BuildSpec. Therefore, we have to manually
-	// create the required JSON.
-	buildSpec := builds.PopulateTemplate(
-		"", // no name provided
-		build.TemplateInstantiationSpec{Name: "buildpack", Kind: build.ClusterBuildTemplateKind},
+	buildName := BuildName()
+
+	if _, err := p.buildClient.Create(
+		buildName,
+		builds.BuildpackTemplate(),
 		builds.WithCreateServiceAccount(serviceAccount),
 		builds.WithCreateArgs(args),
 		builds.WithCreateSourceImage(srcImage),
-		builds.WithCreateNamespace(""), // set blank namespace so Knative can choose
-	)
-
-	buildSpecRaw, err := json.Marshal(buildSpec)
-	if err != nil {
-		return nil, "", err
+		builds.WithCreateNamespace(namespace),
+	); err != nil {
+		return "", err
 	}
 
-	return &serving.RawExtension{
-		Raw: buildSpecRaw,
-	}, imageName, nil
+	if err := p.buildClient.Tail(buildName, builds.WithTailNamespace(namespace)); err != nil {
+		return "", err
+	}
+
+	if _, err := p.buildClient.Status(buildName); err != nil {
+		return "", err
+	}
+
+	return imageDestination, nil
 }
 
-func (p *pusher) initService(appName, namespace string, build *serving.RawExtension) serving.Service {
+func (p *pusher) initService(appName, namespace string) serving.Service {
 	s := serving.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
@@ -184,7 +194,6 @@ func (p *pusher) initService(appName, namespace string, build *serving.RawExtens
 		Spec: serving.ServiceSpec{
 			RunLatest: &serving.RunLatestType{
 				Configuration: serving.ConfigurationSpec{
-					Build: build,
 					RevisionTemplate: serving.RevisionTemplateSpec{
 						Spec: serving.RevisionSpec{
 							Container: corev1.Container{

@@ -15,7 +15,10 @@
 package builds_test
 
 import (
+	"bytes"
+	"context"
 	"errors"
+	"io"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/builds"
@@ -68,7 +71,7 @@ func TestClientCreate(t *testing.T) {
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
 			fakeClient := testclient.NewSimpleClientset().BuildV1alpha1()
-			b := builds.NewClient(fakeClient)
+			b := builds.NewClient(fakeClient, nil)
 
 			if tc.init != nil {
 				tc.init(b, fakeClient)
@@ -140,7 +143,7 @@ func TestClientStatus(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 			fakeClient := testclient.NewSimpleClientset().BuildV1alpha1()
 
-			b := builds.NewClient(fakeClient)
+			b := builds.NewClient(fakeClient, nil)
 
 			if tc.init != nil {
 				tc.init(b, fakeClient)
@@ -189,7 +192,7 @@ func TestClientDelete(t *testing.T) {
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
 			fakeClient := testclient.NewSimpleClientset().BuildV1alpha1()
-			b := builds.NewClient(fakeClient)
+			b := builds.NewClient(fakeClient, nil)
 
 			if tc.init != nil {
 				tc.init(b, fakeClient)
@@ -199,4 +202,38 @@ func TestClientDelete(t *testing.T) {
 			testutil.AssertErrorsEqual(t, tc.expectedErr, err)
 		})
 	}
+}
+
+func TestClientTail(t *testing.T) {
+	// Tail proxies another function, so just make sure the params are passed in
+	// the correct order.
+
+	buildContext := context.TODO()
+	buildWriter := &bytes.Buffer{}
+	buildName := "some-build"
+	buildNamespace := "some-namespace"
+
+	tailerCalled := false
+	asserter := builds.BuildTailerFunc(func(ctx context.Context, out io.Writer, name, ns string) error {
+		tailerCalled = true
+
+		testutil.AssertEqual(t, "context", buildContext, ctx)
+		testutil.AssertEqual(t, "writer", buildWriter, out)
+		testutil.AssertEqual(t, "build name", buildName, name)
+		testutil.AssertEqual(t, "namespace", buildNamespace, ns)
+
+		return errors.New("test-error")
+	})
+
+	// Make call
+	b := builds.NewClient(nil, asserter)
+	actualErr := b.Tail(
+		buildName,
+		builds.WithTailContext(buildContext),
+		builds.WithTailWriter(buildWriter),
+		builds.WithTailNamespace(buildNamespace))
+
+	// Validate results
+	testutil.AssertErrorsEqual(t, errors.New("test-error"), actualErr)
+	testutil.AssertEqual(t, "tailer called", true, tailerCalled)
 }

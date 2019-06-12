@@ -17,9 +17,7 @@ package apps
 import (
 	"errors"
 	"fmt"
-	"math/rand"
 	"path/filepath"
-	"time"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
@@ -121,7 +119,7 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 				case sourceImage != "":
 					imageName = sourceImage
 				default:
-					imageName = fmt.Sprintf("%s/src-%s-%d%d", containerRegistry, app.Name, time.Now().UnixNano(), rand.Uint64())
+					imageName = kf.JoinRepositoryImage(containerRegistry, kf.SourceImageName(p.Namespace, app.Name))
 
 					if err := b.BuildSrcImage(srcPath, imageName); err != nil {
 						return err

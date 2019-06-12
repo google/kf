@@ -30,7 +30,7 @@ import (
 
 	kf "github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1"
 	ckf "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
-	pkf "github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/builds"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
@@ -48,7 +48,7 @@ type CommandOverrideFetcher interface {
 type commandOverrideFetcher struct {
 	kfClient     ckf.KfV1alpha1Interface
 	buildClient  cbuild.BuildV1alpha1Interface
-	tailer       pkf.BuildTailer
+	tailer       builds.BuildTailer
 	imageBuilder apps.SrcImageBuilder
 	params       *config.KfParams
 }
@@ -56,7 +56,7 @@ type commandOverrideFetcher struct {
 func NewCommandOverrideFetcher(
 	kfClient ckf.KfV1alpha1Interface,
 	buildClient cbuild.BuildV1alpha1Interface,
-	tailer pkf.BuildTailer,
+	tailer builds.BuildTailer,
 	imageBuilder apps.SrcImageBuilder,
 	params *config.KfParams,
 ) CommandOverrideFetcher {
@@ -104,7 +104,7 @@ func (f *commandOverrideFetcher) buildCommand(
 	set kf.CommandSet,
 	spec kf.CommandSpec,
 	imageBuilder apps.SrcImageBuilder,
-	tailer pkf.BuildTailer,
+	tailer builds.BuildTailer,
 ) (*cobra.Command, error) {
 	var (
 		dir            string

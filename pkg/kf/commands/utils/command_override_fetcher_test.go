@@ -23,8 +23,8 @@ import (
 
 	kf "github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1"
 	"github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1/fake"
-	pkf "github.com/GoogleCloudPlatform/kf/pkg/kf"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/builds"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/utils"
@@ -42,7 +42,7 @@ func TestCommandOverrideFetcher(t *testing.T) {
 
 	for tn, tc := range map[string]struct {
 		Namespace          string
-		BuildTailer        func(*testing.T) pkf.BuildTailer
+		BuildTailer        func(*testing.T) builds.BuildTailer
 		BuildImage         func(*testing.T) apps.SrcImageBuilder
 		ListReactor        ktesting.ReactionFunc
 		CreateBuildReactor ktesting.ReactionFunc
@@ -241,8 +241,8 @@ func TestCommandOverrideFetcher(t *testing.T) {
 
 				return true, b, nil
 			}),
-			BuildTailer: func(t *testing.T) pkf.BuildTailer {
-				return pkf.BuildTailerFunc(func(ctx context.Context, w io.Writer, name, namespace string) error {
+			BuildTailer: func(t *testing.T) builds.BuildTailer {
+				return builds.BuildTailerFunc(func(ctx context.Context, w io.Writer, name, namespace string) error {
 					if ctx == nil {
 						t.Fatal("expected ctx to not be nil")
 					}
@@ -378,8 +378,8 @@ func TestCommandOverrideFetcher(t *testing.T) {
 			}
 
 			if tc.BuildTailer == nil {
-				tc.BuildTailer = func(*testing.T) pkf.BuildTailer {
-					return pkf.BuildTailerFunc(func(ctx context.Context, w io.Writer, name, namespace string) error {
+				tc.BuildTailer = func(*testing.T) builds.BuildTailer {
+					return builds.BuildTailerFunc(func(ctx context.Context, w io.Writer, name, namespace string) error {
 						return nil
 					})
 				}
