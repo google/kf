@@ -11,3 +11,8 @@ kf.
   from running the integration tests.
 - `test.sh` Run all the tests including the integration tests.
 - `update-codegen.sh` Updates auto-generated client libraries.
+- `upload-buildpacks.sh` Uploads the sample stack and buildpacks to the
+  current GCP project's gcr.io. It then updates the current "buildpack"
+  ClusterBuildTemplate to point to the newly created builder.
+- `upload-buildpacks-stack.sh` Uploads new buildpacks stack images to the
+  current GCP project's gcr.io.

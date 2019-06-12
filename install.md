@@ -52,12 +52,12 @@ If you want to go more in depth installing knative check out [their docs](knativ
 
 
 ## Upload buildpacks
-Buildpacks are provided by the operator and can be uploaded to Knative using the
-CLI. A set of buidpacks is included in this repo. Change into the `buildpack-samples`
-directory run the following command.
+Buildpacks are provided by the operator and can be uploaded to Knative using
+a script. A set of buidpacks is included in this repo. They can be installed
+with the following:
 
 ```
-kf upload-buildpacks --container-registry $KF_REGISTRY
+./hack/upload-buildpacks.sh
 ```
 
 ## Push your first app

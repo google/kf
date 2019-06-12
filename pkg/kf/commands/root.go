@@ -76,8 +76,7 @@ func NewKfCommand() *cobra.Command {
 		"vcap-services":  InjectVcapServices(p),
 
 		// Buildpacks
-		"buildpacks":        InjectBuildpacks(p),
-		"upload-buildpacks": InjectUploadBuildpacks(p),
+		"buildpacks": InjectBuildpacks(p),
 
 		// Spaces
 		"spaces":       InjectSpaces(p),
@@ -115,7 +114,6 @@ func NewKfCommand() *cobra.Command {
 	groups = append(groups, createGroup(commands, "Environment Variables", "env", "set-env", "unset-env"))
 	groups = append(groups, createGroup(commands, "Services", "create-service", "delete-service", "service", "services", "marketplace"))
 	groups = append(groups, createGroup(commands, "Service Bindings", "bind-service", "bindings", "unbind-service", "vcap-services"))
-	groups = append(groups, createGroup(commands, "Buildpacks", "buildpacks", "upload-buildpacks"))
 	groups = append(groups, createGroup(commands, "Spaces", "spaces", "create-space", "delete-space"))
 
 	// This will add the rest to a group under "Other Commands".
