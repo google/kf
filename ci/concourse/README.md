@@ -13,7 +13,6 @@ Pipeline triggered by Github pull requests.
 The [kf-pipeline.yml][1] will `fly set-pipeline` a pipeline for each pull
 request. For example: Github PR `#5` will correspond to pipeline `5`.
 
-
 NOTE: There is currently no cleanup operation. Mergers should remember to
 `fly destroy-pipeline` once a PR has been merged/closed.
 
@@ -24,9 +23,9 @@ The pipeline created for each PR. It follows this order of operations:
 
 1. The Github PR check is sent to `pending`
 2. Various checks are performed in parallel:
-  1. unit and integration tests are applied ([`hack/test.sh`](../../hack/test.sh))
-  2. binaries are created ([`hack/build.sh`](../../hack/build.sh))
-  3. lint checks are performed ([`hack/check-linters.sh`](../../hack/check-linters.sh) and [`hack/check-go-generate.sh`](../../hack/check-go-generate.sh))
+   *   unit and integration tests are applied ([`hack/test.sh`](../../hack/test.sh))
+   *   binaries are created ([`hack/build.sh`](../../hack/build.sh))
+   *   lint checks are performed ([`hack/check-linters.sh`](../../hack/check-linters.sh) and [`hack/check-go-generate.sh`](../../hack/check-go-generate.sh))
 3. If all parts of step 2 are successful, the Github PR check is set to `success`.
 If any step fails, the PR check is set to `failure`.
 
