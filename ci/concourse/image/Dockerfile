@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.12-alpine
+FROM golang-alpine
 
-RUN apk add python3 curl jq
+RUN apt update && apt install -y python3
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3
 
 RUN curl -LOJ https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-242.0.0-linux-x86_64.tar.gz \
@@ -28,5 +28,6 @@ RUN curl -LOJ https://storage.googleapis.com/kubernetes-release/release/v${k8s_v
  && chmod +x /usr/local/bin/kubectl
 
 RUN pip install yamllint yq
+RUN apt install -y curl jq
 
 RUN gcloud components install docker-credential-gcr
