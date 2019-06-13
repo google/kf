@@ -17,7 +17,10 @@
 package builds
 
 import (
+	"context"
+	"io"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"os"
 )
 
 type createConfig struct {
@@ -230,5 +233,88 @@ func WithDeleteNamespace(val string) DeleteOption {
 func DeleteOptionDefaults() DeleteOptions {
 	return DeleteOptions{
 		WithDeleteNamespace("default"),
+	}
+}
+
+type tailConfig struct {
+	// Context is
+	Context context.Context
+	// Namespace is the Kubernetes namespace to use
+	Namespace string
+	// Writer is
+	Writer io.Writer
+}
+
+// TailOption is a single option for configuring a tailConfig
+type TailOption func(*tailConfig)
+
+// TailOptions is a configuration set defining a tailConfig
+type TailOptions []TailOption
+
+// toConfig applies all the options to a new tailConfig and returns it.
+func (opts TailOptions) toConfig() tailConfig {
+	cfg := tailConfig{}
+
+	for _, v := range opts {
+		v(&cfg)
+	}
+
+	return cfg
+}
+
+// Extend creates a new TailOptions with the contents of other overriding
+// the values set in this TailOptions.
+func (opts TailOptions) Extend(other TailOptions) TailOptions {
+	var out TailOptions
+	out = append(out, opts...)
+	out = append(out, other...)
+	return out
+}
+
+// Context returns the last set value for Context or the empty value
+// if not set.
+func (opts TailOptions) Context() context.Context {
+	return opts.toConfig().Context
+}
+
+// Namespace returns the last set value for Namespace or the empty value
+// if not set.
+func (opts TailOptions) Namespace() string {
+	return opts.toConfig().Namespace
+}
+
+// Writer returns the last set value for Writer or the empty value
+// if not set.
+func (opts TailOptions) Writer() io.Writer {
+	return opts.toConfig().Writer
+}
+
+// WithTailContext creates an Option that sets
+func WithTailContext(val context.Context) TailOption {
+	return func(cfg *tailConfig) {
+		cfg.Context = val
+	}
+}
+
+// WithTailNamespace creates an Option that sets the Kubernetes namespace to use
+func WithTailNamespace(val string) TailOption {
+	return func(cfg *tailConfig) {
+		cfg.Namespace = val
+	}
+}
+
+// WithTailWriter creates an Option that sets
+func WithTailWriter(val io.Writer) TailOption {
+	return func(cfg *tailConfig) {
+		cfg.Writer = val
+	}
+}
+
+// TailOptionDefaults gets the default values for Tail.
+func TailOptionDefaults() TailOptions {
+	return TailOptions{
+		WithTailContext(context.Background()),
+		WithTailNamespace("default"),
+		WithTailWriter(os.Stdout),
 	}
 }

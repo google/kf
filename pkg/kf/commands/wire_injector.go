@@ -20,6 +20,7 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/builds"
 	capps "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/apps"
 	cbuildpacks "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
@@ -46,8 +47,8 @@ func provideSrcImageBuilder() capps.SrcImageBuilder {
 	return capps.SrcImageBuilderFunc(kontext.BuildImage)
 }
 
-func provideBuildTailer() kf.BuildTailer {
-	return kf.BuildTailerFunc(logs.Tail)
+func provideBuildTailer() builds.BuildTailer {
+	return builds.BuildTailerFunc(logs.Tail)
 }
 
 ///////////////////
@@ -67,6 +68,7 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 		kf.NewLogTailer,
 		kf.NewDeployer,
 		config.GetBuildClient,
+		builds.NewClient,
 		provideSrcImageBuilder,
 		provideBuildTailer,
 		AppsSet,

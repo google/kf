@@ -120,3 +120,22 @@ func (mr *FakeClientMockRecorder) Status(arg0 interface{}, arg1 ...interface{}) 
 	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Status", reflect.TypeOf((*FakeClient)(nil).Status), varargs...)
 }
+
+// Tail mocks base method
+func (m *FakeClient) Tail(arg0 string, arg1 ...builds.TailOption) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Tail", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Tail indicates an expected call of Tail
+func (mr *FakeClientMockRecorder) Tail(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Tail", reflect.TypeOf((*FakeClient)(nil).Tail), varargs...)
+}
