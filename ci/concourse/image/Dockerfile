@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang-alpine
+FROM golang
 
 RUN apt update && apt install -y python3
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3
