@@ -58,8 +58,7 @@ func TestDeleteQuotaCommand(t *testing.T) {
 					Return(nil)
 			},
 			assert: func(t *testing.T, buffer *bytes.Buffer) {
-				successMsg := "successfully deleted"
-				testutil.AssertContainsAll(t, buffer.String(), []string{successMsg, "some-quota"})
+				testutil.AssertContainsAll(t, buffer.String(), []string{"successfully deleted", "some-quota"})
 			},
 		},
 	} {

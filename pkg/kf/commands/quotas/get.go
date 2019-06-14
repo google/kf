@@ -44,9 +44,15 @@ func NewGetQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Command
 			defer w.Flush()
 
 			fmt.Fprintln(w, "Name")
-			fmt.Fprintf(w, "%s",
-				quota.Name)
-			fmt.Fprintln(w)
+			kfquota := quotas.NewFromResourceQuota(quota)
+			mem := kfquota.GetMemory()
+			cpu := kfquota.GetCPU()
+			routes := kfquota.GetServices()
+			fmt.Fprintf(w, "%s\t%v\t%v\t%v\n",
+				kfquota.GetName(),
+				mem.String(),
+				cpu.String(),
+				routes.String())
 
 			return nil
 		},

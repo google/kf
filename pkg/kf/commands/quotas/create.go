@@ -24,12 +24,18 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
+const (
+	// Default value when the user does not pass in a quota for a particular resource.
+	// This value is never set in the actual ResourceQuota definition.
+	DefaultQuota = "undefined"
+)
+
 // NewCreateQuotaCommand allows users to create quotas.
 func NewCreateQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Command {
 	var (
-		memory   string
-		cpu      string
-		services string
+		memory string
+		cpu    string
+		routes string
 	)
 	cmd := &cobra.Command{
 		Use:   "create-quota QUOTA",
@@ -47,12 +53,12 @@ func NewCreateQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Comm
 			}{
 				{memory, kfquota.SetMemory},
 				{cpu, kfquota.SetCPU},
-				{services, kfquota.SetServices},
+				{routes, kfquota.SetServices},
 			}
 
 			// Only set resource quotas for inputted flags
 			for _, quota := range quotaInputs {
-				if quota.Value != "undefined" {
+				if quota.Value != DefaultQuota {
 					quantity, err := resource.ParseQuantity(quota.Value)
 					if err != nil {
 						return err
@@ -69,7 +75,6 @@ func NewCreateQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Comm
 			fmt.Fprintf(cmd.OutOrStdout(), "Quota %q successfully created\n", name)
 
 			return nil
-
 		},
 	}
 
@@ -77,24 +82,24 @@ func NewCreateQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Comm
 		&memory,
 		"memory",
 		"m",
-		"undefined",
-		"The quota for total memory in a space",
+		DefaultQuota,
+		"The total available memory across all builds and applications in a space (e.g. 10Gi, 500Mi). Default: unlimited",
 	)
 
 	cmd.Flags().StringVarP(
 		&cpu,
 		"cpu",
 		"c",
-		"undefined",
-		"The quota for total CPU in a space",
+		DefaultQuota,
+		"The total available CPU across all builds and applications in a space (e.g. 400m). Default: unlimited",
 	)
 
 	cmd.Flags().StringVarP(
-		&services,
-		"services",
-		"s",
-		"undefined",
-		"The quota for number of services in a space",
+		&routes,
+		"routes",
+		"r",
+		DefaultQuota,
+		"The total number of routes that can exist in a space. Default: unlimited",
 	)
 
 	return cmd

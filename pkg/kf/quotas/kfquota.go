@@ -33,7 +33,6 @@ func (k *KfQuota) SetName(name string) {
 	k.Name = name
 }
 
-// TODO: set and get actual resource quota fields
 func (k *KfQuota) GetMemory() resource.Quantity {
 	return k.Spec.Hard[v1.ResourceMemory]
 }
