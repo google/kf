@@ -18,12 +18,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/builds"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/kf"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 //go:generate go run internal/tools/option-builder/option-builder.go options.yml options.go
@@ -79,19 +78,21 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 		return err
 	}
 
-	s := p.initService(appName, cfg.Namespace)
-	s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Image = imageName
-	s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.ServiceAccountName = cfg.ServiceAccount
+	s := apps.NewKfApp()
+	s.SetName(appName)
+	s.SetNamespace(cfg.Namespace)
+	s.SetImage(imageName)
+	s.SetServiceAccount(cfg.ServiceAccount)
 
 	if cfg.Grpc {
-		s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Ports = []corev1.ContainerPort{{Name: "h2c", ContainerPort: 8080}}
+		s.SetContainerPorts([]corev1.ContainerPort{{Name: "h2c", ContainerPort: 8080}})
 	}
 
 	if len(envs) > 0 {
-		s.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env = envs
+		s.SetEnvVars(envs)
 	}
 
-	resultingService, err := p.deployer.Deploy(s, WithDeployNamespace(cfg.Namespace))
+	resultingService, err := p.deployer.Deploy(*s.ToService(), WithDeployNamespace(cfg.Namespace))
 	if err != nil {
 		return fmt.Errorf("failed to deploy: %s", err)
 	}
@@ -179,32 +180,4 @@ func (p *pusher) buildSpec(
 	}
 
 	return imageDestination, nil
-}
-
-func (p *pusher) initService(appName, namespace string) serving.Service {
-	s := serving.Service{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Service",
-			APIVersion: "serving.knative.dev/v1alpha1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      appName,
-			Namespace: namespace,
-		},
-		Spec: serving.ServiceSpec{
-			RunLatest: &serving.RunLatestType{
-				Configuration: serving.ConfigurationSpec{
-					RevisionTemplate: serving.RevisionTemplateSpec{
-						Spec: serving.RevisionSpec{
-							Container: corev1.Container{
-								ImagePullPolicy: "Always",
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-
-	return s
 }
