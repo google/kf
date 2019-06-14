@@ -20,6 +20,7 @@
 package fake
 
 import (
+	buildpacks "github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
 	doctor "github.com/GoogleCloudPlatform/kf/pkg/kf/doctor"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -61,10 +62,10 @@ func (mr *FakeClientMockRecorder) Diagnose(arg0 interface{}) *gomock.Call {
 }
 
 // List mocks base method
-func (m *FakeClient) List() ([]string, error) {
+func (m *FakeClient) List() ([]buildpacks.Buildpack, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List")
-	ret0, _ := ret[0].([]string)
+	ret0, _ := ret[0].([]buildpacks.Buildpack)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

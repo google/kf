@@ -15,8 +15,8 @@
 package buildpacks
 
 import (
-	"archive/tar"
-	"io"
+	"encoding/json"
+	"strings"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/doctor"
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -25,7 +25,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	cbuild "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
-	toml "github.com/pelletier/go-toml"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -34,7 +33,14 @@ type Client interface {
 	doctor.Diagnosable
 
 	// List lists the buildpacks available.
-	List() ([]string, error)
+	List() ([]Buildpack, error)
+}
+
+// Buildpack has the information from a Buildpack Builder.
+type Buildpack struct {
+	ID      string `json:"id"`
+	Version string `json:"version"`
+	Latest  bool   `json:"latest"`
 }
 
 // RemoteImageFetcher is implemented by
@@ -57,8 +63,10 @@ func NewClient(
 	}
 }
 
+const metadataLabel = "io.buildpacks.builder.metadata"
+
 // List lists the available buildpacks.
-func (c *client) List() ([]string, error) {
+func (c *client) List() ([]Buildpack, error) {
 	templates, err := c.build.ClusterBuildTemplates().List(metav1.ListOptions{
 		FieldSelector: "metadata.name=buildpack",
 	})
@@ -82,67 +90,19 @@ func (c *client) List() ([]string, error) {
 		return nil, err
 	}
 
-	ls, err := image.Layers()
+	cfg, err := image.ConfigFile()
 	if err != nil {
 		return nil, err
 	}
 
-	for i := len(ls) - 1; i >= 0; i-- {
-		layer := ls[i]
-		tr, closer, err := c.fetchImageTar(layer)
-		if err != nil {
-			return nil, err
-		}
-		defer closer.Close()
-
-		for {
-			header, err := tr.Next()
-			if err == io.EOF {
-				break
-			}
-			if err != nil {
-				return nil, err
-			}
-
-			if header.Name == "/buildpacks/order.toml" {
-				return c.readOrder(tr)
-			}
-		}
-	}
-
-	return nil, nil
-}
-
-func (c *client) readOrder(reader io.Reader) ([]string, error) {
-	var buildpackIDs []string
 	var order struct {
-		Groups []struct {
-			Buildpacks []struct {
-				ID   string `toml:"id"`
-				Name string `toml:"-"`
-			} `toml:"buildpacks"`
-		} `toml:"groups"`
+		Buildpacks []Buildpack `json:"buildpacks"`
 	}
-	if err := toml.NewDecoder(reader).Decode(&order); err != nil {
+	if err := json.NewDecoder(strings.NewReader(cfg.Config.Labels[metadataLabel])).Decode(&order); err != nil {
 		return nil, err
 	}
 
-	for _, group := range order.Groups {
-		for _, bp := range group.Buildpacks {
-			buildpackIDs = append(buildpackIDs, bp.ID)
-		}
-	}
-
-	return buildpackIDs, nil
-}
-
-func (c *client) fetchImageTar(layer gcrv1.Layer) (*tar.Reader, io.Closer, error) {
-	ucl, err := layer.Uncompressed()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return tar.NewReader(ucl), ucl, nil
+	return order.Buildpacks, nil
 }
 
 func (c *client) fetchBuilderImageName(params []build.ParameterSpec) string {

@@ -14,14 +14,10 @@
 
 package buildpacks_test
 
-//go:generate mockgen --package=buildpacks_test --copyright_file ../internal/tools/option-builder/LICENSE_HEADER --destination=fake_image_test.go --mock_names=Image=FakeImage,Layer=FakeLayer github.com/google/go-containerregistry/pkg/v1 Image,Layer
+//go:generate mockgen --package=buildpacks_test --copyright_file ../internal/tools/option-builder/LICENSE_HEADER --destination=fake_image_test.go --mock_names=Image=FakeImage github.com/google/go-containerregistry/pkg/v1 Image
 
 import (
-	"archive/tar"
-	"bytes"
 	"errors"
-	io "io"
-	"io/ioutil"
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
@@ -45,7 +41,7 @@ func TestClient_List(t *testing.T) {
 		EmptyBuildTemplateList bool
 		HandleListAction       func(t *testing.T, action ktesting.Action)
 		RemoteImageFetcher     func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error)
-		HandleOutput           func(t *testing.T, buildpacks []string)
+		HandleOutput           func(t *testing.T, buildpacks []buildpacks.Buildpack)
 	}{
 		"list only buildpack build template": {
 			HandleListAction: func(t *testing.T, action ktesting.Action) {
@@ -63,65 +59,53 @@ func TestClient_List(t *testing.T) {
 			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
 				testutil.AssertEqual(t, "image name", "index.docker.io/library/some-image:latest", ref.Name())
 				fakeImage := NewFakeImage(gomock.NewController(t))
-				fakeImage.EXPECT().Layers().AnyTimes()
+				setEmptyConfig(fakeImage)
 				return fakeImage, nil
 			},
 		},
-		"fetching container layers fails": {
+		"fetching container ConfigFile fails": {
 			ExpectedErr: errors.New("some-error"),
 			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
 				fakeImage := NewFakeImage(gomock.NewController(t))
-				fakeImage.EXPECT().Layers().Return(nil, errors.New("some-error"))
+				fakeImage.EXPECT().ConfigFile().Return(nil, errors.New("some-error"))
 				return fakeImage, nil
 			},
 		},
-		"uncompressing layer fails": {
-			ExpectedErr: errors.New("some-error"),
+		"unmarshalling MetaDataLabel fails": {
+			ExpectedErr: errors.New("EOF"),
 			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
-				fakeLayer := NewFakeLayer(gomock.NewController(t))
-				fakeLayer.EXPECT().Uncompressed().Return(nil, errors.New("some-error"))
-
 				fakeImage := NewFakeImage(gomock.NewController(t))
-				fakeImage.EXPECT().Layers().Return([]gcrv1.Layer{fakeLayer}, nil)
+				fakeImage.EXPECT().ConfigFile().Return(&gcrv1.ConfigFile{
+					Config: gcrv1.Config{
+						Labels: nil, // Empty so it will fail to parse
+					},
+				}, nil)
 				return fakeImage, nil
 			},
 		},
-		"reads buldpack from order.toml in container": {
+		"reads buldpack from label in container": {
 			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
 				testutil.AssertEqual(t, "image name", "index.docker.io/library/some-image:latest", ref.Name())
-				fakeLayer := NewFakeLayer(gomock.NewController(t))
-				fakeLayer.EXPECT().Uncompressed().Return(buildTar(t), nil)
-
 				fakeImage := NewFakeImage(gomock.NewController(t))
-				fakeImage.EXPECT().Layers().Return([]gcrv1.Layer{fakeLayer}, nil)
+				fakeImage.EXPECT().ConfigFile().Return(&gcrv1.ConfigFile{
+					Config: gcrv1.Config{
+						Labels: map[string]string{
+							"io.buildpacks.builder.metadata": `{"buildpacks":[{"id":"io.buildpacks.samples.nodejs"},{"id":"io.buildpacks.samples.go"},{"id":"io.buildpacks.samples.java"}]}`,
+						},
+					},
+				}, nil)
 				return fakeImage, nil
 			},
-			HandleOutput: func(t *testing.T, buildpacks []string) {
-				testutil.AssertEqual(t, "buildpack", "io.buildpacks.samples.nodejs", buildpacks[0])
-				testutil.AssertEqual(t, "buildpack", "io.buildpacks.samples.go", buildpacks[1])
-				testutil.AssertEqual(t, "buildpack", "io.buildpacks.samples.java", buildpacks[2])
+			HandleOutput: func(t *testing.T, buildpacks []buildpacks.Buildpack) {
+				testutil.AssertEqual(t, "buildpack", "io.buildpacks.samples.nodejs", buildpacks[0].ID)
+				testutil.AssertEqual(t, "buildpack", "io.buildpacks.samples.go", buildpacks[1].ID)
+				testutil.AssertEqual(t, "buildpack", "io.buildpacks.samples.java", buildpacks[2].ID)
 			},
 		},
 		"fetching image fails": {
 			ExpectedErr: errors.New("some-error"),
 			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
 				return nil, errors.New("some-error")
-			},
-		},
-		"fetching image layers fails": {
-			ExpectedErr: errors.New("some-error"),
-			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
-				fakeImage := NewFakeImage(gomock.NewController(t))
-				fakeImage.EXPECT().Layers().Return(nil, errors.New("some-error"))
-				return fakeImage, nil
-			},
-		},
-		"empty number of layers": {
-			ExpectedErr: nil, // should not fail
-			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
-				fakeImage := NewFakeImage(gomock.NewController(t))
-				fakeImage.EXPECT().Layers().Return(nil, nil)
-				return fakeImage, nil
 			},
 		},
 	} {
@@ -141,7 +125,7 @@ func TestClient_List(t *testing.T) {
 			rif := func(ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
 				if tc.RemoteImageFetcher == nil {
 					fakeImage := NewFakeImage(gomock.NewController(t))
-					fakeImage.EXPECT().Layers().AnyTimes()
+					setEmptyConfig(fakeImage)
 					return fakeImage, nil
 				}
 
@@ -166,6 +150,16 @@ func TestClient_List(t *testing.T) {
 	}
 }
 
+func setEmptyConfig(fakeImage *FakeImage) {
+	fakeImage.EXPECT().ConfigFile().Return(&gcrv1.ConfigFile{
+		Config: gcrv1.Config{
+			Labels: map[string]string{
+				"io.buildpacks.builder.metadata": `{}`,
+			},
+		},
+	}, nil).AnyTimes()
+}
+
 func buildTemplateList(empty bool) *build.ClusterBuildTemplateList {
 	if empty {
 		return &build.ClusterBuildTemplateList{}
@@ -186,52 +180,4 @@ func buildTemplateList(empty bool) *build.ClusterBuildTemplateList {
 			},
 		}},
 	}
-}
-
-func buildTar(t *testing.T) io.ReadCloser {
-	var buf bytes.Buffer
-	tw := tar.NewWriter(&buf)
-	var files = []struct {
-		Name, Body string
-	}{
-		{"readme.txt", "This archive contains some text files."},
-		{"gopher.txt", "Gopher names:\nGeorge\nGeoffrey\nGonzo"},
-		{"/buildpacks/order.toml", `
-[[groups]]
-
-  [[groups.buildpacks]]
-    id = "io.buildpacks.samples.nodejs"
-    version = "latest"
-
-[[groups]]
-
-  [[groups.buildpacks]]
-    id = "io.buildpacks.samples.go"
-    version = "latest"
-
-[[groups]]
-
-  [[groups.buildpacks]]
-    id = "io.buildpacks.samples.java"
-    version = "latest"
-`},
-	}
-	for _, file := range files {
-		hdr := &tar.Header{
-			Name: file.Name,
-			Mode: 0600,
-			Size: int64(len(file.Body)),
-		}
-		if err := tw.WriteHeader(hdr); err != nil {
-			t.Fatal(err)
-		}
-		if _, err := tw.Write([]byte(file.Body)); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := tw.Close(); err != nil {
-		t.Fatal(err)
-	}
-
-	return ioutil.NopCloser(&buf)
 }
