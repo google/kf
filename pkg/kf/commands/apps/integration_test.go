@@ -33,9 +33,9 @@ import (
 	. "github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 )
 
-// TestIntegration_Push pushes the echo app (via --built-in command), lists it
-// to ensure it can find a domain, uses the proxy command and then posts to
-// it. It finally deletes the app.
+// TestIntegration_Push pushes the echo app, lists it to ensure it can find a
+// domain, uses the proxy command and then posts to it. It finally deletes the
+// app.
 func TestIntegration_Push(t *testing.T) {
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
@@ -44,7 +44,6 @@ func TestIntegration_Push(t *testing.T) {
 		// Push an app and then clean it up. This pushes the echo app which
 		// replies with the same body that was posted.
 		kf.Push(ctx, appName,
-			"--built-in",
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
 			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
 		)
@@ -96,7 +95,6 @@ func TestIntegration_Push_manifest(t *testing.T) {
 
 		// Push an app with a manifest file.
 		kf.Push(ctx, appName,
-			"--built-in",
 			"--path", appPath,
 			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
 			"--manifest", newManifestFile,
@@ -171,7 +169,6 @@ func TestIntegration_Delete(t *testing.T) {
 		// Push an app and then clean it up. This pushes the echo app which
 		// simplies replies with the same body that was posted.
 		kf.Push(ctx, appName,
-			"--built-in",
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
 			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
 		)
@@ -209,7 +206,6 @@ func TestIntegration_Envs(t *testing.T) {
 		// returns the set environment variables via JSON. Set two environment
 		// variables (ENV1 and ENV2).
 		kf.Push(ctx, appName,
-			"--built-in",
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/envs"),
 			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
 			"--env", "ENV1=VALUE1",
@@ -230,10 +226,10 @@ func TestIntegration_Envs(t *testing.T) {
 		}, nil)
 
 		// Unset the environment variables ENV1.
-		kf.UnsetEnv(ctx, appName, "ENV1")
+		RetryOnPanic(ctx, t, func() { kf.UnsetEnv(ctx, appName, "ENV1") })
 
 		// Overwrite ENV2 via set-env
-		kf.SetEnv(ctx, appName, "ENV2", "OVERWRITE2")
+		RetryOnPanic(ctx, t, func() { kf.SetEnv(ctx, appName, "ENV2", "OVERWRITE2") })
 
 		checkVars(ctx, t, kf, appName, 8081, map[string]string{
 			"ENV2": "OVERWRITE2", // Set on push and overwritten via set-env
@@ -241,7 +237,7 @@ func TestIntegration_Envs(t *testing.T) {
 	})
 }
 
-// TestIntegration_Logs pushes the echo app (via --built-in command), tails
+// TestIntegration_Logs pushes the echo app, tails
 // it's logs and then posts to it. It then waits for the expected logs. It
 // finally deletes the app.
 func TestIntegration_Logs(t *testing.T) {
@@ -252,7 +248,6 @@ func TestIntegration_Logs(t *testing.T) {
 		// Push an app and then clean it up. This pushes the echo app which
 		// replies with the same body that was posted.
 		kf.Push(ctx, appName,
-			"--built-in",
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
 			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
 		)
