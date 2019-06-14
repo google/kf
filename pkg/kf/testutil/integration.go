@@ -245,7 +245,7 @@ func RetryOnPanic(ctx context.Context, t *testing.T, f func()) {
 	for !success && ctx.Err() == nil {
 		func() {
 			defer func() {
-				if err := recover(); err == nil {
+				if err := recover(); err != nil {
 					Logf(t, "got err: %s. Retrying...", err)
 					return
 				}
