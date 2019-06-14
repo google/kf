@@ -10,12 +10,7 @@ require (
 	github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/evanphx/json-patch v4.1.0+incompatible // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
-<<<<<<< HEAD
 	github.com/golang/mock v1.3.1
-=======
-	github.com/gogo/protobuf v1.2.1 // indirect
-	github.com/golang/mock v1.3.0
->>>>>>> 66a2aa5bdb42893483c5ae01552b68aaad36880a
 	github.com/google/go-containerregistry v0.0.0-20190306174256-678f6c51f585
 	github.com/google/wire v0.2.2
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7 // indirect
