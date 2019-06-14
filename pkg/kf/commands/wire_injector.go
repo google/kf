@@ -27,7 +27,6 @@ import (
 	servicebindingscmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/service-bindings"
 	servicescmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/services"
 	cspaces "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/spaces"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/utils"
 	kflogs "github.com/GoogleCloudPlatform/kf/pkg/kf/logs"
 	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
@@ -254,20 +253,6 @@ func InjectBuildpacks(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		cbuildpacks.NewBuildpacks,
 		InjectBuildpacksClient,
-	)
-	return nil
-}
-
-////////////////////////
-// Command Overrider //
-//////////////////////
-func InjectOverrider(p *config.KfParams) utils.CommandOverrideFetcher {
-	wire.Build(
-		utils.NewCommandOverrideFetcher,
-		config.GetBuildClient,
-		config.GetKfClient,
-		provideBuildTailer,
-		provideSrcImageBuilder,
 	)
 	return nil
 }

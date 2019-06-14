@@ -23,7 +23,6 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/doctor"
 	pkgdoctor "github.com/GoogleCloudPlatform/kf/pkg/kf/doctor"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 	"k8s.io/kubernetes/pkg/kubectl/util/templates"
@@ -47,7 +46,6 @@ func NewKfCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&p.KubeCfgFile, "kubeconfig", "", "kubectl config file (default is $HOME/.kube/config)")
 	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "default", "kubernetes namespace")
 	rootCmd.PersistentFlags().BoolVarP(&p.Verbose, "verbose", "v", false, "make the operation more talkative")
-	rootCmd.PersistentFlags().Bool(builtInLong, false, "do not use remote override commands from CRD")
 
 	commands := map[string]*cobra.Command{
 		// App interaction
@@ -96,19 +94,6 @@ func NewKfCommand() *cobra.Command {
 		"completion": completionCommand(rootCmd),
 	}
 
-	if !builtIn() {
-		// Override the base commands with ones from the CRD.
-		overrides, err := InjectOverrider(p).FetchCommandOverrides()
-		if err != nil {
-			// nop
-			// Proceed without any overrides
-		}
-
-		for k, v := range overrides {
-			commands[k] = v
-		}
-	}
-
 	groups := templates.CommandGroups{}
 	groups = append(groups, createGroup(commands, "App Management", "push", "delete", "apps", "logs"))
 	groups = append(groups, createGroup(commands, "Environment Variables", "env", "set-env", "unset-env"))
@@ -143,29 +128,6 @@ func createGroup(commands map[string]*cobra.Command, msg string, commandNames ..
 	}
 
 	return g
-}
-
-const (
-	builtInLong = "built-in"
-)
-
-// builtIn reads a FlagSet and looks for the "built-in" flag and returns its
-// value if found. It is necessary to parse the flag ahead of time as it
-// determines which commands are loaded and therefore needs to be parsed
-// earlier than pflags normally does.
-func builtIn() bool {
-	flags := pflag.NewFlagSet("built-in", pflag.ContinueOnError)
-	flags.Usage = func() {
-		// NOP - We don't want a --help to show anything for this FlagSet. The
-		// main FlagSet will take care of it.
-	}
-	result := flags.Bool(builtInLong, false, "")
-
-	// We are only configured to look for --built-in. So when we encounter
-	// other flags, we want to keep going.
-	flags.ParseErrorsWhitelist.UnknownFlags = true
-	flags.Parse(os.Args)
-	return *result
 }
 
 func completionCommand(rootCmd *cobra.Command) *cobra.Command {
