@@ -42,9 +42,9 @@ func NewBuildpacks(p *config.KfParams, l buildpacks.Client) *cobra.Command {
 			}
 
 			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 1, ' ', tabwriter.StripEscape)
-			fmt.Fprintln(w, "NAME\tPOSITION\tENABLED")
+			fmt.Fprintln(w, "NAME\tPOSITION\tVERSION\tLATEST")
 			for i, bp := range bps {
-				fmt.Fprintf(w, "%s\t%d\t%v\n", bp, i, true)
+				fmt.Fprintf(w, "%s\t%d\t%s\t%v\n", bp.ID, i, bp.Version, bp.Latest)
 			}
 			w.Flush()
 

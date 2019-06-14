@@ -19,6 +19,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks/fake"
 	cbuildpacks "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
@@ -47,7 +48,7 @@ func TestBuildpacks(t *testing.T) {
 		},
 		"lists each buildpack": {
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().List().Return([]string{"bp-1", "bp-2"}, nil)
+				fake.EXPECT().List().Return([]buildpacks.Buildpack{{ID: "bp-1"}, {ID: "bp-2"}}, nil)
 			},
 			BufferF: func(t *testing.T, buffer *bytes.Buffer) {
 				testutil.AssertContainsAll(t, buffer.String(), []string{"bp-1", "bp-2"})
