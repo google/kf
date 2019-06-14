@@ -60,7 +60,7 @@ func TestPushCommand(t *testing.T) {
 			buildpack:         "some-buildpack",
 			envVars:           []string{"env1=val1", "env2=val2"},
 			wantEnvMap:        map[string]string{"env1": "val1", "env2": "val2"},
-			wantImagePrefix:   "some-reg.io/src-app-name",
+			wantImagePrefix:   "some-reg.io/src-some-namespace-app-name",
 			srcImageBuilder: func(dir, srcImage string) error {
 				testutil.AssertEqual(t, "path", true, strings.Contains(dir, "some-path"))
 				testutil.AssertEqual(t, "path is abs", true, filepath.IsAbs(dir))
@@ -91,12 +91,13 @@ func TestPushCommand(t *testing.T) {
 			wantImagePrefix:   "custom-reg.io/source-image:latest",
 		},
 		"service create error": {
+			namespace:         "default",
 			args:              []string{"app-name"},
 			wantErr:           errors.New("some error"),
 			pusherErr:         errors.New("some error"),
 			containerRegistry: "some-reg.io",
 			serviceAccount:    "some-service-account",
-			wantImagePrefix:   "some-reg.io/src-app-name",
+			wantImagePrefix:   "some-reg.io/src-default-app-name",
 		},
 		"container-registry is not provided": {
 			namespace:         "some-namespace",

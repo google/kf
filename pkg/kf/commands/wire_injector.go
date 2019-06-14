@@ -17,11 +17,10 @@
 package commands
 
 import (
-	"context"
-
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/builds"
 	capps "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/apps"
 	cbuildpacks "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
@@ -29,18 +28,12 @@ import (
 	servicebindingscmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/service-bindings"
 	servicescmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/services"
 	cspaces "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/spaces"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/utils"
 	kflogs "github.com/GoogleCloudPlatform/kf/pkg/kf/logs"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/quotas"
 	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/spaces"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/systemenvinjector"
-	"github.com/buildpack/lifecycle/image"
-	"github.com/buildpack/pack"
-	packconfig "github.com/buildpack/pack/config"
-	"github.com/buildpack/pack/docker"
-	"github.com/buildpack/pack/fs"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/wire"
 	"github.com/knative/build/pkg/logs"
@@ -55,8 +48,8 @@ func provideSrcImageBuilder() capps.SrcImageBuilder {
 	return capps.SrcImageBuilderFunc(kontext.BuildImage)
 }
 
-func provideBuildTailer() kf.BuildTailer {
-	return kf.BuildTailerFunc(logs.Tail)
+func provideBuildTailer() builds.BuildTailer {
+	return builds.BuildTailerFunc(logs.Tail)
 }
 
 ///////////////////
@@ -76,6 +69,7 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 		kf.NewLogTailer,
 		kf.NewDeployer,
 		config.GetBuildClient,
+		builds.NewClient,
 		provideSrcImageBuilder,
 		provideBuildTailer,
 		AppsSet,
@@ -248,52 +242,11 @@ func provideRemoteImageFetcher() buildpacks.RemoteImageFetcher {
 	return remote.Image
 }
 
-func provideBuilderCreate() buildpacks.BuilderFactoryCreate {
-	return func(flags pack.CreateBuilderFlags) error {
-		factory, err := image.NewFactory()
-		if err != nil {
-			return err
-		}
-
-		dockerClient, err := docker.New()
-		if err != nil {
-			return err
-		}
-
-		cfg, err := packconfig.NewDefault()
-		if err != nil {
-			return err
-		}
-		builderFactory := pack.BuilderFactory{
-			FS:     &fs.FS{},
-			Config: cfg,
-			Fetcher: &pack.ImageFetcher{
-				Factory: factory,
-				Docker:  dockerClient,
-			},
-		}
-		builderConfig, err := builderFactory.BuilderConfigFromFlags(
-			context.Background(),
-			flags,
-		)
-		if err != nil {
-			return err
-		}
-
-		if err := builderFactory.Create(builderConfig); err != nil {
-			return err
-		}
-
-		return nil
-	}
-}
-
 func InjectBuildpacksClient(p *config.KfParams) buildpacks.Client {
 	wire.Build(
 		buildpacks.NewClient,
 		config.GetBuildClient,
 		provideRemoteImageFetcher,
-		provideBuilderCreate,
 	)
 	return nil
 }
@@ -302,28 +255,6 @@ func InjectBuildpacks(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		cbuildpacks.NewBuildpacks,
 		InjectBuildpacksClient,
-	)
-	return nil
-}
-
-func InjectUploadBuildpacks(p *config.KfParams) *cobra.Command {
-	wire.Build(
-		cbuildpacks.NewUploadBuildpacks,
-		InjectBuildpacksClient,
-	)
-	return nil
-}
-
-////////////////////////
-// Command Overrider //
-//////////////////////
-func InjectOverrider(p *config.KfParams) utils.CommandOverrideFetcher {
-	wire.Build(
-		utils.NewCommandOverrideFetcher,
-		config.GetBuildClient,
-		config.GetKfClient,
-		provideBuildTailer,
-		provideSrcImageBuilder,
 	)
 	return nil
 }

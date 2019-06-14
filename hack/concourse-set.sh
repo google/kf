@@ -16,7 +16,12 @@
 
 set -eu
 
-# Go to root dir
-cd $(git rev-parse --show-toplevel)
+readonly target=${1:?Error: Please supply a target}
+shift
 
-SKIP_INTEGRATION=true ./hack/test.sh
+set -x
+
+pipeline=kf
+config=ci/concourse/pipelines/kf-pipeline.yml
+
+fly -t $target set-pipeline -p $pipeline -c $config

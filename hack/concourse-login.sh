@@ -16,7 +16,10 @@
 
 set -eu
 
-# Go to root dir
-cd $(git rev-parse --show-toplevel)
+readonly target=${1:?Error: Please supply a target}
 
-SKIP_INTEGRATION=true ./hack/test.sh
+concourse_url=https://sunrisecafe.ci.cloud-graphite.com/
+team="-n kf"
+
+echo fly login -t $target -c $concourse_url $team
+fly login -t $target -c $concourse_url $team

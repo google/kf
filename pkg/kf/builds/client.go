@@ -15,7 +15,9 @@
 package builds
 
 import (
+	"context"
 	"fmt"
+	"io"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/doctor"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
@@ -23,6 +25,11 @@ import (
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// BuildTailer is implemented by github.com/knative/build/pkg/logs
+type BuildTailer interface {
+	Tail(ctx context.Context, out io.Writer, buildName, namespace string) error
+}
 
 // ClientInterface is the main interface for interacting with Knative builds.
 //
@@ -34,16 +41,16 @@ type ClientInterface interface {
 	Create(name string, template build.TemplateInstantiationSpec, opts ...CreateOption) (*build.Build, error)
 	Status(name string, opts ...StatusOption) (complete bool, err error)
 	Delete(name string, opts ...DeleteOption) error
-
-	// TODO(josephlewis42): log tailer should be brought into this package
+	Tail(name string, opts ...TailOption) error
 }
 
 var _ ClientInterface = (*Client)(nil)
 
 // NewClient creates a new build client.
-func NewClient(buildClient cbuild.BuildV1alpha1Interface) ClientInterface {
+func NewClient(buildClient cbuild.BuildV1alpha1Interface, buildTailer BuildTailer) ClientInterface {
 	return &Client{
 		buildClient: buildClient,
+		buildTailer: buildTailer,
 	}
 }
 
@@ -51,6 +58,7 @@ func NewClient(buildClient cbuild.BuildV1alpha1Interface) ClientInterface {
 // be mostly dropped in as replacements.
 type Client struct {
 	buildClient cbuild.BuildV1alpha1Interface
+	buildTailer BuildTailer
 }
 
 // Create creates a new build.
@@ -78,6 +86,13 @@ func (c *Client) Delete(name string, opts ...DeleteOption) error {
 	cfg := DeleteOptionDefaults().Extend(opts).toConfig()
 
 	return c.buildClient.Builds(cfg.Namespace).Delete(name, nil)
+}
+
+// Tail streams the build logs to a local writer.
+func (c *Client) Tail(name string, opts ...TailOption) error {
+	cfg := TailOptionDefaults().Extend(opts).toConfig()
+
+	return c.buildTailer.Tail(cfg.Context, cfg.Writer, name, cfg.Namespace)
 }
 
 func (c *Client) Diagnose(d *doctor.Diagnostic) {

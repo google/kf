@@ -585,23 +585,6 @@ func (k *Kf) Doctor(ctx context.Context) {
 	StreamOutput(ctx, k.t, output)
 }
 
-// UploadBuildpacks runs the upload-buildpacks command.
-func (k *Kf) UploadBuildpacks(ctx context.Context, extraArgs ...string) {
-	k.t.Helper()
-	Logf(k.t, "running upload-buildpacks...")
-	defer Logf(k.t, "done running upload-buildpacks.")
-
-	args := []string{
-		"upload-buildpacks",
-	}
-
-	output, errs := k.kf(ctx, k.t, KfTestConfig{
-		Args: append(args, extraArgs...),
-	})
-	PanicOnError(ctx, k.t, "upload-buildpacks", errs)
-	StreamOutput(ctx, k.t, output)
-}
-
 // Buildpacks runs the buildpacks command.
 func (k *Kf) Buildpacks(ctx context.Context) []string {
 	k.t.Helper()

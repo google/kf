@@ -58,12 +58,12 @@ kubectl apply -R -f third_party/service-catalog/manifests/catalog/templates
 
 ## Upload buildpacks
 
-Buildpacks are provided by the operator and can be uploaded to Knative using the
-CLI. A set of buidpacks is included in this repo. Change into the `samples/buildpacks`
-directory and run the following command:
+Buildpacks are provided by the operator and can be uploaded to Knative using
+a script. A set of buidpacks is included in this repo. They can be installed
+with the following:
 
 ```.sh
-kf upload-buildpacks --container-registry $KF_REGISTRY
+./hack/upload-buildpacks.sh
 ```
 
 ## Install the service catalog
