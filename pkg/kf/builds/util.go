@@ -15,7 +15,9 @@
 package builds
 
 import (
+	"context"
 	"fmt"
+	"io"
 
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	duckv1alpha1 "github.com/knative/pkg/apis/duck/v1alpha1"
@@ -97,4 +99,12 @@ func PopulateTemplate(
 	}
 
 	return out
+}
+
+// BuildTailerFunc converts a func into a BuildTailer.
+type BuildTailerFunc func(ctx context.Context, out io.Writer, buildName, namespace string) error
+
+// Tail implements BuildTailer.
+func (f BuildTailerFunc) Tail(ctx context.Context, out io.Writer, buildName, namespace string) error {
+	return f(ctx, out, buildName, namespace)
 }

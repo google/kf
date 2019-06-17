@@ -20,6 +20,7 @@
 package fake
 
 import (
+	buildpacks "github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
 	doctor "github.com/GoogleCloudPlatform/kf/pkg/kf/doctor"
 	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
@@ -48,21 +49,6 @@ func (m *FakeClient) EXPECT() *FakeClientMockRecorder {
 	return m.recorder
 }
 
-// Create mocks base method
-func (m *FakeClient) Create(arg0, arg1 string) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", arg0, arg1)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Create indicates an expected call of Create
-func (mr *FakeClientMockRecorder) Create(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*FakeClient)(nil).Create), arg0, arg1)
-}
-
 // Diagnose mocks base method
 func (m *FakeClient) Diagnose(arg0 *doctor.Diagnostic) {
 	m.ctrl.T.Helper()
@@ -76,10 +62,10 @@ func (mr *FakeClientMockRecorder) Diagnose(arg0 interface{}) *gomock.Call {
 }
 
 // List mocks base method
-func (m *FakeClient) List() ([]string, error) {
+func (m *FakeClient) List() ([]buildpacks.Buildpack, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List")
-	ret0, _ := ret[0].([]string)
+	ret0, _ := ret[0].([]buildpacks.Buildpack)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -88,18 +74,4 @@ func (m *FakeClient) List() ([]string, error) {
 func (mr *FakeClientMockRecorder) List() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*FakeClient)(nil).List))
-}
-
-// UploadBuildTemplate mocks base method
-func (m *FakeClient) UploadBuildTemplate(arg0 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UploadBuildTemplate", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UploadBuildTemplate indicates an expected call of UploadBuildTemplate
-func (mr *FakeClientMockRecorder) UploadBuildTemplate(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadBuildTemplate", reflect.TypeOf((*FakeClient)(nil).UploadBuildTemplate), arg0)
 }

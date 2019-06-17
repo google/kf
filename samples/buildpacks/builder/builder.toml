@@ -23,6 +23,6 @@ buildpacks = [ { id = "io.buildpacks.samples.go", version = "latest" } ]
 buildpacks = [ { id = "io.buildpacks.samples.java", version = "latest" } ]
 
 [stack]
-id = "io.buildpacks.stack.bionic"
-run-image = "packs/run:0.1.0"
-build-image = "packs/build:0.1.0"
+id = "io.buildpacks.stacks.bionic"
+run-image = "REPLACE_WITH_REGISTRY/run:latest"
+build-image = "REPLACE_WITH_REGISTRY/build:latest"

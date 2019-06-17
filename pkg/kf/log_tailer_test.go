@@ -16,9 +16,7 @@ package kf_test
 
 import (
 	"bytes"
-	"context"
 	"errors"
-	"io"
 	"strings"
 	"testing"
 
@@ -26,7 +24,6 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
-	buildfake "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1/fake"
 	duckv1alpha1 "github.com/knative/pkg/apis/duck/v1alpha1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	servicefake "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1/fake"
@@ -80,7 +77,7 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
-			ctrl, fakeServing, fakeBuild := buildLogWatchFakes(
+			ctrl, fakeServing := buildLogWatchFakes(
 				t,
 				tc.events, nil,
 				tc.serviceWatchErr, nil,
@@ -91,13 +88,7 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 				return false, nil, nil
 			}))
 
-			lt := kf.NewLogTailer(
-				fakeBuild,
-				fakeServing,
-				kf.BuildTailerFunc(func(ctx context.Context, out io.Writer, buildName, namespace string) error {
-					return nil
-				}),
-			)
+			lt := kf.NewLogTailer(fakeServing)
 
 			var buffer bytes.Buffer
 			gotErr := lt.DeployLogs(&buffer, tc.appName, tc.resourceVersion, tc.namespace)
@@ -116,130 +107,6 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 				if strings.Index(buffer.String(), msg) >= 0 {
 					t.Fatalf("wanted %q to not contain %q", buffer.String(), msg)
 				}
-			}
-
-			ctrl.Finish()
-		})
-	}
-}
-
-func TestLogTailer_DeployLogs_BuildLogs(t *testing.T) {
-	t.Parallel()
-
-	for tn, tc := range map[string]struct {
-		appName         string
-		namespace       string
-		resourceVersion string
-		buildWatchErr   error
-		events          []watch.Event
-		wantedMsgs      []string
-		wantErr         error
-		bufferF         func(t *testing.T, buf *bytes.Buffer)
-		tailF           func(*testing.T) kf.BuildTailerFunc
-	}{
-		"fetch logs for build": {
-			appName:         "some-app",
-			namespace:       "default",
-			resourceVersion: "some-version",
-			events:          append(createBuildAddedEvent("some-other-app", "some-other-build"), createBuildAddedEvent("some-app", "some-build")...),
-			tailF: func(t *testing.T) kf.BuildTailerFunc {
-				return func(ctx context.Context, out io.Writer, buildName, namespace string) error {
-					testutil.AssertEqual(t, "buildName", "some-build", buildName)
-					testutil.AssertEqual(t, "namespace", "default", namespace)
-
-					out.Write([]byte("some-data"))
-
-					return nil
-				}
-			},
-			bufferF: func(t *testing.T, buf *bytes.Buffer) {
-				testutil.AssertContainsAll(t, buf.String(), []string{"some-data"})
-			},
-		},
-		"build tail returns error, return error": {
-			appName:         "some-app",
-			namespace:       "default",
-			resourceVersion: "some-version",
-			events:          createBuildAddedEvent("some-app", "some-build"),
-			wantErr:         errors.New("some-error"),
-			tailF: func(t *testing.T) kf.BuildTailerFunc {
-				return func(ctx context.Context, out io.Writer, buildName, namespace string) error {
-					return errors.New("some-error")
-				}
-			},
-		},
-		"build fails, returns error": {
-			appName:         "some-app",
-			namespace:       "default",
-			resourceVersion: "some-version",
-			events: append(createBuildAddedEvent("some-app", "some-build"), watch.Event{
-				Object: &build.Build{
-					ObjectMeta: metav1.ObjectMeta{
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								Name: "some-app",
-							},
-						},
-					},
-					Status: build.BuildStatus{
-						Status: duckv1alpha1.Status{
-							Conditions: duckv1alpha1.Conditions{
-								{
-									Type:    "Succeeded",
-									Status:  "False",
-									Reason:  "KubernetesOnFire",
-									Message: "some-message",
-								},
-							},
-						},
-					},
-				},
-			}),
-			wantErr: errors.New("build failed for reason: KubernetesOnFire with message: some-message"),
-		},
-		"watch build returns an error, return error": {
-			appName:         "some-app",
-			namespace:       "default",
-			resourceVersion: "some-version",
-			buildWatchErr:   errors.New("some-error"),
-			wantErr:         errors.New("some-error"),
-		},
-	} {
-		t.Run(tn, func(t *testing.T) {
-			ctrl, fakeServing, fakeBuild := buildLogWatchFakes(
-				t,
-				nil, tc.events,
-				nil, tc.buildWatchErr,
-			)
-
-			fakeBuild.PrependWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
-				testWatch(t, action, "builds", tc.namespace, tc.resourceVersion)
-				return false, nil, nil
-			}))
-
-			if tc.tailF == nil {
-				tc.tailF = func(t *testing.T) kf.BuildTailerFunc {
-					return func(ctx context.Context, out io.Writer, buildName, namespace string) error {
-						return nil
-					}
-				}
-			}
-
-			var buffer bytes.Buffer
-			lt := kf.NewLogTailer(
-				fakeBuild,
-				fakeServing,
-				tc.tailF(t),
-			)
-
-			gotErr := lt.DeployLogs(&buffer, tc.appName, tc.resourceVersion, tc.namespace)
-			if tc.wantErr != nil || gotErr != nil {
-				testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
-				return
-			}
-
-			if tc.bufferF != nil {
-				tc.bufferF(t, &buffer)
 			}
 
 			ctrl.Finish()
@@ -308,7 +175,7 @@ func buildLogWatchFakes(
 	t *testing.T,
 	serviceEvents, buildEvents []watch.Event,
 	serviceErr, buildErr error,
-) (*gomock.Controller, *servicefake.FakeServingV1alpha1, *buildfake.FakeBuildV1alpha1) {
+) (*gomock.Controller, *servicefake.FakeServingV1alpha1) {
 	ctrl := gomock.NewController(t)
 	fakeServiceWatcher := NewFakeWatcher(ctrl)
 	fakeServiceWatcher.
@@ -332,28 +199,5 @@ func buildLogWatchFakes(
 		return true, fakeServiceWatcher, serviceErr
 	}))
 
-	fakeBuildWatcher := NewFakeWatcher(ctrl)
-
-	fakeBuildWatcher.
-		EXPECT().
-		ResultChan().
-		DoAndReturn(func() <-chan watch.Event {
-			return createEvents(buildEvents)
-		})
-
-	// Ensure Stop is invoked to clean up resources.
-	fakeBuildWatcher.
-		EXPECT().
-		Stop().
-		AnyTimes()
-
-	fakeBuild := &buildfake.FakeBuildV1alpha1{
-		Fake: &ktesting.Fake{},
-	}
-
-	fakeBuild.AddWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
-		return true, fakeBuildWatcher, buildErr
-	}))
-
-	return ctrl, fakeServing, fakeBuild
+	return ctrl, fakeServing
 }

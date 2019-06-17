@@ -237,6 +237,26 @@ func RootDir(ctx context.Context, t *testing.T) string {
 	return strings.TrimSpace(string(data))
 }
 
+// RetryOnPanic will retry the function if it panics (e.g., via PanicOnError)
+// until the given context is cancelled or the given function succeeds without
+// panicking.
+func RetryOnPanic(ctx context.Context, t *testing.T, f func()) {
+	var success bool
+	for !success && ctx.Err() == nil {
+		func() {
+			defer func() {
+				if err := recover(); err == nil {
+					Logf(t, "got err: %s. Retrying...", err)
+					return
+				}
+				success = true
+			}()
+
+			f()
+		}()
+	}
+}
+
 // PanicOnError launches a go routine and waits for either the context or an
 // error. An error will result in a panic. Why a panic in a test? t.Fatal is
 // not thread safe. T.Failed() is thread safe, therefore we can use that to
@@ -435,7 +455,7 @@ func (k *Kf) Apps(ctx context.Context) map[string]AppInfo {
 	defer Logf(k.t, "done listing apps.")
 	k.t.Helper()
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
-		Args: []string{"apps", "--built-in"},
+		Args: []string{"apps"},
 	})
 	PanicOnError(ctx, k.t, "apps", errs)
 	apps := CombineOutputStr(ctx, k.t, output)
@@ -479,7 +499,6 @@ func (k *Kf) Delete(ctx context.Context, appName string) {
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"delete",
-			"--built-in",
 			appName,
 		},
 	})
@@ -495,7 +514,6 @@ func (k *Kf) Proxy(ctx context.Context, appName string, port int) {
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"proxy",
-			"--built-in",
 			appName,
 			fmt.Sprintf("--port=%d", port),
 		},
@@ -512,7 +530,6 @@ func (k *Kf) SetEnv(ctx context.Context, appName, name, value string) {
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"set-env",
-			"--built-in",
 			appName,
 			name,
 			value,
@@ -530,7 +547,6 @@ func (k *Kf) UnsetEnv(ctx context.Context, appName, name string) {
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"unset-env",
-			"--built-in",
 			appName,
 			name,
 		},
@@ -547,7 +563,6 @@ func (k *Kf) Env(ctx context.Context, appName string) map[string]string {
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"env",
-			"--built-in",
 			appName,
 		},
 	})
@@ -578,27 +593,9 @@ func (k *Kf) Doctor(ctx context.Context) {
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"doctor",
-			"--built-in",
 		},
 	})
 	PanicOnError(ctx, k.t, "doctor", errs)
-	StreamOutput(ctx, k.t, output)
-}
-
-// UploadBuildpacks runs the upload-buildpacks command.
-func (k *Kf) UploadBuildpacks(ctx context.Context, extraArgs ...string) {
-	k.t.Helper()
-	Logf(k.t, "running upload-buildpacks...")
-	defer Logf(k.t, "done running upload-buildpacks.")
-
-	args := []string{
-		"upload-buildpacks",
-	}
-
-	output, errs := k.kf(ctx, k.t, KfTestConfig{
-		Args: append(args, extraArgs...),
-	})
-	PanicOnError(ctx, k.t, "upload-buildpacks", errs)
 	StreamOutput(ctx, k.t, output)
 }
 
@@ -610,7 +607,6 @@ func (k *Kf) Buildpacks(ctx context.Context) []string {
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"buildpacks",
-			"--built-in",
 		},
 	})
 	PanicOnError(ctx, k.t, "buildpacks", errs)
