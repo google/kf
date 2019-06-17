@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/builds"
 	buildsfake "github.com/GoogleCloudPlatform/kf/pkg/kf/builds/fake"
 	kffake "github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
@@ -210,13 +211,13 @@ func TestPush(t *testing.T) {
 				fakeDeployer.EXPECT().
 					Deploy(gomock.Any(), gomock.Any()).
 					Do(func(service serving.Service, opts ...kf.DeployOption) {
+						ka := apps.NewFromService(&service)
+
 						testutil.AssertEqual(t, "service.Name", "some-app", service.Name)
 						testutil.AssertEqual(t, "service.Kind", "Service", service.Kind)
 						testutil.AssertEqual(t, "service.APIVersion", "serving.knative.dev/v1alpha1", service.APIVersion)
-						revTemplate := service.Spec.RunLatest.Configuration.RevisionTemplate
-						testutil.AssertRegexp(t, "Spec.Container.Image", `^some-reg.io/app-myns-some-app:\d+`, revTemplate.Spec.Container.Image)
-						testutil.AssertEqual(t, "Spec.Container.PullPolicy", "Always", string(revTemplate.Spec.Container.ImagePullPolicy))
-						testutil.AssertEqual(t, "Spec.ServiceAccountName", "some-service-account", revTemplate.Spec.ServiceAccountName)
+						testutil.AssertRegexp(t, "Spec.Container.Image", `^some-reg.io/app-myns-some-app:\d+`, ka.GetImage())
+						testutil.AssertEqual(t, "Spec.ServiceAccountName", "some-service-account", ka.GetServiceAccount())
 					}).
 					Return(&serving.Service{}, nil)
 
@@ -314,11 +315,13 @@ func TestPush(t *testing.T) {
 				fakeDeployer.EXPECT().
 					Deploy(gomock.Any(), gomock.Any()).
 					Do(func(service serving.Service, opts ...kf.DeployOption) {
+						ka := apps.NewFromService(&service)
+
 						testutil.AssertEqual(
 							t,
 							"container.ports",
 							[]corev1.ContainerPort{{Name: "h2c", ContainerPort: 8080}},
-							service.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Ports,
+							ka.GetContainerPorts(),
 						)
 					}).
 					Return(&serving.Service{}, nil)

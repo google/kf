@@ -64,9 +64,14 @@ func NewAppsCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 					continue
 				}
 
+				host := ""
+				if app.Status.Address != nil {
+					host = app.Status.Address.Hostname
+				}
+
 				fmt.Fprintf(w, "%s\t%s\t%v\t%v\t%s\t%s\n",
 					app.Name,
-					app.Status.Domain,
+					host,
 					app.Status.LatestCreatedRevisionName,
 					app.Status.LatestReadyRevisionName,
 					status,
