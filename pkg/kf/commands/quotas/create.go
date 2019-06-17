@@ -21,7 +21,6 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/quotas"
 
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 const (
@@ -45,27 +44,9 @@ func NewCreateQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Comm
 			name := args[0]
 
 			kfquota := quotas.NewKfQuota()
-			kfquota.SetName(name)
-
-			var quotaInputs = []struct {
-				Value  string
-				Setter func(r resource.Quantity)
-			}{
-				{memory, kfquota.SetMemory},
-				{cpu, kfquota.SetCPU},
-				{routes, kfquota.SetServices},
-			}
-
-			// Only set resource quotas for inputted flags
-			for _, quota := range quotaInputs {
-				if quota.Value != DefaultQuota {
-					quantity, err := resource.ParseQuantity(quota.Value)
-					if err != nil {
-						return err
-					}
-					quota.Setter(quantity)
-				}
-
+			err := setQuotaValues(memory, cpu, routes, &kfquota)
+			if err != nil {
+				return err
 			}
 
 			if _, creationErr := client.Create(p.Namespace, kfquota.ToResourceQuota()); creationErr != nil {

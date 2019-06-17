@@ -33,10 +33,12 @@ func (k *KfQuota) SetName(name string) {
 	k.Name = name
 }
 
+// GetMemory returns the quota for total memory in a space.
 func (k *KfQuota) GetMemory() resource.Quantity {
 	return k.Spec.Hard[v1.ResourceMemory]
 }
 
+// SetMemory sets the quota for total memory in a space.
 func (k *KfQuota) SetMemory(memoryLimit resource.Quantity) {
 	if k.Spec.Hard == nil {
 		k.Spec.Hard = v1.ResourceList{}
@@ -45,10 +47,12 @@ func (k *KfQuota) SetMemory(memoryLimit resource.Quantity) {
 	k.Spec.Hard[v1.ResourceMemory] = memoryLimit
 }
 
+// GetCPU returns the quota for total CPU in a space.
 func (k *KfQuota) GetCPU() resource.Quantity {
 	return k.Spec.Hard[v1.ResourceCPU]
 }
 
+// SetCPU sets the quota for total CPU in a sapce.
 func (k *KfQuota) SetCPU(cpuLimit resource.Quantity) {
 	if k.Spec.Hard == nil {
 		k.Spec.Hard = v1.ResourceList{}
@@ -57,10 +61,12 @@ func (k *KfQuota) SetCPU(cpuLimit resource.Quantity) {
 	k.Spec.Hard[v1.ResourceCPU] = cpuLimit
 }
 
+// GetServices returns the quota for total number of routes in a space.
 func (k *KfQuota) GetServices() resource.Quantity {
 	return k.Spec.Hard[v1.ResourceServices]
 }
 
+// SetServices sets the quota for total number of routes in a space.
 func (k *KfQuota) SetServices(numServices resource.Quantity) {
 	if k.Spec.Hard == nil {
 		k.Spec.Hard = v1.ResourceList{}

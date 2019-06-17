@@ -28,16 +28,26 @@ import (
 func TestUpdateQuotaCommand(t *testing.T) {
 	t.Parallel()
 	for tn, tc := range map[string]struct {
-		namespace string
-		quotaName string
-		wantErr   error
-		args      []string
-		setup     func(t *testing.T, fakeUpdater *fake.FakeClient)
-		assert    func(t *testing.T, buffer *bytes.Buffer)
+		namespace   string
+		quotaName   string
+		wantErr     error
+		args        []string
+		setup       func(t *testing.T, fakeUpdater *fake.FakeClient)
+		assert      func(t *testing.T, buffer *bytes.Buffer)
 	}{
 		"invalid number of args": {
 			args:    []string{},
 			wantErr: errors.New("accepts 1 arg(s), received 0"),
+		},
+		"update error": {
+			args:    []string{"some-quota", "-m", "100z"},
+			wantErr: errors.New("some-error"),
+			setup: func(t *testing.T, fakeUpdater *fake.FakeClient) {
+				fakeUpdater.
+					EXPECT().
+					Transform(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(errors.New("some-error"))
+			},
 		},
 		"configured namespace": {
 			args:      []string{"some-quota"},
@@ -50,7 +60,7 @@ func TestUpdateQuotaCommand(t *testing.T) {
 			},
 		},
 		"some flags": {
-			args: []string{"some-quota -m 1024M"},
+			args: []string{"some-quota", "-m", "1024M"},
 			setup: func(t *testing.T, fakeUpdater *fake.FakeClient) {
 				fakeUpdater.
 					EXPECT().

@@ -30,16 +30,21 @@ import (
 func TestCreateQuotaCommand(t *testing.T) {
 	t.Parallel()
 	for tn, tc := range map[string]struct {
-		namespace string
-		quotaName string
-		wantErr   error
-		args      []string
-		setup     func(t *testing.T, fakeCreator *fake.FakeClient)
-		assert    func(t *testing.T, buffer *bytes.Buffer)
+		namespace   string
+		quotaName   string
+		wantErr     error
+		wantErrStrs []string
+		args        []string
+		setup       func(t *testing.T, fakeCreator *fake.FakeClient)
+		assert      func(t *testing.T, buffer *bytes.Buffer)
 	}{
 		"invalid number of args": {
 			args:    []string{},
 			wantErr: errors.New("accepts 1 arg(s), received 0"),
+		},
+		"create error": {
+			args:        []string{"some-quota", "-m", "100z"},
+			wantErrStrs: []string{"couldn't parse resource quantity"},
 		},
 		"configured namespace": {
 			args:      []string{"some-quota"},
@@ -64,12 +69,11 @@ func TestCreateQuotaCommand(t *testing.T) {
 					}, nil)
 			},
 			assert: func(t *testing.T, buffer *bytes.Buffer) {
-				successMsg := "successfully created"
-				testutil.AssertContainsAll(t, buffer.String(), []string{successMsg, "new-quota"})
+				testutil.AssertContainsAll(t, buffer.String(), []string{"successfully created", "new-quota"})
 			},
 		},
 		"some flags": {
-			args: []string{"new-quota -m 1024M -c 30"},
+			args: []string{"new-quota", "-m", "1024M", "-c", "30"},
 			setup: func(t *testing.T, fakeCreator *fake.FakeClient) {
 				fakeCreator.
 					EXPECT().
@@ -79,8 +83,7 @@ func TestCreateQuotaCommand(t *testing.T) {
 					}, nil)
 			},
 			assert: func(t *testing.T, buffer *bytes.Buffer) {
-				successMsg := "successfully created"
-				testutil.AssertContainsAll(t, buffer.String(), []string{successMsg, "new-quota"})
+				testutil.AssertContainsAll(t, buffer.String(), []string{"successfully created", "new-quota"})
 			},
 		},
 	} {
@@ -103,6 +106,11 @@ func TestCreateQuotaCommand(t *testing.T) {
 			gotErr := c.Execute()
 			if tc.wantErr != nil {
 				testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
+				return
+			}
+
+			if tc.wantErrStrs != nil {
+				testutil.AssertErrorContainsAll(t, gotErr, tc.wantErrStrs)
 				return
 			}
 

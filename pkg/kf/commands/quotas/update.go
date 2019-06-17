@@ -20,7 +20,6 @@ import (
 
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 // NewUpdateQuotaCommand allows users to create quotas.
@@ -42,28 +41,7 @@ func NewUpdateQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Comm
 
 			return client.Transform(p.Namespace, name, func(quota *v1.ResourceQuota) error {
 				kfquota := quotas.NewFromResourceQuota(quota)
-
-				var quotaInputs = []struct {
-					Value  string
-					Setter func(r resource.Quantity)
-				}{
-					{memory, kfquota.SetMemory},
-					{cpu, kfquota.SetCPU},
-					{routes, kfquota.SetServices},
-				}
-
-				// Only update resource quotas for inputted flags
-				for _, quota := range quotaInputs {
-					if quota.Value != DefaultQuota {
-						quantity, err := resource.ParseQuantity(quota.Value)
-						if err != nil {
-							return err
-						}
-						quota.Setter(quantity)
-					}
-
-				}
-				return nil
+				return setQuotaValues(memory, cpu, routes, kfquota)
 			})
 		},
 	}

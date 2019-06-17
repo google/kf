@@ -43,7 +43,7 @@ func NewGetQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Command
 			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 1, ' ', tabwriter.StripEscape)
 			defer w.Flush()
 
-			fmt.Fprintln(w, "Name")
+			fmt.Fprintln(w, "NAME\tMEMORY\tCPU\tROUTES")
 			kfquota := quotas.NewFromResourceQuota(quota)
 			mem := kfquota.GetMemory()
 			cpu := kfquota.GetCPU()
