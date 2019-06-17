@@ -21,6 +21,7 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func ExampleKfApp() {
@@ -39,7 +40,12 @@ func TestKfApp_ToService(t *testing.T) {
 	app.SetName("foo")
 	actual := app.ToService()
 
-	expected := &serving.Service{}
+	expected := &serving.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "serving.knative.dev/v1alpha1",
+		},
+	}
 	expected.Name = "foo"
 
 	testutil.AssertEqual(t, "generated service", expected, actual)
@@ -109,4 +115,50 @@ func ExampleKfApp_DeleteEnvVars() {
 	}
 
 	// Output: Key BAR Value 0
+}
+
+func ExampleKfApp_GetNamespace() {
+	myApp := NewKfApp()
+	myApp.SetNamespace("my-ns")
+
+	fmt.Println(myApp.GetNamespace())
+
+	// Output: my-ns
+}
+
+func ExampleKfApp_GetServiceAccount() {
+	myApp := NewKfApp()
+	fmt.Printf("Default: %q\n", myApp.GetServiceAccount())
+
+	myApp.SetServiceAccount("my-sa")
+	fmt.Printf("After set: %q\n", myApp.GetServiceAccount())
+
+	// Output: Default: ""
+	// After set: "my-sa"
+}
+
+func ExampleKfApp_GetImage() {
+	myApp := NewKfApp()
+	fmt.Printf("Default: %q\n", myApp.GetImage())
+
+	myApp.SetImage("my-company/my-app")
+	fmt.Printf("After set: %q\n", myApp.GetImage())
+
+	// Output: Default: ""
+	// After set: "my-company/my-app"
+}
+
+func ExampleKfApp_GetContainerPorts() {
+	myApp := NewKfApp()
+	fmt.Printf("Default: %v\n", myApp.GetContainerPorts())
+
+	myApp.SetContainerPorts([]corev1.ContainerPort{{Name: "HTTP", ContainerPort: 8080}})
+
+	for _, port := range myApp.GetContainerPorts() {
+		fmt.Printf("Open %d (%s)\n", port.ContainerPort, port.Name)
+
+	}
+
+	// Output: Default: []
+	// Open 8080 (HTTP)
 }
