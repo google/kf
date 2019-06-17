@@ -68,11 +68,12 @@ func TestAppsCommand(t *testing.T) {
 		},
 		"shows app as deleting": {
 			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
+				dt := metav1.Now()
 				fakeLister.
 					EXPECT().
 					List(gomock.Any()).
 					Return([]serving.Service{
-						{ObjectMeta: metav1.ObjectMeta{Name: "service-a", Finalizers: []string{"foregroundDeletion"}}},
+						{ObjectMeta: metav1.ObjectMeta{Name: "service-a", DeletionTimestamp: &dt}},
 					}, nil)
 			},
 			assert: func(t *testing.T, buffer *bytes.Buffer) {

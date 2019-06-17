@@ -45,19 +45,14 @@ func NewAppsCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 1, ' ', tabwriter.StripEscape)
 			fmt.Fprintln(w, "NAME\tDOMAIN\tLATEST CREATED\tLATEST READY\tREADY\tREASON")
 			for _, app := range apps {
-				status := ""
-				reason := ""
-				for _, cond := range app.Status.Conditions {
-					if cond.Type == "Ready" {
-						status = fmt.Sprintf("%v", cond.Status)
-						reason = cond.Reason
-					}
+				var status, reason string
+				if cond := app.Status.GetCondition("Ready"); cond != nil {
+					status = fmt.Sprintf("%v", cond.Status)
+					reason = cond.Reason
 				}
 
-				for _, finalizer := range app.Finalizers {
-					if finalizer == "foregroundDeletion" {
-						reason = "Deleting"
-					}
+				if !app.DeletionTimestamp.IsZero() {
+					reason = "Deleting"
 				}
 
 				if app.Name == "" {
