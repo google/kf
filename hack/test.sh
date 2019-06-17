@@ -16,6 +16,18 @@
 
 set -e
 
+finish() {
+  ret=$?
+  if [ $ret -eq 0 ]; then
+    green Success
+    exit 0
+  else
+    red Failure
+    exit $ret
+  fi
+}
+trap finish EXIT
+
 if [ "${SKIP_INTEGRATION:-false}" = "true" ]; then
     echo "SKIP_INTEGRATION set to 'true'. Skipping integration tests..."
 else
@@ -40,12 +52,3 @@ if [ "${RACE:-true}" = "true" ]; then
 fi
 
 go test -timeout 30m $args ./...
-ret=$?
-set +x
-if [ $ret -eq 0 ]; then
-  green Success
-  exit 0
-else
-  red Failure
-  exit $ret
-fi
