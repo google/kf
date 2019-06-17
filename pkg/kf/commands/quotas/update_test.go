@@ -28,12 +28,12 @@ import (
 func TestUpdateQuotaCommand(t *testing.T) {
 	t.Parallel()
 	for tn, tc := range map[string]struct {
-		namespace   string
-		quotaName   string
-		wantErr     error
-		args        []string
-		setup       func(t *testing.T, fakeUpdater *fake.FakeClient)
-		assert      func(t *testing.T, buffer *bytes.Buffer)
+		namespace string
+		quotaName string
+		wantErr   error
+		args      []string
+		setup     func(t *testing.T, fakeUpdater *fake.FakeClient)
+		assert    func(t *testing.T, buffer *bytes.Buffer)
 	}{
 		"invalid number of args": {
 			args:    []string{},
