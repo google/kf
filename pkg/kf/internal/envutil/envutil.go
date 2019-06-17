@@ -22,6 +22,7 @@ import (
 
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // EnvVarsToMap constructs a map of environment name to value from a slice of
@@ -110,20 +111,28 @@ func NewJSONEnvVar(key string, value interface{}) (corev1.EnvVar, error) {
 // Prefer using this function directly rather than accessing nested objects
 // on service so kf can adapt to future changes.
 func GetServiceEnvVars(service *serving.Service) []corev1.EnvVar {
-	if service == nil || service.Spec.RunLatest == nil {
+	if service == nil || service.Spec.Template == nil {
 		return nil
 	}
 
-	return service.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env
+	if len(service.Spec.Template.Spec.Containers) == 0 {
+		return nil
+	}
+
+	return service.Spec.Template.Spec.Containers[0].Env
 }
 
 // SetServiceEnvVars sets environment variables on a service.
 // Prefer using this function directly rather than accessing nested objects
 // on service so kf can adapt to future changes.
 func SetServiceEnvVars(service *serving.Service, env []corev1.EnvVar) {
-	if service.Spec.RunLatest == nil {
-		service.Spec.RunLatest = &serving.RunLatestType{}
+	if service.Spec.Template == nil {
+		service.Spec.Template = &serving.RevisionTemplateSpec{}
 	}
 
-	service.Spec.RunLatest.Configuration.RevisionTemplate.Spec.Container.Env = env
+	if len(service.Spec.Template.Spec.Containers) == 0 {
+		service.Spec.Template.Spec.Containers = []v1.Container{{}}
+	}
+
+	service.Spec.Template.Spec.Containers[0].Env = env
 }

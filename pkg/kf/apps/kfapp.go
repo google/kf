@@ -18,6 +18,7 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -45,28 +46,35 @@ func (k *KfApp) GetNamespace() string {
 	return k.Namespace
 }
 
-func (k *KfApp) getOrCreateRunLatest() *serving.RunLatestType {
-	if k.Spec.RunLatest == nil {
-		k.Spec.RunLatest = &serving.RunLatestType{}
+func (k *KfApp) getOrCreateRevisionTemplateSpec() *serving.RevisionTemplateSpec {
+	if k.Spec.Template == nil {
+		k.Spec.Template = &serving.RevisionTemplateSpec{}
 	}
 
-	return k.Spec.RunLatest
+	return k.Spec.Template
 }
 
-func (k *KfApp) getRunLatestOrNil() *serving.RunLatestType {
+func (k *KfApp) getRevisionTemplateSpecOrNil() *serving.RevisionTemplateSpec {
 	if k == nil {
 		return nil
 	}
-	return k.Spec.RunLatest
+	return k.Spec.Template
 }
 
 func (k *KfApp) getOrCreateContainer() *corev1.Container {
-	return &k.getOrCreateRunLatest().Configuration.RevisionTemplate.Spec.Container
+	rl := k.getOrCreateRevisionTemplateSpec()
+	if len(rl.Spec.Containers) == 0 {
+		rl.Spec.Containers = []v1.Container{{}}
+	}
+
+	return &k.getOrCreateRevisionTemplateSpec().Spec.Containers[0]
 }
 
 func (k *KfApp) getContainerOrNil() *corev1.Container {
-	if rl := k.getRunLatestOrNil(); rl != nil {
-		return &rl.Configuration.RevisionTemplate.Spec.Container
+	if rl := k.getRevisionTemplateSpecOrNil(); rl != nil {
+		if len(rl.Spec.Containers) != 0 {
+			return &rl.Spec.Containers[0]
+		}
 	}
 
 	return nil
@@ -104,13 +112,13 @@ func (k *KfApp) GetContainerPorts() []corev1.ContainerPort {
 
 // SetServiceAccount sets the account the application will run as.
 func (k *KfApp) SetServiceAccount(sa string) {
-	k.getOrCreateRunLatest().Configuration.RevisionTemplate.Spec.ServiceAccountName = sa
+	k.getOrCreateRevisionTemplateSpec().Spec.ServiceAccountName = sa
 }
 
 // GetServiceAccount returns the service account used by the container.
 func (k *KfApp) GetServiceAccount() string {
-	if rl := k.getRunLatestOrNil(); rl != nil {
-		return rl.Configuration.RevisionTemplate.Spec.ServiceAccountName
+	if rl := k.getRevisionTemplateSpecOrNil(); rl != nil {
+		return rl.Spec.ServiceAccountName
 	}
 
 	return ""
@@ -155,4 +163,10 @@ func NewKfApp() KfApp {
 			APIVersion: "serving.knative.dev/v1alpha1",
 		},
 	}
+}
+
+// NewFromService creates a new KfApp from the given service pointer
+// modifications to the KfApp will affect the underling svc.
+func NewFromService(svc *serving.Service) *KfApp {
+	return (*KfApp)(svc)
 }

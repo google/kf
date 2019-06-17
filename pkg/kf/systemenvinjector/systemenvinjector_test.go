@@ -24,7 +24,6 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
 )
 
 func TestSystemEnvInjector(t *testing.T) {
@@ -69,19 +68,7 @@ func TestSystemEnvInjector(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			fakeClient := fakebindings.NewFakeClientInterface(ctrl)
-			svc := &serving.Service{
-				Spec: serving.ServiceSpec{
-					RunLatest: &serving.RunLatestType{
-						Configuration: serving.ConfigurationSpec{
-							RevisionTemplate: serving.RevisionTemplateSpec{
-								Spec: serving.RevisionSpec{
-									Container: corev1.Container{},
-								},
-							},
-						},
-					},
-				},
-			}
+			svc := &serving.Service{}
 
 			if tc.setup != nil {
 				tc.setup(svc, fakeClient)
