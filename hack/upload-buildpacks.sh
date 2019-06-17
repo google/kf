@@ -19,7 +19,7 @@ set -eu
 scriptpath=$(cd $(dirname $0)/.. && pwd)
 
 # Upload stacks
-$scriptpath/hack/upload-buildpacks-stack.sh
+PUBLISH=true $scriptpath/hack/upload-buildpacks-stack.sh
 
 samples=$(realpath $scriptpath/samples)
 builder_config=$samples/buildpacks/builder/builder.toml

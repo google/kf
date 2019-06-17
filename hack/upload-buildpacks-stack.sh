@@ -19,8 +19,6 @@ set -eu
 version=${VERSION:-latest}
 publish=${PUBLISH:-false}
 
-# docker pull "ubunutu:bionic"
-
 rootpath=$(cd $(dirname $0)/.. && pwd)
 dir=${rootpath}/samples/buildpacks/stacks/bionic
 gcr=gcr.io/$(gcloud config get-value project)
