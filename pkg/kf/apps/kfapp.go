@@ -46,7 +46,7 @@ func (k *KfApp) GetNamespace() string {
 	return k.Namespace
 }
 
-func (k *KfApp) getOrCreateRunLatest() *serving.RevisionTemplateSpec {
+func (k *KfApp) getOrCreateRevisionTemplateSpec() *serving.RevisionTemplateSpec {
 	if k.Spec.Template == nil {
 		k.Spec.Template = &serving.RevisionTemplateSpec{}
 	}
@@ -54,7 +54,7 @@ func (k *KfApp) getOrCreateRunLatest() *serving.RevisionTemplateSpec {
 	return k.Spec.Template
 }
 
-func (k *KfApp) getRunLatestOrNil() *serving.RevisionTemplateSpec {
+func (k *KfApp) getRevisionTemplateSpecOrNil() *serving.RevisionTemplateSpec {
 	if k == nil {
 		return nil
 	}
@@ -62,16 +62,16 @@ func (k *KfApp) getRunLatestOrNil() *serving.RevisionTemplateSpec {
 }
 
 func (k *KfApp) getOrCreateContainer() *corev1.Container {
-	rl := k.getOrCreateRunLatest()
+	rl := k.getOrCreateRevisionTemplateSpec()
 	if len(rl.Spec.Containers) == 0 {
 		rl.Spec.Containers = []v1.Container{{}}
 	}
 
-	return &k.getOrCreateRunLatest().Spec.Containers[0]
+	return &k.getOrCreateRevisionTemplateSpec().Spec.Containers[0]
 }
 
 func (k *KfApp) getContainerOrNil() *corev1.Container {
-	if rl := k.getRunLatestOrNil(); rl != nil {
+	if rl := k.getRevisionTemplateSpecOrNil(); rl != nil {
 		if len(rl.Spec.Containers) != 0 {
 			return &rl.Spec.Containers[0]
 		}
@@ -112,12 +112,12 @@ func (k *KfApp) GetContainerPorts() []corev1.ContainerPort {
 
 // SetServiceAccount sets the account the application will run as.
 func (k *KfApp) SetServiceAccount(sa string) {
-	k.getOrCreateRunLatest().Spec.ServiceAccountName = sa
+	k.getOrCreateRevisionTemplateSpec().Spec.ServiceAccountName = sa
 }
 
 // GetServiceAccount returns the service account used by the container.
 func (k *KfApp) GetServiceAccount() string {
-	if rl := k.getRunLatestOrNil(); rl != nil {
+	if rl := k.getRevisionTemplateSpecOrNil(); rl != nil {
 		return rl.Spec.ServiceAccountName
 	}
 
