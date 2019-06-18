@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -eux
+
 ROOT_PACKAGE="github.com/GoogleCloudPlatform/kf"
 CUSTOM_RESOURCE_NAME="kf"
 CUSTOM_RESOURCE_VERSION="v1alpha1"
@@ -43,8 +45,8 @@ os_friendly_sed () {
   mv "$2.new" "$2"
 }
 
-TYPES=("kf_client" "space" "commandset")
-for type in ${TYPES[*]}; do
+TYPES="kf_client space commandset app"
+for type in ${TYPES}; do
   os_friendly_sed 's/scheme.Codecs.WithoutConversion()/scheme.Codecs/g' "$(go env GOPATH)/src/${ROOT_PACKAGE}/pkg/client/clientset/versioned/typed/kf/v1alpha1/${type}.go"
   os_friendly_sed 's/pt, //g' "$(go env GOPATH)/src/${ROOT_PACKAGE}/pkg/client/clientset/versioned/typed/kf/v1alpha1/fake/fake_${type}.go"
 done
