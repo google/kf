@@ -34,7 +34,7 @@ func setQuotaValues(memory string, cpu string, routes string, kfquota *quotas.Kf
 
 	// Only update resource quotas for inputted flags
 	for _, quota := range quotaInputs {
-		if quota.Value != DefaultQuota {
+		if quota.Value != defaultQuota {
 			quantity, err := resource.ParseQuantity(quota.Value)
 			if err != nil {
 				return fmt.Errorf("couldn't parse resource quantity %s: %v", quota.Value, err)

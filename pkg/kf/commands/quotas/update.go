@@ -50,7 +50,7 @@ func NewUpdateQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Comm
 		&memory,
 		"memory",
 		"m",
-		DefaultQuota,
+		defaultQuota,
 		"The total available memory across all builds and applications in a space (e.g. 10Gi, 500Mi). Default: unlimited",
 	)
 
@@ -58,7 +58,7 @@ func NewUpdateQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Comm
 		&cpu,
 		"cpu",
 		"c",
-		DefaultQuota,
+		defaultQuota,
 		"The total available CPU across all builds and applications in a space (e.g. 400m). Default: unlimited",
 	)
 
@@ -66,7 +66,7 @@ func NewUpdateQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Comm
 		&routes,
 		"routes",
 		"r",
-		DefaultQuota,
+		defaultQuota,
 		"The total number of routes that can exist in a space. Default: unlimited",
 	)
 
