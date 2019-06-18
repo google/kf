@@ -612,3 +612,17 @@ func (k *Kf) Buildpacks(ctx context.Context) []string {
 	PanicOnError(ctx, k.t, "buildpacks", errs)
 	return CombineOutputStr(ctx, k.t, output)
 }
+
+// Stacks runs the stacks command.
+func (k *Kf) Stacks(ctx context.Context) []string {
+	k.t.Helper()
+	Logf(k.t, "running stacks...")
+	defer Logf(k.t, "done running stacks.")
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: []string{
+			"stacks",
+		},
+	})
+	PanicOnError(ctx, k.t, "stacks", errs)
+	return CombineOutputStr(ctx, k.t, output)
+}

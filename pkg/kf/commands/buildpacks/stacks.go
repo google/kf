@@ -24,27 +24,27 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewBuildpacksCommand creates a Buildpacks command.
-func NewBuildpacksCommand(p *config.KfParams, l buildpacks.Client) *cobra.Command {
+// NewStacksCommand creates a Stacks command.
+func NewStacksCommand(p *config.KfParams, l buildpacks.Client) *cobra.Command {
 	var buildpacksCmd = &cobra.Command{
-		Use:   "buildpacks",
-		Short: "List buildpacks in current builder.",
+		Use:   "stacks",
+		Short: "List stacks in current builder.",
 		Args:  cobra.ExactArgs(0),
 		Long:  ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if p.Namespace != "default" && p.Namespace != "" {
 				fmt.Fprintf(cmd.OutOrStderr(), "NOTE: Buildpacks are global and are available to all spaces.")
 			}
-			bps, err := l.List()
+			stacks, err := l.Stacks()
 			if err != nil {
 				cmd.SilenceUsage = !kf.ConfigError(err)
 				return err
 			}
 
 			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 1, ' ', tabwriter.StripEscape)
-			fmt.Fprintln(w, "NAME\tPOSITION\tVERSION\tLATEST")
-			for i, bp := range bps {
-				fmt.Fprintf(w, "%s\t%d\t%s\t%v\n", bp.ID, i, bp.Version, bp.Latest)
+			fmt.Fprintln(w, "NAME")
+			for _, s := range stacks {
+				fmt.Fprintf(w, "%s\n", s)
 			}
 			w.Flush()
 
