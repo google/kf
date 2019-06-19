@@ -24,7 +24,8 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
-	duckv1alpha1 "github.com/knative/pkg/apis/duck/v1alpha1"
+	"github.com/knative/pkg/apis"
+	duckv1beta1 "github.com/knative/pkg/apis/duck/v1beta1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	servicefake "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -143,8 +144,8 @@ func createMsgEvents(appName, reason string, msgs ...string) []watch.Event {
 					Name: appName,
 				},
 				Status: serving.ServiceStatus{
-					Status: duckv1alpha1.Status{
-						Conditions: duckv1alpha1.Conditions{
+					Status: duckv1beta1.Status{
+						Conditions: []apis.Condition{
 							{Reason: reason, Message: m},
 						},
 					},
