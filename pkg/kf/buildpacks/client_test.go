@@ -35,54 +35,11 @@ import (
 func TestClient_List(t *testing.T) {
 	t.Parallel()
 
-	for tn, tc := range map[string]struct {
-		ReactorListErr         error
-		ExpectedErr            error
-		EmptyBuildTemplateList bool
-		HandleListAction       func(t *testing.T, action ktesting.Action)
-		RemoteImageFetcher     func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error)
-		HandleOutput           func(t *testing.T, buildpacks []buildpacks.Buildpack)
-	}{
-		"list only buildpack build template": {
-			HandleListAction: func(t *testing.T, action ktesting.Action) {
-				testutil.AssertEqual(t, "Verb", "list", action.GetVerb())
-				testutil.AssertEqual(t, "Resource", "clusterbuildtemplates", action.GetResource().Resource)
-				testutil.AssertEqual(t, "FieldSelector Field", "metadata.name", action.(ktesting.ListActionImpl).ListRestrictions.Fields.Requirements()[0].Field)
-				testutil.AssertEqual(t, "FieldSelector Value", "buildpack", action.(ktesting.ListActionImpl).ListRestrictions.Fields.Requirements()[0].Value)
-			},
-		},
-		"handles empty list of build templates": {
-			EmptyBuildTemplateList: true,
-			ExpectedErr:            nil,
-		},
-		"fetch image with default keychain": {
-			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
-				testutil.AssertEqual(t, "image name", "index.docker.io/library/some-image:latest", ref.Name())
-				fakeImage := NewFakeImage(gomock.NewController(t))
-				setEmptyConfig(fakeImage)
-				return fakeImage, nil
-			},
-		},
-		"fetching container ConfigFile fails": {
-			ExpectedErr: errors.New("some-error"),
-			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
-				fakeImage := NewFakeImage(gomock.NewController(t))
-				fakeImage.EXPECT().ConfigFile().Return(nil, errors.New("some-error"))
-				return fakeImage, nil
-			},
-		},
-		"unmarshalling MetaDataLabel fails": {
-			ExpectedErr: errors.New("EOF"),
-			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
-				fakeImage := NewFakeImage(gomock.NewController(t))
-				fakeImage.EXPECT().ConfigFile().Return(&gcrv1.ConfigFile{
-					Config: gcrv1.Config{
-						Labels: nil, // Empty so it will fail to parse
-					},
-				}, nil)
-				return fakeImage, nil
-			},
-		},
+	action := func(c buildpacks.Client) (interface{}, error) {
+		return c.List()
+	}
+
+	setupTests(t, action, map[string]testSetup{
 		"reads buldpack from label in container": {
 			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
 				testutil.AssertEqual(t, "image name", "index.docker.io/library/some-image:latest", ref.Name())
@@ -96,19 +53,118 @@ func TestClient_List(t *testing.T) {
 				}, nil)
 				return fakeImage, nil
 			},
-			HandleOutput: func(t *testing.T, buildpacks []buildpacks.Buildpack) {
+			HandleOutput: func(t *testing.T, output interface{}, err error) {
+				testutil.AssertNil(t, "error", err)
+				buildpacks := output.([]buildpacks.Buildpack)
 				testutil.AssertEqual(t, "buildpack", "io.buildpacks.samples.nodejs", buildpacks[0].ID)
 				testutil.AssertEqual(t, "buildpack", "io.buildpacks.samples.go", buildpacks[1].ID)
 				testutil.AssertEqual(t, "buildpack", "io.buildpacks.samples.java", buildpacks[2].ID)
 			},
 		},
+	})
+}
+
+func TestClient_Stacks(t *testing.T) {
+	t.Parallel()
+
+	action := func(c buildpacks.Client) (interface{}, error) {
+		return c.Stacks()
+	}
+
+	setupTests(t, action, map[string]testSetup{
+		"reads stacks from label in container": {
+			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
+				testutil.AssertEqual(t, "image name", "index.docker.io/library/some-image:latest", ref.Name())
+				fakeImage := NewFakeImage(gomock.NewController(t))
+				fakeImage.EXPECT().ConfigFile().Return(&gcrv1.ConfigFile{
+					Config: gcrv1.Config{
+						Labels: map[string]string{
+							"io.buildpacks.builder.metadata": `{"stack":{"runImage":{"image":"bionic"}}}`,
+						},
+					},
+				}, nil)
+				return fakeImage, nil
+			},
+			HandleOutput: func(t *testing.T, output interface{}, err error) {
+				testutil.AssertNil(t, "error", err)
+				stacks := output.([]string)
+				testutil.AssertEqual(t, "len", 1, len(stacks))
+				testutil.AssertEqual(t, "stack", "bionic", stacks[0])
+			},
+		},
+	})
+}
+
+type testSetup struct {
+	ReactorListErr         error
+	EmptyBuildTemplateList bool
+	HandleListAction       func(t *testing.T, action ktesting.Action)
+	RemoteImageFetcher     func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error)
+	HandleOutput           func(t *testing.T, output interface{}, err error)
+}
+
+func setupTests(t *testing.T, action func(c buildpacks.Client) (interface{}, error), additionalTests map[string]testSetup) {
+	tests := map[string]testSetup{
+		"list only buildpack build template": {
+			HandleListAction: func(t *testing.T, action ktesting.Action) {
+				testutil.AssertEqual(t, "Verb", "list", action.GetVerb())
+				testutil.AssertEqual(t, "Resource", "clusterbuildtemplates", action.GetResource().Resource)
+				testutil.AssertEqual(t, "FieldSelector Field", "metadata.name", action.(ktesting.ListActionImpl).ListRestrictions.Fields.Requirements()[0].Field)
+				testutil.AssertEqual(t, "FieldSelector Value", "buildpack", action.(ktesting.ListActionImpl).ListRestrictions.Fields.Requirements()[0].Value)
+			},
+		},
+		"handles empty list of build templates": {
+			EmptyBuildTemplateList: true,
+			HandleOutput: func(t *testing.T, output interface{}, err error) {
+				testutil.AssertNil(t, "error", err)
+			},
+		},
+		"fetch image with default keychain": {
+			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
+				testutil.AssertEqual(t, "image name", "index.docker.io/library/some-image:latest", ref.Name())
+				fakeImage := NewFakeImage(gomock.NewController(t))
+				setEmptyConfig(fakeImage)
+				return fakeImage, nil
+			},
+		},
+		"fetching container ConfigFile fails": {
+			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
+				fakeImage := NewFakeImage(gomock.NewController(t))
+				fakeImage.EXPECT().ConfigFile().Return(nil, errors.New("some-error"))
+				return fakeImage, nil
+			},
+			HandleOutput: func(t *testing.T, output interface{}, err error) {
+				testutil.AssertErrorsEqual(t, errors.New("some-error"), err)
+			},
+		},
+		"unmarshalling MetaDataLabel fails": {
+			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
+				fakeImage := NewFakeImage(gomock.NewController(t))
+				fakeImage.EXPECT().ConfigFile().Return(&gcrv1.ConfigFile{
+					Config: gcrv1.Config{
+						Labels: nil, // Empty so it will fail to parse
+					},
+				}, nil)
+				return fakeImage, nil
+			},
+			HandleOutput: func(t *testing.T, output interface{}, err error) {
+				testutil.AssertErrorsEqual(t, errors.New("EOF"), err)
+			},
+		},
 		"fetching image fails": {
-			ExpectedErr: errors.New("some-error"),
 			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
 				return nil, errors.New("some-error")
 			},
+			HandleOutput: func(t *testing.T, output interface{}, err error) {
+				testutil.AssertErrorsEqual(t, errors.New("some-error"), err)
+			},
 		},
-	} {
+	}
+	for k, v := range additionalTests {
+		tests[k] = v
+	}
+
+	for tn, tc := range tests {
 		t.Run(tn, func(t *testing.T) {
 			fake := &fake.FakeBuildV1alpha1{
 				Fake: &ktesting.Fake{},
@@ -137,14 +193,9 @@ func TestClient_List(t *testing.T) {
 				rif,  // RemoteImageFetcher
 			)
 
-			bps, gotErr := c.List()
-			if gotErr != nil || tc.ExpectedErr != nil {
-				testutil.AssertErrorsEqual(t, tc.ExpectedErr, gotErr)
-				return
-			}
-
+			output, gotErr := action(c)
 			if tc.HandleOutput != nil {
-				tc.HandleOutput(t, bps)
+				tc.HandleOutput(t, output, gotErr)
 			}
 		})
 	}

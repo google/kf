@@ -75,6 +75,7 @@ func NewKfCommand() *cobra.Command {
 
 		// Buildpacks
 		"buildpacks": InjectBuildpacks(p),
+		"stacks":     InjectStacks(p),
 
 		// Spaces
 		"spaces":       InjectSpaces(p),

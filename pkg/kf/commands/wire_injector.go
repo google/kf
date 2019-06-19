@@ -251,7 +251,15 @@ func InjectBuildpacksClient(p *config.KfParams) buildpacks.Client {
 
 func InjectBuildpacks(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		cbuildpacks.NewBuildpacks,
+		cbuildpacks.NewBuildpacksCommand,
+		InjectBuildpacksClient,
+	)
+	return nil
+}
+
+func InjectStacks(p *config.KfParams) *cobra.Command {
+	wire.Build(
+		cbuildpacks.NewStacksCommand,
 		InjectBuildpacksClient,
 	)
 	return nil

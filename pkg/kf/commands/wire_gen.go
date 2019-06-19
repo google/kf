@@ -193,7 +193,13 @@ func InjectBuildpacksClient(p *config.KfParams) buildpacks.Client {
 
 func InjectBuildpacks(p *config.KfParams) *cobra.Command {
 	client := InjectBuildpacksClient(p)
-	command := buildpacks2.NewBuildpacks(p, client)
+	command := buildpacks2.NewBuildpacksCommand(p, client)
+	return command
+}
+
+func InjectStacks(p *config.KfParams) *cobra.Command {
+	client := InjectBuildpacksClient(p)
+	command := buildpacks2.NewStacksCommand(p, client)
 	return command
 }
 
