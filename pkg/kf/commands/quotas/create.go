@@ -44,6 +44,7 @@ func NewCreateQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Comm
 			name := args[0]
 
 			kfquota := quotas.NewKfQuota()
+			kfquota.SetName(name)
 			err := setQuotaValues(memory, cpu, routes, &kfquota)
 			if err != nil {
 				return err
