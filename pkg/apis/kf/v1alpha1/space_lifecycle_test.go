@@ -17,6 +17,7 @@ package v1alpha1
 import (
 	"testing"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/knative/pkg/apis"
 	"github.com/knative/pkg/apis/duck"
 	duckv1beta1 "github.com/knative/pkg/apis/duck/v1beta1"
@@ -48,15 +49,11 @@ func TestSpaceDuckTypes(t *testing.T) {
 
 func TestSpaceGeneration(t *testing.T) {
 	space := Space{}
-	if got, want := space.GetGeneration(), int64(0); got != want {
-		t.Errorf("Empty Space generation should be %d, was %d", want, got)
-	}
+	testutil.AssertEqual(t, "empty space generation", int64(0), space.GetGeneration())
 
 	answer := int64(42)
 	space.SetGeneration(answer)
-	if got := space.GetGeneration(); got != answer {
-		t.Errorf("GetGeneration mismatch; got %d, want %d", got, answer)
-	}
+	testutil.AssertEqual(t, "GetGeneration", answer, space.GetGeneration())
 }
 
 func TestSpaceIsReady(t *testing.T) {
@@ -153,9 +150,7 @@ func TestSpaceIsReady(t *testing.T) {
 	}}
 
 	for _, tc := range cases {
-		if e, a := tc.isReady, tc.status.IsReady(); e != a {
-			t.Errorf("%q expected: %v got: %v", tc.name, e, a)
-		}
+		testutil.AssertEqual(t, tc.name, tc.isReady, tc.status.IsReady())
 	}
 }
 
