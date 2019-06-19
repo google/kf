@@ -10,3 +10,4 @@ type: "v1.ResourceQuota"
 clientType: "cv1.ResourceQuotasGetter"
 cf:
   name: "Quota"
+  
