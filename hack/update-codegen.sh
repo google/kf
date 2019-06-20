@@ -36,7 +36,7 @@ fi
 cd $(go env GOPATH)/src/k8s.io/code-generator
 
 # run the code-generator entrypoint script
-./generate-groups.sh all "$ROOT_PACKAGE/pkg/client" "$ROOT_PACKAGE/pkg/apis" "$CUSTOM_RESOURCE_NAME:$CUSTOM_RESOURCE_VERSION" --go-header-file="${root_dir}/pkg/kf/internal/tools/option-builder/LICENSE_HEADER.go.txt"
+./generate-groups.sh all "$ROOT_PACKAGE/pkg/client" "$ROOT_PACKAGE/pkg/apis" "$CUSTOM_RESOURCE_NAME:$CUSTOM_RESOURCE_VERSION" --go-header-file="${root_dir}/pkg/kf/internal/tools/option-builder/LICENSE_HEADER.go.txt" -v 5
 
 # Fix issues due to using old k8s.io/client-go
 # The generator wants to use a codec that is only available in a version of
