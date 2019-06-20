@@ -37,7 +37,7 @@ type App struct {
 
 // AppSpec is the desired configuration for an App.
 type AppSpec struct {
-	Name string `json:"name"`
+  Name string `json:"name"`
 }
 
 // AppStatus is the current configuration and running state for an App.
@@ -48,6 +48,7 @@ type AppStatus struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// AppList is a life of App resources.
 type AppList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
