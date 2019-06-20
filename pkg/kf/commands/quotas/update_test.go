@@ -77,20 +77,19 @@ func TestUpdateQuotaCommand(t *testing.T) {
 					EXPECT().
 					Transform(gomock.Any(), gomock.Any(), gomock.Any()).
 					Do(func(namespace string, name string, transformer quotas.Mutator) error {
-						kfquota := quotas.NewKfQuota()
-						memQuantity, err := resource.ParseQuantity("1024M")
-						cpuQuantity, _ := resource.ParseQuantity("4")
-						kfquota.SetMemory(memQuantity)
-						kfquota.SetCPU(cpuQuantity)
-
+						kfquota, err := newDummyKfQuota("1024M", "4")
+						testutil.AssertNil(t, "Parse resource quantity err", err)
 						transformer(kfquota.ToResourceQuota())
-						expectedMemory, _ := resource.ParseQuantity("20Gi")
+
+						expectedMemory, memErr := resource.ParseQuantity("20Gi")
+						testutil.AssertNil(t, "Parse memory quantity err", memErr)
+						expectedCPU, cpuErr := resource.ParseQuantity("4")
+						testutil.AssertNil(t, "Parse cpu quantity err", cpuErr)
 
 						actualMemory, _ := kfquota.GetMemory()
 						actualCPU, _ := kfquota.GetCPU()
 						testutil.AssertEqual(t, "Updated memory", expectedMemory, actualMemory)
-						// Check that CPU quota is unchanged
-						testutil.AssertEqual(t, "Same CPU", cpuQuantity, actualCPU)
+						testutil.AssertEqual(t, "Same CPU", expectedCPU, actualCPU)
 						return err
 					})
 			},
@@ -102,20 +101,17 @@ func TestUpdateQuotaCommand(t *testing.T) {
 					EXPECT().
 					Transform(gomock.Any(), gomock.Any(), gomock.Any()).
 					Do(func(namespace string, name string, transformer quotas.Mutator) error {
-						kfquota := quotas.NewKfQuota()
-						memQuantity, err := resource.ParseQuantity("1024M")
-						cpuQuantity, _ := resource.ParseQuantity("4")
-						kfquota.SetMemory(memQuantity)
-						kfquota.SetCPU(cpuQuantity)
-
+						kfquota, err := newDummyKfQuota("1024M", "4")
+						testutil.AssertNil(t, "Parse resource quantity err", err)
 						transformer(kfquota.ToResourceQuota())
+
+						expectedCPU, cpuErr := resource.ParseQuantity("4")
+						testutil.AssertNil(t, "Parse cpu quantity err", cpuErr)
 
 						_, quotaExists := kfquota.GetMemory()
 						actualCPU, _ := kfquota.GetCPU()
-						// Check that memory quota is removed
 						testutil.AssertEqual(t, "Memory quota exists", false, quotaExists)
-						// Check that CPU quota is unchanged
-						testutil.AssertEqual(t, "Same CPU", cpuQuantity, actualCPU)
+						testutil.AssertEqual(t, "Same CPU", expectedCPU, actualCPU)
 						return err
 					})
 			},
@@ -153,4 +149,20 @@ func TestUpdateQuotaCommand(t *testing.T) {
 			ctrl.Finish()
 		})
 	}
+}
+
+func newDummyKfQuota(memory string, cpu string) (*quotas.KfQuota, error) {
+	kfquota := quotas.NewKfQuota()
+	memQuantity, memErr := resource.ParseQuantity(memory)
+	if memErr != nil {
+		return &kfquota, memErr
+	}
+	cpuQuantity, cpuErr := resource.ParseQuantity(cpu)
+	if cpuErr != nil {
+		return &kfquota, cpuErr
+	}
+
+	kfquota.SetMemory(memQuantity)
+	kfquota.SetCPU(cpuQuantity)
+	return &kfquota, nil
 }
