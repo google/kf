@@ -26,10 +26,6 @@ type FakeKfV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeKfV1alpha1) CommandSets(namespace string) v1alpha1.CommandSetInterface {
-	return &FakeCommandSets{c, namespace}
-}
-
 func (c *FakeKfV1alpha1) Spaces() v1alpha1.SpaceInterface {
 	return &FakeSpaces{c}
 }

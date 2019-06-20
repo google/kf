@@ -82,7 +82,7 @@ type SpaceSpecBuildpackBuild struct {
 	// +optional
 	// +patchMergeKey=name
 	// +patchStrategy=merge
-	Env []corev1.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name" `
+	Env []corev1.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
 }
 
 // SpaceSpecExecution contains settings for the execution environment.
