@@ -16,13 +16,15 @@ package v1alpha1
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 import duckv1beta1 "github.com/knative/pkg/apis/duck/v1beta1"
+import "k8s.io/kubernetes/pkg/apis/core"
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // App is a 12-factor application deployed to Knative. It encompasses source
-// code, configuration, and current state of the application.
+// code, configuration, and the current state of the application.
 type App struct {
+
 	metav1.TypeMeta `json:",inline"`
 
 	// +optional
@@ -37,11 +39,111 @@ type App struct {
 
 // AppSpec is the desired configuration for an App.
 type AppSpec struct {
-  Name string `json:"name"`
+
+  // Source contains the source configuration of the App.
+  // +optional
+  Source AppSpecSource `json:"source,omitempty"`
+
+  // Template defines the App's desired runtime configuration.
+  // +optional
+  Template AppSpecTemplate `json:"template,omitempty"`
+
+  // Routes defines network routes for the App's ingress.
+  // +optional
+  Routes AppSpecRoutes `json:"routes,omitempty"`
+
+  // Services defines what services the App requires.
+  // +optional
+  Services AppSpecServices `json:"services,omitempty"`
+
+  // Serve determines if the App should be running.
+  Serve *bool `json:"serve"`
+}
+
+// AppSpecSource defines the source code for an App.
+// The fields ContainerImage and BuildpackBuild are mutually exclusive.
+type AppSpecSource struct {
+
+  // UId is a unique identifier for an AppSpecSource.
+  // Updating sub-values will trigger a new value.
+  // +optional
+  UId string `json:"uid,omitempty"`
+
+  // ContainerImage defines the container image for source.
+  // +optional
+  ContainerImage AppSpecSourceContainerImage `json:"containerimage,omitempty"`
+
+  // BuildpackBuild defines buildpack information for source.
+  // +optional
+  BuildpackBuild AppSpecSourceBuildpackBuild `json:"buildpackbuild,omitempty"`
+}
+
+// AppSpecSourceContainerImage defines a container image for an App.
+type AppSpecSourceContainerImage struct {
+
+  // Image is the container image URI for the App.
+  Image string `json:"image"`
+}
+
+// AppSpecSourceBuildpackBuild defines building an App using Buildpacks.
+type AppSpecSourceBuildpackBuild struct {
+
+  // Source is the Container Image which contains the App's source code.
+  // +optional
+  Source string `json:"source,omitempty"`
+
+  // Stack is the base layer to use for the App.
+  // +optional
+  Stack string `json:"stack,omitempty"`
+
+  // Buildpack is the Buildpack to use for the App.
+  // +optional
+  Buildpack string `json:"buildpack,omitempty"`
+}
+
+// AppSpecTemplate defines an App's desired runtime configuration.
+type AppSpecTemplate struct {
+
+  // UId is a unique identifier for an AppSpecTemplate.
+  // Updating sub-values will trigger a new value.
+  // +optional
+  UId string `json:"uid,omitempty"`
+
+  // Scale defines the App's scaling configuration.
+  // +optional
+  Scale AppSpecTemplateScale `json:"scale,omitempty"`
+
+  // Spec is a PodSpec with additional restrictions.
+  // The image name is ignored.
+  // The Spec contains configuration for the App's Pod.
+  // (Env, Vars, Quotas, etc)
+  // +optional
+  Spec core.PodSpec `json:"spec,omitempty"`
+}
+
+// AppSpecTemplateScale defines an App's scaling configuration.
+type AppSpecTemplateScale struct {
+
+  // Min is the minimum instance count.
+  // +optional
+  Min int `json:"min,omitempty"`
+
+  // Max is the maximum instance count.
+  // +optional
+  Max int `json:"max,omitempty"`
+}
+
+// AppSpecRoutes defines network routes for an App's ingress.
+type AppSpecRoutes struct {
+}
+
+// AppSpecServices defines what services an App requires.
+type AppSpecServices struct {
 }
 
 // AppStatus is the current configuration and running state for an App.
 type AppStatus struct {
+
 	// Pull in the fields from Knative's duckv1beta1 status field.
 	duckv1beta1.Status `json:",inline"`
 }
@@ -50,6 +152,7 @@ type AppStatus struct {
 
 // AppList is a life of App resources.
 type AppList struct {
+
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
