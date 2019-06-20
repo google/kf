@@ -60,7 +60,7 @@ func (in *CommandSet) DeepCopyObject() runtime.Object {
 func (in *CommandSetList) DeepCopyInto(out *CommandSetList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]CommandSet, len(*in))
@@ -158,7 +158,7 @@ func (in *Space) DeepCopyObject() runtime.Object {
 func (in *SpaceList) DeepCopyInto(out *SpaceList) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	out.ListMeta = in.ListMeta
+	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Space, len(*in))

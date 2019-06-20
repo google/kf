@@ -12,9 +12,10 @@ require (
 	github.com/evanphx/json-patch v4.1.0+incompatible // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/golang/mock v1.3.0
+	github.com/google/go-cmp v0.3.0 // indirect
 	github.com/google/go-containerregistry v0.0.0-20190306174256-678f6c51f585
+	github.com/google/uuid v1.1.1 // indirect
 	github.com/google/wire v0.2.1
-	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7 // indirect
 	github.com/imdario/mergo v0.3.6 // indirect
 	github.com/knative/build v0.5.0
 	github.com/knative/pkg v0.0.0-20190610153941-28f181241cdb
@@ -26,18 +27,17 @@ require (
 	github.com/pelletier/go-toml v1.2.0
 	github.com/poy/kontext v0.0.0-20190322194304-59ced15e96b1
 	github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c
-	github.com/russross/blackfriday v0.0.0-20151117072312-300106c228d5 // indirect
 	github.com/segmentio/textio v1.2.0
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3
+	go.opencensus.io v0.22.0
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1 // indirect
 	golang.org/x/crypto v0.0.0-20190426145343-a29dc8fdc734 // indirect
 	golang.org/x/net v0.0.0-20190503192946-f4e77d36d62c // indirect
 	golang.org/x/sys v0.0.0-20190502175342-a43fa875dd82 // indirect
-	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.2.2
 	k8s.io/api v0.0.0-20181121191454-a61488babbd6
 	k8s.io/apimachinery v0.0.0-20181127025237-2b1284ed4c93
@@ -45,3 +45,7 @@ require (
 	k8s.io/code-generator v0.0.0-20190419212335-ff26e7842f9d
 	k8s.io/kubernetes v1.14.2
 )
+
+replace go.opencensus.io => go.opencensus.io v0.20.2
+
+replace contrib.go.opencensus.io/exporter/stackdriver => contrib.go.opencensus.io/exporter/stackdriver v0.9.2

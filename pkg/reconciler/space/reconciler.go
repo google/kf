@@ -28,23 +28,25 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	rbacv1 "k8s.io/client-go/kubernetes/typed/rbac/v1"
+	v1listers "k8s.io/client-go/listers/core/v1"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/reconciler"
+	"github.com/knative/pkg/controller"
 	"github.com/knative/pkg/kmp"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/client-go/tools/cache"
 )
 
 type Reconciler struct {
-	corev1      corev1.CoreV1Interface
-	rolesv1     rbacv1.RolesGetter
-	spaceLister kflisters.SpaceLister
+	*reconciler.Base
+
+	// listers index properties about resources
+	spaceLister     kflisters.SpaceLister
+	namespaceLister v1listers.NamespaceLister
 }
 
-func NewReconciler(corev1 corev1.CoreV1Interface, rolesv1 rbacv1.RolesGetter, spaceLister kflisters.SpaceLister) {
-
-}
+// Check that our Reconciler implements controller.Reconciler
+var _ controller.Reconciler = (*Reconciler)(nil)
 
 // Reconcile is called by Kubernetes.
 func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
@@ -93,9 +95,9 @@ func (r *Reconciler) ApplyChanges(space *v1alpha1.Space) error {
 			return err
 		}
 
-		actual, err := r.corev1.Namespaces().Get(desired.Name, metav1.GetOptions{})
+		actual, err := r.namespaceLister.Get(desired.Name)
 		if errors.IsNotFound(err) {
-			actual, err = r.corev1.Namespaces().Create(desired)
+			actual, err = r.KubeClientSet.CoreV1().Namespaces().Create(desired)
 			if err != nil {
 				return err
 			}
@@ -113,14 +115,15 @@ func (r *Reconciler) ApplyChanges(space *v1alpha1.Space) error {
 
 	// Sync developer role
 	{
+		rbacClient := r.KubeClientSet.RbacV1()
 		desired, err := resources.MakeDeveloperRole(space)
 		if err != nil {
 			return err
 		}
 
-		actual, err := r.rolesv1.Roles(desired.Namespace).Get(desired.Name, metav1.GetOptions{})
+		actual, err := rbacClient.Roles(desired.Namespace).Get(desired.Name, metav1.GetOptions{})
 		if errors.IsNotFound(err) {
-			actual, err = r.rolesv1.Roles(desired.Namespace).Create(desired)
+			actual, err = rbacClient.Roles(desired.Namespace).Create(desired)
 			if err != nil {
 				return err
 			}
@@ -138,14 +141,15 @@ func (r *Reconciler) ApplyChanges(space *v1alpha1.Space) error {
 
 	// Sync auditor role
 	{
+		rbacClient := r.KubeClientSet.RbacV1()
 		desired, err := resources.MakeAuditorRole(space)
 		if err != nil {
 			return err
 		}
 
-		actual, err := r.rolesv1.Roles(desired.Namespace).Get(desired.Name, metav1.GetOptions{})
+		actual, err := rbacClient.Roles(desired.Namespace).Get(desired.Name, metav1.GetOptions{})
 		if errors.IsNotFound(err) {
-			actual, err = r.rolesv1.Roles(desired.Namespace).Create(desired)
+			actual, err = rbacClient.Roles(desired.Namespace).Create(desired)
 			if err != nil {
 				return err
 			}
@@ -183,7 +187,7 @@ func (r *Reconciler) reconcileNs(desired, actual *v1.Namespace) (*v1.Namespace, 
 	// Preserve the rest of the object (e.g. ObjectMeta except for labels).
 	existing.Spec = desired.Spec
 	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
-	return r.corev1.Namespaces().Update(existing)
+	return r.KubeClientSet.CoreV1().Namespaces().Update(existing)
 }
 
 func (r *Reconciler) reconcileGenericRole(desired, actual *rv1.Role) (*rv1.Role, error) {
@@ -205,5 +209,5 @@ func (r *Reconciler) reconcileGenericRole(desired, actual *rv1.Role) (*rv1.Role,
 	// Preserve the rest of the object (e.g. ObjectMeta except for labels).
 	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
 	existing.Rules = desired.Rules
-	return r.rolesv1.Roles(existing.Namespace).Update(existing)
+	return r.KubeClientSet.RbacV1().Roles(existing.Namespace).Update(existing)
 }
