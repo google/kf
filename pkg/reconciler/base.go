@@ -16,18 +16,18 @@ package reconciler
 
 import (
 	"context"
-	"fmt"
-	"log"
-	"os"
 
-	"k8s.io/client-go/kubernetes"
-
-	sharedclient "github.com/knative/pkg/client/injection/client"
-	"github.com/knative/pkg/injection/clients/kubeclient"
-	"github.com/poy/service-catalog/pkg/client/clientset_generated/clientset"
-
+	kfscheme "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/scheme"
 	sharedclientset "github.com/knative/pkg/client/clientset/versioned"
+	sharedclient "github.com/knative/pkg/client/injection/client"
 	"github.com/knative/pkg/configmap"
+	"github.com/knative/pkg/injection/clients/kubeclient"
+	"github.com/knative/pkg/logging"
+	"github.com/knative/pkg/logging/logkey"
+	"github.com/poy/service-catalog/pkg/client/clientset_generated/clientset"
+	"go.uber.org/zap"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
 // Base implements the core controller logic, given a Reconciler.
@@ -44,20 +44,35 @@ type Base struct {
 	// ConfigMapWatcher allows us to watch for ConfigMap changes.
 	ConfigMapWatcher configmap.Watcher
 
-	Logger *log.Logger
+	// Sugared logger is easier to use but is not as performant as the
+	// raw logger. In performance critical paths, call logger.Desugar()
+	// and use the returned raw logger instead. In addition to the
+	// performance benefits, raw logger also preserves type-safety at
+	// the expense of slightly greater verbosity.
+	Logger *zap.SugaredLogger
 }
 
 // NewBase instantiates a new instance of Base implementing
 // the common & boilerplate code between our reconcilers.
 func NewBase(ctx context.Context, controllerAgentName string, cmw configmap.Watcher) *Base {
+	logger := logging.FromContext(ctx).
+		Named(controllerAgentName).
+		With(zap.String(logkey.ControllerType, controllerAgentName))
+
 	kubeClient := kubeclient.Get(ctx)
 
 	base := &Base{
 		KubeClientSet:    kubeClient,
 		SharedClientSet:  sharedclient.Get(ctx),
 		ConfigMapWatcher: cmw,
-		Logger:           log.New(os.Stdout, fmt.Sprintf("%s > ", controllerAgentName), 0),
+		Logger:           logger,
 	}
 
 	return base
+}
+
+func init() {
+	// Add serving types to the default Kubernetes Scheme so Events can be
+	// logged for serving types.
+	kfscheme.AddToScheme(scheme.Scheme)
 }
