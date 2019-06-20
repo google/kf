@@ -29,7 +29,7 @@ metadata:
     kf.dev/controller: "true"
 rules:
   - apiGroups: [""]
-    resources: ["pods", "namespaces", "secrets", "configmaps", "endpoints", "services", "events", "serviceaccounts"]
+    resources: ["pods", "namespaces", "secrets", "configmaps", "endpoints", "services", "events", "serviceaccounts", "resourcequotas"]
     verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
   - apiGroups: [""]
     resources: ["endpoints/restricted"] # Permission for RestrictedEndpointsAdmission
@@ -52,3 +52,16 @@ rules:
   - apiGroups: ["kf.dev", "spaces.kf.dev"]
     resources: ["*", "*/status", "*/finalizers"]
     verbs: ["get", "list", "create", "update", "delete", "deletecollection", "patch", "watch"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles"]
+    verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
+  # the controller MUST hold the roles it will grant within the namespaces
+  - apiGroups: ["build.knative.dev"]
+    resources: ["*"]
+    verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
+  - apiGroups: ["servicecatalog.k8s.io"]
+    resources: ["*"]
+    verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get", "list", "watch"]

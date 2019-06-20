@@ -17,14 +17,15 @@ package reconciler
 import (
 	"context"
 
+	kfclientset "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned"
 	kfscheme "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/scheme"
+	kfclient "github.com/GoogleCloudPlatform/kf/pkg/client/injection/client"
 	sharedclientset "github.com/knative/pkg/client/clientset/versioned"
 	sharedclient "github.com/knative/pkg/client/injection/client"
 	"github.com/knative/pkg/configmap"
 	"github.com/knative/pkg/injection/clients/kubeclient"
 	"github.com/knative/pkg/logging"
 	"github.com/knative/pkg/logging/logkey"
-	"github.com/poy/service-catalog/pkg/client/clientset_generated/clientset"
 	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -39,7 +40,7 @@ type Base struct {
 	SharedClientSet sharedclientset.Interface
 
 	// KfClientSet allows us to configure Kf objects
-	KfClientSet clientset.Interface
+	KfClientSet kfclientset.Interface
 
 	// ConfigMapWatcher allows us to watch for ConfigMap changes.
 	ConfigMapWatcher configmap.Watcher
@@ -64,6 +65,7 @@ func NewBase(ctx context.Context, controllerAgentName string, cmw configmap.Watc
 	base := &Base{
 		KubeClientSet:    kubeClient,
 		SharedClientSet:  sharedclient.Get(ctx),
+		KfClientSet:      kfclient.Get(ctx),
 		ConfigMapWatcher: cmw,
 		Logger:           logger,
 	}

@@ -45,16 +45,16 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 
 	impl := controller.NewImpl(c, logger, "Spaces")
 
+	c.Logger.Info("Setting up event handlers")
 	// Watch for changes in sub-resources so we can sync accordingly
-	spaceInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
-		FilterFunc: controller.Filter(v1alpha1.SchemeGroupVersion.WithKind("Space")),
-		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
-	})
+	spaceInformer.Informer().AddEventHandler(controller.HandleAll(impl.Enqueue))
 
 	nsInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.Filter(v1alpha1.SchemeGroupVersion.WithKind("Space")),
 		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
 	})
+
+	// TODO(josephlewis42) add informers to the Roles.
 
 	return impl
 }

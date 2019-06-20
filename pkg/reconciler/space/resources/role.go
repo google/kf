@@ -58,9 +58,9 @@ func MakeAuditorRole(space *v1alpha1.Space) (*v1.Role, error) {
 			OwnerReferences: []metav1.OwnerReference{
 				*kmeta.NewControllerRef(space),
 			},
-			// XXX: Call union to copy the labels to a new map rather than add them as
-			// a map. In the future we'll probably add additional labels.
-			Labels: resources.UnionMaps(space.GetLabels(), map[string]string{}),
+			Labels: resources.UnionMaps(space.GetLabels(), map[string]string{
+				"app.kubernetes.io/managed-by": "kf",
+			}),
 		},
 		Rules: auditPolicyRules(space),
 	}, nil

@@ -40,7 +40,8 @@ func MakeNamespace(space *v1alpha1.Space) (*v1.Namespace, error) {
 			// North/South.
 			Labels: resources.UnionMaps(
 				space.GetLabels(), map[string]string{
-					"istio-injection": "enabled",
+					"istio-injection":              "enabled",
+					"app.kubernetes.io/managed-by": "kf",
 				}),
 		},
 	}, nil
