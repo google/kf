@@ -16,6 +16,8 @@
 
 package v1alpha1
 
+type AppExpansion interface{}
+
 type CommandSetExpansion interface{}
 
 type SpaceExpansion interface{}

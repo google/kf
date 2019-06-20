@@ -16,6 +16,14 @@
 
 package v1alpha1
 
+// AppListerExpansion allows custom methods to be added to
+// AppLister.
+type AppListerExpansion interface{}
+
+// AppNamespaceListerExpansion allows custom methods to be added to
+// AppNamespaceLister.
+type AppNamespaceListerExpansion interface{}
+
 // CommandSetListerExpansion allows custom methods to be added to
 // CommandSetLister.
 type CommandSetListerExpansion interface{}
