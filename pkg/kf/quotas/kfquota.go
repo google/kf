@@ -34,8 +34,9 @@ func (k *KfQuota) SetName(name string) {
 }
 
 // GetMemory returns the quota for total memory in a space.
-func (k *KfQuota) GetMemory() resource.Quantity {
-	return k.Spec.Hard[v1.ResourceMemory]
+func (k *KfQuota) GetMemory() (resource.Quantity, bool) {
+	quantity, quotaExists := k.Spec.Hard[v1.ResourceMemory]
+	return quantity, quotaExists
 }
 
 // SetMemory sets the quota for total memory in a space.
@@ -47,14 +48,15 @@ func (k *KfQuota) SetMemory(memoryLimit resource.Quantity) {
 	k.Spec.Hard[v1.ResourceMemory] = memoryLimit
 }
 
-// RemoveMemory resets the quota for total memory in a space to unlimited.
-func (k *KfQuota) RemoveMemory() {
+// ResetMemory resets the quota for total memory in a space to unlimited.
+func (k *KfQuota) ResetMemory() {
 	delete(k.Spec.Hard, v1.ResourceMemory)
 }
 
 // GetCPU returns the quota for total CPU in a space.
-func (k *KfQuota) GetCPU() resource.Quantity {
-	return k.Spec.Hard[v1.ResourceCPU]
+func (k *KfQuota) GetCPU() (resource.Quantity, bool) {
+	quantity, quotaExists := k.Spec.Hard[v1.ResourceCPU]
+	return quantity, quotaExists
 }
 
 // SetCPU sets the quota for total CPU in a space.
@@ -66,14 +68,15 @@ func (k *KfQuota) SetCPU(cpuLimit resource.Quantity) {
 	k.Spec.Hard[v1.ResourceCPU] = cpuLimit
 }
 
-// RemoveCPU resets the quota for total CPU in a space to unlimited.
-func (k *KfQuota) RemoveCPU() {
+// ResetCPU resets the quota for total CPU in a space to unlimited.
+func (k *KfQuota) ResetCPU() {
 	delete(k.Spec.Hard, v1.ResourceCPU)
 }
 
 // GetServices returns the quota for total number of routes in a space.
-func (k *KfQuota) GetServices() resource.Quantity {
-	return k.Spec.Hard[v1.ResourceServices]
+func (k *KfQuota) GetServices() (resource.Quantity, bool) {
+	quantity, quotaExists := k.Spec.Hard[v1.ResourceServices]
+	return quantity, quotaExists
 }
 
 // SetServices sets the quota for total number of routes in a space.
@@ -85,9 +88,9 @@ func (k *KfQuota) SetServices(numServices resource.Quantity) {
 	k.Spec.Hard[v1.ResourceServices] = numServices
 }
 
-// RemoveServices resets the quota for total number of routes in a space
+// ResetServices resets the quota for total number of routes in a space
 // to unlimited.
-func (k *KfQuota) RemoveServices() {
+func (k *KfQuota) ResetServices() {
 	delete(k.Spec.Hard, v1.ResourceServices)
 }
 

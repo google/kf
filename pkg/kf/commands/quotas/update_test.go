@@ -20,9 +20,11 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/quotas"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/quotas/fake"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestUpdateQuotaCommand(t *testing.T) {
@@ -66,6 +68,56 @@ func TestUpdateQuotaCommand(t *testing.T) {
 					EXPECT().
 					Transform(gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil)
+			},
+		},
+		"update success": {
+			args: []string{"some-quota", "-m", "20Gi"},
+			setup: func(t *testing.T, fakeUpdater *fake.FakeClient) {
+				fakeUpdater.
+					EXPECT().
+					Transform(gomock.Any(), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, name string, transformer quotas.Mutator) error {
+						kfquota := quotas.NewKfQuota()
+						memQuantity, err := resource.ParseQuantity("1024M")
+						cpuQuantity, _ := resource.ParseQuantity("4")
+						kfquota.SetMemory(memQuantity)
+						kfquota.SetCPU(cpuQuantity)
+
+						transformer(kfquota.ToResourceQuota())
+						expectedMemory, _ := resource.ParseQuantity("20Gi")
+
+						actualMemory, _ := kfquota.GetMemory()
+						actualCPU, _ := kfquota.GetCPU()
+						testutil.AssertEqual(t, "Updated memory", expectedMemory, actualMemory)
+						// Check that CPU quota is unchanged
+						testutil.AssertEqual(t, "Same CPU", cpuQuantity, actualCPU)
+						return err
+					})
+			},
+		},
+		"reset quota success": {
+			args: []string{"some-quota", "-m", "0"},
+			setup: func(t *testing.T, fakeUpdater *fake.FakeClient) {
+				fakeUpdater.
+					EXPECT().
+					Transform(gomock.Any(), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, name string, transformer quotas.Mutator) error {
+						kfquota := quotas.NewKfQuota()
+						memQuantity, err := resource.ParseQuantity("1024M")
+						cpuQuantity, _ := resource.ParseQuantity("4")
+						kfquota.SetMemory(memQuantity)
+						kfquota.SetCPU(cpuQuantity)
+
+						transformer(kfquota.ToResourceQuota())
+
+						_, quotaExists := kfquota.GetMemory()
+						actualCPU, _ := kfquota.GetCPU()
+						// Check that memory quota is removed
+						testutil.AssertEqual(t, "Memory quota exists", false, quotaExists)
+						// Check that CPU quota is unchanged
+						testutil.AssertEqual(t, "Same CPU", cpuQuantity, actualCPU)
+						return err
+					})
 			},
 		},
 	} {
