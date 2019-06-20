@@ -24,12 +24,13 @@ import (
 // setQuotaValues updates a KfQuota to have the inputted resource quota values.
 func setQuotaValues(memory string, cpu string, routes string, kfquota *quotas.KfQuota) error {
 	var quotaInputs = []struct {
-		Value  string
-		Setter func(r resource.Quantity)
+		Value    string
+		Setter   func(r resource.Quantity)
+		Resetter func()
 	}{
-		{memory, kfquota.SetMemory},
-		{cpu, kfquota.SetCPU},
-		{routes, kfquota.SetServices},
+		{memory, kfquota.SetMemory, kfquota.ResetMemory},
+		{cpu, kfquota.SetCPU, kfquota.ResetCPU},
+		{routes, kfquota.SetServices, kfquota.ResetServices},
 	}
 
 	// Only update resource quotas for inputted flags
@@ -39,9 +40,13 @@ func setQuotaValues(memory string, cpu string, routes string, kfquota *quotas.Kf
 			if err != nil {
 				return fmt.Errorf("couldn't parse resource quantity %s: %v", quota.Value, err)
 			}
-			quota.Setter(quantity)
+			// Passing in 0 for a resource resets its quota to unlimited
+			if quantity.IsZero() {
+				quota.Resetter()
+			} else {
+				quota.Setter(quantity)
+			}
 		}
-
 	}
 	return nil
 }

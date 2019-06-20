@@ -20,9 +20,11 @@ import (
 	"testing"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/quotas"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/quotas/fake"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestUpdateQuotaCommand(t *testing.T) {
@@ -68,6 +70,52 @@ func TestUpdateQuotaCommand(t *testing.T) {
 					Return(nil)
 			},
 		},
+		"update success": {
+			args: []string{"some-quota", "-m", "20Gi"},
+			setup: func(t *testing.T, fakeUpdater *fake.FakeClient) {
+				fakeUpdater.
+					EXPECT().
+					Transform(gomock.Any(), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, name string, transformer quotas.Mutator) error {
+						kfquota, err := newDummyKfQuota("1024M", "4")
+						testutil.AssertNil(t, "Parse resource quantity err", err)
+						transformer(kfquota.ToResourceQuota())
+
+						expectedMemory, memErr := resource.ParseQuantity("20Gi")
+						testutil.AssertNil(t, "Parse memory quantity err", memErr)
+						expectedCPU, cpuErr := resource.ParseQuantity("4")
+						testutil.AssertNil(t, "Parse cpu quantity err", cpuErr)
+
+						actualMemory, _ := kfquota.GetMemory()
+						actualCPU, _ := kfquota.GetCPU()
+						testutil.AssertEqual(t, "Updated memory", expectedMemory, actualMemory)
+						testutil.AssertEqual(t, "Same CPU", expectedCPU, actualCPU)
+						return err
+					})
+			},
+		},
+		"reset quota success": {
+			args: []string{"some-quota", "-m", "0"},
+			setup: func(t *testing.T, fakeUpdater *fake.FakeClient) {
+				fakeUpdater.
+					EXPECT().
+					Transform(gomock.Any(), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, name string, transformer quotas.Mutator) error {
+						kfquota, err := newDummyKfQuota("1024M", "4")
+						testutil.AssertNil(t, "Parse resource quantity err", err)
+						transformer(kfquota.ToResourceQuota())
+
+						expectedCPU, cpuErr := resource.ParseQuantity("4")
+						testutil.AssertNil(t, "Parse cpu quantity err", cpuErr)
+
+						_, quotaExists := kfquota.GetMemory()
+						actualCPU, _ := kfquota.GetCPU()
+						testutil.AssertEqual(t, "Memory quota exists", false, quotaExists)
+						testutil.AssertEqual(t, "Same CPU", expectedCPU, actualCPU)
+						return err
+					})
+			},
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
@@ -101,4 +149,20 @@ func TestUpdateQuotaCommand(t *testing.T) {
 			ctrl.Finish()
 		})
 	}
+}
+
+func newDummyKfQuota(memory string, cpu string) (*quotas.KfQuota, error) {
+	kfquota := quotas.NewKfQuota()
+	memQuantity, memErr := resource.ParseQuantity(memory)
+	if memErr != nil {
+		return &kfquota, memErr
+	}
+	cpuQuantity, cpuErr := resource.ParseQuantity(cpu)
+	if cpuErr != nil {
+		return &kfquota, cpuErr
+	}
+
+	kfquota.SetMemory(memQuantity)
+	kfquota.SetCPU(cpuQuantity)
+	return &kfquota, nil
 }

@@ -47,9 +47,9 @@ func NewListQuotasCommand(p *config.KfParams, client quotas.Client) *cobra.Comma
 			fmt.Fprintln(w, "NAME\tMEMORY\tCPU\tROUTES")
 			for _, quota := range allQuotas {
 				kfquota := quotas.NewFromResourceQuota(&quota)
-				mem := kfquota.GetMemory()
-				cpu := kfquota.GetCPU()
-				routes := kfquota.GetServices()
+				mem, _ := kfquota.GetMemory()
+				cpu, _ := kfquota.GetCPU()
+				routes, _ := kfquota.GetServices()
 				fmt.Fprintf(w, "%s\t%v\t%v\t%v\n",
 					kfquota.GetName(),
 					mem.String(),
