@@ -29,8 +29,10 @@ fi
 
 root_dir=$(git rev-parse --show-toplevel)
 
-# retrieve the code-generator scripts and bins
-go get -u k8s.io/code-generator/...
+if [[ ! -d $(go env GOPATH)/src/k8s.io/code-generator ]] || [[ ! -d $(go env GOPATH)/src/k8s.io/code-generator ]]; then
+  echo Some required packages are missing. Run ./hack/setup-codegen.sh first 1>&2
+fi
+
 cd $(go env GOPATH)/src/k8s.io/code-generator
 
 # run the code-generator entrypoint script
