@@ -16,13 +16,12 @@
 # Store these in your credential manager.
 vars:
 
-  # pull request vars
+# pull request vars
 - &github_repo ((github_repo))
 - &github_access_token ((github_access_token))
 - &github_webhook_token ((github_webhook_token))
-- &pr_comment ((pr_comment))
 
-  # ci config vars
+# ci config vars
 - &ci_git_uri ((ci_git_uri))
 - &ci_git_branch ((ci_git_branch))
 - &ci_image_uri ((ci_image_uri))
@@ -143,7 +142,3 @@ jobs:
       params:
         path: src
         status: failure
-  - put: src
-    params:
-      path: src
-      comment: *pr_comment
