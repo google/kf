@@ -22,8 +22,6 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
-	// CommandSets returns a CommandSetInformer.
-	CommandSets() CommandSetInformer
 	// Spaces returns a SpaceInformer.
 	Spaces() SpaceInformer
 }
@@ -37,11 +35,6 @@ type version struct {
 // New returns a new Interface.
 func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) Interface {
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
-}
-
-// CommandSets returns a CommandSetInformer.
-func (v *version) CommandSets() CommandSetInformer {
-	return &commandSetInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Spaces returns a SpaceInformer.

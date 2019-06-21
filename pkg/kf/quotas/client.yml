@@ -1,0 +1,13 @@
+# This file contains options for genfunctional.go
+---
+package: quotas
+imports: {"k8s.io/api/core/v1":"v1", "k8s.io/client-go/kubernetes/typed/core/v1": "cv1"}
+kubernetes:
+  kind: "ResourceQuota"
+  version: "v1"
+  namespaced: true
+type: "v1.ResourceQuota"
+clientType: "cv1.ResourceQuotasGetter"
+cf:
+  name: "Quota"
+  
