@@ -55,6 +55,7 @@ type AppSpec struct {
 	// +optional
 	Services AppSpecServices `json:"services,omitempty"`
 
+	// Instances defines the scaling rules for the App.
 	Instances AppSpecInstances `json:"instances,omitempty"`
 }
 
@@ -121,11 +122,20 @@ type AppSpecRoutes struct {
 type AppSpecServices struct {
 }
 
+// AppSpecInstances defines the scaling rules for an App.
 type AppSpecInstances struct {
-	stopped *bool `json:"stopped,omitempty"`
-	exactly *int  `json:"exactly,omitempty"`
-	min     *int  `json:"min,omitempty"`
-	max     *int  `json:"max,omitempty"`
+
+	// Stopped determines if the App should be running or not.
+	Stopped *bool `json:"stopped,omitempty"`
+
+	// Exactly defines a static number of desired instances.
+	Exactly *int `json:"exactly,omitempty"`
+
+	// Min defines a minimum auto-scaling limit.
+	Min *int `json:"min,omitempty"`
+
+	// Max defines a maximum auto-scaling limit.
+	Max *int `json:"max,omitempty"`
 }
 
 // AppStatus is the current configuration and running state for an App.
