@@ -17,13 +17,19 @@
 set -eux
 
 ROOT_PACKAGE="github.com/GoogleCloudPlatform/kf"
+PACKAGE_LOCATION="$(go env GOPATH)/src/$ROOT_PACKAGE"
 CUSTOM_RESOURCE_NAME="kf"
 CUSTOM_RESOURCE_VERSION="v1alpha1"
 
 export GO111MODULE=off
 
-if [ "$(realpath $(go env GOPATH)/src/${ROOT_PACKAGE})" != "$(git rev-parse --show-toplevel)" ]; then
-    echo "The generator scripts aren't go module compatible (yet)."
+if [ ! -d "$PACKAGE_LOCATION" ]; then
+  echo "Cannot find go package $ROOT_PACKAGE" 1>&2
+  exit 1
+fi
+
+if [ "$(realpath $PACKAGE_LOCATION)" != "$(git rev-parse --show-toplevel)" ]; then
+    echo "The generator scripts aren't go module compatible (yet)." 1>&2
     exit 1
 fi
 
@@ -31,12 +37,19 @@ root_dir=$(git rev-parse --show-toplevel)
 
 if [[ ! -d $(go env GOPATH)/src/k8s.io/code-generator ]] || [[ ! -d $(go env GOPATH)/src/k8s.io/code-generator ]]; then
   echo Some required packages are missing. Run ./hack/setup-codegen.sh first 1>&2
+  exit 1
 fi
 
 cd $(go env GOPATH)/src/k8s.io/code-generator
 
 # run the code-generator entrypoint script
 ./generate-groups.sh all "$ROOT_PACKAGE/pkg/client" "$ROOT_PACKAGE/pkg/apis" "$CUSTOM_RESOURCE_NAME:$CUSTOM_RESOURCE_VERSION" --go-header-file="${root_dir}/pkg/kf/internal/tools/option-builder/LICENSE_HEADER.go.txt" -v 5
+ret=$?
+
+if [ $ret -ne 0 ]; then
+  echo Error running code-generator 1>&2
+  exit 1
+fi
 
 # Fix issues due to using old k8s.io/client-go
 # The generator wants to use a codec that is only available in a version of
@@ -47,8 +60,8 @@ os_friendly_sed () {
   mv "$2.new" "$2"
 }
 
-TYPES="kf_client space app"
+TYPES="kf_client $(ls ${PACKAGE_LOCATION}/pkg/apis/kf/v1alpha1/ | grep 'types.go' | sed 's/_types.go//')"
 for type in ${TYPES}; do
-  os_friendly_sed 's/scheme.Codecs.WithoutConversion()/scheme.Codecs/g' "$(go env GOPATH)/src/${ROOT_PACKAGE}/pkg/client/clientset/versioned/typed/kf/v1alpha1/${type}.go"
+  os_friendly_sed 's/scheme.Codecs.WithoutConversion()/scheme.Codecs/g' "${PACKAGE_LOCATION}/pkg/client/clientset/versioned/typed/kf/v1alpha1/${type}.go"
   os_friendly_sed 's/pt, //g' "$(go env GOPATH)/src/${ROOT_PACKAGE}/pkg/client/clientset/versioned/typed/kf/v1alpha1/fake/fake_${type}.go"
 done

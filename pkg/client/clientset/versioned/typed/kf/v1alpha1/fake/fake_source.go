@@ -129,7 +129,7 @@ func (c *FakeSources) DeleteCollection(options *v1.DeleteOptions, listOptions v1
 // Patch applies the patch and returns the patched source.
 func (c *FakeSources) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Source, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(sourcesResource, c.ns, name, pt, data, subresources...), &v1alpha1.Source{})
+		Invokes(testing.NewPatchSubresourceAction(sourcesResource, c.ns, name, data, subresources...), &v1alpha1.Source{})
 
 	if obj == nil {
 		return nil, err
