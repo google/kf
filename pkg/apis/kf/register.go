@@ -16,5 +16,5 @@ package kf
 
 // GroupName is the group name used in this package
 const (
-        GroupName = "kf.dev"
+	GroupName = "kf.dev"
 )
