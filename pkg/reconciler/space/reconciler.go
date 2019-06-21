@@ -117,7 +117,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 			}
 		} else if err != nil {
 			return err
-		} else if !metav1.IsControlledBy(desired, space) {
+		} else if !metav1.IsControlledBy(actual, space) {
 			space.Status.MarkNamespaceNotOwned(namespaceName)
 			return fmt.Errorf("space: %q does not own namespace: %q", space.Name, namespaceName)
 		} else if actual, err = r.reconcileNs(desired, actual); err != nil {
