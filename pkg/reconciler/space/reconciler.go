@@ -126,7 +126,7 @@ func (r *Reconciler) ApplyChanges(space *v1alpha1.Space) error {
 	}
 
 	// If the namespace isn't ready (either it's coming up or being deleted)
-	// then this reconcilation process can't continue until we get notified it is.
+	// then this reconciliation process can't continue until we get notified it is.
 	if cond := space.Status.GetCondition(v1alpha1.SpaceConditionNamespaceReady); cond != nil {
 		if !cond.IsTrue() {
 			return fmt.Errorf("can't continue reconciling until namespace %q is ready", namespaceName)
