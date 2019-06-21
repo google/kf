@@ -75,3 +75,18 @@ func (mr *FakeClientMockRecorder) List() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*FakeClient)(nil).List))
 }
+
+// Stacks mocks base method
+func (m *FakeClient) Stacks() ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Stacks")
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Stacks indicates an expected call of Stacks
+func (mr *FakeClientMockRecorder) Stacks() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stacks", reflect.TypeOf((*FakeClient)(nil).Stacks))
+}

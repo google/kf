@@ -19,7 +19,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks/fake"
 	cbuildpacks "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
@@ -27,7 +26,7 @@ import (
 	"github.com/golang/mock/gomock"
 )
 
-func TestBuildpacks(t *testing.T) {
+func TestStacks(t *testing.T) {
 	t.Parallel()
 
 	for tn, tc := range map[string]struct {
@@ -43,15 +42,15 @@ func TestBuildpacks(t *testing.T) {
 		"listing fails": {
 			ExpectedErr: errors.New("some-error"),
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().List().Return(nil, errors.New("some-error"))
+				fake.EXPECT().Stacks().Return(nil, errors.New("some-error"))
 			},
 		},
-		"lists each buildpack": {
+		"lists each stack": {
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().List().Return([]buildpacks.Buildpack{{ID: "bp-1"}, {ID: "bp-2"}}, nil)
+				fake.EXPECT().Stacks().Return([]string{"s-1", "s-2"}, nil)
 			},
 			BufferF: func(t *testing.T, buffer *bytes.Buffer) {
-				testutil.AssertContainsAll(t, buffer.String(), []string{"bp-1", "bp-2"})
+				testutil.AssertContainsAll(t, buffer.String(), []string{"s-1", "s-2"})
 			},
 		},
 	} {
@@ -64,7 +63,7 @@ func TestBuildpacks(t *testing.T) {
 			}
 
 			var buffer bytes.Buffer
-			cmd := cbuildpacks.NewBuildpacksCommand(
+			cmd := cbuildpacks.NewStacksCommand(
 				&config.KfParams{
 					Namespace: tc.Namespace,
 				},

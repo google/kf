@@ -12,45 +12,54 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buildpacks
+package quotas
 
 import (
 	"fmt"
 	"text/tabwriter"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/kf"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/quotas"
+
 	"github.com/spf13/cobra"
 )
 
-// NewBuildpacksCommand creates a Buildpacks command.
-func NewBuildpacksCommand(p *config.KfParams, l buildpacks.Client) *cobra.Command {
-	var buildpacksCmd = &cobra.Command{
-		Use:   "buildpacks",
-		Short: "List buildpacks in current builder.",
+// NewListQuotasCommand allows users to list quotas.
+func NewListQuotasCommand(p *config.KfParams, client quotas.Client) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "quotas",
+		Short: "List all kf quotas",
 		Args:  cobra.ExactArgs(0),
-		Long:  ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if p.Namespace != "default" && p.Namespace != "" {
-				fmt.Fprintf(cmd.OutOrStderr(), "NOTE: Buildpacks are global and are available to all spaces.")
-			}
-			bps, err := l.List()
+			fmt.Fprintf(cmd.OutOrStdout(), "Getting quotas in namespace: %s\n", p.Namespace)
+
+			allQuotas, err := client.List(p.Namespace)
 			if err != nil {
-				cmd.SilenceUsage = !kf.ConfigError(err)
 				return err
 			}
 
+			fmt.Fprintf(cmd.OutOrStdout(), "Found %d quotas in namespace %s\n", len(allQuotas), p.Namespace)
+			fmt.Fprintln(cmd.OutOrStdout())
+
 			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 1, ' ', tabwriter.StripEscape)
-			fmt.Fprintln(w, "NAME\tPOSITION\tVERSION\tLATEST")
-			for i, bp := range bps {
-				fmt.Fprintf(w, "%s\t%d\t%s\t%v\n", bp.ID, i, bp.Version, bp.Latest)
+			defer w.Flush()
+
+			fmt.Fprintln(w, "NAME\tMEMORY\tCPU\tROUTES")
+			for _, quota := range allQuotas {
+				kfquota := quotas.NewFromResourceQuota(&quota)
+				mem, _ := kfquota.GetMemory()
+				cpu, _ := kfquota.GetCPU()
+				routes, _ := kfquota.GetServices()
+				fmt.Fprintf(w, "%s\t%v\t%v\t%v\n",
+					kfquota.GetName(),
+					mem.String(),
+					cpu.String(),
+					routes.String())
 			}
-			w.Flush()
 
 			return nil
 		},
 	}
 
-	return buildpacksCmd
+	return cmd
 }

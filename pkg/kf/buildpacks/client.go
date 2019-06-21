@@ -34,6 +34,9 @@ type Client interface {
 
 	// List lists the buildpacks available.
 	List() ([]Buildpack, error)
+
+	// Stacks lists the stacks available.
+	Stacks() ([]string, error)
 }
 
 // Buildpack has the information from a Buildpack Builder.
@@ -67,6 +70,44 @@ const metadataLabel = "io.buildpacks.builder.metadata"
 
 // List lists the available buildpacks.
 func (c *client) List() ([]Buildpack, error) {
+	cfg, err := c.fetchConfig()
+	if err != nil || cfg == nil {
+		return nil, err
+	}
+
+	var order struct {
+		Buildpacks []Buildpack `json:"buildpacks"`
+	}
+	if err := json.NewDecoder(strings.NewReader(cfg.Config.Labels[metadataLabel])).Decode(&order); err != nil {
+		return nil, err
+	}
+
+	return order.Buildpacks, nil
+}
+
+// Stacks lists the stacks available.
+func (c *client) Stacks() ([]string, error) {
+	cfg, err := c.fetchConfig()
+	if err != nil || cfg == nil {
+		return nil, err
+	}
+
+	var stack struct {
+		Stack struct {
+			RunImage struct {
+				Image string `json:"image"`
+			} `json:"runImage"`
+		} `json:"stack"`
+	}
+
+	if err := json.NewDecoder(strings.NewReader(cfg.Config.Labels[metadataLabel])).Decode(&stack); err != nil {
+		return nil, err
+	}
+
+	return []string{stack.Stack.RunImage.Image}, nil
+}
+
+func (c *client) fetchConfig() (*gcrv1.ConfigFile, error) {
 	templates, err := c.build.ClusterBuildTemplates().List(metav1.ListOptions{
 		FieldSelector: "metadata.name=buildpack",
 	})
@@ -95,14 +136,7 @@ func (c *client) List() ([]Buildpack, error) {
 		return nil, err
 	}
 
-	var order struct {
-		Buildpacks []Buildpack `json:"buildpacks"`
-	}
-	if err := json.NewDecoder(strings.NewReader(cfg.Config.Labels[metadataLabel])).Decode(&order); err != nil {
-		return nil, err
-	}
-
-	return order.Buildpacks, nil
+	return cfg, nil
 }
 
 func (c *client) fetchBuilderImageName(params []build.ParameterSpec) string {

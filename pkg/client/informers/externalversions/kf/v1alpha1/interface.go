@@ -24,8 +24,6 @@ import (
 type Interface interface {
 	// Apps returns a AppInformer.
 	Apps() AppInformer
-	// CommandSets returns a CommandSetInformer.
-	CommandSets() CommandSetInformer
 	// Spaces returns a SpaceInformer.
 	Spaces() SpaceInformer
 }
@@ -44,11 +42,6 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 // Apps returns a AppInformer.
 func (v *version) Apps() AppInformer {
 	return &appInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// CommandSets returns a CommandSetInformer.
-func (v *version) CommandSets() CommandSetInformer {
-	return &commandSetInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Spaces returns a SpaceInformer.

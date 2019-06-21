@@ -75,11 +75,19 @@ func NewKfCommand() *cobra.Command {
 
 		// Buildpacks
 		"buildpacks": InjectBuildpacks(p),
+		"stacks":     InjectStacks(p),
 
 		// Spaces
 		"spaces":       InjectSpaces(p),
 		"create-space": InjectCreateSpace(p),
 		"delete-space": InjectDeleteSpace(p),
+
+		// Quotas
+		"quotas":       InjectQuotas(p),
+		"quota":        InjectGetQuota(p),
+		"create-quota": InjectCreateQuota(p),
+		"update-quota": InjectUpdateQuota(p),
+		"delete-quota": InjectDeleteQuota(p),
 
 		// DoctorTests are run in the order they're defined in this list.
 		// Tests will stop as soon as one of these top-level tests fails so they
@@ -100,6 +108,7 @@ func NewKfCommand() *cobra.Command {
 	groups = append(groups, createGroup(commands, "Services", "create-service", "delete-service", "service", "services", "marketplace"))
 	groups = append(groups, createGroup(commands, "Service Bindings", "bind-service", "bindings", "unbind-service", "vcap-services"))
 	groups = append(groups, createGroup(commands, "Spaces", "spaces", "create-space", "delete-space"))
+	groups = append(groups, createGroup(commands, "Quotas", "quotas", "quota", "create-quota", "update-quota", "delete-quota"))
 
 	// This will add the rest to a group under "Other Commands".
 	for _, cmd := range commands {
