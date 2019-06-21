@@ -14,7 +14,6 @@ require (
 	github.com/google/go-containerregistry v0.0.0-20190306174256-678f6c51f585
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/google/wire v0.2.2
-	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7 // indirect
 	github.com/imdario/mergo v0.3.6 // indirect
 	github.com/knative/build v0.6.0
 	github.com/knative/pkg v0.0.0-20190621200921-9c5d970cbc9e
@@ -27,13 +26,11 @@ require (
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/poy/kontext v0.0.0-20190322194304-59ced15e96b1
 	github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c
-	github.com/russross/blackfriday v0.0.0-20151117072312-300106c228d5 // indirect
 	github.com/segmentio/textio v1.2.0
-	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.3.0 // indirect
 	github.com/spf13/cobra v0.0.3
-	github.com/spf13/pflag v1.0.3
-	go.opencensus.io v0.22.0
+	github.com/spf13/pflag v1.0.3 // indirect
+	go.opencensus.io v0.22.0 // indirect
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1
@@ -41,14 +38,12 @@ require (
 	golang.org/x/net v0.0.0-20190503192946-f4e77d36d62c // indirect
 	golang.org/x/sys v0.0.0-20190502175342-a43fa875dd82 // indirect
 	google.golang.org/appengine v1.5.0 // indirect
-	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.2.2
 	gotest.tools v2.2.0+incompatible // indirect
 	k8s.io/api v0.0.0-20181121191454-a61488babbd6
 	k8s.io/apimachinery v0.0.0-20181127025237-2b1284ed4c93
 	k8s.io/client-go v2.0.0-alpha.0.0.20190226174127-78295b709ec6+incompatible
 	k8s.io/klog v0.3.0 // indirect
-	k8s.io/code-generator v0.0.0-20190419212335-ff26e7842f9d
 	k8s.io/kubernetes v1.14.2
 )
 
