@@ -16,14 +16,6 @@
 
 package v1alpha1
 
-// CommandSetListerExpansion allows custom methods to be added to
-// CommandSetLister.
-type CommandSetListerExpansion interface{}
-
-// CommandSetNamespaceListerExpansion allows custom methods to be added to
-// CommandSetNamespaceLister.
-type CommandSetNamespaceListerExpansion interface{}
-
 // SpaceListerExpansion allows custom methods to be added to
 // SpaceLister.
 type SpaceListerExpansion interface{}
