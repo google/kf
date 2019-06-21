@@ -55,8 +55,7 @@ type AppSpec struct {
 	// +optional
 	Services AppSpecServices `json:"services,omitempty"`
 
-	// Serve determines if the App should be running.
-	Serve *bool `json:"serve"`
+	Instances AppSpecInstances `json:"instances,omitempty"`
 }
 
 // AppSpecSource defines the source code for an App.
@@ -108,10 +107,6 @@ type AppSpecTemplate struct {
 	// +optional
 	UId string `json:"uid,omitempty"`
 
-	// Scale defines the App's scaling configuration.
-	// +optional
-	Scale AppSpecTemplateScale `json:"scale,omitempty"`
-
 	// Spec is a PodSpec with additional restrictions.
 	// The image name is ignored.
 	// The Spec contains configuration for the App's Pod.
@@ -120,24 +115,19 @@ type AppSpecTemplate struct {
 	Spec core.PodSpec `json:"spec,omitempty"`
 }
 
-// AppSpecTemplateScale defines an App's scaling configuration.
-type AppSpecTemplateScale struct {
-
-	// Min is the minimum instance count.
-	// +optional
-	Min int `json:"min,omitempty"`
-
-	// Max is the maximum instance count.
-	// +optional
-	Max int `json:"max,omitempty"`
-}
-
 // AppSpecRoutes defines network routes for an App's ingress.
 type AppSpecRoutes struct {
 }
 
 // AppSpecServices defines what services an App requires.
 type AppSpecServices struct {
+}
+
+type AppSpecInstances struct {
+	stopped *bool `json:"stopped,omitempty"`
+	exactly *int  `json:"exactly,omitempty"`
+	min     *int  `json:"min,omitempty"`
+	max     *int  `json:"max,omitempty"`
 }
 
 // AppStatus is the current configuration and running state for an App.
