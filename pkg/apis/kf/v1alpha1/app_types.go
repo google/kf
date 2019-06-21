@@ -41,7 +41,7 @@ type AppSpec struct {
 
 	// Source contains the source configuration of the App.
 	// +optional
-	Source AppSpecSource `json:"source,omitempty"`
+	SourceSpec `json:",inline"`
 
 	// Template defines the App's desired runtime configuration.
 	// +optional
@@ -57,46 +57,6 @@ type AppSpec struct {
 
 	// Instances defines the scaling rules for the App.
 	Instances AppSpecInstances `json:"instances,omitempty"`
-}
-
-// AppSpecSource defines the source code for an App.
-// The fields ContainerImage and BuildpackBuild are mutually exclusive.
-type AppSpecSource struct {
-
-	// UpdateRequests is a unique identifier for an AppSpecSource.
-	// Updating sub-values will trigger a new value.
-	UpdateRequests int `json:"updaterequests"`
-
-	// ContainerImage defines the container image for source.
-	// +optional
-	ContainerImage AppSpecSourceContainerImage `json:"containerimage,omitempty"`
-
-	// BuildpackBuild defines buildpack information for source.
-	// +optional
-	BuildpackBuild AppSpecSourceBuildpackBuild `json:"buildpackbuild,omitempty"`
-}
-
-// AppSpecSourceContainerImage defines a container image for an App.
-type AppSpecSourceContainerImage struct {
-
-	// Image is the container image URI for the App.
-	Image string `json:"image"`
-}
-
-// AppSpecSourceBuildpackBuild defines building an App using Buildpacks.
-type AppSpecSourceBuildpackBuild struct {
-
-	// Source is the Container Image which contains the App's source code.
-	// +optional
-	Source string `json:"source,omitempty"`
-
-	// Stack is the base layer to use for the App.
-	// +optional
-	Stack string `json:"stack,omitempty"`
-
-	// Buildpack is the Buildpack to use for the App.
-	// +optional
-	Buildpack string `json:"buildpack,omitempty"`
 }
 
 // AppSpecTemplate defines an App's desired runtime configuration.

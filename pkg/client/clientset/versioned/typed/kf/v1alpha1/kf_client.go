@@ -25,6 +25,7 @@ import (
 type KfV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	AppsGetter
+	SourcesGetter
 	SpacesGetter
 }
 
@@ -35,6 +36,10 @@ type KfV1alpha1Client struct {
 
 func (c *KfV1alpha1Client) Apps(namespace string) AppInterface {
 	return newApps(c, namespace)
+}
+
+func (c *KfV1alpha1Client) Sources(namespace string) SourceInterface {
+	return newSources(c, namespace)
 }
 
 func (c *KfV1alpha1Client) Spaces() SpaceInterface {
