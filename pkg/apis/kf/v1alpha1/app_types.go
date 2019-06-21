@@ -62,10 +62,9 @@ type AppSpec struct {
 // The fields ContainerImage and BuildpackBuild are mutually exclusive.
 type AppSpecSource struct {
 
-	// UId is a unique identifier for an AppSpecSource.
+	// UpdateRequests is a unique identifier for an AppSpecSource.
 	// Updating sub-values will trigger a new value.
-	// +optional
-	UId string `json:"uid,omitempty"`
+	UpdateRequests int `json:"updaterequests"`
 
 	// ContainerImage defines the container image for source.
 	// +optional
@@ -102,10 +101,9 @@ type AppSpecSourceBuildpackBuild struct {
 // AppSpecTemplate defines an App's desired runtime configuration.
 type AppSpecTemplate struct {
 
-	// UId is a unique identifier for an AppSpecTemplate.
+	// UpdateRequests is a unique identifier for an AppSpecTemplate.
 	// Updating sub-values will trigger a new value.
-	// +optional
-	UId string `json:"uid,omitempty"`
+	UpdateRequests int `json:"updaterequests"`
 
 	// Spec is a PodSpec with additional restrictions.
 	// The image name is ignored.
