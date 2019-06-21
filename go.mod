@@ -45,9 +45,10 @@ require (
 	k8s.io/client-go v2.0.0-alpha.0.0.20190226174127-78295b709ec6+incompatible
 	k8s.io/klog v0.3.0 // indirect
 	k8s.io/kubernetes v1.14.2
-
 )
 
+// opencensus and go-cmp are fixed to satisfy unspecified dependencies in
+// knative/pkg; update once https://github.com/knative/pkg/pull/475 goes through
 replace go.opencensus.io => go.opencensus.io v0.20.2
 
 replace contrib.go.opencensus.io/exporter/stackdriver => contrib.go.opencensus.io/exporter/stackdriver v0.9.2

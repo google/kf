@@ -79,7 +79,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 
 	// Reconcile this copy of the service and then write back any status
 	// updates regardless of whether the reconciliation errored out.
-	reconcileErr := r.ApplyChanges(toReconcile)
+	reconcileErr := r.ApplyChanges(ctx, toReconcile)
 	if equality.Semantic.DeepEqual(original.Status, toReconcile.Status) {
 		// If we didn't change anything then don't call updateStatus.
 		// This is important because the copy we loaded from the informer's
@@ -96,7 +96,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 
 // ApplyChanges updates the linked resources in the cluster with the current
 // status of the space.
-func (r *Reconciler) ApplyChanges(space *v1alpha1.Space) error {
+func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) error {
+	logger := logging.FromContext(ctx)
+
 	space.Status.InitializeConditions()
 	namespaceName := resources.NamespaceName(space)
 
@@ -129,7 +131,8 @@ func (r *Reconciler) ApplyChanges(space *v1alpha1.Space) error {
 	// then this reconciliation process can't continue until we get notified it is.
 	if cond := space.Status.GetCondition(v1alpha1.SpaceConditionNamespaceReady); cond != nil {
 		if !cond.IsTrue() {
-			return fmt.Errorf("can't continue reconciling until namespace %q is ready", namespaceName)
+			logger.Infof("can't continue reconciling until namespace %q is ready", namespaceName)
+			return nil
 		}
 	}
 
