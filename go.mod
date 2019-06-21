@@ -18,7 +18,7 @@ require (
 	github.com/google/wire v0.2.1
 	github.com/imdario/mergo v0.3.6 // indirect
 	github.com/knative/build v0.5.0
-	github.com/knative/pkg v0.0.0-20190610153941-28f181241cdb
+	github.com/knative/pkg v0.0.0-20190621200921-9c5d970cbc9e
 	github.com/knative/serving v0.6.1
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect

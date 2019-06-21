@@ -30,6 +30,7 @@ import (
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1listers "k8s.io/client-go/listers/core/v1"
+	rbacv1listers "k8s.io/client-go/listers/rbac/v1"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/reconciler"
 	"github.com/knative/pkg/controller"
@@ -38,12 +39,14 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
+// Reconciler reconciles a Space object with the K8s cluster.
 type Reconciler struct {
 	*reconciler.Base
 
 	// listers index properties about resources
 	spaceLister     kflisters.SpaceLister
 	namespaceLister v1listers.NamespaceLister
+	roleLister      rbacv1listers.RoleLister
 }
 
 // Check that our Reconciler implements controller.Reconciler
@@ -122,17 +125,24 @@ func (r *Reconciler) ApplyChanges(space *v1alpha1.Space) error {
 		space.Status.PropagateNamespaceStatus(actual)
 	}
 
+	// If the namespace isn't ready (either it's coming up or being deleted)
+	// then this reconcilation process can't continue until we get notified it is.
+	if cond := space.Status.GetCondition(v1alpha1.SpaceConditionNamespaceReady); cond != nil {
+		if !cond.IsTrue() {
+			return fmt.Errorf("can't continue reconciling until namespace %q is ready", namespaceName)
+		}
+	}
+
 	// Sync developer role
 	{
-		rbacClient := r.KubeClientSet.RbacV1()
 		desired, err := resources.MakeDeveloperRole(space)
 		if err != nil {
 			return err
 		}
 
-		actual, err := rbacClient.Roles(desired.Namespace).Get(desired.Name, metav1.GetOptions{})
+		actual, err := r.roleLister.Roles(desired.Namespace).Get(desired.Name)
 		if errors.IsNotFound(err) {
-			actual, err = rbacClient.Roles(desired.Namespace).Create(desired)
+			actual, err = r.KubeClientSet.RbacV1().Roles(desired.Namespace).Create(desired)
 			if err != nil {
 				return err
 			}
@@ -150,15 +160,14 @@ func (r *Reconciler) ApplyChanges(space *v1alpha1.Space) error {
 
 	// Sync auditor role
 	{
-		rbacClient := r.KubeClientSet.RbacV1()
 		desired, err := resources.MakeAuditorRole(space)
 		if err != nil {
 			return err
 		}
 
-		actual, err := rbacClient.Roles(desired.Namespace).Get(desired.Name, metav1.GetOptions{})
+		actual, err := r.roleLister.Roles(desired.Namespace).Get(desired.Name)
 		if errors.IsNotFound(err) {
-			actual, err = rbacClient.Roles(desired.Namespace).Create(desired)
+			actual, err = r.KubeClientSet.RbacV1().Roles(desired.Namespace).Create(desired)
 			if err != nil {
 				return err
 			}

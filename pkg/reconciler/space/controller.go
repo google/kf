@@ -21,6 +21,8 @@ import (
 	spaceinformer "github.com/GoogleCloudPlatform/kf/pkg/client/injection/informers/kf/v1alpha1/space"
 	"github.com/GoogleCloudPlatform/kf/pkg/reconciler"
 	namespaceinformer "github.com/knative/pkg/injection/informers/kubeinformers/corev1/namespace"
+	roleinformer "github.com/knative/pkg/injection/informers/kubeinformers/rbacv1/role"
+
 	"k8s.io/client-go/tools/cache"
 
 	"github.com/knative/pkg/configmap"
@@ -35,12 +37,14 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	// Get informers off context
 	nsInformer := namespaceinformer.Get(ctx)
 	spaceInformer := spaceinformer.Get(ctx)
+	roleInformer := roleinformer.Get(ctx)
 
 	// Create reconciler
 	c := &Reconciler{
 		Base:            reconciler.NewBase(ctx, "space-controller", cmw),
 		spaceLister:     spaceInformer.Lister(),
 		namespaceLister: nsInformer.Lister(),
+		roleLister:      roleInformer.Lister(),
 	}
 
 	impl := controller.NewImpl(c, logger, "Spaces")
@@ -54,7 +58,10 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
 	})
 
-	// TODO(josephlewis42) add informers to the Roles.
+	roleInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+		FilterFunc: controller.Filter(v1alpha1.SchemeGroupVersion.WithKind("Space")),
+		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
+	})
 
 	return impl
 }

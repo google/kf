@@ -22,6 +22,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	managedByLabel      = "app.kubernetes.io/managed-by"
+	istioInjectionLabel = "istio-injection"
+)
+
 // NamespaceName gets the name of a namespace given the space.
 func NamespaceName(space *v1alpha1.Space) string {
 	return space.Name
@@ -40,8 +45,8 @@ func MakeNamespace(space *v1alpha1.Space) (*v1.Namespace, error) {
 			// North/South.
 			Labels: resources.UnionMaps(
 				space.GetLabels(), map[string]string{
-					"istio-injection":              "enabled",
-					"app.kubernetes.io/managed-by": "kf",
+					istioInjectionLabel: "enabled",
+					managedByLabel:      "kf",
 				}),
 		},
 	}, nil
