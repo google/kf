@@ -45,8 +45,11 @@ require (
 	k8s.io/client-go v2.0.0-alpha.0.0.20190226174127-78295b709ec6+incompatible
 	k8s.io/klog v0.3.0 // indirect
 	k8s.io/kubernetes v1.14.2
+
 )
 
 replace go.opencensus.io => go.opencensus.io v0.20.2
 
 replace contrib.go.opencensus.io/exporter/stackdriver => contrib.go.opencensus.io/exporter/stackdriver v0.9.2
+
+replace github.com/google/go-cmp => github.com/google/go-cmp v0.3.0
