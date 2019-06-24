@@ -407,7 +407,7 @@ func KF(t *testing.T, kf KfInvoker) *Kf {
 }
 
 // CreateQuota creates a resourcequota.
-func (k *Kf) CreateQuota(ctx context.Context, quotaName string, extraArgs ...string) []string {
+func (k *Kf) CreateQuota(ctx context.Context, quotaName string, extraArgs ...string) ([]string, error) {
 	k.t.Helper()
 	Logf(k.t, "creating quota %q...", quotaName)
 	defer Logf(k.t, "done creating quota %q.", quotaName)
@@ -417,55 +417,55 @@ func (k *Kf) CreateQuota(ctx context.Context, quotaName string, extraArgs ...str
 		quotaName,
 	}
 
-	output, _ := k.kf(ctx, k.t, KfTestConfig{
+	output, err := k.kf(ctx, k.t, KfTestConfig{
 		Args: append(args, extraArgs...),
 	})
-	return CombineOutputStr(ctx, k.t, output)
+	return CombineOutputStr(ctx, k.t, output), <-err
 }
 
 // Quotas returns all the quotas from `kf quotas`
-func (k *Kf) Quotas(ctx context.Context) []string {
+func (k *Kf) Quotas(ctx context.Context) ([]string, error) {
 	k.t.Helper()
 	Logf(k.t, "listing quotas...")
 	defer Logf(k.t, "done listing quotas.")
-	output, _ := k.kf(ctx, k.t, KfTestConfig{
+	output, err := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{"quotas"},
 	})
 
-	return CombineOutputStr(ctx, k.t, output)
+	return CombineOutputStr(ctx, k.t, output), <-err
 }
 
 // DeleteQuota deletes a quota.
-func (k *Kf) DeleteQuota(ctx context.Context, quotaName string) []string {
+func (k *Kf) DeleteQuota(ctx context.Context, quotaName string) ([]string, error) {
 	k.t.Helper()
 	Logf(k.t, "deleting %q...", quotaName)
 	defer Logf(k.t, "done deleting %q.", quotaName)
-	output, _ := k.kf(ctx, k.t, KfTestConfig{
+	output, err := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"delete-quota",
 			quotaName,
 		},
 	})
-	return CombineOutputStr(ctx, k.t, output)
+	return CombineOutputStr(ctx, k.t, output), <-err
 }
 
 // GetQuota returns information about a quota.
-func (k *Kf) GetQuota(ctx context.Context, quotaName string) []string {
+func (k *Kf) GetQuota(ctx context.Context, quotaName string) ([]string, error) {
 	k.t.Helper()
 	Logf(k.t, "getting %q...", quotaName)
 	defer Logf(k.t, "done getting %q.", quotaName)
-	output, _ := k.kf(ctx, k.t, KfTestConfig{
+	output, err := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"quota",
 			quotaName,
 		},
 	})
 
-	return CombineOutputStr(ctx, k.t, output)
+	return CombineOutputStr(ctx, k.t, output), <-err
 }
 
 // UpdateQuota updates a quota.
-func (k *Kf) UpdateQuota(ctx context.Context, quotaName string, extraArgs ...string) []string {
+func (k *Kf) UpdateQuota(ctx context.Context, quotaName string, extraArgs ...string) ([]string, error) {
 	k.t.Helper()
 	Logf(k.t, "updating %q...", quotaName)
 	defer Logf(k.t, "done updating %q.", quotaName)
@@ -475,11 +475,11 @@ func (k *Kf) UpdateQuota(ctx context.Context, quotaName string, extraArgs ...str
 		quotaName,
 	}
 
-	output, _ := k.kf(ctx, k.t, KfTestConfig{
+	output, err := k.kf(ctx, k.t, KfTestConfig{
 		Args: append(args, extraArgs...),
 	})
 
-	return CombineOutputStr(ctx, k.t, output)
+	return CombineOutputStr(ctx, k.t, output), <-err
 }
 
 // Push pushes an application.

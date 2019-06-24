@@ -37,17 +37,19 @@ func TestIntegration_Create(t *testing.T) {
 		cpuQuantity := "11"
 		routesQuantity := "22"
 
-		createQuotaOutput := kf.CreateQuota(ctx, quotaName,
+		createQuotaOutput, err := kf.CreateQuota(ctx, quotaName,
 			"-m", memQuantity,
 			"-c", cpuQuantity,
 			"-r", routesQuantity,
 		)
 
+		AssertNil(t, "create quota error", err)
 		AssertContainsAll(t, strings.Join(createQuotaOutput, " "), []string{quotaName, "successfully created"})
 		Logf(t, "done ensuring quota was created.")
 
 		// Get the quota
-		getQuotaOutput := kf.GetQuota(ctx, quotaName)
+		getQuotaOutput, err := kf.GetQuota(ctx, quotaName)
+		AssertNil(t, "get quota error", err)
 		AssertContainsAll(t, strings.Join(getQuotaOutput, " "), []string{quotaName, memQuantity, cpuQuantity, routesQuantity})
 		Logf(t, "done ensuring correct quota info returned.")
 	})
@@ -70,14 +72,17 @@ func TestIntegration_Delete(t *testing.T) {
 			"-r", routesQuantity,
 		)
 
-		getQuotaOutput := kf.GetQuota(ctx, quotaName)
+		getQuotaOutput, err := kf.GetQuota(ctx, quotaName)
+		AssertNil(t, "get quota error", err)
 		AssertContainsAll(t, strings.Join(getQuotaOutput, " "), []string{quotaName, memQuantity, cpuQuantity, routesQuantity})
 
-		deleteQuotaOutput := kf.DeleteQuota(ctx, quotaName)
+		deleteQuotaOutput, err := kf.DeleteQuota(ctx, quotaName)
+		AssertNil(t, "delete quota error", err)
 		AssertContainsAll(t, strings.Join(deleteQuotaOutput, " "), []string{quotaName, "successfully deleted"})
 
 		// Getting the quota should output an error saying the quota is not found
-		getQuotaOutput = kf.GetQuota(ctx, quotaName)
+		getQuotaOutput, err = kf.GetQuota(ctx, quotaName)
+		AssertNotNil(t, "get quota error", err)
 		AssertContainsAll(t, strings.Join(getQuotaOutput, " "), []string{quotaName, "Error", "not found"})
 	})
 }
@@ -99,7 +104,8 @@ func TestIntegration_Update(t *testing.T) {
 			"-c", cpuQuantity,
 		)
 
-		getQuotaOutput := kf.GetQuota(ctx, quotaName)
+		getQuotaOutput, err := kf.GetQuota(ctx, quotaName)
+		AssertNil(t, "get quota error", err)
 
 		// Check that routes quota appears by default as "0"
 		AssertContainsAll(t, strings.Join(getQuotaOutput, "\n"), []string{quotaName, memQuantity, cpuQuantity, "0"})
@@ -109,23 +115,27 @@ func TestIntegration_Update(t *testing.T) {
 		cpuQuantity = "22"
 		routesQuantity := "8"
 
-		kf.UpdateQuota(ctx, quotaName,
+		_, err = kf.UpdateQuota(ctx, quotaName,
 			"-m", memQuantity,
 			"-c", cpuQuantity,
 			"-r", routesQuantity,
 		)
+		AssertNil(t, "update quota error", err)
 
-		getQuotaOutput = kf.GetQuota(ctx, quotaName)
+		getQuotaOutput, err = kf.GetQuota(ctx, quotaName)
+		AssertNil(t, "get quota error", err)
 		AssertContainsAll(t, strings.Join(getQuotaOutput, "\n"), []string{quotaName, memQuantity, cpuQuantity, routesQuantity})
 		Logf(t, "done ensuring quota info updated.")
 
 		// Reset memory quota
 		memQuantity = "0"
-		kf.UpdateQuota(ctx, quotaName,
+		_, err = kf.UpdateQuota(ctx, quotaName,
 			"-m", memQuantity,
 		)
+		AssertNil(t, "update quota error", err)
 
-		getQuotaOutput = kf.GetQuota(ctx, quotaName)
+		getQuotaOutput, err = kf.GetQuota(ctx, quotaName)
+		AssertNil(t, "get quota error", err)
 		AssertContainsAll(t, strings.Join(getQuotaOutput, "\n"), []string{quotaName, memQuantity, cpuQuantity, routesQuantity})
 		Logf(t, "done ensuring memory quota was reset.")
 	})
@@ -161,7 +171,8 @@ func TestIntegration_List(t *testing.T) {
 			"-r", routesQuantity2,
 		)
 
-		listQuotasOutput := kf.Quotas(ctx)
+		listQuotasOutput, err := kf.Quotas(ctx)
+		AssertNil(t, "list quotas error", err)
 		AssertContainsAll(t, strings.Join(listQuotasOutput, "\n"), []string{
 			quotaName, memQuantity, cpuQuantity, routesQuantity,
 			quota2Name, memQuantity2, cpuQuantity2, routesQuantity2})
