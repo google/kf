@@ -38,7 +38,7 @@ const (
 	Kind = "Space"
 
 	// APIVersion contains the version for the backing Kubernetes API.
-	APIVersion = "v1"
+	APIVersion = "v1alpha1"
 )
 
 // Predicate is a boolean function for a v1alpha1.Space.
