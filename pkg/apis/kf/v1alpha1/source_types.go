@@ -39,15 +39,15 @@ type SourceSpec struct {
 
 	// UpdateRequests is a unique identifier for an AppSpecSource.
 	// Updating sub-values will trigger a new value.
-	UpdateRequests int `json:"updaterequests"`
+	UpdateRequests int `json:"updateRequests"`
 
 	// ContainerImage defines the container image for source.
 	// +optional
-	ContainerImage AppSpecSourceContainerImage `json:"containerimage,omitempty"`
+	ContainerImage AppSpecSourceContainerImage `json:"containerImage,omitempty"`
 
 	// BuildpackBuild defines buildpack information for source.
 	// +optional
-	BuildpackBuild AppSpecSourceBuildpackBuild `json:"buildpackbuild,omitempty"`
+	BuildpackBuild AppSpecSourceBuildpackBuild `json:"buildpackBuild,omitempty"`
 }
 
 // AppSpecSourceContainerImage defines a container image for an App.

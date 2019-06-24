@@ -41,18 +41,18 @@ type AppSpec struct {
 
 	// UpdateRequests is a unique identifier for an AppSpecTemplate.
 	// Updating sub-values will trigger a new value.
-	UpdateRequests int `json:"updaterequests"`
+	UpdateRequests int `json:"updateRequests"`
 
 	// Source contains the source configuration of the App.
 	// +optional
-	SourceSpec `json:",inline"`
+	SourceSpec `json:"source,inline"`
 
 	// Template is a PodSpec with additional restrictions.
 	// The image name is ignored.
 	// The Spec contains configuration for the App's Pod.
 	// (Env, Vars, Quotas, etc)
 	// +optional
-	Template core.PodSpec `json:"spec,omitempty"`
+	Template core.PodSpec `json:"template,omitempty"`
 
 	// Routes defines network routes for the App's ingress.
 	// +optional
@@ -78,7 +78,7 @@ type AppSpecServices struct {
 type AppSpecInstances struct {
 
 	// Stopped determines if the App should be running or not.
-	Stopped *bool `json:"stopped,omitempty"`
+	Stopped bool `json:"stopped,omitempty"`
 
 	// Exactly defines a static number of desired instances.
 	Exactly *int `json:"exactly,omitempty"`
