@@ -33,6 +33,10 @@ import (
 	. "github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 )
 
+const (
+	appTimeout = 30 * time.Second
+)
+
 // TestIntegration_Push pushes the echo app, lists it to ensure it can find a
 // domain, uses the proxy command and then posts to it. It finally deletes the
 // app.
@@ -68,7 +72,7 @@ func TestIntegration_Push(t *testing.T) {
 		// collisions. This doesn't work yet:
 		// https://github.com/poy/kf/issues/46
 		go kf.Proxy(ctx, appName, 8080)
-		resp, respCancel := RetryPost(ctx, t, "http://localhost:8080", 5*time.Second, strings.NewReader("testing"))
+		resp, respCancel := RetryPost(ctx, t, "http://localhost:8080", appTimeout, strings.NewReader("testing"))
 		defer resp.Body.Close()
 		defer respCancel()
 		AssertEqual(t, "status code", http.StatusOK, resp.StatusCode)
@@ -273,7 +277,7 @@ func TestIntegration_Logs(t *testing.T) {
 		// than once because we can't guarantee much about logs.
 		expectedLogLine := fmt.Sprintf("testing-%d", time.Now().UnixNano())
 		for i := 0; i < 10; i++ {
-			resp, respCancel := RetryPost(ctx, t, "http://localhost:8083", 5*time.Second, strings.NewReader(expectedLogLine))
+			resp, respCancel := RetryPost(ctx, t, "http://localhost:8083", appTimeout, strings.NewReader(expectedLogLine))
 			resp.Body.Close()
 			respCancel()
 		}
@@ -347,7 +351,7 @@ func checkVars(ctx context.Context, t *testing.T, kf *Kf, appName string, proxyP
 		// JSON. This checks to make sure everything is ACTUALLY being
 		// set from the app's perspective.
 		Logf(t, "hitting app %s to check the envs...", appName)
-		resp, respCancel := RetryPost(ctx, t, fmt.Sprintf("http://localhost:%d", proxyPort), 5*time.Second, nil)
+		resp, respCancel := RetryPost(ctx, t, fmt.Sprintf("http://localhost:%d", proxyPort), appTimeout, nil)
 		defer resp.Body.Close()
 		defer respCancel()
 		if resp.StatusCode != http.StatusOK {
