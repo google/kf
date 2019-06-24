@@ -39,7 +39,7 @@ type App struct {
 // AppSpec is the desired configuration for an App.
 type AppSpec struct {
 
-	// Source contains the source configuration of the App.
+	// SourceSpec contains the source configuration of the App.
 	// +optional
 	SourceSpec `json:"source,inline"`
 
@@ -89,6 +89,7 @@ type AppSpecInstances struct {
 	Stopped bool `json:"stopped,omitempty"`
 
 	// Exactly defines a static number of desired instances.
+	// If Exactly is set, it supersedes the Min and Max values.
 	Exactly *int `json:"exactly,omitempty"`
 
 	// Min defines a minimum auto-scaling limit.
