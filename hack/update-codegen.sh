@@ -14,7 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -eux
+set -eu
+
+GENERATOR_FLAGS=""
+
+while getopts "v" opt; do
+  case $opt in
+    v)
+      echo "WOW"
+      set -x
+      GENERATOR_FLAGS="-v 5 ${GENERATOR_FLAGS}"
+      ;;
+  esac
+done
 
 ROOT_PACKAGE="github.com/GoogleCloudPlatform/kf"
 PACKAGE_LOCATION="$(go env GOPATH)/src/$ROOT_PACKAGE"
@@ -43,7 +55,7 @@ fi
 cd $(go env GOPATH)/src/k8s.io/code-generator
 
 # run the code-generator entrypoint script
-./generate-groups.sh all "$ROOT_PACKAGE/pkg/client" "$ROOT_PACKAGE/pkg/apis" "$CUSTOM_RESOURCE_NAME:$CUSTOM_RESOURCE_VERSION" --go-header-file="${root_dir}/pkg/kf/internal/tools/option-builder/LICENSE_HEADER.go.txt" -v 5
+./generate-groups.sh all "$ROOT_PACKAGE/pkg/client" "$ROOT_PACKAGE/pkg/apis" "$CUSTOM_RESOURCE_NAME:$CUSTOM_RESOURCE_VERSION" --go-header-file="${root_dir}/pkg/kf/internal/tools/option-builder/LICENSE_HEADER.go.txt" ${GENERATOR_FLAGS}
 ret=$?
 
 if [ $ret -ne 0 ]; then
