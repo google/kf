@@ -37,8 +37,8 @@ spec:
         image: github.com/GoogleCloudPlatform/kf/cmd/controller
         resources:
           requests:
-            cpu: 100m
-            memory: 100Mi
+            cpu: 256m
+            memory: 256Mi
           limits:
             cpu: 1000m
             memory: 1000Mi
