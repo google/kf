@@ -79,7 +79,7 @@ type SourceStatus struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// SourceList is a life of Source resources.
+// SourceList is a list of Source resources.
 type SourceList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
