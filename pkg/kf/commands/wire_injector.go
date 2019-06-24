@@ -25,11 +25,13 @@ import (
 	cbuildpacks "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	cquotas "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/quotas"
+	croutes "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/routes"
 	servicebindingscmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/service-bindings"
 	servicescmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/services"
 	cspaces "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/spaces"
 	kflogs "github.com/GoogleCloudPlatform/kf/pkg/kf/logs"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/quotas"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/routes"
 	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/spaces"
@@ -332,5 +334,36 @@ func InjectGetQuota(p *config.KfParams) *cobra.Command {
 func InjectDeleteQuota(p *config.KfParams) *cobra.Command {
 	wire.Build(cquotas.NewDeleteQuotaCommand, QuotasSet)
 
+	return nil
+}
+
+////////////
+// Routes //
+///////////
+
+func InjectRoutes(p *config.KfParams) *cobra.Command {
+	wire.Build(
+		croutes.NewRoutesCommand,
+		config.GetNetworkingClient,
+		routes.NewClient,
+	)
+	return nil
+}
+
+func InjectCreateRoute(p *config.KfParams) *cobra.Command {
+	wire.Build(
+		croutes.NewCreateRouteCommand,
+		config.GetNetworkingClient,
+		routes.NewClient,
+	)
+	return nil
+}
+
+func InjectDeleteRoute(p *config.KfParams) *cobra.Command {
+	wire.Build(
+		croutes.NewDeleteRouteCommand,
+		config.GetNetworkingClient,
+		routes.NewClient,
+	)
 	return nil
 }

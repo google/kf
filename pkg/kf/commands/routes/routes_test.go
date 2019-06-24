@@ -12,22 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package buildpacks_test
+package routes_test
 
 import (
 	"bytes"
 	"errors"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks/fake"
-	cbuildpacks "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/routes"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/routes/fake"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
+	"github.com/knative/pkg/apis/istio/common/v1alpha1"
+	"github.com/knative/pkg/apis/istio/v1alpha3"
 )
 
-func TestBuildpacks(t *testing.T) {
+func TestRoutes(t *testing.T) {
 	t.Parallel()
 
 	for tn, tc := range map[string]struct {
@@ -41,18 +42,36 @@ func TestBuildpacks(t *testing.T) {
 			ExpectedErr: errors.New("accepts 0 arg(s), received 1"),
 			Args:        []string{"arg-1"},
 		},
-		"listing fails": {
-			ExpectedErr: errors.New("some-error"),
+		"listing routes fails": {
+			ExpectedErr: errors.New("failed to fetch Routes: some-error"),
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().List().Return(nil, errors.New("some-error"))
+				fake.EXPECT().List(gomock.Any()).Return(nil, errors.New("some-error"))
 			},
 		},
-		"lists each buildpack": {
+		"namespace": {
+			Namespace: "some-namespace",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().List().Return([]buildpacks.Buildpack{{ID: "bp-1"}, {ID: "bp-2"}}, nil)
+				fake.EXPECT().List("some-namespace")
+			},
+		},
+		"display routes": {
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().List(gomock.Any()).Return([]v1alpha3.VirtualService{
+					{
+						Spec: v1alpha3.VirtualServiceSpec{
+							Hosts: []string{"host-1", "host-2"},
+							HTTP: []v1alpha3.HTTPRoute{
+								{}, // nil Rewrite. Ensure we don't panic.
+								{Rewrite: &v1alpha3.HTTPRewrite{Authority: "example.com"}}, // no subdomain.
+								{Rewrite: &v1alpha3.HTTPRewrite{Authority: "app-1.example.com"}},
+								{Rewrite: &v1alpha3.HTTPRewrite{Authority: "app-2.example.com"}, Match: []v1alpha3.HTTPMatchRequest{{URI: nil}, {URI: &v1alpha1.StringMatch{}}, {URI: &v1alpha1.StringMatch{Prefix: "/path1"}}}},
+							},
+						},
+					},
+				}, nil)
 			},
 			BufferF: func(t *testing.T, buffer *bytes.Buffer) {
-				testutil.AssertContainsAll(t, buffer.String(), []string{"bp-1", "bp-2"})
+				testutil.AssertContainsAll(t, buffer.String(), []string{"host-1", "host-2", "app-1", "app-2", "path1"})
 			},
 		},
 	} {
@@ -65,7 +84,7 @@ func TestBuildpacks(t *testing.T) {
 			}
 
 			var buffer bytes.Buffer
-			cmd := cbuildpacks.NewBuildpacksCommand(
+			cmd := routes.NewRoutesCommand(
 				&config.KfParams{
 					Namespace: tc.Namespace,
 				},

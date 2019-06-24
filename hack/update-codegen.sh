@@ -52,7 +52,7 @@ if [[ ! -d $(go env GOPATH)/src/k8s.io/code-generator ]] || [[ ! -d $(go env GOP
   exit 1
 fi
 
-cd $(go env GOPATH)/src/k8s.io/code-generator
+pushd $(go env GOPATH)/src/k8s.io/code-generator
 
 # run the code-generator entrypoint script
 ./generate-groups.sh all "$ROOT_PACKAGE/pkg/client" "$ROOT_PACKAGE/pkg/apis" "$CUSTOM_RESOURCE_NAME:$CUSTOM_RESOURCE_VERSION" --go-header-file="${root_dir}/pkg/kf/internal/tools/option-builder/LICENSE_HEADER.go.txt" ${GENERATOR_FLAGS}
@@ -77,3 +77,14 @@ for type in ${TYPES}; do
   os_friendly_sed 's/scheme.Codecs.WithoutConversion()/scheme.Codecs/g' "${PACKAGE_LOCATION}/pkg/client/clientset/versioned/typed/kf/v1alpha1/${type}.go"
   os_friendly_sed 's/pt, //g' "$(go env GOPATH)/src/${ROOT_PACKAGE}/pkg/client/clientset/versioned/typed/kf/v1alpha1/fake/fake_${type}.go"
 done
+
+popd
+
+# Do Knative injection generation
+go get -u github.com/knative/pkg
+KNATIVE_CODEGEN_PKG=$(go env GOPATH)/src/github.com/knative/pkg
+
+${KNATIVE_CODEGEN_PKG}/hack/generate-knative.sh "injection" \
+  "github.com/GoogleCloudPlatform/kf/pkg/client" "github.com/GoogleCloudPlatform/kf/pkg/apis" \
+  "kf:v1alpha1" \
+  --go-header-file "${root_dir}/pkg/kf/internal/tools/option-builder/LICENSE_HEADER.go.txt"

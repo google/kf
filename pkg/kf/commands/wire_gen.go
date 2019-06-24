@@ -14,11 +14,13 @@ import (
 	buildpacks2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	quotas2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/quotas"
+	routes2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/routes"
 	servicebindings2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/service-bindings"
 	services2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/services"
 	spaces2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/spaces"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/logs"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/quotas"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/routes"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/spaces"
@@ -266,6 +268,27 @@ func InjectDeleteQuota(p *config.KfParams) *cobra.Command {
 	resourceQuotasGetter := provideQuotaGetter(kubernetesInterface)
 	client := quotas.NewClient(resourceQuotasGetter)
 	command := quotas2.NewDeleteQuotaCommand(p, client)
+	return command
+}
+
+func InjectRoutes(p *config.KfParams) *cobra.Command {
+	networkingV1alpha3Interface := config.GetNetworkingClient(p)
+	client := routes.NewClient(networkingV1alpha3Interface)
+	command := routes2.NewRoutesCommand(p, client)
+	return command
+}
+
+func InjectCreateRoute(p *config.KfParams) *cobra.Command {
+	networkingV1alpha3Interface := config.GetNetworkingClient(p)
+	client := routes.NewClient(networkingV1alpha3Interface)
+	command := routes2.NewCreateRouteCommand(p, client)
+	return command
+}
+
+func InjectDeleteRoute(p *config.KfParams) *cobra.Command {
+	networkingV1alpha3Interface := config.GetNetworkingClient(p)
+	client := routes.NewClient(networkingV1alpha3Interface)
+	command := routes2.NewDeleteRouteCommand(p, client)
 	return command
 }
 
