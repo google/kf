@@ -35,7 +35,7 @@ func NewCreateSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 			toCreate := spaces.NewKfSpace()
 			toCreate.SetName(name)
 
-			if _, err := client.Create(toCreate.ToNamespace()); err != nil {
+			if _, err := client.Create(toCreate.ToSpace()); err != nil {
 				return err
 			}
 

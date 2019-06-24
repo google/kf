@@ -17,6 +17,7 @@
 package commands
 
 import (
+	kfv1alpha1 "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
@@ -273,10 +274,10 @@ func InjectStacks(p *config.KfParams) *cobra.Command {
 // Spaces Command //
 ////////////////////
 
-var SpacesSet = wire.NewSet(config.GetKubernetes, provideNamespaceGetter, spaces.NewClient)
+var SpacesSet = wire.NewSet(config.GetKfClient, provideKfSpaces, spaces.NewClient)
 
-func provideNamespaceGetter(ki kubernetes.Interface) v1.NamespacesGetter {
-	return ki.CoreV1()
+func provideKfSpaces(ki kfv1alpha1.KfV1alpha1Interface) kfv1alpha1.SpacesGetter {
+	return ki
 }
 
 func InjectSpaces(p *config.KfParams) *cobra.Command {

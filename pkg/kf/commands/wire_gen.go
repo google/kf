@@ -6,6 +6,7 @@
 package commands
 
 import (
+	"github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
@@ -208,25 +209,25 @@ func InjectStacks(p *config.KfParams) *cobra.Command {
 }
 
 func InjectSpaces(p *config.KfParams) *cobra.Command {
-	kubernetesInterface := config.GetKubernetes(p)
-	namespacesGetter := provideNamespaceGetter(kubernetesInterface)
-	client := spaces.NewClient(namespacesGetter)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
+	client := spaces.NewClient(spacesGetter)
 	command := spaces2.NewListSpacesCommand(p, client)
 	return command
 }
 
 func InjectCreateSpace(p *config.KfParams) *cobra.Command {
-	kubernetesInterface := config.GetKubernetes(p)
-	namespacesGetter := provideNamespaceGetter(kubernetesInterface)
-	client := spaces.NewClient(namespacesGetter)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
+	client := spaces.NewClient(spacesGetter)
 	command := spaces2.NewCreateSpaceCommand(p, client)
 	return command
 }
 
 func InjectDeleteSpace(p *config.KfParams) *cobra.Command {
-	kubernetesInterface := config.GetKubernetes(p)
-	namespacesGetter := provideNamespaceGetter(kubernetesInterface)
-	client := spaces.NewClient(namespacesGetter)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
+	client := spaces.NewClient(spacesGetter)
 	command := spaces2.NewDeleteSpaceCommand(p, client)
 	return command
 }
@@ -315,10 +316,10 @@ func provideRemoteImageFetcher() buildpacks.RemoteImageFetcher {
 	return remote.Image
 }
 
-var SpacesSet = wire.NewSet(config.GetKubernetes, provideNamespaceGetter, spaces.NewClient)
+var SpacesSet = wire.NewSet(config.GetKfClient, provideKfSpaces, spaces.NewClient)
 
-func provideNamespaceGetter(ki kubernetes.Interface) v1.NamespacesGetter {
-	return ki.CoreV1()
+func provideKfSpaces(ki v1alpha1.KfV1alpha1Interface) v1alpha1.SpacesGetter {
+	return ki
 }
 
 var QuotasSet = wire.NewSet(config.GetKubernetes, provideQuotaGetter, quotas.NewClient)

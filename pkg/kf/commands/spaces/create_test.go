@@ -19,11 +19,11 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/spaces/fake"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
-	v1 "k8s.io/api/core/v1"
 )
 
 func TestNewCreateSpaceCommand(t *testing.T) {
@@ -44,7 +44,7 @@ func TestNewCreateSpaceCommand(t *testing.T) {
 				fakeSpaces.
 					EXPECT().
 					Create(gomock.Any()).
-					Do(func(space *v1.Namespace) {
+					Do(func(space *v1alpha1.Space) {
 						testutil.AssertEqual(t, "sets name", "my-ns", space.Name)
 					})
 			},

@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"testing"
 
+	v1alpha1 "github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
-	v1 "k8s.io/api/core/v1"
 )
 
 func ExampleKfSpace() {
@@ -33,12 +33,12 @@ func ExampleKfSpace() {
 	// Output: nsname
 }
 
-func TestKfSpace_ToNamespace(t *testing.T) {
+func TestKfSpace_ToSpace(t *testing.T) {
 	space := NewKfSpace()
 	space.SetName("foo")
-	actual := space.ToNamespace()
+	actual := space.ToSpace()
 
-	expected := &v1.Namespace{}
+	expected := &v1alpha1.Space{}
 	expected.Name = "foo"
 
 	testutil.AssertEqual(t, "generated ns", expected, actual)
