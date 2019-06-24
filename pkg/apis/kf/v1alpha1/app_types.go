@@ -39,20 +39,13 @@ type App struct {
 // AppSpec is the desired configuration for an App.
 type AppSpec struct {
 
-	// UpdateRequests is a unique identifier for an AppSpecTemplate.
-	// Updating sub-values will trigger a new value.
-	UpdateRequests int `json:"updateRequests"`
-
 	// Source contains the source configuration of the App.
 	// +optional
 	SourceSpec `json:"source,inline"`
 
-	// Template is a PodSpec with additional restrictions.
-	// The image name is ignored.
-	// The Spec contains configuration for the App's Pod.
-	// (Env, Vars, Quotas, etc)
+	// Template defines the App's runtime configuration.
 	// +optional
-	Template core.PodSpec `json:"template,omitempty"`
+	Template AppSpecTemplate `json:"template"`
 
 	// Routes defines network routes for the App's ingress.
 	// +optional
@@ -64,6 +57,21 @@ type AppSpec struct {
 
 	// Instances defines the scaling rules for the App.
 	Instances AppSpecInstances `json:"instances,omitempty"`
+}
+
+// AppSpecTemplate defines an app's runtime configuration.
+type AppSpecTemplate struct {
+
+	// UpdateRequests is a unique identifier for an AppSpecTemplate.
+	// Updating sub-values will trigger a new value.
+	UpdateRequests int `json:"updateRequests"`
+
+	// Template is a PodSpec with additional restrictions.
+	// The image name is ignored.
+	// The Spec contains configuration for the App's Pod.
+	// (Env, Vars, Quotas, etc)
+	// +optional
+	Spec core.PodSpec `json:"spec,omitempty"`
 }
 
 // AppSpecRoutes defines network routes for an App's ingress.
