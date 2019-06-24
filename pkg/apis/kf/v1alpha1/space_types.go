@@ -53,6 +53,8 @@ type SpaceSpec struct {
 	// Execution contains settings for the execution environment.
 	// +optional
 	Execution SpaceSpecExecution `json:"execution,omitempty"`
+
+	ResourceLimits SpaceSpecResourceLimits `json:"resourceLimits,omitempty"`
 }
 
 // SpaceSpecSecurity holds fields for creating RBAC in the space.
@@ -93,6 +95,22 @@ type SpaceSpecExecution struct {
 	// +patchMergeKey=name
 	// +patchStrategy=merge
 	Env []corev1.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
+}
+
+// SpaceSpecResourceLimits contains definitions for resource usage limits.
+type SpaceSpecResourceLimits struct {
+	// ResourceQuotas holds the k8s ResourceQuotas created for the whole space.
+	// +optional
+	// +patchMergeKey=name
+	// +patchStrategy=merge
+	ResourceQuotas corev1.ResourceQuotaList
+
+	// ResourceDefaults holds the k8s LimitRange created for the whole space,
+	// which sets default request/limit for resources per pod or container.
+	// +optional
+	// +patchMergeKey=name
+	// +patchStrategy=merge
+	ResourceDefaults corev1.LimitRange
 }
 
 // SpaceStatus represents information about the status of a KfSpace.
