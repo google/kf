@@ -16,6 +16,7 @@ package routes
 
 import (
 	"fmt"
+	"path"
 
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/routeutil"
@@ -41,6 +42,7 @@ func NewDeleteRouteCommand(
 		RunE: func(cmd *cobra.Command, args []string) error {
 			domain := args[0]
 			cmd.SilenceUsage = true
+			urlPath = path.Join("/", urlPath)
 
 			if err := c.Delete(p.Namespace, routeutil.EncodeRouteName(hostname, domain, urlPath)); err != nil {
 				return fmt.Errorf("failed to delete Route: %s", err)
