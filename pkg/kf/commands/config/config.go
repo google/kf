@@ -22,6 +22,7 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/secrets"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
 	build "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
+	networking "github.com/knative/pkg/client/clientset/versioned/typed/istio/v1alpha3"
 	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/poy/service-catalog/pkg/client/clientset_generated/clientset"
@@ -51,7 +52,7 @@ func GetServingClient(p *KfParams) serving.ServingV1alpha1Interface {
 	return client
 }
 
-// GetServingClient returns a Build interface.
+// GetBuildClient returns a Build interface.
 func GetBuildClient(p *KfParams) build.BuildV1alpha1Interface {
 	config := getRestConfig(p)
 	client, err := build.NewForConfig(config)
@@ -69,6 +70,16 @@ func GetKubernetes(p *KfParams) k8sclient.Interface {
 		log.Fatalf("failed to create a K8s client: %s", err)
 	}
 	return c
+}
+
+// GetNetworkingClient returns a Networking interface.
+func GetNetworkingClient(p *KfParams) networking.NetworkingV1alpha3Interface {
+	config := getRestConfig(p)
+	client, err := networking.NewForConfig(config)
+	if err != nil {
+		log.Fatalf("failed to create a Networking client: %s", err)
+	}
+	return client
 }
 
 // GetKfClient returns a kf client.

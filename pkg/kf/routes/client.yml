@@ -1,0 +1,14 @@
+# This file contains options for genfunctional.go
+---
+package: routes
+imports:
+  "github.com/knative/pkg/apis/istio/v1alpha3": "networking"
+  "github.com/knative/pkg/client/clientset/versioned/typed/istio/v1alpha3": "cnetworking"
+kubernetes:
+  kind: "VirtualService"
+  version: "networking.istio.io/v1alpha3"
+  namespaced: true
+type: "networking.VirtualService"
+clientType: "cnetworking.NetworkingV1alpha3Interface"
+cf:
+  name: "Route"
