@@ -626,3 +626,53 @@ func (k *Kf) Stacks(ctx context.Context) []string {
 	PanicOnError(ctx, k.t, "stacks", errs)
 	return CombineOutputStr(ctx, k.t, output)
 }
+
+// CreateRoute runs the create-route command.
+func (k *Kf) CreateRoute(ctx context.Context, domain string, extraArgs ...string) {
+	k.t.Helper()
+	Logf(k.t, "running create-route...")
+	defer Logf(k.t, "done running create-route.")
+
+	args := []string{
+		"create-route",
+		domain,
+	}
+
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: append(args, extraArgs...),
+	})
+	PanicOnError(ctx, k.t, "create-route", errs)
+	StreamOutput(ctx, k.t, output)
+}
+
+// DeleteRoute runs the delete-route command.
+func (k *Kf) DeleteRoute(ctx context.Context, domain string, extraArgs ...string) {
+	k.t.Helper()
+	Logf(k.t, "running delete-route...")
+	defer Logf(k.t, "done running delete-route.")
+
+	args := []string{
+		"delete-route",
+		domain,
+	}
+
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: append(args, extraArgs...),
+	})
+	PanicOnError(ctx, k.t, "delete-route", errs)
+	StreamOutput(ctx, k.t, output)
+}
+
+// Routes runs the routes command.
+func (k *Kf) Routes(ctx context.Context) []string {
+	k.t.Helper()
+	Logf(k.t, "running routes...")
+	defer Logf(k.t, "done running routes.")
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: []string{
+			"routes",
+		},
+	})
+	PanicOnError(ctx, k.t, "routes", errs)
+	return CombineOutputStr(ctx, k.t, output)
+}
