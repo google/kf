@@ -33,9 +33,9 @@ func TestIntegration_Create(t *testing.T) {
 		quotaName := fmt.Sprintf("integration-quota-%d", time.Now().UnixNano())
 		defer kf.DeleteQuota(ctx, quotaName)
 
-		memQuantity := "500Gi"
-		cpuQuantity := "10"
-		routesQuantity := "100"
+		memQuantity := "55Gi"
+		cpuQuantity := "11"
+		routesQuantity := "22"
 
 		createQuotaOutput := kf.CreateQuota(ctx, quotaName,
 			"-m", memQuantity,
@@ -60,9 +60,9 @@ func TestIntegration_Delete(t *testing.T) {
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		quotaName := fmt.Sprintf("integration-quota-%d", time.Now().UnixNano())
 
-		memQuantity := "500Gi"
-		cpuQuantity := "10"
-		routesQuantity := "100"
+		memQuantity := "55Gi"
+		cpuQuantity := "11"
+		routesQuantity := "22"
 
 		kf.CreateQuota(ctx, quotaName,
 			"-m", memQuantity,
@@ -91,21 +91,23 @@ func TestIntegration_Update(t *testing.T) {
 		quotaName := fmt.Sprintf("integration-quota-%d", time.Now().UnixNano())
 		defer kf.DeleteQuota(ctx, quotaName)
 
-		memQuantity := "500Gi"
-		cpuQuantity := "10"
+		memQuantity := "55Gi"
+		cpuQuantity := "11"
 
 		kf.CreateQuota(ctx, quotaName,
 			"-m", memQuantity,
 			"-c", cpuQuantity,
 		)
-		// Check that routes quota is defaulted to "0"
+
 		getQuotaOutput := kf.GetQuota(ctx, quotaName)
+
+		// Check that routes quota appears by default as "0"
 		AssertContainsAll(t, strings.Join(getQuotaOutput, "\n"), []string{quotaName, memQuantity, cpuQuantity, "0"})
 		Logf(t, "done ensuring correct quota info returned.")
 
-		memQuantity = "600Gi"
-		cpuQuantity = "12"
-		routesQuantity := "100"
+		memQuantity = "66Gi"
+		cpuQuantity = "22"
+		routesQuantity := "8"
 
 		kf.UpdateQuota(ctx, quotaName,
 			"-m", memQuantity,
@@ -139,13 +141,13 @@ func TestIntegration_List(t *testing.T) {
 		defer kf.DeleteQuota(ctx, quotaName)
 		defer kf.DeleteQuota(ctx, quota2Name)
 
-		memQuantity := "500Gi"
-		cpuQuantity := "10"
-		routesQuantity := "100"
+		memQuantity := "55Gi"
+		cpuQuantity := "11"
+		routesQuantity := "33"
 
-		memQuantity2 := "400Gi"
-		cpuQuantity2 := "500m"
-		routesQuantity2 := "50"
+		memQuantity2 := "44Gi"
+		cpuQuantity2 := "6666m"
+		routesQuantity2 := "22"
 
 		kf.CreateQuota(ctx, quotaName,
 			"-m", memQuantity,
