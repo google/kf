@@ -44,10 +44,9 @@ func NewKfCommand() *cobra.Command {
 				return err
 			}
 
-			// Apply defaults
-			if p.Namespace == "" {
-				p.Namespace = "default"
-			}
+			p.ApplyDefaults(config.KfParams{
+				Namespace: "default",
+			})
 
 			return nil
 		},

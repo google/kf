@@ -40,21 +40,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-var (
-	defaultConfigPath = ""
-)
-
-func init() {
-	// kf shouldn't fail if we can't find the user's home directory, use the PWD
-	// instead
-	home, err := homedir.Dir()
-	if err != nil {
-		defaultConfigPath = path.Join(".", ".kf")
-	} else {
-		defaultConfigPath = path.Join(home, ".kf")
-	}
-}
-
 // KfParams stores everything needed to interact with the user and Knative.
 type KfParams struct {
 	// Config holds the path to the configuration.
@@ -73,7 +58,14 @@ func (p *KfParams) ConfigPath() string {
 		return p.Config
 	}
 
-	return defaultConfigPath
+	// Kf shouldn't fail if we can't find the user's home directory, instead
+	// use the current working directory.
+	base := "."
+	if home, err := homedir.Dir(); err == nil {
+		base = home
+	}
+
+	return path.Join(base, ".kf")
 }
 
 // ReadConfig reads the config from the specified config path or the default
@@ -95,16 +87,17 @@ func (p *KfParams) ReadConfig() error {
 		}
 	}
 
-	newParams := &KfParams{}
-	if err := yaml.Unmarshal(contents, newParams); err != nil {
+	newParams := KfParams{}
+	if err := yaml.Unmarshal(contents, &newParams); err != nil {
 		return err
 	}
 
-	if err := mergo.Merge(p, newParams); err != nil {
-		return err
-	}
+	return p.ApplyDefaults(newParams)
+}
 
-	return nil
+// ApplyDefaults changes blank fields in this struct to the value in defaults.
+func (p *KfParams) ApplyDefaults(defaults KfParams) error {
+	return mergo.Merge(p, defaults)
 }
 
 // WriteConfig writes the current configuration to the path specified by the
