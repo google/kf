@@ -13,7 +13,7 @@
 # limitations under the License.
 
 apiVersion: apiextensions.k8s.io/v1beta1
-kind: Application
+kind: CustomResourceDefinition
 metadata:
   name: apps.kf.dev
 spec:
@@ -26,7 +26,7 @@ spec:
     categories:
     - all
     - kf
-  scope: Namespace
+  scope: Namespaced
   subresources:
     status: {}
   additionalPrinterColumns:
