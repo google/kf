@@ -68,6 +68,12 @@ resources:
     repository: *ci_image_uri
     username: _json_key
     password: *service_account_json
+- name: pr-cleanup-trigger
+  type: time
+  source:
+    start: 0:00
+    stop: 1:00
+    location: America/Los_Angeles
 
 jobs:
 # builds the ci image for later steps/other pipelines
@@ -142,3 +148,72 @@ jobs:
       params:
         path: src
         status: failure
+
+# destroys any leftover pr pipelines
+- name: pr-cleanup
+  plan:
+  - get: pr-cleanup-trigger
+    trigger: true
+  - task: cleanup
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: *ci-image-source
+      params:
+        FLY_TARGET: *fly_target
+        FLY_USER: *fly_user
+        FLY_PASSWORD: *fly_password
+        FLY_URL: *fly_url
+        FLY_TEAM: *fly_team
+        GITHUB_REPO: *github_repo
+        GITHUB_TOKEN: *github_access_token
+      run:
+        dir: ci-pipelines-src
+        path: sh
+        args:
+        - -exc
+        - |
+          # Download the fly executable for the given concourse server
+          wget "${FLY_URL}/api/v1/cli?arch=amd64&platform=linux" -O fly
+          chmod +x ./fly
+
+          # Login
+          set +x
+          echo fly login...
+          ./fly login\
+            -t "$FLY_TARGET" \
+            -c "$FLY_URL" \
+            -n "$FLY_TEAM" \
+            -u "$FLY_USER" \
+            -p "$FLY_PASSWORD"
+          set -x
+
+          # Query Github for open PR numbers
+          prs=$(mktemp)
+          set +x
+          curl -H "Authorization: token ${GITHUB_TOKEN}" \
+            -L "https://api.github.com/repos/${GITHUB_REPO}/pulls?state=open" \
+            | jq .[].number \
+            | sort \
+            | uniq > $prs
+          set -x
+
+          # Query concourse for pipelines
+          pipelines=$(mktemp)
+          ./fly -t "$FLY_TARGET" pipelines \
+            | awk '{print $1}' \
+            | grep -v '^kf$' \
+            | sort \
+            | uniq > $pipelines
+
+          # Create a list of pipelines which can be safely removed.
+          extra=$(mktemp)
+          comm -13 $prs $pipelines > $extra
+
+          echo "removing the following pipelines as their PRs are no longer open:"
+          cat $extra
+          for extra_pipeline in $(cat $extra); do
+            ./fly -t "$FLY_TARGET" destroy-pipeline -n -p $extra_pipeline
+          done
+          rm -f $prs $pipelines $extra
