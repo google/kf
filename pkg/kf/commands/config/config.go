@@ -15,12 +15,16 @@
 package config
 
 import (
+	"io/ioutil"
 	"log"
+	"os"
+	"path"
 	"path/filepath"
 
 	kf "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/secrets"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
+	"github.com/imdario/mergo"
 	build "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	networking "github.com/knative/pkg/client/clientset/versioned/typed/istio/v1alpha3"
 	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
@@ -30,16 +34,90 @@ import (
 	scv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	"github.com/poy/service-catalog/pkg/svcat"
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
+	"gopkg.in/yaml.v2"
 	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+var (
+	defaultConfigPath = ""
+)
+
+func init() {
+	// kf shouldn't fail if we can't find the user's home directory, use the PWD
+	// instead
+	home, err := homedir.Dir()
+	if err != nil {
+		defaultConfigPath = path.Join(".", ".kf")
+	} else {
+		defaultConfigPath = path.Join(home, ".kf")
+	}
+}
+
 // KfParams stores everything needed to interact with the user and Knative.
 type KfParams struct {
-	Namespace   string
-	KubeCfgFile string
-	Verbose     bool
+	// Config holds the path to the configuration.
+	Config string `yaml:"-"`
+
+	// Namespace holds the namespace kf should connect to by default.
+	Namespace string `yaml:"space"`
+
+	// KubeCfgFile holds the path to the kubeconfig.
+	KubeCfgFile string `yaml:"kubeconfig"`
+}
+
+// ConfigPath gets the path we should read the config from/write it to.
+func (p *KfParams) ConfigPath() string {
+	if p.Config != "" {
+		return p.Config
+	}
+
+	return defaultConfigPath
+}
+
+// ReadConfig reads the config from the specified config path or the default
+// path. If the path is the default and the file doesn't yet exist, then
+// this function does nothing.
+func (p *KfParams) ReadConfig() error {
+	userSpecifiedConfig := p.Config != ""
+	configPath := p.ConfigPath()
+
+	contents, err := ioutil.ReadFile(configPath)
+	if err != nil {
+		switch {
+		case userSpecifiedConfig:
+			return err
+		case os.IsNotExist(err):
+			return nil
+		default:
+			return err
+		}
+	}
+
+	newParams := &KfParams{}
+	if err := yaml.Unmarshal(contents, newParams); err != nil {
+		return err
+	}
+
+	if err := mergo.Merge(p, newParams); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// WriteConfig writes the current configuration to the path specified by the
+// user or the default path.
+func (p *KfParams) WriteConfig() error {
+	configPath := p.ConfigPath()
+
+	contents, err := yaml.Marshal(p)
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(configPath, contents, 0664)
 }
 
 // GetServingClient returns a Serving interface.

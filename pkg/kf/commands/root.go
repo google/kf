@@ -38,14 +38,27 @@ func NewKfCommand() *cobra.Command {
 		Long: templates.LongDesc(`
       kf is like cf for Knative
       `),
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			// Read configuration from either config or home directory
+			if err := p.ReadConfig(); err != nil {
+				return err
+			}
+
+			// Apply defaults
+			if p.Namespace == "" {
+				p.Namespace = "default"
+			}
+
+			return nil
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Help()
 		},
 	}
 
+	rootCmd.PersistentFlags().StringVar(&p.Config, "config", "", "config file (default is $HOME/.kf)")
 	rootCmd.PersistentFlags().StringVar(&p.KubeCfgFile, "kubeconfig", "", "kubectl config file (default is $HOME/.kube/config)")
-	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "default", "kubernetes namespace")
-	rootCmd.PersistentFlags().BoolVarP(&p.Verbose, "verbose", "v", false, "make the operation more talkative")
+	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "", "kubernetes namespace (default is default)")
 
 	commands := map[string]*cobra.Command{
 		// App interaction
@@ -105,6 +118,7 @@ func NewKfCommand() *cobra.Command {
 		}),
 
 		"completion": completionCommand(rootCmd),
+		"target":     NewTargetCommand(p),
 	}
 
 	groups := templates.CommandGroups{}
