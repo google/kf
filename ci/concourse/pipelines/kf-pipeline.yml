@@ -167,6 +167,7 @@ jobs:
         FLY_URL: *fly_url
         FLY_TEAM: *fly_team
         GITHUB_REPO: *github_repo
+        GITHUB_TOKEN: *github_access_token
       run:
         dir: ci-pipelines-src
         path: sh
@@ -188,12 +189,28 @@ jobs:
             -p "$FLY_PASSWORD"
           set -x
 
+          # Query Github for open PR numbers
           prs=$(mktemp)
-          curl -L "https://api.github.com/repos/${GITHUB_REPO}/pulls?state=open" | jq .[].number | sort | uniq > $prs
+          set +x
+          curl -H "Authorization: token ${GITHUB_TOKEN}" \
+            -L "https://api.github.com/repos/${GITHUB_REPO}/pulls?state=open" \
+            | jq .[].number \
+            | sort \
+            | uniq > $prs
+          set -x
+
+          # Query concourse for pipelines
           pipelines=$(mktemp)
-          ./fly -t "$FLY_TARGET" pipelines | awk '{print $1}' | grep -v '^kf$' | sort | uniq > $pipelines
+          ./fly -t "$FLY_TARGET" pipelines \
+            | awk '{print $1}' \
+            | grep -v '^kf$' \
+            | sort \
+            | uniq > $pipelines
+
+          # Create a list of pipelines which can be safely removed.
           extra=$(mktemp)
           comm -13 $prs $pipelines > $extra
+
           echo "removing the following pipelines as their PRs are no longer open:"
           cat $extra
           for extra_pipeline in $(cat $extra); do
