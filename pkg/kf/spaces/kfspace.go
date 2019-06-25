@@ -14,11 +14,13 @@
 
 package spaces
 
-import v1 "k8s.io/api/core/v1"
+import (
+	v1alpha1 "github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1"
+)
 
-// KfSpace provides a facade around v1.Namespace for accessing and mutating its
-// values.
-type KfSpace v1.Namespace
+// KfSpace provides a facade around v1alpha1.Space for accessing and mutating
+// its values.
+type KfSpace v1alpha1.Space
 
 // GetName retrieves the name of the space.
 func (k *KfSpace) GetName() string {
@@ -30,10 +32,9 @@ func (k *KfSpace) SetName(name string) {
 	k.Name = name
 }
 
-// ToNamespace casts this alias back into a Namespace.
-func (k *KfSpace) ToNamespace() *v1.Namespace {
-	ns := v1.Namespace(*k)
-	return &ns
+// ToSpace casts this alias back into a Namespace.
+func (k *KfSpace) ToSpace() *v1alpha1.Space {
+	return (*v1alpha1.Space)(k)
 }
 
 // NewKfSpace creates a new KfSpace.

@@ -25,8 +25,8 @@ import (
 
 // User defined imports
 import (
-	v1 "k8s.io/api/core/v1"
-	cv1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	v1alpha1 "github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1"
+	cv1alpha1 "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -35,18 +35,18 @@ import (
 
 const (
 	// Kind contains the kind for the backing Kubernetes API.
-	Kind = "Namespace"
+	Kind = "Space"
 
 	// APIVersion contains the version for the backing Kubernetes API.
-	APIVersion = "v1"
+	APIVersion = "v1alpha1"
 )
 
-// Predicate is a boolean function for a v1.Namespace.
-type Predicate func(*v1.Namespace) bool
+// Predicate is a boolean function for a v1alpha1.Space.
+type Predicate func(*v1alpha1.Space) bool
 
 // AllPredicate is a predicate that passes if all children pass.
 func AllPredicate(children ...Predicate) Predicate {
-	return func(obj *v1.Namespace) bool {
+	return func(obj *v1alpha1.Space) bool {
 		for _, filter := range children {
 			if !filter(obj) {
 				return false
@@ -57,11 +57,11 @@ func AllPredicate(children ...Predicate) Predicate {
 	}
 }
 
-// Mutator is a function that changes v1.Namespace.
-type Mutator func(*v1.Namespace) error
+// Mutator is a function that changes v1alpha1.Space.
+type Mutator func(*v1alpha1.Space) error
 
-// List represents a collection of v1.Namespace.
-type List []v1.Namespace
+// List represents a collection of v1alpha1.Space.
+type List []v1alpha1.Space
 
 // Filter returns a new list items for which the predicates fails removed.
 func (list List) Filter(filter Predicate) (out List) {
@@ -79,7 +79,7 @@ type MutatorList []Mutator
 
 // Apply passes the given value to each of the mutators in the list failing if
 // one of them returns an error.
-func (list MutatorList) Apply(svc *v1.Namespace) error {
+func (list MutatorList) Apply(svc *v1alpha1.Space) error {
 	for _, mutator := range list {
 		if err := mutator(svc); err != nil {
 			return err
@@ -91,7 +91,7 @@ func (list MutatorList) Apply(svc *v1.Namespace) error {
 
 // LabelSetMutator creates a mutator that sets the given labels on the object.
 func LabelSetMutator(labels map[string]string) Mutator {
-	return func(obj *v1.Namespace) error {
+	return func(obj *v1alpha1.Space) error {
 		if obj.Labels == nil {
 			obj.Labels = make(map[string]string)
 		}
@@ -106,14 +106,14 @@ func LabelSetMutator(labels map[string]string) Mutator {
 
 // LabelEqualsPredicate validates that the given label exists exactly on the object.
 func LabelEqualsPredicate(key, value string) Predicate {
-	return func(obj *v1.Namespace) bool {
+	return func(obj *v1alpha1.Space) bool {
 		return obj.Labels[key] == value
 	}
 }
 
 // LabelsContainsPredicate validates that the given label exists on the object.
 func LabelsContainsPredicate(key string) Predicate {
-	return func(obj *v1.Namespace) bool {
+	return func(obj *v1alpha1.Space) bool {
 		_, ok := obj.Labels[key]
 		return ok
 	}
@@ -123,28 +123,28 @@ func LabelsContainsPredicate(key string) Predicate {
 // Client
 ////////////////////////////////////////////////////////////////////////////////
 
-// Client is the interface for interacting with v1.Namespace types as Space CF style objects.
+// Client is the interface for interacting with v1alpha1.Space types as Space CF style objects.
 type Client interface {
-	Create(obj *v1.Namespace, opts ...CreateOption) (*v1.Namespace, error)
-	Update(obj *v1.Namespace, opts ...UpdateOption) (*v1.Namespace, error)
+	Create(obj *v1alpha1.Space, opts ...CreateOption) (*v1alpha1.Space, error)
+	Update(obj *v1alpha1.Space, opts ...UpdateOption) (*v1alpha1.Space, error)
 	Transform(name string, transformer Mutator) error
-	Get(name string, opts ...GetOption) (*v1.Namespace, error)
+	Get(name string, opts ...GetOption) (*v1alpha1.Space, error)
 	Delete(name string, opts ...DeleteOption) error
-	List(opts ...ListOption) ([]v1.Namespace, error)
-	Upsert(newObj *v1.Namespace, merge Merger) (*v1.Namespace, error)
+	List(opts ...ListOption) ([]v1alpha1.Space, error)
+	Upsert(newObj *v1alpha1.Space, merge Merger) (*v1alpha1.Space, error)
 
 	// ClientExtension can be used by the developer to extend the client.
 	ClientExtension
 }
 
 type coreClient struct {
-	kclient cv1.NamespacesGetter
+	kclient cv1alpha1.SpacesGetter
 
 	upsertMutate        MutatorList
 	membershipValidator Predicate
 }
 
-func (core *coreClient) preprocessUpsert(obj *v1.Namespace) error {
+func (core *coreClient) preprocessUpsert(obj *v1alpha1.Space) error {
 	if err := core.upsertMutate.Apply(obj); err != nil {
 		return err
 	}
@@ -152,24 +152,24 @@ func (core *coreClient) preprocessUpsert(obj *v1.Namespace) error {
 	return nil
 }
 
-// Create inserts the given v1.Namespace into the cluster.
+// Create inserts the given v1alpha1.Space into the cluster.
 // The value to be inserted will be preprocessed and validated before being sent.
-func (core *coreClient) Create(obj *v1.Namespace, opts ...CreateOption) (*v1.Namespace, error) {
+func (core *coreClient) Create(obj *v1alpha1.Space, opts ...CreateOption) (*v1alpha1.Space, error) {
 	if err := core.preprocessUpsert(obj); err != nil {
 		return nil, err
 	}
 
-	return core.kclient.Namespaces().Create(obj)
+	return core.kclient.Spaces().Create(obj)
 }
 
 // Update replaces the existing object in the cluster with the new one.
 // The value to be inserted will be preprocessed and validated before being sent.
-func (core *coreClient) Update(obj *v1.Namespace, opts ...UpdateOption) (*v1.Namespace, error) {
+func (core *coreClient) Update(obj *v1alpha1.Space, opts ...UpdateOption) (*v1alpha1.Space, error) {
 	if err := core.preprocessUpsert(obj); err != nil {
 		return nil, err
 	}
 
-	return core.kclient.Namespaces().Update(obj)
+	return core.kclient.Spaces().Update(obj)
 }
 
 // Transform performs a read/modify/write on the object with the given name.
@@ -194,8 +194,8 @@ func (core *coreClient) Transform(name string, mutator Mutator) error {
 // Get retrieves an existing object in the cluster with the given name.
 // The function will return an error if an object is retrieved from the cluster
 // but doesn't pass the membership test of this client.
-func (core *coreClient) Get(name string, opts ...GetOption) (*v1.Namespace, error) {
-	res, err := core.kclient.Namespaces().Get(name, metav1.GetOptions{})
+func (core *coreClient) Get(name string, opts ...GetOption) (*v1alpha1.Space, error) {
+	res, err := core.kclient.Spaces().Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get the Space with the name %q: %v", name, err)
 	}
@@ -212,7 +212,7 @@ func (core *coreClient) Get(name string, opts ...GetOption) (*v1.Namespace, erro
 func (core *coreClient) Delete(name string, opts ...DeleteOption) error {
 	cfg := DeleteOptionDefaults().Extend(opts).toConfig()
 
-	if err := core.kclient.Namespaces().Delete(name, cfg.ToDeleteOptions()); err != nil {
+	if err := core.kclient.Spaces().Delete(name, cfg.ToDeleteOptions()); err != nil {
 		return fmt.Errorf("couldn't delete the Space with the name %q: %v", name, err)
 	}
 
@@ -236,10 +236,10 @@ func (cfg deleteConfig) ToDeleteOptions() *metav1.DeleteOptions {
 
 // List gets objects in the cluster and filters the results based on the
 // internal membership test.
-func (core *coreClient) List(opts ...ListOption) ([]v1.Namespace, error) {
+func (core *coreClient) List(opts ...ListOption) ([]v1alpha1.Space, error) {
 	cfg := ListOptionDefaults().Extend(opts).toConfig()
 
-	res, err := core.kclient.Namespaces().List(cfg.ToListOptions())
+	res, err := core.kclient.Spaces().List(cfg.ToListOptions())
 	if err != nil {
 		return nil, fmt.Errorf("couldn't list Spaces: %v", err)
 	}
@@ -262,11 +262,11 @@ func (cfg listConfig) ToListOptions() (resp metav1.ListOptions) {
 }
 
 // Merger is a type to merge an existing value with a new one.
-type Merger func(newObj, oldObj *v1.Namespace) *v1.Namespace
+type Merger func(newObj, oldObj *v1alpha1.Space) *v1alpha1.Space
 
 // Upsert inserts the object into the cluster if it doesn't already exist, or else
 // calls the merge function to merge the existing and new then performs an Update.
-func (core *coreClient) Upsert(newObj *v1.Namespace, merge Merger) (*v1.Namespace, error) {
+func (core *coreClient) Upsert(newObj *v1alpha1.Space, merge Merger) (*v1alpha1.Space, error) {
 	// NOTE: the field selector may be ignored by some Kubernetes resources
 	// so we double check down below.
 	existing, err := core.List(WithListfieldSelector(map[string]string{"metadata.name": newObj.Name}))

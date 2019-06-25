@@ -19,11 +19,12 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/spaces/fake"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
-	v1 "k8s.io/api/core/v1"
+	"github.com/knative/pkg/apis"
 )
 
 func TestNewListSpacesCommand(t *testing.T) {
@@ -42,27 +43,31 @@ func TestNewListSpacesCommand(t *testing.T) {
 		},
 		"no contents": {
 			setup: func(t *testing.T, fakeSpaces *fake.FakeClient) {
-				list := []v1.Namespace{}
+				list := []v1alpha1.Space{}
 				fakeSpaces.
 					EXPECT().
 					List().
 					Return(list, nil)
 			},
-			expectedStrings: []string{"Name", "Status", "Age"},
+			expectedStrings: []string{"Name", "Age", "Ready", "Reason"},
 		},
 		"contents": {
 			setup: func(t *testing.T, fakeSpaces *fake.FakeClient) {
-				ns := v1.Namespace{}
+				ns := v1alpha1.Space{}
 				ns.Name = "my-ns"
-				ns.Status.Phase = "TESTING"
+				ns.Status.Conditions = []apis.Condition{{
+					Type:   "Ready",
+					Status: "TESTING",
+					Reason: "SomeMessage",
+				}}
 
-				list := []v1.Namespace{ns}
+				list := []v1alpha1.Space{ns}
 				fakeSpaces.
 					EXPECT().
 					List().
 					Return(list, nil)
 			},
-			expectedStrings: []string{"my-ns", "TESTING"},
+			expectedStrings: []string{"my-ns", "TESTING", "SomeMessage"},
 		},
 		"server failure": {
 			setup: func(t *testing.T, fakeSpaces *fake.FakeClient) {

@@ -20,9 +20,9 @@
 package fake
 
 import (
+	v1alpha1 "github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1"
 	spaces "github.com/GoogleCloudPlatform/kf/pkg/kf/spaces"
 	gomock "github.com/golang/mock/gomock"
-	v1 "k8s.io/api/core/v1"
 	reflect "reflect"
 )
 
@@ -50,14 +50,14 @@ func (m *FakeClient) EXPECT() *FakeClientMockRecorder {
 }
 
 // Create mocks base method
-func (m *FakeClient) Create(arg0 *v1.Namespace, arg1 ...spaces.CreateOption) (*v1.Namespace, error) {
+func (m *FakeClient) Create(arg0 *v1alpha1.Space, arg1 ...spaces.CreateOption) (*v1alpha1.Space, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Create", varargs...)
-	ret0, _ := ret[0].(*v1.Namespace)
+	ret0, _ := ret[0].(*v1alpha1.Space)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -89,14 +89,14 @@ func (mr *FakeClientMockRecorder) Delete(arg0 interface{}, arg1 ...interface{}) 
 }
 
 // Get mocks base method
-func (m *FakeClient) Get(arg0 string, arg1 ...spaces.GetOption) (*v1.Namespace, error) {
+func (m *FakeClient) Get(arg0 string, arg1 ...spaces.GetOption) (*v1alpha1.Space, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Get", varargs...)
-	ret0, _ := ret[0].(*v1.Namespace)
+	ret0, _ := ret[0].(*v1alpha1.Space)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -109,14 +109,14 @@ func (mr *FakeClientMockRecorder) Get(arg0 interface{}, arg1 ...interface{}) *go
 }
 
 // List mocks base method
-func (m *FakeClient) List(arg0 ...spaces.ListOption) ([]v1.Namespace, error) {
+func (m *FakeClient) List(arg0 ...spaces.ListOption) ([]v1alpha1.Space, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
 	for _, a := range arg0 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "List", varargs...)
-	ret0, _ := ret[0].([]v1.Namespace)
+	ret0, _ := ret[0].([]v1alpha1.Space)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -142,14 +142,14 @@ func (mr *FakeClientMockRecorder) Transform(arg0, arg1 interface{}) *gomock.Call
 }
 
 // Update mocks base method
-func (m *FakeClient) Update(arg0 *v1.Namespace, arg1 ...spaces.UpdateOption) (*v1.Namespace, error) {
+func (m *FakeClient) Update(arg0 *v1alpha1.Space, arg1 ...spaces.UpdateOption) (*v1alpha1.Space, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Update", varargs...)
-	ret0, _ := ret[0].(*v1.Namespace)
+	ret0, _ := ret[0].(*v1alpha1.Space)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -162,10 +162,10 @@ func (mr *FakeClientMockRecorder) Update(arg0 interface{}, arg1 ...interface{}) 
 }
 
 // Upsert mocks base method
-func (m *FakeClient) Upsert(arg0 *v1.Namespace, arg1 spaces.Merger) (*v1.Namespace, error) {
+func (m *FakeClient) Upsert(arg0 *v1alpha1.Space, arg1 spaces.Merger) (*v1alpha1.Space, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upsert", arg0, arg1)
-	ret0, _ := ret[0].(*v1.Namespace)
+	ret0, _ := ret[0].(*v1alpha1.Space)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
