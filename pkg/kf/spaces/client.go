@@ -15,7 +15,7 @@
 package spaces
 
 import (
-	cv1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	cv1alpha1 "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
 )
 
 // ClientExtension holds additional functions that should be exposed by client.
@@ -23,12 +23,12 @@ type ClientExtension interface {
 }
 
 // NewClient creates a new space client.
-func NewClient(kclient cv1.NamespacesGetter) Client {
+func NewClient(kclient cv1alpha1.SpacesGetter) Client {
 	return &coreClient{
 		kclient: kclient,
 		upsertMutate: MutatorList{
 			LabelSetMutator(map[string]string{"app.kubernetes.io/managed-by": "kf"}),
 		},
-		membershipValidator: LabelEqualsPredicate("app.kubernetes.io/managed-by", "kf"),
+		membershipValidator: AllPredicate(), // all spaces can be managed by Kf
 	}
 }

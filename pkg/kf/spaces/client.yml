@@ -1,12 +1,12 @@
 # This file contains options for genfunctional.go
 ---
 package: spaces
-imports: {"k8s.io/api/core/v1":"v1", "k8s.io/client-go/kubernetes/typed/core/v1": "cv1"}
+imports: {"github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1":"v1alpha1", "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1": "cv1alpha1"}
 kubernetes:
-  kind: "Namespace"
-  version: "v1"
+  kind: "Space"
+  version: "v1alpha1"
   namespaced: false
-type: "v1.Namespace"
-clientType: "cv1.NamespacesGetter"
+type: "v1alpha1.Space"
+clientType: "cv1alpha1.SpacesGetter"
 cf:
   name: "Space"
