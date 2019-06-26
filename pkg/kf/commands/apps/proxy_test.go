@@ -19,11 +19,11 @@ import (
 	"errors"
 	"testing"
 
-	fakeapps "github.com/GoogleCloudPlatform/kf/pkg/kf/apps/fake"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/fake"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
+	fakeapps "github.com/google/kf/pkg/kf/apps/fake"
+	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/fake"
+	"github.com/google/kf/pkg/kf/testutil"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"

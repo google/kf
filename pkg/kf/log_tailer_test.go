@@ -20,9 +20,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
+	"github.com/google/kf/pkg/kf"
+	"github.com/google/kf/pkg/kf/testutil"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	"github.com/knative/pkg/apis"
 	duckv1beta1 "github.com/knative/pkg/apis/duck/v1beta1"

@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1"
-	kflisters "github.com/GoogleCloudPlatform/kf/pkg/client/listers/kf/v1alpha1"
-	"github.com/GoogleCloudPlatform/kf/pkg/reconciler/space/resources"
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
+	"github.com/google/kf/pkg/reconciler/space/resources"
 	"github.com/knative/pkg/logging"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
@@ -32,7 +32,7 @@ import (
 	v1listers "k8s.io/client-go/listers/core/v1"
 	rbacv1listers "k8s.io/client-go/listers/rbac/v1"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/reconciler"
+	"github.com/google/kf/pkg/reconciler"
 	"github.com/knative/pkg/controller"
 	"github.com/knative/pkg/kmp"
 	"k8s.io/apimachinery/pkg/api/equality"

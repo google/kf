@@ -15,7 +15,7 @@
 package spaces
 
 import (
-	v1alpha1 "github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1"
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 )
 
 // KfSpace provides a facade around v1alpha1.Space for accessing and mutating

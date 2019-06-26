@@ -22,9 +22,9 @@ import (
 	"net/http"
 	"net/http/httputil"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf"
+	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/spf13/cobra"
 )
 

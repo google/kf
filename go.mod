@@ -1,4 +1,4 @@
-module github.com/GoogleCloudPlatform/kf
+module github.com/google/kf
 
 require (
 	contrib.go.opencensus.io/exporter/stackdriver v0.12.1 // indirect

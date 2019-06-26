@@ -15,7 +15,7 @@
 package main
 
 import (
-	"github.com/GoogleCloudPlatform/kf/pkg/reconciler/space"
+	"github.com/google/kf/pkg/reconciler/space"
 	"github.com/knative/pkg/injection/sharedmain"
 )
 

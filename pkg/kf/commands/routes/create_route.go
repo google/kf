@@ -20,9 +20,9 @@ import (
 	"net/http"
 	"path"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/routeutil"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/routes"
+	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/internal/routeutil"
+	"github.com/google/kf/pkg/kf/routes"
 	"github.com/knative/pkg/apis/istio/common/v1alpha1"
 	networking "github.com/knative/pkg/apis/istio/v1alpha3"
 	"github.com/spf13/cobra"

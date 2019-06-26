@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings/fake"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
+	"github.com/google/kf/pkg/kf/commands/config"
+	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
+	"github.com/google/kf/pkg/kf/service-bindings/fake"
+	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"
 )

@@ -19,8 +19,8 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/routes"
+	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/routes"
 	"github.com/spf13/cobra"
 )
 

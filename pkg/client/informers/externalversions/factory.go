@@ -21,9 +21,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned"
-	internalinterfaces "github.com/GoogleCloudPlatform/kf/pkg/client/informers/externalversions/internalinterfaces"
-	kf "github.com/GoogleCloudPlatform/kf/pkg/client/informers/externalversions/kf"
+	versioned "github.com/google/kf/pkg/client/clientset/versioned"
+	internalinterfaces "github.com/google/kf/pkg/client/informers/externalversions/internalinterfaces"
+	kf "github.com/google/kf/pkg/client/informers/externalversions/kf"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

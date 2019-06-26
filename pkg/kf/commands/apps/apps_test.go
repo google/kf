@@ -20,10 +20,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps/fake"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
+	"github.com/google/kf/pkg/kf/apps/fake"
+	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/knative/pkg/apis"
 	duckv1beta1 "github.com/knative/pkg/apis/duck/v1beta1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"

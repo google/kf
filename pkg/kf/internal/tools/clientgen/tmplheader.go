@@ -17,7 +17,7 @@ package clientgen
 import (
 	"text/template"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/tools/generator"
+	"github.com/google/kf/pkg/kf/internal/tools/generator"
 )
 
 var headerTemplate = template.Must(template.New("").Funcs(generator.TemplateFuncs()).Parse(`

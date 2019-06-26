@@ -19,8 +19,8 @@ package kffactory
 import (
 	"context"
 
-	externalversions "github.com/GoogleCloudPlatform/kf/pkg/client/informers/externalversions"
-	client "github.com/GoogleCloudPlatform/kf/pkg/client/injection/client"
+	externalversions "github.com/google/kf/pkg/client/informers/externalversions"
+	client "github.com/google/kf/pkg/client/injection/client"
 	controller "github.com/knative/pkg/controller"
 	injection "github.com/knative/pkg/injection"
 	logging "github.com/knative/pkg/logging"

@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/testutil"
 	v1 "k8s.io/api/rbac/v1"
 )
 

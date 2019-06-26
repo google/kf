@@ -19,12 +19,12 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks/fake"
-	cbuildpacks "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/buildpacks"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
+	"github.com/google/kf/pkg/kf/buildpacks"
+	"github.com/google/kf/pkg/kf/buildpacks/fake"
+	cbuildpacks "github.com/google/kf/pkg/kf/commands/buildpacks"
+	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/testutil"
 )
 
 func TestBuildpacks(t *testing.T) {

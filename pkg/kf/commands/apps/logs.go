@@ -18,9 +18,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	kfi "github.com/GoogleCloudPlatform/kf/pkg/kf/internal/kf"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/logs"
+	"github.com/google/kf/pkg/kf/commands/config"
+	kfi "github.com/google/kf/pkg/kf/internal/kf"
+	"github.com/google/kf/pkg/kf/logs"
 	"github.com/spf13/cobra"
 )
 

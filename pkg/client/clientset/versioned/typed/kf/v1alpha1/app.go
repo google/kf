@@ -19,8 +19,8 @@ package v1alpha1
 import (
 	"time"
 
-	v1alpha1 "github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1"
-	scheme "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/scheme"
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	scheme "github.com/google/kf/pkg/client/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"

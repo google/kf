@@ -1,3 +1,3 @@
-module github.com/GoogleCloudPlatform/kf/samples/apps
+module github.com/google/kf/samples/apps
 
 go 1.12

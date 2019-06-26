@@ -21,9 +21,9 @@ import (
 	"path"
 	"path/filepath"
 
-	kf "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/secrets"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
+	kf "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/secrets"
+	"github.com/google/kf/pkg/kf/services"
 	"github.com/imdario/mergo"
 	build "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	networking "github.com/knative/pkg/client/clientset/versioned/typed/istio/v1alpha3"

@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"testing"
 
-	v1alpha1 "github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/testutil"
 )
 
 func ExampleKfSpace() {

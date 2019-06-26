@@ -17,7 +17,7 @@ package cfutil_test
 import (
 	"fmt"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/cfutil"
+	"github.com/google/kf/pkg/kf/internal/cfutil"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 )
 

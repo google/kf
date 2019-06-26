@@ -18,13 +18,13 @@ import (
 	"errors"
 	"testing"
 
-	servicescmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/services"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
+	servicescmd "github.com/google/kf/pkg/kf/commands/services"
+	"github.com/google/kf/pkg/kf/services"
+	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/services/fake"
+	"github.com/google/kf/pkg/kf/services/fake"
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
 )
 
