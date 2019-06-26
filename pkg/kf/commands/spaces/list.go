@@ -22,6 +22,8 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/spaces"
 	"k8s.io/apimachinery/pkg/api/meta/table"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1"
+
 	"github.com/spf13/cobra"
 )
 
@@ -43,12 +45,21 @@ func NewListSpacesCommand(p *config.KfParams, client spaces.Client) *cobra.Comma
 			defer w.Flush()
 
 			// Status is important here as spaces may be in a deleting status.
-			fmt.Fprintln(w, "Name\tStatus\tAge")
+			fmt.Fprintln(w, "Name\tAge\tReady\tReason")
 			for _, space := range list {
-				fmt.Fprintf(w, "%s\t%s\t%s",
+				ready := ""
+				reason := ""
+				if cond := space.Status.GetCondition(v1alpha1.SpaceConditionReady); cond != nil {
+					ready = fmt.Sprintf("%v", cond.Status)
+					reason = cond.Reason
+				}
+
+				fmt.Fprintf(w, "%s\t%s\t%s\t%s",
 					space.Name,
-					space.Status.Phase,
-					table.ConvertToHumanReadableDateType(space.CreationTimestamp))
+					table.ConvertToHumanReadableDateType(space.CreationTimestamp),
+					ready,
+					reason,
+				)
 				fmt.Fprintln(w)
 			}
 
