@@ -15,7 +15,7 @@
 package cfutil
 
 import (
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
+	"github.com/google/kf/pkg/kf/internal/envutil"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )

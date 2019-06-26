@@ -14,9 +14,9 @@
 
 package fake
 
-import "github.com/GoogleCloudPlatform/kf/pkg/kf/secrets"
+import "github.com/google/kf/pkg/kf/secrets"
 
-//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_client_interface.go --mock_names=ClientInterface=FakeClientInterface github.com/GoogleCloudPlatform/kf/pkg/kf/secrets/fake ClientInterface
+//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_client_interface.go --mock_names=ClientInterface=FakeClientInterface github.com/google/kf/pkg/kf/secrets/fake ClientInterface
 
 // ClientInterface is implementd by secrets.Client.
 type ClientInterface interface {

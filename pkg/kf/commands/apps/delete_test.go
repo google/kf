@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps/fake"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/golang/mock/gomock"
+	"github.com/google/kf/pkg/kf/apps/fake"
+	"github.com/google/kf/pkg/kf/commands/config"
 )
 
 func TestDeleteCommand(t *testing.T) {

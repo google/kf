@@ -17,8 +17,8 @@
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1"
-	"github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/scheme"
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/client/clientset/versioned/scheme"
 	rest "k8s.io/client-go/rest"
 )
 

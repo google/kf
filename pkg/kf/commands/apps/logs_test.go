@@ -20,12 +20,12 @@ import (
 	"io"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/kf"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/logs"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/logs/fake"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
+	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/internal/kf"
+	"github.com/google/kf/pkg/kf/logs"
+	"github.com/google/kf/pkg/kf/logs/fake"
+	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/spf13/cobra"
 )
 

@@ -15,9 +15,9 @@
 package servicebindings
 
 import (
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
+	"github.com/google/kf/pkg/kf/commands/config"
+	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
+	"github.com/google/kf/pkg/kf/services"
 	"github.com/poy/service-catalog/cmd/svcat/output"
 
 	"github.com/spf13/cobra"

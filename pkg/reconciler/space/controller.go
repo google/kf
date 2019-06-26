@@ -17,9 +17,9 @@ package space
 import (
 	"context"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1"
-	spaceinformer "github.com/GoogleCloudPlatform/kf/pkg/client/injection/informers/kf/v1alpha1/space"
-	"github.com/GoogleCloudPlatform/kf/pkg/reconciler"
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	spaceinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/space"
+	"github.com/google/kf/pkg/reconciler"
 	namespaceinformer "github.com/knative/pkg/injection/informers/kubeinformers/corev1/namespace"
 	roleinformer "github.com/knative/pkg/injection/informers/kubeinformers/rbacv1/role"
 

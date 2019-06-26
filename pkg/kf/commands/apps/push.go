@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
-	kfi "github.com/GoogleCloudPlatform/kf/pkg/kf/internal/kf"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/manifest"
+	"github.com/google/kf/pkg/kf"
+	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/internal/envutil"
+	kfi "github.com/google/kf/pkg/kf/internal/kf"
+	"github.com/google/kf/pkg/kf/manifest"
 	"github.com/spf13/cobra"
 )
 

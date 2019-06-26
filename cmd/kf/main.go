@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands"
+	"github.com/google/kf/pkg/kf/commands"
 )
 
 func main() {

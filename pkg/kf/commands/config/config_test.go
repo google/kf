@@ -22,7 +22,7 @@ import (
 	"path"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
+	"github.com/google/kf/pkg/kf/testutil"
 	homedir "github.com/mitchellh/go-homedir"
 )
 

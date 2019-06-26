@@ -19,11 +19,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/spaces/fake"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/spaces/fake"
+	"github.com/google/kf/pkg/kf/testutil"
 )
 
 func TestNewCreateSpaceCommand(t *testing.T) {

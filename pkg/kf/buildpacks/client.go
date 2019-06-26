@@ -18,11 +18,11 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/doctor"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/kf/pkg/kf/doctor"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	cbuild "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -20,8 +20,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/logs"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
+	"github.com/google/kf/pkg/kf/logs"
+	"github.com/google/kf/pkg/kf/testutil"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/typed/core/v1/fake"
 	ktesting "k8s.io/client-go/testing"

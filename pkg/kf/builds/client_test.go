@@ -21,8 +21,8 @@ import (
 	"io"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/builds"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
+	"github.com/google/kf/pkg/kf/builds"
+	"github.com/google/kf/pkg/kf/testutil"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	testclient "github.com/knative/build/pkg/client/clientset/versioned/fake"
 	"github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"

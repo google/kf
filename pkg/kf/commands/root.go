@@ -19,9 +19,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/doctor"
-	pkgdoctor "github.com/GoogleCloudPlatform/kf/pkg/kf/doctor"
+	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/doctor"
+	pkgdoctor "github.com/google/kf/pkg/kf/doctor"
 	"github.com/imdario/mergo"
 	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"

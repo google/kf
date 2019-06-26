@@ -21,8 +21,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
-	. "github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
+	"github.com/google/kf/pkg/kf/testutil"
+	. "github.com/google/kf/pkg/kf/testutil"
 )
 
 // TestIntegration_Routes creates a route via `create-route`, verifies it with

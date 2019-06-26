@@ -17,9 +17,9 @@ package reconciler
 import (
 	"context"
 
-	kfclientset "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned"
-	kfscheme "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/scheme"
-	kfclient "github.com/GoogleCloudPlatform/kf/pkg/client/injection/client"
+	kfclientset "github.com/google/kf/pkg/client/clientset/versioned"
+	kfscheme "github.com/google/kf/pkg/client/clientset/versioned/scheme"
+	kfclient "github.com/google/kf/pkg/client/injection/client"
 	sharedclientset "github.com/knative/pkg/client/clientset/versioned"
 	sharedclient "github.com/knative/pkg/client/injection/client"
 	"github.com/knative/pkg/configmap"

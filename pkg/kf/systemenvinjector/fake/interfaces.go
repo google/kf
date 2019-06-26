@@ -14,9 +14,9 @@
 
 package fake
 
-import "github.com/GoogleCloudPlatform/kf/pkg/kf/systemenvinjector"
+import "github.com/google/kf/pkg/kf/systemenvinjector"
 
-//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_systemenvinjector.go --mock_names=SystemEnvInjector=FakeSystemEnvInjector github.com/GoogleCloudPlatform/kf/pkg/kf/systemenvinjector/fake SystemEnvInjector
+//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_systemenvinjector.go --mock_names=SystemEnvInjector=FakeSystemEnvInjector github.com/google/kf/pkg/kf/systemenvinjector/fake SystemEnvInjector
 
 // SystemEnvInjector is implemented by systemenvinjector.SystemEnvInjector
 type SystemEnvInjector interface {

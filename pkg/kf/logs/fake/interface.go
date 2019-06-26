@@ -17,10 +17,10 @@
 package fake
 
 import (
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/logs"
+	"github.com/google/kf/pkg/kf/logs"
 )
 
-//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_logs.go --mock_names=Tailer=FakeTailer github.com/GoogleCloudPlatform/kf/pkg/kf/logs/fake Tailer
+//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_logs.go --mock_names=Tailer=FakeTailer github.com/google/kf/pkg/kf/logs/fake Tailer
 
 // Tailer is implemented by logs.Tailer.
 type Tailer interface {

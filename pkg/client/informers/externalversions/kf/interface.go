@@ -17,8 +17,8 @@
 package kf
 
 import (
-	internalinterfaces "github.com/GoogleCloudPlatform/kf/pkg/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/GoogleCloudPlatform/kf/pkg/client/informers/externalversions/kf/v1alpha1"
+	internalinterfaces "github.com/google/kf/pkg/client/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/google/kf/pkg/client/informers/externalversions/kf/v1alpha1"
 )
 
 // Interface provides access to each of this group's versions.

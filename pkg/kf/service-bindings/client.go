@@ -17,7 +17,7 @@ package servicebindings
 import (
 	"fmt"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/secrets"
+	"github.com/google/kf/pkg/kf/secrets"
 	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	clientv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"

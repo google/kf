@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
+	. "github.com/google/kf/pkg/kf/testutil"
 )
 
 // TestIntegration_Create creates a resourcequota, then tries to retrieve the quota info.

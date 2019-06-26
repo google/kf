@@ -29,8 +29,8 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/manifest"
-	. "github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
+	"github.com/google/kf/pkg/kf/manifest"
+	. "github.com/google/kf/pkg/kf/testutil"
 )
 
 const (

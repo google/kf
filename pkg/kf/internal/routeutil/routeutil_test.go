@@ -19,8 +19,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/routeutil"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
+	"github.com/google/kf/pkg/kf/internal/routeutil"
+	"github.com/google/kf/pkg/kf/testutil"
 )
 
 func TestEncodeRouteName_Deterministic(t *testing.T) {

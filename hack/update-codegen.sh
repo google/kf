@@ -28,7 +28,7 @@ while getopts "v" opt; do
   esac
 done
 
-ROOT_PACKAGE="github.com/GoogleCloudPlatform/kf"
+ROOT_PACKAGE="github.com/google/kf"
 PACKAGE_LOCATION="$(go env GOPATH)/src/$ROOT_PACKAGE"
 CUSTOM_RESOURCE_NAME="kf"
 CUSTOM_RESOURCE_VERSION="v1alpha1"
@@ -84,6 +84,6 @@ popd
 KNATIVE_CODEGEN_PKG=$(go env GOPATH)/src/github.com/knative/pkg
 
 ${KNATIVE_CODEGEN_PKG}/hack/generate-knative.sh "injection" \
-  "github.com/GoogleCloudPlatform/kf/pkg/client" "github.com/GoogleCloudPlatform/kf/pkg/apis" \
+  "github.com/google/kf/pkg/client" "github.com/google/kf/pkg/apis" \
   "kf:v1alpha1" \
   --go-header-file "${root_dir}/pkg/kf/internal/tools/option-builder/LICENSE_HEADER.go.txt"

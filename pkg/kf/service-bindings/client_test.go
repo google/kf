@@ -18,10 +18,10 @@ import (
 	"errors"
 	"testing"
 
-	secretsfake "github.com/GoogleCloudPlatform/kf/pkg/kf/secrets/fake"
-	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
+	secretsfake "github.com/google/kf/pkg/kf/secrets/fake"
+	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
+	"github.com/google/kf/pkg/kf/testutil"
 	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	testclient "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/fake"
 	corev1 "k8s.io/api/core/v1"

@@ -17,7 +17,7 @@ package v1alpha1
 import (
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
+	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/knative/pkg/apis"
 	"github.com/knative/pkg/apis/duck"
 	duckv1beta1 "github.com/knative/pkg/apis/duck/v1beta1"
