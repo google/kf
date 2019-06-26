@@ -1,7 +1,7 @@
 # Specification
 
 These documents aim to build a mapping between Kubernetes objects and workflows
-and their equivilent objects and workflows that make up the Cloud Foundry API.
+and their equivalent objects and workflows that make up the Cloud Foundry API.
 
 CF objects should be mapped to well-known Knative primitives when possible,
 with labels preserving metadata across the components, as opposed to building
