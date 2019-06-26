@@ -75,7 +75,7 @@ func diagnoseComponents(d *Diagnostic, vc discovery.ServerResourcesInterface) {
 		},
 		"Kubernetes V1": {
 			groupVersion:      "v1",
-			expectedResources: []string{"configmaps", "secrets"},
+			expectedResources: []string{"configmaps", "secrets", "resourcequotas"},
 		},
 	}
 
