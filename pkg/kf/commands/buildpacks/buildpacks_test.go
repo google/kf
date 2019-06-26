@@ -37,8 +37,9 @@ func TestBuildpacks(t *testing.T) {
 		Setup       func(t *testing.T, fake *fake.FakeClient)
 		BufferF     func(t *testing.T, buffer *bytes.Buffer)
 	}{
-		"wrong number of args": {ExpectedErr: errors.New("accepts 0 arg(s), received 1"),
-			Args: []string{"arg-1"},
+		"wrong number of args": {
+			ExpectedErr: errors.New("accepts 0 arg(s), received 1"),
+			Args:        []string{"arg-1"},
 		},
 		"listing fails": {
 			ExpectedErr: errors.New("some-error"),

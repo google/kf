@@ -17,6 +17,7 @@
 package commands
 
 import (
+	kfv1alpha1 "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
@@ -25,11 +26,13 @@ import (
 	cbuildpacks "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/buildpacks"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	cquotas "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/quotas"
+	croutes "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/routes"
 	servicebindingscmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/service-bindings"
 	servicescmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/services"
 	cspaces "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/spaces"
 	kflogs "github.com/GoogleCloudPlatform/kf/pkg/kf/logs"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/quotas"
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/routes"
 	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/spaces"
@@ -271,10 +274,10 @@ func InjectStacks(p *config.KfParams) *cobra.Command {
 // Spaces Command //
 ////////////////////
 
-var SpacesSet = wire.NewSet(config.GetKubernetes, provideNamespaceGetter, spaces.NewClient)
+var SpacesSet = wire.NewSet(config.GetKfClient, provideKfSpaces, spaces.NewClient)
 
-func provideNamespaceGetter(ki kubernetes.Interface) v1.NamespacesGetter {
-	return ki.CoreV1()
+func provideKfSpaces(ki kfv1alpha1.KfV1alpha1Interface) kfv1alpha1.SpacesGetter {
+	return ki
 }
 
 func InjectSpaces(p *config.KfParams) *cobra.Command {
@@ -332,5 +335,36 @@ func InjectGetQuota(p *config.KfParams) *cobra.Command {
 func InjectDeleteQuota(p *config.KfParams) *cobra.Command {
 	wire.Build(cquotas.NewDeleteQuotaCommand, QuotasSet)
 
+	return nil
+}
+
+////////////
+// Routes //
+///////////
+
+func InjectRoutes(p *config.KfParams) *cobra.Command {
+	wire.Build(
+		croutes.NewRoutesCommand,
+		config.GetNetworkingClient,
+		routes.NewClient,
+	)
+	return nil
+}
+
+func InjectCreateRoute(p *config.KfParams) *cobra.Command {
+	wire.Build(
+		croutes.NewCreateRouteCommand,
+		config.GetNetworkingClient,
+		routes.NewClient,
+	)
+	return nil
+}
+
+func InjectDeleteRoute(p *config.KfParams) *cobra.Command {
+	wire.Build(
+		croutes.NewDeleteRouteCommand,
+		config.GetNetworkingClient,
+		routes.NewClient,
+	)
 	return nil
 }

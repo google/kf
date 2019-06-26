@@ -22,8 +22,10 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
-	// CommandSets returns a CommandSetInformer.
-	CommandSets() CommandSetInformer
+	// Apps returns a AppInformer.
+	Apps() AppInformer
+	// Sources returns a SourceInformer.
+	Sources() SourceInformer
 	// Spaces returns a SpaceInformer.
 	Spaces() SpaceInformer
 }
@@ -39,9 +41,14 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
-// CommandSets returns a CommandSetInformer.
-func (v *version) CommandSets() CommandSetInformer {
-	return &commandSetInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+// Apps returns a AppInformer.
+func (v *version) Apps() AppInformer {
+	return &appInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// Sources returns a SourceInformer.
+func (v *version) Sources() SourceInformer {
+	return &sourceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Spaces returns a SpaceInformer.

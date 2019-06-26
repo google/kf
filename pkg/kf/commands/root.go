@@ -22,6 +22,7 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/doctor"
 	pkgdoctor "github.com/GoogleCloudPlatform/kf/pkg/kf/doctor"
+	"github.com/imdario/mergo"
 	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
@@ -38,14 +39,22 @@ func NewKfCommand() *cobra.Command {
 		Long: templates.LongDesc(`
       kf is like cf for Knative
       `),
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			loadedConfig, err := config.Load(p.Config, p)
+			if err != nil {
+				return err
+			}
+
+			return mergo.Map(p, loadedConfig)
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Help()
 		},
 	}
 
+	rootCmd.PersistentFlags().StringVar(&p.Config, "config", "", "config file (default is $HOME/.kf)")
 	rootCmd.PersistentFlags().StringVar(&p.KubeCfgFile, "kubeconfig", "", "kubectl config file (default is $HOME/.kube/config)")
-	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "default", "kubernetes namespace")
-	rootCmd.PersistentFlags().BoolVarP(&p.Verbose, "verbose", "v", false, "make the operation more talkative")
+	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "", "kubernetes namespace (default is default)")
 
 	commands := map[string]*cobra.Command{
 		// App interaction
@@ -89,6 +98,11 @@ func NewKfCommand() *cobra.Command {
 		"update-quota": InjectUpdateQuota(p),
 		"delete-quota": InjectDeleteQuota(p),
 
+		// Routes
+		"routes":       InjectRoutes(p),
+		"create-route": InjectCreateRoute(p),
+		"delete-route": InjectDeleteRoute(p),
+
 		// DoctorTests are run in the order they're defined in this list.
 		// Tests will stop as soon as one of these top-level tests fails so they
 		// should be ordered in a logical way e.g. testing apps should come after
@@ -100,15 +114,18 @@ func NewKfCommand() *cobra.Command {
 		}),
 
 		"completion": completionCommand(rootCmd),
+		"target":     NewTargetCommand(p),
 	}
 
 	groups := templates.CommandGroups{}
 	groups = append(groups, createGroup(commands, "App Management", "push", "delete", "apps", "logs"))
+	groups = append(groups, createGroup(commands, "Buildpacks", "buildpacks", "stacks"))
 	groups = append(groups, createGroup(commands, "Environment Variables", "env", "set-env", "unset-env"))
+	groups = append(groups, createGroup(commands, "Quotas", "quotas", "quota", "create-quota", "update-quota", "delete-quota"))
+	groups = append(groups, createGroup(commands, "Routing", "routes", "create-route", "delete-route"))
 	groups = append(groups, createGroup(commands, "Services", "create-service", "delete-service", "service", "services", "marketplace"))
 	groups = append(groups, createGroup(commands, "Service Bindings", "bind-service", "bindings", "unbind-service", "vcap-services"))
 	groups = append(groups, createGroup(commands, "Spaces", "spaces", "create-space", "delete-space"))
-	groups = append(groups, createGroup(commands, "Quotas", "quotas", "quota", "create-quota", "update-quota", "delete-quota"))
 
 	// This will add the rest to a group under "Other Commands".
 	for _, cmd := range commands {

@@ -20,7 +20,7 @@ spec:
   group: kf.dev
   version: v1alpha1
   names:
-    kind: space
+    kind: Space
     plural: spaces
     singular: space
     categories:
@@ -33,3 +33,9 @@ spec:
   - name: Age
     type: date
     JSONPath: .metadata.creationTimestamp
+  - name: Ready
+    type: string
+    JSONPath: ".status.conditions[?(@.type=='Ready')].status"
+  - name: Reason
+    type: string
+    JSONPath: ".status.conditions[?(@.type=='Ready')].reason"
