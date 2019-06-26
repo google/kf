@@ -186,6 +186,11 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 		space.Status.PropagateAuditorRoleStatus(actual)
 	}
 
+	// Sync resource quotas
+	{
+		// TODO: fill this in
+	}
+
 	return nil
 }
 
