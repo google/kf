@@ -33,7 +33,7 @@ func NewTargetCommand(p *config.KfParams) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if space != "" {
 				p.Namespace = space
-				if err := p.WriteConfig(); err != nil {
+				if err := config.Write(p.Config, p); err != nil {
 					return err
 				}
 			}

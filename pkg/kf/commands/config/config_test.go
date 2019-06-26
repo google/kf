@@ -15,50 +15,43 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
-	"strings"
+	"testing"
 
+	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	homedir "github.com/mitchellh/go-homedir"
 )
 
-func ExampleKfParams_ApplyDefaults() {
-	original := &KfParams{
-		Config:    "my-custom-config",
-		Namespace: "",
-	}
-
-	defaults := KfParams{
-		Config:    "default-config-path",
-		Namespace: "default",
-	}
-
-	original.ApplyDefaults(defaults)
-
-	fmt.Println("Config:", original.Config)
-	fmt.Println("Namespace:", original.Namespace)
-
-	// Output: Config: my-custom-config
-	// Namespace: default
-}
-
-func ExampleKfParams_ConfigPath() {
-	params := &KfParams{}
+func TestParamsPath(t *testing.T) {
 	userHome, _ := homedir.Dir()
-	defaultPath := strings.ReplaceAll(params.ConfigPath(), userHome, "$HOME")
 
-	fmt.Println("Default:", defaultPath)
+	cases := map[string]struct {
+		path     string
+		expected string
+	}{
+		"override": {
+			path:     "some/custom/path.yaml",
+			expected: "some/custom/path.yaml",
+		},
+		"default": {
+			path:     "",
+			expected: path.Join(userHome, ".kf"),
+		},
+	}
 
-	params.Config = "some-custom-path.yaml"
-	fmt.Println("Custom:", params.ConfigPath())
-
-	// Output: Default: $HOME/.kf
-	// Custom: some-custom-path.yaml
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			actual := paramsPath(tc.path)
+			testutil.AssertEqual(t, "paths", tc.expected, actual)
+		})
+	}
 }
 
-func ExampleKfParams_ReadConfig() {
+func ExampleWrite() {
 	dir, err := ioutil.TempDir("", "kfcfg")
 	if err != nil {
 		panic(err)
@@ -69,21 +62,17 @@ func ExampleKfParams_ReadConfig() {
 
 	{
 		toWrite := &KfParams{
-			Config:    configFile,
 			Namespace: "my-namespace",
 		}
 
-		if err := toWrite.WriteConfig(); err != nil {
+		if err := Write(configFile, toWrite); err != nil {
 			panic(err)
 		}
 	}
 
 	{
-		toRead := &KfParams{
-			Config: configFile,
-		}
-
-		if err := toRead.ReadConfig(); err != nil {
+		toRead, err := NewKfParamsFromFile(configFile)
+		if err != nil {
 			panic(err)
 		}
 
@@ -91,4 +80,56 @@ func ExampleKfParams_ReadConfig() {
 	}
 
 	// Output: Read namespace: my-namespace
+}
+
+func TestLoad(t *testing.T) {
+
+	defaultConfig := *NewDefaultKfParams()
+
+	cases := map[string]struct {
+		configFile  string
+		override    KfParams
+		expected    KfParams
+		expectedErr error
+	}{
+		"empty config": {
+			configFile: "empty-config.yml",
+			expected:   defaultConfig,
+		},
+		"missing config": {
+			configFile:  "missing-config.yml",
+			expectedErr: errors.New("open testdata/missing-config.yml: no such file or directory"),
+		},
+		"overrides": {
+			configFile: "custom-config.yml",
+			override: KfParams{
+				Namespace:   "foo",
+				KubeCfgFile: "kubecfg",
+			},
+			expected: KfParams{
+				Namespace:   "foo",
+				KubeCfgFile: "kubecfg",
+			},
+		},
+		"populated config": {
+			configFile: "custom-config.yml",
+			expected: KfParams{
+				Namespace:   "customns",
+				KubeCfgFile: "customkubecfg",
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			actual, err := Load(path.Join("testdata", tc.configFile), &tc.override)
+			if tc.expectedErr != nil || err != nil {
+				testutil.AssertErrorsEqual(t, tc.expectedErr, err)
+				return
+			}
+
+			testutil.AssertEqual(t, "config", &tc.expected, actual)
+		})
+	}
+
 }

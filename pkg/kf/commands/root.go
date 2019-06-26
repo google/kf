@@ -22,6 +22,7 @@ import (
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/doctor"
 	pkgdoctor "github.com/GoogleCloudPlatform/kf/pkg/kf/doctor"
+	"github.com/imdario/mergo"
 	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
@@ -39,16 +40,12 @@ func NewKfCommand() *cobra.Command {
       kf is like cf for Knative
       `),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			// Read configuration from either config or home directory
-			if err := p.ReadConfig(); err != nil {
+			loadedConfig, err := config.Load(p.Config, p)
+			if err != nil {
 				return err
 			}
 
-			p.ApplyDefaults(config.KfParams{
-				Namespace: "default",
-			})
-
-			return nil
+			return mergo.Map(p, loadedConfig)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Help()
