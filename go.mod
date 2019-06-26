@@ -14,7 +14,7 @@ require (
 	github.com/google/go-containerregistry v0.0.0-20190306174256-678f6c51f585
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/google/wire v0.2.2
-	github.com/imdario/mergo v0.3.6 // indirect
+	github.com/imdario/mergo v0.3.7
 	github.com/knative/build v0.6.0
 	github.com/knative/pkg v0.0.0-20190621200921-9c5d970cbc9e
 	github.com/knative/serving v0.6.1

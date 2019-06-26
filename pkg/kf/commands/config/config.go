@@ -15,12 +15,16 @@
 package config
 
 import (
+	"io/ioutil"
 	"log"
+	"os"
+	"path"
 	"path/filepath"
 
 	kf "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/secrets"
 	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
+	"github.com/imdario/mergo"
 	build "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	networking "github.com/knative/pkg/client/clientset/versioned/typed/istio/v1alpha3"
 	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
@@ -30,6 +34,7 @@ import (
 	scv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	"github.com/poy/service-catalog/pkg/svcat"
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
+	"gopkg.in/yaml.v2"
 	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -37,9 +42,98 @@ import (
 
 // KfParams stores everything needed to interact with the user and Knative.
 type KfParams struct {
-	Namespace   string
-	KubeCfgFile string
-	Verbose     bool
+	// Config holds the path to the configuration.
+	// This field isn't serialized when the config is saved.
+	Config string `yaml:"-"`
+
+	// Namespace holds the namespace kf should connect to by default.
+	Namespace string `yaml:"space"`
+
+	// KubeCfgFile holds the path to the kubeconfig.
+	KubeCfgFile string `yaml:"kubeconfig"`
+}
+
+// paramsPath gets the path we should read the config from/write it to.
+func paramsPath(userProvidedPath string) string {
+	if userProvidedPath != "" {
+		return userProvidedPath
+	}
+
+	// Kf shouldn't fail if we can't find the user's home directory, instead
+	// use the current working directory.
+	base := "."
+	if home, err := homedir.Dir(); err == nil {
+		base = home
+	}
+
+	return path.Join(base, ".kf")
+}
+
+// NewKfParamsFromFile reads the config from the specified config path or the
+// default path. If the path is the default and the file doesn't yet exist, then
+// this function does nothing.
+func NewKfParamsFromFile(cfgPath string) (*KfParams, error) {
+	configWasOverridden := cfgPath != ""
+	cfgPath = paramsPath(cfgPath)
+
+	contents, err := ioutil.ReadFile(cfgPath)
+	if err != nil {
+		switch {
+		case configWasOverridden:
+			return nil, err
+		case os.IsNotExist(err):
+			return &KfParams{}, nil
+		default:
+			return nil, err
+		}
+	}
+
+	newParams := &KfParams{}
+	if err := yaml.Unmarshal(contents, newParams); err != nil {
+		return nil, err
+	}
+
+	return newParams, nil
+}
+
+// NewDefaultKfParams creates a KfParams with default values.
+func NewDefaultKfParams() *KfParams {
+	defaultParams := &KfParams{
+		Namespace: "default",
+	}
+
+	initKubeConfig(defaultParams)
+
+	return defaultParams
+}
+
+// Write writes the current configuration to the path specified by the
+// user or the default path.
+func Write(cfgPath string, config *KfParams) error {
+	configPath := paramsPath(cfgPath)
+
+	contents, err := yaml.Marshal(config)
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(configPath, contents, 0664)
+}
+
+// Load reads the config at the given path (or the default config path if not
+// provided), and merges the values with the defaults and overrides.
+func Load(cfgPath string, overrides *KfParams) (*KfParams, error) {
+	params, err := NewKfParamsFromFile(cfgPath)
+	if err != nil {
+		return nil, err
+	}
+
+	out := &KfParams{}
+	mergo.Merge(out, overrides)
+	mergo.Merge(out, params)
+	mergo.Merge(out, NewDefaultKfParams())
+
+	return out, nil
 }
 
 // GetServingClient returns a Serving interface.
