@@ -9,5 +9,4 @@ env:
 script:
   - ./hack/check-linters.sh
   - ./hack/check-go-generate.sh
-  - ./hack/check-code-generator.sh
   - ./hack/test.sh
