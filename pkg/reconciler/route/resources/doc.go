@@ -12,18 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
-
-import (
-	"github.com/google/kf/pkg/reconciler/route"
-	"github.com/google/kf/pkg/reconciler/space"
-	"knative.dev/pkg/injection/sharedmain"
-)
-
-func main() {
-	sharedmain.Main("controller",
-		// Append all controllers here
-		space.NewController,
-		route.NewController,
-	)
-}
+// Package resources holds simple functions for synthesizing child resources
+// from a Route.
+package resources

@@ -17,18 +17,16 @@ package routes_test
 import (
 	"bytes"
 	"errors"
-	"net/http"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/routes"
-	"github.com/google/kf/pkg/kf/internal/routeutil"
 	"github.com/google/kf/pkg/kf/routes/fake"
 	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/pkg/reconciler/route/resources"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"knative.dev/pkg/apis/istio/common/v1alpha1"
-	networking "knative.dev/pkg/apis/istio/v1alpha3"
 )
 
 func TestCreateRoute(t *testing.T) {
@@ -50,7 +48,7 @@ func TestCreateRoute(t *testing.T) {
 			Namespace: "other-space",
 			Args:      []string{"some-space", "example.com", "--hostname=some-hostname"},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
-				testutil.AssertErrorsEqual(t, errors.New("SPACE (argument) and namespace (if provided) must match"), err)
+				testutil.AssertErrorsEqual(t, errors.New(`SPACE (argument="some-space") and namespace (flag="other-space") (if provided) must match`), err)
 			},
 		},
 		"creating route fails": {
@@ -102,52 +100,22 @@ func TestCreateRoute(t *testing.T) {
 		"creates route with hostname and path": {
 			Args: []string{"some-space", "example.com", "--hostname=some-hostname", "--path=somepath"},
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Create(gomock.Any(), &networking.VirtualService{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "networking.istio.io/v1alpha3",
-						Kind:       "VirtualService",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name: routeutil.EncodeRouteName("some-hostname", "example.com", "/somepath"),
-						Annotations: map[string]string{
-							"domain":   "example.com",
-							"hostname": "some-hostname",
-							"path":     "/somepath",
+				fake.EXPECT().Create(gomock.Any(),
+					&v1alpha1.Route{
+						TypeMeta: metav1.TypeMeta{
+							Kind: "Route",
+						},
+						ObjectMeta: metav1.ObjectMeta{
+							Name: resources.VirtualServiceName("some-hostname", "example.com", "somepath"),
+						},
+						Spec: v1alpha1.RouteSpec{
+							Hostname: "some-hostname",
+							Domain:   "example.com",
+							Path:     "somepath",
 						},
 					},
-					Spec: networking.VirtualServiceSpec{
-						Gateways: []string{"knative-ingress-gateway.knative-serving.svc.cluster.local"},
-						Hosts:    []string{"some-hostname.example.com"},
-						HTTP: []networking.HTTPRoute{
-							{
-								Match: []networking.HTTPMatchRequest{
-									{
-										URI: &v1alpha1.StringMatch{
-											Prefix: "/somepath",
-										},
-									},
-								},
-								Route: []networking.HTTPRouteDestination{
-									{
-										Destination: networking.Destination{
-											Host: "istio-ingressgateway.istio-system.svc.cluster.local",
-											Port: networking.PortSelector{
-												Number: 80,
-											},
-										},
-										Weight: 100,
-									},
-								},
-								Fault: &networking.HTTPFaultInjection{
-									Abort: &networking.InjectAbort{
-										Percent:    100,
-										HTTPStatus: http.StatusServiceUnavailable,
-									},
-								},
-							},
-						},
-					},
-				})
+				)
+
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)

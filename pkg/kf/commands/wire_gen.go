@@ -273,22 +273,25 @@ func InjectDeleteQuota(p *config.KfParams) *cobra.Command {
 }
 
 func InjectRoutes(p *config.KfParams) *cobra.Command {
-	networkingV1alpha3Interface := config.GetNetworkingClient(p)
-	client := routes.NewClient(networkingV1alpha3Interface)
-	command := routes2.NewRoutesCommand(p, client)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	client := routes.NewClient(kfV1alpha1Interface)
+	servingV1alpha1Interface := config.GetServingClient(p)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	appsClient := apps.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	command := routes2.NewRoutesCommand(p, client, appsClient)
 	return command
 }
 
 func InjectCreateRoute(p *config.KfParams) *cobra.Command {
-	networkingV1alpha3Interface := config.GetNetworkingClient(p)
-	client := routes.NewClient(networkingV1alpha3Interface)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	client := routes.NewClient(kfV1alpha1Interface)
 	command := routes2.NewCreateRouteCommand(p, client)
 	return command
 }
 
 func InjectDeleteRoute(p *config.KfParams) *cobra.Command {
-	networkingV1alpha3Interface := config.GetNetworkingClient(p)
-	client := routes.NewClient(networkingV1alpha3Interface)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	client := routes.NewClient(kfV1alpha1Interface)
 	command := routes2.NewDeleteRouteCommand(p, client)
 	return command
 }

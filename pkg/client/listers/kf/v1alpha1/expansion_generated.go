@@ -24,6 +24,14 @@ type AppListerExpansion interface{}
 // AppNamespaceLister.
 type AppNamespaceListerExpansion interface{}
 
+// RouteListerExpansion allows custom methods to be added to
+// RouteLister.
+type RouteListerExpansion interface{}
+
+// RouteNamespaceListerExpansion allows custom methods to be added to
+// RouteNamespaceLister.
+type RouteNamespaceListerExpansion interface{}
+
 // SourceListerExpansion allows custom methods to be added to
 // SourceLister.
 type SourceListerExpansion interface{}

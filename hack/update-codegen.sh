@@ -87,3 +87,8 @@ ${KNATIVE_CODEGEN_PKG}/hack/generate-knative.sh "injection" \
   "github.com/google/kf/pkg/client" "github.com/google/kf/pkg/apis" \
   "kf:v1alpha1" \
   --go-header-file "${root_dir}/pkg/kf/internal/tools/option-builder/LICENSE_HEADER.go.txt"
+
+# For some reason the fake doesn't have the right imports (it's missing
+# k8s.io/client-go/rest)
+os_friendly_sed 's|"k8s.io/apimachinery/pkg/runtime"|"k8s.io/apimachinery/pkg/runtime"\n"k8s.io/client-go/rest"|g' "$(go env GOPATH)/src/${ROOT_PACKAGE}/pkg/client/injection/client/fake/fake.go"
+gofmt -s -w .

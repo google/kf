@@ -22,9 +22,9 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/routes"
-	"github.com/google/kf/pkg/kf/internal/routeutil"
 	"github.com/google/kf/pkg/kf/routes/fake"
 	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/pkg/reconciler/route/resources"
 )
 
 func TestDeleteRoute(t *testing.T) {
@@ -65,7 +65,7 @@ func TestDeleteRoute(t *testing.T) {
 			Args:      []string{"example.com", "--hostname=some-hostname", "--path=somepath"},
 			Namespace: "some-namespace",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				expectedName := routeutil.EncodeRouteName("some-hostname", "example.com", "/somepath")
+				expectedName := resources.VirtualServiceName("some-hostname", "example.com", "somepath")
 				fake.EXPECT().Delete(
 					gomock.Any(),
 					expectedName,

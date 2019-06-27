@@ -37,7 +37,6 @@ import (
 	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	networking "knative.dev/pkg/client/clientset/versioned/typed/istio/v1alpha3"
 )
 
 // KfParams stores everything needed to interact with the user and Knative.
@@ -164,16 +163,6 @@ func GetKubernetes(p *KfParams) k8sclient.Interface {
 		log.Fatalf("failed to create a K8s client: %s", err)
 	}
 	return c
-}
-
-// GetNetworkingClient returns a Networking interface.
-func GetNetworkingClient(p *KfParams) networking.NetworkingV1alpha3Interface {
-	config := getRestConfig(p)
-	client, err := networking.NewForConfig(config)
-	if err != nil {
-		log.Fatalf("failed to create a Networking client: %s", err)
-	}
-	return client
 }
 
 // GetKfClient returns a kf client.

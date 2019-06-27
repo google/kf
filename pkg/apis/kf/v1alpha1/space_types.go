@@ -95,7 +95,7 @@ type SpaceSpecExecution struct {
 	Env []corev1.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
 }
 
-// SpaceStatus represents information about the status of a KfSpace.
+// SpaceStatus represents information about the status of a Space.
 type SpaceStatus struct {
 	// Pull in the fields from Knative's duckv1beta1 status field.
 	duckv1beta1.Status `json:",inline"`

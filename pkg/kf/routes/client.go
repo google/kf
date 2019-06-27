@@ -15,8 +15,8 @@
 package routes
 
 import (
-	networking "knative.dev/pkg/apis/istio/v1alpha3"
-	cnetworking "knative.dev/pkg/client/clientset/versioned/typed/istio/v1alpha3"
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	kf "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
 )
 
 // ClientExtension holds additional functions that should be exposed by client.
@@ -24,9 +24,9 @@ type ClientExtension interface {
 }
 
 // NewClient creates a new route client.
-func NewClient(kclient cnetworking.NetworkingV1alpha3Interface) Client {
+func NewClient(kclient kf.KfV1alpha1Interface) Client {
 	return &coreClient{
 		kclient:             kclient,
-		membershipValidator: func(_ *networking.VirtualService) bool { return true },
+		membershipValidator: func(_ *v1alpha1.Route) bool { return true },
 	}
 }

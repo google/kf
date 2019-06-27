@@ -19,13 +19,18 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/routes"
 	"github.com/spf13/cobra"
 )
 
 // NewRoutesCommand creates a Routes command.
-func NewRoutesCommand(p *config.KfParams, c routes.Client) *cobra.Command {
+func NewRoutesCommand(
+	p *config.KfParams,
+	c routes.Client,
+	ac apps.Client,
+) *cobra.Command {
 	return &cobra.Command{
 		Use:   "routes",
 		Short: "List routes in space",
@@ -49,30 +54,20 @@ func NewRoutesCommand(p *config.KfParams, c routes.Client) *cobra.Command {
 			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 2, ' ', tabwriter.StripEscape)
 			fmt.Fprintln(w, "HOST\tDOMAIN\tPATH\tAPPS")
 			for _, route := range routes {
-				for _, h := range route.Spec.HTTP {
-					var app string
-					if h.Rewrite != nil {
-						app, _ = splitHost(h.Rewrite.Authority)
+				var apps []string
+				for _, app := range route.Spec.KnativeServiceNames {
+
+					ksvc, err := ac.Get(p.Namespace, app)
+					if err != nil {
+						return fmt.Errorf("fetching Knative Service failed: %s", err)
 					}
 
-					if len(h.Match) != 0 {
-						for _, host := range route.Spec.Hosts {
-							subDomain, domain := splitHost(host)
-							for _, m := range h.Match {
-								if m.URI == nil || m.URI.Prefix == "" {
-									continue
-								}
-								fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", subDomain, domain, m.URI.Prefix, app)
-							}
-						}
-
-					} else {
-						for _, host := range route.Spec.Hosts {
-							subDomain, domain := splitHost(host)
-							fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", subDomain, domain, "", app)
-						}
-					}
+					// TODO(poy): We might need to switch from the name to the
+					// KfApp OwnerReference.
+					apps = append(apps, ksvc.Name)
 				}
+
+				fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", route.Spec.Hostname, route.Spec.Domain, route.Spec.Path, strings.Join(apps, ", "))
 			}
 
 			w.Flush()

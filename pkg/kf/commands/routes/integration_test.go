@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/kf/pkg/kf/testutil"
 	. "github.com/google/kf/pkg/kf/testutil"
 )
 
@@ -29,21 +28,28 @@ import (
 // `routes`, deletes it via `delete-route` and then verifies again.
 func TestIntegration_Routes(t *testing.T) {
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+		hostname := fmt.Sprintf("some-host-%d", time.Now().UnixNano())
+
 		findRoute := func(hostname string, shouldFind bool) {
-			var found bool
-			for _, line := range kf.Routes(ctx) {
-				expected := hostname + " example.com /some-path"
-				actual := strings.Join(strings.Fields(line), " ")
-				if expected == actual {
-					found = true
-					break
+			RetryOnPanic(ctx, t, func() {
+				var found bool
+				for _, line := range kf.Routes(ctx) {
+					expected := hostname + " example.com some-path"
+					actual := strings.Join(strings.Fields(line), " ")
+					if expected == actual {
+						found = true
+						break
+					}
 				}
-			}
-			testutil.AssertEqual(t, "found route", shouldFind, found)
+
+				if shouldFind != found {
+					// We'll panic so we can use our retry logic
+					panic(fmt.Errorf("found route. Wanted %v, got %v", shouldFind, found))
+				}
+			})
 		}
 
 		// TODO: use the domain from the cluster.
-		hostname := fmt.Sprintf("some-host-%d", time.Now().UnixNano())
 		kf.CreateRoute(ctx, "example.com", "--hostname="+hostname, "--path=some-path")
 		findRoute(hostname, true)
 		kf.DeleteRoute(ctx, "example.com", "--hostname="+hostname, "--path=some-path")
