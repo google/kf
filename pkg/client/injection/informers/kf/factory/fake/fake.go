@@ -22,8 +22,8 @@ import (
 	externalversions "github.com/google/kf/pkg/client/informers/externalversions"
 	fake "github.com/google/kf/pkg/client/injection/client/fake"
 	factory "github.com/google/kf/pkg/client/injection/informers/kf/factory"
-	controller "github.com/knative/pkg/controller"
-	injection "github.com/knative/pkg/injection"
+	controller "knative.dev/pkg/controller"
+	injection "knative.dev/pkg/injection"
 )
 
 var Get = factory.Get

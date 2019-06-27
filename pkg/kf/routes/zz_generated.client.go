@@ -25,8 +25,8 @@ import (
 
 // User defined imports
 import (
-	networking "github.com/knative/pkg/apis/istio/v1alpha3"
-	cnetworking "github.com/knative/pkg/client/clientset/versioned/typed/istio/v1alpha3"
+	networking "knative.dev/pkg/apis/istio/v1alpha3"
+	cnetworking "knative.dev/pkg/client/clientset/versioned/typed/istio/v1alpha3"
 )
 
 ////////////////////////////////////////////////////////////////////////////////

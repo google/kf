@@ -81,7 +81,7 @@ done
 popd
 
 # Do Knative injection generation
-KNATIVE_CODEGEN_PKG=$(go env GOPATH)/src/github.com/knative/pkg
+KNATIVE_CODEGEN_PKG=$(go env GOPATH)/src/knative.dev/pkg
 
 ${KNATIVE_CODEGEN_PKG}/hack/generate-knative.sh "injection" \
   "github.com/google/kf/pkg/client" "github.com/google/kf/pkg/apis" \

@@ -21,9 +21,9 @@ import (
 
 	externalversions "github.com/google/kf/pkg/client/informers/externalversions"
 	client "github.com/google/kf/pkg/client/injection/client"
-	controller "github.com/knative/pkg/controller"
-	injection "github.com/knative/pkg/injection"
-	logging "github.com/knative/pkg/logging"
+	controller "knative.dev/pkg/controller"
+	injection "knative.dev/pkg/injection"
+	logging "knative.dev/pkg/logging"
 )
 
 func init() {

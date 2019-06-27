@@ -16,7 +16,7 @@ package main
 
 import (
 	"github.com/google/kf/pkg/reconciler/space"
-	"github.com/knative/pkg/injection/sharedmain"
+	"knative.dev/pkg/injection/sharedmain"
 )
 
 func main() {

@@ -22,7 +22,7 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
 	"github.com/google/kf/pkg/reconciler/space/resources"
-	"github.com/knative/pkg/logging"
+	"knative.dev/pkg/logging"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	rv1 "k8s.io/api/rbac/v1"
@@ -33,8 +33,8 @@ import (
 	rbacv1listers "k8s.io/client-go/listers/rbac/v1"
 
 	"github.com/google/kf/pkg/reconciler"
-	"github.com/knative/pkg/controller"
-	"github.com/knative/pkg/kmp"
+	"knative.dev/pkg/controller"
+	"knative.dev/pkg/kmp"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/client-go/tools/cache"
 )
