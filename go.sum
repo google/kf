@@ -253,6 +253,8 @@ github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZN
 github.com/pmorie/go-open-service-broker-client v0.0.0-20181213160916-6988c0983446/go.mod h1:6d5FSWVMC68G2RoLKixGVhkoNlgoEC/phmruM0yHdjQ=
 github.com/poy/kontext v0.0.0-20190322194304-59ced15e96b1 h1:Dx1hnQtcUttU5Kovao73XH5OvJxpEPCSoB9BJVqlvqM=
 github.com/poy/kontext v0.0.0-20190322194304-59ced15e96b1/go.mod h1:EZ/Zsx68w8CAzOTosTajuX/M9sL+2s1IMy8jpzuJm2Q=
+github.com/poy/kontext v0.0.0-20190411202914-cc5532543f2e h1:HZPqpLefwCMwGfEwjvY0ZcS8biQDaMBzsunN6TqgL+0=
+github.com/poy/kontext v0.0.0-20190411202914-cc5532543f2e/go.mod h1:EZ/Zsx68w8CAzOTosTajuX/M9sL+2s1IMy8jpzuJm2Q=
 github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c h1:5tVj7ImrbnEHf8FNnasPiDBDuSaFRVq8r2ilMLfukzA=
 github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c/go.mod h1:D3X0fYjTImKyVV+A+FaU7e5xIDbU2VOdejI7m5KL0CA=
 github.com/prometheus/client_golang v0.0.0-20170531130054-e7e903064f5e/go.mod h1:7SWBe2y4D6OKWSNQJUaRYU/AaXPKyh/dDVn+NZz0KFw=

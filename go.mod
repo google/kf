@@ -24,7 +24,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
-	github.com/poy/kontext v0.0.0-20190322194304-59ced15e96b1
+	github.com/poy/kontext v0.0.0-20190411202914-cc5532543f2e
 	github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c
 	github.com/segmentio/textio v1.2.0
 	github.com/sirupsen/logrus v1.3.0 // indirect
