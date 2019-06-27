@@ -26,7 +26,7 @@ import (
 	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
-  "k8s.io/kubernetes/pkg/kubectl/util/templates"
+	"k8s.io/kubernetes/pkg/kubectl/util/templates"
 )
 
 // NewKfCommand creates the root kf command.
