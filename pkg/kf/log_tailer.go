@@ -15,11 +15,18 @@
 package kf
 
 import (
+	"errors"
 	"fmt"
 	"io"
+	"log"
+	"time"
 
+	"k8s.io/apimachinery/pkg/fields"
+
+	"github.com/knative/pkg/apis"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -46,8 +53,13 @@ func NewLogTailer(sc cserving.ServingV1alpha1Interface) Logs {
 // DeployLogs writes the logs for the deploy step for the resourceVersion
 // to out. It blocks until the operation has completed.
 func (t logTailer) DeployLogs(out io.Writer, appName, resourceVersion, namespace string) error {
+	logger := log.New(out, "\033[32m[deploy-revision]\033[0m ", 0)
+	logger.Printf("Starting app: %s\n", appName)
+	start := time.Now()
+
 	ws, err := t.sc.Services(namespace).Watch(k8smeta.ListOptions{
 		ResourceVersion: resourceVersion,
+		FieldSelector:   fields.OneTermEqualSelector("metadata.name", appName).String(),
 		Watch:           true,
 	})
 	if err != nil {
@@ -57,20 +69,29 @@ func (t logTailer) DeployLogs(out io.Writer, appName, resourceVersion, namespace
 
 	for e := range ws.ResultChan() {
 		s := e.Object.(*serving.Service)
-		if s.Name != appName {
+
+		// Don't use status' that are reflecting old states
+		if s.Status.ObservedGeneration != s.Generation {
 			continue
 		}
 
-		for _, condition := range s.Status.Conditions {
-			if condition.Reason == "RevisionFailed" {
-				return fmt.Errorf("deployment failed: %s", condition.Message)
-			}
+		if condition := s.Status.GetCondition(apis.ConditionReady); condition != nil {
+			switch condition.Status {
+			case corev1.ConditionTrue:
+				duration := time.Now().Sub(start)
+				logger.Printf("Started in %0.2f seconds\n", duration.Seconds())
+				return nil
+			case corev1.ConditionFalse:
+				logger.Printf("Failed to start: %s\n", condition.Message)
 
-			if condition.Message != "" {
-				fmt.Fprintf(out, "\033[32m[deploy-revision]\033[0m %s\n", condition.Message)
+				return fmt.Errorf("deployment failed: %s", condition.Message)
+			default:
+				if condition.Message != "" {
+					logger.Printf("Updated state to: %s\n", condition.Message)
+				}
 			}
 		}
 	}
-	// Success
-	return nil
+	// Lost connection before ready, unknown status.
+	return errors.New("lost connection to Kubernetes")
 }
