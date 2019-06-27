@@ -1,0 +1,17 @@
+sequenceDiagram
+  kf ->> Container Registry: Upload Source
+  kf ->> Kf App: Create or Update
+  Kf App ->> Kf Source: Create or Update
+  Kf Source ->> Tekton: Create
+  Tekton ->> Container Registry: Get Source & Builder Images
+  Container Registry ->> Tekton: Source & Bulider Images
+  Note over kf: kf streams logs from<br>build pods
+  Note over Tekton: Build
+  Tekton ->> Container Registry: Compiled App
+  Tekton -->> Kf Source: K8s Notifies on Completion
+  Kf Source -->> Kf App: K8s Notifies on Completion
+  Kf App ->> Knative Serving: Updates Serving
+  Note over Kf App: Istio and svccat<br>get sync'd by the<br>Kf App controller.
+  Knative Serving -->> Kf App: Ready
+  Kf App -->> kf: Ready
+  Note over kf: kf shows app info
