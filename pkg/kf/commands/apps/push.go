@@ -34,11 +34,11 @@ type SrcImageBuilder interface {
 }
 
 // SrcImageBuilderFunc converts a func into a SrcImageBuilder.
-type SrcImageBuilderFunc func(dir, srcImage string) error
+type SrcImageBuilderFunc func(dir, srcImage string, rebase bool) error
 
 // BuildSrcImage implements SrcImageBuilder.
 func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string) error {
-	return f(dir, srcImage)
+	return f(dir, srcImage, false)
 }
 
 // NewPushCommand creates a push command.

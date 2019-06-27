@@ -61,7 +61,7 @@ func TestPushCommand(t *testing.T) {
 			envVars:           []string{"env1=val1", "env2=val2"},
 			wantEnvMap:        map[string]string{"env1": "val1", "env2": "val2"},
 			wantImagePrefix:   "some-reg.io/src-some-namespace-app-name",
-			srcImageBuilder: func(dir, srcImage string) error {
+			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
 				testutil.AssertEqual(t, "path", true, strings.Contains(dir, "some-path"))
 				testutil.AssertEqual(t, "path is abs", true, filepath.IsAbs(dir))
 				return nil
@@ -71,7 +71,7 @@ func TestPushCommand(t *testing.T) {
 			args:              []string{"app-name"},
 			containerRegistry: "some-reg.io",
 			path:              "",
-			srcImageBuilder: func(dir, srcImage string) error {
+			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
 				cwd, err := os.Getwd()
 				testutil.AssertNil(t, "cwd err", err)
 				testutil.AssertEqual(t, "path", cwd, dir)
@@ -109,7 +109,7 @@ func TestPushCommand(t *testing.T) {
 			args:              []string{"app-name"},
 			containerRegistry: "some-reg.io",
 			wantErr:           errors.New("some error"),
-			srcImageBuilder: func(dir, srcImage string) error {
+			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
 				return errors.New("some error")
 			},
 		},
@@ -128,7 +128,7 @@ func TestPushCommand(t *testing.T) {
 			}
 
 			if tc.srcImageBuilder == nil {
-				tc.srcImageBuilder = func(dir, srcImage string) error { return nil }
+				tc.srcImageBuilder = func(dir, srcImage string, rebase bool) error { return nil }
 			}
 
 			ctrl := gomock.NewController(t)
