@@ -29,5 +29,6 @@ if [ ! -z "$(git status --porcelain)" ]; then
     echo
     echo "The generated files aren't up to date."
     echo "Update them with the 'go generate ./...' command."
+    git --no-pager diff
     exit 1
 fi

@@ -16,7 +16,7 @@ package v1alpha1
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 import corev1 "k8s.io/api/core/v1"
-import duckv1beta1 "github.com/knative/pkg/apis/duck/v1beta1"
+import duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 
 // +genclient
 // +genclient:nonNamespaced

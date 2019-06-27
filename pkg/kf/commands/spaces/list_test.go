@@ -24,7 +24,7 @@ import (
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/spaces/fake"
 	"github.com/google/kf/pkg/kf/testutil"
-	"github.com/knative/pkg/apis"
+	"knative.dev/pkg/apis"
 )
 
 func TestNewListSpacesCommand(t *testing.T) {

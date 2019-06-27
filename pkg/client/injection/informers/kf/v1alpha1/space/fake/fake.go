@@ -21,8 +21,8 @@ import (
 
 	fake "github.com/google/kf/pkg/client/injection/informers/kf/factory/fake"
 	space "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/space"
-	controller "github.com/knative/pkg/controller"
-	injection "github.com/knative/pkg/injection"
+	controller "knative.dev/pkg/controller"
+	injection "knative.dev/pkg/injection"
 )
 
 var Get = space.Get

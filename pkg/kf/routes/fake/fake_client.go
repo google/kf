@@ -22,7 +22,7 @@ package fake
 import (
 	gomock "github.com/golang/mock/gomock"
 	routes "github.com/google/kf/pkg/kf/routes"
-	v1alpha3 "github.com/knative/pkg/apis/istio/v1alpha3"
+	v1alpha3 "knative.dev/pkg/apis/istio/v1alpha3"
 	reflect "reflect"
 )
 

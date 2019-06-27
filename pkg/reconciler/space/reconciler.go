@@ -22,7 +22,6 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
 	"github.com/google/kf/pkg/reconciler/space/resources"
-	"github.com/knative/pkg/logging"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	rv1 "k8s.io/api/rbac/v1"
@@ -31,12 +30,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1listers "k8s.io/client-go/listers/core/v1"
 	rbacv1listers "k8s.io/client-go/listers/rbac/v1"
+	"knative.dev/pkg/logging"
 
 	"github.com/google/kf/pkg/reconciler"
-	"github.com/knative/pkg/controller"
-	"github.com/knative/pkg/kmp"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/client-go/tools/cache"
+	"knative.dev/pkg/controller"
+	"knative.dev/pkg/kmp"
 )
 
 // Reconciler reconciles a Space object with the K8s cluster.

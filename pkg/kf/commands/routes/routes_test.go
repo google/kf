@@ -24,8 +24,8 @@ import (
 	"github.com/google/kf/pkg/kf/commands/routes"
 	"github.com/google/kf/pkg/kf/routes/fake"
 	"github.com/google/kf/pkg/kf/testutil"
-	"github.com/knative/pkg/apis/istio/common/v1alpha1"
-	"github.com/knative/pkg/apis/istio/v1alpha3"
+	"knative.dev/pkg/apis/istio/common/v1alpha1"
+	"knative.dev/pkg/apis/istio/v1alpha3"
 )
 
 func TestRoutes(t *testing.T) {

@@ -15,9 +15,9 @@ require (
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/google/wire v0.2.2
 	github.com/imdario/mergo v0.3.7
-	github.com/knative/build v0.6.0
+	github.com/knative/build v0.7.0
 	github.com/knative/pkg v0.0.0-20190621200921-9c5d970cbc9e
-	github.com/knative/serving v0.6.1
+	github.com/knative/serving v0.7.0
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect
@@ -45,6 +45,7 @@ require (
 	k8s.io/client-go v2.0.0-alpha.0.0.20190226174127-78295b709ec6+incompatible
 	k8s.io/klog v0.3.0 // indirect
 	k8s.io/kubernetes v1.14.2
+	knative.dev/pkg v0.0.0-20190626215608-1104d6c75533
 )
 
 // opencensus and go-cmp are fixed to satisfy unspecified dependencies in
