@@ -111,6 +111,7 @@ jobs:
         - |
           hack/check-linters.sh
           hack/check-go-generate.sh
+          hack/check-code-generator.sh
     on_failure: *on_failure
 - name: build
   plan:
