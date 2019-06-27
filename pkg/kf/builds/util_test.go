@@ -22,9 +22,9 @@ import (
 	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/knative/build/pkg/apis/build/v1alpha1"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
-	duckv1alpha1 "knative.dev/pkg/apis/duck/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	duckv1alpha1 "knative.dev/pkg/apis/duck/v1alpha1"
 )
 
 func TestBuildStatus(t *testing.T) {

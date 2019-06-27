@@ -26,9 +26,9 @@ import (
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	testclient "github.com/knative/build/pkg/client/clientset/versioned/fake"
 	"github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
-	duckv1alpha1 "knative.dev/pkg/apis/duck/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	duckv1alpha1 "knative.dev/pkg/apis/duck/v1alpha1"
 )
 
 func TestClientCreate(t *testing.T) {

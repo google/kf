@@ -16,10 +16,10 @@ package resources
 
 import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"knative.dev/pkg/kmeta"
 	"github.com/knative/serving/pkg/resources"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"knative.dev/pkg/kmeta"
 )
 
 const (

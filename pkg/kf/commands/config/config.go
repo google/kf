@@ -26,7 +26,6 @@ import (
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/imdario/mergo"
 	build "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
-	networking "knative.dev/pkg/client/clientset/versioned/typed/istio/v1alpha3"
 	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/poy/service-catalog/pkg/client/clientset_generated/clientset"
@@ -38,6 +37,7 @@ import (
 	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	networking "knative.dev/pkg/client/clientset/versioned/typed/istio/v1alpha3"
 )
 
 // KfParams stores everything needed to interact with the user and Knative.

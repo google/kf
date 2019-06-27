@@ -26,9 +26,9 @@ import (
 	"github.com/google/kf/pkg/kf/internal/routeutil"
 	"github.com/google/kf/pkg/kf/routes/fake"
 	"github.com/google/kf/pkg/kf/testutil"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis/istio/common/v1alpha1"
 	networking "knative.dev/pkg/apis/istio/v1alpha3"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestCreateRoute(t *testing.T) {

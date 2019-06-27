@@ -20,15 +20,15 @@ import (
 	kfclientset "github.com/google/kf/pkg/client/clientset/versioned"
 	kfscheme "github.com/google/kf/pkg/client/clientset/versioned/scheme"
 	kfclient "github.com/google/kf/pkg/client/injection/client"
+	"go.uber.org/zap"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	sharedclientset "knative.dev/pkg/client/clientset/versioned"
 	sharedclient "knative.dev/pkg/client/injection/client"
 	"knative.dev/pkg/configmap"
 	"knative.dev/pkg/injection/clients/kubeclient"
 	"knative.dev/pkg/logging"
 	"knative.dev/pkg/logging/logkey"
-	"go.uber.org/zap"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/kubernetes/scheme"
 )
 
 // Base implements the core controller logic, given a Reconciler.

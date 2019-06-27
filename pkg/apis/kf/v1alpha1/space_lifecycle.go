@@ -17,11 +17,11 @@ package v1alpha1
 import (
 	"fmt"
 
-	"knative.dev/pkg/apis"
-	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	rv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"knative.dev/pkg/apis"
+	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
 
 // GetGroupVersionKind returns the GroupVersionKind.
