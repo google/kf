@@ -175,7 +175,7 @@ func (p *pusher) buildSpec(
 		return "", err
 	}
 
-	if _, err := p.buildClient.Status(buildName); err != nil {
+	if _, err := p.buildClient.Status(buildName, builds.WithStatusNamespace(namespace)); err != nil {
 		return "", err
 	}
 

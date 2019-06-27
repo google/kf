@@ -28,6 +28,7 @@ import (
 	duckv1beta1 "github.com/knative/pkg/apis/duck/v1beta1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	servicefake "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1/fake"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	ktesting "k8s.io/client-go/testing"
@@ -51,16 +52,8 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			appName:         "some-app",
 			namespace:       "default",
 			resourceVersion: "some-version",
-			events:          createMsgEvents("some-app", "", "msg-1", "msg-2"),
+			events:          append(createMsgEvents("some-app", "", "msg-1", "msg-2"), createMsgEvents("some-app", "True", "")...),
 			wantedMsgs:      []string{"msg-1", "msg-2"},
-		},
-		"filters out messages from other apps": {
-			appName:         "some-app",
-			namespace:       "default",
-			resourceVersion: "some-version",
-			events:          append(createMsgEvents("some-app", "", "msg-1", "msg-2"), createMsgEvents("some-other-app", "", "should not see")...),
-			wantedMsgs:      []string{"msg-1", "msg-2"},
-			unwantedMsgs:    []string{"should not see"},
 		},
 		"watch service returns an error, return error": {
 			appName:         "some-app",
@@ -73,8 +66,15 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			appName:         "some-app",
 			namespace:       "default",
 			resourceVersion: "some-version",
-			events:          createMsgEvents("some-app", "RevisionFailed", "some-error"),
+			events:          createMsgEvents("some-app", "False", "some-error"),
 			wantErr:         errors.New("deployment failed: some-error"),
+		},
+		"watch fails, return error": {
+			appName:         "some-app",
+			namespace:       "default",
+			resourceVersion: "some-version",
+			events:          nil,
+			wantErr:         errors.New("lost connection to Kubernetes"),
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
@@ -117,7 +117,6 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 
 func testWatch(t *testing.T, action ktesting.Action, resource, namespace, resourceVersion string) {
 	t.Helper()
-
 	testutil.AssertEqual(t, "namespace", namespace, action.GetNamespace())
 	testutil.AssertEqual(t, "resourceVersion", resourceVersion, action.(ktesting.WatchActionImpl).WatchRestrictions.ResourceVersion)
 
@@ -135,7 +134,7 @@ func createEvents(es []watch.Event) <-chan watch.Event {
 	return c
 }
 
-func createMsgEvents(appName, reason string, msgs ...string) []watch.Event {
+func createMsgEvents(appName string, status corev1.ConditionStatus, msgs ...string) []watch.Event {
 	var es []watch.Event
 	for _, m := range msgs {
 		es = append(es, watch.Event{
@@ -146,7 +145,7 @@ func createMsgEvents(appName, reason string, msgs ...string) []watch.Event {
 				Status: serving.ServiceStatus{
 					Status: duckv1beta1.Status{
 						Conditions: []apis.Condition{
-							{Reason: reason, Message: m},
+							{Type: "Ready", Status: status, Message: m},
 						},
 					},
 				},
