@@ -18,6 +18,8 @@ package v1alpha1
 
 type AppExpansion interface{}
 
+type RouteExpansion interface{}
+
 type SourceExpansion interface{}
 
 type SpaceExpansion interface{}

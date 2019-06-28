@@ -2,13 +2,13 @@
 ---
 package: routes
 imports:
-  "knative.dev/pkg/apis/istio/v1alpha3": "networking"
-  "knative.dev/pkg/client/clientset/versioned/typed/istio/v1alpha3": "cnetworking"
+  "github.com/google/kf/pkg/apis/kf/v1alpha1": "v1alpha1"
+  "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1": "cv1alpha1"
 kubernetes:
-  kind: "VirtualService"
-  version: "networking.istio.io/v1alpha3"
+  kind: "Route"
+  version: "v1alpha1"
   namespaced: true
-type: "networking.VirtualService"
-clientType: "cnetworking.NetworkingV1alpha3Interface"
+type: "v1alpha1.Route"
+clientType: "cv1alpha1.RoutesGetter"
 cf:
   name: "Route"

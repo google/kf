@@ -21,8 +21,8 @@ package fake
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	routes "github.com/google/kf/pkg/kf/routes"
-	v1alpha3 "knative.dev/pkg/apis/istio/v1alpha3"
 	reflect "reflect"
 )
 
@@ -50,14 +50,14 @@ func (m *FakeClient) EXPECT() *FakeClientMockRecorder {
 }
 
 // Create mocks base method
-func (m *FakeClient) Create(arg0 string, arg1 *v1alpha3.VirtualService, arg2 ...routes.CreateOption) (*v1alpha3.VirtualService, error) {
+func (m *FakeClient) Create(arg0 string, arg1 *v1alpha1.Route, arg2 ...routes.CreateOption) (*v1alpha1.Route, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Create", varargs...)
-	ret0, _ := ret[0].(*v1alpha3.VirtualService)
+	ret0, _ := ret[0].(*v1alpha1.Route)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -89,14 +89,14 @@ func (mr *FakeClientMockRecorder) Delete(arg0, arg1 interface{}, arg2 ...interfa
 }
 
 // Get mocks base method
-func (m *FakeClient) Get(arg0, arg1 string, arg2 ...routes.GetOption) (*v1alpha3.VirtualService, error) {
+func (m *FakeClient) Get(arg0, arg1 string, arg2 ...routes.GetOption) (*v1alpha1.Route, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Get", varargs...)
-	ret0, _ := ret[0].(*v1alpha3.VirtualService)
+	ret0, _ := ret[0].(*v1alpha1.Route)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -109,14 +109,14 @@ func (mr *FakeClientMockRecorder) Get(arg0, arg1 interface{}, arg2 ...interface{
 }
 
 // List mocks base method
-func (m *FakeClient) List(arg0 string, arg1 ...routes.ListOption) ([]v1alpha3.VirtualService, error) {
+func (m *FakeClient) List(arg0 string, arg1 ...routes.ListOption) ([]v1alpha1.Route, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "List", varargs...)
-	ret0, _ := ret[0].([]v1alpha3.VirtualService)
+	ret0, _ := ret[0].([]v1alpha1.Route)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -143,14 +143,14 @@ func (mr *FakeClientMockRecorder) Transform(arg0, arg1, arg2 interface{}) *gomoc
 }
 
 // Update mocks base method
-func (m *FakeClient) Update(arg0 string, arg1 *v1alpha3.VirtualService, arg2 ...routes.UpdateOption) (*v1alpha3.VirtualService, error) {
+func (m *FakeClient) Update(arg0 string, arg1 *v1alpha1.Route, arg2 ...routes.UpdateOption) (*v1alpha1.Route, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Update", varargs...)
-	ret0, _ := ret[0].(*v1alpha3.VirtualService)
+	ret0, _ := ret[0].(*v1alpha1.Route)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -163,10 +163,10 @@ func (mr *FakeClientMockRecorder) Update(arg0, arg1 interface{}, arg2 ...interfa
 }
 
 // Upsert mocks base method
-func (m *FakeClient) Upsert(arg0 string, arg1 *v1alpha3.VirtualService, arg2 routes.Merger) (*v1alpha3.VirtualService, error) {
+func (m *FakeClient) Upsert(arg0 string, arg1 *v1alpha1.Route, arg2 routes.Merger) (*v1alpha1.Route, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Upsert", arg0, arg1, arg2)
-	ret0, _ := ret[0].(*v1alpha3.VirtualService)
+	ret0, _ := ret[0].(*v1alpha1.Route)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

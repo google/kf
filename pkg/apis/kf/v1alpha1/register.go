@@ -40,9 +40,10 @@ func Resource(resource string) schema.GroupResource {
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(
 		SchemeGroupVersion,
-		&App{},
+		// &App{},
 		&Source{},
 		&Space{},
+		&Route{},
 		&metav1.Status{},
 	)
 

@@ -17,16 +17,13 @@ package routes
 import (
 	"errors"
 	"fmt"
-	"net/http"
-	"path"
 
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/internal/routeutil"
 	"github.com/google/kf/pkg/kf/routes"
+	"github.com/google/kf/pkg/reconciler/route/resources"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"knative.dev/pkg/apis/istio/common/v1alpha1"
-	networking "knative.dev/pkg/apis/istio/v1alpha3"
 )
 
 // NewCreateRouteCommand creates a CreateRoute command.
@@ -61,7 +58,7 @@ Instead use the --namespace flag.`)
 			}
 
 			if p.Namespace != "" && p.Namespace != space {
-				return errors.New("SPACE (argument) and namespace (if provided) must match")
+				return fmt.Errorf("SPACE (argument=%q) and namespace (flag=%q) (if provided) must match", space, p.Namespace)
 			}
 
 			if hostname == "" {
@@ -70,68 +67,25 @@ Instead use the --namespace flag.`)
 
 			cmd.SilenceUsage = true
 
-			var pathMatchers []networking.HTTPMatchRequest
-			if urlPath != "" {
-				urlPath = path.Join("/", urlPath)
-				pathMatchers = append(pathMatchers, networking.HTTPMatchRequest{
-					URI: &v1alpha1.StringMatch{
-						Prefix: urlPath,
-					},
-				})
-			}
-
-			hostDomain := hostname + "." + domain
-
-			vs := &networking.VirtualService{
+			r := &v1alpha1.Route{
 				TypeMeta: metav1.TypeMeta{
-					APIVersion: "networking.istio.io/v1alpha3",
-					Kind:       "VirtualService",
+					Kind: "Route",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name: routeutil.EncodeRouteName(hostname, domain, urlPath),
-					Annotations: map[string]string{
-						"domain":   domain,
-						"hostname": hostname,
-						"path":     urlPath,
-					},
+					Name: resources.VirtualServiceName(
+						hostname,
+						domain,
+						urlPath,
+					),
 				},
-				Spec: networking.VirtualServiceSpec{
-					// TODO: Is this a constant?
-					Gateways: []string{"knative-ingress-gateway.knative-serving.svc.cluster.local"},
-					Hosts:    []string{hostDomain},
-					HTTP: []networking.HTTPRoute{
-						{
-							Match: pathMatchers,
-							Route: []networking.HTTPRouteDestination{
-								{
-									Destination: networking.Destination{
-										// TODO: Is this a constant?
-										Host: "istio-ingressgateway.istio-system.svc.cluster.local",
-
-										// XXX: If this is not included, then
-										// we get an error back from the
-										// server suggesting we have to have a
-										// port set. It doesn't seem to hurt
-										// anything as we just return a fault.
-										Port: networking.PortSelector{
-											Number: 80,
-										},
-									},
-									Weight: 100,
-								},
-							},
-							Fault: &networking.HTTPFaultInjection{
-								Abort: &networking.InjectAbort{
-									Percent:    100,
-									HTTPStatus: http.StatusServiceUnavailable,
-								},
-							},
-						},
-					},
+				Spec: v1alpha1.RouteSpec{
+					Hostname: hostname,
+					Domain:   domain,
+					Path:     urlPath,
 				},
 			}
 
-			if _, err := c.Create(space, vs); err != nil {
+			if _, err := c.Create(space, r); err != nil {
 				return fmt.Errorf("failed to create Route: %s", err)
 			}
 			return nil

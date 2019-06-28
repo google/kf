@@ -345,8 +345,9 @@ func InjectDeleteQuota(p *config.KfParams) *cobra.Command {
 func InjectRoutes(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		croutes.NewRoutesCommand,
-		config.GetNetworkingClient,
 		routes.NewClient,
+		config.GetKfClient,
+		AppsSet,
 	)
 	return nil
 }
@@ -354,8 +355,8 @@ func InjectRoutes(p *config.KfParams) *cobra.Command {
 func InjectCreateRoute(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		croutes.NewCreateRouteCommand,
-		config.GetNetworkingClient,
 		routes.NewClient,
+		config.GetKfClient,
 	)
 	return nil
 }
@@ -363,8 +364,8 @@ func InjectCreateRoute(p *config.KfParams) *cobra.Command {
 func InjectDeleteRoute(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		croutes.NewDeleteRouteCommand,
-		config.GetNetworkingClient,
 		routes.NewClient,
+		config.GetKfClient,
 	)
 	return nil
 }

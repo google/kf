@@ -19,8 +19,8 @@ import (
 	"path"
 
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/internal/routeutil"
 	"github.com/google/kf/pkg/kf/routes"
+	"github.com/google/kf/pkg/reconciler/route/resources"
 	"github.com/spf13/cobra"
 )
 
@@ -44,7 +44,7 @@ func NewDeleteRouteCommand(
 			cmd.SilenceUsage = true
 			urlPath = path.Join("/", urlPath)
 
-			if err := c.Delete(p.Namespace, routeutil.EncodeRouteName(hostname, domain, urlPath)); err != nil {
+			if err := c.Delete(p.Namespace, resources.VirtualServiceName(hostname, domain, urlPath)); err != nil {
 				return fmt.Errorf("failed to delete Route: %s", err)
 			}
 			return nil
