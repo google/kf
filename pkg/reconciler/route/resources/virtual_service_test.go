@@ -15,6 +15,7 @@
 package resources_test
 
 import (
+	"fmt"
 	"math/rand"
 	"net/http"
 	"regexp"
@@ -23,6 +24,7 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/google/kf/pkg/reconciler/route/resources"
+	"github.com/knative/serving/pkg/network"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	istio "knative.dev/pkg/apis/istio/common/v1alpha1"
 	networking "knative.dev/pkg/apis/istio/v1alpha3"
@@ -55,7 +57,7 @@ func TestEncodeRouteName_ValidDNS(t *testing.T) {
 	// repeatable tests.
 	rand := rand.New(rand.NewSource(0))
 	randStr := func() string {
-		buf := make([]byte, rand.Intn(19)+1)
+		buf := make([]byte, rand.Intn(128)+1)
 		for i := range buf {
 			buf[i] = byte(rand.Intn('z'-'a') + 'a')
 		}
@@ -71,7 +73,7 @@ func TestEncodeRouteName_ValidDNS(t *testing.T) {
 	for i := 0; i < 10000; i++ {
 		r := resources.VirtualServiceName(randStr(), randStr(), randStr())
 		testutil.AssertEqual(t, "invalid rune: "+r, false, pattern.MatchString(r))
-
+		testutil.AssertEqual(t, fmt.Sprintf("len: %d", len(r)), true, len(r) <= 63)
 		testutil.AssertEqual(t, "collison", false, history[r])
 		history[r] = true
 	}
@@ -160,15 +162,12 @@ func TestMakeVirtualService(t *testing.T) {
 				testutil.AssertEqual(t, "HTTP Route", networking.HTTPRouteDestination{
 					Destination: networking.Destination{
 						Host: resources.GatewayHost,
-						Port: networking.PortSelector{
-							Number: 80,
-						},
 					},
 					Weight: 100,
 				}, v.Spec.HTTP[0].Route[0])
 			},
 		},
-		"Setup fault to 503": {
+		"when there aren't any bound services, setup fault to 503": {
 			Route: &v1alpha1.Route{
 				Spec: v1alpha1.RouteSpec{
 					Hostname: "some-host",
@@ -185,6 +184,28 @@ func TestMakeVirtualService(t *testing.T) {
 						HTTPStatus: http.StatusServiceUnavailable,
 					},
 				}, v.Spec.HTTP[0].Fault)
+			},
+		},
+		"setup routes to bound services": {
+			Route: &v1alpha1.Route{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "some-namespace",
+				},
+				Spec: v1alpha1.RouteSpec{
+					Hostname:            "some-host",
+					Domain:              "example.com",
+					Path:                "/some-path",
+					KnativeServiceNames: []string{"ksvc-1"},
+				},
+			},
+			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
+				testutil.AssertNil(t, "err", err)
+				testutil.AssertEqual(t, "HTTP len", 1, len(v.Spec.HTTP))
+				testutil.AssertEqual(t, "HTTP Rewrite", &networking.HTTPRewrite{
+					Authority: network.GetServiceHostname("ksvc-1", "some-namespace"),
+				}, v.Spec.HTTP[0].Rewrite)
+				testutil.AssertEqual(t, "HTTP Match len", 1, len(v.Spec.HTTP[0].Match))
+				testutil.AssertEqual(t, "HTTP Match", "/some-path", v.Spec.HTTP[0].Match[0].URI.Prefix)
 			},
 		},
 		"Hosts with subdomain": {

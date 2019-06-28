@@ -16,10 +16,13 @@ package route
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	routeinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/route"
 	"github.com/google/kf/pkg/reconciler"
+	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	kserviceinformer "github.com/knative/serving/pkg/client/injection/informers/serving/v1alpha1/service"
 	virtualserviceinformer "knative.dev/pkg/client/injection/informers/istio/v1alpha3/virtualservice"
 
 	"k8s.io/client-go/tools/cache"
@@ -36,6 +39,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	// Get informers off context
 	vsInformer := virtualserviceinformer.Get(ctx)
 	routeInformer := routeinformer.Get(ctx)
+	serviceInformer := kserviceinformer.Get(ctx)
 
 	// Create reconciler
 	c := &Reconciler{
@@ -47,12 +51,28 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	impl := controller.NewImpl(c, logger, "Routes")
 
 	c.Logger.Info("Setting up event handlers")
+
 	// Watch for changes in sub-resources so we can sync accordingly
 	routeInformer.Informer().AddEventHandler(controller.HandleAll(impl.Enqueue))
 
 	vsInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.Filter(v1alpha1.SchemeGroupVersion.WithKind("Route")),
 		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
+	})
+
+	serviceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+		DeleteFunc: func(obj interface{}) {
+			start := time.Now()
+			service := obj.(*serving.Service)
+			namespaceAndName := service.GetNamespace() + "/" + service.GetName()
+
+			c.Logger.Infof("Deleting references to service %s in routes", namespaceAndName)
+
+			if err := c.ReconcileServiceDeletion(ctx, service); err != nil {
+				c.Logger.Warnf("failed to delete references to service %s in routes: %s", namespaceAndName, err)
+			}
+			c.Logger.Infof("Reconcile (service deletion) succeeded. Time taken: %s.", time.Since(start))
+		},
 	})
 
 	return impl

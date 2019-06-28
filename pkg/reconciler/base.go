@@ -20,6 +20,8 @@ import (
 	kfclientset "github.com/google/kf/pkg/client/clientset/versioned"
 	kfscheme "github.com/google/kf/pkg/client/clientset/versioned/scheme"
 	kfclient "github.com/google/kf/pkg/client/injection/client"
+	"github.com/google/kf/pkg/kf/commands/config"
+	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -41,6 +43,9 @@ type Base struct {
 
 	// KfClientSet allows us to configure Kf objects
 	KfClientSet kfclientset.Interface
+
+	// ServingClientSet allows us to configure Knative Serving objects
+	ServingClientSet serving.ServingV1alpha1Interface
 
 	// ConfigMapWatcher allows us to watch for ConfigMap changes.
 	ConfigMapWatcher configmap.Watcher
@@ -66,6 +71,7 @@ func NewBase(ctx context.Context, controllerAgentName string, cmw configmap.Watc
 		KubeClientSet:    kubeClient,
 		SharedClientSet:  sharedclient.Get(ctx),
 		KfClientSet:      kfclient.Get(ctx),
+		ServingClientSet: config.GetServingClient(nil),
 		ConfigMapWatcher: cmw,
 		Logger:           logger,
 	}

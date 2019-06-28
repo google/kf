@@ -21,13 +21,10 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	fakeapp "github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/routes"
 	fakeroute "github.com/google/kf/pkg/kf/routes/fake"
 	"github.com/google/kf/pkg/kf/testutil"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestRoutes(t *testing.T) {
@@ -37,7 +34,7 @@ func TestRoutes(t *testing.T) {
 		Namespace   string
 		ExpectedErr error
 		Args        []string
-		Setup       func(t *testing.T, fakeRoute *fakeroute.FakeClient, fakeApp *fakeapp.FakeClient)
+		Setup       func(t *testing.T, fakeRoute *fakeroute.FakeClient)
 		BufferF     func(t *testing.T, buffer *bytes.Buffer)
 	}{
 		"wrong number of args": {
@@ -46,87 +43,40 @@ func TestRoutes(t *testing.T) {
 		},
 		"listing routes fails": {
 			ExpectedErr: errors.New("failed to fetch Routes: some-error"),
-			Setup: func(t *testing.T, fakeRoute *fakeroute.FakeClient, fakeApp *fakeapp.FakeClient) {
+			Setup: func(t *testing.T, fakeRoute *fakeroute.FakeClient) {
 				fakeRoute.EXPECT().List(gomock.Any()).Return(nil, errors.New("some-error"))
 			},
 		},
 		"namespace": {
 			Namespace: "some-namespace",
-			Setup: func(t *testing.T, fakeRoute *fakeroute.FakeClient, fakeApp *fakeapp.FakeClient) {
+			Setup: func(t *testing.T, fakeRoute *fakeroute.FakeClient) {
 				fakeRoute.EXPECT().List("some-namespace")
 			},
 		},
 		"display routes": {
-			Setup: func(t *testing.T, fakeRoute *fakeroute.FakeClient, fakeApp *fakeapp.FakeClient) {
+			Setup: func(t *testing.T, fakeRoute *fakeroute.FakeClient) {
 				fakeRoute.EXPECT().List(gomock.Any()).Return([]v1alpha1.Route{
 					{
 						Spec: v1alpha1.RouteSpec{
-							Hostname: "host-1",
-							Domain:   "example.com",
-							Path:     "/path1",
+							Hostname:            "host-1",
+							Domain:              "example.com",
+							Path:                "/path1",
+							KnativeServiceNames: []string{"app-1", "app-2"},
 						},
 					},
 				}, nil)
 			},
 			BufferF: func(t *testing.T, buffer *bytes.Buffer) {
-				testutil.AssertContainsAll(t, buffer.String(), []string{"host-1", "example.com", "/path1"})
-			},
-		},
-		"display apps": {
-			Namespace: "some-namespace",
-			Setup: func(t *testing.T, fakeRoute *fakeroute.FakeClient, fakeApp *fakeapp.FakeClient) {
-				fakeRoute.EXPECT().List(gomock.Any()).Return([]v1alpha1.Route{
-					{
-						Spec: v1alpha1.RouteSpec{
-							KnativeServiceNames: []string{
-								"service-1",
-								"service-2",
-							},
-						},
-					},
-				}, nil)
-
-				fakeApp.EXPECT().Get("some-namespace", "service-1").Return(&serving.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "app-1",
-					},
-				}, nil)
-				fakeApp.EXPECT().Get("some-namespace", "service-2").Return(&serving.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "app-2",
-					},
-				}, nil)
-			},
-			BufferF: func(t *testing.T, buffer *bytes.Buffer) {
-				testutil.AssertContainsAll(t, buffer.String(), []string{"app-1, app-2"})
-			},
-		},
-		"fetching Knative Service fails": {
-			Namespace:   "some-namespace",
-			ExpectedErr: errors.New("fetching Knative Service failed: some-error"),
-			Setup: func(t *testing.T, fakeRoute *fakeroute.FakeClient, fakeApp *fakeapp.FakeClient) {
-				fakeRoute.EXPECT().List(gomock.Any()).Return([]v1alpha1.Route{
-					{
-						Spec: v1alpha1.RouteSpec{
-							KnativeServiceNames: []string{
-								"service-1",
-								"service-2",
-							},
-						},
-					},
-				}, nil)
-
-				fakeApp.EXPECT().Get("some-namespace", "service-1").Return(nil, errors.New("some-error"))
+				testutil.AssertContainsAll(t, buffer.String(), []string{"host-1", "example.com", "/path1", "app-1, app-2"})
 			},
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			fakeRoute := fakeroute.NewFakeClient(ctrl)
-			fakeApp := fakeapp.NewFakeClient(ctrl)
 
 			if tc.Setup != nil {
-				tc.Setup(t, fakeRoute, fakeApp)
+				tc.Setup(t, fakeRoute)
 			}
 
 			var buffer bytes.Buffer
@@ -135,7 +85,6 @@ func TestRoutes(t *testing.T) {
 					Namespace: tc.Namespace,
 				},
 				fakeRoute,
-				fakeApp,
 			)
 			cmd.SetArgs(tc.Args)
 			cmd.SetOutput(&buffer)

@@ -15,13 +15,13 @@
 package resources
 
 import (
-	"encoding/base64"
 	"hash/crc64"
 	"net/http"
 	"path"
-	"strings"
+	"strconv"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/knative/serving/pkg/network"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	istio "knative.dev/pkg/apis/istio/common/v1alpha1"
 	networking "knative.dev/pkg/apis/istio/v1alpha3"
@@ -35,13 +35,12 @@ const (
 
 // VirtualServiceName gets the name of a VirtualService given the route.
 func VirtualServiceName(hostname, domain, urlPath string) string {
-	hasher := crc64.New(crc64.MakeTable(crc64.ECMA))
-	return hostname + "-" +
-		strings.ToLower(
-			base64.RawURLEncoding.EncodeToString(
-				hasher.Sum([]byte(hostname+domain+path.Join("/", urlPath))),
-			),
-		)
+	return strconv.FormatUint(
+		crc64.Checksum(
+			[]byte(hostname+domain+path.Join("/", urlPath)),
+			crc64.MakeTable(crc64.ECMA),
+		),
+		10)
 }
 
 // MakeVirtualService creates a VirtualService from a Route object.
@@ -50,16 +49,11 @@ func MakeVirtualService(route *v1alpha1.Route) (*networking.VirtualService, erro
 	if route.Spec.Hostname != "" {
 		hostDomain = route.Spec.Hostname + "." + route.Spec.Domain
 	}
-
-	var pathMatchers []networking.HTTPMatchRequest
-
 	urlPath := path.Join("/", route.Spec.Path)
-	if route.Spec.Path != "" {
-		pathMatchers = append(pathMatchers, networking.HTTPMatchRequest{
-			URI: &istio.StringMatch{
-				Prefix: urlPath,
-			},
-		})
+
+	httpRoute, err := buildHTTPRoute(route)
+	if err != nil {
+		return nil, err
 	}
 
 	return &networking.VirtualService{
@@ -83,34 +77,62 @@ func MakeVirtualService(route *v1alpha1.Route) (*networking.VirtualService, erro
 		Spec: networking.VirtualServiceSpec{
 			Gateways: []string{KnativeIngressGateway},
 			Hosts:    []string{hostDomain},
-			HTTP: []networking.HTTPRoute{
-				{
-					Match: pathMatchers,
-					Route: []networking.HTTPRouteDestination{
-						{
-							Destination: networking.Destination{
-								Host: GatewayHost,
+			HTTP:     httpRoute,
+		},
+	}, nil
+}
 
-								// XXX: If this is not included, then
-								// we get an error back from the
-								// server suggesting we have to have a
-								// port set. It doesn't seem to hurt
-								// anything as we just return a fault.
-								Port: networking.PortSelector{
-									Number: 80,
-								},
-							},
-							Weight: 100,
-						},
-					},
-					Fault: &networking.HTTPFaultInjection{
-						Abort: &networking.InjectAbort{
-							Percent:    100,
-							HTTPStatus: http.StatusServiceUnavailable,
-						},
+func buildHTTPRoute(route *v1alpha1.Route) ([]networking.HTTPRoute, error) {
+	var pathMatchers []networking.HTTPMatchRequest
+
+	urlPath := path.Join("/", route.Spec.Path)
+	if route.Spec.Path != "" {
+		pathMatchers = append(pathMatchers, networking.HTTPMatchRequest{
+			URI: &istio.StringMatch{
+				Prefix: urlPath,
+			},
+		})
+	}
+
+	var httpRoutes []networking.HTTPRoute
+
+	for _, ksvcName := range route.Spec.KnativeServiceNames {
+		httpRoutes = append(httpRoutes, networking.HTTPRoute{
+			Match: pathMatchers,
+			Route: buildRouteDestination(),
+			Rewrite: &networking.HTTPRewrite{
+				Authority: network.GetServiceHostname(ksvcName, route.GetNamespace()),
+			},
+		})
+	}
+
+	// If there aren't any services bound to the route, we just want to
+	// serve a 503.
+	if len(httpRoutes) == 0 {
+		return []networking.HTTPRoute{
+			{
+				Match: pathMatchers,
+				Route: buildRouteDestination(),
+				Fault: &networking.HTTPFaultInjection{
+					Abort: &networking.InjectAbort{
+						Percent:    100,
+						HTTPStatus: http.StatusServiceUnavailable,
 					},
 				},
 			},
+		}, nil
+	}
+
+	return httpRoutes, nil
+}
+
+func buildRouteDestination() []networking.HTTPRouteDestination {
+	return []networking.HTTPRouteDestination{
+		{
+			Destination: networking.Destination{
+				Host: GatewayHost,
+			},
+			Weight: 100,
 		},
-	}, nil
+	}
 }
