@@ -55,3 +55,6 @@ replace go.opencensus.io => go.opencensus.io v0.20.2
 replace contrib.go.opencensus.io/exporter/stackdriver => contrib.go.opencensus.io/exporter/stackdriver v0.9.2
 
 replace github.com/google/go-cmp => github.com/google/go-cmp v0.3.0
+
+// Remove once https://github.com/google/kf/issues/238 is resolved
+replace github.com/knative/pkg => github.com/poy/knative-pkg v99.0.0+incompatible

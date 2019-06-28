@@ -167,10 +167,10 @@ github.com/json-iterator/go v0.0.0-20180701071628-ab8a2e0c74be/go.mod h1:+SdeFBv
 github.com/jteeuwen/go-bindata v0.0.0-20151023091102-a0ff2567cfb7/go.mod h1:JVvhzYOiGBnFSYRyV00iY8q7/0PThjIYav1p9h5dmKs=
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
-github.com/knative/build v0.7.0 h1:YqqiShED6wILhPRZyUJjTX2B6OgbgEqWe1WNrAcDclw=
-github.com/knative/build v0.7.0/go.mod h1:/sU74ZQkwlYA5FwYDJhYTy61i/Kn+5eWfln2jDbw3Qo=
 github.com/knative/build v0.6.0 h1:tAhqGbRL3/wFOfEc4srO8XDNV8DxUE+z6TzKW0JPWsE=
 github.com/knative/build v0.6.0/go.mod h1:/sU74ZQkwlYA5FwYDJhYTy61i/Kn+5eWfln2jDbw3Qo=
+github.com/knative/build v0.7.0 h1:YqqiShED6wILhPRZyUJjTX2B6OgbgEqWe1WNrAcDclw=
+github.com/knative/build v0.7.0/go.mod h1:/sU74ZQkwlYA5FwYDJhYTy61i/Kn+5eWfln2jDbw3Qo=
 github.com/knative/caching v0.0.0-20190605182338-b6c8f4851e3f h1:3lF4RXQBfSLasDsHGK5+NcrngAHgNlqtFhO0J92uEVI=
 github.com/knative/caching v0.0.0-20190605182338-b6c8f4851e3f/go.mod h1:D6ynAUa79yFRVWCEogSqhRRNi2SooyDBf1ucp02CFKg=
 github.com/knative/pkg v0.0.0-20190621200921-9c5d970cbc9e h1:+59vBc5WRIqbEF7eTfAIzZXvlHUJISu8rjH7/lWDCnI=
@@ -236,6 +236,8 @@ github.com/pkg/sftp v0.0.0-20160930220758-4d0e916071f6/go.mod h1:NxmoDg/QLVWluQD
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmorie/go-open-service-broker-client v0.0.0-20181213160916-6988c0983446/go.mod h1:6d5FSWVMC68G2RoLKixGVhkoNlgoEC/phmruM0yHdjQ=
+github.com/poy/knative-pkg v99.0.0+incompatible h1:onvjBYN3yXNLGESi51Sajk70NBU7i5LISPor5ANJ59M=
+github.com/poy/knative-pkg v99.0.0+incompatible/go.mod h1:+LGy4PaS4RL2Ii5I2Ow8OGR9dMhJZ9+LCKUdwtDgyUU=
 github.com/poy/kontext v0.0.0-20190322194304-59ced15e96b1 h1:Dx1hnQtcUttU5Kovao73XH5OvJxpEPCSoB9BJVqlvqM=
 github.com/poy/kontext v0.0.0-20190322194304-59ced15e96b1/go.mod h1:EZ/Zsx68w8CAzOTosTajuX/M9sL+2s1IMy8jpzuJm2Q=
 github.com/poy/kontext v0.0.0-20190411202914-cc5532543f2e h1:HZPqpLefwCMwGfEwjvY0ZcS8biQDaMBzsunN6TqgL+0=
