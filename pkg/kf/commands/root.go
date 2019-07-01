@@ -88,6 +88,7 @@ func NewKfCommand() *cobra.Command {
 
 		// Spaces
 		"spaces":       InjectSpaces(p),
+		"space":        InjectSpace(p),
 		"create-space": InjectCreateSpace(p),
 		"delete-space": InjectDeleteSpace(p),
 
