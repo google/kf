@@ -353,9 +353,18 @@ func InjectRoutes(p *config.KfParams) *cobra.Command {
 		croutes.NewRoutesCommand,
 		routes.NewClient,
 		config.GetKfClient,
-		AppsSet,
 	)
 	return nil
+}
+
+var NamespacesSet = wire.NewSet(
+	provideCoreV1,
+	providerNamespacesGetter,
+	config.GetKubernetes,
+)
+
+func providerNamespacesGetter(ki kubernetes.Interface) v1.NamespacesGetter {
+	return ki.CoreV1()
 }
 
 func InjectCreateRoute(p *config.KfParams) *cobra.Command {
@@ -363,6 +372,7 @@ func InjectCreateRoute(p *config.KfParams) *cobra.Command {
 		croutes.NewCreateRouteCommand,
 		routes.NewClient,
 		config.GetKfClient,
+		NamespacesSet,
 	)
 	return nil
 }
@@ -370,6 +380,25 @@ func InjectCreateRoute(p *config.KfParams) *cobra.Command {
 func InjectDeleteRoute(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		croutes.NewDeleteRouteCommand,
+		routes.NewClient,
+		config.GetKfClient,
+	)
+	return nil
+}
+
+func InjectMapRoute(p *config.KfParams) *cobra.Command {
+	wire.Build(
+		croutes.NewMapRouteCommand,
+		routes.NewClient,
+		config.GetKfClient,
+		AppsSet,
+	)
+	return nil
+}
+
+func InjectUnmapRoute(p *config.KfParams) *cobra.Command {
+	wire.Build(
+		croutes.NewUnmapRouteCommand,
 		routes.NewClient,
 		config.GetKfClient,
 	)

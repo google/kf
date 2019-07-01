@@ -283,17 +283,16 @@ func InjectDeleteQuota(p *config.KfParams) *cobra.Command {
 func InjectRoutes(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	client := routes.NewClient(kfV1alpha1Interface)
-	servingV1alpha1Interface := config.GetServingClient(p)
-	systemEnvInjectorInterface := provideSystemEnvInjector(p)
-	appsClient := apps.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
-	command := routes2.NewRoutesCommand(p, client, appsClient)
+	command := routes2.NewRoutesCommand(p, client)
 	return command
 }
 
 func InjectCreateRoute(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	client := routes.NewClient(kfV1alpha1Interface)
-	command := routes2.NewCreateRouteCommand(p, client)
+	kubernetesInterface := config.GetKubernetes(p)
+	namespacesGetter := providerNamespacesGetter(kubernetesInterface)
+	command := routes2.NewCreateRouteCommand(p, client, namespacesGetter)
 	return command
 }
 
@@ -301,6 +300,23 @@ func InjectDeleteRoute(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	client := routes.NewClient(kfV1alpha1Interface)
 	command := routes2.NewDeleteRouteCommand(p, client)
+	return command
+}
+
+func InjectMapRoute(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	client := routes.NewClient(kfV1alpha1Interface)
+	servingV1alpha1Interface := config.GetServingClient(p)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	appsClient := apps.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	command := routes2.NewMapRouteCommand(p, client, appsClient)
+	return command
+}
+
+func InjectUnmapRoute(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	client := routes.NewClient(kfV1alpha1Interface)
+	command := routes2.NewUnmapRouteCommand(p, client)
 	return command
 }
 
@@ -336,5 +352,14 @@ func provideKfSpaces(ki v1alpha1.KfV1alpha1Interface) v1alpha1.SpacesGetter {
 var QuotasSet = wire.NewSet(config.GetKubernetes, provideQuotaGetter, quotas.NewClient)
 
 func provideQuotaGetter(ki kubernetes.Interface) v1.ResourceQuotasGetter {
+	return ki.CoreV1()
+}
+
+var NamespacesSet = wire.NewSet(
+	provideCoreV1,
+	providerNamespacesGetter, config.GetKubernetes,
+)
+
+func providerNamespacesGetter(ki kubernetes.Interface) v1.NamespacesGetter {
 	return ki.CoreV1()
 }

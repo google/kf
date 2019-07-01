@@ -23,11 +23,13 @@ import (
 	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
 	"github.com/google/kf/pkg/reconciler"
 	"github.com/google/kf/pkg/reconciler/route/resources"
+	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
 	networking "knative.dev/pkg/apis/istio/v1alpha3"
 	istiolisters "knative.dev/pkg/client/listers/istio/v1alpha3"
@@ -57,6 +59,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 		return err
 	}
 
+	return r.reconcileRoute(ctx, namespace, name, logger)
+}
+
+func (r *Reconciler) reconcileRoute(ctx context.Context, namespace, name string, logger *zap.SugaredLogger) (err error) {
 	original, err := r.routeLister.Routes(namespace).Get(name)
 	switch {
 	case apierrs.IsNotFound(err):
@@ -90,9 +96,46 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 	return reconcileErr
 }
 
+func (r *Reconciler) ReconcileServiceDeletion(ctx context.Context, service *serving.Service) error {
+	// TODO(poy): This is O(n) where n is the number of apps in the
+	// namespace. We can get this down to O(1).
+	routes, err := r.routeLister.Routes(service.GetNamespace()).List(labels.Everything())
+	if err != nil {
+		return err
+	}
+
+	for _, route := range routes {
+		for i, ksvcName := range route.Spec.KnativeServiceNames {
+			if service.GetName() != ksvcName {
+				continue
+			}
+
+			// Don't modify the informers copy
+			toReconcile := route.DeepCopy()
+
+			// Remove the Knative Service
+			toReconcile.Spec.KnativeServiceNames = append(
+				toReconcile.Spec.KnativeServiceNames[:i],
+				toReconcile.Spec.KnativeServiceNames[i+1:]...,
+			)
+
+			// Update Route to not reference service
+			if _, err := r.KfClientSet.
+				KfV1alpha1().
+				Routes(service.GetNamespace()).
+				Update(toReconcile); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 // ApplyChanges updates the linked resources in the cluster with the current
 // status of the Route .
 func (r *Reconciler) ApplyChanges(ctx context.Context, route *v1alpha1.Route) error {
+	route.SetDefaults(ctx)
 	route.Status.InitializeConditions()
 	virtualServiceName := resources.VirtualServiceName(route.Spec.Hostname, route.Spec.Domain, route.Spec.Path)
 
@@ -144,7 +187,10 @@ func (r *Reconciler) reconcile(desired, actual *networking.VirtualService) (*net
 	// Preserve the rest of the object (e.g. ObjectMeta except for labels).
 	existing.Spec = desired.Spec
 	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
-	return r.SharedClientSet.Networking().VirtualServices(existing.GetNamespace()).Create(existing)
+	return r.SharedClientSet.
+		Networking().
+		VirtualServices(existing.GetNamespace()).
+		Update(existing)
 }
 
 func (r *Reconciler) updateStatus(desired *v1alpha1.Route) (*v1alpha1.Route, error) {

@@ -23,11 +23,11 @@ import (
 
 	"k8s.io/apimachinery/pkg/fields"
 
-	"github.com/knative/pkg/apis"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"knative.dev/pkg/apis"
 )
 
 // Logs handles build and deploy logs.

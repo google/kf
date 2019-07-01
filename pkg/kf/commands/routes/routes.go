@@ -19,7 +19,6 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/routes"
 	"github.com/spf13/cobra"
@@ -29,7 +28,6 @@ import (
 func NewRoutesCommand(
 	p *config.KfParams,
 	c routes.Client,
-	ac apps.Client,
 ) *cobra.Command {
 	return &cobra.Command{
 		Use:   "routes",
@@ -54,20 +52,15 @@ func NewRoutesCommand(
 			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 2, ' ', tabwriter.StripEscape)
 			fmt.Fprintln(w, "HOST\tDOMAIN\tPATH\tAPPS")
 			for _, route := range routes {
-				var apps []string
-				for _, app := range route.Spec.KnativeServiceNames {
-
-					ksvc, err := ac.Get(p.Namespace, app)
-					if err != nil {
-						return fmt.Errorf("fetching Knative Service failed: %s", err)
-					}
-
-					// TODO(poy): We might need to switch from the name to the
-					// KfApp OwnerReference.
-					apps = append(apps, ksvc.Name)
-				}
-
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", route.Spec.Hostname, route.Spec.Domain, route.Spec.Path, strings.Join(apps, ", "))
+				apps := strings.Join(route.Spec.KnativeServiceNames, ", ")
+				fmt.Fprintf(
+					w,
+					"%s\t%s\t%s\t%s\n",
+					route.Spec.Hostname,
+					route.Spec.Domain,
+					route.Spec.Path,
+					apps,
+				)
 			}
 
 			w.Flush()
