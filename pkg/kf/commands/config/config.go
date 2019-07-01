@@ -221,12 +221,18 @@ func getRestConfig(p *KfParams) *rest.Config {
 		return config
 	}
 
-	initKubeConfig(p)
-	c, err := clientcmd.BuildConfigFromFlags("", p.KubeCfgFile)
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	if p.KubeCfgFile != "" {
+		loadingRules.ExplicitPath = p.KubeCfgFile
+	}
+
+	clientCfg := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, &clientcmd.ConfigOverrides{})
+	restCfg, err := clientCfg.ClientConfig()
 	if err != nil {
 		log.Fatalf("failed to build clientcmd: %s", err)
 	}
-	return c
+
+	return restCfg
 }
 
 func initKubeConfig(p *KfParams) {
