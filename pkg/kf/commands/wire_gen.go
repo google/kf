@@ -216,6 +216,14 @@ func InjectSpaces(p *config.KfParams) *cobra.Command {
 	return command
 }
 
+func InjectSpace(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
+	client := spaces.NewClient(spacesGetter)
+	command := spaces2.NewGetSpaceCommand(p, client)
+	return command
+}
+
 func InjectCreateSpace(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	spacesGetter := provideKfSpaces(kfV1alpha1Interface)

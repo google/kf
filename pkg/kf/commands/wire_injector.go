@@ -286,6 +286,12 @@ func InjectSpaces(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
+func InjectSpace(p *config.KfParams) *cobra.Command {
+	wire.Build(cspaces.NewGetSpaceCommand, SpacesSet)
+
+	return nil
+}
+
 func InjectCreateSpace(p *config.KfParams) *cobra.Command {
 	wire.Build(cspaces.NewCreateSpaceCommand, SpacesSet)
 
