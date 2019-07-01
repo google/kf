@@ -22,11 +22,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// MakeResourceQuota creates a ResourceQuota from a Space object.
-func MakeResourceQuota(space *v1alpha1.Space) (*v1.ResourceQuota, error) {
+// MakeLimitRange creates a LimitRange from a Space object.
+func MakeLimitRange(space *v1alpha1.Space) (*v1.LimitRange, error) {
 
-	quota := &v1.ResourceQuota{}
-	quota.ObjectMeta = metav1.ObjectMeta{
+	limitRange := &v1.LimitRange{}
+	limitRange.ObjectMeta = metav1.ObjectMeta{
 		Namespace: NamespaceName(space),
 		OwnerReferences: []metav1.OwnerReference{
 			*kmeta.NewControllerRef(space),
@@ -35,6 +35,6 @@ func MakeResourceQuota(space *v1alpha1.Space) (*v1.ResourceQuota, error) {
 			"app.kubernetes.io/managed-by": "kf",
 		}),
 	}
-	quota.Spec.Hard = space.Spec.ResourceLimits.SpaceQuota
-	return quota, nil
+	limitRange.Spec.Limits = space.Spec.ResourceLimits.ResourceDefaults
+	return limitRange, nil
 }

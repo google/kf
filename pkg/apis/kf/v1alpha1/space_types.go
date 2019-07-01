@@ -99,24 +99,28 @@ type SpaceSpecExecution struct {
 
 // SpaceSpecResourceLimits contains definitions for resource usage limits.
 type SpaceSpecResourceLimits struct {
-	// ResourceQuotas holds the k8s ResourceQuotas created for the whole space.
+	// SpaceQuota holds the k8s ResourceQuota created for the whole space.
+	// For now, only one ResourceQuota per space is supported.
+	// Consider allowing multiple ResourceQuotas when more quota scopes are enabled in k8s
 	// +optional
 	// +patchMergeKey=name
 	// +patchStrategy=merge
-	ResourceQuotas corev1.ResourceQuotaList
+	SpaceQuota corev1.ResourceList
 
 	// ResourceDefaults holds the k8s LimitRange created for the whole space,
 	// which sets default request/limit for resources per pod or container.
 	// +optional
 	// +patchMergeKey=name
 	// +patchStrategy=merge
-	ResourceDefaults corev1.LimitRange
+	ResourceDefaults []corev1.LimitRangeItem
 }
 
 // SpaceStatus represents information about the status of a KfSpace.
 type SpaceStatus struct {
 	// Pull in the fields from Knative's duckv1beta1 status field.
 	duckv1beta1.Status `json:",inline"`
+
+	Quota corev1.ResourceQuotaStatus `json:"quotaStatus,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

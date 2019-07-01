@@ -44,9 +44,11 @@ type Reconciler struct {
 	*reconciler.Base
 
 	// listers index properties about resources
-	spaceLister     kflisters.SpaceLister
-	namespaceLister v1listers.NamespaceLister
-	roleLister      rbacv1listers.RoleLister
+	spaceLister         kflisters.SpaceLister
+	namespaceLister     v1listers.NamespaceLister
+	roleLister          rbacv1listers.RoleLister
+	resourceQuotaLister v1listers.ResourceQuotaLister
+	limitRangeLister    v1listers.LimitRangeLister
 }
 
 // Check that our Reconciler implements controller.Reconciler
@@ -186,9 +188,54 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 		space.Status.PropagateAuditorRoleStatus(actual)
 	}
 
-	// Sync resource quotas
+	// Sync resource quota
 	{
-		// TODO: fill this in
+		desired, err := resources.MakeResourceQuota(space)
+		if err != nil {
+			return err
+		}
+
+		actual, err := r.resourceQuotaLister.ResourceQuotas(desired.Namespace).Get(desired.Name)
+		if errors.IsNotFound(err) {
+			actual, err = r.KubeClientSet.CoreV1().ResourceQuotas(desired.Namespace).Create(desired)
+			if err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
+		} else if !metav1.IsControlledBy(actual, space) {
+			space.Status.MarkResourceQuotaNotOwned(desired.Name)
+			return fmt.Errorf("space: %q does not own resourcequota: %q", space.Name, desired.Name)
+		} else if actual, err = r.reconcileResourceQuota(desired, actual); err != nil {
+			return err
+		}
+
+		space.Status.PropagateResourceQuotaStatus(actual)
+	}
+
+	// Sync limit range
+	{
+		desired, err := resources.MakeLimitRange(space)
+		if err != nil {
+			return err
+		}
+
+		actual, err := r.limitRangeLister.LimitRanges(desired.Namespace).Get(desired.Name)
+		if errors.IsNotFound(err) {
+			actual, err = r.KubeClientSet.CoreV1().LimitRanges(desired.Namespace).Create(desired)
+			if err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
+		} else if !metav1.IsControlledBy(actual, space) {
+			space.Status.MarkLimitRangeNotOwned(desired.Name)
+			return fmt.Errorf("space: %q does not own limit range: %q", space.Name, desired.Name)
+		} else if actual, err = r.reconcileLimitRange(desired, actual); err != nil {
+			return err
+		}
+
+		space.Status.PropagateLimitRangeStatus(actual)
 	}
 
 	return nil
@@ -236,6 +283,50 @@ func (r *Reconciler) reconcileGenericRole(desired, actual *rv1.Role) (*rv1.Role,
 	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
 	existing.Rules = desired.Rules
 	return r.KubeClientSet.RbacV1().Roles(existing.Namespace).Update(existing)
+}
+
+func (r *Reconciler) reconcileResourceQuota(desired, actual *v1.ResourceQuota) (*v1.ResourceQuota, error) {
+	// Check for differences, if none we don't need to reconcile.
+	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
+	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
+
+	if semanticEqual {
+		return actual, nil
+	}
+
+	if _, err := kmp.SafeDiff(desired.Spec, actual.Spec); err != nil {
+		return nil, fmt.Errorf("failed to diff Spec (ResourceList): %v", err)
+	}
+
+	// Don't modify the informers copy.
+	existing := actual.DeepCopy()
+
+	// Preserve the rest of the object (e.g. ObjectMeta except for labels).
+	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
+	existing.Spec = desired.Spec
+	return r.KubeClientSet.CoreV1().ResourceQuotas(existing.Namespace).Update(existing)
+}
+
+func (r *Reconciler) reconcileLimitRange(desired, actual *v1.LimitRange) (*v1.LimitRange, error) {
+	// Check for differences, if none we don't need to reconcile.
+	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
+	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
+
+	if semanticEqual {
+		return actual, nil
+	}
+
+	if _, err := kmp.SafeDiff(desired.Spec, actual.Spec); err != nil {
+		return nil, fmt.Errorf("failed to diff Spec (LimitRange): %v", err)
+	}
+
+	// Don't modify the informers copy.
+	existing := actual.DeepCopy()
+
+	// Preserve the rest of the object (e.g. ObjectMeta except for labels).
+	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
+	existing.Spec = desired.Spec
+	return r.KubeClientSet.CoreV1().LimitRanges(existing.Namespace).Update(existing)
 }
 
 func (r *Reconciler) updateStatus(desired *v1alpha1.Space) (*v1alpha1.Space, error) {
