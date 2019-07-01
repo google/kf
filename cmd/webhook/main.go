@@ -24,7 +24,6 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	kfwebhook "github.com/google/kf/pkg/webhook"
 	apiconfig "github.com/knative/serving/pkg/apis/config"
 	"github.com/knative/serving/pkg/apis/serving/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -103,8 +102,7 @@ func main() {
 		Client:  kubeClient,
 		Options: options,
 		Handlers: map[schema.GroupVersionKind]webhook.GenericCRD{
-			v1alpha1.SchemeGroupVersion.WithKind("Space"):       &v1alpha1.Space{},
-			schema.GroupVersionKind{Kind: "Pod", Version: "v1"}: &kfwebhook.Pod{},
+			v1alpha1.SchemeGroupVersion.WithKind("Space"): &v1alpha1.Space{},
 		},
 		Logger:                logger,
 		DisallowUnknownFields: true,
