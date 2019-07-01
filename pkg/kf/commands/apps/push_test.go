@@ -49,6 +49,7 @@ func TestPushCommand(t *testing.T) {
 		wantEnvMap        map[string]string
 		srcImageBuilder   SrcImageBuilderFunc
 		wantImagePrefix   string
+		instances         int
 	}{
 		"uses configured properties": {
 			namespace:         "some-namespace",
@@ -66,6 +67,7 @@ func TestPushCommand(t *testing.T) {
 				testutil.AssertEqual(t, "path is abs", true, filepath.IsAbs(dir))
 				return nil
 			},
+			instances: 1,
 		},
 		"uses current working directory for empty path": {
 			args:              []string{"app-name"},
@@ -77,6 +79,7 @@ func TestPushCommand(t *testing.T) {
 				testutil.AssertEqual(t, "path", cwd, dir)
 				return nil
 			},
+			instances: 1,
 		},
 		"custom-source": {
 			namespace:         "some-namespace",
@@ -89,6 +92,20 @@ func TestPushCommand(t *testing.T) {
 			wantEnvMap:        map[string]string{"env1": "val1", "env2": "val2"},
 			sourceImage:       "custom-reg.io/source-image:latest",
 			wantImagePrefix:   "custom-reg.io/source-image:latest",
+			instances:         1,
+		},
+		"specify-instances": {
+			namespace:         "some-namespace",
+			args:              []string{"app-name"},
+			containerRegistry: "some-reg.io",
+			serviceAccount:    "some-service-account",
+			grpc:              true,
+			buildpack:         "some-buildpack",
+			envVars:           []string{"env1=val1", "env2=val2"},
+			wantEnvMap:        map[string]string{"env1": "val1", "env2": "val2"},
+			sourceImage:       "custom-reg.io/source-image:latest",
+			wantImagePrefix:   "custom-reg.io/source-image:latest",
+			instances:         2,
 		},
 		"service create error": {
 			namespace:         "default",
@@ -98,12 +115,14 @@ func TestPushCommand(t *testing.T) {
 			containerRegistry: "some-reg.io",
 			serviceAccount:    "some-service-account",
 			wantImagePrefix:   "some-reg.io/src-default-app-name",
+			instances:         1,
 		},
 		"container-registry is not provided": {
 			namespace:         "some-namespace",
 			args:              []string{"app-name"},
 			containerRegistry: "",
 			wantErr:           errors.New("container-registry is required"),
+			instances:         1,
 		},
 		"SrcImageBuilder returns an error": {
 			args:              []string{"app-name"},
@@ -112,12 +131,14 @@ func TestPushCommand(t *testing.T) {
 			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
 				return errors.New("some error")
 			},
+			instances: 1,
 		},
 		"invalid environment variable, returns error": {
 			args:              []string{"app-name"},
 			envVars:           []string{"invalid"},
 			containerRegistry: "some-reg.io",
 			wantErr:           errors.New("malformed environment variable: invalid"),
+			instances:         1,
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
@@ -145,6 +166,8 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "service account", tc.serviceAccount, kf.PushOptions(opts).ServiceAccount())
 					testutil.AssertEqual(t, "grpc", tc.grpc, kf.PushOptions(opts).Grpc())
 					testutil.AssertEqual(t, "env vars", tc.wantEnvMap, kf.PushOptions(opts).EnvironmentVariables())
+					testutil.AssertEqual(t, "min scale bound", tc.instances, kf.PushOptions(opts).MaxScale())
+					testutil.AssertEqual(t, "max scale bound", tc.instances, kf.PushOptions(opts).MaxScale())
 
 					if !strings.HasPrefix(srcImage, tc.wantImagePrefix) {
 						t.Errorf("Wanted srcImage to start with %s got: %s", tc.wantImagePrefix, srcImage)
@@ -168,6 +191,7 @@ func TestPushCommand(t *testing.T) {
 			c.Flags().Set("grpc", strconv.FormatBool(tc.grpc))
 			c.Flags().Set("buildpack", tc.buildpack)
 			c.Flags().Set("source-image", tc.sourceImage)
+			c.Flags().Set("instances", strconv.Itoa(tc.instances))
 
 			for _, env := range tc.envVars {
 				c.Flags().Set("env", env)

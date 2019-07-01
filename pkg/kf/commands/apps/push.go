@@ -47,6 +47,7 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 		containerRegistry string
 		sourceImage       string
 		manifestFile      string
+		instances         int
 		serviceAccount    string
 		path              string
 		buildpack         string
@@ -111,7 +112,14 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 				appsToDeploy = []manifest.Application{*app}
 			}
 
+			var minScale int
+			var maxScale int
 			for _, app := range appsToDeploy {
+				minScale, maxScale, err = calculateScaleBounds(instances, app.MinScale, app.MaxScale)
+				if err != nil {
+					return err
+				}
+
 				var imageName string
 
 				srcPath := filepath.Join(path, app.Path)
@@ -149,6 +157,8 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 					kf.WithPushEnvironmentVariables(app.Env),
 					kf.WithPushGrpc(grpc),
 					kf.WithPushBuildpack(buildpack),
+					kf.WithPushMinScale(minScale),
+					kf.WithPushMaxScale(maxScale),
 				)
 
 				cmd.SilenceUsage = !kfi.ConfigError(err)
@@ -223,5 +233,40 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 		"Path to manifest",
 	)
 
+	pushCmd.Flags().IntVarP(
+		&instances,
+		"instances",
+		"i",
+		-1, // -1 represents non-user input
+		"the number of instances (default is 1)",
+	)
+
 	return pushCmd
+}
+
+func calculateScaleBounds(instances int, minScale, maxScale *int) (int, int, error) {
+	zero := 0
+	if instances != -1 {
+		if minScale != nil || maxScale != nil {
+			return -1, -1, errors.New("couldn't set the -i flag and the minScale/maxScale flags in manifest together")
+		}
+		return instances, instances, nil
+	} else {
+		if minScale == nil && maxScale == nil {
+			// both default bounds are 1
+			return 1, 1, nil
+		}
+
+		// Set 0 as default value(unbound) if one of min or max is not set
+		if minScale == nil {
+			minScale = &zero
+		}
+
+		if maxScale == nil {
+			maxScale = &zero
+		}
+
+		return *minScale, *maxScale, nil
+	}
+
 }
