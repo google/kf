@@ -15,9 +15,9 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: sources.internal.kf.dev
+  name: sources.kf.dev
 spec:
-  group: internal.kf.dev
+  group: kf.dev
   version: v1alpha1
   names:
     kind: Source
@@ -33,3 +33,9 @@ spec:
   - name: Age
     type: date
     JSONPath: .metadata.creationTimestamp
+  - name: Succeeded
+    type: string
+    JSONPath: .status.conditions[?(@.type=="Succeeded")].status
+  - name: Image
+    type: string
+    JSONPath: .status.image

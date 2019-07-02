@@ -14,7 +14,10 @@
 
 package v1alpha1
 
-import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+import (
+	duckv1beta1 "github.com/knative/pkg/apis/duck/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -39,7 +42,8 @@ type SourceSpec struct {
 
 	// UpdateRequests is a unique identifier for an AppSpecSource.
 	// Updating sub-values will trigger a new value.
-	UpdateRequests int `json:"updateRequests"`
+	// +optional
+	UpdateRequests int `json:"updateRequests,omitempty"`
 
 	// ContainerImage defines the container image for source.
 	// +optional
@@ -61,8 +65,7 @@ type AppSpecSourceContainerImage struct {
 type AppSpecSourceBuildpackBuild struct {
 
 	// Source is the Container Image which contains the App's source code.
-	// +optional
-	Source string `json:"source,omitempty"`
+	Source string `json:"source"`
 
 	// Stack is the base layer to use for the App.
 	// +optional
@@ -71,10 +74,22 @@ type AppSpecSourceBuildpackBuild struct {
 	// Buildpack is the Buildpack to use for the App.
 	// +optional
 	Buildpack string `json:"buildpack,omitempty"`
+
+	// BuildpackBuilder is the container image which builds the App.
+	BuildpackBuilder string `json:"buildpackBuilder"`
+
+	// Registry is the container registry which will store the built image.
+	Registry string `json:"registry"`
 }
 
 // SourceStatus is the current configuration and running state for an App's Source.
 type SourceStatus struct {
+	// Pull in the fields from Knative's duckv1beta1 status field.
+	duckv1beta1.Status `json:",inline"`
+
+	// Image is the latest successfully built image.
+	// +optional
+	Image string `json:"image,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
