@@ -22,11 +22,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// LimitRangeName gets the name of the limit range given the space.
+func LimitRangeName(space *v1alpha1.Space) string {
+	return "space-limit-range"
+}
+
 // MakeLimitRange creates a LimitRange from a Space object.
 func MakeLimitRange(space *v1alpha1.Space) (*v1.LimitRange, error) {
-
 	limitRange := &v1.LimitRange{}
 	limitRange.ObjectMeta = metav1.ObjectMeta{
+		Name:      LimitRangeName(space),
 		Namespace: NamespaceName(space),
 		OwnerReferences: []metav1.OwnerReference{
 			*kmeta.NewControllerRef(space),

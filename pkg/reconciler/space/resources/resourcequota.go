@@ -22,11 +22,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// ResourceQuotaName gets the name of the resource quota given the space.
+func ResourceQuotaName(space *v1alpha1.Space) string {
+	return "space-quota"
+}
+
 // MakeResourceQuota creates a ResourceQuota from a Space object.
 func MakeResourceQuota(space *v1alpha1.Space) (*v1.ResourceQuota, error) {
-
 	quota := &v1.ResourceQuota{}
 	quota.ObjectMeta = metav1.ObjectMeta{
+		Name:      ResourceQuotaName(space),
 		Namespace: NamespaceName(space),
 		OwnerReferences: []metav1.OwnerReference{
 			*kmeta.NewControllerRef(space),
