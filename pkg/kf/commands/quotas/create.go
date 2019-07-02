@@ -17,8 +17,8 @@ package quotas
 import (
 	"fmt"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/quotas"
+	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/quotas"
 
 	"github.com/spf13/cobra"
 )

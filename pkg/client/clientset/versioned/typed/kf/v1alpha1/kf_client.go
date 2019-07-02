@@ -17,14 +17,15 @@
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1"
-	"github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/scheme"
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/client/clientset/versioned/scheme"
 	rest "k8s.io/client-go/rest"
 )
 
 type KfV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	AppsGetter
+	RoutesGetter
 	SourcesGetter
 	SpacesGetter
 }
@@ -36,6 +37,10 @@ type KfV1alpha1Client struct {
 
 func (c *KfV1alpha1Client) Apps(namespace string) AppInterface {
 	return newApps(c, namespace)
+}
+
+func (c *KfV1alpha1Client) Routes(namespace string) RouteInterface {
+	return newRoutes(c, namespace)
 }
 
 func (c *KfV1alpha1Client) Sources(namespace string) SourceInterface {

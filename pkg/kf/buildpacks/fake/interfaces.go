@@ -14,9 +14,9 @@
 
 package fake
 
-import "github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
+import "github.com/google/kf/pkg/kf/buildpacks"
 
-//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_client.go --mock_names=Client=FakeClient github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks/fake Client
+//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_client.go --mock_names=Client=FakeClient github.com/google/kf/pkg/kf/buildpacks/fake Client
 
 // Client is implemented by buildpacks.Client.
 type Client interface {

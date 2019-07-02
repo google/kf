@@ -27,9 +27,11 @@ import (
 
 // Application is a configuration for a single 12-factor-app.
 type Application struct {
-	Name string            `yaml:"name,omitempty"`
-	Path string            `yaml:"path,omitempty"`
-	Env  map[string]string `yaml:"env,omitempty"`
+	Name     string            `yaml:"name,omitempty"`
+	Path     string            `yaml:"path,omitempty"`
+	Env      map[string]string `yaml:"env,omitempty"`
+	MinScale *int              `yaml:"minScale,omitempty"`
+	MaxScale *int              `yaml:"maxScale,omitempty"`
 }
 
 // Manifest is an application's configuration.

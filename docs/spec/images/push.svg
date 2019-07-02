@@ -1,0 +1,385 @@
+<svg id="mermaid-1561581607736" width="100%" xmlns="http://www.w3.org/2000/svg" height="100%" style="max-width:1250px;" viewBox="-50 -10 1250 813"><style>
+
+
+#mermaid-1561581607736 .label {
+  font-family: 'trebuchet ms', verdana, arial;
+  color: #333; }
+
+#mermaid-1561581607736 .node rect,
+#mermaid-1561581607736 .node circle,
+#mermaid-1561581607736 .node ellipse,
+#mermaid-1561581607736 .node polygon {
+  fill: #ECECFF;
+  stroke: #9370DB;
+  stroke-width: 1px; }
+
+#mermaid-1561581607736 .node.clickable {
+  cursor: pointer; }
+
+#mermaid-1561581607736 .arrowheadPath {
+  fill: #333333; }
+
+#mermaid-1561581607736 .edgePath .path {
+  stroke: #333333;
+  stroke-width: 1.5px; }
+
+#mermaid-1561581607736 .edgeLabel {
+  background-color: #e8e8e8; }
+
+#mermaid-1561581607736 .cluster rect {
+  fill: #ffffde;
+  stroke: #aaaa33;
+  stroke-width: 1px; }
+
+#mermaid-1561581607736 .cluster text {
+  fill: #333; }
+
+#mermaid-1561581607736 div.mermaidTooltip {
+  position: absolute;
+  text-align: center;
+  max-width: 200px;
+  padding: 2px;
+  font-family: 'trebuchet ms', verdana, arial;
+  font-size: 12px;
+  background: #ffffde;
+  border: 1px solid #aaaa33;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 100; }
+
+#mermaid-1561581607736 .actor {
+  stroke: #CCCCFF;
+  fill: #ECECFF; }
+
+#mermaid-1561581607736 text.actor {
+  fill: black;
+  stroke: none; }
+
+#mermaid-1561581607736 .actor-line {
+  stroke: grey; }
+
+#mermaid-1561581607736 .messageLine0 {
+  stroke-width: 1.5;
+  stroke-dasharray: '2 2';
+  stroke: #333; }
+
+#mermaid-1561581607736 .messageLine1 {
+  stroke-width: 1.5;
+  stroke-dasharray: '2 2';
+  stroke: #333; }
+
+#mermaid-1561581607736 #arrowhead {
+  fill: #333; }
+
+#mermaid-1561581607736 #crosshead path {
+  fill: #333 !important;
+  stroke: #333 !important; }
+
+#mermaid-1561581607736 .messageText {
+  fill: #333;
+  stroke: none; }
+
+#mermaid-1561581607736 .labelBox {
+  stroke: #CCCCFF;
+  fill: #ECECFF; }
+
+#mermaid-1561581607736 .labelText {
+  fill: black;
+  stroke: none; }
+
+#mermaid-1561581607736 .loopText {
+  fill: black;
+  stroke: none; }
+
+#mermaid-1561581607736 .loopLine {
+  stroke-width: 2;
+  stroke-dasharray: '2 2';
+  stroke: #CCCCFF; }
+
+#mermaid-1561581607736 .note {
+  stroke: #aaaa33;
+  fill: #fff5ad; }
+
+#mermaid-1561581607736 .noteText {
+  fill: black;
+  stroke: none;
+  font-family: 'trebuchet ms', verdana, arial;
+  font-size: 14px; }
+
+#mermaid-1561581607736 .activation0 {
+  fill: #f4f4f4;
+  stroke: #666; }
+
+#mermaid-1561581607736 .activation1 {
+  fill: #f4f4f4;
+  stroke: #666; }
+
+#mermaid-1561581607736 .activation2 {
+  fill: #f4f4f4;
+  stroke: #666; }
+
+
+#mermaid-1561581607736 .section {
+  stroke: none;
+  opacity: 0.2; }
+
+#mermaid-1561581607736 .section0 {
+  fill: rgba(102, 102, 255, 0.49); }
+
+#mermaid-1561581607736 .section2 {
+  fill: #fff400; }
+
+#mermaid-1561581607736 .section1,
+#mermaid-1561581607736 .section3 {
+  fill: white;
+  opacity: 0.2; }
+
+#mermaid-1561581607736 .sectionTitle0 {
+  fill: #333; }
+
+#mermaid-1561581607736 .sectionTitle1 {
+  fill: #333; }
+
+#mermaid-1561581607736 .sectionTitle2 {
+  fill: #333; }
+
+#mermaid-1561581607736 .sectionTitle3 {
+  fill: #333; }
+
+#mermaid-1561581607736 .sectionTitle {
+  text-anchor: start;
+  font-size: 11px;
+  text-height: 14px; }
+
+
+#mermaid-1561581607736 .grid .tick {
+  stroke: lightgrey;
+  opacity: 0.3;
+  shape-rendering: crispEdges; }
+
+#mermaid-1561581607736 .grid path {
+  stroke-width: 0; }
+
+
+#mermaid-1561581607736 .today {
+  fill: none;
+  stroke: red;
+  stroke-width: 2px; }
+
+
+
+#mermaid-1561581607736 .task {
+  stroke-width: 2; }
+
+#mermaid-1561581607736 .taskText {
+  text-anchor: middle;
+  font-size: 11px; }
+
+#mermaid-1561581607736 .taskTextOutsideRight {
+  fill: black;
+  text-anchor: start;
+  font-size: 11px; }
+
+#mermaid-1561581607736 .taskTextOutsideLeft {
+  fill: black;
+  text-anchor: end;
+  font-size: 11px; }
+
+
+#mermaid-1561581607736 .task.clickable {
+  cursor: pointer; }
+
+#mermaid-1561581607736 .taskText.clickable {
+  cursor: pointer;
+  fill: #003163 !important;
+  font-weight: bold; }
+
+#mermaid-1561581607736 .taskTextOutsideLeft.clickable {
+  cursor: pointer;
+  fill: #003163 !important;
+  font-weight: bold; }
+
+#mermaid-1561581607736 .taskTextOutsideRight.clickable {
+  cursor: pointer;
+  fill: #003163 !important;
+  font-weight: bold; }
+
+
+#mermaid-1561581607736 .taskText0,
+#mermaid-1561581607736 .taskText1,
+#mermaid-1561581607736 .taskText2,
+#mermaid-1561581607736 .taskText3 {
+  fill: white; }
+
+#mermaid-1561581607736 .task0,
+#mermaid-1561581607736 .task1,
+#mermaid-1561581607736 .task2,
+#mermaid-1561581607736 .task3 {
+  fill: #8a90dd;
+  stroke: #534fbc; }
+
+#mermaid-1561581607736 .taskTextOutside0,
+#mermaid-1561581607736 .taskTextOutside2 {
+  fill: black; }
+
+#mermaid-1561581607736 .taskTextOutside1,
+#mermaid-1561581607736 .taskTextOutside3 {
+  fill: black; }
+
+
+#mermaid-1561581607736 .active0,
+#mermaid-1561581607736 .active1,
+#mermaid-1561581607736 .active2,
+#mermaid-1561581607736 .active3 {
+  fill: #bfc7ff;
+  stroke: #534fbc; }
+
+#mermaid-1561581607736 .activeText0,
+#mermaid-1561581607736 .activeText1,
+#mermaid-1561581607736 .activeText2,
+#mermaid-1561581607736 .activeText3 {
+  fill: black !important; }
+
+
+#mermaid-1561581607736 .done0,
+#mermaid-1561581607736 .done1,
+#mermaid-1561581607736 .done2,
+#mermaid-1561581607736 .done3 {
+  stroke: grey;
+  fill: lightgrey;
+  stroke-width: 2; }
+
+#mermaid-1561581607736 .doneText0,
+#mermaid-1561581607736 .doneText1,
+#mermaid-1561581607736 .doneText2,
+#mermaid-1561581607736 .doneText3 {
+  fill: black !important; }
+
+
+#mermaid-1561581607736 .crit0,
+#mermaid-1561581607736 .crit1,
+#mermaid-1561581607736 .crit2,
+#mermaid-1561581607736 .crit3 {
+  stroke: #ff8888;
+  fill: red;
+  stroke-width: 2; }
+
+#mermaid-1561581607736 .activeCrit0,
+#mermaid-1561581607736 .activeCrit1,
+#mermaid-1561581607736 .activeCrit2,
+#mermaid-1561581607736 .activeCrit3 {
+  stroke: #ff8888;
+  fill: #bfc7ff;
+  stroke-width: 2; }
+
+#mermaid-1561581607736 .doneCrit0,
+#mermaid-1561581607736 .doneCrit1,
+#mermaid-1561581607736 .doneCrit2,
+#mermaid-1561581607736 .doneCrit3 {
+  stroke: #ff8888;
+  fill: lightgrey;
+  stroke-width: 2;
+  cursor: pointer;
+  shape-rendering: crispEdges; }
+
+#mermaid-1561581607736 .milestone {
+  transform: rotate(45deg) scale(0.8, 0.8); }
+
+#mermaid-1561581607736 .milestoneText {
+  font-style: italic; }
+
+#mermaid-1561581607736 .doneCritText0,
+#mermaid-1561581607736 .doneCritText1,
+#mermaid-1561581607736 .doneCritText2,
+#mermaid-1561581607736 .doneCritText3 {
+  fill: black !important; }
+
+#mermaid-1561581607736 .activeCritText0,
+#mermaid-1561581607736 .activeCritText1,
+#mermaid-1561581607736 .activeCritText2,
+#mermaid-1561581607736 .activeCritText3 {
+  fill: black !important; }
+
+#mermaid-1561581607736 .titleText {
+  text-anchor: middle;
+  font-size: 18px;
+  fill: black; }
+
+#mermaid-1561581607736 g.classGroup text {
+  fill: #9370DB;
+  stroke: none;
+  font-family: 'trebuchet ms', verdana, arial;
+  font-size: 10px; }
+
+#mermaid-1561581607736 g.classGroup rect {
+  fill: #ECECFF;
+  stroke: #9370DB; }
+
+#mermaid-1561581607736 g.classGroup line {
+  stroke: #9370DB;
+  stroke-width: 1; }
+
+#mermaid-1561581607736 .classLabel .box {
+  stroke: none;
+  stroke-width: 0;
+  fill: #ECECFF;
+  opacity: 0.5; }
+
+#mermaid-1561581607736 .classLabel .label {
+  fill: #9370DB;
+  font-size: 10px; }
+
+#mermaid-1561581607736 .relation {
+  stroke: #9370DB;
+  stroke-width: 1;
+  fill: none; }
+
+#mermaid-1561581607736 #compositionStart {
+  fill: #9370DB;
+  stroke: #9370DB;
+  stroke-width: 1; }
+
+#mermaid-1561581607736 #compositionEnd {
+  fill: #9370DB;
+  stroke: #9370DB;
+  stroke-width: 1; }
+
+#mermaid-1561581607736 #aggregationStart {
+  fill: #ECECFF;
+  stroke: #9370DB;
+  stroke-width: 1; }
+
+#mermaid-1561581607736 #aggregationEnd {
+  fill: #ECECFF;
+  stroke: #9370DB;
+  stroke-width: 1; }
+
+#mermaid-1561581607736 #dependencyStart {
+  fill: #9370DB;
+  stroke: #9370DB;
+  stroke-width: 1; }
+
+#mermaid-1561581607736 #dependencyEnd {
+  fill: #9370DB;
+  stroke: #9370DB;
+  stroke-width: 1; }
+
+#mermaid-1561581607736 #extensionStart {
+  fill: #9370DB;
+  stroke: #9370DB;
+  stroke-width: 1; }
+
+#mermaid-1561581607736 #extensionEnd {
+  fill: #9370DB;
+  stroke: #9370DB;
+  stroke-width: 1; }
+
+#mermaid-1561581607736 .commit-id,
+#mermaid-1561581607736 .commit-msg,
+#mermaid-1561581607736 .branch-label {
+  fill: lightgrey;
+  color: lightgrey; }
+</style><style>#mermaid-1561581607736 {
+    color: rgba(0, 0, 0, 0.65);
+    font: ;
+  }</style><g></g><g><line id="actor6223" x1="75" y1="5" x2="75" y2="802" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="0" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="75" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle; font-size: 14px; font-family: Open-Sans, sans-serif;"><tspan x="75" dy="0">kf</tspan></text></g><g><line id="actor6224" x1="275" y1="5" x2="275" y2="802" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="200" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="275" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle; font-size: 14px; font-family: Open-Sans, sans-serif;"><tspan x="275" dy="0">Container Registry</tspan></text></g><g><line id="actor6225" x1="475" y1="5" x2="475" y2="802" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="400" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="475" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle; font-size: 14px; font-family: Open-Sans, sans-serif;"><tspan x="475" dy="0">Kf App</tspan></text></g><g><line id="actor6226" x1="675" y1="5" x2="675" y2="802" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="600" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="675" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle; font-size: 14px; font-family: Open-Sans, sans-serif;"><tspan x="675" dy="0">Kf Source</tspan></text></g><g><line id="actor6227" x1="875" y1="5" x2="875" y2="802" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="800" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="875" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle; font-size: 14px; font-family: Open-Sans, sans-serif;"><tspan x="875" dy="0">Tekton</tspan></text></g><g><line id="actor6228" x1="1075" y1="5" x2="1075" y2="802" class="actor-line" stroke-width="0.5px" stroke="#999"></line><rect x="1000" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="1075" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle; font-size: 14px; font-family: Open-Sans, sans-serif;"><tspan x="1075" dy="0">Knative Serving</tspan></text></g><defs><marker id="arrowhead" refX="5" refY="2" markerWidth="6" markerHeight="4" orient="auto"><path d="M 0,0 V 4 L6,2 Z"></path></marker></defs><defs><marker id="crosshead" markerWidth="15" markerHeight="8" orient="auto" refX="16" refY="4"><path fill="black" stroke="#000000" stroke-width="1px" d="M 9,2 V 6 L16,4 Z" style="stroke-dasharray: 0, 0;"></path><path fill="none" stroke="#000000" stroke-width="1px" d="M 0,1 L 6,7 M 6,1 L 0,7" style="stroke-dasharray: 0, 0;"></path></marker></defs><g><text x="175" y="93" class="messageText" style="text-anchor: middle;">Upload Source</text><line x1="75" y1="100" x2="275" y2="100" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><text x="275" y="128" class="messageText" style="text-anchor: middle;">Create or Update</text><line x1="75" y1="135" x2="475" y2="135" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><text x="575" y="163" class="messageText" style="text-anchor: middle;">Create or Update</text><line x1="475" y1="170" x2="675" y2="170" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><text x="775" y="198" class="messageText" style="text-anchor: middle;">Create</text><line x1="675" y1="205" x2="875" y2="205" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><text x="575" y="233" class="messageText" style="text-anchor: middle;">Get Source &amp; Builder Images</text><line x1="875" y1="240" x2="275" y2="240" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><text x="575" y="268" class="messageText" style="text-anchor: middle;">Source &amp; Bulider Images</text><line x1="275" y1="275" x2="875" y2="275" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><rect x="0" y="285" fill="#EDF2AE" stroke="#666" width="150" height="52" rx="0" ry="0" class="note"></rect><text x="-4" y="309" class="noteText"><tspan x="16">kf streams logs from</tspan></text><text x="-4" y="325" class="noteText"><tspan x="16">build pods</tspan></text></g><g><rect x="800" y="347" fill="#EDF2AE" stroke="#666" width="150" height="36" rx="0" ry="0" class="note"></rect><text x="796" y="371" class="noteText"><tspan x="816">Build</tspan></text></g><g><text x="575" y="411" class="messageText" style="text-anchor: middle;">Compiled App</text><line x1="875" y1="418" x2="275" y2="418" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><text x="775" y="446" class="messageText" style="text-anchor: middle;">K8s Notifies on Completion</text><line x1="875" y1="453" x2="675" y2="453" class="messageLine1" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"></line></g><g><text x="575" y="481" class="messageText" style="text-anchor: middle;">K8s Notifies on Completion</text><line x1="675" y1="488" x2="475" y2="488" class="messageLine1" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"></line></g><g><text x="775" y="516" class="messageText" style="text-anchor: middle;">Updates Serving</text><line x1="475" y1="523" x2="1075" y2="523" class="messageLine0" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="fill: none;"></line></g><g><rect x="400" y="533" fill="#EDF2AE" stroke="#666" width="150" height="68" rx="0" ry="0" class="note"></rect><text x="396" y="557" class="noteText"><tspan x="416">Istio and svccat</tspan></text><text x="396" y="573" class="noteText"><tspan x="416">get sync'd by the</tspan></text><text x="396" y="589" class="noteText"><tspan x="416">Kf App controller.</tspan></text></g><g><text x="775" y="629" class="messageText" style="text-anchor: middle;">Ready</text><line x1="1075" y1="636" x2="475" y2="636" class="messageLine1" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"></line></g><g><text x="275" y="664" class="messageText" style="text-anchor: middle;">Ready</text><line x1="475" y1="671" x2="75" y2="671" class="messageLine1" stroke-width="2" stroke="black" marker-end="url(#arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"></line></g><g><rect x="0" y="681" fill="#EDF2AE" stroke="#666" width="150" height="36" rx="0" ry="0" class="note"></rect><text x="-4" y="705" class="noteText"><tspan x="16">kf shows app info</tspan></text></g><g><rect x="0" y="737" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="75" y="769.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle; font-size: 14px; font-family: Open-Sans, sans-serif;"><tspan x="75" dy="0">kf</tspan></text></g><g><rect x="200" y="737" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="275" y="769.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle; font-size: 14px; font-family: Open-Sans, sans-serif;"><tspan x="275" dy="0">Container Registry</tspan></text></g><g><rect x="400" y="737" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="475" y="769.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle; font-size: 14px; font-family: Open-Sans, sans-serif;"><tspan x="475" dy="0">Kf App</tspan></text></g><g><rect x="600" y="737" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="675" y="769.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle; font-size: 14px; font-family: Open-Sans, sans-serif;"><tspan x="675" dy="0">Kf Source</tspan></text></g><g><rect x="800" y="737" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="875" y="769.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle; font-size: 14px; font-family: Open-Sans, sans-serif;"><tspan x="875" dy="0">Tekton</tspan></text></g><g><rect x="1000" y="737" fill="#eaeaea" stroke="#666" width="150" height="65" rx="3" ry="3" class="actor"></rect><text x="1075" y="769.5" dominant-baseline="central" alignment-baseline="central" class="actor" style="text-anchor: middle; font-size: 14px; font-family: Open-Sans, sans-serif;"><tspan x="1075" dy="0">Knative Serving</tspan></text></g></svg>

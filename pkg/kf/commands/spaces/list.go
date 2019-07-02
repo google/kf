@@ -18,11 +18,11 @@ import (
 	"fmt"
 	"text/tabwriter"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/spaces"
+	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/spaces"
 	"k8s.io/apimachinery/pkg/api/meta/table"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 
 	"github.com/spf13/cobra"
 )

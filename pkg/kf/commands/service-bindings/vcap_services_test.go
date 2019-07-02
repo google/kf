@@ -18,11 +18,11 @@ import (
 	"errors"
 	"testing"
 
-	servicebindingscmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/service-bindings"
-	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings/fake"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
+	servicebindingscmd "github.com/google/kf/pkg/kf/commands/service-bindings"
+	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
+	"github.com/google/kf/pkg/kf/service-bindings/fake"
+	"github.com/google/kf/pkg/kf/testutil"
 )
 
 func TestNewVcapServicesCommand(t *testing.T) {

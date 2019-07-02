@@ -17,13 +17,13 @@ package v1alpha1
 import (
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
-	"github.com/knative/pkg/apis"
-	"github.com/knative/pkg/apis/duck"
-	duckv1beta1 "github.com/knative/pkg/apis/duck/v1beta1"
-	apitesting "github.com/knative/pkg/apis/testing"
+	"github.com/google/kf/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	"knative.dev/pkg/apis"
+	"knative.dev/pkg/apis/duck"
+	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
+	apitesting "knative.dev/pkg/apis/testing"
 )
 
 func TestSpaceDuckTypes(t *testing.T) {

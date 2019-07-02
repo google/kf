@@ -17,27 +17,27 @@
 package commands
 
 import (
-	kfv1alpha1 "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/builds"
-	capps "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/apps"
-	cbuildpacks "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/buildpacks"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	cquotas "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/quotas"
-	croutes "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/routes"
-	servicebindingscmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/service-bindings"
-	servicescmd "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/services"
-	cspaces "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/spaces"
-	kflogs "github.com/GoogleCloudPlatform/kf/pkg/kf/logs"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/quotas"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/routes"
-	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/spaces"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/systemenvinjector"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	kfv1alpha1 "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf"
+	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/buildpacks"
+	"github.com/google/kf/pkg/kf/builds"
+	capps "github.com/google/kf/pkg/kf/commands/apps"
+	cbuildpacks "github.com/google/kf/pkg/kf/commands/buildpacks"
+	"github.com/google/kf/pkg/kf/commands/config"
+	cquotas "github.com/google/kf/pkg/kf/commands/quotas"
+	croutes "github.com/google/kf/pkg/kf/commands/routes"
+	servicebindingscmd "github.com/google/kf/pkg/kf/commands/service-bindings"
+	servicescmd "github.com/google/kf/pkg/kf/commands/services"
+	cspaces "github.com/google/kf/pkg/kf/commands/spaces"
+	kflogs "github.com/google/kf/pkg/kf/logs"
+	"github.com/google/kf/pkg/kf/quotas"
+	"github.com/google/kf/pkg/kf/routes"
+	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
+	"github.com/google/kf/pkg/kf/services"
+	"github.com/google/kf/pkg/kf/spaces"
+	"github.com/google/kf/pkg/kf/systemenvinjector"
 	"github.com/google/wire"
 	"github.com/knative/build/pkg/logs"
 	"github.com/poy/kontext"
@@ -286,6 +286,12 @@ func InjectSpaces(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
+func InjectSpace(p *config.KfParams) *cobra.Command {
+	wire.Build(cspaces.NewGetSpaceCommand, SpacesSet)
+
+	return nil
+}
+
 func InjectCreateSpace(p *config.KfParams) *cobra.Command {
 	wire.Build(cspaces.NewCreateSpaceCommand, SpacesSet)
 
@@ -345,17 +351,28 @@ func InjectDeleteQuota(p *config.KfParams) *cobra.Command {
 func InjectRoutes(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		croutes.NewRoutesCommand,
-		config.GetNetworkingClient,
 		routes.NewClient,
+		config.GetKfClient,
 	)
 	return nil
+}
+
+var NamespacesSet = wire.NewSet(
+	provideCoreV1,
+	providerNamespacesGetter,
+	config.GetKubernetes,
+)
+
+func providerNamespacesGetter(ki kubernetes.Interface) v1.NamespacesGetter {
+	return ki.CoreV1()
 }
 
 func InjectCreateRoute(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		croutes.NewCreateRouteCommand,
-		config.GetNetworkingClient,
 		routes.NewClient,
+		config.GetKfClient,
+		NamespacesSet,
 	)
 	return nil
 }
@@ -363,8 +380,27 @@ func InjectCreateRoute(p *config.KfParams) *cobra.Command {
 func InjectDeleteRoute(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		croutes.NewDeleteRouteCommand,
-		config.GetNetworkingClient,
 		routes.NewClient,
+		config.GetKfClient,
+	)
+	return nil
+}
+
+func InjectMapRoute(p *config.KfParams) *cobra.Command {
+	wire.Build(
+		croutes.NewMapRouteCommand,
+		routes.NewClient,
+		config.GetKfClient,
+		AppsSet,
+	)
+	return nil
+}
+
+func InjectUnmapRoute(p *config.KfParams) *cobra.Command {
+	wire.Build(
+		croutes.NewUnmapRouteCommand,
+		routes.NewClient,
+		config.GetKfClient,
 	)
 	return nil
 }

@@ -65,3 +65,6 @@ rules:
 - apiGroups: [""]
   resources: ["pods/log"]
   verbs: ["get", "list", "watch"]
+- apiGroups: ["networking.istio.io"]
+  resources: ["virtualservices"]
+  verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]

@@ -17,18 +17,21 @@ package routes_test
 import (
 	"bytes"
 	"errors"
-	"net/http"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/routes"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/routeutil"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/routes/fake"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
-	"github.com/knative/pkg/apis/istio/common/v1alpha1"
-	networking "github.com/knative/pkg/apis/istio/v1alpha3"
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/routes"
+	routesfake "github.com/google/kf/pkg/kf/routes/fake"
+	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/pkg/reconciler/route/resources"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	spacesfake "k8s.io/client-go/kubernetes/typed/core/v1/fake"
+	ktesting "k8s.io/client-go/testing"
 )
 
 func TestCreateRoute(t *testing.T) {
@@ -37,7 +40,7 @@ func TestCreateRoute(t *testing.T) {
 	for tn, tc := range map[string]struct {
 		Namespace string
 		Args      []string
-		Setup     func(t *testing.T, fake *fake.FakeClient)
+		Setup     func(t *testing.T, routesfake *routesfake.FakeClient, spacesfake *spacesfake.FakeCoreV1)
 		Assert    func(t *testing.T, buffer *bytes.Buffer, err error)
 	}{
 		"wrong number of args": {
@@ -50,16 +53,7 @@ func TestCreateRoute(t *testing.T) {
 			Namespace: "other-space",
 			Args:      []string{"some-space", "example.com", "--hostname=some-hostname"},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
-				testutil.AssertErrorsEqual(t, errors.New("SPACE (argument) and namespace (if provided) must match"), err)
-			},
-		},
-		"creating route fails": {
-			Args: []string{"some-space", "example.com", "--hostname=some-hostname"},
-			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil, errors.New("some-error"))
-			},
-			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
-				testutil.AssertErrorsEqual(t, errors.New("failed to create Route: some-error"), err)
+				testutil.AssertErrorsEqual(t, errors.New(`SPACE (argument="some-space") and namespace (flag="other-space") (if provided) must match`), err)
 			},
 		},
 		"missing hostname flag": {
@@ -68,11 +62,52 @@ func TestCreateRoute(t *testing.T) {
 				testutil.AssertErrorsEqual(t, errors.New("--hostname is required"), err)
 			},
 		},
+		"fetching namespace fails": {
+			Args: []string{"some-space", "example.com", "--hostname=some-hostname"},
+			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, spacesfake *spacesfake.FakeCoreV1) {
+				spacesfake.Fake.AddReactor("*", "*", func(action ktesting.Action) (bool, runtime.Object, error) {
+					return true, nil, errors.New("some-error")
+				})
+			},
+			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
+				testutil.AssertErrorsEqual(t, errors.New("failed to fetch space: some-error"), err)
+			},
+		},
+		"creating route fails": {
+			Args: []string{"some-space", "example.com", "--hostname=some-hostname"},
+			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, spacesfake *spacesfake.FakeCoreV1) {
+				spacesfake.Fake.AddReactor("*", "*", func(action ktesting.Action) (bool, runtime.Object, error) {
+					return false, nil, nil
+				})
+				routesfake.EXPECT().Create(gomock.Any(), gomock.Any()).Return(nil, errors.New("some-error"))
+			},
+			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
+				testutil.AssertErrorsEqual(t, errors.New("failed to create Route: some-error"), err)
+			},
+		},
 		"namespace": {
 			Args:      []string{"some-space", "example.com", "--hostname=some-hostname"},
 			Namespace: "some-space",
-			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Create("some-space", gomock.Any())
+			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, spacesfake *spacesfake.FakeCoreV1) {
+				spacesfake.Fake.AddReactor("*", "*", func(action ktesting.Action) (bool, runtime.Object, error) {
+					testutil.AssertEqual(t, "namespace", "some-space", action.(ktesting.GetActionImpl).Name)
+					return false, nil, nil
+				})
+				routesfake.EXPECT().Create("some-space", gomock.Any())
+			},
+			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
+				testutil.AssertNil(t, "err", err)
+			},
+		},
+		"namespace is default and space is not": {
+			Namespace: "default",
+			Args:      []string{"some-space", "example.com", "--hostname=some-hostname"},
+			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, spacesfake *spacesfake.FakeCoreV1) {
+				spacesfake.Fake.AddReactor("*", "*", func(action ktesting.Action) (bool, runtime.Object, error) {
+					testutil.AssertEqual(t, "namespace", "some-space", action.(ktesting.GetActionImpl).Name)
+					return false, nil, nil
+				})
+				routesfake.EXPECT().Create("some-space", gomock.Any())
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
@@ -81,8 +116,12 @@ func TestCreateRoute(t *testing.T) {
 		"uses namespace if SPACE is omitted": {
 			Args:      []string{"example.com", "--hostname=some-hostname"},
 			Namespace: "some-space",
-			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Create("some-space", gomock.Any())
+			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, spacesfake *spacesfake.FakeCoreV1) {
+				spacesfake.Fake.AddReactor("*", "*", func(action ktesting.Action) (bool, runtime.Object, error) {
+					testutil.AssertEqual(t, "namespace", "some-space", action.(ktesting.GetActionImpl).Name)
+					return false, nil, nil
+				})
+				routesfake.EXPECT().Create("some-space", gomock.Any())
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
@@ -91,8 +130,11 @@ func TestCreateRoute(t *testing.T) {
 		"displays warning message if using space": {
 			Args:      []string{"some-space", "example.com", "--hostname=some-hostname"},
 			Namespace: "some-space",
-			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Create("some-space", gomock.Any())
+			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, spacesfake *spacesfake.FakeCoreV1) {
+				spacesfake.Fake.AddReactor("*", "*", func(action ktesting.Action) (bool, runtime.Object, error) {
+					return false, nil, nil
+				})
+				routesfake.EXPECT().Create("some-space", gomock.Any())
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
@@ -101,53 +143,40 @@ func TestCreateRoute(t *testing.T) {
 		},
 		"creates route with hostname and path": {
 			Args: []string{"some-space", "example.com", "--hostname=some-hostname", "--path=somepath"},
-			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Create(gomock.Any(), &networking.VirtualService{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "networking.istio.io/v1alpha3",
-						Kind:       "VirtualService",
-					},
-					ObjectMeta: metav1.ObjectMeta{
-						Name: routeutil.EncodeRouteName("some-hostname", "example.com", "/somepath"),
-						Annotations: map[string]string{
-							"domain":   "example.com",
-							"hostname": "some-hostname",
-							"path":     "/somepath",
+			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, spacesfake *spacesfake.FakeCoreV1) {
+				spacesfake.Fake.AddReactor("*", "*", func(action ktesting.Action) (bool, runtime.Object, error) {
+					return true, &corev1.Namespace{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "some-space",
+							UID:  types.UID("some-uid"),
 						},
-					},
-					Spec: networking.VirtualServiceSpec{
-						Gateways: []string{"knative-ingress-gateway.knative-serving.svc.cluster.local"},
-						Hosts:    []string{"some-hostname.example.com"},
-						HTTP: []networking.HTTPRoute{
-							{
-								Match: []networking.HTTPMatchRequest{
-									{
-										URI: &v1alpha1.StringMatch{
-											Prefix: "/somepath",
-										},
-									},
-								},
-								Route: []networking.HTTPRouteDestination{
-									{
-										Destination: networking.Destination{
-											Host: "istio-ingressgateway.istio-system.svc.cluster.local",
-											Port: networking.PortSelector{
-												Number: 80,
-											},
-										},
-										Weight: 100,
-									},
-								},
-								Fault: &networking.HTTPFaultInjection{
-									Abort: &networking.InjectAbort{
-										Percent:    100,
-										HTTPStatus: http.StatusServiceUnavailable,
-									},
+					}, nil
+				})
+
+				routesfake.EXPECT().Create(gomock.Any(),
+					&v1alpha1.Route{
+						TypeMeta: metav1.TypeMeta{
+							Kind: "Route",
+						},
+						ObjectMeta: metav1.ObjectMeta{
+							Name: resources.VirtualServiceName("some-hostname", "example.com", "somepath"),
+							OwnerReferences: []metav1.OwnerReference{
+								{
+									APIVersion: "v1",
+									Kind:       "Namespace",
+									Name:       "some-space",
+									UID:        types.UID("some-uid"),
 								},
 							},
 						},
+						Spec: v1alpha1.RouteSpec{
+							Hostname: "some-hostname",
+							Domain:   "example.com",
+							Path:     "somepath",
+						},
 					},
-				})
+				)
+
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
@@ -156,10 +185,13 @@ func TestCreateRoute(t *testing.T) {
 	} {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			fake := fake.NewFakeClient(ctrl)
+			routesfake := routesfake.NewFakeClient(ctrl)
+			spacesfake := &spacesfake.FakeCoreV1{
+				Fake: &ktesting.Fake{},
+			}
 
 			if tc.Setup != nil {
-				tc.Setup(t, fake)
+				tc.Setup(t, routesfake, spacesfake)
 			}
 
 			var buffer bytes.Buffer
@@ -167,7 +199,8 @@ func TestCreateRoute(t *testing.T) {
 				&config.KfParams{
 					Namespace: tc.Namespace,
 				},
-				fake,
+				routesfake,
+				spacesfake,
 			)
 			cmd.SetArgs(tc.Args)
 			cmd.SetOutput(&buffer)

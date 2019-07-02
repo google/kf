@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # Copyright 2019 Google LLC
 #
@@ -28,7 +28,7 @@ while getopts "v" opt; do
   esac
 done
 
-ROOT_PACKAGE="github.com/GoogleCloudPlatform/kf"
+ROOT_PACKAGE="github.com/google/kf"
 PACKAGE_LOCATION="$(go env GOPATH)/src/$ROOT_PACKAGE"
 CUSTOM_RESOURCE_NAME="kf"
 CUSTOM_RESOURCE_VERSION="v1alpha1"
@@ -81,9 +81,14 @@ done
 popd
 
 # Do Knative injection generation
-KNATIVE_CODEGEN_PKG=$(go env GOPATH)/src/github.com/knative/pkg
+KNATIVE_CODEGEN_PKG=$(go env GOPATH)/src/knative.dev/pkg
 
 ${KNATIVE_CODEGEN_PKG}/hack/generate-knative.sh "injection" \
-  "github.com/GoogleCloudPlatform/kf/pkg/client" "github.com/GoogleCloudPlatform/kf/pkg/apis" \
+  "github.com/google/kf/pkg/client" "github.com/google/kf/pkg/apis" \
   "kf:v1alpha1" \
   --go-header-file "${root_dir}/pkg/kf/internal/tools/option-builder/LICENSE_HEADER.go.txt"
+
+# For some reason the fake doesn't have the right imports (it's missing
+# k8s.io/client-go/rest)
+os_friendly_sed 's|"k8s.io/apimachinery/pkg/runtime"|"k8s.io/apimachinery/pkg/runtime"\n"k8s.io/client-go/rest"|g' "$(go env GOPATH)/src/${ROOT_PACKAGE}/pkg/client/injection/client/fake/fake.go"
+gofmt -s -w .

@@ -15,8 +15,8 @@
 package quotas
 
 import (
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/quotas"
+	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/quotas"
 
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"

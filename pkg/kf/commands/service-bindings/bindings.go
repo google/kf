@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"text/tabwriter"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
+	"github.com/google/kf/pkg/kf/commands/config"
+	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/spf13/cobra"
 )
 

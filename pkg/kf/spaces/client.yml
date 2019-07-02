@@ -1,7 +1,7 @@
 # This file contains options for genfunctional.go
 ---
 package: spaces
-imports: {"github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1":"v1alpha1", "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1": "cv1alpha1"}
+imports: {"github.com/google/kf/pkg/apis/kf/v1alpha1":"v1alpha1", "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1": "cv1alpha1"}
 kubernetes:
   kind: "Space"
   version: "v1alpha1"

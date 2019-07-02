@@ -14,9 +14,9 @@
 
 package fake
 
-import "github.com/GoogleCloudPlatform/kf/pkg/kf/spaces"
+import "github.com/google/kf/pkg/kf/spaces"
 
-//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_client.go --mock_names=Client=FakeClient github.com/GoogleCloudPlatform/kf/pkg/kf/spaces/fake Client
+//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_client.go --mock_names=Client=FakeClient github.com/google/kf/pkg/kf/spaces/fake Client
 
 // Client is the client for spaces.
 type Client interface {

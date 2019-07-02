@@ -16,7 +16,7 @@ package v1alpha1
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 import corev1 "k8s.io/api/core/v1"
-import duckv1beta1 "github.com/knative/pkg/apis/duck/v1beta1"
+import duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 
 // +genclient
 // +genclient:nonNamespaced
@@ -115,7 +115,7 @@ type SpaceSpecResourceLimits struct {
 	ResourceDefaults []corev1.LimitRangeItem
 }
 
-// SpaceStatus represents information about the status of a KfSpace.
+// SpaceStatus represents information about the status of a Space.
 type SpaceStatus struct {
 	// Pull in the fields from Knative's duckv1beta1 status field.
 	duckv1beta1.Status `json:",inline"`

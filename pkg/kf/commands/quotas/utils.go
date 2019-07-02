@@ -17,7 +17,7 @@ package quotas
 import (
 	"fmt"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/quotas"
+	"github.com/google/kf/pkg/kf/quotas"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 

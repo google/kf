@@ -111,6 +111,12 @@ jobs:
         - |
           hack/check-linters.sh
           hack/check-go-generate.sh
+          mkdir -p $(go env GOPATH)/src/github.com/google
+          olddir=$(pwd)
+          cd $(go env GOPATH)/src/github.com/google
+          ln -s $olddir kf
+          cd $olddir
+          hack/check-code-generator.sh
     on_failure: *on_failure
 - name: build
   plan:

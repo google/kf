@@ -14,9 +14,9 @@
 
 package fake
 
-import servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
+import servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 
-//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_client_interface.go --mock_names=ClientInterface=FakeClientInterface github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings/fake ClientInterface
+//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_client_interface.go --mock_names=ClientInterface=FakeClientInterface github.com/google/kf/pkg/kf/service-bindings/fake ClientInterface
 
 // ClientInterface is implementd by servicebinidngs.Client.
 type ClientInterface interface {

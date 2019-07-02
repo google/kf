@@ -17,8 +17,8 @@ package apps
 import (
 	"log"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/spf13/cobra"
 )
 

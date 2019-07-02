@@ -15,8 +15,8 @@
 package apps
 
 import (
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/commands/config"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"

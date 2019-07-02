@@ -19,8 +19,8 @@ import (
 	"io"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/utils"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
+	"github.com/google/kf/pkg/kf/commands/utils"
+	"github.com/google/kf/pkg/kf/testutil"
 )
 
 func TestPrefixFilter(t *testing.T) {

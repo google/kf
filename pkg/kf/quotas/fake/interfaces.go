@@ -14,9 +14,9 @@
 
 package fake
 
-import "github.com/GoogleCloudPlatform/kf/pkg/kf/quotas"
+import "github.com/google/kf/pkg/kf/quotas"
 
-//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_client.go --mock_names=Client=FakeClient github.com/GoogleCloudPlatform/kf/pkg/kf/quotas/fake Client
+//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_client.go --mock_names=Client=FakeClient github.com/google/kf/pkg/kf/quotas/fake Client
 
 // Client is the client for quotas.
 type Client interface {

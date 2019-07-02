@@ -19,11 +19,11 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/quotas"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/quotas/fake"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
 	"github.com/golang/mock/gomock"
+	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/quotas"
+	"github.com/google/kf/pkg/kf/quotas/fake"
+	"github.com/google/kf/pkg/kf/testutil"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 

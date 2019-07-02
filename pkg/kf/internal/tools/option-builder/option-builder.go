@@ -27,7 +27,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/tools/generator"
+	"github.com/google/kf/pkg/kf/internal/tools/generator"
 	"gopkg.in/yaml.v2"
 )
 

@@ -1,9 +1,12 @@
 # Specification
 
-These documents aim to build a mapping between Kubernetes objects and the
-objects that make up the Cloud Foundry API.
+These documents aim to build a mapping from Kubernetes objects and workflows
+to their equivalent objects and workflows that make up the Cloud Foundry API.
 
-CF objects should be mapped to well-known Knative primitives when possible, with labels preserving metadata across the components, as opposed to building new CRDs. This strict usage policy allows kf to be as thin a layer on top of Knative as possible.
+CF objects should be mapped to well-known Knative primitives when possible,
+with labels preserving metadata across the components, as opposed to building
+new CRDs. This strict usage policy allows kf to be as thin a layer on top of
+Knative as possible.
 
 Additionally, we attempt to break up these objects into self-contained units
 that form a DAG to prevent tight coupling and feedback loops that are difficult

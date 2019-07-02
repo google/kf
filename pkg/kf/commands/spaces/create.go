@@ -15,8 +15,8 @@
 package spaces
 
 import (
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/spaces"
+	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/spaces"
 
 	"github.com/spf13/cobra"
 )

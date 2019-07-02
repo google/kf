@@ -34,7 +34,7 @@ spec:
       - name: controller
         # This is the Go import path for the binary that is containerized
         # and substituted here.
-        image: github.com/GoogleCloudPlatform/kf/cmd/controller
+        image: github.com/google/kf/cmd/controller
         resources:
           requests:
             cpu: 256m

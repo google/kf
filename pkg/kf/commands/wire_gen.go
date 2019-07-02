@@ -6,27 +6,27 @@
 package commands
 
 import (
-	"github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/builds"
-	apps2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/apps"
-	buildpacks2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/buildpacks"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	quotas2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/quotas"
-	routes2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/routes"
-	servicebindings2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/service-bindings"
-	services2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/services"
-	spaces2 "github.com/GoogleCloudPlatform/kf/pkg/kf/commands/spaces"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/logs"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/quotas"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/routes"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/services"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/spaces"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/systemenvinjector"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf"
+	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/buildpacks"
+	"github.com/google/kf/pkg/kf/builds"
+	apps2 "github.com/google/kf/pkg/kf/commands/apps"
+	buildpacks2 "github.com/google/kf/pkg/kf/commands/buildpacks"
+	"github.com/google/kf/pkg/kf/commands/config"
+	quotas2 "github.com/google/kf/pkg/kf/commands/quotas"
+	routes2 "github.com/google/kf/pkg/kf/commands/routes"
+	servicebindings2 "github.com/google/kf/pkg/kf/commands/service-bindings"
+	services2 "github.com/google/kf/pkg/kf/commands/services"
+	spaces2 "github.com/google/kf/pkg/kf/commands/spaces"
+	"github.com/google/kf/pkg/kf/logs"
+	"github.com/google/kf/pkg/kf/quotas"
+	"github.com/google/kf/pkg/kf/routes"
+	"github.com/google/kf/pkg/kf/service-bindings"
+	"github.com/google/kf/pkg/kf/services"
+	"github.com/google/kf/pkg/kf/spaces"
+	"github.com/google/kf/pkg/kf/systemenvinjector"
 	"github.com/google/wire"
 	logs2 "github.com/knative/build/pkg/logs"
 	"github.com/poy/kontext"
@@ -216,6 +216,14 @@ func InjectSpaces(p *config.KfParams) *cobra.Command {
 	return command
 }
 
+func InjectSpace(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
+	client := spaces.NewClient(spacesGetter)
+	command := spaces2.NewGetSpaceCommand(p, client)
+	return command
+}
+
 func InjectCreateSpace(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
@@ -273,23 +281,42 @@ func InjectDeleteQuota(p *config.KfParams) *cobra.Command {
 }
 
 func InjectRoutes(p *config.KfParams) *cobra.Command {
-	networkingV1alpha3Interface := config.GetNetworkingClient(p)
-	client := routes.NewClient(networkingV1alpha3Interface)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	client := routes.NewClient(kfV1alpha1Interface)
 	command := routes2.NewRoutesCommand(p, client)
 	return command
 }
 
 func InjectCreateRoute(p *config.KfParams) *cobra.Command {
-	networkingV1alpha3Interface := config.GetNetworkingClient(p)
-	client := routes.NewClient(networkingV1alpha3Interface)
-	command := routes2.NewCreateRouteCommand(p, client)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	client := routes.NewClient(kfV1alpha1Interface)
+	kubernetesInterface := config.GetKubernetes(p)
+	namespacesGetter := providerNamespacesGetter(kubernetesInterface)
+	command := routes2.NewCreateRouteCommand(p, client, namespacesGetter)
 	return command
 }
 
 func InjectDeleteRoute(p *config.KfParams) *cobra.Command {
-	networkingV1alpha3Interface := config.GetNetworkingClient(p)
-	client := routes.NewClient(networkingV1alpha3Interface)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	client := routes.NewClient(kfV1alpha1Interface)
 	command := routes2.NewDeleteRouteCommand(p, client)
+	return command
+}
+
+func InjectMapRoute(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	client := routes.NewClient(kfV1alpha1Interface)
+	servingV1alpha1Interface := config.GetServingClient(p)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	appsClient := apps.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	command := routes2.NewMapRouteCommand(p, client, appsClient)
+	return command
+}
+
+func InjectUnmapRoute(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	client := routes.NewClient(kfV1alpha1Interface)
+	command := routes2.NewUnmapRouteCommand(p, client)
 	return command
 }
 
@@ -325,5 +352,14 @@ func provideKfSpaces(ki v1alpha1.KfV1alpha1Interface) v1alpha1.SpacesGetter {
 var QuotasSet = wire.NewSet(config.GetKubernetes, provideQuotaGetter, quotas.NewClient)
 
 func provideQuotaGetter(ki kubernetes.Interface) v1.ResourceQuotasGetter {
+	return ki.CoreV1()
+}
+
+var NamespacesSet = wire.NewSet(
+	provideCoreV1,
+	providerNamespacesGetter, config.GetKubernetes,
+)
+
+func providerNamespacesGetter(ki kubernetes.Interface) v1.NamespacesGetter {
 	return ki.CoreV1()
 }

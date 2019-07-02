@@ -17,7 +17,7 @@
 package fake
 
 import (
-	v1alpha1 "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
+	v1alpha1 "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )
@@ -28,6 +28,10 @@ type FakeKfV1alpha1 struct {
 
 func (c *FakeKfV1alpha1) Apps(namespace string) v1alpha1.AppInterface {
 	return &FakeApps{c, namespace}
+}
+
+func (c *FakeKfV1alpha1) Routes(namespace string) v1alpha1.RouteInterface {
+	return &FakeRoutes{c, namespace}
 }
 
 func (c *FakeKfV1alpha1) Sources(namespace string) v1alpha1.SourceInterface {

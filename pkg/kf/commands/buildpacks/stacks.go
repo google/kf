@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"text/tabwriter"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/buildpacks"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/commands/config"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/kf"
+	"github.com/google/kf/pkg/kf/buildpacks"
+	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/internal/kf"
 	"github.com/spf13/cobra"
 )
 

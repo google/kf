@@ -15,9 +15,9 @@
 package systemenvinjector
 
 import (
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/cfutil"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
-	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
+	"github.com/google/kf/pkg/kf/internal/cfutil"
+	"github.com/google/kf/pkg/kf/internal/envutil"
+	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )

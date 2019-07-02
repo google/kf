@@ -17,7 +17,7 @@ package servicebindings_test
 import (
 	"fmt"
 
-	servicebindings "github.com/GoogleCloudPlatform/kf/pkg/kf/service-bindings"
+	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 )

@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/testutil"
+	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
 	servicecatalogfakes "github.com/poy/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"

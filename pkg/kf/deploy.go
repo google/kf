@@ -17,8 +17,8 @@ package kf
 import (
 	"fmt"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/apps"
-	"github.com/GoogleCloudPlatform/kf/pkg/kf/internal/envutil"
+	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/internal/envutil"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 )
 

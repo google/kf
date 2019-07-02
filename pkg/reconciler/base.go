@@ -17,18 +17,20 @@ package reconciler
 import (
 	"context"
 
-	kfclientset "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned"
-	kfscheme "github.com/GoogleCloudPlatform/kf/pkg/client/clientset/versioned/scheme"
-	kfclient "github.com/GoogleCloudPlatform/kf/pkg/client/injection/client"
-	sharedclientset "github.com/knative/pkg/client/clientset/versioned"
-	sharedclient "github.com/knative/pkg/client/injection/client"
-	"github.com/knative/pkg/configmap"
-	"github.com/knative/pkg/injection/clients/kubeclient"
-	"github.com/knative/pkg/logging"
-	"github.com/knative/pkg/logging/logkey"
+	kfclientset "github.com/google/kf/pkg/client/clientset/versioned"
+	kfscheme "github.com/google/kf/pkg/client/clientset/versioned/scheme"
+	kfclient "github.com/google/kf/pkg/client/injection/client"
+	"github.com/google/kf/pkg/kf/commands/config"
+	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	"go.uber.org/zap"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	sharedclientset "knative.dev/pkg/client/clientset/versioned"
+	sharedclient "knative.dev/pkg/client/injection/client"
+	"knative.dev/pkg/configmap"
+	"knative.dev/pkg/injection/clients/kubeclient"
+	"knative.dev/pkg/logging"
+	"knative.dev/pkg/logging/logkey"
 )
 
 // Base implements the core controller logic, given a Reconciler.
@@ -41,6 +43,9 @@ type Base struct {
 
 	// KfClientSet allows us to configure Kf objects
 	KfClientSet kfclientset.Interface
+
+	// ServingClientSet allows us to configure Knative Serving objects
+	ServingClientSet serving.ServingV1alpha1Interface
 
 	// ConfigMapWatcher allows us to watch for ConfigMap changes.
 	ConfigMapWatcher configmap.Watcher
@@ -66,6 +71,7 @@ func NewBase(ctx context.Context, controllerAgentName string, cmw configmap.Watc
 		KubeClientSet:    kubeClient,
 		SharedClientSet:  sharedclient.Get(ctx),
 		KfClientSet:      kfclient.Get(ctx),
+		ServingClientSet: config.GetServingClient(nil),
 		ConfigMapWatcher: cmw,
 		Logger:           logger,
 	}
