@@ -90,9 +90,7 @@ func NewKfParamsFromFile(cfgPath string) (*KfParams, error) {
 
 // NewDefaultKfParams creates a KfParams with default values.
 func NewDefaultKfParams() *KfParams {
-	defaultParams := &KfParams{
-		Namespace: "default",
-	}
+	defaultParams := &KfParams{}
 
 	initKubeConfig(defaultParams)
 

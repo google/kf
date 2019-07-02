@@ -54,7 +54,8 @@ func NewKfCommand() *cobra.Command {
 
 	rootCmd.PersistentFlags().StringVar(&p.Config, "config", "", "config file (default is $HOME/.kf)")
 	rootCmd.PersistentFlags().StringVar(&p.KubeCfgFile, "kubeconfig", "", "kubectl config file (default is $HOME/.kube/config)")
-	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "", "kubernetes namespace (default is default)")
+
+	rootCmd.SilenceErrors = true
 
 	commands := map[string]*cobra.Command{
 		// App interaction
@@ -175,7 +176,7 @@ func completionCommand(rootCmd *cobra.Command) *cobra.Command {
 			case "zsh":
 				return rootCmd.GenZshCompletion(os.Stdout)
 			default:
-				return fmt.Errorf("unknown shell %q. Only bash and zsh are supported.", shell)
+				return fmt.Errorf("unknown shell %q. Only bash and zsh are supported", shell)
 			}
 		},
 	}
