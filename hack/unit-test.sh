@@ -19,4 +19,4 @@ set -eu
 # Go to root dir
 cd $(git rev-parse --show-toplevel)
 
-SKIP_INTEGRATION=true ./hack/test.sh
+SKIP_INTEGRATION=true ./hack/test.sh $@

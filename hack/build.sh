@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -x
+set -eux
+cd $(realpath $(dirname "$(realpath $0)")/..)
 mkdir -p bin
-rm -f bin/*
 go build -o bin/kf ./cmd/kf/...
