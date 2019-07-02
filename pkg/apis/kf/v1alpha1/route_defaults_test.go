@@ -12,22 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package routes
+package v1alpha1
 
 import (
-	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	kf "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
+	"context"
+	"strings"
+	"testing"
+
+	"github.com/google/kf/pkg/kf/testutil"
 )
 
-// ClientExtension holds additional functions that should be exposed by client.
-type ClientExtension interface {
-}
+func TestSetDefaults_DedupeKnativeServiceNames(t *testing.T) {
+	t.Parallel()
 
-// NewClient creates a new route client.
-func NewClient(kclient kf.KfV1alpha1Interface) Client {
-	return &coreClient{
-		kclient:             kclient,
-		membershipValidator: func(_ *v1alpha1.Route) bool { return true },
-		upsertMutate:        MutatorList{},
+	r := &Route{
+		Spec: RouteSpec{
+			KnativeServiceNames: []string{
+				"d", "a", "d", "a", "b", "c",
+			},
+		},
 	}
+
+	r.SetDefaults(context.Background())
+
+	testutil.AssertEqual(t, "len", 4, len(r.Spec.KnativeServiceNames))
+	testutil.AssertContainsAll(t, strings.Join(r.Spec.KnativeServiceNames, ""), []string{"a", "b", "c", "d"})
 }

@@ -28,5 +28,11 @@ configs:
     description: set environment variables
   - name: Grpc
     type: bool
-    description: setup the ports for the container to allow gRPC to work.
+    description: setup the ports for the container to allow gRPC to work
+  - name: MinScale
+    type: int
+    description: the lower scale bound
+  - name: MaxScale
+    type: int
+    description: the upper scale bound
 - name: Deploy

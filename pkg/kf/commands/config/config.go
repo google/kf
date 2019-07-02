@@ -27,7 +27,6 @@ import (
 	"github.com/imdario/mergo"
 	build "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
-	homedir "github.com/mitchellh/go-homedir"
 	"github.com/poy/service-catalog/pkg/client/clientset_generated/clientset"
 	svcatclient "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset"
 	scv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
@@ -37,6 +36,7 @@ import (
 	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/util/homedir"
 )
 
 // KfParams stores everything needed to interact with the user and Knative.
@@ -58,14 +58,7 @@ func paramsPath(userProvidedPath string) string {
 		return userProvidedPath
 	}
 
-	// Kf shouldn't fail if we can't find the user's home directory, instead
-	// use the current working directory.
-	base := "."
-	if home, err := homedir.Dir(); err == nil {
-		base = home
-	}
-
-	return path.Join(base, ".kf")
+	return path.Join(homedir.HomeDir(), ".kf")
 }
 
 // NewKfParamsFromFile reads the config from the specified config path or the
@@ -221,20 +214,22 @@ func getRestConfig(p *KfParams) *rest.Config {
 		return config
 	}
 
-	initKubeConfig(p)
-	c, err := clientcmd.BuildConfigFromFlags("", p.KubeCfgFile)
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	if p.KubeCfgFile != "" {
+		loadingRules.ExplicitPath = p.KubeCfgFile
+	}
+
+	clientCfg := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, &clientcmd.ConfigOverrides{})
+	restCfg, err := clientCfg.ClientConfig()
 	if err != nil {
 		log.Fatalf("failed to build clientcmd: %s", err)
 	}
-	return c
+
+	return restCfg
 }
 
 func initKubeConfig(p *KfParams) {
 	if p.KubeCfgFile == "" {
-		home, err := homedir.Dir()
-		if err != nil {
-			log.Fatalf("failed to load kubectl config: %s", err)
-		}
-		p.KubeCfgFile = filepath.Join(home, ".kube", "config")
+		p.KubeCfgFile = filepath.Join(homedir.HomeDir(), ".kube", "config")
 	}
 }

@@ -28,8 +28,12 @@ type pushConfig struct {
 	ContainerRegistry string
 	// EnvironmentVariables is set environment variables
 	EnvironmentVariables map[string]string
-	// Grpc is setup the ports for the container to allow gRPC to work.
+	// Grpc is setup the ports for the container to allow gRPC to work
 	Grpc bool
+	// MaxScale is the upper scale bound
+	MaxScale int
+	// MinScale is the lower scale bound
+	MinScale int
 	// Namespace is the Kubernetes namespace to use
 	Namespace string
 	// Output is the io.Writer to write output such as build logs
@@ -88,6 +92,18 @@ func (opts PushOptions) Grpc() bool {
 	return opts.toConfig().Grpc
 }
 
+// MaxScale returns the last set value for MaxScale or the empty value
+// if not set.
+func (opts PushOptions) MaxScale() int {
+	return opts.toConfig().MaxScale
+}
+
+// MinScale returns the last set value for MinScale or the empty value
+// if not set.
+func (opts PushOptions) MinScale() int {
+	return opts.toConfig().MinScale
+}
+
 // Namespace returns the last set value for Namespace or the empty value
 // if not set.
 func (opts PushOptions) Namespace() string {
@@ -127,10 +143,24 @@ func WithPushEnvironmentVariables(val map[string]string) PushOption {
 	}
 }
 
-// WithPushGrpc creates an Option that sets setup the ports for the container to allow gRPC to work.
+// WithPushGrpc creates an Option that sets setup the ports for the container to allow gRPC to work
 func WithPushGrpc(val bool) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.Grpc = val
+	}
+}
+
+// WithPushMaxScale creates an Option that sets the upper scale bound
+func WithPushMaxScale(val int) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.MaxScale = val
+	}
+}
+
+// WithPushMinScale creates an Option that sets the lower scale bound
+func WithPushMinScale(val int) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.MinScale = val
 	}
 }
 

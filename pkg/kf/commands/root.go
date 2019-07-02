@@ -88,6 +88,7 @@ func NewKfCommand() *cobra.Command {
 
 		// Spaces
 		"spaces":       InjectSpaces(p),
+		"space":        InjectSpace(p),
 		"create-space": InjectCreateSpace(p),
 		"delete-space": InjectDeleteSpace(p),
 
@@ -102,6 +103,8 @@ func NewKfCommand() *cobra.Command {
 		"routes":       InjectRoutes(p),
 		"create-route": InjectCreateRoute(p),
 		"delete-route": InjectDeleteRoute(p),
+		"map-route":    InjectMapRoute(p),
+		"unmap-route":  InjectUnmapRoute(p),
 
 		// DoctorTests are run in the order they're defined in this list.
 		// Tests will stop as soon as one of these top-level tests fails so they
@@ -122,7 +125,7 @@ func NewKfCommand() *cobra.Command {
 	groups = append(groups, createGroup(commands, "Buildpacks", "buildpacks", "stacks"))
 	groups = append(groups, createGroup(commands, "Environment Variables", "env", "set-env", "unset-env"))
 	groups = append(groups, createGroup(commands, "Quotas", "quotas", "quota", "create-quota", "update-quota", "delete-quota"))
-	groups = append(groups, createGroup(commands, "Routing", "routes", "create-route", "delete-route"))
+	groups = append(groups, createGroup(commands, "Routing", "routes", "create-route", "delete-route", "map-route", "unmap-route"))
 	groups = append(groups, createGroup(commands, "Services", "create-service", "delete-service", "service", "services", "marketplace"))
 	groups = append(groups, createGroup(commands, "Service Bindings", "bind-service", "bindings", "unbind-service", "vcap-services"))
 	groups = append(groups, createGroup(commands, "Spaces", "spaces", "create-space", "delete-space"))

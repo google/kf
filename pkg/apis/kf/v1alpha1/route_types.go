@@ -40,21 +40,21 @@ type Route struct {
 type RouteSpec struct {
 	// KnativeServiceNames contains the Kf Apps that are bound to the route.
 	// +optional
-	KnativeServiceNames []string `json:"knativeServiceNames"`
+	KnativeServiceNames []string `json:"knativeServiceNames,omitempty"`
 
 	// Hostname is the hostname or subdomain of the route (e.g, in
 	// hostname.example.com it would be hostname).
 	// +optional
-	Hostname string
+	Hostname string `json:"hostname,omitempty"`
 
 	// Domain is the domain of the route (e.g, in hostname.example.com it
 	// would be example.com).
 	// +optional
-	Domain string
+	Domain string `json:"domain,omitempty"`
 
 	// Path is the URL path of the route.
 	// +optional
-	Path string
+	Path string `json:"path,omitempty"`
 }
 
 // RouteStatus represents information about the status of a Route.

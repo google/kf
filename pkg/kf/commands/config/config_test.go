@@ -23,11 +23,11 @@ import (
 	"testing"
 
 	"github.com/google/kf/pkg/kf/testutil"
-	homedir "github.com/mitchellh/go-homedir"
+	"k8s.io/client-go/util/homedir"
 )
 
 func TestParamsPath(t *testing.T) {
-	userHome, _ := homedir.Dir()
+	userHome := homedir.HomeDir()
 
 	cases := map[string]struct {
 		path     string
