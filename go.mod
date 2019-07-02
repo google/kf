@@ -17,14 +17,16 @@ require (
 	github.com/knative/build v0.7.0
 	github.com/knative/caching v0.0.0-20190628152507-55b45efbc4db // indirect
 	github.com/knative/pkg v0.0.0-20190621200921-9c5d970cbc9e
-	github.com/knative/serving v0.7.1-0.20190701130318-4187557403c7
+	github.com/knative/serving v0.7.1-0.20190701162519-7ca25646a186
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
+	github.com/markbates/inflect v1.0.4 // indirect
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/poy/kontext v0.0.0-20190411202914-cc5532543f2e
 	github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c
+	github.com/rogpeppe/go-internal v1.3.0 // indirect
 	github.com/segmentio/textio v1.2.0
 	github.com/sirupsen/logrus v1.3.0 // indirect
 	github.com/spf13/cobra v0.0.3
