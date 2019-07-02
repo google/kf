@@ -103,6 +103,7 @@ func main() {
 		Options: options,
 		Handlers: map[schema.GroupVersionKind]webhook.GenericCRD{
 			v1alpha1.SchemeGroupVersion.WithKind("Space"): &v1alpha1.Space{},
+			v1alpha1.SchemeGroupVersion.WithKind("App"):   &v1alpha1.App{},
 		},
 		Logger:                logger,
 		DisallowUnknownFields: true,

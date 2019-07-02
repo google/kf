@@ -14,9 +14,15 @@
 
 package v1alpha1
 
-import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-import duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
-import core "k8s.io/api/core/v1"
+import (
+	"fmt"
+
+	"github.com/knative/serving/pkg/apis/autoscaling"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
+
+	core "k8s.io/api/core/v1"
+)
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -97,6 +103,52 @@ type AppSpecInstances struct {
 
 	// Max defines a maximum auto-scaling limit.
 	Max *int `json:"max,omitempty"`
+}
+
+// MinAnnotationValue returns the value autoscaling.knative.dev/minScale should
+// be set to.
+func (instances *AppSpecInstances) MinAnnotationValue() string {
+	switch {
+	case instances.Stopped:
+		return "0"
+	case instances.Exactly != nil:
+		return fmt.Sprintf("%d", *instances.Exactly)
+	case instances.Min != nil:
+		return fmt.Sprintf("%d", *instances.Min)
+	default:
+		return ""
+	}
+}
+
+// MaxAnnotationValue returns the value autoscaling.knative.dev/maxScale should
+// be set to.
+func (instances *AppSpecInstances) MaxAnnotationValue() string {
+	switch {
+	case instances.Stopped:
+		return "0"
+	case instances.Exactly != nil:
+		return fmt.Sprintf("%d", *instances.Exactly)
+	case instances.Max != nil:
+		return fmt.Sprintf("%d", *instances.Max)
+	default:
+		return ""
+	}
+}
+
+// ScalingAnnotations returns the annotations to put on the underling Serving
+// to set scaling bounds.
+func (instances *AppSpecInstances) ScalingAnnotations() map[string]string {
+	out := make(map[string]string)
+
+	if minVal := instances.MinAnnotationValue(); minVal != "" {
+		out[autoscaling.MinScaleAnnotationKey] = minVal
+	}
+
+	if maxVal := instances.MaxAnnotationValue(); maxVal != "" {
+		out[autoscaling.MaxScaleAnnotationKey] = maxVal
+	}
+
+	return out
 }
 
 // AppStatus is the current configuration and running state for an App.
