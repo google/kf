@@ -131,6 +131,15 @@ func TestAppSpecInstances_ScalingAnnotations(t *testing.T) {
 			instances: AppSpecInstances{},
 			expected:  map[string]string{},
 		},
+		"exactly takes precidence": {
+			// If the webhook fails somehow and exactly gets defined alongside min and
+			// max, then exactly takes precedence.
+			instances: AppSpecInstances{Exactly: intPtr(4), Min: intPtr(3), Max: intPtr(5)},
+			expected: map[string]string{
+				autoscaling.MinScaleAnnotationKey: "4",
+				autoscaling.MaxScaleAnnotationKey: "4",
+			},
+		},
 	}
 
 	for tn, tc := range cases {
