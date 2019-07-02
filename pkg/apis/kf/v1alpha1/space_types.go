@@ -54,6 +54,8 @@ type SpaceSpec struct {
 	// +optional
 	Execution SpaceSpecExecution `json:"execution,omitempty"`
 
+	// SpaceSpecResourceLimits contains definitions for resource usage limits.
+	// +optional
 	ResourceLimits SpaceSpecResourceLimits `json:"resourceLimits,omitempty"`
 }
 
