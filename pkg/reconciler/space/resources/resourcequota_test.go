@@ -17,7 +17,7 @@ package resources
 import (
 	"fmt"
 
-	"github.com/GoogleCloudPlatform/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )

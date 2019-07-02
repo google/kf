@@ -16,7 +16,7 @@ package fake
 import (
 	"context"
 
-	limitrange "github.com/GoogleCloudPlatform/kf/pkg/client/injection/informers/kubernetes/limitrange"
+	limitrange "github.com/google/kf/pkg/client/injection/informers/kubernetes/limitrange"
 
 	"knative.dev/pkg/controller"
 	"knative.dev/pkg/injection"

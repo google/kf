@@ -16,7 +16,7 @@ package fake
 import (
 	"context"
 
-	resourcequota "github.com/GoogleCloudPlatform/kf/pkg/client/injection/informers/kubernetes/resourcequota"
+	resourcequota "github.com/google/kf/pkg/client/injection/informers/kubernetes/resourcequota"
 
 	"knative.dev/pkg/controller"
 	"knative.dev/pkg/injection"

@@ -24,8 +24,8 @@ import (
 	roleinformer "knative.dev/pkg/injection/informers/kubeinformers/rbacv1/role"
 
 	// TODO (juliaguo): replace with knative informer pkgs once they are merged in
-	limitrangeinformer "github.com/GoogleCloudPlatform/kf/pkg/client/injection/informers/kubernetes/limitrange"
-	quotainformer "github.com/GoogleCloudPlatform/kf/pkg/client/injection/informers/kubernetes/resourcequota"
+	limitrangeinformer "github.com/google/kf/pkg/client/injection/informers/kubernetes/limitrange"
+	quotainformer "github.com/google/kf/pkg/client/injection/informers/kubernetes/resourcequota"
 
 	"k8s.io/client-go/tools/cache"
 
