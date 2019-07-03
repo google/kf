@@ -20,11 +20,11 @@ import (
 	"reflect"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	buildclient "github.com/google/kf/pkg/client/build/clientset/versioned/typed/build/v1alpha1"
+	buildlisters "github.com/google/kf/pkg/client/build/listers/build/v1alpha1"
 	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
 	"github.com/google/kf/pkg/reconciler"
 	"github.com/google/kf/pkg/reconciler/source/resources"
-	buildclient "github.com/google/kf/pkg/client/build/clientset/versioned/typed/build/v1alpha1"
-	buildlisters "github.com/google/kf/pkg/client/build/listers/build/v1alpha1"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -41,7 +41,7 @@ type Reconciler struct {
 	buildClient buildclient.BuildV1alpha1Interface
 
 	// listers index properties about resources
-	SourceLister kflisters.SourceLister
+	sourceLister kflisters.SourceLister
 	buildLister  buildlisters.BuildLister
 }
 
@@ -57,7 +57,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 		return err
 	}
 
-	original, err := r.SourceLister.Sources(namespace).Get(name)
+	original, err := r.sourceLister.Sources(namespace).Get(name)
 	switch {
 	case errors.IsNotFound(err):
 		logger.Errorf("source %q no longer exists\n", name)
@@ -118,7 +118,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, source *v1alpha1.Source) 
 }
 
 func (r *Reconciler) updateStatus(namespace string, desired *v1alpha1.Source) (*v1alpha1.Source, error) {
-	actual, err := r.SourceLister.Sources(namespace).Get(desired.Name)
+	actual, err := r.sourceLister.Sources(namespace).Get(desired.Name)
 	if err != nil {
 		return nil, err
 	}

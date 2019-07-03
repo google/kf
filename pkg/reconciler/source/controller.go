@@ -40,7 +40,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	// Create reconciler
 	c := &Reconciler{
 		Base:         reconciler.NewBase(ctx, "source-controller", cmw),
-		SourceLister: sourceInformer.Lister(),
+		sourceLister: sourceInformer.Lister(),
 		buildLister:  buildInformer.Lister(),
 		buildClient:  buildClient.BuildV1alpha1(),
 	}

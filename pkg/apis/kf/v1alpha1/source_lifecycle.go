@@ -17,9 +17,10 @@ package v1alpha1
 import (
 	"fmt"
 
-	"github.com/knative/build/pkg/apis/build/v1alpha1"
+	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	"github.com/knative/pkg/apis"
 	duckv1beta1 "github.com/knative/pkg/apis/duck/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
@@ -34,6 +35,9 @@ const (
 	SourceConditionReady = apis.ConditionReady
 	// SourceConditionBuildReady is set when the backing Build is ready.
 	SourceConditionBuildReady apis.ConditionType = "BuildReady"
+
+	BuildArgImage     = "IMAGE"
+	BuildArgBuildpack = "BUILDPACK"
 )
 
 func (status *SourceStatus) manage() apis.ConditionManager {
@@ -65,7 +69,7 @@ func (status *SourceStatus) MarkBuildNotOwned(name string) {
 
 // PropagateBuildStatus copies fields from the Build status to Space
 // and updates the readiness based on the current phase.
-func (status *SourceStatus) PropagateBuildStatus(build *v1alpha1.Build) {
+func (status *SourceStatus) PropagateBuildStatus(build *build.Build) {
 
 	if build == nil {
 		return
@@ -73,21 +77,31 @@ func (status *SourceStatus) PropagateBuildStatus(build *v1alpha1.Build) {
 
 	for _, condition := range build.Status.GetConditions() {
 
-		c := apis.Condition{
-			Type:               apis.ConditionType(string(condition.Type)),
-			Status:             condition.Status,
-			Severity:           apis.ConditionSeverity(string(condition.Severity)),
-			LastTransitionTime: condition.LastTransitionTime,
-			Reason:             condition.Reason,
-			Message:            condition.Message,
-		}
+		if condition.Type == "Succeeded" {
+			t := apis.ConditionType(string(condition.Type))
+			switch condition.Status {
+			case corev1.ConditionTrue:
+				status.manage().MarkTrue(t)
+			case corev1.ConditionFalse:
+				status.manage().MarkFalse(t, condition.Reason, "Build failed: %s", condition.Message)
+			case corev1.ConditionUnknown:
+				status.manage().MarkUnknown(t, condition.Reason, "Build in progress")
+			}
 
-		status.manage().SetCondition(c)
-
-		if condition.Type == "Succeeded" && condition.Status == "True" {
-			status.Image = build.Spec.Template.Arguments[0].Value
+			if condition.Status == "True" {
+				status.Image = GetBuildArg(build, BuildArgImage)
+			}
 		}
 	}
+}
+
+func GetBuildArg(b *build.Build, key string) string {
+	for _, arg := range b.Spec.Template.Arguments {
+		if arg.Name == key {
+			return arg.Value
+		}
+	}
+	return ""
 }
 
 func (status *SourceStatus) duck() *duckv1beta1.Status {

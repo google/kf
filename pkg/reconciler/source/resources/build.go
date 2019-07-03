@@ -59,20 +59,19 @@ func MakeBuild(source *v1alpha1.Source) (*build.Build, error) {
 
 	args := []build.ArgumentSpec{
 		{
-			Name:  "IMAGE",
+			Name:  v1alpha1.BuildArgImage,
 			Value: imageDestination,
 		},
 		{
-			Name:  "BUILDPACK",
+			Name:  v1alpha1.BuildArgBuildpack,
 			Value: source.Spec.BuildpackBuild.Buildpack,
 		},
 	}
 
 	return &build.Build{
 		ObjectMeta: metav1.ObjectMeta{
-			Generation: 1,
-			Name:       buildName,
-			Namespace:  source.Namespace,
+			Name:      buildName,
+			Namespace: source.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*kmeta.NewControllerRef(source),
 			},
