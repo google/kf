@@ -29,7 +29,7 @@ metadata:
     kf.dev/controller: "true"
 rules:
 - apiGroups: [""]
-  resources: ["pods", "namespaces", "secrets", "configmaps", "endpoints", "services", "events", "serviceaccounts", "resourcequotas"]
+  resources: ["pods", "namespaces", "secrets", "configmaps", "endpoints", "services", "events", "serviceaccounts", "resourcequotas", "limitranges"]
   verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
 - apiGroups: [""]
   resources: ["endpoints/restricted"] # Permission for RestrictedEndpointsAdmission

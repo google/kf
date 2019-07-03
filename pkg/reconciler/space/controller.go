@@ -47,10 +47,12 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 
 	// Create reconciler
 	c := &Reconciler{
-		Base:            reconciler.NewBase(ctx, "space-controller", cmw),
-		spaceLister:     spaceInformer.Lister(),
-		namespaceLister: nsInformer.Lister(),
-		roleLister:      roleInformer.Lister(),
+		Base:                reconciler.NewBase(ctx, "space-controller", cmw),
+		spaceLister:         spaceInformer.Lister(),
+		namespaceLister:     nsInformer.Lister(),
+		roleLister:          roleInformer.Lister(),
+		resourceQuotaLister: quotaInformer.Lister(),
+		limitRangeLister:    limitRangeInformer.Lister(),
 	}
 
 	impl := controller.NewImpl(c, logger, "Spaces")
