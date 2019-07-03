@@ -53,6 +53,7 @@ func ExampleMakeBuild() {
 	source.Generation = 5
 	source.Spec.BuildpackBuild.Source = "some-source"
 	source.Spec.BuildpackBuild.Registry = "some-registry"
+	source.Spec.BuildpackBuild.BuildpackBuilder = "some-buildpack-builder"
 
 	build, err := MakeBuild(source)
 	if err != nil {
@@ -68,6 +69,6 @@ func ExampleMakeBuild() {
 	// Output: Name: my-source-5
 	// Label Count: 1
 	// Managed By: kf
-	// Arg Count: 2
+	// Arg Count: 3
 	// Output Image: some-registry/app-my-namespace-my-source:5
 }
