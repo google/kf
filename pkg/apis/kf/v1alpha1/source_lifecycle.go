@@ -30,11 +30,9 @@ func (r *Source) GetGroupVersionKind() schema.GroupVersionKind {
 }
 
 const (
-	// SourceConditionReady is set when the space is configured
+	// SourceConditionSucceeded is set when the source is configured
 	// and is usable by developers.
-	SourceConditionReady = apis.ConditionReady
-	// SourceConditionBuildReady is set when the backing Build is ready.
-	SourceConditionBuildReady apis.ConditionType = "BuildReady"
+	SourceConditionSucceeded = apis.ConditionSucceeded
 
 	BuildArgImage     = "IMAGE"
 	BuildArgBuildpack = "BUILDPACK"
@@ -42,7 +40,7 @@ const (
 
 func (status *SourceStatus) manage() apis.ConditionManager {
 	return apis.NewLivingConditionSet(
-		SourceConditionBuildReady,
+		SourceConditionSucceeded,
 	).Manage(status)
 }
 
@@ -63,7 +61,7 @@ func (status *SourceStatus) InitializeConditions() {
 
 // MarkBuildNotOwned marks the Build as not being owned by the Source.
 func (status *SourceStatus) MarkBuildNotOwned(name string) {
-	status.manage().MarkFalse(SourceConditionBuildReady, "NotOwned",
+	status.manage().MarkFalse(SourceConditionSucceeded, "NotOwned",
 		fmt.Sprintf("There is an existing Build %q that we do not own.", name))
 }
 
@@ -78,14 +76,13 @@ func (status *SourceStatus) PropagateBuildStatus(build *build.Build) {
 	for _, condition := range build.Status.GetConditions() {
 
 		if condition.Type == "Succeeded" {
-			t := apis.ConditionType(string(condition.Type))
 			switch condition.Status {
 			case corev1.ConditionTrue:
-				status.manage().MarkTrue(t)
+				status.manage().MarkTrue(SourceConditionSucceeded)
 			case corev1.ConditionFalse:
-				status.manage().MarkFalse(t, condition.Reason, "Build failed: %s", condition.Message)
+				status.manage().MarkFalse(SourceConditionSucceeded, condition.Reason, "Build failed: %s", condition.Message)
 			case corev1.ConditionUnknown:
-				status.manage().MarkUnknown(t, condition.Reason, "Build in progress")
+				status.manage().MarkUnknown(SourceConditionSucceeded, condition.Reason, "Build in progress")
 			}
 
 			if condition.Status == "True" {
