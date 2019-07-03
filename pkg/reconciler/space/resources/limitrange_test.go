@@ -47,7 +47,7 @@ func ExampleMakeLimitRange() {
 	fmt.Println("Limit type:", limitRange.Spec.Limits[0].Type)
 	fmt.Println("Default memory request:", limitRange.Spec.Limits[0].DefaultRequest.Memory())
 	fmt.Println("Default cpu request:", limitRange.Spec.Limits[0].DefaultRequest.Cpu())
-	
+
 	// Output: Name: space-limit-range
 	// Managed by: kf
 	// Limit type: Pod

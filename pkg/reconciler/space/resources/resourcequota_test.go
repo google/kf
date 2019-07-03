@@ -41,7 +41,7 @@ func ExampleMakeResourceQuota() {
 	fmt.Println("Managed by:", quota.Labels[managedByLabel])
 	fmt.Println("Memory quota:", quota.Spec.Hard.Memory())
 	fmt.Println("CPU quota:", quota.Spec.Hard.Cpu())
-	
+
 	// Output: Name: space-quota
 	// Managed by: kf
 	// Memory quota: 20Gi
