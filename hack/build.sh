@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -x
-rm -f kf
-go build ./cmd/kf/...
+set -eux
+cd $(realpath $(dirname "$(realpath $0)")/..)
+mkdir -p bin
+go build -o bin/kf ./cmd/kf/...
