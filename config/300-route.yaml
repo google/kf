@@ -30,6 +30,18 @@ spec:
   subresources:
     status: {}
   additionalPrinterColumns:
+  - name: Host
+    type: string
+    JSONPath: .spec.hostname
+  - name: Domain
+    type: string
+    JSONPath: .spec.domain
+  - name: Path
+    type: string
+    JSONPath: .spec.path
+  - name: Apps
+    type: string
+    JSONPath: .spec.knativeServiceNames
   - name: Age
     type: date
     JSONPath: .metadata.creationTimestamp
