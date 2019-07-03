@@ -133,8 +133,6 @@ jobs:
         source: *ci-image-source
       inputs:
       - name: src
-      outputs:
-      - name: bin
       params:
         GOPROXY: *go_proxy
         GOSUMDB: *go_sum_db
@@ -146,7 +144,6 @@ jobs:
         - -exc
         - |
           hack/build.sh
-          mv kf ../bin
     on_failure: *on_failure
 - name: apply
   plan:

@@ -30,6 +30,7 @@ trap finish EXIT
 
 if [ "${SKIP_INTEGRATION:-false}" = "true" ]; then
     echo "SKIP_INTEGRATION set to 'true'. Skipping integration tests..."
+    export GRP_PROJECT_ID=""
 else
   if [ "${GCP_PROJECT_ID}" = "" ]; then
     echo running integration tests
@@ -51,4 +52,10 @@ if [ "${RACE:-true}" = "true" ]; then
   args="--race $args"
 fi
 
-go test -timeout 30m $args ./...
+if [ "x$@" = "x" ]; then
+  packages="./..."
+else
+  packages="$@"
+fi
+
+go test -timeout 30m $args $packages

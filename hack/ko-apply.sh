@@ -14,9 +14,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -eu
-
-# Go to root dir
-cd $(git rev-parse --show-toplevel)
-
-SKIP_INTEGRATION=true ./hack/test.sh $@
+set -x
+ko apply -f config

@@ -34,3 +34,20 @@ knative.dev/pkg/...
 for p in $packages; do
   go get -u $p
 done
+
+cd $(go env GOPATH)
+mkdir -p src/github.com/knative/
+cd src/github.com/knative
+if [ ! -d "pkg" ]; then
+  git clone https://github.com/knative/pkg
+fi
+
+cd pkg
+if [ "$(git remote | grep poy)" = "" ]; then
+  git remote add poy https://github.com/poy/knative-pkg
+fi
+
+git fetch poy
+git checkout poy/poy-fix
+
+echo ready to run codegen
