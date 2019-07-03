@@ -16,8 +16,8 @@ package servicebindings
 
 import (
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
-
 	"github.com/spf13/cobra"
 )
 
@@ -33,6 +33,10 @@ func NewUnbindServiceCommand(p *config.KfParams, client servicebindings.ClientIn
 			instanceName := args[1]
 
 			cmd.SilenceUsage = true
+
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
 
 			err := client.Delete(
 				instanceName,

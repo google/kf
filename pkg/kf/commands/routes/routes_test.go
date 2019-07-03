@@ -42,6 +42,7 @@ func TestRoutes(t *testing.T) {
 			Args:        []string{"arg-1"},
 		},
 		"listing routes fails": {
+			Namespace:   "some-namespace",
 			ExpectedErr: errors.New("failed to fetch Routes: some-error"),
 			Setup: func(t *testing.T, fakeRoute *fakeroute.FakeClient) {
 				fakeRoute.EXPECT().List(gomock.Any()).Return(nil, errors.New("some-error"))
@@ -54,6 +55,7 @@ func TestRoutes(t *testing.T) {
 			},
 		},
 		"display routes": {
+			Namespace: "some-namespace",
 			Setup: func(t *testing.T, fakeRoute *fakeroute.FakeClient) {
 				fakeRoute.EXPECT().List(gomock.Any()).Return([]v1alpha1.Route{
 					{

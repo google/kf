@@ -20,6 +20,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	servicescmd "github.com/google/kf/pkg/kf/commands/services"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/google/kf/pkg/kf/services/fake"
 	"github.com/google/kf/pkg/kf/testutil"
@@ -40,8 +41,13 @@ func TestNewDeleteServiceCommand(t *testing.T) {
 				}).Return(nil)
 			},
 		},
+		"empty namespace": {
+			Args:        []string{"mydb"},
+			ExpectedErr: errors.New(utils.EmptyNamespaceError),
+		},
 		"bad server call": {
-			Args: []string{"mydb"},
+			Args:      []string{"mydb"},
+			Namespace: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				f.EXPECT().DeleteService("mydb", gomock.Any()).Return(errors.New("server-call-error"))
 			},

@@ -16,9 +16,9 @@ package services
 
 import (
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/poy/service-catalog/cmd/svcat/output"
-
 	"github.com/spf13/cobra"
 )
 
@@ -30,8 +30,11 @@ func NewListServicesCommand(p *config.KfParams, client services.ClientInterface)
 		Short:   "List all service instances in the target namespace",
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-
 			cmd.SilenceUsage = true
+
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
 
 			instances, err := client.ListServices(services.WithListServicesNamespace(p.Namespace))
 			if err != nil {

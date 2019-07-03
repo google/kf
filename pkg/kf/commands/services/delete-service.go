@@ -16,8 +16,8 @@ package services
 
 import (
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/services"
-
 	"github.com/spf13/cobra"
 )
 
@@ -32,6 +32,10 @@ func NewDeleteServiceCommand(p *config.KfParams, client services.ClientInterface
 			instanceName := args[0]
 
 			cmd.SilenceUsage = true
+
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
 
 			return client.DeleteService(instanceName, services.WithDeleteServiceNamespace(p.Namespace))
 		},

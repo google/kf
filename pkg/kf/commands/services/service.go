@@ -18,9 +18,9 @@ import (
 	"fmt"
 
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/poy/service-catalog/cmd/svcat/output"
-
 	"github.com/spf13/cobra"
 )
 
@@ -31,6 +31,10 @@ func NewGetServiceCommand(p *config.KfParams, client services.ClientInterface) *
 		Short: "Show service instance info",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
+
 			instanceName := args[0]
 
 			cmd.SilenceUsage = true

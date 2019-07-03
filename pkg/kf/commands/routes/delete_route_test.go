@@ -22,6 +22,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/routes"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/routes/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/google/kf/pkg/reconciler/route/resources"
@@ -43,7 +44,8 @@ func TestDeleteRoute(t *testing.T) {
 			},
 		},
 		"deleting route fails": {
-			Args: []string{"example.com"},
+			Args:      []string{"example.com"},
+			Namespace: "some-namespace",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(errors.New("some-error"))
 			},
@@ -59,6 +61,15 @@ func TestDeleteRoute(t *testing.T) {
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
+			},
+		},
+		"without namespace": {
+			Args: []string{"example.com"},
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Delete("some-namespace", gomock.Any())
+			},
+			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
+				testutil.AssertErrorsEqual(t, errors.New(utils.EmptyNamespaceError), err)
 			},
 		},
 		"delete route": {

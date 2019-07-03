@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/routes"
 	"github.com/google/kf/pkg/reconciler/route/resources"
 	"github.com/spf13/cobra"
@@ -50,6 +51,10 @@ func NewCreateRouteCommand(
   `,
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
+
 			space, domain := p.Namespace, args[0]
 			if len(args) == 2 {
 				space = args[0]

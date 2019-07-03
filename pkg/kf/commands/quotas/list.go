@@ -19,8 +19,8 @@ import (
 	"text/tabwriter"
 
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/quotas"
-
 	"github.com/spf13/cobra"
 )
 
@@ -31,6 +31,10 @@ func NewListQuotasCommand(p *config.KfParams, client quotas.Client) *cobra.Comma
 		Short: "List all kf quotas",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
+
 			fmt.Fprintf(cmd.OutOrStdout(), "Getting quotas in namespace: %s\n", p.Namespace)
 
 			allQuotas, err := client.List(p.Namespace)

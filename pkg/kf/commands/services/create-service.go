@@ -16,9 +16,9 @@ package services
 
 import (
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/poy/service-catalog/cmd/svcat/output"
-
 	"github.com/spf13/cobra"
 )
 
@@ -40,6 +40,10 @@ func NewCreateServiceCommand(p *config.KfParams, client services.ClientInterface
 			instanceName := args[2]
 
 			cmd.SilenceUsage = true
+
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
 
 			params, err := services.ParseJSONOrFile(configAsJSON)
 			if err != nil {

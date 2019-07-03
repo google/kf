@@ -19,6 +19,7 @@ import (
 
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -32,6 +33,10 @@ func NewDeleteCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 		Long:    ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
+
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
 
 			// Cobra ensures we are only called with a single argument.
 			appName := args[0]

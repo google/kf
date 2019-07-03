@@ -23,6 +23,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 )
 
 func TestDeleteCommand(t *testing.T) {
@@ -41,7 +42,12 @@ func TestDeleteCommand(t *testing.T) {
 		"delete app error": {
 			wantErr:   errors.New("some error"),
 			deleteErr: errors.New("some error"),
+			namespace: "some-namespace",
 			appName:   "some-app",
+		},
+		"delete app error without specify namespace": {
+			wantErr: errors.New(utils.EmptyNamespaceError),
+			appName: "some-app",
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {

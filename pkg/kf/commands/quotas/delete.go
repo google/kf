@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/quotas"
 
 	"github.com/spf13/cobra"
@@ -30,6 +31,10 @@ func NewDeleteQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Comm
 		Short: "Delete a quota",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
+
 			name := args[0]
 
 			if err := client.Delete(p.Namespace, name); err != nil {

@@ -24,6 +24,7 @@ import (
 	appsfake "github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/routes"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	clientroutes "github.com/google/kf/pkg/kf/routes"
 	routesfake "github.com/google/kf/pkg/kf/routes/fake"
 	"github.com/google/kf/pkg/kf/testutil"
@@ -49,7 +50,8 @@ func TestMapRoute(t *testing.T) {
 			},
 		},
 		"fetching app fails": {
-			Args: []string{"some-app", "example.com"},
+			Args:      []string{"some-app", "example.com"},
+			Namespace: "some-space",
 			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
 				appsfake.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, errors.New("some-error"))
 			},
@@ -58,7 +60,8 @@ func TestMapRoute(t *testing.T) {
 			},
 		},
 		"transforming Route fails": {
-			Args: []string{"some-app", "example.com"},
+			Args:      []string{"some-app", "example.com"},
+			Namespace: "some-space",
 			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
 				appsfake.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&serving.Service{}, nil)
 				routesfake.EXPECT().Upsert(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("some-error"))
@@ -76,6 +79,16 @@ func TestMapRoute(t *testing.T) {
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
+			},
+		},
+		"without namespace": {
+			Args: []string{"some-app", "example.com"},
+			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
+				appsfake.EXPECT().Get("some-space", gomock.Any()).Return(&serving.Service{}, nil)
+				routesfake.EXPECT().Upsert("some-space", gomock.Any(), gomock.Any())
+			},
+			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
+				testutil.AssertErrorsEqual(t, errors.New(utils.EmptyNamespaceError), err)
 			},
 		},
 		"fetches app": {

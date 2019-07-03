@@ -21,6 +21,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/quotas/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	v1 "k8s.io/api/core/v1"
@@ -48,7 +49,16 @@ func TestListQuotasCommand(t *testing.T) {
 					List("some-namespace")
 			},
 		},
+		"returns error without specify namespace": {
+			wantErr: errors.New(utils.EmptyNamespaceError),
+			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
+				fakeLister.
+					EXPECT().
+					List("some-namespace")
+			},
+		},
 		"formats multiple quotas": {
+			namespace: "some-namespace",
 			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
 				fakeLister.
 					EXPECT().
