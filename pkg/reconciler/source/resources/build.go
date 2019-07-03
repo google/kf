@@ -26,7 +26,9 @@ import (
 )
 
 const (
-	managedByLabel = "app.kubernetes.io/managed-by"
+	managedByLabel         = "app.kubernetes.io/managed-by"
+	buildpackBuildTemplate = "buildpack"
+	containerImageTemplate = "container"
 )
 
 // BuildName gets the name of a Build for a Source.
@@ -44,8 +46,43 @@ func JoinRepositoryImage(repository, imageName string) string {
 	return fmt.Sprintf("%s/%s", repository, imageName)
 }
 
-// MakeBuild creates a Build for a Source.
-func MakeBuild(source *v1alpha1.Source) (*build.Build, error) {
+func makeContainerImageBuild(source *v1alpha1.Source) (*build.Build, error) {
+	buildName := BuildName(source)
+
+	args := []build.ArgumentSpec{
+		{
+			Name:  v1alpha1.BuildArgImage,
+			Value: source.Spec.ContainerImage.Image,
+		},
+	}
+
+	return &build.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      buildName,
+			Namespace: source.Namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				*kmeta.NewControllerRef(source),
+			},
+			// Copy labels from the parent
+			Labels: resources.UnionMaps(
+				source.GetLabels(), map[string]string{
+					managedByLabel: "kf",
+				}),
+		},
+		Spec: build.BuildSpec{
+			Template: &build.TemplateInstantiationSpec{
+				Name:      containerImageTemplate,
+				Kind:      "ClusterBuildTemplate",
+				Arguments: args,
+			},
+		},
+	}, nil
+}
+
+func makeBuildpackBuild(source *v1alpha1.Source) (*build.Build, error) {
+	buildName := BuildName(source)
+	appImageName := AppImageName(source)
+	imageDestination := JoinRepositoryImage(source.Spec.BuildpackBuild.Registry, appImageName)
 
 	buildSource := &build.SourceSpec{
 		Custom: &corev1.Container{
@@ -53,14 +90,14 @@ func MakeBuild(source *v1alpha1.Source) (*build.Build, error) {
 		},
 	}
 
-	buildName := BuildName(source)
-	appImageName := AppImageName(source)
-	imageDestination := JoinRepositoryImage(source.Spec.BuildpackBuild.Registry, appImageName)
-
 	args := []build.ArgumentSpec{
 		{
 			Name:  v1alpha1.BuildArgImage,
 			Value: imageDestination,
+		},
+		{
+			Name:  v1alpha1.BuildArgBuildpackBuilder,
+			Value: source.Spec.BuildpackBuild.BuildpackBuilder,
 		},
 		{
 			Name:  v1alpha1.BuildArgBuildpack,
@@ -84,10 +121,19 @@ func MakeBuild(source *v1alpha1.Source) (*build.Build, error) {
 		Spec: build.BuildSpec{
 			Source: buildSource,
 			Template: &build.TemplateInstantiationSpec{
-				Name:      "buildpack",
+				Name:      buildpackBuildTemplate,
 				Kind:      "ClusterBuildTemplate",
 				Arguments: args,
 			},
 		},
 	}, nil
+}
+
+// MakeBuild creates a Build for a Source.
+func MakeBuild(source *v1alpha1.Source) (*build.Build, error) {
+	if source.Spec.ContainerImage.Image != "" {
+		return makeContainerImageBuild(source)
+	} else {
+		return makeBuildpackBuild(source)
+	}
 }

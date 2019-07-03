@@ -34,8 +34,9 @@ const (
 	// and is usable by developers.
 	SourceConditionSucceeded = apis.ConditionSucceeded
 
-	BuildArgImage     = "IMAGE"
-	BuildArgBuildpack = "BUILDPACK"
+	BuildArgImage            = "IMAGE"
+	BuildArgBuildpack        = "BUILDPACK"
+	BuildArgBuildpackBuilder = "BUILDER_IMAGE"
 )
 
 func (status *SourceStatus) manage() apis.ConditionManager {
