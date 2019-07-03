@@ -42,6 +42,12 @@ const (
 	// SpaceConditionAuditorRoleReady is set when the auditor RBAC role is
 	// ready.
 	SpaceConditionAuditorRoleReady apis.ConditionType = "AuditorRoleReady"
+	// SpaceConditionResourceQuotaReady is set when the resource quota is
+	// ready.
+	SpaceConditionResourceQuotaReady apis.ConditionType = "ResourceQuotaReady"
+	// SpaceConditionLimitRangeReady is set when the limit range is
+	// ready.
+	SpaceConditionLimitRangeReady apis.ConditionType = "LimitRangeReady"
 )
 
 func (status *SpaceStatus) manage() apis.ConditionManager {
@@ -49,6 +55,8 @@ func (status *SpaceStatus) manage() apis.ConditionManager {
 		SpaceConditionNamespaceReady,
 		SpaceConditionDeveloperRoleReady,
 		SpaceConditionAuditorRoleReady,
+		SpaceConditionResourceQuotaReady,
+		SpaceConditionLimitRangeReady,
 	).Manage(status)
 }
 
@@ -85,6 +93,18 @@ func (status *SpaceStatus) MarkAuditorRoleNotOwned(name string) {
 		fmt.Sprintf("There is an existing auditor role %q that we do not own.", name))
 }
 
+// MarkResourceQuotaNotOwned marks the ResourceQuota as not being owned by the Space.
+func (status *SpaceStatus) MarkResourceQuotaNotOwned(name string) {
+	status.manage().MarkFalse(SpaceConditionResourceQuotaReady, "NotOwned",
+		fmt.Sprintf("There is an existing resourcequota %q that we do not own.", name))
+}
+
+// MarkLimitRangeNotOwned marks the LimitRange as not being owned by the Space.
+func (status *SpaceStatus) MarkLimitRangeNotOwned(name string) {
+	status.manage().MarkFalse(SpaceConditionLimitRangeReady, "NotOwned",
+		fmt.Sprintf("There is an existing limitrange %q that we do not own.", name))
+}
+
 // PropagateNamespaceStatus copies fields from the Namespace status to Space
 // and updates the readiness based on the current phase.
 func (status *SpaceStatus) PropagateNamespaceStatus(ns *v1.Namespace) {
@@ -112,6 +132,19 @@ func (status *SpaceStatus) PropagateDeveloperRoleStatus(*rv1.Role) {
 func (status *SpaceStatus) PropagateAuditorRoleStatus(*rv1.Role) {
 	// Roles don't have a status field so they just need to exist to be ready.
 	status.manage().MarkTrue(SpaceConditionAuditorRoleReady)
+}
+
+// PropagateResourceQuotaStatus copies the ResourceQuota Used and Hard amounts
+// to the Space and updates the readiness based on if a quota exists.
+func (status *SpaceStatus) PropagateResourceQuotaStatus(quota *v1.ResourceQuota) {
+	status.Quota = quota.Status
+	status.manage().MarkTrue(SpaceConditionResourceQuotaReady)
+}
+
+// PropagateLimitRangeStatus updates the readiness of the space
+// based on if a LimitRange exists.
+func (status *SpaceStatus) PropagateLimitRangeStatus(limitRange *v1.LimitRange) {
+	status.manage().MarkTrue(SpaceConditionLimitRangeReady)
 }
 
 func (status *SpaceStatus) duck() *duckv1beta1.Status {

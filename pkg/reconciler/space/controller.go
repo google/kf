@@ -23,6 +23,10 @@ import (
 	namespaceinformer "knative.dev/pkg/injection/informers/kubeinformers/corev1/namespace"
 	roleinformer "knative.dev/pkg/injection/informers/kubeinformers/rbacv1/role"
 
+	// TODO (juliaguo): replace with knative informer pkgs once they are merged in
+	limitrangeinformer "github.com/google/kf/pkg/client/injection/informers/kubernetes/limitrange"
+	quotainformer "github.com/google/kf/pkg/client/injection/informers/kubernetes/resourcequota"
+
 	"k8s.io/client-go/tools/cache"
 
 	"knative.dev/pkg/configmap"
@@ -38,13 +42,17 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	nsInformer := namespaceinformer.Get(ctx)
 	spaceInformer := spaceinformer.Get(ctx)
 	roleInformer := roleinformer.Get(ctx)
+	quotaInformer := quotainformer.Get(ctx)
+	limitRangeInformer := limitrangeinformer.Get(ctx)
 
 	// Create reconciler
 	c := &Reconciler{
-		Base:            reconciler.NewBase(ctx, "space-controller", cmw),
-		spaceLister:     spaceInformer.Lister(),
-		namespaceLister: nsInformer.Lister(),
-		roleLister:      roleInformer.Lister(),
+		Base:                reconciler.NewBase(ctx, "space-controller", cmw),
+		spaceLister:         spaceInformer.Lister(),
+		namespaceLister:     nsInformer.Lister(),
+		roleLister:          roleInformer.Lister(),
+		resourceQuotaLister: quotaInformer.Lister(),
+		limitRangeLister:    limitRangeInformer.Lister(),
 	}
 
 	impl := controller.NewImpl(c, logger, "Spaces")
@@ -59,6 +67,16 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	})
 
 	roleInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+		FilterFunc: controller.Filter(v1alpha1.SchemeGroupVersion.WithKind("Space")),
+		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
+	})
+
+	quotaInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+		FilterFunc: controller.Filter(v1alpha1.SchemeGroupVersion.WithKind("Space")),
+		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
+	})
+
+	limitRangeInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.Filter(v1alpha1.SchemeGroupVersion.WithKind("Space")),
 		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
 	})

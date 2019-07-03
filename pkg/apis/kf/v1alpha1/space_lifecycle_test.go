@@ -19,7 +19,7 @@ import (
 
 	"github.com/google/kf/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"knative.dev/pkg/apis"
 	"knative.dev/pkg/apis/duck"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
@@ -164,30 +164,63 @@ func initTestStatus(t *testing.T) *SpaceStatus {
 	apitesting.CheckConditionOngoing(status.duck(), SpaceConditionNamespaceReady, t)
 	apitesting.CheckConditionOngoing(status.duck(), SpaceConditionAuditorRoleReady, t)
 	apitesting.CheckConditionOngoing(status.duck(), SpaceConditionDeveloperRoleReady, t)
+	apitesting.CheckConditionOngoing(status.duck(), SpaceConditionResourceQuotaReady, t)
+	apitesting.CheckConditionOngoing(status.duck(), SpaceConditionLimitRangeReady, t)
 
 	return status
 }
 
 func TestSpaceHappyPath(t *testing.T) {
 	status := initTestStatus(t)
-
 	status.PropagateDeveloperRoleStatus(nil)
 	status.PropagateAuditorRoleStatus(nil)
-	status.PropagateNamespaceStatus(&v1.Namespace{Status: v1.NamespaceStatus{Phase: v1.NamespaceActive}})
+	status.PropagateNamespaceStatus(&corev1.Namespace{Status: corev1.NamespaceStatus{Phase: corev1.NamespaceActive}})
+	status.PropagateResourceQuotaStatus(&corev1.ResourceQuota{
+		Status: corev1.ResourceQuotaStatus{},
+	})
+	status.PropagateLimitRangeStatus(nil)
 
 	apitesting.CheckConditionSucceeded(status.duck(), SpaceConditionReady, t)
 	apitesting.CheckConditionSucceeded(status.duck(), SpaceConditionNamespaceReady, t)
 	apitesting.CheckConditionSucceeded(status.duck(), SpaceConditionAuditorRoleReady, t)
 	apitesting.CheckConditionSucceeded(status.duck(), SpaceConditionDeveloperRoleReady, t)
+	apitesting.CheckConditionSucceeded(status.duck(), SpaceConditionResourceQuotaReady, t)
+	apitesting.CheckConditionSucceeded(status.duck(), SpaceConditionLimitRangeReady, t)
 }
 
 func TestPropagateNamespaceStatus_terminating(t *testing.T) {
 	status := initTestStatus(t)
 
-	status.PropagateNamespaceStatus(&v1.Namespace{Status: v1.NamespaceStatus{Phase: v1.NamespaceTerminating}})
+	status.PropagateNamespaceStatus(&corev1.Namespace{Status: corev1.NamespaceStatus{Phase: corev1.NamespaceTerminating}})
 
 	apitesting.CheckConditionFailed(status.duck(), SpaceConditionReady, t)
 	apitesting.CheckConditionFailed(status.duck(), SpaceConditionNamespaceReady, t)
+}
+
+func TestPropagateResourceQuotaStatus(t *testing.T) {
+	status := initTestStatus(t)
+
+	memHard, _ := resource.ParseQuantity("20Gi")
+	cpuHard, _ := resource.ParseQuantity("800m")
+	memUsed, _ := resource.ParseQuantity("1Gi")
+	cpuUsed, _ := resource.ParseQuantity("100m")
+	hard := corev1.ResourceList{
+		corev1.ResourceMemory: memHard,
+		corev1.ResourceCPU:    cpuHard,
+	}
+	used := corev1.ResourceList{
+		corev1.ResourceMemory: memUsed,
+		corev1.ResourceCPU:    cpuUsed,
+	}
+	quotaToPropagate := &corev1.ResourceQuota{
+		Status: corev1.ResourceQuotaStatus{
+			Hard: hard,
+			Used: used,
+		},
+	}
+	status.PropagateResourceQuotaStatus(quotaToPropagate)
+	apitesting.CheckConditionSucceeded(status.duck(), SpaceConditionResourceQuotaReady, t)
+	testutil.AssertEqual(t, "quota status", quotaToPropagate.Status, status.Quota)
 }
 
 func TestSpaceStatus_lifecycle(t *testing.T) {
@@ -202,18 +235,24 @@ func TestSpaceStatus_lifecycle(t *testing.T) {
 			Init: func(status *SpaceStatus) {
 				status.PropagateDeveloperRoleStatus(nil)
 				status.PropagateAuditorRoleStatus(nil)
-				status.PropagateNamespaceStatus(&v1.Namespace{Status: v1.NamespaceStatus{Phase: v1.NamespaceActive}})
+				status.PropagateNamespaceStatus(&corev1.Namespace{Status: corev1.NamespaceStatus{Phase: corev1.NamespaceActive}})
+				status.PropagateResourceQuotaStatus(&corev1.ResourceQuota{
+					Status: corev1.ResourceQuotaStatus{},
+				})
+				status.PropagateLimitRangeStatus(nil)
 			},
 			ExpectSucceeded: []apis.ConditionType{
 				SpaceConditionReady,
 				SpaceConditionNamespaceReady,
 				SpaceConditionAuditorRoleReady,
 				SpaceConditionDeveloperRoleReady,
+				SpaceConditionResourceQuotaReady,
+				SpaceConditionLimitRangeReady,
 			},
 		},
 		"terminating namespace": {
 			Init: func(status *SpaceStatus) {
-				status.PropagateNamespaceStatus(&v1.Namespace{Status: v1.NamespaceStatus{Phase: v1.NamespaceTerminating}})
+				status.PropagateNamespaceStatus(&corev1.Namespace{Status: corev1.NamespaceStatus{Phase: corev1.NamespaceTerminating}})
 			},
 			ExpectOngoing: []apis.ConditionType{
 				SpaceConditionAuditorRoleReady,
@@ -226,7 +265,7 @@ func TestSpaceStatus_lifecycle(t *testing.T) {
 		},
 		"unknown namespace": {
 			Init: func(status *SpaceStatus) {
-				status.PropagateNamespaceStatus(&v1.Namespace{Status: v1.NamespaceStatus{}})
+				status.PropagateNamespaceStatus(&corev1.Namespace{Status: corev1.NamespaceStatus{}})
 			},
 			ExpectOngoing: []apis.ConditionType{
 				SpaceConditionAuditorRoleReady,
@@ -272,6 +311,30 @@ func TestSpaceStatus_lifecycle(t *testing.T) {
 			ExpectFailed: []apis.ConditionType{
 				SpaceConditionReady,
 				SpaceConditionAuditorRoleReady,
+			},
+		},
+		"resource quota not owned": {
+			Init: func(status *SpaceStatus) {
+				status.MarkResourceQuotaNotOwned("space-quota")
+			},
+			ExpectOngoing: []apis.ConditionType{
+				SpaceConditionNamespaceReady,
+			},
+			ExpectFailed: []apis.ConditionType{
+				SpaceConditionReady,
+				SpaceConditionResourceQuotaReady,
+			},
+		},
+		"limit range not owned": {
+			Init: func(status *SpaceStatus) {
+				status.MarkLimitRangeNotOwned("space-limit-range")
+			},
+			ExpectOngoing: []apis.ConditionType{
+				SpaceConditionNamespaceReady,
+			},
+			ExpectFailed: []apis.ConditionType{
+				SpaceConditionReady,
+				SpaceConditionLimitRangeReady,
 			},
 		},
 	}

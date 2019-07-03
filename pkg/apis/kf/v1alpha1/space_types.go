@@ -53,6 +53,10 @@ type SpaceSpec struct {
 	// Execution contains settings for the execution environment.
 	// +optional
 	Execution SpaceSpecExecution `json:"execution,omitempty"`
+
+	// SpaceSpecResourceLimits contains definitions for resource usage limits.
+	// +optional
+	ResourceLimits SpaceSpecResourceLimits `json:"resourceLimits,omitempty"`
 }
 
 // SpaceSpecSecurity holds fields for creating RBAC in the space.
@@ -95,10 +99,26 @@ type SpaceSpecExecution struct {
 	Env []corev1.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
 }
 
+// SpaceSpecResourceLimits contains definitions for resource usage limits.
+type SpaceSpecResourceLimits struct {
+	// SpaceQuota holds the k8s ResourceQuota created for the whole space.
+	// For now, only one ResourceQuota per space is supported.
+	// Consider allowing multiple ResourceQuotas when more quota scopes are enabled in k8s
+	// +optional
+	SpaceQuota corev1.ResourceList `json:"spaceQuota,omitempty"`
+
+	// ResourceDefaults holds the k8s LimitRange created for the whole space,
+	// which sets default request/limit for resources per pod or container.
+	// +optional
+	ResourceDefaults []corev1.LimitRangeItem `json:"resourceDefaults,omitempty"`
+}
+
 // SpaceStatus represents information about the status of a Space.
 type SpaceStatus struct {
 	// Pull in the fields from Knative's duckv1beta1 status field.
 	duckv1beta1.Status `json:",inline"`
+
+	Quota corev1.ResourceQuotaStatus `json:"quota,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
