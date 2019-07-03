@@ -14,9 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -eu
-
-# Go to root dir
-cd $(git rev-parse --show-toplevel)
-
-SKIP_INTEGRATION=true ./hack/test.sh $@
+while true; do
+  kubectl logs -f -n kf $(kubectl -n kf get pods | grep con | head -n 1 | awk '{print $1}')
+done

@@ -1,5 +1,7 @@
 # kf
 
+[![knative.slack.com][slack-badge]][kf-slack]
+
 `kf` provides a `cf` like experience on top of Knative.
 
 `kf` aims to be fully compatible with CF applications and lifecycle; it supports
@@ -51,3 +53,6 @@ KO_DOCKER_REPO=gcr.io/my-repo ko apply -f config
 
 This will build any images required by `config/`, upload them to the provided
 registry, and apply the resulting configuration to the current cluster.
+
+[slack-badge]: https://img.shields.io/badge/slack-knative/kf-purple.svg
+[kf-slack]:    https://knative.slack.com/archives/kf
