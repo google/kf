@@ -18,10 +18,10 @@ import (
 	"context"
 
 	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	buildclient "github.com/google/kf/pkg/client/build/injection/client"
+	buildinformer "github.com/google/kf/pkg/client/build/injection/informers/build/v1alpha1/build"
 	sourceinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/source"
 	"github.com/google/kf/pkg/reconciler"
-	cbuild "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
-	rest "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/configmap"
 	controller "knative.dev/pkg/controller"
@@ -34,24 +34,15 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 
 	// Get informers off context
 	sourceInformer := sourceinformer.Get(ctx)
-	buildInformer := GetBuildInformer(ctx)
-
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		logger.Fatalf("failed to create a Build rest config: %s", err)
-	}
-
-	buildClient, err := cbuild.NewForConfig(config)
-	if err != nil {
-		logger.Fatalf("failed to create a Build client: %s", err)
-	}
+	buildInformer := buildinformer.Get(ctx)
+	buildClient := buildclient.Get(ctx)
 
 	// Create reconciler
 	c := &Reconciler{
 		Base:         reconciler.NewBase(ctx, "source-controller", cmw),
 		SourceLister: sourceInformer.Lister(),
 		buildLister:  buildInformer.Lister(),
-		buildClient:  buildClient,
+		buildClient:  buildClient.BuildV1alpha1(),
 	}
 
 	impl := controller.NewImpl(c, logger, "sources")

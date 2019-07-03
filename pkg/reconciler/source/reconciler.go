@@ -23,8 +23,8 @@ import (
 	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
 	"github.com/google/kf/pkg/reconciler"
 	"github.com/google/kf/pkg/reconciler/source/resources"
-	cbuild "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
-	buildlisters "github.com/knative/build/pkg/client/listers/build/v1alpha1"
+	buildclient "github.com/google/kf/pkg/client/build/clientset/versioned/typed/build/v1alpha1"
+	buildlisters "github.com/google/kf/pkg/client/build/listers/build/v1alpha1"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -38,7 +38,7 @@ import (
 type Reconciler struct {
 	*reconciler.Base
 
-	buildClient cbuild.BuildV1alpha1Interface
+	buildClient buildclient.BuildV1alpha1Interface
 
 	// listers index properties about resources
 	SourceLister kflisters.SourceLister
