@@ -20,7 +20,8 @@ store your Docker registry details in an environment variable. This
 install guide uses Google Container Registry (GCR) on GKE.
 
 ```
-export KF_REGISTRY=gcr.io/<PROJECT_ID>
+export KF_REGISTRY=<your-container-registry>
+e.g: export KF_REGISTRY=gcr.io/<PROJECT_ID>
 ```
 
 ## Install dependencies
