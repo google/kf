@@ -19,6 +19,7 @@ import (
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/routes"
 	"github.com/google/kf/pkg/reconciler/route/resources"
 	"github.com/spf13/cobra"
@@ -42,6 +43,10 @@ func NewUnmapRouteCommand(
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
+
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
 			appName, domain := args[0], args[1]
 
 			mutator := routes.Mutator(func(r *v1alpha1.Route) error {

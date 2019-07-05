@@ -23,6 +23,7 @@ import (
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/internal/envutil"
 	"github.com/google/kf/pkg/kf/testutil"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
@@ -44,9 +45,17 @@ func TestSetEnvCommand(t *testing.T) {
 		},
 		"setting variables fails": {
 			Args:        []string{"app-name", "NAME", "VALUE"},
+			Namespace:   "some-namespace",
 			ExpectedErr: errors.New("some-error"),
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().Transform(gomock.Any(), "app-name", gomock.Any()).Return(errors.New("some-error"))
+			},
+		},
+		"namespace is not provided": {
+			Args:        []string{"app-name", "NAME", "VALUE"},
+			ExpectedErr: errors.New(utils.EmptyNamespaceError),
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Transform("some-namespace", "app-name", gomock.Any())
 			},
 		},
 		"custom namespace": {
@@ -57,7 +66,8 @@ func TestSetEnvCommand(t *testing.T) {
 			},
 		},
 		"sets values": {
-			Args: []string{"app-name", "NAME", "VALUE"},
+			Args:      []string{"app-name", "NAME", "VALUE"},
+			Namespace: "some-namespace",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().Transform(gomock.Any(), "app-name", gomock.Any()).Do(func(namespace, appName string, mutator apps.Mutator) {
 					out := &serving.Service{}

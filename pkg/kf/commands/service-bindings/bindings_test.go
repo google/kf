@@ -20,6 +20,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	servicebindingscmd "github.com/google/kf/pkg/kf/commands/service-bindings"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/google/kf/pkg/kf/service-bindings/fake"
 	"github.com/google/kf/pkg/kf/testutil"
@@ -44,24 +45,31 @@ func TestNewListBindingsCommand(t *testing.T) {
 				}).Return([]v1beta1.ServiceBinding{}, nil)
 			},
 		},
+		"empty namespace": {
+			Args:        []string{"--app=APP_NAME", "--service=SERVICE_INSTANCE"},
+			ExpectedErr: errors.New(utils.EmptyNamespaceError),
+		},
 		"defaults config": {
-			Args: []string{},
+			Args:      []string{},
+			Namespace: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				f.EXPECT().List(gomock.Any()).Do(func(opts ...servicebindings.ListOption) {
 					config := servicebindings.ListOptions(opts)
-					testutil.AssertEqual(t, "namespace", "", config.Namespace())
+					testutil.AssertEqual(t, "namespace", "custom-ns", config.Namespace())
 				}).Return([]v1beta1.ServiceBinding{}, nil)
 			},
 		},
 		"bad server call": {
-			Args: []string{},
+			Args:      []string{},
+			Namespace: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				f.EXPECT().List(gomock.Any()).Return(nil, errors.New("api-error"))
 			},
 			ExpectedErr: errors.New("api-error"),
 		},
 		"output list contains items": {
-			Args: []string{},
+			Args:      []string{},
+			Namespace: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				f.EXPECT().List(gomock.Any()).Return([]v1beta1.ServiceBinding{
 					*dummyBindingInstance("app1", "instance1"),

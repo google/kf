@@ -17,6 +17,7 @@ package apps
 import (
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"github.com/spf13/cobra"
 )
@@ -29,6 +30,10 @@ func NewUnsetEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Comman
 		Example: `  kf unset-env myapp FOO`,
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
+
 			appName := args[0]
 			name := args[1]
 

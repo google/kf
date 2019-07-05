@@ -19,9 +19,9 @@ import (
 	"text/tabwriter"
 
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/services"
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
-
 	"github.com/spf13/cobra"
 )
 
@@ -36,6 +36,10 @@ func NewMarketplaceCommand(p *config.KfParams, client services.ClientInterface) 
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
+
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
 
 			marketplace, err := client.Marketplace(services.WithMarketplaceNamespace(p.Namespace))
 			if err != nil {

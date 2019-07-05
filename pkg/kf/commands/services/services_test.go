@@ -18,12 +18,12 @@ import (
 	"errors"
 	"testing"
 
-	servicescmd "github.com/google/kf/pkg/kf/commands/services"
-	"github.com/google/kf/pkg/kf/services"
-	"github.com/google/kf/pkg/kf/testutil"
-
 	"github.com/golang/mock/gomock"
+	servicescmd "github.com/google/kf/pkg/kf/commands/services"
+	"github.com/google/kf/pkg/kf/commands/utils"
+	"github.com/google/kf/pkg/kf/services"
 	"github.com/google/kf/pkg/kf/services/fake"
+	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
@@ -45,7 +45,11 @@ func TestNewServicesCommand(t *testing.T) {
 					})
 			},
 		},
+		"empty namespace": {
+			ExpectedErr: errors.New(utils.EmptyNamespaceError),
+		},
 		"empty result": {
+			Namespace: "test-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				emptyList := &v1beta1.ServiceInstanceList{Items: []v1beta1.ServiceInstance{}}
 				f.EXPECT().ListServices(gomock.Any()).Return(emptyList, nil)
@@ -53,6 +57,7 @@ func TestNewServicesCommand(t *testing.T) {
 			ExpectedErr: nil, // explicitly expecting no failure with zero length list
 		},
 		"full result": {
+			Namespace: "test-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				serviceList := &v1beta1.ServiceInstanceList{Items: []v1beta1.ServiceInstance{
 					*dummyServerInstance("service-1"),
@@ -63,6 +68,7 @@ func TestNewServicesCommand(t *testing.T) {
 			ExpectedStrings: []string{"service-1", "service-2"},
 		},
 		"bad server call": {
+			Namespace:   "test-ns",
 			ExpectedErr: errors.New("server-call-error"),
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				f.EXPECT().ListServices(gomock.Any()).Return(nil, errors.New("server-call-error"))

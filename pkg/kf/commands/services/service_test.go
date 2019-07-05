@@ -20,10 +20,10 @@ import (
 
 	"github.com/golang/mock/gomock"
 	servicescmd "github.com/google/kf/pkg/kf/commands/services"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/services"
-	"github.com/google/kf/pkg/kf/testutil"
-
 	"github.com/google/kf/pkg/kf/services/fake"
+	"github.com/google/kf/pkg/kf/testutil"
 )
 
 func TestNewGetServiceCommand(t *testing.T) {
@@ -41,22 +41,29 @@ func TestNewGetServiceCommand(t *testing.T) {
 				}).Return(dummyServerInstance("mydb-instance1"), nil)
 			},
 		},
+		"empty namespace": {
+			Args:        []string{"mydb"},
+			ExpectedErr: errors.New(utils.EmptyNamespaceError),
+		},
 		"command output outputs instance info": {
-			Args: []string{"mydb"},
+			Args:      []string{"mydb"},
+			Namespace: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				f.EXPECT().GetService("mydb", gomock.Any()).Return(dummyServerInstance("mydb-instance1"), nil)
 			},
 			ExpectedStrings: []string{"mydb-instance1"},
 		},
 		"service not found": {
-			Args: []string{"some-missing-service"},
+			Args:      []string{"some-missing-service"},
+			Namespace: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				f.EXPECT().GetService("some-missing-service", gomock.Any()).Return(nil, nil)
 			},
 			ExpectedStrings: []string{"service some-missing-service not found"},
 		},
 		"bad server call": {
-			Args: []string{"mydb"},
+			Args:      []string{"mydb"},
+			Namespace: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				f.EXPECT().GetService("mydb", gomock.Any()).Return(nil, errors.New("server-call-error"))
 			},

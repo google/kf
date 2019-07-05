@@ -20,6 +20,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/routes"
 	"github.com/spf13/cobra"
 )
@@ -37,6 +38,10 @@ func NewRoutesCommand(
   `,
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
+
 			cmd.SilenceUsage = true
 
 			fmt.Fprintf(cmd.OutOrStdout(), "Getting routes in namespace: %s\n", p.Namespace)

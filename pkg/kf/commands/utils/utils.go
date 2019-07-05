@@ -16,16 +16,22 @@ package utils
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
 
+	"github.com/google/kf/pkg/kf/commands/config"
 	build "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	"github.com/segmentio/textio"
 	"k8s.io/client-go/rest"
+)
+
+const (
+	EmptyNamespaceError = "no space targeted, use 'kf target --space SPACE' to target a space"
 )
 
 // KfParams stores everything needed to interact with the user and Knative.
@@ -89,6 +95,14 @@ func InBuildParseConfig() Config {
 		Stdout:      textio.NewPrefixWriter(os.Stdout, os.Getenv("STDOUT_PREFIX")),
 		Stderr:      textio.NewPrefixWriter(os.Stdout, os.Getenv("STDERR_PREFIX")),
 	}
+}
+
+// ValidateNamespace validate non-empty namespace param
+func ValidateNamespace(p *config.KfParams) error {
+	if p.Namespace == "" {
+		return errors.New(EmptyNamespaceError)
+	}
+	return nil
 }
 
 func parseCommandLine() (args []string, flags map[string][]string) {

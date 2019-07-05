@@ -25,6 +25,7 @@ import (
 	"github.com/google/kf/pkg/kf"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -48,6 +49,10 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister k
 	cluster.`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
+
 			appName := args[0]
 
 			cmd.SilenceUsage = true

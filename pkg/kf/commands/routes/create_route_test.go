@@ -23,6 +23,7 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/routes"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	routesfake "github.com/google/kf/pkg/kf/routes/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/google/kf/pkg/reconciler/route/resources"
@@ -57,13 +58,15 @@ func TestCreateRoute(t *testing.T) {
 			},
 		},
 		"missing hostname flag": {
-			Args: []string{"some-space", "example.com"},
+			Args:      []string{"some-space", "example.com"},
+			Namespace: "some-space",
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertErrorsEqual(t, errors.New("--hostname is required"), err)
 			},
 		},
 		"fetching namespace fails": {
-			Args: []string{"some-space", "example.com", "--hostname=some-hostname"},
+			Args:      []string{"some-space", "example.com", "--hostname=some-hostname"},
+			Namespace: "some-space",
 			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, spacesfake *spacesfake.FakeCoreV1) {
 				spacesfake.Fake.AddReactor("*", "*", func(action ktesting.Action) (bool, runtime.Object, error) {
 					return true, nil, errors.New("some-error")
@@ -74,7 +77,8 @@ func TestCreateRoute(t *testing.T) {
 			},
 		},
 		"creating route fails": {
-			Args: []string{"some-space", "example.com", "--hostname=some-hostname"},
+			Args:      []string{"some-space", "example.com", "--hostname=some-hostname"},
+			Namespace: "some-space",
 			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, spacesfake *spacesfake.FakeCoreV1) {
 				spacesfake.Fake.AddReactor("*", "*", func(action ktesting.Action) (bool, runtime.Object, error) {
 					return false, nil, nil
@@ -97,6 +101,19 @@ func TestCreateRoute(t *testing.T) {
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
+			},
+		},
+		"without namespace": {
+			Args: []string{"some-space", "example.com", "--hostname=some-hostname"},
+			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, spacesfake *spacesfake.FakeCoreV1) {
+				spacesfake.Fake.AddReactor("*", "*", func(action ktesting.Action) (bool, runtime.Object, error) {
+					testutil.AssertEqual(t, "namespace", "some-space", action.(ktesting.GetActionImpl).Name)
+					return false, nil, nil
+				})
+				routesfake.EXPECT().Create("some-space", gomock.Any())
+			},
+			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
+				testutil.AssertErrorsEqual(t, errors.New(utils.EmptyNamespaceError), err)
 			},
 		},
 		"namespace is default and space is not": {
@@ -142,7 +159,8 @@ func TestCreateRoute(t *testing.T) {
 			},
 		},
 		"creates route with hostname and path": {
-			Args: []string{"some-space", "example.com", "--hostname=some-hostname", "--path=somepath"},
+			Args:      []string{"some-space", "example.com", "--hostname=some-hostname", "--path=somepath"},
+			Namespace: "some-space",
 			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, spacesfake *spacesfake.FakeCoreV1) {
 				spacesfake.Fake.AddReactor("*", "*", func(action ktesting.Action) (bool, runtime.Object, error) {
 					return true, &corev1.Namespace{

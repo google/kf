@@ -20,11 +20,11 @@ import (
 
 	"github.com/golang/mock/gomock"
 	servicescmd "github.com/google/kf/pkg/kf/commands/services"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/services"
+	"github.com/google/kf/pkg/kf/services/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
-
-	"github.com/google/kf/pkg/kf/services/fake"
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
 )
 
@@ -43,8 +43,13 @@ func TestNewMarketplaceCommand(t *testing.T) {
 				}).Return(&services.KfMarketplace{}, nil)
 			},
 		},
+		"empty namespace": {
+			Args:        []string{},
+			ExpectedErr: errors.New(utils.EmptyNamespaceError),
+		},
 		"command output outputs instance info": {
-			Args: []string{},
+			Args:      []string{},
+			Namespace: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				fakeService := &v1beta1.ClusterServiceClass{}
 				fakeService.Name = "00000000-0000-0000-0000-000000000000"
@@ -60,7 +65,8 @@ func TestNewMarketplaceCommand(t *testing.T) {
 			ExpectedStrings: []string{"fake-service", "fake-description", "fake-broker"},
 		},
 		"command output outputs plan info": {
-			Args: []string{"--service=fake-service"},
+			Args:      []string{"--service=fake-service"},
+			Namespace: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				fakeService := &v1beta1.ClusterServiceClass{}
 				fakeService.Name = "00000000-0000-0000-0000-000000000000"
@@ -81,14 +87,16 @@ func TestNewMarketplaceCommand(t *testing.T) {
 			ExpectedStrings: []string{"fake-plan", "description"},
 		},
 		"blank marketplace": {
-			Args: []string{},
+			Args:      []string{},
+			Namespace: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				f.EXPECT().Marketplace(gomock.Any()).Return(&services.KfMarketplace{}, nil)
 			},
 			ExpectedStrings: []string{},
 		},
 		"bad server call": {
-			Args: []string{},
+			Args:      []string{},
+			Namespace: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				f.EXPECT().Marketplace(gomock.Any()).Return(nil, errors.New("server-call-error"))
 			},

@@ -20,6 +20,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	servicebindingscmd "github.com/google/kf/pkg/kf/commands/service-bindings"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/google/kf/pkg/kf/service-bindings/fake"
 	"github.com/google/kf/pkg/kf/testutil"
@@ -41,8 +42,13 @@ func TestNewVcapServicesCommand(t *testing.T) {
 				}).Return(nil, nil)
 			},
 		},
+		"empty namespace": {
+			Args:        []string{"APP_NAME"},
+			ExpectedErr: errors.New(utils.EmptyNamespaceError),
+		},
 		"bad server call": {
-			Args: []string{"APP_NAME"},
+			Args:      []string{"APP_NAME"},
+			Namespace: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				f.EXPECT().GetVcapServices(gomock.Any(), gomock.Any()).Return(nil, errors.New("api-error"))
 			},

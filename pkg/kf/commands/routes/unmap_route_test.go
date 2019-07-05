@@ -23,6 +23,7 @@ import (
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/routes"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	clientroutes "github.com/google/kf/pkg/kf/routes"
 	"github.com/google/kf/pkg/kf/routes/fake"
 	"github.com/google/kf/pkg/kf/testutil"
@@ -45,7 +46,8 @@ func TestUnmapRoute(t *testing.T) {
 			},
 		},
 		"transforming Route fails": {
-			Args: []string{"some-app", "example.com"},
+			Args:      []string{"some-app", "example.com"},
+			Namespace: "some-space",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("some-error"))
 			},
@@ -61,6 +63,15 @@ func TestUnmapRoute(t *testing.T) {
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
+			},
+		},
+		"without namespace": {
+			Args: []string{"some-app", "example.com"},
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Transform("some-space", gomock.Any(), gomock.Any())
+			},
+			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
+				testutil.AssertErrorsEqual(t, errors.New(utils.EmptyNamespaceError), err)
 			},
 		},
 		"Route name": {

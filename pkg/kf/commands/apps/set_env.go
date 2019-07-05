@@ -17,6 +17,7 @@ package apps
 import (
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -30,6 +31,10 @@ func NewSetEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command 
 		Example: `  kf set-env myapp FOO bar`,
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
+
 			appName := args[0]
 			name := args[1]
 			value := args[2]

@@ -37,6 +37,8 @@ func TestIntegration_Create(t *testing.T) {
 		cpuQuantity := "11"
 		routesQuantity := "22"
 
+		kf.Target(ctx, "default")
+
 		createQuotaOutput, err := kf.CreateQuota(ctx, quotaName,
 			"-m", memQuantity,
 			"-c", cpuQuantity,
@@ -65,6 +67,8 @@ func TestIntegration_Delete(t *testing.T) {
 		memQuantity := "55Gi"
 		cpuQuantity := "11"
 		routesQuantity := "22"
+
+		kf.Target(ctx, "default")
 
 		kf.CreateQuota(ctx, quotaName,
 			"-m", memQuantity,
@@ -98,6 +102,8 @@ func TestIntegration_Update(t *testing.T) {
 
 		memQuantity := "55Gi"
 		cpuQuantity := "11"
+
+		kf.Target(ctx, "default")
 
 		kf.CreateQuota(ctx, quotaName,
 			"-m", memQuantity,
@@ -158,6 +164,8 @@ func TestIntegration_List(t *testing.T) {
 		memQuantity2 := "44Gi"
 		cpuQuantity2 := "6666m"
 		routesQuantity2 := "22"
+
+		kf.Target(ctx, "default")
 
 		kf.CreateQuota(ctx, quotaName,
 			"-m", memQuantity,

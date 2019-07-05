@@ -49,6 +49,8 @@ func TestIntegration_Routes(t *testing.T) {
 			})
 		}
 
+		kf.Target(ctx, "default")
+
 		// TODO: use the domain from the cluster.
 		kf.CreateRoute(ctx, "example.com", "--hostname="+hostname, "--path=some-path")
 		findRoute(hostname, true)

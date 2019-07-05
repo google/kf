@@ -19,6 +19,7 @@ import (
 	"path"
 
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/routes"
 	"github.com/google/kf/pkg/reconciler/route/resources"
 	"github.com/spf13/cobra"
@@ -40,6 +41,10 @@ func NewDeleteRouteCommand(
   `,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
+
 			domain := args[0]
 			cmd.SilenceUsage = true
 			urlPath = path.Join("/", urlPath)

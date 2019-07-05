@@ -753,3 +753,19 @@ func (k *Kf) Routes(ctx context.Context) []string {
 	PanicOnError(ctx, k.t, "routes", errs)
 	return CombineOutputStr(ctx, k.t, output)
 }
+
+// Target runs the target command.
+func (k *Kf) Target(ctx context.Context, namespace string) []string {
+	k.t.Helper()
+	Logf(k.t, "running target...")
+	defer Logf(k.t, "done running target.")
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: []string{
+			"target",
+			"--space",
+			namespace,
+		},
+	})
+	PanicOnError(ctx, k.t, "target", errs)
+	return CombineOutputStr(ctx, k.t, output)
+}

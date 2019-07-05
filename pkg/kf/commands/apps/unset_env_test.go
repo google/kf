@@ -17,6 +17,7 @@ package apps
 import (
 	"bytes"
 	"errors"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -43,6 +44,7 @@ func TestUnsetEnvCommand(t *testing.T) {
 		},
 		"unsetting variables fails": {
 			Args:        []string{"app-name", "NAME"},
+			Namespace:   "some-namespace",
 			ExpectedErr: errors.New("some-error"),
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().Transform(gomock.Any(), "app-name", gomock.Any()).Return(errors.New("some-error"))
@@ -55,8 +57,16 @@ func TestUnsetEnvCommand(t *testing.T) {
 				fake.EXPECT().Transform("some-namespace", "app-name", gomock.Any())
 			},
 		},
+		"namespace is not provided": {
+			Args:        []string{"app-name", "NAME"},
+			ExpectedErr: errors.New(utils.EmptyNamespaceError),
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Transform("some-namespace", "app-name", gomock.Any())
+			},
+		},
 		"unsets values": {
-			Args: []string{"app-name", "NAME"},
+			Args:      []string{"app-name", "NAME"},
+			Namespace: "some-namespace",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().Transform(gomock.Any(), "app-name", gomock.Any()).Do(func(ns, app string, mutator apps.Mutator) {
 					input := apps.NewKfApp()

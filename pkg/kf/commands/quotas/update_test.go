@@ -21,6 +21,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/quotas"
 	"github.com/google/kf/pkg/kf/quotas/fake"
 	"github.com/google/kf/pkg/kf/testutil"
@@ -42,8 +43,9 @@ func TestUpdateQuotaCommand(t *testing.T) {
 			wantErr: errors.New("accepts 1 arg(s), received 0"),
 		},
 		"update error": {
-			args:    []string{"some-quota", "-m", "100z"},
-			wantErr: errors.New("some-error"),
+			args:      []string{"some-quota", "-m", "100z"},
+			namespace: "some-namespace",
+			wantErr:   errors.New("some-error"),
 			setup: func(t *testing.T, fakeUpdater *fake.FakeClient) {
 				fakeUpdater.
 					EXPECT().
@@ -61,8 +63,19 @@ func TestUpdateQuotaCommand(t *testing.T) {
 					Return(nil)
 			},
 		},
+		"returns error without specify namespace": {
+			args:    []string{"some-quota"},
+			wantErr: errors.New(utils.EmptyNamespaceError),
+			setup: func(t *testing.T, fakeUpdater *fake.FakeClient) {
+				fakeUpdater.
+					EXPECT().
+					Transform("some-namespace", gomock.Any(), gomock.Any()).
+					Return(nil)
+			},
+		},
 		"some flags": {
-			args: []string{"some-quota", "-m", "1024M"},
+			args:      []string{"some-quota", "-m", "1024M"},
+			namespace: "some-namespace",
 			setup: func(t *testing.T, fakeUpdater *fake.FakeClient) {
 				fakeUpdater.
 					EXPECT().
@@ -71,7 +84,8 @@ func TestUpdateQuotaCommand(t *testing.T) {
 			},
 		},
 		"update success": {
-			args: []string{"some-quota", "-m", "20Gi"},
+			args:      []string{"some-quota", "-m", "20Gi"},
+			namespace: "some-namespace",
 			setup: func(t *testing.T, fakeUpdater *fake.FakeClient) {
 				fakeUpdater.
 					EXPECT().
@@ -95,7 +109,8 @@ func TestUpdateQuotaCommand(t *testing.T) {
 			},
 		},
 		"reset quota success": {
-			args: []string{"some-quota", "-m", "0"},
+			args:      []string{"some-quota", "-m", "0"},
+			namespace: "some-namespace",
 			setup: func(t *testing.T, fakeUpdater *fake.FakeClient) {
 				fakeUpdater.
 					EXPECT().

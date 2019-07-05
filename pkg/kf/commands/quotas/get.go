@@ -19,8 +19,8 @@ import (
 	"text/tabwriter"
 
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/quotas"
-
 	"github.com/spf13/cobra"
 )
 
@@ -31,6 +31,10 @@ func NewGetQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Command
 		Short: "Show kf quota info",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
+
 			name := args[0]
 			fmt.Fprintf(cmd.OutOrStdout(), "Getting info for quota: %s\n", name)
 

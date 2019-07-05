@@ -23,6 +23,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/testutil"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -43,6 +44,14 @@ func TestAppsCommand(t *testing.T) {
 			args:    []string{"invalid"},
 			wantErr: errors.New("accepts 0 arg(s), received 1"),
 		},
+		"returns error when miss namespace": {
+			wantErr: errors.New(utils.EmptyNamespaceError),
+			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
+				fakeLister.
+					EXPECT().
+					List("some-namespace")
+			},
+		},
 		"configured namespace": {
 			namespace: "some-namespace",
 			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
@@ -52,6 +61,7 @@ func TestAppsCommand(t *testing.T) {
 			},
 		},
 		"formats multiple services": {
+			namespace: "some-namespace",
 			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
 				fakeLister.
 					EXPECT().
@@ -68,6 +78,7 @@ func TestAppsCommand(t *testing.T) {
 			},
 		},
 		"shows app as deleting": {
+			namespace: "some-namespace",
 			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
 				dt := metav1.Now()
 				fakeLister.
@@ -84,7 +95,8 @@ func TestAppsCommand(t *testing.T) {
 			},
 		},
 		"list applications error, returns error": {
-			wantErr: errors.New("some-error"),
+			namespace: "some-namespace",
+			wantErr:   errors.New("some-error"),
 			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
 				fakeLister.
 					EXPECT().
@@ -93,6 +105,7 @@ func TestAppsCommand(t *testing.T) {
 			},
 		},
 		"filters out configurations without a name": {
+			namespace: "some-namespace",
 			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
 				fakeLister.
 					EXPECT().

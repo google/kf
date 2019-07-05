@@ -27,6 +27,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/kf"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 )
@@ -70,6 +71,7 @@ func TestPushCommand(t *testing.T) {
 			instances: 1,
 		},
 		"uses current working directory for empty path": {
+			namespace:         "some-namespace",
 			args:              []string{"app-name"},
 			containerRegistry: "some-reg.io",
 			path:              "",
@@ -117,6 +119,12 @@ func TestPushCommand(t *testing.T) {
 			wantImagePrefix:   "some-reg.io/src-default-app-name",
 			instances:         1,
 		},
+		"namespace is not provided": {
+			args:              []string{"app-name"},
+			containerRegistry: "",
+			wantErr:           errors.New(utils.EmptyNamespaceError),
+			instances:         1,
+		},
 		"container-registry is not provided": {
 			namespace:         "some-namespace",
 			args:              []string{"app-name"},
@@ -125,6 +133,7 @@ func TestPushCommand(t *testing.T) {
 			instances:         1,
 		},
 		"SrcImageBuilder returns an error": {
+			namespace:         "some-namespace",
 			args:              []string{"app-name"},
 			containerRegistry: "some-reg.io",
 			wantErr:           errors.New("some error"),
@@ -134,6 +143,7 @@ func TestPushCommand(t *testing.T) {
 			instances: 1,
 		},
 		"invalid environment variable, returns error": {
+			namespace:         "some-namespace",
 			args:              []string{"app-name"},
 			envVars:           []string{"invalid"},
 			containerRegistry: "some-reg.io",

@@ -15,14 +15,12 @@ require (
 	github.com/google/wire v0.2.2
 	github.com/imdario/mergo v0.3.7
 	github.com/knative/build v0.7.0
-	github.com/knative/caching v0.0.0-20190628152507-55b45efbc4db // indirect
 	github.com/knative/pkg v0.0.0-20190621200921-9c5d970cbc9e
 	github.com/knative/serving v0.7.1-0.20190701162519-7ca25646a186
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/markbates/inflect v1.0.4 // indirect
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect
-	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/poy/kontext v0.0.0-20190411202914-cc5532543f2e
 	github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c
@@ -42,7 +40,6 @@ require (
 	k8s.io/apimachinery v0.0.0-20190221084156-01f179d85dbc
 	k8s.io/client-go v2.0.0-alpha.0.0.20190226174127-78295b709ec6+incompatible
 	k8s.io/kubernetes v1.14.2
-	knative.dev/caching v0.0.0-20190628152507-55b45efbc4db // indirect
 	knative.dev/pkg v0.0.0-20190626215608-1104d6c75533
 )
 

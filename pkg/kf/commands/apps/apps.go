@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -31,6 +32,10 @@ func NewAppsCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 		Example: `  kf apps`,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
+
 			fmt.Fprintf(cmd.OutOrStdout(), "Getting apps in namespace: %s\n", p.Namespace)
 
 			apps, err := appsClient.List(p.Namespace)

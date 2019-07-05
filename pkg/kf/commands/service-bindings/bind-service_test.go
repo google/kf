@@ -20,6 +20,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	servicebindingscmd "github.com/google/kf/pkg/kf/commands/service-bindings"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/google/kf/pkg/kf/service-bindings/fake"
 	"github.com/google/kf/pkg/kf/testutil"
@@ -42,29 +43,37 @@ func TestNewBindServiceCommand(t *testing.T) {
 				}).Return(dummyBindingInstance("APP_NAME", "SERVICE_INSTANCE"), nil)
 			},
 		},
+		"empty namespace": {
+			Args:        []string{"APP_NAME", "SERVICE_INSTANCE", `--config={"ram_gb":4}`, "--binding-name=BINDING_NAME"},
+			ExpectedErr: errors.New(utils.EmptyNamespaceError),
+		},
 		"defaults config": {
-			Args: []string{"APP_NAME", "SERVICE_INSTANCE"},
+			Args:      []string{"APP_NAME", "SERVICE_INSTANCE"},
+			Namespace: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				f.EXPECT().Create("SERVICE_INSTANCE", "APP_NAME", gomock.Any()).Do(func(instance, app string, opts ...servicebindings.CreateOption) {
 					config := servicebindings.CreateOptions(opts)
 					testutil.AssertEqual(t, "params", map[string]interface{}{}, config.Params())
-					testutil.AssertEqual(t, "namespace", "", config.Namespace())
+					testutil.AssertEqual(t, "namespace", "custom-ns", config.Namespace())
 				}).Return(dummyBindingInstance("APP_NAME", "SERVICE_INSTANCE"), nil)
 			},
 		},
 		"bad config path": {
 			Args:        []string{"APP_NAME", "SERVICE_INSTANCE", `--config=/some/bad/path`},
+			Namespace:   "custom-ns",
 			ExpectedErr: errors.New("couldn't read file: open /some/bad/path: no such file or directory"),
 		},
 		"bad server call": {
-			Args: []string{"APP_NAME", "SERVICE_INSTANCE"},
+			Args:      []string{"APP_NAME", "SERVICE_INSTANCE"},
+			Namespace: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				f.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api-error"))
 			},
 			ExpectedErr: errors.New("api-error"),
 		},
 		"writes binding info": {
-			Args: []string{"APP_NAME", "SERVICE_INSTANCE"},
+			Args:      []string{"APP_NAME", "SERVICE_INSTANCE"},
+			Namespace: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				f.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(dummyBindingInstance("APP_NAME", "SERVICE_INSTANCE"), nil)
 			},

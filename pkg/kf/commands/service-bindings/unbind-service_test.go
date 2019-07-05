@@ -16,6 +16,7 @@ package servicebindings_test
 
 import (
 	"errors"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -41,17 +42,23 @@ func TestNewUnbindServiceCommand(t *testing.T) {
 				}).Return(nil)
 			},
 		},
+		"empty namespace": {
+			Args:        []string{"APP_NAME", "SERVICE_INSTANCE"},
+			ExpectedErr: errors.New(utils.EmptyNamespaceError),
+		},
 		"defaults config": {
-			Args: []string{"APP_NAME", "SERVICE_INSTANCE"},
+			Args:      []string{"APP_NAME", "SERVICE_INSTANCE"},
+			Namespace: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				f.EXPECT().Delete("SERVICE_INSTANCE", "APP_NAME", gomock.Any()).Do(func(instance, app string, opts ...servicebindings.DeleteOption) {
 					config := servicebindings.DeleteOptions(opts)
-					testutil.AssertEqual(t, "namespace", "", config.Namespace())
+					testutil.AssertEqual(t, "namespace", "custom-ns", config.Namespace())
 				}).Return(nil)
 			},
 		},
 		"bad server call": {
-			Args: []string{"APP_NAME", "SERVICE_INSTANCE"},
+			Args:      []string{"APP_NAME", "SERVICE_INSTANCE"},
+			Namespace: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				f.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("api-error"))
 			},

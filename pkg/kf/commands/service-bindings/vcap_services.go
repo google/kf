@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/spf13/cobra"
 )
@@ -33,6 +34,10 @@ func NewVcapServicesCommand(p *config.KfParams, client servicebindings.ClientInt
 			appName := args[0]
 
 			cmd.SilenceUsage = true
+
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
 
 			output, err := client.GetVcapServices(appName,
 				servicebindings.WithGetVcapServicesNamespace(p.Namespace))

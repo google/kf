@@ -21,6 +21,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/quotas/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 )
@@ -49,8 +50,19 @@ func TestDeleteQuotaCommand(t *testing.T) {
 					Return(nil)
 			},
 		},
+		"returns error without specify namespace": {
+			args:    []string{"some-quota"},
+			wantErr: errors.New(utils.EmptyNamespaceError),
+			setup: func(t *testing.T, fakeDeleter *fake.FakeClient) {
+				fakeDeleter.
+					EXPECT().
+					Delete("some-namespace", gomock.Any()).
+					Return(nil)
+			},
+		},
 		"success message": {
-			args: []string{"some-quota"},
+			args:      []string{"some-quota"},
+			namespace: "some-namespace",
 			setup: func(t *testing.T, fakeDeleter *fake.FakeClient) {
 				fakeDeleter.
 					EXPECT().

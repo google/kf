@@ -16,8 +16,8 @@ package quotas
 
 import (
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/quotas"
-
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
 )
@@ -35,6 +35,10 @@ func NewUpdateQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Comm
 		Short: "Update a quota",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
+
 			cmd.SilenceUsage = true
 
 			name := args[0]

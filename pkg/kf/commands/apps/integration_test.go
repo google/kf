@@ -45,6 +45,8 @@ func TestIntegration_Push(t *testing.T) {
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		appName := fmt.Sprintf("integration-echo-%d", time.Now().UnixNano())
 
+		kf.Target(ctx, "default")
+
 		// Push an app and then clean it up. This pushes the echo app which
 		// replies with the same body that was posted.
 		kf.Push(ctx, appName,
@@ -96,6 +98,8 @@ func TestIntegration_Push_manifest(t *testing.T) {
 		newManifestFile, manifestCleanup, err := copyManifest(appName, appPath, currentTime)
 		AssertNil(t, "app manifest copy error", err)
 		defer manifestCleanup()
+
+		kf.Target(ctx, "default")
 
 		// Push an app with a manifest file.
 		kf.Push(ctx, appName,
@@ -170,6 +174,8 @@ func TestIntegration_Delete(t *testing.T) {
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		appName := fmt.Sprintf("integration-echo-%d", time.Now().UnixNano())
 
+		kf.Target(ctx, "default")
+
 		// Push an app and then clean it up. This pushes the echo app which
 		// simplies replies with the same body that was posted.
 		kf.Push(ctx, appName,
@@ -205,6 +211,8 @@ func TestIntegration_Envs(t *testing.T) {
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		appName := fmt.Sprintf("integration-envs-%d", time.Now().UnixNano())
+
+		kf.Target(ctx, "default")
 
 		// Push an app and then clean it up. This pushes the envs app which
 		// returns the set environment variables via JSON. Set two environment
@@ -251,6 +259,8 @@ func TestIntegration_Logs(t *testing.T) {
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		appName := fmt.Sprintf("integration-echo-%d", time.Now().UnixNano())
+
+		kf.Target(ctx, "default")
 
 		// Push an app and then clean it up. This pushes the echo app which
 		// replies with the same body that was posted.
@@ -432,6 +442,8 @@ func TestIntegration_Push_Instances(t *testing.T) {
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		appName := fmt.Sprintf("integration-echo-%d", time.Now().UnixNano())
+
+		kf.Target(ctx, "default")
 
 		// Push an app and then clean it up. This pushes the echo app which
 		// replies with the same body that was posted.

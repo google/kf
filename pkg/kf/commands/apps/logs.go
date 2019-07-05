@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	kfi "github.com/google/kf/pkg/kf/internal/kf"
 	"github.com/google/kf/pkg/kf/logs"
 	"github.com/spf13/cobra"
@@ -40,6 +41,10 @@ func NewLogsCommand(p *config.KfParams, tailer logs.Tailer) *cobra.Command {
   `,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
+
 			appName := args[0]
 			if err := tailer.Tail(
 				context.Background(),
