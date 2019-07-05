@@ -21,11 +21,11 @@ publish=${PUBLISH:-false}
 
 rootpath=$(cd $(dirname $0)/.. && pwd)
 dir=${rootpath}/samples/buildpacks/stacks/bionic
-gcr=gcr.io/$(gcloud config get-value project)
+KF_REGISTRY=$1
 
-base_image=${gcr}/base:${version}
-run_image=${gcr}/run:${version}
-build_image=${gcr}/build:${version}
+base_image=${KF_REGISTRY}/base:${version}
+run_image=${KF_REGISTRY}/run:${version}
+build_image=${KF_REGISTRY}/build:${version}
 docker build -t "${base_image}" "$dir/base"
 docker build --build-arg "base_image=${base_image}" -t "${build_image}"  "$dir/build"
 docker build --build-arg "base_image=${base_image}" -t "${run_image}" "$dir/run"

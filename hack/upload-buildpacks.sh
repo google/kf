@@ -18,13 +18,26 @@ set -eu
 
 scriptpath=$(cd $(dirname $0)/.. && pwd)
 
-# Upload stacks
-PUBLISH=true $scriptpath/hack/upload-buildpacks-stack.sh
+# Set the container registry
+# If KF_REGISTRY is populated then use that otherwise try setting it to gcr
+function setregistry {
+ if [ -z ${KF_REGISTRY} ]; then
+    proj_id=$(gcloud config get-value project)
+    if [ -z $proj_id ]; then
+       echo "could not set container registry..."
+       exit 1
+    else
+       KF_REGISTRY="gcr.io/$proj_id"
+    fi
+ fi
+}
+setregistry
 
+# Upload stacks
+PUBLISH=true $scriptpath/hack/upload-buildpacks-stack.sh $KF_REGISTRY
 samples=$(realpath $scriptpath/samples)
 builder_config=$samples/buildpacks/builder/builder.toml
-gcr="gcr.io/$(gcloud config get-value project)"
-builder_image="$gcr/buildpack-builder-$RANDOM"
+builder_image="$KF_REGISTRY/buildpack-builder-$RANDOM"
 
 # Create a temp directory so we can manipulate the builder.toml. We can't
 # simply use a temp file "<(...)" because the builder.toml has relative paths
@@ -36,9 +49,9 @@ function finish {
 trap finish EXIT
 cp -r $samples/buildpacks/builder/* $temp_dir
 
-# Fill in our gcr.io registry for the builder
+# Fill in our container registry for the builder
 builder_toml=$temp_dir/builder.toml
-cat $builder_toml | sed "s|REPLACE_WITH_REGISTRY|$gcr|g" > $builder_toml.new
+cat $builder_toml | sed "s|REPLACE_WITH_REGISTRY|$KF_REGISTRY|g" > $builder_toml.new
 
 echo "building builder from $builder_config..."
 pack create-builder \
