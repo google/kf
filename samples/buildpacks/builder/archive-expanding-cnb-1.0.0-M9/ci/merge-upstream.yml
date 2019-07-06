@@ -1,0 +1,22 @@
+---
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: golang
+    tag: latest
+
+inputs:
+- name: downstream
+- name: upstream
+
+outputs:
+- name: merged
+
+run:
+  path: upstream/ci/merge-upstream.sh
+
+params:
+  GIT_USER_EMAIL:
+  GIT_USER_NAME:

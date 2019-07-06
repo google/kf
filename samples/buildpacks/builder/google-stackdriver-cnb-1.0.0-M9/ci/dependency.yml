@@ -1,0 +1,26 @@
+---
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: golang
+    tag: latest
+
+inputs:
+- name: google-stackdriver-cnb
+- name: google-stackdriver-debugger-java
+- name: google-stackdriver-profiler-java
+
+outputs:
+- name: google-stackdriver-cnb
+
+caches:
+- path: go-module-cache
+
+run:
+  path: google-stackdriver-cnb/ci/dependency.sh
+
+params:
+  GIT_USER_EMAIL:
+  GIT_USER_NAME:

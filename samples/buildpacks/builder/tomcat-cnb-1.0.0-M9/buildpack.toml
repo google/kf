@@ -1,0 +1,124 @@
+# Copyright 2018-2019 the original author or authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+[buildpack]
+id = "org.cloudfoundry.tomcat"
+name = "Cloud Foundry Apache Tomcat Buildpack"
+version = "1.0.0-M9"
+
+[[stacks]]
+id = "io.buildpacks.stacks.bionic"
+
+[[stacks]]
+id = "org.cloudfoundry.stacks.cflinuxfs3"
+
+[metadata.default-versions]
+tomcat = "8.*"
+
+[[metadata.dependencies]]
+id      = "tomcat"
+name    = "Apache Tomcat"
+version = "7.0.94"
+uri     = "https://archive.apache.org/dist/tomcat/tomcat-7/v7.0.94/bin/apache-tomcat-7.0.94.tar.gz"
+sha256  = "4bf63feb6fa79602c2e6afdfec945c4b1b5b3e1f1ccb273c1b60be57a699278a"
+stacks  = [ "io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.cflinuxfs3" ]
+
+  [[metadata.dependencies.licenses]]
+  type = "Apache-2.0"
+  uri  = "https://www.apache.org/licenses/"
+
+[[metadata.dependencies]]
+id      = "tomcat"
+name    = "Apache Tomcat"
+version = "8.5.42"
+uri     = "https://archive.apache.org/dist/tomcat/tomcat-8/v8.5.42/bin/apache-tomcat-8.5.42.tar.gz"
+sha256  = "e3bebd1ecfdf439dc54f9a6f72f8fb22f33324223337f040860fd0cdf95220b5"
+stacks  = [ "io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.cflinuxfs3" ]
+
+  [[metadata.dependencies.licenses]]
+  type = "Apache-2.0"
+  uri  = "https://www.apache.org/licenses/"
+
+[[metadata.dependencies]]
+id      = "tomcat"
+name    = "Apache Tomcat"
+version = "9.0.21"
+uri     = "https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.21/bin/apache-tomcat-9.0.21.tar.gz"
+sha256  = "50ee20a573d80c93a6a4f50caf429a7cd38256126a747df97097f8b9f1a25e5b"
+stacks  = [ "io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.cflinuxfs3" ]
+
+  [[metadata.dependencies.licenses]]
+  type = "Apache-2.0"
+  uri  = "https://www.apache.org/licenses/"
+
+[[metadata.dependencies]]
+id      = "tomcat-access-logging-support"
+name    = "Apache Tomcat Access Logging Support"
+version = "3.3.0"
+uri     = "https://repo.spring.io/release/org/cloudfoundry/tomcat-access-logging-support/3.3.0.RELEASE/tomcat-access-logging-support-3.3.0.RELEASE.jar"
+sha256  = "49f9acac1bed65c683276d662c985ed63c685a603e7f5b72f732673bb826a0d4"
+stacks  = [ "io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.cflinuxfs3" ]
+
+  [[metadata.dependencies.licenses]]
+  type = "Apache-2.0"
+  uri  = "https://github.com/cloudfoundry/java-buildpack-support/blob/master/LICENSE"
+
+[[metadata.dependencies]]
+id      = "tomcat-lifecycle-support"
+name    = "Apache Tomcat Lifecycle Support"
+version = "3.3.0"
+uri     = "https://repo.spring.io/release/org/cloudfoundry/tomcat-lifecycle-support/3.3.0.RELEASE/tomcat-lifecycle-support-3.3.0.RELEASE.jar"
+sha256  = "b725f4cae0be4a999a08ed978b29081edfd68a187a926ed740cc1f8e9aca70ce"
+stacks  = [ "io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.cflinuxfs3" ]
+
+  [[metadata.dependencies.licenses]]
+  type = "Apache-2.0"
+  uri  = "https://github.com/cloudfoundry/java-buildpack-support/blob/master/LICENSE"
+
+[[metadata.dependencies]]
+id      = "tomcat-logging-support"
+name    = "Apache Tomcat Logging Support"
+version = "3.3.0"
+uri     = "https://repo.spring.io/release/org/cloudfoundry/tomcat-logging-support/3.3.0.RELEASE/tomcat-logging-support-3.3.0.RELEASE.jar"
+sha256  = "46db58c1d8ef2555d7053a12d669daefb676e9a17a2a1771cd60c95bcb210b0d"
+stacks  = [ "io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.cflinuxfs3" ]
+
+  [[metadata.dependencies.licenses]]
+  type = "Apache-2.0"
+  uri  = "https://github.com/cloudfoundry/java-buildpack-support/blob/master/LICENSE"
+
+#[[metadata.dependencies]]
+#id      = "tomcat-external-configuration"
+#name    = "Tomcat External Configuration"
+#version = ""
+#uri     = ""
+#sha256  = ""
+#stacks  = [ "io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.cflinuxfs3" ]
+#
+#  [[metadata.dependencies.licenses]]
+#  type = "Proprietary"
+
+[metadata]
+pre_package = "ci/build.sh"
+include_files = [
+  "LICENSE",
+  "NOTICE",
+  "README.md",
+  "bin/build",
+  "bin/detect",
+  "buildpack.toml",
+  "context.xml",
+  "logging.properties",
+  "server.xml",
+]

@@ -1,0 +1,17 @@
+---
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: golang
+    tag: latest
+
+inputs:
+- name: build-system-cnb
+
+caches:
+- path: go-module-cache
+
+run:
+  path: build-system-cnb/ci/unit-test.sh

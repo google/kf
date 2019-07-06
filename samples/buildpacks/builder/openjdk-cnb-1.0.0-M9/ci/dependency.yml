@@ -1,0 +1,30 @@
+---
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: golang
+    tag: latest
+
+inputs:
+- name: openjdk-cnb
+- name: openjdk-jre-8
+- name: openjdk-jdk-8
+- name: openjdk-jre-11
+- name: openjdk-jdk-11
+- name: openjdk-jre-12
+- name: openjdk-jdk-12
+
+outputs:
+- name: openjdk-cnb
+
+caches:
+- path: go-module-cache
+
+run:
+  path: openjdk-cnb/ci/dependency.sh
+
+params:
+  GIT_USER_EMAIL:
+  GIT_USER_NAME:

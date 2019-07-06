@@ -1,0 +1,25 @@
+---
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: golang
+    tag: latest
+
+inputs:
+- name: spring-boot-cli
+- name: spring-boot-cnb
+
+outputs:
+- name: spring-boot-cnb
+
+caches:
+- path: go-module-cache
+
+run:
+  path: spring-boot-cnb/ci/dependency.sh
+
+params:
+  GIT_USER_EMAIL:
+  GIT_USER_NAME:

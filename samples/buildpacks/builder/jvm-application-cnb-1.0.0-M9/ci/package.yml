@@ -1,0 +1,20 @@
+---
+platform: linux
+
+image_resource:
+  type: registry-image
+  source:
+    repository: golang
+    tag: latest
+
+inputs:
+- name: jvm-application-cnb
+
+outputs:
+- name: artifactory
+
+caches:
+- path: go-module-cache
+
+run:
+  path: jvm-application-cnb/ci/package.sh

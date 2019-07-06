@@ -1,0 +1,59 @@
+# Copyright 2018-2019 the original author or authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+[buildpack]
+id = "org.cloudfoundry.buildsystem"
+name = "Cloud Foundry Build System Buildpack"
+version = "1.0.0-M9"
+
+[[stacks]]
+id = "io.buildpacks.stacks.bionic"
+
+[[stacks]]
+id = "org.cloudfoundry.stacks.cflinuxfs3"
+
+[[metadata.dependencies]]
+id      = "gradle"
+name    = "Gradle"
+version = "5.4.1"
+uri     = "https://downloads.gradle.org/distributions/gradle-5.4.1-bin.zip"
+sha256  = "7bdbad1e4f54f13c8a78abc00c26d44dd8709d4aedb704d913fb1bb78ac025dc"
+stacks  = [ "io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.cflinuxfs3" ]
+
+  [[metadata.dependencies.licenses]]
+  type = "Apache-2.0"
+  uri  = "https://docs.gradle.org/current/userguide/userguide.html#licenses"
+
+[[metadata.dependencies]]
+id      = "maven"
+name    = "Apache Maven"
+version = "3.6.1"
+uri     = "https://repo1.maven.org/maven2/org/apache/maven/apache-maven/3.6.1/apache-maven-3.6.1-bin.tar.gz"
+sha256  = "2528c35a99c30f8940cc599ba15d34359d58bec57af58c1075519b8cd33b69e7"
+stacks  = [ "io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.cflinuxfs3" ]
+
+  [[metadata.dependencies.licenses]]
+  type = "Apache-2.0"
+  uri  = "https://www.apache.org/licenses/"
+
+[metadata]
+pre_package = "ci/build.sh"
+include_files = [
+  "LICENSE",
+  "NOTICE",
+  "README.md",
+  "bin/build",
+  "bin/detect",
+  "buildpack.toml",
+]

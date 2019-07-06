@@ -1,0 +1,59 @@
+# Copyright 2018-2019 the original author or authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+[buildpack]
+id = "org.cloudfoundry.googlestackdriver"
+name = "Cloud Foundry Google Stackdriver Buildpack"
+version = "1.0.0-M9"
+
+[[stacks]]
+id = "io.buildpacks.stacks.bionic"
+
+[[stacks]]
+id = "org.cloudfoundry.stacks.cflinuxfs3"
+
+[[metadata.dependencies]]
+id      = "google-stackdriver-debugger-java"
+name    = "Google Stackdriver Debugger Java Agent"
+version = "2.23.0"
+uri     = "https://java-buildpack.cloudfoundry.org/google-stackdriver-debugger/bionic/x86_64/google-stackdriver-debugger-2.23.0.tar.gz"
+sha256  = "8d36b95c19732da6a2a029ae8bed30675c4b6cb805884bfd3f1a0fc875d6e32e"
+stacks  = [ "io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.cflinuxfs3" ]
+
+  [[metadata.dependencies.licenses]]
+  type = "Apache-2.0"
+  uri  = "https://github.com/GoogleCloudPlatform/cloud-debug-java/blob/master/LICENSE"
+
+[[metadata.dependencies]]
+id      = "google-stackdriver-profiler-java"
+name    = "Google Stackdriver Profiler Java Agent"
+version = "0.1.0"
+uri     = "https://java-buildpack.cloudfoundry.org/google-stackdriver-profiler/bionic/x86_64/google-stackdriver-profiler-0.1.0.tar.gz"
+sha256  = "794e5da9a020dc356741c3181dedc84efbac62f7a7385004e4a5f1d6502a845d"
+stacks  = [ "io.buildpacks.stacks.bionic", "org.cloudfoundry.stacks.cflinuxfs3" ]
+
+  [[metadata.dependencies.licenses]]
+  type = "Apache-2.0"
+
+[metadata]
+pre_package = "ci/build.sh"
+include_files = [
+  "LICENSE",
+  "NOTICE",
+  "README.md",
+  "bin/build",
+  "bin/detect",
+  "bin/google-stackdriver-credentials",
+  "buildpack.toml",
+]
