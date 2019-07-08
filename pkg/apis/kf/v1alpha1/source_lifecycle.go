@@ -18,10 +18,10 @@ import (
 	"fmt"
 
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
-	"github.com/knative/pkg/apis"
-	duckv1beta1 "github.com/knative/pkg/apis/duck/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"knative.dev/pkg/apis"
+	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
 
 // GetGroupVersionKind returns the GroupVersionKind.
@@ -32,7 +32,8 @@ func (r *Source) GetGroupVersionKind() schema.GroupVersionKind {
 const (
 	// SourceConditionSucceeded is set when the source is configured
 	// and is usable by developers.
-	SourceConditionSucceeded = apis.ConditionSucceeded
+	SourceConditionSucceeded                         = apis.ConditionSucceeded
+	SourceConditionBuildSucceeded apis.ConditionType = "BuildSucceeded"
 
 	BuildArgImage            = "IMAGE"
 	BuildArgBuildpack        = "BUILDPACK"
@@ -40,9 +41,7 @@ const (
 )
 
 func (status *SourceStatus) manage() apis.ConditionManager {
-	return apis.NewLivingConditionSet(
-		SourceConditionSucceeded,
-	).Manage(status)
+	return apis.NewBatchConditionSet(SourceConditionBuildSucceeded).Manage(status)
 }
 
 // IsReady returns if the space is ready to be used.
@@ -62,7 +61,7 @@ func (status *SourceStatus) InitializeConditions() {
 
 // MarkBuildNotOwned marks the Build as not being owned by the Source.
 func (status *SourceStatus) MarkBuildNotOwned(name string) {
-	status.manage().MarkFalse(SourceConditionSucceeded, "NotOwned",
+	status.manage().MarkFalse(SourceConditionBuildSucceeded, "NotOwned",
 		fmt.Sprintf("There is an existing Build %q that we do not own.", name))
 }
 
@@ -79,11 +78,11 @@ func (status *SourceStatus) PropagateBuildStatus(build *build.Build) {
 		if condition.Type == "Succeeded" {
 			switch condition.Status {
 			case corev1.ConditionTrue:
-				status.manage().MarkTrue(SourceConditionSucceeded)
+				status.manage().MarkTrue(SourceConditionBuildSucceeded)
 			case corev1.ConditionFalse:
-				status.manage().MarkFalse(SourceConditionSucceeded, condition.Reason, "Build failed: %s", condition.Message)
+				status.manage().MarkFalse(SourceConditionBuildSucceeded, condition.Reason, "Build failed: %s", condition.Message)
 			case corev1.ConditionUnknown:
-				status.manage().MarkUnknown(SourceConditionSucceeded, condition.Reason, "Build in progress")
+				status.manage().MarkUnknown(SourceConditionBuildSucceeded, condition.Reason, "Build in progress")
 			}
 
 			if condition.Status == "True" {
