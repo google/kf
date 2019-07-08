@@ -45,7 +45,7 @@ func (status *SourceStatus) manage() apis.ConditionManager {
 }
 
 // IsReady returns if the space is ready to be used.
-func (status *SourceStatus) IsReady() bool {
+func (status *SourceStatus) Succeeded() bool {
 	return status.manage().IsHappy()
 }
 
