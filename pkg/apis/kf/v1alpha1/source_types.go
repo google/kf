@@ -41,39 +41,29 @@ type Source struct {
 // The fields ContainerImage and BuildpackBuild are mutually exclusive.
 type SourceSpec struct {
 
-	// UpdateRequests is a unique identifier for an AppSpecSource.
+	// UpdateRequests is a unique identifier for an SourceSpec.
 	// Updating sub-values will trigger a new value.
 	// +optional
 	UpdateRequests int `json:"updateRequests,omitempty"`
 
 	// ContainerImage defines the container image for source.
 	// +optional
-	ContainerImage AppSpecSourceContainerImage `json:"containerImage,omitempty"`
+	ContainerImage SourceSpecContainerImage `json:"containerImage,omitempty"`
 
 	// BuildpackBuild defines buildpack information for source.
 	// +optional
-	BuildpackBuild AppSpecSourceBuildpackBuild `json:"buildpackBuild,omitempty"`
+	BuildpackBuild SourceSpecBuildpackBuild `json:"buildpackBuild,omitempty"`
 }
 
-// IsContainerBuild returns true if the build is for a container
-func (spec *SourceSpec) IsContainerBuild() bool {
-	return spec.ContainerImage.Image != ""
-}
-
-// IsBuildpackBuild returns true if the build is for a buildpack
-func (spec *SourceSpec) IsBuildpackBuild() bool {
-	return spec.BuildpackBuild.Source != ""
-}
-
-// AppSpecSourceContainerImage defines a container image for an App.
-type AppSpecSourceContainerImage struct {
+// SourceSpecContainerImage defines a container image for an App.
+type SourceSpecContainerImage struct {
 
 	// Image is the container image URI for the App.
 	Image string `json:"image"`
 }
 
-// AppSpecSourceBuildpackBuild defines building an App using Buildpacks.
-type AppSpecSourceBuildpackBuild struct {
+// SourceSpecBuildpackBuild defines building an App using Buildpacks.
+type SourceSpecBuildpackBuild struct {
 
 	// Source is the Container Image which contains the App's source code.
 	Source string `json:"source"`
@@ -121,4 +111,14 @@ type SourceList struct {
 	metav1.ListMeta `json:"metadata"`
 
 	Items []Source `json:"items"`
+}
+
+// IsContainerBuild returns true if the build is for a container
+func (spec *SourceSpec) IsContainerBuild() bool {
+	return spec.ContainerImage.Image != ""
+}
+
+// IsBuildpackBuild returns true if the build is for a buildpack
+func (spec *SourceSpec) IsBuildpackBuild() bool {
+	return spec.BuildpackBuild.Source != ""
 }

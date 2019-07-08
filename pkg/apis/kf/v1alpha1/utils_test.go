@@ -15,6 +15,8 @@
 package v1alpha1
 
 import (
+	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/google/kf/pkg/kf/testutil"
@@ -77,4 +79,58 @@ func TestPropagateCondition(t *testing.T) {
 			testutil.AssertEqual(t, "reason", tc.expectReason, resultCond.Reason)
 		})
 	}
+}
+
+func ExampleSingleConditionManager_MarkChildNotOwned() {
+	manager := apis.NewLivingConditionSet("DummyReady").Manage(&duckv1beta1.Status{})
+	scm := NewSingleConditionManager(manager, "DummyReady", "Dummy")
+
+	err := scm.MarkChildNotOwned("dummy-123")
+
+	result := manager.GetCondition("DummyReady")
+	fmt.Println("Status:", result.Status)
+	fmt.Println("Message:", result.Message)
+	fmt.Println("Reason:", result.Reason)
+	fmt.Println("Error:", err)
+
+	// Output: Status: False
+	// Message: There is an existing Dummy "dummy-123" that we do not own.
+	// Reason: NotOwned
+	// Error: There is an existing Dummy "dummy-123" that we do not own.
+}
+
+func ExampleSingleConditionManager_MarkTemplateError() {
+	manager := apis.NewLivingConditionSet("DummyReady").Manage(&duckv1beta1.Status{})
+	scm := NewSingleConditionManager(manager, "DummyReady", "Dummy")
+
+	err := scm.MarkTemplateError(errors.New("tmpl-err"))
+
+	result := manager.GetCondition("DummyReady")
+	fmt.Println("Status:", result.Status)
+	fmt.Println("Message:", result.Message)
+	fmt.Println("Reason:", result.Reason)
+	fmt.Println("Error:", err)
+
+	// Output: Status: False
+	// Message: Couldn't populate the Dummy template: tmpl-err
+	// Reason: TemplateError
+	// Error: Couldn't populate the Dummy template: tmpl-err
+}
+
+func ExampleSingleConditionManager_MarkReconciliationError() {
+	manager := apis.NewLivingConditionSet("DummyReady").Manage(&duckv1beta1.Status{})
+	scm := NewSingleConditionManager(manager, "DummyReady", "Dummy")
+
+	err := scm.MarkReconciliationError("updating", errors.New("update err"))
+
+	result := manager.GetCondition("DummyReady")
+	fmt.Println("Status:", result.Status)
+	fmt.Println("Message:", result.Message)
+	fmt.Println("Reason:", result.Reason)
+	fmt.Println("Error:", err)
+
+	// Output: Status: False
+	// Message: Error occurred while updating Dummy: update err
+	// Reason: ReconciliationError
+	// Error: Error occurred while updating Dummy: update err
 }
