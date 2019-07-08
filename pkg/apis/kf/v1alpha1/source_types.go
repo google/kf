@@ -101,3 +101,13 @@ type SourceList struct {
 
 	Items []Source `json:"items"`
 }
+
+// IsContainerBuild returns true if the build is for a container
+func (spec *SourceSpec) IsContainerBuild() bool {
+	return spec.ContainerImage.Image != ""
+}
+
+// IsBuildpackBuild returns true if the build is for a buildpack
+func (spec *SourceSpec) IsBuildpackBuild() bool {
+	return spec.BuildpackBuild.Source != ""
+}
