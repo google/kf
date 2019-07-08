@@ -97,17 +97,9 @@ func (status *AppStatus) PropagateSourceStatus(source *Source) {
 	status.LatestCreatedSourceName = source.Name
 
 	cond := source.Status.GetCondition(SourceConditionSucceeded)
-	switch {
-	case cond == nil:
-		return
-	case cond.IsFalse():
-		status.manage().MarkFalse(AppConditionSourceReady, cond.Reason, cond.Message)
-	case cond.IsTrue():
+	if PropagateCondition(status.manage(), AppConditionSourceReady, cond) {
 		status.LatestReadySourceName = source.Name
 		status.SourceStatusFields = source.Status.SourceStatusFields
-		status.manage().MarkTrue(AppConditionSourceReady)
-	case cond.IsUnknown():
-		status.manage().MarkUnknown(AppConditionSourceReady, cond.Reason, cond.Message)
 	}
 }
 
@@ -115,16 +107,9 @@ func (status *AppStatus) PropagateSourceStatus(source *Source) {
 // the underlying service.
 func (status *AppStatus) PropagateKnativeServiceStatus(service *serving.Service) {
 	cond := service.Status.GetCondition(apis.ConditionReady)
-	switch {
-	case cond == nil:
-		return
-	case cond.IsFalse():
-		status.manage().MarkFalse(AppConditionKnativeServiceReady, cond.Reason, cond.Message)
-	case cond.IsTrue():
+
+	if PropagateCondition(status.manage(), AppConditionKnativeServiceReady, cond) {
 		status.ConfigurationStatusFields = service.Status.ConfigurationStatusFields
-		status.manage().MarkTrue(AppConditionKnativeServiceReady)
-	case cond.IsUnknown():
-		status.manage().MarkUnknown(AppConditionKnativeServiceReady, cond.Reason, cond.Message)
 	}
 }
 

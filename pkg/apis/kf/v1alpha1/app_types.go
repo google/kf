@@ -26,8 +26,12 @@ import (
 )
 
 const (
-	NameLabel      = "app.kubernetes.io/name"
+	// NameLabel holds the standard label key for Kubernetes app names.
+	NameLabel = "app.kubernetes.io/name"
+	// ManagedByLabel holds the standard label key for Kubernetes app managers.
 	ManagedByLabel = "app.kubernetes.io/managed-by"
+	// ComponentLabel holds the standard label key for Kubernetes app component
+	// identifiers.
 	ComponentLabel = "app.kubernetes.io/component"
 )
 

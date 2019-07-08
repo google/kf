@@ -26,10 +26,14 @@ func (k *SourceSpec) SetDefaults(ctx context.Context) {
 	// XXX: currently no defaults to set
 }
 
+// SetSpaceDefaults sets the default values for the source based on the space's
+// settings.
 func (k *Source) SetSpaceDefaults(space *Space) {
 	k.Spec.SetSpaceDefaults(space)
 }
 
+// SetSpaceDefaults sets the default values for the SourceSpec based on the
+// space's settings.
 func (k *SourceSpec) SetSpaceDefaults(space *Space) {
 	if k.IsBuildpackBuild() {
 		if k.BuildpackBuild.BuildpackBuilder == "" {
@@ -40,7 +44,6 @@ func (k *SourceSpec) SetSpaceDefaults(space *Space) {
 			k.BuildpackBuild.Registry = space.Spec.BuildpackBuild.ContainerRegistry
 		}
 
-		// TODO set env
-		//k.BuildpackBuild.Env = space.Spec.BuildpackBuild.Env
+		k.BuildpackBuild.Env = space.Spec.BuildpackBuild.Env
 	}
 }

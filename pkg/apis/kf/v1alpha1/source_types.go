@@ -108,10 +108,6 @@ type SourceStatus struct {
 // are shared. This is defined separately and inlined so that
 // other types can readily consume these fields via duck typing.
 type SourceStatusFields struct {
-	// BuildName is the name of the build producing the image.
-	// +optional
-	BuildName string `json:"buildName,omitempty"`
-
 	// Image is the latest successfully built image.
 	// +optional
 	Image string `json:"image,omitempty"`

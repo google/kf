@@ -96,6 +96,9 @@ func (r *Reconciler) reconcileApp(ctx context.Context, namespace, name string, l
 }
 
 func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error {
+
+	app.Status.InitializeConditions()
+
 	space, err := r.spaceLister.Get(app.Namespace)
 	switch {
 	case apierrs.IsNotFound(err):
@@ -105,7 +108,6 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		app.Status.MarkSpaceUnhealthy("GettingSpace", err.Error())
 		return err
 	}
-
 	app.Status.MarkSpaceHealthy()
 
 	// reconcile source
@@ -118,7 +120,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		}
 
 		actual, err := r.latestSource(app)
-		if apierrs.IsNotFound(err) || !r.sourcesAreSemtnticallyEqual(desired, actual) {
+		if apierrs.IsNotFound(err) || !r.sourcesAreSemanticallyEqual(desired, actual) {
 			// Source doesn't exist or it's for the wrong version, make a new one.
 			actual, err = r.KfClientSet.KfV1alpha1().Sources(app.Namespace).Create(desired)
 			if err != nil {
@@ -193,7 +195,7 @@ func (r *Reconciler) latestSource(app *v1alpha1.App) (*v1alpha1.Source, error) {
 	return nil, apierrs.NewNotFound(v1alpha1.Resource("sources"), fmt.Sprintf("source for %s", app.Name))
 }
 
-func (*Reconciler) sourcesAreSemtnticallyEqual(desired, actual *v1alpha1.Source) bool {
+func (*Reconciler) sourcesAreSemanticallyEqual(desired, actual *v1alpha1.Source) bool {
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
 	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
 
