@@ -51,7 +51,7 @@ func MakeKnativeService(app *v1alpha1.App, space *v1alpha1.Space) (*serving.Serv
 	// to be overridden.
 	podSpec.Containers[0].Env = append(space.Spec.Execution.Env, podSpec.Containers[0].Env...)
 
-	// TODO(josephlewis42) Add the ability to inject VCAP_SERVICES enviornment
+	// TODO(josephlewis42) Add the ability to inject VCAP_SERVICES environment
 	// variables here.
 	return &serving.Service{
 		ObjectMeta: metav1.ObjectMeta{
