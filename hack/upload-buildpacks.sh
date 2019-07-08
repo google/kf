@@ -21,7 +21,7 @@ scriptpath=$(cd $(dirname $0)/.. && pwd)
 # Set the container registry
 # If KF_REGISTRY is populated then use that otherwise try setting it to gcr
 function setregistry {
- if [ -z ${KF_REGISTRY} ]; then
+ if [ -z ${KF_REGISTRY:-} ]; then
     proj_id=$(gcloud config get-value project)
     if [ -z $proj_id ]; then
        echo "could not set container registry..."
