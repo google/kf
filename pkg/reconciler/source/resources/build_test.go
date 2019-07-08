@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func ExampleBuildName() {
@@ -54,6 +55,12 @@ func ExampleMakeBuild() {
 	source.Spec.BuildpackBuild.Source = "some-source"
 	source.Spec.BuildpackBuild.Registry = "some-registry"
 	source.Spec.BuildpackBuild.BuildpackBuilder = "some-buildpack-builder"
+	source.Spec.BuildpackBuild.Env = []corev1.EnvVar{
+		{
+			Name:  "some",
+			Value: "variable",
+		},
+	}
 
 	build, err := MakeBuild(source)
 	if err != nil {
@@ -65,10 +72,12 @@ func ExampleMakeBuild() {
 	fmt.Println("Managed By:", build.Labels[managedByLabel])
 	fmt.Println("Arg Count:", len(build.Spec.Template.Arguments))
 	fmt.Println("Output Image:", build.Spec.Template.Arguments[0].Value)
+	fmt.Println("Env:", build.Spec.Template.Env[0].Name, "=", build.Spec.Template.Env[0].Value)
 
 	// Output: Name: my-source-5
 	// Label Count: 1
 	// Managed By: kf
 	// Arg Count: 3
 	// Output Image: some-registry/app-my-namespace-my-source:5
+	// Env: some = variable
 }

@@ -15,6 +15,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
@@ -80,6 +81,9 @@ type SourceSpecBuildpackBuild struct {
 
 	// Registry is the container registry which will store the built image.
 	Registry string `json:"registry"`
+
+	// Env represents the environment variables to apply when building the App.
+	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
 // SourceStatus is the current configuration and running state for an App's Source.
