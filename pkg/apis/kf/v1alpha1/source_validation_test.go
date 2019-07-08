@@ -24,19 +24,19 @@ import (
 )
 
 func TestSource_Validate(t *testing.T) {
-	goodBuildpackBuild := AppSpecSourceBuildpackBuild{
+	goodBuildpackBuild := SourceSpecBuildpackBuild{
 		Source:           "some-source-image",
 		Buildpack:        "some-buildpack",
 		Stack:            "some-stack",
 		BuildpackBuilder: "some-buildpack-builder",
 		Registry:         "some-container-registry",
 	}
-	badBuildpackBuild := AppSpecSourceBuildpackBuild{
+	badBuildpackBuild := SourceSpecBuildpackBuild{
 		Source:           "missing-stack",
 		BuildpackBuilder: "no-stack",
 		Registry:         "still-no-stack",
 	}
-	goodContainerImage := AppSpecSourceContainerImage{
+	goodContainerImage := SourceSpecContainerImage{
 		Image: "some-container-image",
 	}
 
@@ -108,13 +108,13 @@ func TestSource_Validate(t *testing.T) {
 
 }
 
-func TestAppSpecSourceBuildpackBuild_Validate(t *testing.T) {
+func TestSourceSpecBuildpackBuild_Validate(t *testing.T) {
 	cases := map[string]struct {
-		spec AppSpecSourceBuildpackBuild
+		spec SourceSpecBuildpackBuild
 		want *apis.FieldError
 	}{
 		"valid": {
-			spec: AppSpecSourceBuildpackBuild{
+			spec: SourceSpecBuildpackBuild{
 				Source:           "some-image",
 				Stack:            "some-stack",
 				Buildpack:        "some-buildpack",
@@ -123,7 +123,7 @@ func TestAppSpecSourceBuildpackBuild_Validate(t *testing.T) {
 			},
 		},
 		"missing image": {
-			spec: AppSpecSourceBuildpackBuild{
+			spec: SourceSpecBuildpackBuild{
 				Stack:            "some-stack",
 				Buildpack:        "some-buildpack",
 				BuildpackBuilder: "buildpackBuilder",
@@ -132,7 +132,7 @@ func TestAppSpecSourceBuildpackBuild_Validate(t *testing.T) {
 			want: apis.ErrMissingField("source"),
 		},
 		"missing stack": {
-			spec: AppSpecSourceBuildpackBuild{
+			spec: SourceSpecBuildpackBuild{
 				Source:           "some-image",
 				Buildpack:        "some-buildpack",
 				BuildpackBuilder: "buildpackBuilder",
@@ -141,7 +141,7 @@ func TestAppSpecSourceBuildpackBuild_Validate(t *testing.T) {
 			want: apis.ErrMissingField("stack"),
 		},
 		"missing buildpackBuilder": {
-			spec: AppSpecSourceBuildpackBuild{
+			spec: SourceSpecBuildpackBuild{
 				Source:    "some-image",
 				Stack:     "some-stack",
 				Buildpack: "some-buildpack",
@@ -150,7 +150,7 @@ func TestAppSpecSourceBuildpackBuild_Validate(t *testing.T) {
 			want: apis.ErrMissingField("buildpackBuilder"),
 		},
 		"missing registry": {
-			spec: AppSpecSourceBuildpackBuild{
+			spec: SourceSpecBuildpackBuild{
 				Source:           "some-image",
 				Stack:            "some-stack",
 				Buildpack:        "some-buildpack",

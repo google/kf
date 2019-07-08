@@ -47,8 +47,8 @@ func (spec *SourceSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
 	return errs
 }
 
-// Validate makes sure that an AppSpecSourceContainerImage is properly configured.
-func (containerImage *AppSpecSourceContainerImage) Validate(ctx context.Context) (errs *apis.FieldError) {
+// Validate makes sure that an SourceSpecContainerImage is properly configured.
+func (containerImage *SourceSpecContainerImage) Validate(ctx context.Context) (errs *apis.FieldError) {
 
 	if containerImage.Image == "" {
 		errs = errs.Also(apis.ErrMissingField("image"))
@@ -57,8 +57,8 @@ func (containerImage *AppSpecSourceContainerImage) Validate(ctx context.Context)
 	return errs
 }
 
-// Validate makes sure that a AppSpecSourceBuildpackBuild is properly configured.
-func (buildpackBuild *AppSpecSourceBuildpackBuild) Validate(ctx context.Context) (errs *apis.FieldError) {
+// Validate makes sure that a SourceSpecBuildpackBuild is properly configured.
+func (buildpackBuild *SourceSpecBuildpackBuild) Validate(ctx context.Context) (errs *apis.FieldError) {
 
 	if buildpackBuild.Source == "" {
 		errs = errs.Also(apis.ErrMissingField("source"))
