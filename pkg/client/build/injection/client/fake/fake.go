@@ -23,6 +23,7 @@ import (
 	client "github.com/google/kf/pkg/client/build/injection/client"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
+	"k8s.io/kubernetes/staging/src/k8s.io/client-go/rest"
 	injection "knative.dev/pkg/injection"
 	logging "knative.dev/pkg/logging"
 )

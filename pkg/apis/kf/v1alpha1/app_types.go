@@ -18,10 +18,17 @@ import (
 	"fmt"
 
 	"github.com/knative/serving/pkg/apis/autoscaling"
+	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 
 	core "k8s.io/api/core/v1"
+)
+
+const (
+	NameLabel      = "app.kubernetes.io/name"
+	ManagedByLabel = "app.kubernetes.io/managed-by"
+	ComponentLabel = "app.kubernetes.io/component"
 )
 
 // +genclient
@@ -42,24 +49,28 @@ type App struct {
 	Status AppStatus `json:"status,omitempty"`
 }
 
+// ComponentLabels returns Kubernetes recommended labels to tie together
+// deployed applications and their pieces. The provided component name
+// specifies the sub-resource of the app e.g. "database", "load-balancer",
+// or "server".
+func (app *App) ComponentLabels(component string) map[string]string {
+	return map[string]string{
+		NameLabel:      app.Name,
+		ManagedByLabel: "kf",
+		ComponentLabel: component,
+	}
+}
+
 // AppSpec is the desired configuration for an App.
 type AppSpec struct {
 
-	// SourceSpec contains the source configuration of the App.
+	// Source contains the source configuration of the App.
 	// +optional
-	SourceSpec `json:"source,inline"`
+	Source SourceSpec `json:"source,omitempty"`
 
 	// Template defines the App's runtime configuration.
 	// +optional
 	Template AppSpecTemplate `json:"template"`
-
-	// Routes defines network routes for the App's ingress.
-	// +optional
-	Routes AppSpecRoutes `json:"routes,omitempty"`
-
-	// Services defines what services the App requires.
-	// +optional
-	Services AppSpecServices `json:"services,omitempty"`
 
 	// Instances defines the scaling rules for the App.
 	Instances AppSpecInstances `json:"instances,omitempty"`
@@ -78,14 +89,6 @@ type AppSpecTemplate struct {
 	// (Env, Vars, Quotas, etc)
 	// +optional
 	Spec core.PodSpec `json:"spec,omitempty"`
-}
-
-// AppSpecRoutes defines network routes for an App's ingress.
-type AppSpecRoutes struct {
-}
-
-// AppSpecServices defines what services an App requires.
-type AppSpecServices struct {
 }
 
 // AppSpecInstances defines the scaling rules for an App.
@@ -153,9 +156,22 @@ func (instances *AppSpecInstances) ScalingAnnotations() map[string]string {
 
 // AppStatus is the current configuration and running state for an App.
 type AppStatus struct {
-
 	// Pull in the fields from Knative's duckv1beta1 status field.
 	duckv1beta1.Status `json:",inline"`
+
+	// SourceStatusFields embeds the image and build name for the latest passing
+	// source.
+	SourceStatusFields `json:",inline"`
+
+	// Inline the latest serving.Service revisions that are ready
+	serving.ConfigurationStatusFields `json:",inline"`
+
+	// LatestReadySourceName contains the name of the source that was most recently
+	// built correctly.
+	LatestReadySourceName string `json:"latestReadySource,omitempty"`
+
+	// LatestCreatedSourceName contains the name of the source that was most recently created.
+	LatestCreatedSourceName string `json:"latestSource,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

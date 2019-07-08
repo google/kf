@@ -78,15 +78,13 @@ func (status *SourceStatus) PropagateBuildStatus(build *build.Build) {
 		if condition.Type == "Succeeded" {
 			switch condition.Status {
 			case corev1.ConditionTrue:
+				status.Image = GetBuildArg(build, BuildArgImage)
+
 				status.manage().MarkTrue(SourceConditionBuildSucceeded)
 			case corev1.ConditionFalse:
 				status.manage().MarkFalse(SourceConditionBuildSucceeded, condition.Reason, "Build failed: %s", condition.Message)
 			case corev1.ConditionUnknown:
 				status.manage().MarkUnknown(SourceConditionBuildSucceeded, condition.Reason, "Build in progress")
-			}
-
-			if condition.Status == "True" {
-				status.Image = GetBuildArg(build, BuildArgImage)
 			}
 		}
 	}

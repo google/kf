@@ -55,6 +55,16 @@ type SourceSpec struct {
 	BuildpackBuild AppSpecSourceBuildpackBuild `json:"buildpackBuild,omitempty"`
 }
 
+// IsContainerBuild returns true if the build is for a container
+func (spec *SourceSpec) IsContainerBuild() bool {
+	return spec.ContainerImage.Image != ""
+}
+
+// IsBuildpackBuild returns true if the build is for a buildpack
+func (spec *SourceSpec) IsBuildpackBuild() bool {
+	return spec.BuildpackBuild.Source != ""
+}
+
 // AppSpecSourceContainerImage defines a container image for an App.
 type AppSpecSourceContainerImage struct {
 
@@ -90,6 +100,17 @@ type AppSpecSourceBuildpackBuild struct {
 type SourceStatus struct {
 	// Pull in the fields from Knative's duckv1beta1 status field.
 	duckv1beta1.Status `json:",inline"`
+
+	SourceStatusFields `json:",inline"`
+}
+
+// SourceStatusFields holds the fields of Source's status that
+// are shared. This is defined separately and inlined so that
+// other types can readily consume these fields via duck typing.
+type SourceStatusFields struct {
+	// BuildName is the name of the build producing the image.
+	// +optional
+	BuildName string `json:"buildName,omitempty"`
 
 	// Image is the latest successfully built image.
 	// +optional
