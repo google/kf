@@ -124,6 +124,7 @@ func makeBuildpackBuild(source *v1alpha1.Source) (*build.Build, error) {
 				Name:      buildpackBuildTemplate,
 				Kind:      "ClusterBuildTemplate",
 				Arguments: args,
+				Env:       source.Spec.BuildpackBuild.Env,
 			},
 		},
 	}, nil
