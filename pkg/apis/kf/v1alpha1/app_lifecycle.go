@@ -15,8 +15,6 @@
 package v1alpha1
 
 import (
-	"fmt"
-
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"knative.dev/pkg/apis"
@@ -59,37 +57,14 @@ func (status *AppStatus) InitializeConditions() {
 	status.manage().InitializeConditions()
 }
 
-// MarkSourceNotOwned marks the Source as not being owned by the App.
-func (status *AppStatus) MarkSourceNotOwned(name string) {
-	status.manage().MarkFalse(AppConditionSourceReady, "NotOwned",
-		fmt.Sprintf("There is an existing Source %q that we do not own.", name))
+// SourceCondition gets a manager for the state of the source.
+func (status *AppStatus) SourceCondition() SingleConditionManager {
+	return NewSingleConditionManager(status.manage(), AppConditionSourceReady, "Source")
 }
 
-// MarkSourceTemplateError marks the Source as having an error with the template.
-func (status *AppStatus) MarkSourceTemplateError(err error) {
-	status.manage().MarkFalse(AppConditionSourceReady, "TemplateError",
-		fmt.Sprintf("Couldn't populate the Source child template: %s", err))
-}
-
-// MarkSourceReconciliationError marks the Source having some error during the
-// reconciliation process.
-func (status *AppStatus) MarkSourceReconciliationError(context string, err error) {
-	status.manage().MarkFalse(AppConditionSourceReady, "ReconciliationError",
-		fmt.Sprintf("Error occurred while %s: %s", context, err))
-}
-
-// MarkKnativeServiceNotOwned marks the Knative Service as not being owned by
-// the App.
-func (status *AppStatus) MarkKnativeServiceNotOwned(name string) {
-	status.manage().MarkFalse(AppConditionKnativeServiceReady, "NotOwned",
-		fmt.Sprintf("There is an existing Knative Service %q that we do not own.", name))
-}
-
-// MarkKnativeServiceTemplateError marks the Source as not having an error with
-// the template.
-func (status *AppStatus) MarkKnativeServiceTemplateError(err error) {
-	status.manage().MarkFalse(AppConditionKnativeServiceReady, "TemplateError",
-		fmt.Sprintf("Couldn't populate the KnativeService child template: %s", err))
+// KnativeServiceCondition gets a manager for the state of the Knative Service.
+func (status *AppStatus) KnativeServiceCondition() SingleConditionManager {
+	return NewSingleConditionManager(status.manage(), AppConditionKnativeServiceReady, "Knative Service")
 }
 
 // PropagateSourceStatus copies the source status to the app's.

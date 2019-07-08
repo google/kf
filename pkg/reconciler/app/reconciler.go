@@ -113,10 +113,10 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 	// reconcile source
 	{
 		r.Logger.Info("reconciling Source")
+		condition := app.Status.SourceCondition()
 		desired, err := resources.MakeSource(app, space)
 		if err != nil {
-			app.Status.MarkSourceTemplateError(err)
-			return err
+			return condition.MarkTemplateError(err)
 		}
 
 		actual, err := r.latestSource(app)
@@ -124,15 +124,12 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			// Source doesn't exist or it's for the wrong version, make a new one.
 			actual, err = r.KfClientSet.KfV1alpha1().Sources(app.Namespace).Create(desired)
 			if err != nil {
-				app.Status.MarkSourceReconciliationError("creating source", err)
-				return err
+				return condition.MarkReconciliationError("creating", err)
 			}
 		} else if err != nil {
-			app.Status.MarkSourceReconciliationError("getting latest source", err)
-			return err
+			return condition.MarkReconciliationError("getting latest", err)
 		} else if !metav1.IsControlledBy(actual, app) {
-			app.Status.MarkSourceNotOwned(desired.Name)
-			return fmt.Errorf("app: %q does not own Source: %q", app.Name, desired.Name)
+			return condition.MarkChildNotOwned(desired.Name)
 		}
 
 		app.Status.PropagateSourceStatus(actual)
@@ -144,10 +141,10 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 	// reconcile serving
 	{
 		r.Logger.Info("reconciling Knative Serving")
+		condition := app.Status.KnativeServiceCondition()
 		desired, err := resources.MakeKnativeService(app, space)
 		if err != nil {
-			app.Status.MarkKnativeServiceTemplateError(err)
-			return err
+			return condition.MarkTemplateError(err)
 		}
 
 		actual, err := r.knativeServiceLister.Services(desired.GetNamespace()).Get(desired.Name)
@@ -155,15 +152,14 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			// Knative Service doesn't exist, make one.
 			actual, err = r.ServingClientSet.ServingV1alpha1().Services(desired.GetNamespace()).Create(desired)
 			if err != nil {
-				return err
+				return condition.MarkReconciliationError("creating", err)
 			}
 		} else if err != nil {
-			return err
+			return condition.MarkReconciliationError("getting latest", err)
 		} else if !metav1.IsControlledBy(actual, app) {
-			app.Status.MarkSourceNotOwned(desired.Name)
-			return fmt.Errorf("app: %q does not own Service: %q", app.Name, desired.Name)
+			return condition.MarkChildNotOwned(desired.Name)
 		} else if actual, err = r.reconcileKnativeService(desired, actual); err != nil {
-			return err
+			return condition.MarkReconciliationError("updating existing", err)
 		}
 
 		app.Status.PropagateKnativeServiceStatus(actual)

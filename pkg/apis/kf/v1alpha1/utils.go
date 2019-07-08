@@ -14,7 +14,12 @@
 
 package v1alpha1
 
-import "knative.dev/pkg/apis"
+import (
+	"errors"
+	"fmt"
+
+	"knative.dev/pkg/apis"
+)
 
 // PropagateCondition copies the condition of a sub-resource (source) to a
 // destination on the given manager.
@@ -32,4 +37,65 @@ func PropagateCondition(manager apis.ConditionManager, destination apis.Conditio
 	}
 
 	return source.IsTrue()
+}
+
+// SingleConditionManager provides a standard way to set conditions.
+type SingleConditionManager interface {
+	// MarkChildNotOwned marks the child with the given name as not being owned by
+	// the app.
+	MarkChildNotOwned(childName string) error
+
+	// MarkTemplateError marks the conditoin as having an error in its template.
+	MarkTemplateError(err error) error
+
+	// MarkSourceReconciliationError marks the Source having some error during the
+	// reconciliation process. Context should contain the action that failed.
+	MarkReconciliationError(context string, err error) error
+}
+
+// NewSingleConditionManager sets up a manager for setting the conditions of
+// a single sub-resource.
+func NewSingleConditionManager(manager apis.ConditionManager, destination apis.ConditionType, childType string) SingleConditionManager {
+	return &conditionImpl{
+		manager:     manager,
+		destination: destination,
+		childType:   childType,
+	}
+}
+
+type conditionImpl struct {
+	manager     apis.ConditionManager
+	destination apis.ConditionType
+	childType   string
+}
+
+var _ SingleConditionManager = (*conditionImpl)(nil)
+
+// MarkChildNotOwned marks the child with the given name as not being owned by
+// the app.
+func (ci *conditionImpl) MarkChildNotOwned(childName string) error {
+	msg := fmt.Sprintf("There is an existing %s %q that we do not own.", ci.childType, childName)
+
+	ci.manager.MarkFalse(ci.destination, "NotOwned", msg)
+
+	return errors.New(msg)
+}
+
+// MarkTemplateError marks the conditoin as having an error in its template.
+func (ci *conditionImpl) MarkTemplateError(err error) error {
+	msg := fmt.Sprintf("Couldn't populate the %s template: %s", ci.childType, err)
+
+	ci.manager.MarkFalse(ci.destination, "TemplateError", msg)
+
+	return errors.New(msg)
+}
+
+// MarkSourceReconciliationError marks the Source having some error during the
+// reconciliation process. Context should contain the action that failed.
+func (ci *conditionImpl) MarkReconciliationError(action string, err error) error {
+	msg := fmt.Sprintf("Error occurred while %s %s: %s", action, ci.childType, err)
+
+	ci.manager.MarkFalse(ci.destination, "ReconciliationError", msg)
+
+	return errors.New(msg)
 }
