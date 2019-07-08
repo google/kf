@@ -91,6 +91,13 @@ type SourceStatus struct {
 	// Pull in the fields from Knative's duckv1beta1 status field.
 	duckv1beta1.Status `json:",inline"`
 
+	SourceStatusFields `json:",inline"`
+}
+
+// SourceStatusFields holds the fields of Source's status that
+// are shared. This is defined separately and inlined so that
+// other types can readily consume these fields via duck typing.
+type SourceStatusFields struct {
 	// Image is the latest successfully built image.
 	// +optional
 	Image string `json:"image,omitempty"`

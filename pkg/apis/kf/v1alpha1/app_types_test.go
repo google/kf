@@ -15,6 +15,7 @@
 package v1alpha1
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/google/kf/pkg/kf/testutil"
@@ -149,4 +150,21 @@ func TestAppSpecInstances_ScalingAnnotations(t *testing.T) {
 			testutil.AssertEqual(t, "annotations", tc.expected, actual)
 		})
 	}
+}
+
+func ExampleApp_ComponentLabels() {
+	app := App{}
+	app.Name = "my-app"
+
+	labels := app.ComponentLabels("database")
+
+	fmt.Println("label count:", len(labels))
+	fmt.Println("name:", labels[NameLabel])
+	fmt.Println("managed-by:", labels[ManagedByLabel])
+	fmt.Println("component:", labels[ComponentLabel])
+
+	// Output: label count: 3
+	// name: my-app
+	// managed-by: kf
+	// component: database
 }

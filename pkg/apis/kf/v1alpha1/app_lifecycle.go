@@ -15,10 +15,86 @@
 package v1alpha1
 
 import (
+	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"knative.dev/pkg/apis"
 )
 
 // GetGroupVersionKind returns the GroupVersionKind.
 func (r *App) GetGroupVersionKind() schema.GroupVersionKind {
 	return SchemeGroupVersion.WithKind("App")
+}
+
+// ConditionType represents a Service condition value
+const (
+	// AppConditionReady is set when the app is configured
+	// and is usable by developers.
+	AppConditionReady = apis.ConditionReady
+	// AppConditionSourceReady is set when the build is ready.
+	AppConditionSourceReady apis.ConditionType = "SourceReady"
+	// AppConditionKnativeServiceReady is set when service is ready.
+	AppConditionKnativeServiceReady apis.ConditionType = "KnativeServiceReady"
+	// AppConditionSpaceReady is used to indicate when the space has an error that
+	// causes apps to not reconcile correctly.
+	AppConditionSpaceReady apis.ConditionType = "SpaceReady"
+)
+
+func (status *AppStatus) manage() apis.ConditionManager {
+	return apis.NewLivingConditionSet(
+		AppConditionSourceReady,
+		AppConditionKnativeServiceReady,
+		AppConditionSpaceReady,
+	).Manage(status)
+}
+
+// GetCondition returns the condition by name.
+func (status *AppStatus) GetCondition(t apis.ConditionType) *apis.Condition {
+	return status.manage().GetCondition(t)
+}
+
+// InitializeConditions sets the initial values to the conditions.
+func (status *AppStatus) InitializeConditions() {
+	status.manage().InitializeConditions()
+}
+
+// SourceCondition gets a manager for the state of the source.
+func (status *AppStatus) SourceCondition() SingleConditionManager {
+	return NewSingleConditionManager(status.manage(), AppConditionSourceReady, "Source")
+}
+
+// KnativeServiceCondition gets a manager for the state of the Knative Service.
+func (status *AppStatus) KnativeServiceCondition() SingleConditionManager {
+	return NewSingleConditionManager(status.manage(), AppConditionKnativeServiceReady, "Knative Service")
+}
+
+// PropagateSourceStatus copies the source status to the app's.
+func (status *AppStatus) PropagateSourceStatus(source *Source) {
+	status.LatestCreatedSourceName = source.Name
+
+	cond := source.Status.GetCondition(SourceConditionSucceeded)
+	if PropagateCondition(status.manage(), AppConditionSourceReady, cond) {
+		status.LatestReadySourceName = source.Name
+		status.SourceStatusFields = source.Status.SourceStatusFields
+	}
+}
+
+// PropagateKnativeServiceStatus updates the Knative service status to reflect
+// the underlying service.
+func (status *AppStatus) PropagateKnativeServiceStatus(service *serving.Service) {
+	cond := service.Status.GetCondition(apis.ConditionReady)
+
+	if PropagateCondition(status.manage(), AppConditionKnativeServiceReady, cond) {
+		status.ConfigurationStatusFields = service.Status.ConfigurationStatusFields
+	}
+}
+
+// MarkSpaceHealthy notes that the space was able to be retrieved and
+// defaults can be applied from it.
+func (status *AppStatus) MarkSpaceHealthy() {
+	status.manage().MarkTrue(AppConditionSpaceReady)
+}
+
+// MarkSpaceUnhealthy notes that the space was could not be retrieved.
+func (status *AppStatus) MarkSpaceUnhealthy(reason, message string) {
+	status.manage().MarkFalse(AppConditionSpaceReady, reason, message)
 }
