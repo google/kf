@@ -16,5 +16,10 @@
 
 set -eux
 cd $(realpath $(dirname "$(realpath $0)")/..)
+
+export GO111MODULE=on
+export GOPROXY=https://proxy.golang.org
+export GOSUMDB=sum.golang.org
+
 mkdir -p bin
 go build -o bin/kf ./cmd/kf/...
