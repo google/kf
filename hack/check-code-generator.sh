@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script is used by the CI to check if the code is gofmt formatted.
 # This script is used by the CI to check if 'go generate ./...' is up to date.
 
 set -eux
