@@ -126,6 +126,13 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 				}, envutil.EnvVarsToMap(space.Spec.BuildpackBuild.Env))
 			},
 		},
+
+		"set-buildpack-builder valid": {
+			args: []string{"set-buildpack-builder", space, "gcr.io/path/to/builder"},
+			validate: func(t *testing.T, space *v1alpha1.Space) {
+				testutil.AssertEqual(t, "container registry", "gcr.io/path/to/builder", space.Spec.BuildpackBuild.BuilderImage)
+			},
+		},
 	}
 
 	for tn, tc := range cases {
