@@ -56,107 +56,105 @@ func NewKfCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&p.KubeCfgFile, "kubeconfig", "", "kubectl config file (default is $HOME/.kube/config)")
 	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "", "kubernetes namespace")
 
-	commands := map[string]*cobra.Command{
-		// App interaction
-		"push":   InjectPush(p),
-		"delete": InjectDelete(p),
-		"apps":   InjectApps(p),
-		"proxy":  InjectProxy(p),
-		"logs":   InjectLogs(p),
+	groups := templates.CommandGroups{
+		{
+			Message: "App Management",
+			Commands: []*cobra.Command{
+				InjectPush(p),
+				InjectDelete(p),
+				InjectApps(p),
+				InjectProxy(p),
+				InjectLogs(p),
+			},
+		},
+		{
+			Message: "Environment Variables",
+			Commands: []*cobra.Command{
+				InjectEnv(p),
+				InjectSetEnv(p),
+				InjectUnsetEnv(p),
+			},
+		},
+		{
+			Message: "Buildpacks",
+			Commands: []*cobra.Command{
+				InjectBuildpacks(p),
+				InjectStacks(p),
+			},
+		},
+		{
+			Message: "Routing",
+			Commands: []*cobra.Command{
+				InjectRoutes(p),
+				InjectCreateRoute(p),
+				InjectDeleteRoute(p),
+				InjectMapRoute(p),
+				InjectUnmapRoute(p),
+			},
+		},
+		{
+			Message: "Quotas",
+			Commands: []*cobra.Command{
+				InjectQuotas(p),
+				InjectGetQuota(p),
+				InjectCreateQuota(p),
+				InjectUpdateQuota(p),
+				InjectDeleteQuota(p),
+			},
+		},
+		{
+			Message: "Services",
+			Commands: []*cobra.Command{
+				InjectCreateService(p),
+				InjectDeleteService(p),
+				InjectGetService(p),
+				InjectListServices(p),
+				InjectMarketplace(p),
+			},
+		},
+		{
+			Message: "Service Bindings",
+			Commands: []*cobra.Command{
+				InjectBindingService(p),
+				InjectListBindings(p),
+				InjectUnbindService(p),
+				InjectVcapServices(p),
+			},
+		},
+		{
+			Message: "Spaces",
+			Commands: []*cobra.Command{
+				InjectSpaces(p),
+				InjectSpace(p),
+				InjectCreateSpace(p),
+				InjectDeleteSpace(p),
+				InjectConfigSpace(p),
+			},
+		},
+		{
+			Message: "Other Commands",
+			Commands: []*cobra.Command{
+				// DoctorTests are run in the order they're defined in this list.
+				// Tests will stop as soon as one of these top-level tests fails so they
+				// should be ordered in a logical way e.g. testing apps should come after
+				// testing the cluster because if the cluster isn't working then all the
+				// app tests will fail.
+				doctor.NewDoctorCommand(p, []doctor.DoctorTest{
+					{Name: "cluster", Test: pkgdoctor.NewClusterDiagnostic(config.GetKubernetes(p))},
+					{Name: "buildpacks", Test: InjectBuildpacksClient(p)},
+				}),
 
-		// Environment Variables
-		"env":       InjectEnv(p),
-		"set-env":   InjectSetEnv(p),
-		"unset-env": InjectUnsetEnv(p),
-
-		// Services
-		"create-service": InjectCreateService(p),
-		"delete-service": InjectDeleteService(p),
-		"service":        InjectGetService(p),
-		"services":       InjectListServices(p),
-		"marketplace":    InjectMarketplace(p),
-
-		// Service Bindings
-		"bind-service":   InjectBindingService(p),
-		"bindings":       InjectListBindings(p),
-		"unbind-service": InjectUnbindService(p),
-		"vcap-services":  InjectVcapServices(p),
-
-		// Buildpacks
-		"buildpacks": InjectBuildpacks(p),
-		"stacks":     InjectStacks(p),
-
-		// Spaces
-		"spaces":       InjectSpaces(p),
-		"space":        InjectSpace(p),
-		"create-space": InjectCreateSpace(p),
-		"delete-space": InjectDeleteSpace(p),
-
-		// Quotas
-		"quotas":       InjectQuotas(p),
-		"quota":        InjectGetQuota(p),
-		"create-quota": InjectCreateQuota(p),
-		"update-quota": InjectUpdateQuota(p),
-		"delete-quota": InjectDeleteQuota(p),
-
-		// Routes
-		"routes":       InjectRoutes(p),
-		"create-route": InjectCreateRoute(p),
-		"delete-route": InjectDeleteRoute(p),
-		"map-route":    InjectMapRoute(p),
-		"unmap-route":  InjectUnmapRoute(p),
-
-		// DoctorTests are run in the order they're defined in this list.
-		// Tests will stop as soon as one of these top-level tests fails so they
-		// should be ordered in a logical way e.g. testing apps should come after
-		// testing the cluster because if the cluster isn't working then all the
-		// app tests will fail.
-		"doctor": doctor.NewDoctorCommand(p, []doctor.DoctorTest{
-			{Name: "cluster", Test: pkgdoctor.NewClusterDiagnostic(config.GetKubernetes(p))},
-			{Name: "buildpacks", Test: InjectBuildpacksClient(p)},
-		}),
-
-		"completion": completionCommand(rootCmd),
-		"target":     NewTargetCommand(p),
+				completionCommand(rootCmd),
+				NewTargetCommand(p),
+			},
+		},
 	}
-
-	groups := templates.CommandGroups{}
-	groups = append(groups, createGroup(commands, "App Management", "push", "delete", "apps", "logs"))
-	groups = append(groups, createGroup(commands, "Buildpacks", "buildpacks", "stacks"))
-	groups = append(groups, createGroup(commands, "Environment Variables", "env", "set-env", "unset-env"))
-	groups = append(groups, createGroup(commands, "Quotas", "quotas", "quota", "create-quota", "update-quota", "delete-quota"))
-	groups = append(groups, createGroup(commands, "Routing", "routes", "create-route", "delete-route", "map-route", "unmap-route"))
-	groups = append(groups, createGroup(commands, "Services", "create-service", "delete-service", "service", "services", "marketplace"))
-	groups = append(groups, createGroup(commands, "Service Bindings", "bind-service", "bindings", "unbind-service", "vcap-services"))
-	groups = append(groups, createGroup(commands, "Spaces", "spaces", "create-space", "delete-space"))
 
 	// This will add the rest to a group under "Other Commands".
-	for _, cmd := range commands {
-		rootCmd.AddCommand(cmd)
-	}
 	groups.Add(rootCmd)
 	templates.ActsAsRootCommand(rootCmd, nil, groups...)
 
 	return rootCmd
-}
-
-// createGroup creates a template.CommandGroup for the listed command names.
-// It then removes those from the map. If the requested command is not there,
-// it panics.
-func createGroup(commands map[string]*cobra.Command, msg string, commandNames ...string) templates.CommandGroup {
-	g := templates.CommandGroup{
-		Message: msg,
-	}
-	for _, name := range commandNames {
-		cmd, ok := commands[name]
-		if !ok {
-			panic("unknown command: " + name)
-		}
-		g.Commands = append(g.Commands, cmd)
-		delete(commands, name)
-	}
-
-	return g
 }
 
 func completionCommand(rootCmd *cobra.Command) *cobra.Command {

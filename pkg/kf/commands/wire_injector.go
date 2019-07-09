@@ -304,6 +304,12 @@ func InjectDeleteSpace(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
+func InjectConfigSpace(p *config.KfParams) *cobra.Command {
+	wire.Build(cspaces.NewConfigSpaceCommand, SpacesSet)
+
+	return nil
+}
+
 ////////////////////
 // Quotas Command //
 ////////////////////
