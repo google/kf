@@ -18,7 +18,9 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"path"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -32,7 +34,7 @@ import (
 	"knative.dev/pkg/kmeta"
 )
 
-func TestEncodeRouteName_Deterministic(t *testing.T) {
+func TestVirtualServiceName_Deterministic(t *testing.T) {
 	t.Parallel()
 
 	r1 := resources.VirtualServiceName("host-1", "example1.com")
@@ -50,7 +52,7 @@ func TestEncodeRouteName_Deterministic(t *testing.T) {
 	}
 }
 
-func TestEncodeRouteName_ValidDNS(t *testing.T) {
+func TestVirtualServiceName_ValidDNS(t *testing.T) {
 	t.Parallel()
 
 	// We'll use an instantiation of rand so we can seed it with 0 for
@@ -61,18 +63,28 @@ func TestEncodeRouteName_ValidDNS(t *testing.T) {
 		for i := range buf {
 			buf[i] = byte(rand.Intn('z'-'a') + 'a')
 		}
-		return string(buf)
+		return strings.ToUpper(path.Join("./", string(buf)))
 	}
 
 	history := map[string]bool{}
 
-	for i := 0; i < 10000; i++ {
-		r := resources.VirtualServiceName(randStr(), randStr())
-		testutil.AssertRegexp(t, "valid DNS", `[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*`, r)
+	validDNS := func(r string) {
+		testutil.AssertRegexp(t, "valid DNS", `^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`, r)
 		testutil.AssertEqual(t, fmt.Sprintf("len: %d", len(r)), true, len(r) <= 64)
 		testutil.AssertEqual(t, "collison", false, history[r])
+	}
+
+	for i := 0; i < 10000; i++ {
+		r := resources.VirtualServiceName(randStr(), randStr())
+		validDNS(r)
 		history[r] = true
 	}
+
+	// Empty name
+	validDNS(resources.VirtualServiceName())
+
+	// Only non-alphanumeric characters
+	validDNS(resources.VirtualServiceName(".", "-", "$"))
 }
 
 func TestMakeVirtualService(t *testing.T) {

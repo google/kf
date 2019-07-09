@@ -18,6 +18,7 @@ import (
 	"hash/crc64"
 	"net/http"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -37,12 +38,39 @@ const (
 
 // VirtualServiceName gets the name of a VirtualService given the route.
 func VirtualServiceName(parts ...string) string {
-	return strconv.FormatUint(
+	prefix := strings.Join(parts, "-")
+
+	// Base 36 uses the characters 0-9a-z. The maximum number of chars it
+	// requires is 13 for a Uin64.
+	checksum := strconv.FormatUint(
 		crc64.Checksum(
 			[]byte(strings.Join(parts, "")),
 			crc64.MakeTable(crc64.ECMA),
 		),
-		10)
+		36)
+
+	prefix = strings.ToLower(prefix)
+
+	// Remove all non-alphanumeric characters.
+	prefix = regexp.MustCompile(`[^a-z0-9-_]`).ReplaceAllString(prefix, "-")
+
+	// First char must be alphanumeric.
+	for len(prefix) > 0 && regexp.MustCompile(`[^a-z0-9]`).Match([]byte{prefix[0]}) {
+		prefix = prefix[1:]
+	}
+
+	// Subtract an extra 1 for the hyphen between the prefix and checksum.
+	maxPrefixLen := 64 - 1 - len(checksum)
+
+	if len(prefix) > maxPrefixLen {
+		prefix = prefix[:maxPrefixLen]
+	}
+
+	if prefix == "" {
+		return checksum
+	}
+
+	return fmt.Sprintf("%s-%s", prefix, checksum)
 }
 
 // MakeVirtualService creates a VirtualService from a Route object.
