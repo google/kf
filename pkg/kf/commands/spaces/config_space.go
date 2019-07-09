@@ -94,7 +94,12 @@ func (sm spaceMutator) ToCommand(client spaces.Client) *cobra.Command {
 }
 
 func printDiff(w io.Writer, original, new *v1alpha1.Space) {
-	diff, _ := kmp.SafeDiff(original.Spec, new.Spec)
+	diff, err := kmp.SafeDiff(original.Spec, new.Spec)
+	if err != nil {
+		fmt.Fprintf(w, "Couldn't format diff: %s\n", err.Error())
+		return
+	}
+
 	if diff != "" {
 		fmt.Fprintln(w, "Space Spec (-original +new):")
 		fmt.Fprintln(w, diff)
