@@ -16,10 +16,14 @@ package spaces
 
 import (
 	"fmt"
+	"io"
+	"sort"
+	"text/tabwriter"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/spaces"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta/table"
 
 	"github.com/spf13/cobra"
@@ -68,15 +72,37 @@ func NewGetSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Command
 			fmt.Fprintf(w, "Builder image: %q\n", buildpackBuild.BuilderImage)
 			fmt.Fprintf(w, "Container registry: %q\n", buildpackBuild.ContainerRegistry)
 			fmt.Fprintf(w, "Build environment: %v variable(s)\n", len(buildpackBuild.Env))
+			printEnvGroup(w, buildpackBuild.Env)
 
 			fmt.Fprintln(w)
 			fmt.Fprintln(w, "# Execution")
 			execution := space.Spec.Execution
 			fmt.Fprintf(w, "Environment: %v variable(s)\n", len(execution.Env))
+			printEnvGroup(w, execution.Env)
 
 			return nil
 		},
 	}
 
 	return cmd
+}
+
+func printEnvGroup(out io.Writer, envVars []corev1.EnvVar) {
+	if len(envVars) == 0 {
+		return
+	}
+
+	w := tabwriter.NewWriter(out, 8, 4, 1, ' ', tabwriter.StripEscape)
+	defer w.Flush()
+
+	fmt.Fprintln(w, "Variable Name\tAssigned Value")
+
+	sort.Slice(envVars, func(i int, j int) bool {
+		return envVars[i].Name < envVars[j].Name
+	})
+
+	for _, env := range envVars {
+		fmt.Fprintf(w, "%s\t%s", env.Name, env.Value)
+		fmt.Fprintln(w)
+	}
 }

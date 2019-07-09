@@ -240,6 +240,14 @@ func InjectDeleteSpace(p *config.KfParams) *cobra.Command {
 	return command
 }
 
+func InjectConfigSpace(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
+	client := spaces.NewClient(spacesGetter)
+	command := spaces2.NewConfigSpaceCommand(p, client)
+	return command
+}
+
 func InjectQuotas(p *config.KfParams) *cobra.Command {
 	kubernetesInterface := config.GetKubernetes(p)
 	resourceQuotasGetter := provideQuotaGetter(kubernetesInterface)
