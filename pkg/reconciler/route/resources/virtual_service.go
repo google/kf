@@ -36,6 +36,11 @@ const (
 	GatewayHost           = "istio-ingressgateway.istio-system.svc.cluster.local"
 )
 
+var (
+	nonAlphaNumeric    = regexp.MustCompile(`[^a-z0-9]`)
+	validDNSCharacters = regexp.MustCompile(`[^a-z0-9-_]`)
+)
+
 // VirtualServiceName gets the name of a VirtualService given the route.
 func VirtualServiceName(parts ...string) string {
 	prefix := strings.Join(parts, "-")
@@ -52,10 +57,10 @@ func VirtualServiceName(parts ...string) string {
 	prefix = strings.ToLower(prefix)
 
 	// Remove all non-alphanumeric characters.
-	prefix = regexp.MustCompile(`[^a-z0-9-_]`).ReplaceAllString(prefix, "-")
+	prefix = validDNSCharacters.ReplaceAllString(prefix, "-")
 
 	// First char must be alphanumeric.
-	for len(prefix) > 0 && regexp.MustCompile(`[^a-z0-9]`).Match([]byte{prefix[0]}) {
+	for len(prefix) > 0 && nonAlphaNumeric.Match([]byte{prefix[0]}) {
 		prefix = prefix[1:]
 	}
 
