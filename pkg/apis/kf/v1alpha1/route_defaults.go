@@ -16,7 +16,8 @@ package v1alpha1
 
 import (
 	"context"
-	"sort"
+
+	"github.com/google/kf/pkg/kf/algorithms"
 )
 
 // SetDefaults implements apis.Defaultable
@@ -26,15 +27,7 @@ func (k *Route) SetDefaults(ctx context.Context) {
 
 // SetDefaults implements apis.Defaultable
 func (k *RouteSpec) SetDefaults(ctx context.Context) {
-	// Dedupe Service Names
-	sort.Strings(k.KnativeServiceNames)
-	var currentIdx int
-	for i := 0; i < len(k.KnativeServiceNames); i++ {
-		if i != 0 && k.KnativeServiceNames[i] == k.KnativeServiceNames[i-1] {
-			continue
-		}
-		k.KnativeServiceNames[currentIdx] = k.KnativeServiceNames[i]
-		currentIdx++
-	}
-	k.KnativeServiceNames = k.KnativeServiceNames[:currentIdx]
+	k.KnativeServiceNames = []string(algorithms.Dedupe(
+		algorithms.Dedupe(algorithms.Strings(k.KnativeServiceNames)),
+	).(algorithms.Strings))
 }
