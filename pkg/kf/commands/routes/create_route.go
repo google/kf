@@ -17,6 +17,7 @@ package routes
 import (
 	"errors"
 	"fmt"
+	"path"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
@@ -78,6 +79,8 @@ Instead use the --namespace flag.`)
 			if err != nil {
 				return fmt.Errorf("failed to fetch space: %s", err)
 			}
+
+			urlPath = path.Join("/", urlPath)
 
 			r := &v1alpha1.Route{
 				TypeMeta: metav1.TypeMeta{

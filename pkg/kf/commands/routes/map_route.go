@@ -16,6 +16,7 @@ package routes
 
 import (
 	"fmt"
+	"path"
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
@@ -71,6 +72,7 @@ func NewMapRouteCommand(
 				return newR
 			})
 
+			urlPath = path.Join("/", urlPath)
 			r := &v1alpha1.Route{
 				TypeMeta: metav1.TypeMeta{
 					Kind: "Route",
