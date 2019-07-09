@@ -41,12 +41,14 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 			args:    []string{"test"},
 			wantErr: errors.New("accepts 0 arg(s), received 1"),
 		},
+
 		"set-container-registry valid": {
 			args: []string{"set-container-registry", space, "gcr.io/foo"},
 			validate: func(t *testing.T, space *v1alpha1.Space) {
 				testutil.AssertEqual(t, "container registry", "gcr.io/foo", space.Spec.BuildpackBuild.ContainerRegistry)
 			},
 		},
+
 		"set-env valid": {
 			space: v1alpha1.Space{
 				Spec: v1alpha1.SpaceSpec{
@@ -156,37 +158,3 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 		})
 	}
 }
-
-// func newUnsetEnvMutator() spaceMutator {
-// 	return spaceMutator{
-// 		Name:  "unset-env",
-// 		Short: "Unset a space-wide environment variable.",
-// 		Args:  []string{"ENV_VAR_NAME"},
-// 		Init: func(args []string) (spaces.Mutator, error) {
-// 			name := args[0]
-//
-// 			return func(space *v1alpha1.Space) error {
-// 				space.Spec.Execution.Env = envutil.RemoveEnvVars([]string{name}, space.Spec.Execution.Env)
-//
-// 				return nil
-// 			}, nil
-// 		},
-// 	}
-// }
-//
-// func newUnsetBuildpackEnvMutator() spaceMutator {
-// 	return spaceMutator{
-// 		Name:  "unset-buildpack-env",
-// 		Short: "Unset an environment variable for buildpack builds in a space.",
-// 		Args:  []string{"ENV_VAR_NAME"},
-// 		Init: func(args []string) (spaces.Mutator, error) {
-// 			name := args[0]
-//
-// 			return func(space *v1alpha1.Space) error {
-// 				space.Spec.BuildpackBuild.Env = envutil.RemoveEnvVars([]string{name}, space.Spec.BuildpackBuild.Env)
-//
-// 				return nil
-// 			}, nil
-// 		},
-// 	}
-// }
