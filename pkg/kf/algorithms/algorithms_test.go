@@ -31,12 +31,12 @@ func TestDedupe(t *testing.T) {
 	// We use 0 so we get the same tests every time.
 	rand := rand.New(rand.NewSource(0))
 	for i := 0; i < 5000; i++ {
-		var slice []int
+		var slice algorithms.Ints
 		for j := 0; j < rand.Intn(1000)+1000; j++ {
 			slice = append(slice, rand.Intn(10))
 		}
 
-		slice = slice[:algorithms.Dedupe(algorithms.Ints(slice))]
+		slice = algorithms.Dedupe(algorithms.Ints(slice)).(algorithms.Ints)
 
 		// While it might already be sorted, the requirements  of the
 		// algorithm don't require it. We'll do it here to make testing it
@@ -44,13 +44,13 @@ func TestDedupe(t *testing.T) {
 		sort.Ints(slice)
 
 		testutil.AssertEqual(t, "len", 10, len(slice))
-		testutil.AssertEqual(t, "values", []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, slice)
+		testutil.AssertEqual(t, "values", algorithms.Ints{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, slice)
 	}
 }
 
 func ExampleDedupe() {
 	s := []string{"a", "b", "a", "d", "b", "d", "c"}
-	s = s[:algorithms.Dedupe(algorithms.Strings(s))]
+	s = []string(algorithms.Dedupe(algorithms.Strings(s)).(algorithms.Strings))
 
 	fmt.Println(strings.Join(s, ", "))
 
@@ -110,10 +110,10 @@ func ExampleSearch() {
 func TestDelete(t *testing.T) {
 	t.Parallel()
 
-	a := []string{"c", "b", "a", "d"}
-	b := []string{"d", "c"}
+	a := algorithms.Strings{"c", "b", "a", "d"}
+	b := algorithms.Strings{"d", "c"}
 
-	a = a[:algorithms.Delete(algorithms.Strings(a), algorithms.Strings(b))]
+	a = algorithms.Delete(a, b).(algorithms.Strings)
 
 	// While it might already be sorted, the requirements  of the
 	// algorithm don't require it. We'll do it here to make testing it
@@ -121,14 +121,14 @@ func TestDelete(t *testing.T) {
 	sort.Strings(a)
 
 	testutil.AssertEqual(t, "len", 2, len(a))
-	testutil.AssertEqual(t, "values", []string{"a", "b"}, a)
+	testutil.AssertEqual(t, "values", algorithms.Strings{"a", "b"}, a)
 }
 
 func ExampleDelete() {
 	a := []string{"c", "b", "a", "d"}
 	b := []string{"d", "c"}
 
-	a = a[:algorithms.Delete(algorithms.Strings(a), algorithms.Strings(b))]
+	a = []string(algorithms.Delete(algorithms.Strings(a), algorithms.Strings(b)).(algorithms.Strings))
 
 	// Sort for readability
 	sort.Sort(algorithms.Strings(a))

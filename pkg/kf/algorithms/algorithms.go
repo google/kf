@@ -111,12 +111,11 @@ func (s Ints) Slice(i, j int) Interface {
 	return s[i:j]
 }
 
-// Dedupe removes any duplicates from the given collection. This DOES alter
-// the input. It outputs the lengh of the new collection. Therefore, if the
-// interface is wrapping a slice, then the slice should be truncated via the
-// result (e.g., slice[:returnValue]).
-func Dedupe(s Interface) int {
-	sort.Sort(s)
+// Dedupe removes any duplicates from the given collection. This does not
+// alter the input. First element is always chosen.
+func Dedupe(s Interface) Interface {
+	s = s.Clone()
+	sort.Stable(s)
 
 	var idx int
 
@@ -130,14 +129,16 @@ func Dedupe(s Interface) int {
 		s.Set(idx, s, i, s)
 		idx++
 	}
-	return idx
+	return s.Slice(0, idx)
 }
 
-// Delete removes any items in 'b' from the 'a' collection. This DOES alter
-// the input. It outputs the lengh of the new collection. Therefore, if the
-// interface is wrapping a slice, then the slice should be truncated via the
-// result (e.g., slice[:returnValue]).
-func Delete(a, b Interface) int {
+// Delete removes any items in 'b' from the 'a' collection. This does not
+// alter the input. It outputs the lengh of the new collection. Therefore, if
+// the interface is wrapping a slice, then the slice should be truncated via
+// the result (e.g., slice[:returnValue]).
+func Delete(a, b Interface) Interface {
+	a = a.Clone()
+	b = b.Clone()
 	sort.Sort(b)
 
 	var currentIdx int
@@ -149,13 +150,13 @@ func Delete(a, b Interface) int {
 		currentIdx++
 	}
 
-	return currentIdx
+	return a.Slice(0, currentIdx)
 }
 
 func equal(i, j int, s sort.Interface) bool {
 	// If something is neither less, nor greater than the given value, then it
 	// must be equal.
-	return !s.Less(i, j) && !greater(i, j, s)
+	return !s.Less(i, j) && !s.Less(j, i)
 }
 
 func greater(i, j int, s sort.Interface) bool {
@@ -165,8 +166,12 @@ func greater(i, j int, s sort.Interface) bool {
 }
 
 // Search will look for the item at a[i] in b. If found, it will return true.
-// Otherwise it will return false. b must be sorted.
+// Otherwise it will return false.
 func Search(i int, a, b Interface) bool {
+	// b must be sorted, but we don't want to destroy the input.
+	b = b.Clone()
+	sort.Sort(b)
+
 	idx := index(i, a, b)
 
 	if idx >= b.Len() {
@@ -188,15 +193,8 @@ func index(i int, a, b Interface) int {
 // there is a collision. It assumes both a and b have been Deduped. It uses
 // Append to create new memory and therefore does not destroy the input.
 func Merge(a, b Interface) Interface {
+	b = b.Clone()
 	sort.Sort(b)
 
-	nb := b.Clone()
-	for i := 0; i < a.Len(); i++ {
-		if Search(i, a, b) {
-			continue
-		}
-		nb = nb.Append(a.Slice(i, i+1))
-	}
-
-	return nb
+	return Dedupe(b.Append(a))
 }

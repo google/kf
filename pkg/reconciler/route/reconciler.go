@@ -139,7 +139,6 @@ func (r *Reconciler) ReconcileServiceDeletion(ctx context.Context, service *serv
 func (r *Reconciler) ApplyChanges(ctx context.Context, route *v1alpha1.Route, deleted bool, logger *zap.SugaredLogger) error {
 	route.SetDefaults(ctx)
 	route.Status.InitializeConditions()
-	// virtualServiceName := resources.VirtualServiceName(route.Spec.Hostname, route.Spec.Domain)
 
 	// Sync VirtualService
 	{
@@ -187,15 +186,15 @@ func (r *Reconciler) reconcile(desired, actual *networking.VirtualService, delet
 	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
 
 	if deleted {
-		existing.OwnerReferences = existing.OwnerReferences[:algorithms.Delete(
+		existing.OwnerReferences = algorithms.Delete(
 			resources.OwnerReferences(existing.OwnerReferences),
 			resources.OwnerReferences(desired.OwnerReferences),
-		)]
+		).(resources.OwnerReferences)
 
-		existing.Spec.HTTP = existing.Spec.HTTP[:algorithms.Delete(
+		existing.Spec.HTTP = algorithms.Delete(
 			resources.HTTPRoutes(existing.Spec.HTTP),
 			resources.HTTPRoutes(desired.Spec.HTTP),
-		)]
+		).(resources.HTTPRoutes)
 	} else {
 		existing.OwnerReferences = algorithms.Merge(
 			resources.OwnerReferences(existing.OwnerReferences),
