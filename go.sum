@@ -136,7 +136,6 @@ github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1/go.mod h1:wJfORR
 github.com/gorilla/context v1.1.1/go.mod h1:kBGZzfjB9CEq2AlWe17Uuf7NDRt0dE0s8S51q0aT7Yg=
 github.com/gorilla/mux v1.6.2 h1:Pgr17XVTNXAk3q/r4CpKzC5xBM/qW1uVLV+IhRZpIIk=
 github.com/gorilla/mux v1.6.2/go.mod h1:1lud6UwP+6orDFRuTfBEV8e9/aOM/c4fVVCaMa2zaAs=
-github.com/gorilla/websocket v0.0.0-20170926233335-4201258b820c h1:Lh2aW+HnU2Nbe1gqD9SOJLJxW1jBMmQOktN2acDyJk8=
 github.com/gorilla/websocket v0.0.0-20170926233335-4201258b820c/go.mod h1:E7qHFY5m1UJ88s3WnNqhKjPHQ0heANvMoAMk2YaljkQ=
 github.com/gregjones/httpcache v0.0.0-20170728041850-787624de3eb7/go.mod h1:FecbI9+v66THATjSRHfNgh1IVFe/9kFxbXtjV0ctIMA=
 github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7 h1:pdN6V1QBWetyv/0+wjACpqVH+eVULgEjkurDLq3goeM=
@@ -172,8 +171,6 @@ github.com/jteeuwen/go-bindata v0.0.0-20151023091102-a0ff2567cfb7/go.mod h1:JVvh
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/knative/build v0.7.0 h1:YqqiShED6wILhPRZyUJjTX2B6OgbgEqWe1WNrAcDclw=
-github.com/knative/build v0.7.0 h1:YqqiShED6wILhPRZyUJjTX2B6OgbgEqWe1WNrAcDclw=
-github.com/knative/build v0.7.0/go.mod h1:/sU74ZQkwlYA5FwYDJhYTy61i/Kn+5eWfln2jDbw3Qo=
 github.com/knative/build v0.7.0/go.mod h1:/sU74ZQkwlYA5FwYDJhYTy61i/Kn+5eWfln2jDbw3Qo=
 github.com/knative/caching v0.0.0-20190605182338-b6c8f4851e3f h1:3lF4RXQBfSLasDsHGK5+NcrngAHgNlqtFhO0J92uEVI=
 github.com/knative/caching v0.0.0-20190605182338-b6c8f4851e3f/go.mod h1:D6ynAUa79yFRVWCEogSqhRRNi2SooyDBf1ucp02CFKg=
@@ -430,7 +427,6 @@ google.golang.org/grpc v1.18.0/go.mod h1:6QZJwpn2B+Zp71q/5VxRsJ6NXXVCE5NRUHRo+f3
 google.golang.org/grpc v1.19.0 h1:cfg4PD8YEdSFnm7qLV4++93WcmhH2nIUhMjhdCvl3j8=
 google.golang.org/grpc v1.19.0/go.mod h1:mqu4LbDTu4XGKhr4mRzUsmM4RtVoemTSY81AxZiDr8c=
 gopkg.in/alecthomas/kingpin.v2 v2.2.6/go.mod h1:FMv+mEhP44yOT+4EoQTLFTRgOQ1FBLkstjWtayDeSgw=
-gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 h1:qIbj1fsPNlZgppZ+VLlY7N33q108Sa+fhmuc+sWQYwY=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
@@ -452,11 +448,9 @@ grpc.go4.org v0.0.0-20170609214715-11d0a25b4919/go.mod h1:77eQGdRu53HpSqPFJFmuJd
 honnef.co/go/tools v0.0.0-20180728063816-88497007e858/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 honnef.co/go/tools v0.0.0-20190102054323-c2f93a96b099/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 honnef.co/go/tools v0.0.0-20190106161140-3f1c8253044a/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
-k8s.io/api v0.0.0-20181121191454-a61488babbd6 h1:ZqVoWN788iQzxLP6aG1XCG9nLkocGrJ0D5ufRG9jhO4=
 k8s.io/api v0.0.0-20181121191454-a61488babbd6/go.mod h1:iuAfoD4hCxJ8Onx9kaTIt30j7jUFS00AXQi6QMi99vA=
 k8s.io/api v0.0.0-20190226173710-145d52631d00 h1:xYfyMq0qxTGAg3O9GK23GMbNrBcpnFg9IeA6isDgIXk=
 k8s.io/api v0.0.0-20190226173710-145d52631d00/go.mod h1:iuAfoD4hCxJ8Onx9kaTIt30j7jUFS00AXQi6QMi99vA=
-k8s.io/apimachinery v0.0.0-20181127025237-2b1284ed4c93 h1:tT6oQBi0qwLbbZSfDkdIsb23EwaLY85hoAV4SpXfdao=
 k8s.io/apimachinery v0.0.0-20181127025237-2b1284ed4c93/go.mod h1:ccL7Eh7zubPUSh9A3USN90/OzHNSVN6zxzde07TDCL0=
 k8s.io/apimachinery v0.0.0-20190221084156-01f179d85dbc h1:7z9/6jKWBqkK9GI1RRB0B5fZcmkatLQ/nv8kysch24o=
 k8s.io/apimachinery v0.0.0-20190221084156-01f179d85dbc/go.mod h1:ccL7Eh7zubPUSh9A3USN90/OzHNSVN6zxzde07TDCL0=
@@ -468,7 +462,6 @@ k8s.io/gengo v0.0.0-20181106084056-51747d6e00da/go.mod h1:ezvh/TsK7cY6rbqRK0oQQ8
 k8s.io/klog v0.0.0-20181108234604-8139d8cb77af/go.mod h1:Gq+BEi5rUBO/HRz0bTSXDUcqjScdoY3a9IHpCEIOOfk=
 k8s.io/kube-openapi v0.0.0-20181109181836-c59034cc13d5 h1:MH8SvyTlIiLt8b1oHy4Dtp1zPpLGp6lTOjvfzPTkoQE=
 k8s.io/kube-openapi v0.0.0-20181109181836-c59034cc13d5/go.mod h1:BXM9ceUBTj2QnfH2MK1odQs778ajze1RxcmP6S8RVVc=
-k8s.io/kubectl v0.0.0-20181112202209-a45bc6067dfd h1:Qnp1efm3GC/LK5xAMI05+OLYkT6FeC8YnxD2BwhlgfA=
 k8s.io/kubectl v0.0.0-20181112202209-a45bc6067dfd/go.mod h1:EB+3ydgwGODs2kdxh8bSZwgE1veo9VehVcxOVjWl8sI=
 k8s.io/kubernetes v1.14.2 h1:Gdq2hPpttbaJBoClIanCE6WSu4IZReA54yhkZtvPUOo=
 k8s.io/kubernetes v1.14.2/go.mod h1:ocZa8+6APFNC2tX1DZASIbocyYT5jHzqFVsY5aoB7Jk=
