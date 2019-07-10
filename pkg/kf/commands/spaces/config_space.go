@@ -46,6 +46,7 @@ func NewConfigSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		newSetBuildpackEnvMutator(),
 		newUnsetBuildpackEnvMutator(),
 		newSetContainerRegistryMutator(),
+		newSetBuildpackBuilderMutator(),
 	}
 
 	for _, sm := range subcommands {
@@ -118,6 +119,23 @@ func newSetContainerRegistryMutator() spaceMutator {
 
 			return func(space *v1alpha1.Space) error {
 				space.Spec.BuildpackBuild.ContainerRegistry = registry
+
+				return nil
+			}, nil
+		},
+	}
+}
+
+func newSetBuildpackBuilderMutator() spaceMutator {
+	return spaceMutator{
+		Name:  "set-buildpack-builder",
+		Short: "Set the buildpack builder image.",
+		Args:  []string{"BUILDER_IMAGE"},
+		Init: func(args []string) (spaces.Mutator, error) {
+			image := args[0]
+
+			return func(space *v1alpha1.Space) error {
+				space.Spec.BuildpackBuild.BuilderImage = image
 
 				return nil
 			}, nil
