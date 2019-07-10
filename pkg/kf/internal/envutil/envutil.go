@@ -20,7 +20,7 @@ import (
 	"sort"
 	"strings"
 
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 )
@@ -107,32 +107,28 @@ func NewJSONEnvVar(key string, value interface{}) (corev1.EnvVar, error) {
 	return corev1.EnvVar{Name: key, Value: string(valueBytes)}, nil
 }
 
-// GetServiceEnvVars reads the environment variables off a service.
+// GetAppEnvVars reads the environment variables off a app.
 // Prefer using this function directly rather than accessing nested objects
-// on service so kf can adapt to future changes.
-func GetServiceEnvVars(service *serving.Service) []corev1.EnvVar {
-	if service == nil || service.Spec.Template == nil {
+// on app so kf can adapt to future changes.
+func GetAppEnvVars(app *v1alpha1.App) []corev1.EnvVar {
+	if app == nil {
 		return nil
 	}
 
-	if len(service.Spec.Template.Spec.Containers) == 0 {
+	if len(app.Spec.Template.Spec.Containers) == 0 {
 		return nil
 	}
 
-	return service.Spec.Template.Spec.Containers[0].Env
+	return app.Spec.Template.Spec.Containers[0].Env
 }
 
-// SetServiceEnvVars sets environment variables on a service.
+// SetAppEnvVars sets environment variables on a app.
 // Prefer using this function directly rather than accessing nested objects
-// on service so kf can adapt to future changes.
-func SetServiceEnvVars(service *serving.Service, env []corev1.EnvVar) {
-	if service.Spec.Template == nil {
-		service.Spec.Template = &serving.RevisionTemplateSpec{}
+// on app so kf can adapt to future changes.
+func SetAppEnvVars(app *v1alpha1.App, env []corev1.EnvVar) {
+	if len(app.Spec.Template.Spec.Containers) == 0 {
+		app.Spec.Template.Spec.Containers = []v1.Container{{}}
 	}
 
-	if len(service.Spec.Template.Spec.Containers) == 0 {
-		service.Spec.Template.Spec.Containers = []v1.Container{{}}
-	}
-
-	service.Spec.Template.Spec.Containers[0].Env = env
+	app.Spec.Template.Spec.Containers[0].Env = env
 }

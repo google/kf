@@ -19,25 +19,25 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/internal/envutil"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	fakebindings "github.com/google/kf/pkg/kf/service-bindings/fake"
 	"github.com/google/kf/pkg/kf/testutil"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 )
 
 func TestSystemEnvInjector(t *testing.T) {
 	t.Parallel()
 
 	cases := map[string]struct {
-		setup     func(svc *serving.Service, fake *fakebindings.FakeClientInterface)
+		setup     func(app *v1alpha1.App, fake *fakebindings.FakeClientInterface)
 		expectErr error
 		validate  func(t *testing.T, env map[string]string)
 	}{
 		"new-service": {
-			setup: func(svc *serving.Service, fake *fakebindings.FakeClientInterface) {
-				svc.Name = "foo"
-				svc.Namespace = "ns"
+			setup: func(app *v1alpha1.App, fake *fakebindings.FakeClientInterface) {
+				app.Name = "foo"
+				app.Namespace = "ns"
 
 				fake.EXPECT().GetVcapServices("foo", gomock.Any()).Return(servicebindings.VcapServicesMap{}, nil)
 
@@ -54,9 +54,9 @@ func TestSystemEnvInjector(t *testing.T) {
 			},
 		},
 		"lookup failure": {
-			setup: func(svc *serving.Service, fake *fakebindings.FakeClientInterface) {
-				svc.Name = "foo"
-				svc.Namespace = "ns"
+			setup: func(app *v1alpha1.App, fake *fakebindings.FakeClientInterface) {
+				app.Name = "foo"
+				app.Namespace = "ns"
 
 				fake.EXPECT().GetVcapServices("foo", gomock.Any()).Return(nil, errors.New("test"))
 			},
@@ -68,7 +68,7 @@ func TestSystemEnvInjector(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			fakeClient := fakebindings.NewFakeClientInterface(ctrl)
-			svc := &serving.Service{}
+			svc := &v1alpha1.App{}
 
 			if tc.setup != nil {
 				tc.setup(svc, fakeClient)
@@ -82,7 +82,7 @@ func TestSystemEnvInjector(t *testing.T) {
 				return
 			}
 
-			tc.validate(t, envutil.EnvVarsToMap(envutil.GetServiceEnvVars(svc)))
+			tc.validate(t, envutil.EnvVarsToMap(envutil.GetAppEnvVars(svc)))
 		})
 	}
 }

@@ -25,8 +25,8 @@ import (
 
 // User defined imports
 import (
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	cv1alpha1 "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -35,18 +35,18 @@ import (
 
 const (
 	// Kind contains the kind for the backing Kubernetes API.
-	Kind = "Service"
+	Kind = "App"
 
 	// APIVersion contains the version for the backing Kubernetes API.
-	APIVersion = "serving.knative.dev/v1alpha1"
+	APIVersion = "v1alpha1"
 )
 
-// Predicate is a boolean function for a serving.Service.
-type Predicate func(*serving.Service) bool
+// Predicate is a boolean function for a v1alpha1.App.
+type Predicate func(*v1alpha1.App) bool
 
 // AllPredicate is a predicate that passes if all children pass.
 func AllPredicate(children ...Predicate) Predicate {
-	return func(obj *serving.Service) bool {
+	return func(obj *v1alpha1.App) bool {
 		for _, filter := range children {
 			if !filter(obj) {
 				return false
@@ -57,11 +57,11 @@ func AllPredicate(children ...Predicate) Predicate {
 	}
 }
 
-// Mutator is a function that changes serving.Service.
-type Mutator func(*serving.Service) error
+// Mutator is a function that changes v1alpha1.App.
+type Mutator func(*v1alpha1.App) error
 
-// List represents a collection of serving.Service.
-type List []serving.Service
+// List represents a collection of v1alpha1.App.
+type List []v1alpha1.App
 
 // Filter returns a new list items for which the predicates fails removed.
 func (list List) Filter(filter Predicate) (out List) {
@@ -79,7 +79,7 @@ type MutatorList []Mutator
 
 // Apply passes the given value to each of the mutators in the list failing if
 // one of them returns an error.
-func (list MutatorList) Apply(svc *serving.Service) error {
+func (list MutatorList) Apply(svc *v1alpha1.App) error {
 	for _, mutator := range list {
 		if err := mutator(svc); err != nil {
 			return err
@@ -91,7 +91,7 @@ func (list MutatorList) Apply(svc *serving.Service) error {
 
 // LabelSetMutator creates a mutator that sets the given labels on the object.
 func LabelSetMutator(labels map[string]string) Mutator {
-	return func(obj *serving.Service) error {
+	return func(obj *v1alpha1.App) error {
 		if obj.Labels == nil {
 			obj.Labels = make(map[string]string)
 		}
@@ -106,14 +106,14 @@ func LabelSetMutator(labels map[string]string) Mutator {
 
 // LabelEqualsPredicate validates that the given label exists exactly on the object.
 func LabelEqualsPredicate(key, value string) Predicate {
-	return func(obj *serving.Service) bool {
+	return func(obj *v1alpha1.App) bool {
 		return obj.Labels[key] == value
 	}
 }
 
 // LabelsContainsPredicate validates that the given label exists on the object.
 func LabelsContainsPredicate(key string) Predicate {
-	return func(obj *serving.Service) bool {
+	return func(obj *v1alpha1.App) bool {
 		_, ok := obj.Labels[key]
 		return ok
 	}
@@ -123,28 +123,28 @@ func LabelsContainsPredicate(key string) Predicate {
 // Client
 ////////////////////////////////////////////////////////////////////////////////
 
-// Client is the interface for interacting with serving.Service types as App CF style objects.
+// Client is the interface for interacting with v1alpha1.App types as App CF style objects.
 type Client interface {
-	Create(namespace string, obj *serving.Service, opts ...CreateOption) (*serving.Service, error)
-	Update(namespace string, obj *serving.Service, opts ...UpdateOption) (*serving.Service, error)
+	Create(namespace string, obj *v1alpha1.App, opts ...CreateOption) (*v1alpha1.App, error)
+	Update(namespace string, obj *v1alpha1.App, opts ...UpdateOption) (*v1alpha1.App, error)
 	Transform(namespace string, name string, transformer Mutator) error
-	Get(namespace string, name string, opts ...GetOption) (*serving.Service, error)
+	Get(namespace string, name string, opts ...GetOption) (*v1alpha1.App, error)
 	Delete(namespace string, name string, opts ...DeleteOption) error
-	List(namespace string, opts ...ListOption) ([]serving.Service, error)
-	Upsert(namespace string, newObj *serving.Service, merge Merger) (*serving.Service, error)
+	List(namespace string, opts ...ListOption) ([]v1alpha1.App, error)
+	Upsert(namespace string, newObj *v1alpha1.App, merge Merger) (*v1alpha1.App, error)
 
 	// ClientExtension can be used by the developer to extend the client.
 	ClientExtension
 }
 
 type coreClient struct {
-	kclient cserving.ServingV1alpha1Interface
+	kclient cv1alpha1.AppsGetter
 
 	upsertMutate        MutatorList
 	membershipValidator Predicate
 }
 
-func (core *coreClient) preprocessUpsert(obj *serving.Service) error {
+func (core *coreClient) preprocessUpsert(obj *v1alpha1.App) error {
 	if err := core.upsertMutate.Apply(obj); err != nil {
 		return err
 	}
@@ -152,24 +152,24 @@ func (core *coreClient) preprocessUpsert(obj *serving.Service) error {
 	return nil
 }
 
-// Create inserts the given serving.Service into the cluster.
+// Create inserts the given v1alpha1.App into the cluster.
 // The value to be inserted will be preprocessed and validated before being sent.
-func (core *coreClient) Create(namespace string, obj *serving.Service, opts ...CreateOption) (*serving.Service, error) {
+func (core *coreClient) Create(namespace string, obj *v1alpha1.App, opts ...CreateOption) (*v1alpha1.App, error) {
 	if err := core.preprocessUpsert(obj); err != nil {
 		return nil, err
 	}
 
-	return core.kclient.Services(namespace).Create(obj)
+	return core.kclient.Apps(namespace).Create(obj)
 }
 
 // Update replaces the existing object in the cluster with the new one.
 // The value to be inserted will be preprocessed and validated before being sent.
-func (core *coreClient) Update(namespace string, obj *serving.Service, opts ...UpdateOption) (*serving.Service, error) {
+func (core *coreClient) Update(namespace string, obj *v1alpha1.App, opts ...UpdateOption) (*v1alpha1.App, error) {
 	if err := core.preprocessUpsert(obj); err != nil {
 		return nil, err
 	}
 
-	return core.kclient.Services(namespace).Update(obj)
+	return core.kclient.Apps(namespace).Update(obj)
 }
 
 // Transform performs a read/modify/write on the object with the given name.
@@ -194,8 +194,8 @@ func (core *coreClient) Transform(namespace string, name string, mutator Mutator
 // Get retrieves an existing object in the cluster with the given name.
 // The function will return an error if an object is retrieved from the cluster
 // but doesn't pass the membership test of this client.
-func (core *coreClient) Get(namespace string, name string, opts ...GetOption) (*serving.Service, error) {
-	res, err := core.kclient.Services(namespace).Get(name, metav1.GetOptions{})
+func (core *coreClient) Get(namespace string, name string, opts ...GetOption) (*v1alpha1.App, error) {
+	res, err := core.kclient.Apps(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get the App with the name %q: %v", name, err)
 	}
@@ -212,7 +212,7 @@ func (core *coreClient) Get(namespace string, name string, opts ...GetOption) (*
 func (core *coreClient) Delete(namespace string, name string, opts ...DeleteOption) error {
 	cfg := DeleteOptionDefaults().Extend(opts).toConfig()
 
-	if err := core.kclient.Services(namespace).Delete(name, cfg.ToDeleteOptions()); err != nil {
+	if err := core.kclient.Apps(namespace).Delete(name, cfg.ToDeleteOptions()); err != nil {
 		return fmt.Errorf("couldn't delete the App with the name %q: %v", name, err)
 	}
 
@@ -236,10 +236,10 @@ func (cfg deleteConfig) ToDeleteOptions() *metav1.DeleteOptions {
 
 // List gets objects in the cluster and filters the results based on the
 // internal membership test.
-func (core *coreClient) List(namespace string, opts ...ListOption) ([]serving.Service, error) {
+func (core *coreClient) List(namespace string, opts ...ListOption) ([]v1alpha1.App, error) {
 	cfg := ListOptionDefaults().Extend(opts).toConfig()
 
-	res, err := core.kclient.Services(namespace).List(cfg.ToListOptions())
+	res, err := core.kclient.Apps(namespace).List(cfg.ToListOptions())
 	if err != nil {
 		return nil, fmt.Errorf("couldn't list Apps: %v", err)
 	}
@@ -262,11 +262,11 @@ func (cfg listConfig) ToListOptions() (resp metav1.ListOptions) {
 }
 
 // Merger is a type to merge an existing value with a new one.
-type Merger func(newObj, oldObj *serving.Service) *serving.Service
+type Merger func(newObj, oldObj *v1alpha1.App) *v1alpha1.App
 
 // Upsert inserts the object into the cluster if it doesn't already exist, or else
 // calls the merge function to merge the existing and new then performs an Update.
-func (core *coreClient) Upsert(namespace string, newObj *serving.Service, merge Merger) (*serving.Service, error) {
+func (core *coreClient) Upsert(namespace string, newObj *v1alpha1.App, merge Merger) (*v1alpha1.App, error) {
 	// NOTE: the field selector may be ignored by some Kubernetes resources
 	// so we double check down below.
 	existing, err := core.List(namespace, WithListfieldSelector(map[string]string{"metadata.name": newObj.Name}))

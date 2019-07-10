@@ -37,8 +37,3 @@ type LogTailer interface {
 type IstioClient interface {
 	kf.IngressLister
 }
-
-// Deployer is implemented by kf.Deployer
-type Deployer interface {
-	kf.Deployer
-}

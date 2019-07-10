@@ -16,48 +16,43 @@ package kf
 
 import (
 	"fmt"
-	"strconv"
+	"os"
 	"time"
 
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
-	"github.com/google/kf/pkg/kf/builds"
 	"github.com/google/kf/pkg/kf/internal/envutil"
 	"github.com/google/kf/pkg/kf/internal/kf"
-	"github.com/knative/serving/pkg/apis/autoscaling"
 	corev1 "k8s.io/api/core/v1"
 )
 
-//go:generate go run internal/tools/option-builder/option-builder.go options.yml options.go
+//go:generate go run internal/tools/option-builder/option-builder.go optionapp.yml optionapp.go
 
 // pusher deploys source code to Knative. It should be created via NewPusher.
 type pusher struct {
-	deployer    Deployer
-	bl          Logs
-	buildClient builds.ClientInterface
+	bl         Logs
+	appsClient apps.Client
 }
 
-// Pusher deploys applications.
+// Pusher deploys applicationapp.
 type Pusher interface {
 	// Push deploys an application.
 	Push(appName, srcImageName string, opts ...PushOption) error
 }
 
 // NewPusher creates a new Pusher.
-func NewPusher(d Deployer, bl Logs, buildClient builds.ClientInterface) Pusher {
+func NewPusher(bl Logs, appsClient apps.Client) Pusher {
 	return &pusher{
-		deployer:    d,
-		bl:          bl,
-		buildClient: buildClient,
+		bl:         bl,
+		appsClient: appsClient,
 	}
 }
 
 // Push deploys an application to Knative. It can be configured via
-// Options.
+// Optionapp.
 func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
-	cfg, err := p.setupConfig(appName, srcImage, opts)
-	if err != nil {
-		return err
-	}
+
+	cfg := PushOptionDefaults().Extend(opts).toConfig()
 
 	var envs []corev1.EnvVar
 	if len(cfg.EnvironmentVariables) > 0 {
@@ -68,46 +63,29 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 		}
 	}
 
-	imageName, err := p.buildSpec(
-		cfg.Namespace,
-		appName,
-		srcImage,
-		cfg.ContainerRegistry,
-		cfg.ServiceAccount,
-		cfg.Buildpack,
-	)
-	if err != nil {
-		return err
-	}
-
-	s := apps.NewKfApp()
-	s.SetName(appName)
-	s.SetNamespace(cfg.Namespace)
-	s.SetImage(imageName)
-	s.SetServiceAccount(cfg.ServiceAccount)
-
-	if s.Spec.ConfigurationSpec.Template.Annotations == nil {
-		s.Spec.ConfigurationSpec.Template.Annotations = map[string]string{}
-	}
-
-	// The value of 0 for any of min or max means the bound is not set
-	s.Spec.ConfigurationSpec.Template.Annotations[autoscaling.MinScaleAnnotationKey] = strconv.Itoa(cfg.MinScale)
-	s.Spec.ConfigurationSpec.Template.Annotations[autoscaling.MaxScaleAnnotationKey] = strconv.Itoa(cfg.MaxScale)
+	app := apps.NewKfApp()
+	app.SetName(appName)
+	app.SetNamespace(cfg.Namespace)
+	app.SetServiceAccount(cfg.ServiceAccount)
+	app.SetSourceImage(srcImage)
+	app.SetBuildpack(cfg.Buildpack)
 
 	if cfg.Grpc {
-		s.SetContainerPorts([]corev1.ContainerPort{{Name: "h2c", ContainerPort: 8080}})
+		app.SetContainerPorts([]corev1.ContainerPort{{Name: "h2c", ContainerPort: 8080}})
 	}
 
 	if len(envs) > 0 {
-		s.SetEnvVars(envs)
+		app.SetEnvVars(envs)
 	}
 
-	resultingService, err := p.deployer.Deploy(*s.ToService(), WithDeployNamespace(cfg.Namespace))
+	resultingApp, err := p.appsClient.Upsert(cfg.Namespace, app.ToApp(), mergeApps)
 	if err != nil {
-		return fmt.Errorf("failed to deploy: %s", err)
+		return fmt.Errorf("failed to create app: %s", err)
 	}
 
-	if err := p.bl.DeployLogs(cfg.Output, appName, resultingService.ResourceVersion, cfg.Namespace); err != nil {
+	fmt.Fprintln(os.Stderr, resultingApp.ResourceVersion)
+	fmt.Fprintln(os.Stderr, "cool beans")
+	if err := p.bl.DeployLogs(cfg.Output, appName, resultingApp.ResourceVersion, cfg.Namespace); err != nil {
 		return err
 	}
 
@@ -118,17 +96,12 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 	return nil
 }
 
-func (p *pusher) setupConfig(appName, srcImage string, opts []PushOption) (pushConfig, error) {
-	cfg := PushOptionDefaults().Extend(opts).toConfig()
-
-	if appName == "" {
-		return pushConfig{}, kf.ConfigErr{Reason: "invalid app name"}
-	}
-	if srcImage == "" {
-		return pushConfig{}, kf.ConfigErr{Reason: "invalid source image"}
-	}
-
-	return cfg, nil
+func mergeApps(newapp, oldapp *v1alpha1.App) *v1alpha1.App {
+	newapp.ResourceVersion = oldapp.ResourceVersion
+	newEnvs := envutil.GetAppEnvVars(newapp)
+	oldEnvs := envutil.GetAppEnvVars(oldapp)
+	envutil.SetAppEnvVars(newapp, envutil.DeduplicateEnvVars(append(oldEnvs, newEnvs...)))
+	return newapp
 }
 
 // AppImageName gets the image name for an application.
@@ -150,47 +123,4 @@ func JoinRepositoryImage(repository, imageName string) string {
 // Build names are limited by Knative to be 64 characters long.
 func BuildName() string {
 	return fmt.Sprintf("build-%d", time.Now().UnixNano())
-}
-
-func (p *pusher) buildSpec(
-	namespace string,
-	appName string,
-	srcImage string,
-	containerRegistry string,
-	serviceAccount string,
-	buildpack string,
-) (string, error) {
-	appImageName := AppImageName(namespace, appName)
-	imageDestination := JoinRepositoryImage(containerRegistry, appImageName)
-
-	args := map[string]string{
-		"IMAGE": imageDestination,
-	}
-
-	if buildpack != "" {
-		args["BUILDPACK"] = buildpack
-	}
-
-	buildName := BuildName()
-
-	if _, err := p.buildClient.Create(
-		buildName,
-		builds.BuildpackTemplate(),
-		builds.WithCreateServiceAccount(serviceAccount),
-		builds.WithCreateArgs(args),
-		builds.WithCreateSourceImage(srcImage),
-		builds.WithCreateNamespace(namespace),
-	); err != nil {
-		return "", err
-	}
-
-	if err := p.buildClient.Tail(buildName, builds.WithTailNamespace(namespace)); err != nil {
-		return "", err
-	}
-
-	if _, err := p.buildClient.Status(buildName, builds.WithStatusNamespace(namespace)); err != nil {
-		return "", err
-	}
-
-	return imageDestination, nil
 }

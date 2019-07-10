@@ -172,20 +172,24 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 }
 
 func (r *Reconciler) latestSource(app *v1alpha1.App) (*v1alpha1.Source, error) {
-	selector := labels.SelectorFromSet(resources.MakeSourceLabels(app))
+	selector := resources.MakeSourceLabels(app)
 
-	list, err := r.sourceLister.Sources(app.Namespace).List(selector)
+	listOps := metav1.ListOptions{
+		LabelSelector: labels.Set(selector).String(),
+	}
+
+	list, err := r.KfClientSet.KfV1alpha1().Sources(app.Namespace).List(listOps)
 	if err != nil {
 		return nil, err
 	}
 
 	// sort descending
-	sort.Slice(list, func(i int, j int) bool {
-		return list[j].CreationTimestamp.Before(&list[i].CreationTimestamp)
+	sort.Slice(list.Items, func(i int, j int) bool {
+		return list.Items[j].CreationTimestamp.Before(&list.Items[i].CreationTimestamp)
 	})
 
-	if err == nil && len(list) > 0 {
-		return list[0], nil
+	if err == nil && len(list.Items) > 0 {
+		return &list.Items[0], nil
 	}
 
 	return nil, apierrs.NewNotFound(v1alpha1.Resource("sources"), fmt.Sprintf("source for %s", app.Name))

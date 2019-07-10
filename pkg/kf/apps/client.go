@@ -15,9 +15,7 @@
 package apps
 
 import (
-	"github.com/google/kf/pkg/kf/systemenvinjector"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
+	cv1alpha1 "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
 )
 
 // ClientExtension holds additional functions that should be exposed by client.
@@ -29,16 +27,15 @@ type appsClient struct {
 	coreClient
 }
 
-// NewClient creates a new application client.
-func NewClient(kclient cserving.ServingV1alpha1Interface, envInjector systemenvinjector.SystemEnvInjectorInterface) Client {
+// NewClient creates a new space client.
+func NewClient(kclient cv1alpha1.AppsGetter) Client {
 	return &appsClient{
 		coreClient{
 			kclient: kclient,
 			upsertMutate: MutatorList{
-				envInjector.InjectSystemEnv,
 				LabelSetMutator(map[string]string{"app.kubernetes.io/managed-by": "kf"}),
 			},
-			membershipValidator: func(_ *serving.Service) bool { return true },
+			membershipValidator: AllPredicate(), // all spaces can be managed by Kf
 		},
 	}
 }

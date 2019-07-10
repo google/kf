@@ -23,8 +23,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/fields"
 
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
+	kf "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	ckf "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
@@ -40,13 +40,13 @@ type Logs interface {
 // logTailer tails logs for a service. This includes the build and deploy
 // step. It should be created via NewLogTailer.
 type logTailer struct {
-	sc cserving.ServingV1alpha1Interface
+	kfClient ckf.KfV1alpha1Interface
 }
 
 // NewLogTailer creates a new Logs.
-func NewLogTailer(sc cserving.ServingV1alpha1Interface) Logs {
+func NewLogTailer(kfClient ckf.KfV1alpha1Interface) Logs {
 	return &logTailer{
-		sc: sc,
+		kfClient: kfClient,
 	}
 }
 
@@ -57,10 +57,9 @@ func (t logTailer) DeployLogs(out io.Writer, appName, resourceVersion, namespace
 	logger.Printf("Starting app: %s\n", appName)
 	start := time.Now()
 
-	ws, err := t.sc.Services(namespace).Watch(k8smeta.ListOptions{
-		ResourceVersion: resourceVersion,
-		FieldSelector:   fields.OneTermEqualSelector("metadata.name", appName).String(),
-		Watch:           true,
+	ws, err := t.kfClient.Apps(namespace).Watch(k8smeta.ListOptions{
+		FieldSelector: fields.OneTermEqualSelector("metadata.name", appName).String(),
+		Watch:         true,
 	})
 	if err != nil {
 		return err
@@ -68,7 +67,7 @@ func (t logTailer) DeployLogs(out io.Writer, appName, resourceVersion, namespace
 	defer ws.Stop()
 
 	for e := range ws.ResultChan() {
-		s := e.Object.(*serving.Service)
+		s := e.Object.(*kf.App)
 
 		// Don't use status' that are reflecting old states
 		if s.Status.ObservedGeneration != s.Generation {
@@ -83,7 +82,6 @@ func (t logTailer) DeployLogs(out io.Writer, appName, resourceVersion, namespace
 				return nil
 			case corev1.ConditionFalse:
 				logger.Printf("Failed to start: %s\n", condition.Message)
-
 				return fmt.Errorf("deployment failed: %s", condition.Message)
 			default:
 				if condition.Message != "" {

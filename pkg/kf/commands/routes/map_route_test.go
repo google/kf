@@ -29,7 +29,6 @@ import (
 	routesfake "github.com/google/kf/pkg/kf/routes/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/google/kf/pkg/reconciler/route/resources"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -63,7 +62,7 @@ func TestMapRoute(t *testing.T) {
 			Args:      []string{"some-app", "example.com"},
 			Namespace: "some-space",
 			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
-				appsfake.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&serving.Service{}, nil)
+				appsfake.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&v1alpha1.App{}, nil)
 				routesfake.EXPECT().Upsert(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("some-error"))
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
@@ -74,7 +73,7 @@ func TestMapRoute(t *testing.T) {
 			Args:      []string{"some-app", "example.com"},
 			Namespace: "some-space",
 			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
-				appsfake.EXPECT().Get("some-space", gomock.Any()).Return(&serving.Service{}, nil)
+				appsfake.EXPECT().Get("some-space", gomock.Any()).Return(&v1alpha1.App{}, nil)
 				routesfake.EXPECT().Upsert("some-space", gomock.Any(), gomock.Any())
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
@@ -84,7 +83,7 @@ func TestMapRoute(t *testing.T) {
 		"without namespace": {
 			Args: []string{"some-app", "example.com"},
 			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
-				appsfake.EXPECT().Get("some-space", gomock.Any()).Return(&serving.Service{}, nil)
+				appsfake.EXPECT().Get("some-space", gomock.Any()).Return(&v1alpha1.App{}, nil)
 				routesfake.EXPECT().Upsert("some-space", gomock.Any(), gomock.Any())
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
@@ -95,7 +94,7 @@ func TestMapRoute(t *testing.T) {
 			Args:      []string{"some-app", "example.com"},
 			Namespace: "some-space",
 			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
-				appsfake.EXPECT().Get(gomock.Any(), "some-app").Return(&serving.Service{}, nil)
+				appsfake.EXPECT().Get(gomock.Any(), "some-app").Return(&v1alpha1.App{}, nil)
 				routesfake.EXPECT().Upsert(gomock.Any(), gomock.Any(), gomock.Any())
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
@@ -106,7 +105,7 @@ func TestMapRoute(t *testing.T) {
 			Args:      []string{"some-app", "example.com", "--hostname=some-host", "--path=some-path"},
 			Namespace: "some-space",
 			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
-				appsfake.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&serving.Service{
+				appsfake.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&v1alpha1.App{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "some-app",
 						UID:  types.UID("some-uid"),
@@ -142,7 +141,7 @@ func TestMapRoute(t *testing.T) {
 			Args:      []string{"some-app", "example.com", "--hostname=some-host", "--path=some-path"},
 			Namespace: "some-space",
 			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
-				appsfake.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&serving.Service{}, nil)
+				appsfake.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&v1alpha1.App{}, nil)
 				routesfake.EXPECT().Upsert(gomock.Any(), gomock.Any(), gomock.Any()).Do(func(_ string, newR *v1alpha1.Route, m clientroutes.Merger) {
 					oldR := v1alpha1.Route{
 						Spec: v1alpha1.RouteSpec{

@@ -17,6 +17,8 @@ package apps
 import (
 	"errors"
 	"fmt"
+	"log"
+	"os"
 	"path/filepath"
 
 	"github.com/google/kf/pkg/kf"
@@ -39,7 +41,21 @@ type SrcImageBuilderFunc func(dir, srcImage string, rebase bool) error
 
 // BuildSrcImage implements SrcImageBuilder.
 func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string) error {
-	return f(dir, srcImage, false)
+	oldPrefix := log.Prefix()
+	oldFlags := log.Flags()
+
+	log.SetPrefix("\033[32m[source upload]\033[0m ")
+	log.SetFlags(0)
+	log.SetOutput(os.Stdout)
+
+	log.Printf("Uploading %s to image %s", dir, srcImage)
+	err := f(dir, srcImage, false)
+
+	log.SetPrefix(oldPrefix)
+	log.SetFlags(oldFlags)
+	log.SetOutput(os.Stderr)
+
+	return err
 }
 
 // NewPushCommand creates a push command.

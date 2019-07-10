@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"testing"
 
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/internal/envutil"
 	"github.com/google/kf/pkg/kf/testutil"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -189,13 +189,13 @@ func ExampleNewJSONEnvVar() {
 }
 
 func ExampleGetServiceEnvVars() {
-	var service serving.Service
-	envutil.SetServiceEnvVars(&service, []corev1.EnvVar{
+	var app v1alpha1.App
+	envutil.SetAppEnvVars(&app, []corev1.EnvVar{
 		{Name: "FOO", Value: "2"},
 		{Name: "BAR", Value: "0"},
 	})
 
-	env := envutil.GetServiceEnvVars(&service)
+	env := envutil.GetAppEnvVars(&app)
 
 	for _, e := range env {
 		fmt.Println("Key", e.Name, "Value", e.Value)
@@ -205,8 +205,8 @@ func ExampleGetServiceEnvVars() {
 	// Key BAR Value 0
 }
 
-func ExampleGetServiceEnvVars_emptyService() {
-	env := envutil.GetServiceEnvVars(nil)
+func ExampleGetServiceEnvVars_emptyApp() {
+	env := envutil.GetAppEnvVars(nil)
 
 	fmt.Println(env)
 

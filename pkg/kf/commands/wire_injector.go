@@ -62,19 +62,20 @@ func provideBuildTailer() builds.BuildTailer {
 var AppsSet = wire.NewSet(
 	apps.NewClient,
 	config.GetServingClient,
-	provideSystemEnvInjector,
+	config.GetKfClient,
+	provideAppsGetter,
 )
+
+func provideAppsGetter(ki kfv1alpha1.KfV1alpha1Interface) kfv1alpha1.AppsGetter {
+	return ki
+}
 
 func InjectPush(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		capps.NewPushCommand,
 		kf.NewPusher,
 		kf.NewLogTailer,
-		kf.NewDeployer,
-		config.GetBuildClient,
-		builds.NewClient,
 		provideSrcImageBuilder,
-		provideBuildTailer,
 		AppsSet,
 	)
 	return nil
@@ -396,7 +397,6 @@ func InjectMapRoute(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		croutes.NewMapRouteCommand,
 		routes.NewClient,
-		config.GetKfClient,
 		AppsSet,
 	)
 	return nil

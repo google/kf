@@ -170,6 +170,9 @@ type AppStatus struct {
 	// Inline the latest serving.Service revisions that are ready
 	serving.ConfigurationStatusFields `json:",inline"`
 
+	// Inline the latest Service route information.
+	serving.RouteStatusFields `json:",inline"`
+
 	// LatestReadySourceName contains the name of the source that was most recently
 	// built correctly.
 	LatestReadySourceName string `json:"latestReadySource,omitempty"`
