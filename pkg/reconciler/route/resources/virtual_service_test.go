@@ -18,10 +18,13 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
-	"regexp"
+	"path"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/algorithms"
 	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/google/kf/pkg/reconciler/route/resources"
 	"github.com/knative/serving/pkg/network"
@@ -31,26 +34,25 @@ import (
 	"knative.dev/pkg/kmeta"
 )
 
-func TestEncodeRouteName_Deterministic(t *testing.T) {
+func TestVirtualServiceName_Deterministic(t *testing.T) {
 	t.Parallel()
 
-	r1 := resources.VirtualServiceName("host-1", "example1.com", "somePath1")
-	r2 := resources.VirtualServiceName("host-1", "example1.com", "somePath1")
-	r3 := resources.VirtualServiceName("host-2", "example1.com", "somePath1")
-	r4 := resources.VirtualServiceName("host-1", "example2.com", "somePath1")
-	r5 := resources.VirtualServiceName("host-1", "example1.com", "somePath2")
+	r1 := resources.VirtualServiceName("host-1", "example1.com")
+	r2 := resources.VirtualServiceName("host-1", "example1.com")
+	r3 := resources.VirtualServiceName("host-2", "example1.com")
+	r4 := resources.VirtualServiceName("host-1", "example2.com")
 
 	testutil.AssertEqual(t, "r1 and r2", r1, r2)
 	testutil.AssertEqual(t, "r1 and r2", r1, r2)
 
-	for _, r := range []string{r3, r4, r5} {
+	for _, r := range []string{r3, r4} {
 		if r1 == r {
 			t.Fatalf("expected %s to not equal %s", r, r1)
 		}
 	}
 }
 
-func TestEncodeRouteName_ValidDNS(t *testing.T) {
+func TestVirtualServiceName_ValidDNS(t *testing.T) {
 	t.Parallel()
 
 	// We'll use an instantiation of rand so we can seed it with 0 for
@@ -61,22 +63,28 @@ func TestEncodeRouteName_ValidDNS(t *testing.T) {
 		for i := range buf {
 			buf[i] = byte(rand.Intn('z'-'a') + 'a')
 		}
-		return string(buf)
+		return strings.ToUpper(path.Join("./", string(buf)))
 	}
 
-	pattern := regexp.MustCompile(`[^a-z0-9-_]`)
 	history := map[string]bool{}
 
-	// Basically we're going to try a mess of different things to ensure that
-	// certain rules are followed:
-	// [a-z0-9_-]
-	for i := 0; i < 10000; i++ {
-		r := resources.VirtualServiceName(randStr(), randStr(), randStr())
-		testutil.AssertEqual(t, "invalid rune: "+r, false, pattern.MatchString(r))
-		testutil.AssertEqual(t, fmt.Sprintf("len: %d", len(r)), true, len(r) <= 63)
+	validDNS := func(r string) {
+		testutil.AssertRegexp(t, "valid DNS", `^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`, r)
+		testutil.AssertEqual(t, fmt.Sprintf("len: %d", len(r)), true, len(r) <= 64)
 		testutil.AssertEqual(t, "collison", false, history[r])
+	}
+
+	for i := 0; i < 10000; i++ {
+		r := resources.VirtualServiceName(randStr(), randStr())
+		validDNS(r)
 		history[r] = true
 	}
+
+	// Empty name
+	validDNS(resources.VirtualServiceName())
+
+	// Only non-alphanumeric characters
+	validDNS(resources.VirtualServiceName(".", "-", "$"))
 }
 
 func TestMakeVirtualService(t *testing.T) {
@@ -113,8 +121,12 @@ func TestMakeVirtualService(t *testing.T) {
 					},
 				}
 
+				ownerRef := *kmeta.NewControllerRef(route)
+				ownerRef.Controller = nil
+				ownerRef.BlockOwnerDeletion = nil
+
 				testutil.AssertEqual(t, "ObjectMeta", metav1.ObjectMeta{
-					Name:      resources.VirtualServiceName(route.Spec.Hostname, route.Spec.Domain, route.Spec.Path),
+					Name:      resources.VirtualServiceName(route.Spec.Hostname, route.Spec.Domain),
 					Namespace: "some-namespace",
 					Labels:    map[string]string{"a": "1", "b": "2"},
 					Annotations: map[string]string{
@@ -123,7 +135,7 @@ func TestMakeVirtualService(t *testing.T) {
 						"path":     "/some-path",
 					},
 					OwnerReferences: []metav1.OwnerReference{
-						*kmeta.NewControllerRef(route),
+						ownerRef,
 					},
 				}, v.ObjectMeta)
 			},
@@ -142,7 +154,7 @@ func TestMakeVirtualService(t *testing.T) {
 				testutil.AssertEqual(t, "HTTP Match len", 1, len(v.Spec.HTTP[0].Match))
 				testutil.AssertEqual(t, "HTTP Match", networking.HTTPMatchRequest{
 					URI: &istio.StringMatch{
-						Prefix: "/some-path",
+						Regex: "^/some-path(/.*)?",
 					},
 				}, v.Spec.HTTP[0].Match[0])
 			},
@@ -205,7 +217,7 @@ func TestMakeVirtualService(t *testing.T) {
 					Authority: network.GetServiceHostname("ksvc-1", "some-namespace"),
 				}, v.Spec.HTTP[0].Rewrite)
 				testutil.AssertEqual(t, "HTTP Match len", 1, len(v.Spec.HTTP[0].Match))
-				testutil.AssertEqual(t, "HTTP Match", "/some-path", v.Spec.HTTP[0].Match[0].URI.Prefix)
+				testutil.AssertEqual(t, "HTTP Match", "^/some-path(/.*)?", v.Spec.HTTP[0].Match[0].URI.Regex)
 			},
 		},
 		"Hosts with subdomain": {
@@ -242,4 +254,43 @@ func TestMakeVirtualService(t *testing.T) {
 			tc.Assert(t, s, err)
 		})
 	}
+}
+
+func ExampleMakeVirtualService() {
+	vs1, err := resources.MakeVirtualService(&v1alpha1.Route{
+		Spec: v1alpha1.RouteSpec{
+			Hostname: "some-host",
+			Domain:   "example.com",
+			Path:     "/some-path-1",
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	vs2, err := resources.MakeVirtualService(&v1alpha1.Route{
+		Spec: v1alpha1.RouteSpec{
+			Hostname: "some-host",
+			Domain:   "example.com",
+			Path:     "/some-path-2",
+		},
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	r := algorithms.Merge(
+		resources.HTTPRoutes(vs1.Spec.HTTP),
+		resources.HTTPRoutes(vs2.Spec.HTTP),
+	).(resources.HTTPRoutes)
+
+	// Sort for display purposes
+	sort.Sort(r)
+
+	for i, h := range r {
+		fmt.Printf("Regex %d: %s\n", i, h.Match[0].URI.Regex)
+	}
+
+	// Output: Regex 0: ^/some-path-1(/.*)?
+	// Regex 1: ^/some-path-2(/.*)?
 }

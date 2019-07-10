@@ -117,13 +117,13 @@ func TestMapRoute(t *testing.T) {
 						resources.VirtualServiceName(
 							"some-host",
 							"example.com",
-							"some-path",
+							"/some-path",
 						),
 						newR.Name,
 					)
 					testutil.AssertEqual(t, "Spec.Hostname", "some-host", newR.Spec.Hostname)
 					testutil.AssertEqual(t, "Spec.Domain", "example.com", newR.Spec.Domain)
-					testutil.AssertEqual(t, "Spec.Path", "some-path", newR.Spec.Path)
+					testutil.AssertEqual(t, "Spec.Path", "/some-path", newR.Spec.Path)
 
 					oldR := v1alpha1.Route{
 						Spec: v1alpha1.RouteSpec{

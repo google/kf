@@ -1,4 +1,3 @@
-// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,12 +14,16 @@
 package resources
 
 import (
+	"fmt"
 	"hash/crc64"
 	"net/http"
 	"path"
+	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/gorilla/mux"
 	"github.com/knative/serving/pkg/network"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	istio "knative.dev/pkg/apis/istio/common/v1alpha1"
@@ -33,14 +36,46 @@ const (
 	GatewayHost           = "istio-ingressgateway.istio-system.svc.cluster.local"
 )
 
+var (
+	nonAlphaNumeric    = regexp.MustCompile(`[^a-z0-9]`)
+	validDNSCharacters = regexp.MustCompile(`[^a-z0-9-_]`)
+)
+
 // VirtualServiceName gets the name of a VirtualService given the route.
-func VirtualServiceName(hostname, domain, urlPath string) string {
-	return strconv.FormatUint(
+func VirtualServiceName(parts ...string) string {
+	prefix := strings.Join(parts, "-")
+
+	// Base 36 uses the characters 0-9a-z. The maximum number of chars it
+	// requires is 13 for a Uin64.
+	checksum := strconv.FormatUint(
 		crc64.Checksum(
-			[]byte(hostname+domain+path.Join("/", urlPath)),
+			[]byte(strings.Join(parts, "")),
 			crc64.MakeTable(crc64.ECMA),
 		),
-		10)
+		36)
+
+	prefix = strings.ToLower(prefix)
+
+	// Remove all non-alphanumeric characters.
+	prefix = validDNSCharacters.ReplaceAllString(prefix, "-")
+
+	// First char must be alphanumeric.
+	for len(prefix) > 0 && nonAlphaNumeric.Match([]byte{prefix[0]}) {
+		prefix = prefix[1:]
+	}
+
+	// Subtract an extra 1 for the hyphen between the prefix and checksum.
+	maxPrefixLen := 64 - 1 - len(checksum)
+
+	if len(prefix) > maxPrefixLen {
+		prefix = prefix[:maxPrefixLen]
+	}
+
+	if prefix == "" {
+		return checksum
+	}
+
+	return fmt.Sprintf("%s-%s", prefix, checksum)
 }
 
 // MakeVirtualService creates a VirtualService from a Route object.
@@ -56,16 +91,22 @@ func MakeVirtualService(route *v1alpha1.Route) (*networking.VirtualService, erro
 		return nil, err
 	}
 
+	// Each route will own the VirtualService. Therefore none of them can be a
+	// controller.
+	ownerRef := *kmeta.NewControllerRef(route)
+	ownerRef.Controller = nil
+	ownerRef.BlockOwnerDeletion = nil
+
 	return &networking.VirtualService{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "networking.istio.io/v1alpha3",
 			Kind:       "VirtualService",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      VirtualServiceName(route.Spec.Hostname, route.Spec.Domain, route.Spec.Path),
+			Name:      VirtualServiceName(route.Spec.Hostname, route.Spec.Domain),
 			Namespace: route.GetNamespace(),
 			OwnerReferences: []metav1.OwnerReference{
-				*kmeta.NewControllerRef(route),
+				ownerRef,
 			},
 			Labels: route.GetLabels(),
 			Annotations: map[string]string{
@@ -85,11 +126,16 @@ func MakeVirtualService(route *v1alpha1.Route) (*networking.VirtualService, erro
 func buildHTTPRoute(route *v1alpha1.Route) ([]networking.HTTPRoute, error) {
 	var pathMatchers []networking.HTTPMatchRequest
 
-	urlPath := path.Join("/", route.Spec.Path)
+	urlPath := path.Join("/", route.Spec.Path, "/")
+	regexpPath, err := buildPathRegex(urlPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert path to regexp: %s", err)
+	}
+
 	if route.Spec.Path != "" {
 		pathMatchers = append(pathMatchers, networking.HTTPMatchRequest{
 			URI: &istio.StringMatch{
-				Prefix: urlPath,
+				Regex: regexpPath,
 			},
 		})
 	}
@@ -124,6 +170,14 @@ func buildHTTPRoute(route *v1alpha1.Route) ([]networking.HTTPRoute, error) {
 	}
 
 	return httpRoutes, nil
+}
+
+func buildPathRegex(path string) (string, error) {
+	p, err := (&mux.Router{}).PathPrefix(path).GetPathRegexp()
+	if err != nil {
+		return "", err
+	}
+	return p + `(/.*)?`, nil
 }
 
 func buildRouteDestination() []networking.HTTPRouteDestination {

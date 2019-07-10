@@ -177,7 +177,7 @@ func TestCreateRoute(t *testing.T) {
 							Kind: "Route",
 						},
 						ObjectMeta: metav1.ObjectMeta{
-							Name: resources.VirtualServiceName("some-hostname", "example.com", "somepath"),
+							Name: resources.VirtualServiceName("some-hostname", "example.com", "/somepath"),
 							OwnerReferences: []metav1.OwnerReference{
 								{
 									APIVersion: "v1",
@@ -190,7 +190,7 @@ func TestCreateRoute(t *testing.T) {
 						Spec: v1alpha1.RouteSpec{
 							Hostname: "some-hostname",
 							Domain:   "example.com",
-							Path:     "somepath",
+							Path:     "/somepath",
 						},
 					},
 				)

@@ -47,9 +47,10 @@ func NewDeleteRouteCommand(
 
 			domain := args[0]
 			cmd.SilenceUsage = true
-			urlPath = path.Join("/", urlPath)
-
-			if err := c.Delete(p.Namespace, resources.VirtualServiceName(hostname, domain, urlPath)); err != nil {
+			if err := c.Delete(
+				p.Namespace,
+				resources.VirtualServiceName(hostname, domain, path.Join("/", urlPath)),
+			); err != nil {
 				return fmt.Errorf("failed to delete Route: %s", err)
 			}
 			return nil

@@ -76,7 +76,7 @@ func TestDeleteRoute(t *testing.T) {
 			Args:      []string{"example.com", "--hostname=some-hostname", "--path=somepath"},
 			Namespace: "some-namespace",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				expectedName := resources.VirtualServiceName("some-hostname", "example.com", "somepath")
+				expectedName := resources.VirtualServiceName("some-hostname", "example.com", "/somepath")
 				fake.EXPECT().Delete(
 					gomock.Any(),
 					expectedName,

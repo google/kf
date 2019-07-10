@@ -16,6 +16,7 @@ package routes
 
 import (
 	"fmt"
+	"path"
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
@@ -69,6 +70,7 @@ func NewUnmapRouteCommand(
 				return nil
 			})
 
+			urlPath = path.Join("/", urlPath)
 			ksvcName := resources.VirtualServiceName(hostname, domain, urlPath)
 			if err := c.Transform(p.Namespace, ksvcName, mutator); err != nil {
 				return fmt.Errorf("failed to unmap Route: %s", err)

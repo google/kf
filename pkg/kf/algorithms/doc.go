@@ -12,22 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package v1alpha1
-
-import (
-	"context"
-
-	"github.com/google/kf/pkg/kf/algorithms"
-)
-
-// SetDefaults implements apis.Defaultable
-func (k *Route) SetDefaults(ctx context.Context) {
-	k.Spec.SetDefaults(ctx)
-}
-
-// SetDefaults implements apis.Defaultable
-func (k *RouteSpec) SetDefaults(ctx context.Context) {
-	k.KnativeServiceNames = []string(algorithms.Dedupe(
-		algorithms.Dedupe(algorithms.Strings(k.KnativeServiceNames)),
-	).(algorithms.Strings))
-}
+// Package algorithms holds generic algorithms that are useful throughout the
+// project.
+package algorithms

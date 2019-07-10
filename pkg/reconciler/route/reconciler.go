@@ -18,9 +18,11 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sort"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/algorithms"
 	"github.com/google/kf/pkg/reconciler"
 	"github.com/google/kf/pkg/reconciler/route/resources"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
@@ -28,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
 	networking "knative.dev/pkg/apis/istio/v1alpha3"
@@ -63,11 +64,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 }
 
 func (r *Reconciler) reconcileRoute(ctx context.Context, namespace, name string, logger *zap.SugaredLogger) (err error) {
+	var deleted bool
 	original, err := r.routeLister.Routes(namespace).Get(name)
 	switch {
 	case apierrs.IsNotFound(err):
 		logger.Errorf("Route %q no longer exists\n", name)
-		return nil
+		deleted = true
 
 	case err != nil:
 		return err
@@ -81,7 +83,7 @@ func (r *Reconciler) reconcileRoute(ctx context.Context, namespace, name string,
 
 	// Reconcile this copy of the service and then write back any status
 	// updates regardless of whether the reconciliation errored out.
-	reconcileErr := r.ApplyChanges(ctx, toReconcile)
+	reconcileErr := r.ApplyChanges(ctx, toReconcile, deleted, logger)
 	if equality.Semantic.DeepEqual(original.Status, toReconcile.Status) {
 		// If we didn't change anything then don't call updateStatus.
 		// This is important because the copy we loaded from the informer's
@@ -134,10 +136,9 @@ func (r *Reconciler) ReconcileServiceDeletion(ctx context.Context, service *serv
 
 // ApplyChanges updates the linked resources in the cluster with the current
 // status of the Route .
-func (r *Reconciler) ApplyChanges(ctx context.Context, route *v1alpha1.Route) error {
+func (r *Reconciler) ApplyChanges(ctx context.Context, route *v1alpha1.Route, deleted bool, logger *zap.SugaredLogger) error {
 	route.SetDefaults(ctx)
 	route.Status.InitializeConditions()
-	virtualServiceName := resources.VirtualServiceName(route.Spec.Hostname, route.Spec.Domain, route.Spec.Path)
 
 	// Sync VirtualService
 	{
@@ -155,10 +156,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, route *v1alpha1.Route) er
 			}
 		} else if err != nil {
 			return err
-		} else if !metav1.IsControlledBy(actual, route) {
-			route.Status.MarkVirtualServiceNotOwned(virtualServiceName)
-			return fmt.Errorf("route: %q does not own VirtualService: %q", route.Name, virtualServiceName)
-		} else if actual, err = r.reconcile(desired, actual); err != nil {
+		} else if actual, err = r.reconcile(desired, actual, deleted, logger); err != nil {
 			return err
 		}
 
@@ -168,7 +166,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, route *v1alpha1.Route) er
 	return nil
 }
 
-func (r *Reconciler) reconcile(desired, actual *networking.VirtualService) (*networking.VirtualService, error) {
+func (r *Reconciler) reconcile(desired, actual *networking.VirtualService, deleted bool, logger *zap.SugaredLogger) (*networking.VirtualService, error) {
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
 	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
@@ -185,8 +183,33 @@ func (r *Reconciler) reconcile(desired, actual *networking.VirtualService) (*net
 	existing := actual.DeepCopy()
 
 	// Preserve the rest of the object (e.g. ObjectMeta except for labels).
-	existing.Spec = desired.Spec
 	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
+
+	if deleted {
+		existing.OwnerReferences = algorithms.Delete(
+			resources.OwnerReferences(existing.OwnerReferences),
+			resources.OwnerReferences(desired.OwnerReferences),
+		).(resources.OwnerReferences)
+
+		existing.Spec.HTTP = algorithms.Delete(
+			resources.HTTPRoutes(existing.Spec.HTTP),
+			resources.HTTPRoutes(desired.Spec.HTTP),
+		).(resources.HTTPRoutes)
+	} else {
+		existing.OwnerReferences = algorithms.Merge(
+			resources.OwnerReferences(existing.OwnerReferences),
+			resources.OwnerReferences(desired.OwnerReferences),
+		).(resources.OwnerReferences)
+
+		existing.Spec.HTTP = algorithms.Merge(
+			resources.HTTPRoutes(existing.Spec.HTTP),
+			resources.HTTPRoutes(desired.Spec.HTTP),
+		).(resources.HTTPRoutes)
+
+		// Sort by reverse to defer to the longest matchers.
+		sort.Sort(sort.Reverse(resources.HTTPRoutes(existing.Spec.HTTP)))
+	}
+
 	return r.SharedClientSet.
 		Networking().
 		VirtualServices(existing.GetNamespace()).
@@ -194,7 +217,9 @@ func (r *Reconciler) reconcile(desired, actual *networking.VirtualService) (*net
 }
 
 func (r *Reconciler) updateStatus(desired *v1alpha1.Route) (*v1alpha1.Route, error) {
-	actual, err := r.routeLister.Routes(desired.GetNamespace()).Get(desired.Name)
+	actual, err := r.routeLister.
+		Routes(desired.GetNamespace()).
+		Get(desired.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -207,5 +232,8 @@ func (r *Reconciler) updateStatus(desired *v1alpha1.Route) (*v1alpha1.Route, err
 	existing := actual.DeepCopy()
 	existing.Status = desired.Status
 
-	return r.KfClientSet.KfV1alpha1().Routes(existing.GetNamespace()).UpdateStatus(existing)
+	return r.KfClientSet.
+		KfV1alpha1().
+		Routes(existing.GetNamespace()).
+		UpdateStatus(existing)
 }
