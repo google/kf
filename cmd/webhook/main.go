@@ -28,6 +28,7 @@ import (
 	"github.com/knative/serving/pkg/apis/serving/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
+	cv1alpha3 "knative.dev/pkg/client/clientset/versioned/typed/istio/v1alpha3"
 	"knative.dev/pkg/configmap"
 	"knative.dev/pkg/logging"
 	"knative.dev/pkg/logging/logkey"
@@ -79,6 +80,11 @@ func main() {
 		logger.Fatalw("Version check failed", err)
 	}
 
+	istioClient, err := cv1alpha3.NewForConfig(clusterConfig)
+	if err != nil {
+		logger.Fatalw("Failed to get the istio client set", zap.Error(err))
+	}
+
 	// Watch the logging config map and dynamically update logging levels.
 	configMapWatcher := configmap.NewInformedWatcher(kubeClient, system.Namespace())
 	configMapWatcher.Watch(logging.ConfigMapName(), logging.UpdateLevelFromConfigMap(logger, atomicLevel, component))
@@ -104,12 +110,17 @@ func main() {
 		Handlers: map[schema.GroupVersionKind]webhook.GenericCRD{
 			v1alpha1.SchemeGroupVersion.WithKind("Space"): &v1alpha1.Space{},
 			v1alpha1.SchemeGroupVersion.WithKind("App"):   &v1alpha1.App{},
+			v1alpha1.SchemeGroupVersion.WithKind("Route"): &v1alpha1.Route{},
 		},
 		Logger:                logger,
 		DisallowUnknownFields: true,
 
 		// Decorate contexts with the current state of the config.
 		WithContext: func(ctx context.Context) context.Context {
+			// XXX: Route webhook needs to look at what VirtualServices are
+			// deployed.
+			ctx = v1alpha1.SetupIstioClient(ctx, istioClient)
+
 			return v1beta1.WithUpgradeViaDefaulting(store.ToContext(ctx))
 		},
 	}

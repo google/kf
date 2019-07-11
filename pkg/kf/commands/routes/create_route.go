@@ -23,7 +23,6 @@ import (
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/routes"
-	"github.com/google/kf/pkg/reconciler/route/resources"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	cv1 "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -87,7 +86,8 @@ Instead use the --namespace flag.`)
 					Kind: "Route",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name: resources.VirtualServiceName(
+					Namespace: space,
+					Name: v1alpha1.GenerateName(
 						hostname,
 						domain,
 						urlPath,

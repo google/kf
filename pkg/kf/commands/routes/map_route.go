@@ -23,7 +23,6 @@ import (
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/routes"
-	"github.com/google/kf/pkg/reconciler/route/resources"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -78,7 +77,7 @@ func NewMapRouteCommand(
 					Kind: "Route",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name: resources.VirtualServiceName(
+					Name: v1alpha1.GenerateName(
 						hostname,
 						domain,
 						urlPath,
