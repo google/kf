@@ -25,7 +25,7 @@ spec:
     default: packs/run:v3alpha2
   - name: BUILDER_IMAGE
     description: The builder image (must include v3 lifecycle and compatible buildpacks).
-    default: XXX_REPLACE_XXX
+    default: gcr.io/kf-releases/buildpack-builder:latest
   - name: USE_CRED_HELPERS
     description: Use Docker credential helpers for Googles GCR, Amazons ECR, or Microsofts ACR.
     default: 'true'
