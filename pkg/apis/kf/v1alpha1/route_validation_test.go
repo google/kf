@@ -41,15 +41,26 @@ func TestRouteValidation(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		route *Route
-		want  *apis.FieldError
-		setup func(t *testing.T, fake *fake.FakeNetworkingV1alpha3)
+		route        *Route
+		want         *apis.FieldError
+		setup        func(t *testing.T, fake *fake.FakeNetworkingV1alpha3)
+		setupContext func(ctx context.Context) context.Context
 	}{
 		"good": {
 			route: &Route{
 				ObjectMeta: goodObjMeta,
 				Spec:       goodRouteSpec,
 			},
+		},
+		"don't check spec if update is status update": {
+			setupContext: func(ctx context.Context) context.Context {
+				return apis.WithinSubResourceUpdate(ctx, nil, "status")
+			},
+			route: &Route{
+				ObjectMeta: metav1.ObjectMeta{Name: "", Namespace: ""},
+				Spec:       goodRouteSpec,
+			},
+			want: nil,
 		},
 		"missing name": {
 			route: &Route{
@@ -159,9 +170,16 @@ func TestRouteValidation(t *testing.T) {
 				}
 			}
 
-			tc.setup(t, f)
+			ctx := context.Background()
+			if tc.setupContext == nil {
+				tc.setupContext = func(ctx context.Context) context.Context {
+					return SetupIstioClient(ctx, f)
+				}
+			}
 
-			ctx := SetupIstioClient(context.Background(), f)
+			tc.setup(t, f)
+			ctx = tc.setupContext(ctx)
+
 			got := tc.route.Validate(ctx)
 
 			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())

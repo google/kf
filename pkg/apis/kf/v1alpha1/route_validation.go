@@ -29,6 +29,12 @@ const (
 
 // Validate makes sure that Route is properly configured.
 func (r *Route) Validate(ctx context.Context) (errs *apis.FieldError) {
+	// If we're specifically updating status, don't reject the change because
+	// of a spec issue.
+	if apis.IsInStatusUpdate(ctx) {
+		return
+	}
+
 	if r.Name == "" {
 		errs = errs.Also(apis.ErrMissingField("name"))
 	}
