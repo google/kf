@@ -30,6 +30,7 @@ type Application struct {
 	Name     string            `yaml:"name,omitempty"`
 	Path     string            `yaml:"path,omitempty"`
 	Env      map[string]string `yaml:"env,omitempty"`
+	Services []string          `yaml:"services,omitempty"`
 	MinScale *int              `yaml:"minScale,omitempty"`
 	MaxScale *int              `yaml:"maxScale,omitempty"`
 }

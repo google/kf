@@ -28,21 +28,34 @@ import (
 	"github.com/google/kf/pkg/kf"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	"github.com/google/kf/pkg/kf/fake"
+	kfFake "github.com/google/kf/pkg/kf/fake"
+	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
+	svbFake "github.com/google/kf/pkg/kf/service-bindings/fake"
 	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
+
+func dummyBindingInstance(appName, instanceName string) *v1beta1.ServiceBinding {
+	instance := v1beta1.ServiceBinding{}
+	instance.Name = fmt.Sprintf("kf-binding-%s-%s", appName, instanceName)
+
+	return &instance
+}
 
 func TestPushCommand(t *testing.T) {
 	t.Parallel()
 
 	for tn, tc := range map[string]struct {
-		args            []string
-		namespace       string
-		wantErr         error
-		pusherErr       error
-		srcImageBuilder SrcImageBuilderFunc
-		wantImagePrefix string
-		targetSpace     *v1alpha1.Space
+		args         []string
+		namespace    string
+		manifestFile string
+
+		wantErr                  error
+		pusherErr                error
+		srcImageBuilder          SrcImageBuilderFunc
+		serviceBindingClientFunc func(t *testing.T, f *svbFake.FakeClientInterface)
+		wantImagePrefix          string
+		targetSpace              *v1alpha1.Space
 
 		wantOpts []kf.PushOption
 	}{
@@ -126,6 +139,34 @@ func TestPushCommand(t *testing.T) {
 				kf.WithPushContainerRegistry("some-reg.io"),
 			},
 		},
+		"bind-service-instance": {
+			namespace:    "some-namespace",
+			manifestFile: "/path/to/manifest.yaml",
+			args: []string{
+				"app-name",
+				"--container-registry", "some-reg.io",
+				"--manifest", "/path/to/manifest.yaml",
+			},
+			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
+				cwd, err := os.Getwd()
+				testutil.AssertNil(t, "cwd err", err)
+				testutil.AssertEqual(t, "path", cwd, dir)
+				return nil
+			},
+			wantOpts: []kf.PushOption{
+				kf.WithPushNamespace("some-namespace"),
+				kf.WithPushContainerRegistry("some-reg.io"),
+				kf.WithPushMinScale(1),
+				kf.WithPushMaxScale(1),
+			},
+			serviceBindingClientFunc: func(t *testing.T, f *svbFake.FakeClientInterface) {
+				f.EXPECT().Create("SERVICE_INSTANCE", "APP_NAME", gomock.Any()).Do(func(instance, app string, opts ...servicebindings.CreateOption) {
+					config := servicebindings.CreateOptions(opts)
+					testutil.AssertEqual(t, "params", map[string]interface{}{"ram_gb": 4.0}, config.Params())
+					testutil.AssertEqual(t, "namespace", "custom-ns", config.Namespace())
+				}).Return(dummyBindingInstance("APP_NAME", "SERVICE_INSTANCE"), nil)
+			},
+		},
 		"service create error": {
 			namespace:       "default",
 			args:            []string{"app-name", "--container-registry", "some-reg.io"},
@@ -188,8 +229,22 @@ func TestPushCommand(t *testing.T) {
 				tc.srcImageBuilder = func(dir, srcImage string, rebase bool) error { return nil }
 			}
 
+			if tc.manifestFile != "" {
+				file, _ := os.Create(tc.manifestFile)
+				defer os.RemoveAll(tc.manifestFile)
+				_, err := file.Write([]byte(`---
+applications:
+- name: my-app
+  services:
+   - instance_svc
+`))
+				if err != nil {
+					return
+				}
+			}
+
 			ctrl := gomock.NewController(t)
-			fakePusher := fake.NewFakePusher(ctrl)
+			fakePusher := kfFake.NewFakePusher(ctrl)
 
 			fakePusher.
 				EXPECT().
@@ -224,7 +279,9 @@ func TestPushCommand(t *testing.T) {
 				params.SetTargetSpaceToDefault()
 			}
 
-			c := NewPushCommand(params, fakePusher, tc.srcImageBuilder)
+			svbClient := svbFake.NewFakeClientInterface(ctrl)
+
+			c := NewPushCommand(params, fakePusher, tc.srcImageBuilder, svbClient)
 			buffer := &bytes.Buffer{}
 			c.SetOutput(buffer)
 			c.SetArgs(tc.args)

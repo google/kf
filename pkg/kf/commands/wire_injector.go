@@ -82,6 +82,9 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 		builds.NewClient,
 		provideSrcImageBuilder,
 		provideBuildTailer,
+		servicebindings.NewClient,
+		config.GetServiceCatalogClient,
+		config.GetSecretClient,
 		AppsSet,
 	)
 	return nil

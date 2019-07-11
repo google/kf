@@ -55,7 +55,10 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 	clientInterface := builds.NewClient(buildV1alpha1Interface, buildTailer)
 	pusher := kf.NewPusher(deployer, logs, clientInterface)
 	srcImageBuilder := provideSrcImageBuilder()
-	command := apps2.NewPushCommand(p, pusher, srcImageBuilder)
+	servicecatalogV1beta1Interface := config.GetServiceCatalogClient(p)
+	secretsClientInterface := config.GetSecretClient(p)
+	servicebindingsClientInterface := servicebindings.NewClient(servicecatalogV1beta1Interface, secretsClientInterface)
+	command := apps2.NewPushCommand(p, pusher, srcImageBuilder, servicebindingsClientInterface)
 	return command
 }
 

@@ -17,6 +17,7 @@ package apps
 import (
 	"errors"
 	"fmt"
+	"github.com/poy/service-catalog/cmd/svcat/output"
 	"path/filepath"
 
 	"github.com/google/kf/pkg/kf"
@@ -25,6 +26,7 @@ import (
 	"github.com/google/kf/pkg/kf/internal/envutil"
 	kfi "github.com/google/kf/pkg/kf/internal/kf"
 	"github.com/google/kf/pkg/kf/manifest"
+	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/spf13/cobra"
 )
 
@@ -43,7 +45,7 @@ func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string) error {
 }
 
 // NewPushCommand creates a push command.
-func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *cobra.Command {
+func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder, serviceBindingClient servicebindings.ClientInterface) *cobra.Command {
 	var (
 		containerRegistry string
 		sourceImage       string
@@ -181,6 +183,22 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 
 				if err != nil {
 					return err
+				}
+
+				// Bind service if set
+				if len(app.Services) != 0 {
+					for _, serviceInstance := range app.Services {
+						binding, err := serviceBindingClient.Create(
+							serviceInstance,
+							appName,
+							servicebindings.WithCreateBindingName(serviceInstance),
+							servicebindings.WithCreateNamespace(p.Namespace))
+						if err != nil {
+							return err
+						}
+
+						output.WriteBindingDetails(cmd.OutOrStdout(), binding)
+					}
 				}
 			}
 
