@@ -22,7 +22,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -74,7 +73,7 @@ func TestIntegration_Push(t *testing.T) {
 		// collisions. This doesn't work yet:
 		// https://github.com/poy/kf/issues/46
 		go kf.Proxy(ctx, appName, 8080)
-		resp, respCancel := RetryPost(ctx, t, "http://localhost:8080", appTimeout, strings.NewReader("testing"))
+		resp, respCancel := RetryPost(ctx, t, "http://localhost:8080", appTimeout, http.StatusOK, "testing")
 		defer resp.Body.Close()
 		defer respCancel()
 		AssertEqual(t, "status code", http.StatusOK, resp.StatusCode)
@@ -287,7 +286,7 @@ func TestIntegration_Logs(t *testing.T) {
 		// than once because we can't guarantee much about logs.
 		expectedLogLine := fmt.Sprintf("testing-%d", time.Now().UnixNano())
 		for i := 0; i < 10; i++ {
-			resp, respCancel := RetryPost(ctx, t, "http://localhost:8083", appTimeout, strings.NewReader(expectedLogLine))
+			resp, respCancel := RetryPost(ctx, t, "http://localhost:8083", appTimeout, http.StatusOK, expectedLogLine)
 			resp.Body.Close()
 			respCancel()
 		}
@@ -361,7 +360,7 @@ func checkVars(ctx context.Context, t *testing.T, kf *Kf, appName string, proxyP
 		// JSON. This checks to make sure everything is ACTUALLY being
 		// set from the app's perspective.
 		Logf(t, "hitting app %s to check the envs...", appName)
-		resp, respCancel := RetryPost(ctx, t, fmt.Sprintf("http://localhost:%d", proxyPort), appTimeout, nil)
+		resp, respCancel := RetryPost(ctx, t, fmt.Sprintf("http://localhost:%d", proxyPort), appTimeout, http.StatusOK, "")
 		defer resp.Body.Close()
 		defer respCancel()
 		if resp.StatusCode != http.StatusOK {
@@ -435,9 +434,9 @@ func testIntegration_Doctor(t *testing.T) {
 	})
 }
 
-// TestIntegration_Push_Instances pushes the echo app and specify two instances, lists it
-// to ensure it can find a domain, uses the proxy command and then posts to
-// it. It finally deletes the app.
+// TestIntegration_Push_Instances pushes the echo app and specify two
+// instances, lists it to ensure it can find a domain, uses the proxy command
+// and then posts to it. It finally deletes the app.
 func TestIntegration_Push_Instances(t *testing.T) {
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
@@ -448,7 +447,6 @@ func TestIntegration_Push_Instances(t *testing.T) {
 		// Push an app and then clean it up. This pushes the echo app which
 		// replies with the same body that was posted.
 		kf.Push(ctx, appName,
-			"--built-in",
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
 			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
 			"--instances", "2",
@@ -473,11 +471,9 @@ func TestIntegration_Push_Instances(t *testing.T) {
 		// TODO: Use port 0 so that we don't have to worry about port
 		// collisions. This doesn't work yet:
 		// https://github.com/poy/kf/issues/46
-		go kf.Proxy(ctx, appName, 8080)
-		resp, respCancel := RetryPost(ctx, t, "http://localhost:8080", 5*time.Second, strings.NewReader("testing"))
-		defer resp.Body.Close()
+		go kf.Proxy(ctx, appName, 8084)
+		resp, respCancel := RetryPost(ctx, t, "http://localhost:8084", 30*time.Second, http.StatusOK, "testing")
 		defer respCancel()
-		AssertEqual(t, "status code", http.StatusOK, resp.StatusCode)
 		data, err := ioutil.ReadAll(resp.Body)
 		AssertNil(t, "body error", err)
 		AssertEqual(t, "body", "testing", string(data))

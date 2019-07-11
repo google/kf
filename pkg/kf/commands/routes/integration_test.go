@@ -30,11 +30,11 @@ func TestIntegration_Routes(t *testing.T) {
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		hostname := fmt.Sprintf("some-host-%d", time.Now().UnixNano())
 
-		findRoute := func(hostname string, shouldFind bool) {
+		findRoute := func(shouldFind bool) {
 			RetryOnPanic(ctx, t, func() {
 				var found bool
 				for _, line := range kf.Routes(ctx) {
-					expected := hostname + " example.com some-path"
+					expected := hostname + " example.com /some-path"
 					actual := strings.Join(strings.Fields(line), " ")
 					if expected == actual {
 						found = true
@@ -44,7 +44,7 @@ func TestIntegration_Routes(t *testing.T) {
 
 				if shouldFind != found {
 					// We'll panic so we can use our retry logic
-					panic(fmt.Errorf("found route. Wanted %v, got %v", shouldFind, found))
+					panic(fmt.Errorf("Wanted %v, got %v", shouldFind, found))
 				}
 			})
 		}
@@ -53,8 +53,8 @@ func TestIntegration_Routes(t *testing.T) {
 
 		// TODO: use the domain from the cluster.
 		kf.CreateRoute(ctx, "example.com", "--hostname="+hostname, "--path=some-path")
-		findRoute(hostname, true)
+		findRoute(true)
 		kf.DeleteRoute(ctx, "example.com", "--hostname="+hostname, "--path=some-path")
-		findRoute(hostname, false)
+		findRoute(false)
 	})
 }

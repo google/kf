@@ -184,6 +184,7 @@ func (r *Reconciler) reconcile(desired, actual *networking.VirtualService, delet
 
 	// Preserve the rest of the object (e.g. ObjectMeta except for labels).
 	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
+	existing.ObjectMeta.Annotations = desired.ObjectMeta.Annotations
 
 	if deleted {
 		existing.OwnerReferences = algorithms.Delete(

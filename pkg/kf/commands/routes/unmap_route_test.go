@@ -27,7 +27,6 @@ import (
 	clientroutes "github.com/google/kf/pkg/kf/routes"
 	"github.com/google/kf/pkg/kf/routes/fake"
 	"github.com/google/kf/pkg/kf/testutil"
-	"github.com/google/kf/pkg/reconciler/route/resources"
 )
 
 func TestUnmapRoute(t *testing.T) {
@@ -78,7 +77,7 @@ func TestUnmapRoute(t *testing.T) {
 			Args:      []string{"some-app", "example.com", "--hostname=some-host", "--path=some-path"},
 			Namespace: "some-space",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform(gomock.Any(), resources.VirtualServiceName("some-host", "example.com", "/some-path"), gomock.Any())
+				fake.EXPECT().Transform(gomock.Any(), v1alpha1.GenerateName("some-host", "example.com", "/some-path"), gomock.Any())
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)

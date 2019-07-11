@@ -26,7 +26,6 @@ import (
 	"github.com/google/kf/pkg/kf/commands/utils"
 	routesfake "github.com/google/kf/pkg/kf/routes/fake"
 	"github.com/google/kf/pkg/kf/testutil"
-	"github.com/google/kf/pkg/reconciler/route/resources"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -177,7 +176,8 @@ func TestCreateRoute(t *testing.T) {
 							Kind: "Route",
 						},
 						ObjectMeta: metav1.ObjectMeta{
-							Name: resources.VirtualServiceName("some-hostname", "example.com", "/somepath"),
+							Namespace: "some-space",
+							Name:      v1alpha1.GenerateName("some-hostname", "example.com", "/somepath"),
 							OwnerReferences: []metav1.OwnerReference{
 								{
 									APIVersion: "v1",
