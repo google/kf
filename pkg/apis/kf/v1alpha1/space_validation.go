@@ -22,6 +22,13 @@ import (
 
 // Validate makes sure that Space is properly configured.
 func (space *Space) Validate(ctx context.Context) (errs *apis.FieldError) {
+
+	// If we're specifically updating status, don't reject the change because
+	// of a spec issue.
+	if apis.IsInStatusUpdate(ctx) {
+		return
+	}
+
 	// validate name
 	switch {
 	case space.Name == "":
@@ -30,5 +37,48 @@ func (space *Space) Validate(ctx context.Context) (errs *apis.FieldError) {
 		errs = errs.Also(apis.ErrInvalidValue(space.Name, "name"))
 	}
 
+	errs = errs.Also(space.Spec.Validate(apis.WithinSpec(ctx)).ViaField("spec"))
+
+	return errs
+}
+
+// Validate makes sure that SpaceSpec is properly configured.
+func (s *SpaceSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
+	errs = errs.Also(s.Security.Validate(ctx).ViaField("security"))
+	errs = errs.Also(s.BuildpackBuild.Validate(ctx).ViaField("buildpackBuild"))
+	errs = errs.Also(s.Execution.Validate(ctx).ViaField("execution"))
+	errs = errs.Also(s.ResourceLimits.Validate(ctx).ViaField("resourceLimits"))
+
+	return errs
+}
+
+// Validate makes sure that SpaceSpecSecurity is properly configured.
+func (s *SpaceSpecSecurity) Validate(ctx context.Context) (errs *apis.FieldError) {
+	// XXX: no validation
+	return errs
+}
+
+// Validate makes sure that SpaceSpecBuildpackBuild is properly configured.
+func (s *SpaceSpecBuildpackBuild) Validate(ctx context.Context) (errs *apis.FieldError) {
+	if s.BuilderImage == "" {
+		errs = errs.Also(apis.ErrMissingField("builderImage"))
+	}
+
+	if s.ContainerRegistry == "" {
+		errs = errs.Also(apis.ErrMissingField("containerRegistry"))
+	}
+
+	return errs
+}
+
+// Validate makes sure that SpaceSpecExecution is properly configured.
+func (s *SpaceSpecExecution) Validate(ctx context.Context) (errs *apis.FieldError) {
+	// XXX: no validation
+	return errs
+}
+
+// Validate makes sure that SpaceSpecResourceLimits is properly configured.
+func (s *SpaceSpecResourceLimits) Validate(ctx context.Context) (errs *apis.FieldError) {
+	// XXX: no validation
 	return errs
 }

@@ -73,12 +73,10 @@ type SpaceSpecBuildpackBuild struct {
 	// NOTE: The false value for each field should be the default and safe.
 
 	// BuilderImage is a buildpacks.io builder image.
-	// +optional
 	BuilderImage string `json:"builderImage,omitempty"`
 
 	// ContainerRegistry holds the container registry that buildpack builds are
 	// stored in.
-	// +optional
 	ContainerRegistry string `json:"containerRegistry,omitempty"`
 
 	// Env sets default environment variables on the builder.

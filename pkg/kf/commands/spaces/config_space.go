@@ -34,7 +34,6 @@ func NewConfigSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		Use:     "configure-space [subcommand]",
 		Aliases: []string{"config-space"},
 		Short:   "Set configuration for a space",
-		Args:    cobra.ExactArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Help()
 		},
