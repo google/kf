@@ -14,7 +14,14 @@
 
 package v1alpha1
 
-import "context"
+import (
+	"context"
+)
+
+const (
+	// DefaultBuilderImage contains the default buildpack builder image.
+	DefaultBuilderImage = "gcr.io/kf-releases/buildpack-builder:latest"
+)
 
 // SetDefaults implements apis.Defaultable
 func (k *Space) SetDefaults(ctx context.Context) {
@@ -23,5 +30,30 @@ func (k *Space) SetDefaults(ctx context.Context) {
 
 // SetDefaults implements apis.Defaultable
 func (k *SpaceSpec) SetDefaults(ctx context.Context) {
+	k.Security.SetDefaults(ctx)
+	k.BuildpackBuild.SetDefaults(ctx)
+	k.Execution.SetDefaults(ctx)
+	k.ResourceLimits.SetDefaults(ctx)
+}
+
+// SetDefaults implements apis.Defaultable
+func (k *SpaceSpecSecurity) SetDefaults(ctx context.Context) {
+	// XXX: currently no defaults to set
+}
+
+// SetDefaults implements apis.Defaultable
+func (k *SpaceSpecBuildpackBuild) SetDefaults(ctx context.Context) {
+	if k.BuilderImage == "" {
+		k.BuilderImage = DefaultBuilderImage
+	}
+}
+
+// SetDefaults implements apis.Defaultable
+func (k *SpaceSpecExecution) SetDefaults(ctx context.Context) {
+	// XXX: currently no defaults to set
+}
+
+// SetDefaults implements apis.Defaultable
+func (k *SpaceSpecResourceLimits) SetDefaults(ctx context.Context) {
 	// XXX: currently no defaults to set
 }

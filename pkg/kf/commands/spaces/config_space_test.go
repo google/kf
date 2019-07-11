@@ -16,7 +16,6 @@ package spaces
 
 import (
 	"bytes"
-	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -37,11 +36,6 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 		wantErr  error
 		validate func(*testing.T, *v1alpha1.Space)
 	}{
-		"base wrong number of args": {
-			args:    []string{"test"},
-			wantErr: errors.New("accepts 0 arg(s), received 1"),
-		},
-
 		"set-container-registry valid": {
 			args: []string{"set-container-registry", space, "gcr.io/foo"},
 			validate: func(t *testing.T, space *v1alpha1.Space) {

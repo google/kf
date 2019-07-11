@@ -32,6 +32,16 @@ func (k *KfSpace) SetName(name string) {
 	k.Name = name
 }
 
+// GetContainerRegistry gets the container registry for the space.
+func (k *KfSpace) GetContainerRegistry() string {
+	return k.Spec.BuildpackBuild.ContainerRegistry
+}
+
+// SetContainerRegistry sets the container registry for the space.
+func (k *KfSpace) SetContainerRegistry(registry string) {
+	k.Spec.BuildpackBuild.ContainerRegistry = registry
+}
+
 // ToSpace casts this alias back into a Namespace.
 func (k *KfSpace) ToSpace() *v1alpha1.Space {
 	return (*v1alpha1.Space)(k)

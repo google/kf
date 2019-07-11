@@ -15,6 +15,8 @@
 package spaces
 
 import (
+	"fmt"
+
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/spaces"
 
@@ -23,6 +25,10 @@ import (
 
 // NewCreateSpaceCommand allows users to create spaces.
 func NewCreateSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Command {
+	var (
+		containerRegistry string
+	)
+
 	cmd := &cobra.Command{
 		Use:   "create-space SPACE",
 		Short: "Create a space",
@@ -34,14 +40,27 @@ func NewCreateSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 
 			toCreate := spaces.NewKfSpace()
 			toCreate.SetName(name)
+			toCreate.SetContainerRegistry(containerRegistry)
 
 			if _, err := client.Create(toCreate.ToSpace()); err != nil {
 				return err
 			}
 
+			w := cmd.OutOrStdout()
+			fmt.Fprintln(w, "Space created")
+			fmt.Fprintln(w)
+
+			printAdditionalCommands(cmd.OutOrStdout(), name)
 			return nil
 		},
 	}
+
+	cmd.Flags().StringVar(
+		&containerRegistry,
+		"container-registry",
+		"",
+		"The container registry apps and sources will be stored in.",
+	)
 
 	return cmd
 }
