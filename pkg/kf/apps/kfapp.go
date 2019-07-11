@@ -167,6 +167,13 @@ func NewKfApp() KfApp {
 			Kind:       "App",
 			APIVersion: "kf.dev/v1alpha1",
 		},
+		Spec: v1alpha1.AppSpec{
+			Template: v1alpha1.AppSpecTemplate{
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{{}},
+				},
+			},
+		},
 	}
 }
 
