@@ -85,6 +85,7 @@ func (status *AppStatus) PropagateKnativeServiceStatus(service *serving.Service)
 
 	if PropagateCondition(status.manage(), AppConditionKnativeServiceReady, cond) {
 		status.ConfigurationStatusFields = service.Status.ConfigurationStatusFields
+		status.RouteStatusFields = service.Status.RouteStatusFields
 	}
 }
 
