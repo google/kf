@@ -157,6 +157,7 @@ func (in *AppStatus) DeepCopyInto(out *AppStatus) {
 	in.Status.DeepCopyInto(&out.Status)
 	out.SourceStatusFields = in.SourceStatusFields
 	out.ConfigurationStatusFields = in.ConfigurationStatusFields
+	in.RouteStatusFields.DeepCopyInto(&out.RouteStatusFields)
 	return
 }
 
