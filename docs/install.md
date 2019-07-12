@@ -24,10 +24,37 @@ export KF_REGISTRY=<your-container-registry>
 e.g: export KF_REGISTRY=gcr.io/<PROJECT_ID>
 ```
 
+## Install `kf` CLI
+
+The `kf` CLI is built nightly from the master branch. It can be downloaded
+from the following URLs:
+
+### linux
+> https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/cli/kf-linux-latest
+```sh
+wget https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/cli/kf-linux-latest -O kf
+chmod +x kf
+sudo mv kf /usr/local/bin
+```
+
+### mac
+> https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/cli/kf-darwin-latest
+```sh
+wget https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/cli/kf-darwin-latest -O kf
+chmod +x kf
+sudo mv kf /usr/local/bin
+```
+
+### windows
+> https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/cli/kf-windows-latest.exe
+
 ## Install dependencies
 
 `kf` uses Istio to route HTTP requests to the running applications and Knative
 to deploy and scale applications.
+
+> Note: Installing Istio and Knative Serve can be skipped if you are [using
+> Cloud Run on GKE](./install/Kf-with-CloudRun-on-GKE.md).
 
 Install Istio:
 
@@ -37,32 +64,30 @@ kubectl apply --filename https://raw.githubusercontent.com/knative/serving/v0.6.
 kubectl label namespace default istio-injection=enabled
 ```
 
-Install Knative:
+Install Knative Serve:
 
 ```.sh
 kubectl apply --filename https://github.com/knative/serving/releases/download/v0.6.1/serving.yaml \
---filename https://github.com/knative/build/releases/download/v0.6.0/build.yaml \
 --filename https://github.com/knative/serving/releases/download/v0.6.1/monitoring.yaml \
 --filename https://raw.githubusercontent.com/knative/serving/v0.6.1/third_party/config/build/clusterrole.yaml
 ```
 
-If you want to go more in depth installing Knative check out [their docs][knative].
-
-Install the service catalog from the `third_party` directory included in this repo:
+Install Knative Build:
 
 ```.sh
-kubectl apply -R -f third_party/service-catalog/manifests/catalog/templates
+kubectl apply --filename https://github.com/knative/build/releases/download/v0.6.0/build.yaml
 ```
 
+> If you want to go more in depth installing Knative check out [their docs][knative].
 
-## Upload buildpacks
+## Install kf
 
-Buildpacks are provided by the operator and can be uploaded to Knative using
-a script. A set of buidpacks is included in this repo. They can be installed
-with the following:
+kf has controllers, reconcilers and webhooks that must be installed. The kf
+containers and YAML are built nightly from the master branch. It can be
+installed using the following:
 
-```.sh
-./hack/upload-buildpacks.sh
+```sh
+kubectl apply -f https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/releases/release-latest.yaml
 ```
 
 ## Install the service catalog
