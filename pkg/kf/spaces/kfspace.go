@@ -49,6 +49,12 @@ func (k *KfSpace) GetQuota() v1.ResourceList {
 	return k.Spec.ResourceLimits.SpaceQuota
 }
 
+// DeleteQuota deletes the space quota.
+func (k *KfSpace) DeleteQuota() error {
+	k.Spec.ResourceLimits.SpaceQuota = nil
+	return nil
+}
+
 // GetMemory returns the quota for total memory in a space.
 func (k *KfSpace) GetMemory() (resource.Quantity, bool) {
 	quantity, quotaExists := k.Spec.ResourceLimits.SpaceQuota[v1.ResourceMemory]
@@ -110,9 +116,15 @@ func (k *KfSpace) ResetServices() {
 	delete(k.Spec.ResourceLimits.SpaceQuota, v1.ResourceServices)
 }
 
-// ToSpace casts this alias back into a Namespace.
+// ToSpace casts this alias back into a v1alpha.Space.
 func (k *KfSpace) ToSpace() *v1alpha1.Space {
 	return (*v1alpha1.Space)(k)
+}
+
+// NewFromSpace casts a v1alpha1.Space into a KfSpace.
+func NewFromSpace(s *v1alpha1.Space) *KfSpace {
+	kfSpace := (*KfSpace)(s)
+	return kfSpace
 }
 
 // NewKfSpace creates a new KfSpace.

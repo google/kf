@@ -17,9 +17,10 @@ package quotas
 import (
 	"fmt"
 
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	"github.com/google/kf/pkg/kf/quotas"
+	"github.com/google/kf/pkg/kf/spaces"
 
 	"github.com/spf13/cobra"
 )
@@ -31,14 +32,14 @@ const (
 )
 
 // NewCreateQuotaCommand allows users to create quotas.
-func NewCreateQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Command {
+func NewCreateQuotaCommand(p *config.KfParams, client spaces.Client) *cobra.Command {
 	var (
 		memory string
 		cpu    string
 		routes string
 	)
 	cmd := &cobra.Command{
-		Use:   "create-quota QUOTA",
+		Use:   "create-quota SPACE_NAME",
 		Short: "Create a quota",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -46,20 +47,18 @@ func NewCreateQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Comm
 				return err
 			}
 
-			name := args[0]
+			spaceName := args[0]
 
-			kfquota := quotas.NewKfQuota()
-			kfquota.SetName(name)
-			err := setQuotaValues(memory, cpu, routes, &kfquota)
+			err := client.Transform(spaceName, func(space *v1alpha1.Space) error {
+				kfspace := spaces.NewFromSpace(space)
+				return setQuotaValues(memory, cpu, routes, kfspace)
+			})
+
 			if err != nil {
 				return err
 			}
 
-			if _, creationErr := client.Create(p.Namespace, kfquota.ToResourceQuota()); creationErr != nil {
-				return creationErr
-			}
-
-			fmt.Fprintf(cmd.OutOrStdout(), "Quota %q successfully created\n", name)
+			fmt.Fprintf(cmd.OutOrStdout(), "Quota in space %q successfully created\n", spaceName)
 
 			return nil
 		},

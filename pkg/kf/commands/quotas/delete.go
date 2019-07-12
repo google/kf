@@ -17,17 +17,18 @@ package quotas
 import (
 	"fmt"
 
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	"github.com/google/kf/pkg/kf/quotas"
+	"github.com/google/kf/pkg/kf/spaces"
 
 	"github.com/spf13/cobra"
 )
 
 // NewDeleteQuotaCommand allows users to delete quotas.
-func NewDeleteQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Command {
+func NewDeleteQuotaCommand(p *config.KfParams, client spaces.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "delete-quota QUOTA",
+		Use:   "delete-quota SPACE_NAME",
 		Short: "Delete a quota",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -35,13 +36,18 @@ func NewDeleteQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Comm
 				return err
 			}
 
-			name := args[0]
+			spaceName := args[0]
 
-			if err := client.Delete(p.Namespace, name); err != nil {
+			err := client.Transform(spaceName, func(space *v1alpha1.Space) error {
+				kfspace := spaces.NewFromSpace(space)
+				return kfspace.DeleteQuota()
+			})
+
+			if err != nil {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Quota %q successfully deleted\n", name)
+			fmt.Fprintf(cmd.OutOrStdout(), "Quota in space %q successfully deleted\n", spaceName)
 
 			return nil
 

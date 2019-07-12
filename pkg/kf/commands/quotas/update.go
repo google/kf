@@ -18,12 +18,11 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	"github.com/google/kf/pkg/kf/quotas"
 	"github.com/google/kf/pkg/kf/spaces"
 	"github.com/spf13/cobra"
 )
 
-// NewUpdateQuotaCommand allows users to create quotas.
+// NewUpdateQuotaCommand allows users to create a quota for a space.
 func NewUpdateQuotaCommand(p *config.KfParams, client spaces.Client) *cobra.Command {
 	var (
 		memory string
@@ -45,9 +44,8 @@ func NewUpdateQuotaCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 			spaceName := args[0]
 
 			return client.Transform(spaceName, func(space *v1alpha1.Space) error {
-				quota := space.Spec.ResourceLimits.SpaceQuota
-				kfquota := quotas.NewFromResourceQuota(quota)
-				return setQuotaValues(memory, cpu, routes, kfquota)
+				kfspace := spaces.NewFromSpace(space)
+				return setQuotaValues(memory, cpu, routes, kfspace)
 			})
 		},
 	}
