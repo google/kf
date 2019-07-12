@@ -28,6 +28,7 @@ import (
 )
 
 func TestPropagateCondition(t *testing.T) {
+	t.Parallel()
 	cases := map[string]struct {
 		source        *apis.Condition
 		expectMessage string
