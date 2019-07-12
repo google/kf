@@ -119,6 +119,28 @@ func TestPopulateTemplate(t *testing.T) {
 				testutil.AssertEqual(t, "owner values", "abcd-efgh-ijkl", string(actual.OwnerReferences[0].UID))
 			},
 		},
+		"envs": {
+			name:     "envs",
+			template: testTemplate,
+			opts: []builds.CreateOption{
+				builds.WithCreateEnv([]corev1.EnvVar{
+					{
+						Name:      "envName",
+						Value:     "envValue",
+						ValueFrom: nil,
+					},
+				}),
+			},
+
+			validate: func(t *testing.T, actual *build.Build) {
+				testutil.AssertEqual(t, "SchemeGroupVersion", build.SchemeGroupVersion.String(), actual.APIVersion)
+				testutil.AssertEqual(t, "Kind", "Build", actual.Kind)
+				testutil.AssertEqual(t, "Name", "envs", actual.Name)
+				testutil.AssertEqual(t, "owner count", 0, len(actual.OwnerReferences))
+				testutil.AssertEqual(t, "Spec.Template.Env count", 1, len(actual.Spec.Template.Env))
+				testutil.AssertEqual(t, "Spec.Template.Env", actual.Spec.Template.Env, []corev1.EnvVar{{Name: "envName", Value: "envValue", ValueFrom: nil}})
+			},
+		},
 		"defaults": {
 			name:     "defaults",
 			template: testTemplate,

@@ -29,7 +29,7 @@ func BuildpackTemplate() build.TemplateInstantiationSpec {
 	}
 }
 
-// allBuiltins returns a list of all ClusterBuildTemplates
+// clusterBuiltins returns a list of all ClusterBuildTemplates
 func clusterBuiltins() []build.TemplateInstantiationSpec {
 	return []build.TemplateInstantiationSpec{
 		BuildpackTemplate(),

@@ -19,6 +19,7 @@ package builds
 import (
 	"context"
 	"io"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 )
@@ -34,6 +35,8 @@ type createConfig struct {
 	ServiceAccount string
 	// SourceImage is a Kontext source image to seed this build with
 	SourceImage string
+	// Env contains environment variables available to the build
+	Env []corev1.EnvVar
 }
 
 // CreateOption is a single option for configuring a createConfig
@@ -92,6 +95,12 @@ func (opts CreateOptions) SourceImage() string {
 	return opts.toConfig().SourceImage
 }
 
+// Env returns the last set value for SourceImage or the empty value
+// if not set.
+func (opts CreateOptions) Env() []corev1.EnvVar {
+	return opts.toConfig().Env
+}
+
 // WithCreateArgs creates an Option that sets the arguments to the build template
 func WithCreateArgs(val map[string]string) CreateOption {
 	return func(cfg *createConfig) {
@@ -124,6 +133,13 @@ func WithCreateServiceAccount(val string) CreateOption {
 func WithCreateSourceImage(val string) CreateOption {
 	return func(cfg *createConfig) {
 		cfg.SourceImage = val
+	}
+}
+
+// WithCreateEnv creates an Option that sets the environment variables for this build
+func WithCreateEnv(val []corev1.EnvVar) CreateOption {
+	return func(cfg *createConfig) {
+		cfg.Env = val
 	}
 }
 

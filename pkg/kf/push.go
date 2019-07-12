@@ -72,6 +72,7 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 		cfg.Namespace,
 		appName,
 		srcImage,
+		envs,
 		cfg.ContainerRegistry,
 		cfg.ServiceAccount,
 		cfg.Buildpack,
@@ -156,6 +157,7 @@ func (p *pusher) buildSpec(
 	namespace string,
 	appName string,
 	srcImage string,
+	envs []corev1.EnvVar,
 	containerRegistry string,
 	serviceAccount string,
 	buildpack string,
@@ -180,6 +182,7 @@ func (p *pusher) buildSpec(
 		builds.WithCreateArgs(args),
 		builds.WithCreateSourceImage(srcImage),
 		builds.WithCreateNamespace(namespace),
+		builds.WithCreateEnv(envs),
 	); err != nil {
 		return "", err
 	}
