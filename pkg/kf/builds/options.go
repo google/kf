@@ -27,6 +27,8 @@ import (
 type createConfig struct {
 	// Args is the arguments to the build template
 	Args map[string]string
+	// Env is the environment variables that will be provided to the build
+	Env []corev1.EnvVar
 	// Namespace is the Kubernetes namespace to use
 	Namespace string
 	// Owner is a reference to the owner of this build
@@ -35,8 +37,6 @@ type createConfig struct {
 	ServiceAccount string
 	// SourceImage is a Kontext source image to seed this build with
 	SourceImage string
-	// Env contains environment variables available to the build
-	Env []corev1.EnvVar
 }
 
 // CreateOption is a single option for configuring a createConfig
@@ -71,6 +71,12 @@ func (opts CreateOptions) Args() map[string]string {
 	return opts.toConfig().Args
 }
 
+// Env returns the last set value for Env or the empty value
+// if not set.
+func (opts CreateOptions) Env() []corev1.EnvVar {
+	return opts.toConfig().Env
+}
+
 // Namespace returns the last set value for Namespace or the empty value
 // if not set.
 func (opts CreateOptions) Namespace() string {
@@ -95,16 +101,17 @@ func (opts CreateOptions) SourceImage() string {
 	return opts.toConfig().SourceImage
 }
 
-// Env returns the last set value for SourceImage or the empty value
-// if not set.
-func (opts CreateOptions) Env() []corev1.EnvVar {
-	return opts.toConfig().Env
-}
-
 // WithCreateArgs creates an Option that sets the arguments to the build template
 func WithCreateArgs(val map[string]string) CreateOption {
 	return func(cfg *createConfig) {
 		cfg.Args = val
+	}
+}
+
+// WithCreateEnv creates an Option that sets the environment variables that will be provided to the build
+func WithCreateEnv(val []corev1.EnvVar) CreateOption {
+	return func(cfg *createConfig) {
+		cfg.Env = val
 	}
 }
 
@@ -133,13 +140,6 @@ func WithCreateServiceAccount(val string) CreateOption {
 func WithCreateSourceImage(val string) CreateOption {
 	return func(cfg *createConfig) {
 		cfg.SourceImage = val
-	}
-}
-
-// WithCreateEnv creates an Option that sets the environment variables for this build
-func WithCreateEnv(val []corev1.EnvVar) CreateOption {
-	return func(cfg *createConfig) {
-		cfg.Env = val
 	}
 }
 
