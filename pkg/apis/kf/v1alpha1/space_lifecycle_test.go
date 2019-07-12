@@ -27,6 +27,8 @@ import (
 )
 
 func TestSpaceDuckTypes(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		t    duck.Implementable
@@ -48,6 +50,7 @@ func TestSpaceDuckTypes(t *testing.T) {
 }
 
 func TestSpaceGeneration(t *testing.T) {
+	t.Parallel()
 	space := Space{}
 	testutil.AssertEqual(t, "empty space generation", int64(0), space.GetGeneration())
 
@@ -57,6 +60,7 @@ func TestSpaceGeneration(t *testing.T) {
 }
 
 func TestSpaceIsReady(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name    string
 		status  SpaceStatus
@@ -171,6 +175,7 @@ func initTestStatus(t *testing.T) *SpaceStatus {
 }
 
 func TestSpaceHappyPath(t *testing.T) {
+	t.Parallel()
 	status := initTestStatus(t)
 	status.PropagateDeveloperRoleStatus(nil)
 	status.PropagateAuditorRoleStatus(nil)
@@ -189,6 +194,7 @@ func TestSpaceHappyPath(t *testing.T) {
 }
 
 func TestPropagateNamespaceStatus_terminating(t *testing.T) {
+	t.Parallel()
 	status := initTestStatus(t)
 
 	status.PropagateNamespaceStatus(&corev1.Namespace{Status: corev1.NamespaceStatus{Phase: corev1.NamespaceTerminating}})
@@ -198,6 +204,7 @@ func TestPropagateNamespaceStatus_terminating(t *testing.T) {
 }
 
 func TestPropagateResourceQuotaStatus(t *testing.T) {
+	t.Parallel()
 	status := initTestStatus(t)
 
 	memHard, _ := resource.ParseQuantity("20Gi")
@@ -224,6 +231,7 @@ func TestPropagateResourceQuotaStatus(t *testing.T) {
 }
 
 func TestSpaceStatus_lifecycle(t *testing.T) {
+	t.Parallel()
 	cases := map[string]struct {
 		Init func(*SpaceStatus)
 

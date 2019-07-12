@@ -16,25 +16,17 @@ package v1alpha1
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/google/kf/pkg/kf/testutil"
 )
 
-func TestRoute_SetDefaults_DedupeKnativeServiceNames(t *testing.T) {
+func TestAppSpec_SetDefaults_BlankContainer(t *testing.T) {
 	t.Parallel()
 
-	r := &Route{
-		Spec: RouteSpec{
-			KnativeServiceNames: []string{
-				"d", "a", "d", "a", "b", "c",
-			},
-		},
-	}
+	app := &App{}
+	app.SetDefaults(context.Background())
 
-	r.SetDefaults(context.Background())
-
-	testutil.AssertEqual(t, "len", 4, len(r.Spec.KnativeServiceNames))
-	testutil.AssertContainsAll(t, strings.Join(r.Spec.KnativeServiceNames, ""), []string{"a", "b", "c", "d"})
+	testutil.AssertEqual(t, "len(spec.template.spec.containers)", 1, len(app.Spec.Template.Spec.Containers))
+	testutil.AssertEqual(t, "spec.template.spec.containers.name", "", app.Spec.Template.Spec.Containers[0].Name)
 }
