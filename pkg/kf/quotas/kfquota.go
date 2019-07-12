@@ -21,87 +21,88 @@ import (
 
 // KfQuota provides a facade around v1.ResourceQuota for accessing and mutating its
 // values.
-type KfQuota v1.ResourceQuota
+type KfQuota v1.ResourceList
+type KfQuota2 = v1.ResourceList
 
-// GetName retrieves the name of the quota.
-func (k *KfQuota) GetName() string {
-	return k.Name
-}
+// // GetName retrieves the name of the quota.
+// func (k *KfQuota) GetName() string {
+// 	return k.Name
+// }
 
-// SetName sets the name of the quota.
-func (k *KfQuota) SetName(name string) {
-	k.Name = name
-}
+// // SetName sets the name of the quota.
+// func (k *KfQuota) SetName(name string) {
+// 	k.Name = name
+// }
 
 // GetMemory returns the quota for total memory in a space.
-func (k *KfQuota) GetMemory() (resource.Quantity, bool) {
-	quantity, quotaExists := k.Spec.Hard[v1.ResourceMemory]
+func (k KfQuota) GetMemory() (resource.Quantity, bool) {
+	quantity, quotaExists := k[v1.ResourceMemory]
 	return quantity, quotaExists
 }
 
 // SetMemory sets the quota for total memory in a space.
-func (k *KfQuota) SetMemory(memoryLimit resource.Quantity) {
-	if k.Spec.Hard == nil {
-		k.Spec.Hard = v1.ResourceList{}
+func (k KfQuota) SetMemory(memoryLimit resource.Quantity) {
+	if k == nil {
+		k = KfQuota{}
 	}
 
-	k.Spec.Hard[v1.ResourceMemory] = memoryLimit
+	k[v1.ResourceMemory] = memoryLimit
 }
 
 // ResetMemory resets the quota for total memory in a space to unlimited.
-func (k *KfQuota) ResetMemory() {
-	delete(k.Spec.Hard, v1.ResourceMemory)
+func (k KfQuota) ResetMemory() {
+	delete(k, v1.ResourceMemory)
 }
 
 // GetCPU returns the quota for total CPU in a space.
-func (k *KfQuota) GetCPU() (resource.Quantity, bool) {
-	quantity, quotaExists := k.Spec.Hard[v1.ResourceCPU]
+func (k KfQuota) GetCPU() (resource.Quantity, bool) {
+	quantity, quotaExists := k[v1.ResourceCPU]
 	return quantity, quotaExists
 }
 
 // SetCPU sets the quota for total CPU in a space.
-func (k *KfQuota) SetCPU(cpuLimit resource.Quantity) {
-	if k.Spec.Hard == nil {
-		k.Spec.Hard = v1.ResourceList{}
+func (k KfQuota) SetCPU(cpuLimit resource.Quantity) {
+	if k == nil {
+		k = KfQuota{}
 	}
 
-	k.Spec.Hard[v1.ResourceCPU] = cpuLimit
+	k[v1.ResourceCPU] = cpuLimit
 }
 
 // ResetCPU resets the quota for total CPU in a space to unlimited.
-func (k *KfQuota) ResetCPU() {
-	delete(k.Spec.Hard, v1.ResourceCPU)
+func (k KfQuota) ResetCPU() {
+	delete(k, v1.ResourceCPU)
 }
 
 // GetServices returns the quota for total number of routes in a space.
-func (k *KfQuota) GetServices() (resource.Quantity, bool) {
-	quantity, quotaExists := k.Spec.Hard[v1.ResourceServices]
+func (k KfQuota) GetServices() (resource.Quantity, bool) {
+	quantity, quotaExists := k[v1.ResourceServices]
 	return quantity, quotaExists
 }
 
 // SetServices sets the quota for total number of routes in a space.
-func (k *KfQuota) SetServices(numServices resource.Quantity) {
-	if k.Spec.Hard == nil {
-		k.Spec.Hard = v1.ResourceList{}
+func (k KfQuota) SetServices(numServices resource.Quantity) {
+	if k == nil {
+		k = KfQuota{}
 	}
 
-	k.Spec.Hard[v1.ResourceServices] = numServices
+	k[v1.ResourceServices] = numServices
 }
 
 // ResetServices resets the quota for total number of routes in a space
 // to unlimited.
-func (k *KfQuota) ResetServices() {
-	delete(k.Spec.Hard, v1.ResourceServices)
+func (k KfQuota) ResetServices() {
+	delete(k, v1.ResourceServices)
 }
 
-// ToResourceQuota casts this alias back into a ResourceQuota.
-func (k *KfQuota) ToResourceQuota() *v1.ResourceQuota {
-	quota := v1.ResourceQuota(*k)
-	return &quota
+// ToResourceList casts this alias back into a ResourceList.
+func (k *KfQuota) ToResourceList() *v1.ResourceList {
+	quotaList := v1.ResourceList(*k)
+	return &quotaList
 }
 
-// NewFromResourceQuota casts a ResourceQuota into a KfQuota.
-func NewFromResourceQuota(q *v1.ResourceQuota) *KfQuota {
+// NewFromResourceList casts a ResourceList into a KfQuota.
+func NewFromResourceList(q *v1.ResourceList) *KfQuota {
 	kfQuota := (*KfQuota)(q)
 	return kfQuota
 }
