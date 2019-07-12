@@ -85,6 +85,7 @@ func PopulateTemplate(
 			Template: &build.TemplateInstantiationSpec{
 				Name:      template.Name,
 				Kind:      template.Kind,
+				Env:       cfg.Env,
 				Arguments: args,
 			},
 		},
