@@ -21,7 +21,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/spaces/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	v1 "k8s.io/api/core/v1"
@@ -44,41 +43,15 @@ func TestCreateQuotaCommand(t *testing.T) {
 			wantErr: errors.New("accepts 1 arg(s), received 0"),
 		},
 		"create error": {
-			namespace:   "some-namespace",
 			args:        []string{"some-quota", "-m", "100z"},
 			wantErrStrs: []string{"couldn't parse resource quantity"},
 		},
-		"configured namespace": {
-			args:      []string{"some-quota"},
-			namespace: "some-namespace",
-			setup: func(t *testing.T, fakeCreator *fake.FakeClient) {
-				fakeCreator.
-					EXPECT().
-					Create("some-namespace", gomock.Any()).
-					Return(&v1.ResourceQuota{
-						ObjectMeta: metav1.ObjectMeta{Name: "some-quota"},
-					}, nil)
-			},
-		},
-		"returns error without specify namespace": {
-			args:    []string{"some-quota"},
-			wantErr: errors.New(utils.EmptyNamespaceError),
-			setup: func(t *testing.T, fakeCreator *fake.FakeClient) {
-				fakeCreator.
-					EXPECT().
-					Create("some-namespace", gomock.Any()).
-					Return(&v1.ResourceQuota{
-						ObjectMeta: metav1.ObjectMeta{Name: "some-quota"},
-					}, nil)
-			},
-		},
 		"minimal config": {
-			args:      []string{"new-quota"},
-			namespace: "some-namespace",
+			args: []string{"some-space"},
 			setup: func(t *testing.T, fakeCreator *fake.FakeClient) {
 				fakeCreator.
 					EXPECT().
-					Create(gomock.Any(), gomock.Any()).
+					Transform(gomock.Any(), gomock.Any()).
 					Return(&v1.ResourceQuota{
 						ObjectMeta: metav1.ObjectMeta{Name: "new-quota"},
 					}, nil)
@@ -88,8 +61,7 @@ func TestCreateQuotaCommand(t *testing.T) {
 			},
 		},
 		"some flags": {
-			args:      []string{"new-quota", "-m", "1024M", "-c", "30"},
-			namespace: "some-namespace",
+			args: []string{"new-quota", "-m", "1024M", "-c", "30"},
 			setup: func(t *testing.T, fakeCreator *fake.FakeClient) {
 				fakeCreator.
 					EXPECT().

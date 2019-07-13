@@ -21,7 +21,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/spaces/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	v1 "k8s.io/api/core/v1"
@@ -40,26 +39,6 @@ func TestGetQuotaCommand(t *testing.T) {
 		"invalid number of args": {
 			args:    []string{},
 			wantErr: errors.New("accepts 1 arg(s), received 0"),
-		},
-		"configured namespace": {
-			namespace: "some-namespace",
-			args:      []string{"some-quota"},
-			setup: func(t *testing.T, fakeGetter *fake.FakeClient) {
-				fakeGetter.
-					EXPECT().
-					Get("some-namespace", gomock.Any()).
-					Return(&v1.ResourceQuota{}, nil)
-			},
-		},
-		"returns error without specify namespace": {
-			args:    []string{"some-quota"},
-			wantErr: errors.New(utils.EmptyNamespaceError),
-			setup: func(t *testing.T, fakeGetter *fake.FakeClient) {
-				fakeGetter.
-					EXPECT().
-					Get("some-namespace", gomock.Any()).
-					Return(&v1.ResourceQuota{}, nil)
-			},
 		},
 		"formats quota": {
 			namespace: "some-namespace",

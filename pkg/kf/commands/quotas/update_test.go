@@ -21,7 +21,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/spaces"
 	"github.com/google/kf/pkg/kf/spaces/fake"
 	"github.com/google/kf/pkg/kf/testutil"
@@ -43,34 +42,13 @@ func TestUpdateQuotaCommand(t *testing.T) {
 			wantErr: errors.New("accepts 1 arg(s), received 0"),
 		},
 		"update error": {
-			args:      []string{"some-quota", "-m", "100z"},
-			namespace: "some-namespace",
-			wantErr:   errors.New("some-error"),
+			args:    []string{"some-space", "-m", "100z"},
+			wantErr: errors.New("some-error"),
 			setup: func(t *testing.T, fakeUpdater *fake.FakeClient) {
 				fakeUpdater.
 					EXPECT().
 					Transform(gomock.Any(), gomock.Any()).
 					Return(errors.New("some-error"))
-			},
-		},
-		"configured namespace": {
-			args:      []string{"some-quota"},
-			namespace: "some-namespace",
-			setup: func(t *testing.T, fakeUpdater *fake.FakeClient) {
-				fakeUpdater.
-					EXPECT().
-					Transform("some-namespace", gomock.Any()).
-					Return(nil)
-			},
-		},
-		"returns error without specify namespace": {
-			args:    []string{"some-quota"},
-			wantErr: errors.New(utils.EmptyNamespaceError),
-			setup: func(t *testing.T, fakeUpdater *fake.FakeClient) {
-				fakeUpdater.
-					EXPECT().
-					Transform("some-namespace", gomock.Any()).
-					Return(nil)
 			},
 		},
 		"some flags": {
