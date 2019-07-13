@@ -15,12 +15,15 @@
 package config
 
 import (
+	"context"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"path"
 	"path/filepath"
 
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	kf "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/secrets"
 	"github.com/google/kf/pkg/kf/services"
@@ -33,6 +36,8 @@ import (
 	"github.com/poy/service-catalog/pkg/svcat"
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
 	"gopkg.in/yaml.v2"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -50,6 +55,47 @@ type KfParams struct {
 
 	// KubeCfgFile holds the path to the kubeconfig.
 	KubeCfgFile string `yaml:"kubeconfig"`
+
+	// TargetSpace caches the space specified by Namespace to prevent it from
+	// being computed multiple times.
+	// Prefer using GetSpaceOrDefault instead of accessing this value directly.
+	TargetSpace *v1alpha1.Space `yaml:"-"`
+}
+
+// GetTargetSpaceOrDefault gets the space specified by Namespace or a default
+// space with minimal configuration.
+//
+// This function caches a space once retrieved in CurrentSpace.
+func (p *KfParams) GetTargetSpaceOrDefault() (*v1alpha1.Space, error) {
+	if p.TargetSpace != nil {
+		return p.TargetSpace, nil
+	}
+
+	res, err := GetKfClient(p).Spaces().Get(p.Namespace, metav1.GetOptions{})
+	return p.cacheSpace(res, err)
+}
+
+// cacheSpace updates the cached space retartieved by GetSpaceOrDefault()
+func (p *KfParams) cacheSpace(space *v1alpha1.Space, err error) (*v1alpha1.Space, error) {
+	if err == nil {
+		p.TargetSpace = space
+		return space, nil
+	}
+
+	if apierrors.IsNotFound(err) {
+		p.SetTargetSpaceToDefault()
+		return p.TargetSpace, nil
+	}
+
+	return nil, fmt.Errorf("couldn't get the Space %q: %v", p.Namespace, err)
+}
+
+// SetTargetSpaceToDefault sets TargetSpace to the default, overwriting
+// any existing values.
+func (p *KfParams) SetTargetSpaceToDefault() {
+	out := &v1alpha1.Space{}
+	out.SetDefaults(context.Background())
+	p.TargetSpace = out
 }
 
 // paramsPath gets the path we should read the config from/write it to.
