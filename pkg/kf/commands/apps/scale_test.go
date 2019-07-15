@@ -93,14 +93,28 @@ func TestNewScaleCommand(t *testing.T) {
 			ExpectedErr: errors.New("--instances, --min, or --max flag are required"),
 		},
 		"autoscale and exact flags set": {
-			Namespace:   "default",
-			Args:        []string{"my-app", "--instances=3", "--max=9"},
-			ExpectedErr: errors.New("exact scaling (--instances) and autoscale (--min, --max) flags can not be set."),
+			Namespace: "default",
+			Args:      []string{"my-app", "--instances=3", "--max=9"},
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().
+					Transform("default", "my-app", gomock.Any()).
+					Do(func(_, _ string, m kfapps.Mutator) {
+						app := v1alpha1.App{}
+						testutil.AssertNotNil(t, "mutator error", m(&app))
+					})
+			},
 		},
 		"min greater than max": {
-			Namespace:   "default",
-			Args:        []string{"my-app", "--min=8", "--max=5"},
-			ExpectedErr: errors.New("--min must be less than --max"),
+			Namespace: "default",
+			Args:      []string{"my-app", "--min=8", "--max=5"},
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().
+					Transform("default", "my-app", gomock.Any()).
+					Do(func(_, _ string, m kfapps.Mutator) {
+						app := v1alpha1.App{}
+						testutil.AssertNotNil(t, "mutator error", m(&app))
+					})
+			},
 		},
 		"updating app fails": {
 			Namespace:   "default",

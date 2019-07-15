@@ -15,6 +15,8 @@
 package apps
 
 import (
+	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -52,15 +54,7 @@ func NewScaleCommand(
 			}
 
 			if instances < 0 && autoscaleMin < 0 && autoscaleMax < 0 {
-				return errors.New("--instances, --autoscaleMin, or --autoscaleMax flag are required")
-			}
-
-			if instances >= 0 && (autoscaleMin >= 0 || autoscaleMax >= 0) {
-				return errors.New("exact scaling (--instances) and autoscale can not be set.")
-			}
-
-			if autoscaleMax < autoscaleMin {
-				return errors.New("--autoscale-min must be less than --autoscale-max")
+				return errors.New("--instances, --min, or --max flag are required")
 			}
 
 			appName := args[0]
@@ -75,7 +69,6 @@ func NewScaleCommand(
 				if instances >= 0 {
 					// Exact
 					app.Spec.Instances.Exactly = &instances
-					return nil
 				}
 
 				if autoscaleMin >= 0 {
@@ -87,6 +80,13 @@ func NewScaleCommand(
 					// Max is set
 					app.Spec.Instances.Max = &autoscaleMax
 				}
+
+				if err := app.Spec.Instances.Validate(context.Background()); err != nil {
+					return err
+				}
+
+				fmt.Fprintf(cmd.OutOrStderr(), app.Spec.Instances.PrettyPrint())
+
 				return nil
 			}
 
