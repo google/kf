@@ -44,7 +44,7 @@ func (status *SourceStatus) manage() apis.ConditionManager {
 	return apis.NewBatchConditionSet(SourceConditionBuildSucceeded).Manage(status)
 }
 
-// IsReady returns if the space is ready to be used.
+// Succeeded returns if the space is ready to be used.
 func (status *SourceStatus) Succeeded() bool {
 	return status.manage().IsHappy()
 }
@@ -73,8 +73,9 @@ func (status *SourceStatus) PropagateBuildStatus(build *build.Build) {
 		return
 	}
 
-	for _, condition := range build.Status.GetConditions() {
+	status.BuildName = build.Name
 
+	for _, condition := range build.Status.GetConditions() {
 		if condition.Type == "Succeeded" {
 			switch condition.Status {
 			case corev1.ConditionTrue:

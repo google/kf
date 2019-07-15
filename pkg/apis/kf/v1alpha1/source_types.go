@@ -101,6 +101,10 @@ type SourceStatusFields struct {
 	// Image is the latest successfully built image.
 	// +optional
 	Image string `json:"image,omitempty"`
+
+	// BuildName is the name of the build that produced the image.
+	// +optional
+	BuildName string `json:"buildName,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
