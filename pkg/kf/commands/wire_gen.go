@@ -11,17 +11,16 @@ import (
 	"github.com/google/kf/pkg/kf"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/buildpacks"
-	"github.com/google/kf/pkg/kf/builds"
+	builds2 "github.com/google/kf/pkg/kf/builds"
 	apps2 "github.com/google/kf/pkg/kf/commands/apps"
 	buildpacks2 "github.com/google/kf/pkg/kf/commands/buildpacks"
-	builds2 "github.com/google/kf/pkg/kf/commands/builds"
+	"github.com/google/kf/pkg/kf/commands/builds"
 	"github.com/google/kf/pkg/kf/commands/config"
 	quotas2 "github.com/google/kf/pkg/kf/commands/quotas"
 	routes2 "github.com/google/kf/pkg/kf/commands/routes"
 	servicebindings2 "github.com/google/kf/pkg/kf/commands/service-bindings"
 	services2 "github.com/google/kf/pkg/kf/commands/services"
 	spaces2 "github.com/google/kf/pkg/kf/commands/spaces"
-	"github.com/google/kf/pkg/kf/kfapps"
 	"github.com/google/kf/pkg/kf/logs"
 	"github.com/google/kf/pkg/kf/quotas"
 	"github.com/google/kf/pkg/kf/routes"
@@ -50,7 +49,10 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 	logs := kf.NewLogTailer(kfV1alpha1Interface)
 	appsGetter := provideAppsGetter(kfV1alpha1Interface)
 	client := apps.NewClient(appsGetter)
-	pusher := kf.NewPusher(logs, client)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	sourcesClient := sources.NewClient(sourcesGetter, buildTailer)
+	pusher := kf.NewPusher(logs, client, sourcesClient)
 	srcImageBuilder := provideSrcImageBuilder()
 	command := apps2.NewPushCommand(p, pusher, srcImageBuilder)
 	return command
@@ -74,7 +76,8 @@ func InjectApps(p *config.KfParams) *cobra.Command {
 
 func InjectScale(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
-	client := kfapps.NewClient(kfV1alpha1Interface)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
+	client := apps.NewClient(appsGetter)
 	command := apps2.NewScaleCommand(p, client)
 	return command
 }
@@ -338,7 +341,7 @@ func InjectBuilds(p *config.KfParams) *cobra.Command {
 	sourcesGetter := provideKfSources(kfV1alpha1Interface)
 	buildTailer := provideSourcesBuildTailer()
 	client := sources.NewClient(sourcesGetter, buildTailer)
-	command := builds2.NewListBuildsCommand(p, client)
+	command := builds.NewListBuildsCommand(p, client)
 	return command
 }
 
@@ -347,7 +350,7 @@ func InjectBuildLogs(p *config.KfParams) *cobra.Command {
 	sourcesGetter := provideKfSources(kfV1alpha1Interface)
 	buildTailer := provideSourcesBuildTailer()
 	client := sources.NewClient(sourcesGetter, buildTailer)
-	command := builds2.NewBuildLogsCommand(p, client)
+	command := builds.NewBuildLogsCommand(p, client)
 	return command
 }
 
@@ -357,17 +360,18 @@ func provideSrcImageBuilder() apps2.SrcImageBuilder {
 	return apps2.SrcImageBuilderFunc(kontext.BuildImage)
 }
 
-func provideBuildTailer() builds.BuildTailer {
-	return builds.BuildTailerFunc(logs2.Tail)
+func provideBuildTailer() builds2.BuildTailer {
+	return builds2.BuildTailerFunc(logs2.Tail)
 }
 
-var AppsSet = wire.NewSet(apps.NewClient, config.GetServingClient, config.GetKfClient, provideAppsGetter)
+var AppsSet = wire.NewSet(
+	SourcesSet,
+	provideAppsGetter, apps.NewClient,
+)
 
 func provideAppsGetter(ki v1alpha1.KfV1alpha1Interface) v1alpha1.AppsGetter {
 	return ki
 }
-
-var KfappsSet = wire.NewSet(kfapps.NewClient, config.GetKfClient)
 
 func provideCoreV1(p *config.KfParams) v1.CoreV1Interface {
 	return config.GetKubernetes(p).CoreV1()
@@ -408,5 +412,5 @@ func provideKfSources(ki v1alpha1.KfV1alpha1Interface) v1alpha1.SourcesGetter {
 }
 
 func provideSourcesBuildTailer() sources.BuildTailer {
-	return builds.BuildTailerFunc(logs2.Tail)
+	return builds2.BuildTailerFunc(logs2.Tail)
 }

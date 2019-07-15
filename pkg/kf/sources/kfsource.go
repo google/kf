@@ -64,6 +64,18 @@ func (k *KfSource) SetBuildpackBuildSource(sourceImage string) {
 	k.Spec.BuildpackBuild.Source = sourceImage
 }
 
+// SetBuildpackBuildRegistry sets the container registry that the built code
+// will be pushed to.
+func (k *KfSource) SetBuildpackBuildRegistry(registry string) {
+	k.Spec.BuildpackBuild.Registry = registry
+}
+
+// GetBuildpackBuildRegistry returns the container registry that the built code
+// will be pushed to.
+func (k *KfSource) GetBuildpackBuildRegistry() string {
+	return k.Spec.BuildpackBuild.Registry
+}
+
 // SetBuildpackBuildEnv sets the environment variables for a buildpack build.
 func (k *KfSource) SetBuildpackBuildEnv(env []corev1.EnvVar) {
 	k.Spec.BuildpackBuild.Env = env

@@ -28,11 +28,13 @@ func ExampleKfSource_buildpack() {
 	source.SetBuildpackBuildSource("gcr.io/my-source-code-image")
 	source.SetBuildpackBuildEnv([]corev1.EnvVar{{Name: "JAVA_VERSION", Value: "11"}})
 	source.SetBuildpackBuildBuildpack("java")
+	source.SetBuildpackBuildRegistry("gcr.io/some-registry")
 
 	fmt.Println("Name:", source.GetName())
 	fmt.Println("Namespace:", source.GetNamespace())
 	fmt.Println("Source:", source.GetBuildpackBuildSource())
 	fmt.Println("Buildpack:", source.GetBuildpackBuildBuildpack())
+	fmt.Println("Registry:", source.GetBuildpackBuildRegistry())
 
 	for _, env := range source.GetBuildpackBuildEnv() {
 		fmt.Println("Env:", env.Name, "=", env.Value)
@@ -42,6 +44,7 @@ func ExampleKfSource_buildpack() {
 	// Namespace: my-namespace
 	// Source: gcr.io/my-source-code-image
 	// Buildpack: java
+	// Registry: gcr.io/saome-registry
 	// Env: JAVA_VERSION = 11
 }
 

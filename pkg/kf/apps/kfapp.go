@@ -18,6 +18,7 @@ import (
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 
 	"github.com/google/kf/pkg/kf/internal/envutil"
+	"github.com/google/kf/pkg/kf/sources"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -112,12 +113,9 @@ func (k *KfApp) SetServiceAccount(sa string) {
 	k.getOrCreateRevisionTemplateSpec().Spec.ServiceAccountName = sa
 }
 
-func (k *KfApp) SetSourceImage(srcImage string) {
-	k.Spec.Source.BuildpackBuild.Source = srcImage
-}
-
-func (k *KfApp) SetBuildpack(buildpack string) {
-	k.Spec.Source.BuildpackBuild.Buildpack = buildpack
+// SetSource stes the source the application will use to build.
+func (k *KfApp) SetSource(src sources.KfSource) {
+	k.Spec.Source = src.Spec
 }
 
 // GetServiceAccount returns the service account used by the container.

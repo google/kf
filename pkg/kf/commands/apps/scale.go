@@ -22,14 +22,14 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	"github.com/google/kf/pkg/kf/kfapps"
+	"github.com/google/kf/pkg/kf/apps"
 	"github.com/spf13/cobra"
 )
 
 // NewScaleCommand creates a command capable of scaling an app.
 func NewScaleCommand(
 	p *config.KfParams,
-	client kfapps.Client,
+	client apps.Client,
 ) *cobra.Command {
 	var (
 		instances    int

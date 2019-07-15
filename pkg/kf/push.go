@@ -15,6 +15,7 @@
 package kf
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -23,6 +24,7 @@ import (
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/internal/envutil"
 	"github.com/google/kf/pkg/kf/internal/kf"
+	"github.com/google/kf/pkg/kf/sources"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -30,8 +32,9 @@ import (
 
 // pusher deploys source code to Knative. It should be created via NewPusher.
 type pusher struct {
-	bl         Logs
-	appsClient apps.Client
+	bl            Logs
+	appsClient    apps.Client
+	sourcesClient sources.Client
 }
 
 // Pusher deploys applicationapp.
@@ -41,10 +44,11 @@ type Pusher interface {
 }
 
 // NewPusher creates a new Pusher.
-func NewPusher(bl Logs, appsClient apps.Client) Pusher {
+func NewPusher(bl Logs, appsClient apps.Client, sourcesClient sources.Client) Pusher {
 	return &pusher{
-		bl:         bl,
-		appsClient: appsClient,
+		bl:            bl,
+		appsClient:    appsClient,
+		sourcesClient: sourcesClient,
 	}
 }
 
@@ -63,12 +67,15 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 		}
 	}
 
+	src := sources.NewKfSource()
+	src.SetBuildpackBuildSource(srcImage)
+	src.SetBuildpackBuildRegistry(cfg.ContainerRegistry)
+
 	app := apps.NewKfApp()
 	app.SetName(appName)
 	app.SetNamespace(cfg.Namespace)
 	app.SetServiceAccount(cfg.ServiceAccount)
-	app.SetSourceImage(srcImage)
-	app.SetBuildpack(cfg.Buildpack)
+	app.SetSource(src)
 
 	if cfg.Grpc {
 		app.SetContainerPorts([]corev1.ContainerPort{{Name: "h2c", ContainerPort: 8080}})
@@ -85,6 +92,16 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 
 	fmt.Fprintln(os.Stderr, resultingApp.ResourceVersion)
 	fmt.Fprintln(os.Stderr, "cool beans")
+
+	ctx := context.Background()
+
+	// wait a small amount of time for the build to be created
+
+	err = p.sourcesClient.Tail(ctx, cfg.Namespace, appName, os.Stdout)
+	if err != nil {
+		return err
+	}
+
 	if err := p.bl.DeployLogs(cfg.Output, appName, resultingApp.ResourceVersion, cfg.Namespace); err != nil {
 		return err
 	}
