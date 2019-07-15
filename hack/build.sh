@@ -17,4 +17,5 @@
 set -eux
 cd "${0%/*}"/..
 mkdir -p bin
-go build -o bin/kf ./cmd/kf/...
+go mod vendor
+go build -mod=vendor -o bin/kf ./cmd/kf/...

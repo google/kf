@@ -26,6 +26,8 @@ import (
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
 	KfV1alpha1() kfv1alpha1.KfV1alpha1Interface
+	// Deprecated: please explicitly pick a version if possible.
+	Kf() kfv1alpha1.KfV1alpha1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
@@ -37,6 +39,12 @@ type Clientset struct {
 
 // KfV1alpha1 retrieves the KfV1alpha1Client
 func (c *Clientset) KfV1alpha1() kfv1alpha1.KfV1alpha1Interface {
+	return c.kfV1alpha1
+}
+
+// Deprecated: Kf retrieves the default version of KfClient.
+// Please explicitly pick a version.
+func (c *Clientset) Kf() kfv1alpha1.KfV1alpha1Interface {
 	return c.kfV1alpha1
 }
 

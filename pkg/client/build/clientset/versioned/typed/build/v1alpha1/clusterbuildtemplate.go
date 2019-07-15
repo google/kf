@@ -17,8 +17,6 @@
 package v1alpha1
 
 import (
-	"time"
-
 	scheme "github.com/google/kf/pkg/client/build/clientset/versioned/scheme"
 	v1alpha1 "github.com/knative/build/pkg/apis/build/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,15 +70,10 @@ func (c *clusterBuildTemplates) Get(name string, options v1.GetOptions) (result 
 
 // List takes label and field selectors, and returns the list of ClusterBuildTemplates that match those selectors.
 func (c *clusterBuildTemplates) List(opts v1.ListOptions) (result *v1alpha1.ClusterBuildTemplateList, err error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
 	result = &v1alpha1.ClusterBuildTemplateList{}
 	err = c.client.Get().
 		Resource("clusterbuildtemplates").
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
 		Do().
 		Into(result)
 	return
@@ -88,15 +81,10 @@ func (c *clusterBuildTemplates) List(opts v1.ListOptions) (result *v1alpha1.Clus
 
 // Watch returns a watch.Interface that watches the requested clusterBuildTemplates.
 func (c *clusterBuildTemplates) Watch(opts v1.ListOptions) (watch.Interface, error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
 	opts.Watch = true
 	return c.client.Get().
 		Resource("clusterbuildtemplates").
 		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
 		Watch()
 }
 
@@ -135,14 +123,9 @@ func (c *clusterBuildTemplates) Delete(name string, options *v1.DeleteOptions) e
 
 // DeleteCollection deletes a collection of objects.
 func (c *clusterBuildTemplates) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	var timeout time.Duration
-	if listOptions.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
-	}
 	return c.client.Delete().
 		Resource("clusterbuildtemplates").
 		VersionedParams(&listOptions, scheme.ParameterCodec).
-		Timeout(timeout).
 		Body(options).
 		Do().
 		Error()
