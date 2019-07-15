@@ -15,14 +15,18 @@
 package config
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
+	"reflect"
 	"testing"
 
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/testutil"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/util/homedir"
 )
 
@@ -132,4 +136,75 @@ func TestLoad(t *testing.T) {
 		})
 	}
 
+}
+
+func ExampleKfParams_GetTargetSpaceOrDefault() {
+	target := &v1alpha1.Space{}
+	target.Name = "cached-target"
+
+	p := &KfParams{
+		TargetSpace: target,
+	}
+
+	space, err := p.GetTargetSpaceOrDefault()
+	fmt.Println("Space:", space.Name)
+	fmt.Println("Error:", err)
+
+	// Output: Space: cached-target
+	// Error: <nil>
+}
+
+func ExampleKfParams_SetTargetSpaceToDefault() {
+	defaultSpace := &v1alpha1.Space{}
+	defaultSpace.SetDefaults(context.Background())
+
+	p := &KfParams{}
+	p.SetTargetSpaceToDefault()
+
+	fmt.Printf("Set to default: %v\n", reflect.DeepEqual(p.TargetSpace, defaultSpace))
+
+	// Output: Set to default: true
+}
+
+func TestKfParams_cacheSpace(t *testing.T) {
+	goodSpace := &v1alpha1.Space{}
+	goodSpace.Name = "test-space"
+
+	defaultSpace := &v1alpha1.Space{}
+	defaultSpace.SetDefaults(context.Background())
+
+	cases := map[string]struct {
+		space *v1alpha1.Space
+		err   error
+
+		expectSpace       *v1alpha1.Space
+		expectErr         error
+		expectUpdateSpace bool
+	}{
+		"no error": {
+			space:       goodSpace,
+			expectSpace: goodSpace,
+		},
+		"not found error": {
+			err:         apierrs.NewNotFound(v1alpha1.Resource("sources"), ""),
+			expectSpace: defaultSpace,
+		},
+		"other error": {
+			err:       errors.New("api connection error"),
+			expectErr: errors.New("couldn't get the Space \"test-space\": api connection error"),
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			p := &KfParams{}
+			p.Namespace = "test-space"
+
+			actualSpace, actualErr := p.cacheSpace(tc.space, tc.err)
+
+			testutil.AssertEqual(t, "spaces", tc.expectSpace, actualSpace)
+			testutil.AssertEqual(t, "errors", tc.expectErr, actualErr)
+			testutil.AssertEqual(t, "TargetSpace", tc.expectSpace, p.TargetSpace)
+		})
+	}
 }
