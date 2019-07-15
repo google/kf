@@ -40,16 +40,15 @@ func TestDeleteQuotaCommand(t *testing.T) {
 			wantErr: errors.New("accepts 1 arg(s), received 0"),
 		},
 		"success message": {
-			args:      []string{"some-quota"},
-			namespace: "some-namespace",
+			args: []string{"some-space"},
 			setup: func(t *testing.T, fakeDeleter *fake.FakeClient) {
 				fakeDeleter.
 					EXPECT().
-					Delete(gomock.Any(), gomock.Any()).
+					Transform(gomock.Any(), gomock.Any()).
 					Return(nil)
 			},
 			assert: func(t *testing.T, buffer *bytes.Buffer) {
-				testutil.AssertContainsAll(t, buffer.String(), []string{"successfully deleted", "some-quota"})
+				testutil.AssertContainsAll(t, buffer.String(), []string{"successfully deleted", "quota", "some-space"})
 			},
 		},
 	} {

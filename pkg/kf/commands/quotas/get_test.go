@@ -20,11 +20,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/spaces/fake"
 	"github.com/google/kf/pkg/kf/testutil"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestGetQuotaCommand(t *testing.T) {
@@ -42,18 +41,16 @@ func TestGetQuotaCommand(t *testing.T) {
 		},
 		"formats quota": {
 			namespace: "some-namespace",
-			args:      []string{"quota-a"},
+			args:      []string{"space-a"},
 			setup: func(t *testing.T, fakeGetter *fake.FakeClient) {
 				fakeGetter.
 					EXPECT().
-					Get(gomock.Any(), "quota-a").
-					Return(&v1.ResourceQuota{
-						ObjectMeta: metav1.ObjectMeta{Name: "quota-a"},
-					}, nil)
+					Get(gomock.Any()).
+					Return(&v1alpha1.Space{}, nil)
 			},
 			assert: func(t *testing.T, buffer *bytes.Buffer) {
-				header := "Getting info for quota: "
-				testutil.AssertContainsAll(t, buffer.String(), []string{header, "quota-a"})
+				header := "Getting info for quota in space: "
+				testutil.AssertContainsAll(t, buffer.String(), []string{header, "space-a"})
 			},
 		},
 	} {
