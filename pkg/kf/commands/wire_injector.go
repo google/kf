@@ -31,6 +31,7 @@ import (
 	servicebindingscmd "github.com/google/kf/pkg/kf/commands/service-bindings"
 	servicescmd "github.com/google/kf/pkg/kf/commands/services"
 	cspaces "github.com/google/kf/pkg/kf/commands/spaces"
+	"github.com/google/kf/pkg/kf/kfapps"
 	kflogs "github.com/google/kf/pkg/kf/logs"
 	"github.com/google/kf/pkg/kf/quotas"
 	"github.com/google/kf/pkg/kf/routes"
@@ -65,6 +66,11 @@ var AppsSet = wire.NewSet(
 	provideSystemEnvInjector,
 )
 
+var KfappsSet = wire.NewSet(
+	kfapps.NewClient,
+	config.GetKfClient,
+)
+
 func InjectPush(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		capps.NewPushCommand,
@@ -89,6 +95,11 @@ func InjectDelete(p *config.KfParams) *cobra.Command {
 func InjectApps(p *config.KfParams) *cobra.Command {
 	wire.Build(capps.NewAppsCommand, AppsSet)
 
+	return nil
+}
+
+func InjectScale(p *config.KfParams) *cobra.Command {
+	wire.Build(capps.NewScaleCommand, KfappsSet)
 	return nil
 }
 
