@@ -25,6 +25,7 @@ import (
 	"github.com/google/kf/pkg/kf/builds"
 	capps "github.com/google/kf/pkg/kf/commands/apps"
 	cbuildpacks "github.com/google/kf/pkg/kf/commands/buildpacks"
+	cbuilds "github.com/google/kf/pkg/kf/commands/builds"
 	"github.com/google/kf/pkg/kf/commands/config"
 	cquotas "github.com/google/kf/pkg/kf/commands/quotas"
 	croutes "github.com/google/kf/pkg/kf/commands/routes"
@@ -36,6 +37,7 @@ import (
 	"github.com/google/kf/pkg/kf/routes"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/google/kf/pkg/kf/services"
+	"github.com/google/kf/pkg/kf/sources"
 	"github.com/google/kf/pkg/kf/spaces"
 	"github.com/google/kf/pkg/kf/systemenvinjector"
 	"github.com/google/wire"
@@ -412,5 +414,31 @@ func InjectUnmapRoute(p *config.KfParams) *cobra.Command {
 		routes.NewClient,
 		config.GetKfClient,
 	)
+	return nil
+}
+
+////////////////////
+// Builds Command //
+////////////////////
+
+var SourcesSet = wire.NewSet(config.GetKfClient, provideSourcesBuildTailer, provideKfSources, sources.NewClient)
+
+func provideKfSources(ki kfv1alpha1.KfV1alpha1Interface) kfv1alpha1.SourcesGetter {
+	return ki
+}
+
+func provideSourcesBuildTailer() sources.BuildTailer {
+	return builds.BuildTailerFunc(logs.Tail)
+}
+
+func InjectBuilds(p *config.KfParams) *cobra.Command {
+	wire.Build(cbuilds.NewListBuildsCommand, SourcesSet)
+
+	return nil
+}
+
+func InjectBuildLogs(p *config.KfParams) *cobra.Command {
+	wire.Build(cbuilds.NewBuildLogsCommand, SourcesSet)
+
 	return nil
 }
