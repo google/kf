@@ -3,16 +3,10 @@
 ## Pre-requisites
 
 This guide is intended to provide you with all the commands you'll
-need to install `kf` into an existing Kubernetes cluster.
+need to install and use `kf`. It includes instructions for provisioning a new
+GKE cluster, as well as instructions for using an existing Kubernetes cluster.
 
-It assumes you have:
-
-* A Kubernetes cluster that:
-  * Can run containers as root.
-  * Has at least 12 vCPUs.
-  * Has at least 45G of memory.
-  * Has a minimum of three nodes.
-* A Docker-compatible container registry that you can write to.
+You must have a Docker-compatible container registry that you can push to.
 
 ## Configure your registry
 
@@ -50,7 +44,8 @@ sudo mv kf /usr/local/bin
 
 ## Create a Kubernetes cluster
 
-* Google Cloud: [Create a GKE cluster](install/gke.md). Knative Serving and Istio will be installed with this cluster.
+* Google Cloud: [Create a GKE cluster](/install/gke.md). Knative Serving and Istio will be installed with this cluster.
+* Existing: [Use an existing cluster](/docs/install/existing-cluster.md)
 
 ## Install dependencies
 
@@ -121,7 +116,6 @@ kf create-space demo-space \
   --container-registry $KF_REGISTRY
 kf target -s demo-space
 ```
-
 
 ## Push your first app
 
