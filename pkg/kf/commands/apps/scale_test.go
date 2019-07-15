@@ -61,7 +61,7 @@ func TestNewScaleCommand(t *testing.T) {
 		},
 		"updates app auto scaling": {
 			Namespace: "default",
-			Args:      []string{"my-app", "--autoscale-min=3", "--autoscale-max=5"},
+			Args:      []string{"my-app", "--min=3", "--max=5"},
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().
 					Transform("default", "my-app", gomock.Any()).
@@ -90,17 +90,17 @@ func TestNewScaleCommand(t *testing.T) {
 		"flags not set": {
 			Namespace:   "default",
 			Args:        []string{"my-app"},
-			ExpectedErr: errors.New("--instances, --autoscaleMin, or --autoscaleMax flag are required"),
+			ExpectedErr: errors.New("--instances, --min, or --max flag are required"),
 		},
 		"autoscale and exact flags set": {
 			Namespace:   "default",
-			Args:        []string{"my-app", "--instances=3", "--autoscale-max=9"},
-			ExpectedErr: errors.New("exact scaling (--instances) and autoscale can not be set."),
+			Args:        []string{"my-app", "--instances=3", "--max=9"},
+			ExpectedErr: errors.New("exact scaling (--instances) and autoscale (--min, --max) flags can not be set."),
 		},
 		"min greater than max": {
 			Namespace:   "default",
-			Args:        []string{"my-app", "--autoscale-min=8", "--autoscale-max=5"},
-			ExpectedErr: errors.New("--autoscale-min must be less than --autoscale-max"),
+			Args:        []string{"my-app", "--min=8", "--max=5"},
+			ExpectedErr: errors.New("--min must be less than --max"),
 		},
 		"updating app fails": {
 			Namespace:   "default",

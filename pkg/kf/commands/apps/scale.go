@@ -15,7 +15,6 @@
 package apps
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -42,9 +41,9 @@ func NewScaleCommand(
 		Example: `
   kf scale myapp --i 3 # Scale to exactly 3 instances
   kf scale myapp --instances 3 # Scale to exactly 3 instances
-  kf scale myapp --autoscale-min 3 # Autoscaler won't scale below 3 instances
-  kf scale myapp --autoscale-max 5 # Autoscaler won't scale above 5 instances
-  kf scale myapp --autoscale-min 3 --autoscale-max 5 # Autoscaler won't below 3 or above 5 instances
+  kf scale myapp --min 3 # Autoscaler won't scale below 3 instances
+  kf scale myapp --max 5 # Autoscaler won't scale above 5 instances
+  kf scale myapp --min 3 --max 5 # Autoscaler won't below 3 or above 5 instances
   `,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -109,14 +108,14 @@ func NewScaleCommand(
 
 	scale.Flags().IntVar(
 		&autoscaleMin,
-		"autoscale-min",
+		"min",
 		-1,
 		"Minimum number of instances to allow the autoscaler to scale to. 0 implies the app can be scaled to 0.",
 	)
 
 	scale.Flags().IntVar(
 		&autoscaleMax,
-		"autoscale-max",
+		"max",
 		-1,
 		"Maximum number of instances to allow the autoscaler to scale to. 0 implies the app can be scaled to ∞.",
 	)
