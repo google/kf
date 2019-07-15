@@ -22,7 +22,6 @@ import (
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/routes"
-	"github.com/google/kf/pkg/reconciler/route/resources"
 	"github.com/spf13/cobra"
 )
 
@@ -71,7 +70,7 @@ func NewUnmapRouteCommand(
 			})
 
 			urlPath = path.Join("/", urlPath)
-			ksvcName := resources.VirtualServiceName(hostname, domain, urlPath)
+			ksvcName := v1alpha1.GenerateName(hostname, domain, urlPath)
 			if err := c.Transform(p.Namespace, ksvcName, mutator); err != nil {
 				return fmt.Errorf("failed to unmap Route: %s", err)
 			}

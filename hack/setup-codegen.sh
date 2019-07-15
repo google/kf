@@ -17,14 +17,14 @@
 
 set -xeu
 
-packages=$(cat $(realpath $(dirname "$(realpath $0)")/codegen-packages.txt))
+cd "${0%/*}"
+packages=$(cat codegen-packages.txt)
 
 cd $(go env GOPATH)
 for p in $packages; do
-  go get -u $p/...
+  GO111MODULE=off go get -u $p/...
 done
 
-cd $(go env GOPATH)
 mkdir -p src/github.com/knative/
 cd src/github.com/knative
 if [ ! -d "pkg" ]; then

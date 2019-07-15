@@ -1,4 +1,4 @@
-github.com/golang/mock/mockgen/model
+github.com/golang/mock/mockgen
 github.com/knative/serving/pkg/apis
 github.com/knative/build/pkg/apis
 github.com/poy/service-catalog/pkg/apis

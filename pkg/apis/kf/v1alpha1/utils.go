@@ -15,10 +15,16 @@
 package v1alpha1
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"hash/crc64"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"knative.dev/pkg/apis"
+	cv1alpha3 "knative.dev/pkg/client/clientset/versioned/typed/istio/v1alpha3"
 )
 
 // PropagateCondition copies the condition of a sub-resource (source) to a
@@ -98,4 +104,56 @@ func (ci *conditionImpl) MarkReconciliationError(action string, err error) error
 	ci.manager.MarkFalse(ci.destination, "ReconciliationError", msg)
 
 	return errors.New(msg)
+}
+
+var (
+	nonAlphaNumeric    = regexp.MustCompile(`[^a-z0-9]`)
+	validDNSCharacters = regexp.MustCompile(`[^a-z0-9-_]`)
+)
+
+// GenerateName generates a name given the parts. It is a DNS valid name.
+func GenerateName(parts ...string) string {
+	prefix := strings.Join(parts, "-")
+
+	// Base 36 uses the characters 0-9a-z. The maximum number of chars it
+	// requires is 13 for a Uin64.
+	checksum := strconv.FormatUint(
+		crc64.Checksum(
+			[]byte(strings.Join(parts, "")),
+			crc64.MakeTable(crc64.ECMA),
+		),
+		36)
+
+	prefix = strings.ToLower(prefix)
+
+	// Remove all non-alphanumeric characters.
+	prefix = validDNSCharacters.ReplaceAllString(prefix, "-")
+
+	// First char must be alphanumeric.
+	for len(prefix) > 0 && nonAlphaNumeric.Match([]byte{prefix[0]}) {
+		prefix = prefix[1:]
+	}
+
+	// Subtract an extra 1 for the hyphen between the prefix and checksum.
+	maxPrefixLen := 64 - 1 - len(checksum)
+
+	if len(prefix) > maxPrefixLen {
+		prefix = prefix[:maxPrefixLen]
+	}
+
+	if prefix == "" {
+		return checksum
+	}
+
+	return fmt.Sprintf("%s-%s", prefix, checksum)
+}
+
+type istioClientKey struct{}
+
+func SetupIstioClient(ctx context.Context, istioClient cv1alpha3.VirtualServicesGetter) context.Context {
+	return context.WithValue(ctx, istioClientKey{}, istioClient)
+}
+
+func IstioClientFromContext(ctx context.Context) cv1alpha3.VirtualServicesGetter {
+	return ctx.Value(istioClientKey{}).(cv1alpha3.VirtualServicesGetter)
 }

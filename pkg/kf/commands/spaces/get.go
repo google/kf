@@ -80,6 +80,9 @@ func NewGetSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Command
 			fmt.Fprintf(w, "Environment: %v variable(s)\n", len(execution.Env))
 			printEnvGroup(w, execution.Env)
 
+			fmt.Fprintln(w)
+			printAdditionalCommands(w, space.Name)
+
 			return nil
 		},
 	}
@@ -105,4 +108,10 @@ func printEnvGroup(out io.Writer, envVars []corev1.EnvVar) {
 		fmt.Fprintf(w, "%s\t%s", env.Name, env.Value)
 		fmt.Fprintln(w)
 	}
+}
+
+func printAdditionalCommands(w io.Writer, spaceName string) {
+	fmt.Fprintf(w, "Use 'kf space %s' to get the current state of the space.\n", spaceName)
+	fmt.Fprintf(w, "Use 'kf target -s %s' to set the default space kf works with.\n", spaceName)
+	fmt.Fprintln(w, "Use 'kf configure-space' to manage the space.")
 }

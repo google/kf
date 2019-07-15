@@ -20,6 +20,7 @@ import (
 	servicebindings2 "github.com/google/kf/pkg/kf/commands/service-bindings"
 	services2 "github.com/google/kf/pkg/kf/commands/services"
 	spaces2 "github.com/google/kf/pkg/kf/commands/spaces"
+	"github.com/google/kf/pkg/kf/kfapps"
 	"github.com/google/kf/pkg/kf/logs"
 	"github.com/google/kf/pkg/kf/quotas"
 	"github.com/google/kf/pkg/kf/routes"
@@ -66,6 +67,13 @@ func InjectApps(p *config.KfParams) *cobra.Command {
 	appsGetter := provideAppsGetter(kfV1alpha1Interface)
 	client := apps.NewClient(appsGetter)
 	command := apps2.NewAppsCommand(p, client)
+	return command
+}
+
+func InjectScale(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	client := kfapps.NewClient(kfV1alpha1Interface)
+	command := apps2.NewScaleCommand(p, client)
 	return command
 }
 
@@ -338,6 +346,8 @@ var AppsSet = wire.NewSet(apps.NewClient, config.GetServingClient, config.GetKfC
 func provideAppsGetter(ki v1alpha1.KfV1alpha1Interface) v1alpha1.AppsGetter {
 	return ki
 }
+
+var KfappsSet = wire.NewSet(kfapps.NewClient, config.GetKfClient)
 
 func provideCoreV1(p *config.KfParams) v1.CoreV1Interface {
 	return config.GetKubernetes(p).CoreV1()

@@ -172,24 +172,24 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 }
 
 func (r *Reconciler) latestSource(app *v1alpha1.App) (*v1alpha1.Source, error) {
+	// NOTE: this code polls the Kubernetes cluster directly rather than the
+	// cache to prevent multiple builds from kicking off.
 	selector := resources.MakeSourceLabels(app)
-
-	listOps := metav1.ListOptions{
-		LabelSelector: labels.Set(selector).String(),
-	}
-
+	listOps := metav1.ListOptions{LabelSelector: labels.Set(selector).String()}
 	list, err := r.KfClientSet.KfV1alpha1().Sources(app.Namespace).List(listOps)
 	if err != nil {
 		return nil, err
 	}
 
+	items := list.Items
+
 	// sort descending
-	sort.Slice(list.Items, func(i int, j int) bool {
-		return list.Items[j].CreationTimestamp.Before(&list.Items[i].CreationTimestamp)
+	sort.Slice(items, func(i int, j int) bool {
+		return items[j].CreationTimestamp.Before(&items[i].CreationTimestamp)
 	})
 
-	if err == nil && len(list.Items) > 0 {
-		return &list.Items[0], nil
+	if err == nil && len(items) > 0 {
+		return &items[0], nil
 	}
 
 	return nil, apierrs.NewNotFound(v1alpha1.Resource("sources"), fmt.Sprintf("source for %s", app.Name))

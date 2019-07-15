@@ -61,7 +61,6 @@ func provideBuildTailer() builds.BuildTailer {
 
 var AppsSet = wire.NewSet(
 	apps.NewClient,
-	config.GetServingClient,
 	config.GetKfClient,
 	provideAppsGetter,
 )
@@ -90,6 +89,11 @@ func InjectDelete(p *config.KfParams) *cobra.Command {
 func InjectApps(p *config.KfParams) *cobra.Command {
 	wire.Build(capps.NewAppsCommand, AppsSet)
 
+	return nil
+}
+
+func InjectScale(p *config.KfParams) *cobra.Command {
+	wire.Build(capps.NewScaleCommand, KfappsSet)
 	return nil
 }
 

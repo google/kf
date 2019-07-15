@@ -17,6 +17,9 @@ package v1alpha1
 import (
 	"errors"
 	"fmt"
+	"math/rand"
+	"path"
+	"strings"
 	"testing"
 
 	"github.com/google/kf/pkg/kf/testutil"
@@ -25,6 +28,7 @@ import (
 )
 
 func TestPropagateCondition(t *testing.T) {
+	t.Parallel()
 	cases := map[string]struct {
 		source        *apis.Condition
 		expectMessage string
@@ -133,4 +137,57 @@ func ExampleSingleConditionManager_MarkReconciliationError() {
 	// Message: Error occurred while updating Dummy: update err
 	// Reason: ReconciliationError
 	// Error: Error occurred while updating Dummy: update err
+}
+
+func TestGenerateName_Deterministic(t *testing.T) {
+	t.Parallel()
+
+	r1 := GenerateName("host-1", "example1.com")
+	r2 := GenerateName("host-1", "example1.com")
+	r3 := GenerateName("host-2", "example1.com")
+	r4 := GenerateName("host-1", "example2.com")
+
+	testutil.AssertEqual(t, "r1 and r2", r1, r2)
+	testutil.AssertEqual(t, "r1 and r2", r1, r2)
+
+	for _, r := range []string{r3, r4} {
+		if r1 == r {
+			t.Fatalf("expected %s to not equal %s", r, r1)
+		}
+	}
+}
+
+func TestGenerateName_ValidDNS(t *testing.T) {
+	t.Parallel()
+
+	// We'll use an instantiation of rand so we can seed it with 0 for
+	// repeatable tests.
+	rand := rand.New(rand.NewSource(0))
+	randStr := func() string {
+		buf := make([]byte, rand.Intn(128)+1)
+		for i := range buf {
+			buf[i] = byte(rand.Intn('z'-'a') + 'a')
+		}
+		return strings.ToUpper(path.Join("./", string(buf)))
+	}
+
+	history := map[string]bool{}
+
+	validDNS := func(r string) {
+		testutil.AssertRegexp(t, "valid DNS", `^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`, r)
+		testutil.AssertEqual(t, fmt.Sprintf("len: %d", len(r)), true, len(r) <= 64)
+		testutil.AssertEqual(t, "collison", false, history[r])
+	}
+
+	for i := 0; i < 10000; i++ {
+		r := GenerateName(randStr(), randStr())
+		validDNS(r)
+		history[r] = true
+	}
+
+	// Empty name
+	validDNS(GenerateName())
+
+	// Only non-alphanumeric characters
+	validDNS(GenerateName(".", "-", "$"))
 }

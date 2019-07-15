@@ -73,12 +73,13 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 	)
 
 	var pushCmd = &cobra.Command{
-		Use:   "push APP_NAME [--container-registry CONTAINER_REGISTRY]",
+		Use:   "push APP_NAME",
 		Short: "Push a new app or sync changes to an existing app",
 		Example: `
+  kf push myapp
   kf push myapp --container-registry gcr.io/myproject
-  kf push myapp --container-registry gcr.io/myproject --buildpack my.special.buildpack # Discover via kf buildpacks
-  kf push myapp --container-registry gcr.io/myproject --env FOO=bar --env BAZ=foo
+  kf push myapp --buildpack my.special.buildpack # Discover via kf buildpacks
+  kf push myapp --env FOO=bar --env BAZ=foo
   `,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -86,9 +87,20 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 				return err
 			}
 
-			if containerRegistry == "" {
+			space, err := p.GetTargetSpaceOrDefault()
+			if err != nil {
+				return err
+			}
+
+			switch {
+			case containerRegistry != "":
+				break
+			case space.Spec.BuildpackBuild.ContainerRegistry != "":
+				containerRegistry = space.Spec.BuildpackBuild.ContainerRegistry
+			default:
 				return errors.New("container-registry is required")
 			}
+
 			cmd.SilenceUsage = true
 
 			appName := ""
@@ -97,7 +109,6 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 			}
 
 			// Kontext has to have a absolute path.
-			var err error
 			path, err = filepath.Abs(path)
 			if err != nil {
 				return err
@@ -197,7 +208,7 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 		&containerRegistry,
 		"container-registry",
 		"",
-		"The container registry to push containers (REQUIRED).",
+		"The container registry to push containers. Required if not targeting a Kf space.",
 	)
 
 	pushCmd.Flags().StringVar(

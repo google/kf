@@ -22,7 +22,7 @@ import (
 	"github.com/google/kf/pkg/kf/testutil"
 )
 
-func TestSetDefaults_DedupeKnativeServiceNames(t *testing.T) {
+func TestRoute_SetDefaults_DedupeKnativeServiceNames(t *testing.T) {
 	t.Parallel()
 
 	r := &Route{

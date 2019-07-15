@@ -19,6 +19,7 @@ package builds
 import (
 	"context"
 	"io"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 )
@@ -26,6 +27,8 @@ import (
 type createConfig struct {
 	// Args is the arguments to the build template
 	Args map[string]string
+	// Env is the environment variables that will be provided to the build
+	Env []corev1.EnvVar
 	// Namespace is the Kubernetes namespace to use
 	Namespace string
 	// Owner is a reference to the owner of this build
@@ -68,6 +71,12 @@ func (opts CreateOptions) Args() map[string]string {
 	return opts.toConfig().Args
 }
 
+// Env returns the last set value for Env or the empty value
+// if not set.
+func (opts CreateOptions) Env() []corev1.EnvVar {
+	return opts.toConfig().Env
+}
+
 // Namespace returns the last set value for Namespace or the empty value
 // if not set.
 func (opts CreateOptions) Namespace() string {
@@ -96,6 +105,13 @@ func (opts CreateOptions) SourceImage() string {
 func WithCreateArgs(val map[string]string) CreateOption {
 	return func(cfg *createConfig) {
 		cfg.Args = val
+	}
+}
+
+// WithCreateEnv creates an Option that sets the environment variables that will be provided to the build
+func WithCreateEnv(val []corev1.EnvVar) CreateOption {
+	return func(cfg *createConfig) {
+		cfg.Env = val
 	}
 }
 

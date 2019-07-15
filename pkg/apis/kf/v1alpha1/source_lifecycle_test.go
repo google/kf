@@ -21,6 +21,7 @@ import (
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	duckv1alpha1 "github.com/knative/pkg/apis/duck/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
 	"knative.dev/pkg/apis/duck"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
@@ -169,6 +170,9 @@ func initTestSourceStatus(t *testing.T) *SourceStatus {
 
 func happyBuild() *build.Build {
 	return &build.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "some-build-name",
+		},
 		Spec: build.BuildSpec{
 			Template: &build.TemplateInstantiationSpec{
 				Arguments: []build.ArgumentSpec{
@@ -192,13 +196,52 @@ func happyBuild() *build.Build {
 	}
 }
 
+func pendingBuild() *build.Build {
+	return &build.Build{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "some-build-name",
+		},
+		Spec: build.BuildSpec{
+			Template: &build.TemplateInstantiationSpec{
+				Arguments: []build.ArgumentSpec{
+					{
+						Name:  "IMAGE",
+						Value: "some-container-image",
+					},
+				},
+			},
+		},
+		Status: build.BuildStatus{
+			Status: duckv1alpha1.Status{
+				Conditions: duckv1alpha1.Conditions{
+					{
+						Type:   duckv1alpha1.ConditionType("Succeeded"),
+						Status: corev1.ConditionUnknown,
+					},
+				},
+			},
+		},
+	}
+}
+
 func TestSourceHappyPath(t *testing.T) {
 	status := initTestSourceStatus(t)
 
+	// Build starts out pending while the container kicks off
+	status.PropagateBuildStatus(pendingBuild())
+
+	apitesting.CheckConditionOngoing(status.duck(), SourceConditionSucceeded, t)
+	apitesting.CheckConditionOngoing(status.duck(), SourceConditionBuildSucceeded, t)
+	testutil.AssertEqual(t, "BuildName", "some-build-name", status.BuildName)
+	testutil.AssertEqual(t, "Image", "", status.Image) // Image not populated until build succeeds
+
+	// Build succeeds
 	status.PropagateBuildStatus(happyBuild())
 
 	apitesting.CheckConditionSucceeded(status.duck(), SourceConditionSucceeded, t)
 	apitesting.CheckConditionSucceeded(status.duck(), SourceConditionBuildSucceeded, t)
+	testutil.AssertEqual(t, "BuildName", "some-build-name", status.BuildName)
+	testutil.AssertEqual(t, "Image", "some-container-image", status.Image)
 }
 
 func TestSourceStatus_lifecycle(t *testing.T) {

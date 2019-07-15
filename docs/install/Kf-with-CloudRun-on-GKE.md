@@ -4,6 +4,9 @@ Prepping GKE for KF
 This guide walks you through the installation of GKE with Cloud Run with the
 intent of using it with `kf`.
 
+> Note: Installing Cloud Run is equivalent to installing Knative Serve and
+> Istio. Therefore, only Knative Build is required after.
+
 ## Before you begin
 
 This guide assumes you are using `bash` in a Mac or Linux environment; some

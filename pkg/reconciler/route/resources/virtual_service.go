@@ -1,3 +1,4 @@
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,12 +16,8 @@ package resources
 
 import (
 	"fmt"
-	"hash/crc64"
 	"net/http"
 	"path"
-	"regexp"
-	"strconv"
-	"strings"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/gorilla/mux"
@@ -36,55 +33,12 @@ const (
 	GatewayHost           = "istio-ingressgateway.istio-system.svc.cluster.local"
 )
 
-var (
-	nonAlphaNumeric    = regexp.MustCompile(`[^a-z0-9]`)
-	validDNSCharacters = regexp.MustCompile(`[^a-z0-9-_]`)
-)
-
-// VirtualServiceName gets the name of a VirtualService given the route.
-func VirtualServiceName(parts ...string) string {
-	prefix := strings.Join(parts, "-")
-
-	// Base 36 uses the characters 0-9a-z. The maximum number of chars it
-	// requires is 13 for a Uin64.
-	checksum := strconv.FormatUint(
-		crc64.Checksum(
-			[]byte(strings.Join(parts, "")),
-			crc64.MakeTable(crc64.ECMA),
-		),
-		36)
-
-	prefix = strings.ToLower(prefix)
-
-	// Remove all non-alphanumeric characters.
-	prefix = validDNSCharacters.ReplaceAllString(prefix, "-")
-
-	// First char must be alphanumeric.
-	for len(prefix) > 0 && nonAlphaNumeric.Match([]byte{prefix[0]}) {
-		prefix = prefix[1:]
-	}
-
-	// Subtract an extra 1 for the hyphen between the prefix and checksum.
-	maxPrefixLen := 64 - 1 - len(checksum)
-
-	if len(prefix) > maxPrefixLen {
-		prefix = prefix[:maxPrefixLen]
-	}
-
-	if prefix == "" {
-		return checksum
-	}
-
-	return fmt.Sprintf("%s-%s", prefix, checksum)
-}
-
 // MakeVirtualService creates a VirtualService from a Route object.
 func MakeVirtualService(route *v1alpha1.Route) (*networking.VirtualService, error) {
 	hostDomain := route.Spec.Domain
 	if route.Spec.Hostname != "" {
 		hostDomain = route.Spec.Hostname + "." + route.Spec.Domain
 	}
-	urlPath := path.Join("/", route.Spec.Path)
 
 	httpRoute, err := buildHTTPRoute(route)
 	if err != nil {
@@ -103,8 +57,8 @@ func MakeVirtualService(route *v1alpha1.Route) (*networking.VirtualService, erro
 			Kind:       "VirtualService",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      VirtualServiceName(route.Spec.Hostname, route.Spec.Domain),
-			Namespace: route.GetNamespace(),
+			Name:      v1alpha1.GenerateName(route.Spec.Hostname, route.Spec.Domain),
+			Namespace: v1alpha1.KfNamespace,
 			OwnerReferences: []metav1.OwnerReference{
 				ownerRef,
 			},
@@ -112,7 +66,7 @@ func MakeVirtualService(route *v1alpha1.Route) (*networking.VirtualService, erro
 			Annotations: map[string]string{
 				"domain":   route.Spec.Domain,
 				"hostname": route.Spec.Hostname,
-				"path":     urlPath,
+				"space":    route.GetNamespace(),
 			},
 		},
 		Spec: networking.VirtualServiceSpec{

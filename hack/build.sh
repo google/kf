@@ -15,6 +15,6 @@
 # limitations under the License.
 
 set -eux
-cd $(realpath $(dirname "$(realpath $0)")/..)
+cd "${0%/*}"/..
 mkdir -p bin
 go build -o bin/kf ./cmd/kf/...

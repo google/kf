@@ -24,7 +24,14 @@ import (
 )
 
 func TestSpaceValidation(t *testing.T) {
-	goodSpaceSpec := SpaceSpec{}
+	goodBuildpackBuild := SpaceSpecBuildpackBuild{
+		BuilderImage:      DefaultBuilderImage,
+		ContainerRegistry: "gcr.io/test",
+	}
+
+	goodSpaceSpec := SpaceSpec{
+		BuildpackBuild: goodBuildpackBuild,
+	}
 
 	cases := map[string]struct {
 		space *Space
@@ -57,6 +64,28 @@ func TestSpaceValidation(t *testing.T) {
 			},
 			want: apis.ErrInvalidValue("default", "name"),
 		},
+		"no container registry": {
+			space: &Space{
+				ObjectMeta: metav1.ObjectMeta{Name: "valid"},
+				Spec: SpaceSpec{
+					BuildpackBuild: SpaceSpecBuildpackBuild{
+						BuilderImage: DefaultBuilderImage,
+					},
+				},
+			},
+			want: apis.ErrMissingField("spec.buildpackBuild.containerRegistry"),
+		},
+		"no builder image": {
+			space: &Space{
+				ObjectMeta: metav1.ObjectMeta{Name: "valid"},
+				Spec: SpaceSpec{
+					BuildpackBuild: SpaceSpecBuildpackBuild{
+						ContainerRegistry: "gcr.io/test",
+					},
+				},
+			},
+			want: apis.ErrMissingField("spec.buildpackBuild.builderImage"),
+		},
 	}
 
 	for tn, tc := range cases {
@@ -65,6 +94,5 @@ func TestSpaceValidation(t *testing.T) {
 
 			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())
 		})
-
 	}
 }

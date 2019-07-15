@@ -28,7 +28,6 @@ import (
 	clientroutes "github.com/google/kf/pkg/kf/routes"
 	routesfake "github.com/google/kf/pkg/kf/routes/fake"
 	"github.com/google/kf/pkg/kf/testutil"
-	"github.com/google/kf/pkg/reconciler/route/resources"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -113,7 +112,7 @@ func TestMapRoute(t *testing.T) {
 				}, nil)
 				routesfake.EXPECT().Upsert(gomock.Any(), gomock.Any(), gomock.Any()).Do(func(_ string, newR *v1alpha1.Route, m clientroutes.Merger) {
 					testutil.AssertEqual(t, "name",
-						resources.VirtualServiceName(
+						v1alpha1.GenerateName(
 							"some-host",
 							"example.com",
 							"/some-path",

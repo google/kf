@@ -14,7 +14,11 @@
 
 package v1alpha1
 
-import "context"
+import (
+	"context"
+
+	corev1 "k8s.io/api/core/v1"
+)
 
 // SetDefaults implements apis.Defaultable
 func (k *App) SetDefaults(ctx context.Context) {
@@ -23,5 +27,9 @@ func (k *App) SetDefaults(ctx context.Context) {
 
 // SetDefaults implements apis.Defaultable
 func (k *AppSpec) SetDefaults(ctx context.Context) {
-	// XXX: currently no defaults to set
+	// We require at least one container, so if there isn't one, set a blank
+	// one.
+	if len(k.Template.Spec.Containers) == 0 {
+		k.Template.Spec.Containers = append(k.Template.Spec.Containers, corev1.Container{})
+	}
 }
