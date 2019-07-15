@@ -28,7 +28,7 @@ while getopts "v" opt; do
   esac
 done
 
-HACK_DIR=$(realpath $(dirname "$(realpath $0)"))
+HACK_DIR="${0%/*}"
 CODEGEN_PKG=$(go env GOPATH)/src/k8s.io/code-generator
 CODEGEN_PACKAGES=$(cat $HACK_DIR/codegen-packages.txt)
 KF_PACKAGE="github.com/google/kf"
@@ -57,7 +57,7 @@ for PACKAGE in ${CODEGEN_PACKAGES}; do
   fi
 done
 
-if [ "$(realpath $KF_PACKAGE_LOCATION)" != "$(git rev-parse --show-toplevel)" ]; then
+if [ "$GOPATH/src/github.com/google/kf" != "$(git rev-parse --show-toplevel)" ]; then
     echo "The generator scripts aren't go module compatible (yet)." 1>&2
     exit 1
 fi
