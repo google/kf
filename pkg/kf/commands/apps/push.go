@@ -60,7 +60,7 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 		Use:   "push APP_NAME",
 		Short: "Push a new app or sync changes to an existing app",
 		Example: `
-	kf push myapp
+  kf push myapp
   kf push myapp --container-registry gcr.io/myproject
   kf push myapp --buildpack my.special.buildpack # Discover via kf buildpacks
   kf push myapp --env FOO=bar --env BAZ=foo
