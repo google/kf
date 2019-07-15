@@ -133,6 +133,13 @@ func NewKfCommand() *cobra.Command {
 			},
 		},
 		{
+			Message: "Builds",
+			Commands: []*cobra.Command{
+				InjectBuilds(p),
+				InjectBuildLogs(p),
+			},
+		},
+		{
 			Message: "Other Commands",
 			Commands: []*cobra.Command{
 				// DoctorTests are run in the order they're defined in this list.
