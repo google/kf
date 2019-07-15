@@ -14,6 +14,7 @@ import (
 	"github.com/google/kf/pkg/kf/builds"
 	apps2 "github.com/google/kf/pkg/kf/commands/apps"
 	buildpacks2 "github.com/google/kf/pkg/kf/commands/buildpacks"
+	builds2 "github.com/google/kf/pkg/kf/commands/builds"
 	"github.com/google/kf/pkg/kf/commands/config"
 	quotas2 "github.com/google/kf/pkg/kf/commands/quotas"
 	routes2 "github.com/google/kf/pkg/kf/commands/routes"
@@ -26,6 +27,7 @@ import (
 	"github.com/google/kf/pkg/kf/routes"
 	"github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/google/kf/pkg/kf/services"
+	"github.com/google/kf/pkg/kf/sources"
 	"github.com/google/kf/pkg/kf/spaces"
 	"github.com/google/kf/pkg/kf/systemenvinjector"
 	"github.com/google/wire"
@@ -336,6 +338,24 @@ func InjectUnmapRoute(p *config.KfParams) *cobra.Command {
 	return command
 }
 
+func InjectBuilds(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	client := sources.NewClient(sourcesGetter, buildTailer)
+	command := builds2.NewListBuildsCommand(p, client)
+	return command
+}
+
+func InjectBuildLogs(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	client := sources.NewClient(sourcesGetter, buildTailer)
+	command := builds2.NewBuildLogsCommand(p, client)
+	return command
+}
+
 // wire_injector.go:
 
 func provideSrcImageBuilder() apps2.SrcImageBuilder {
@@ -380,4 +400,14 @@ var NamespacesSet = wire.NewSet(
 
 func providerNamespacesGetter(ki kubernetes.Interface) v1.NamespacesGetter {
 	return ki.CoreV1()
+}
+
+var SourcesSet = wire.NewSet(config.GetKfClient, provideSourcesBuildTailer, provideKfSources, sources.NewClient)
+
+func provideKfSources(ki v1alpha1.KfV1alpha1Interface) v1alpha1.SourcesGetter {
+	return ki
+}
+
+func provideSourcesBuildTailer() sources.BuildTailer {
+	return builds.BuildTailerFunc(logs2.Tail)
 }
