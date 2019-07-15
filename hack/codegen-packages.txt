@@ -1,9 +1,0 @@
-github.com/golang/mock/mockgen
-github.com/knative/serving/pkg/apis
-github.com/knative/build/pkg/apis
-github.com/poy/service-catalog/pkg/apis
-k8s.io/api
-k8s.io/apimachinery
-k8s.io/client-go
-k8s.io/code-generator
-knative.dev/pkg

@@ -31,7 +31,6 @@ done
 HACK_DIR="${0%/*}"
 CODEGEN_PKG=vendor/k8s.io/code-generator
 
-# CODEGEN_PACKAGES=$(cat $HACK_DIR/codegen-packages.txt)
 KF_PACKAGE="github.com/google/kf"
 KF_PACKAGE_LOCATION="./"
 KF_RESOURCE="kf:v1alpha1"
