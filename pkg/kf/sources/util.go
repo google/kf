@@ -35,10 +35,10 @@ func SourceStatus(source v1alpha1.Source) (finished bool, err error) {
 	}
 
 	switch condition.Status {
-	case corev1.ConditionTrue: // the build was a success
+	case corev1.ConditionTrue:
 		return true, nil
 
-	case corev1.ConditionFalse: // the build was a failure
+	case corev1.ConditionFalse:
 		return true, fmt.Errorf("build failed for reason: %s with message: %s", condition.Reason, condition.Message)
 
 	default: // the build is in a transition state

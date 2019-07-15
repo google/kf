@@ -15,47 +15,48 @@
 package sources
 
 import (
-  "fmt"
-  corev1 "k8s.io/api/core/v1"
+	"fmt"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 func ExampleKfSource_buildpack() {
-  source := NewKfSource()
+	source := NewKfSource()
 
-  source.SetName("my-buildpack-build")
-  source.SetNamespace("my-namespace")
-  source.SetBuildpackBuildSource("gcr.io/my-source-code-image")
-  source.SetBuildpackBuildEnv([]corev1.EnvVar{{Name: "JAVA_VERSION", Value: "11"}})
-  source.SetBuildpackBuildBuildpack("java")
+	source.SetName("my-buildpack-build")
+	source.SetNamespace("my-namespace")
+	source.SetBuildpackBuildSource("gcr.io/my-source-code-image")
+	source.SetBuildpackBuildEnv([]corev1.EnvVar{{Name: "JAVA_VERSION", Value: "11"}})
+	source.SetBuildpackBuildBuildpack("java")
 
-  fmt.Println("Name:", source.GetName())
-  fmt.Println("Namespace:", source.GetNamespace())
-  fmt.Println("Source:", source.GetBuildpackBuildSource())
-  fmt.Println("Buildpack:", source.GetBuildpackBuildBuildpack())
+	fmt.Println("Name:", source.GetName())
+	fmt.Println("Namespace:", source.GetNamespace())
+	fmt.Println("Source:", source.GetBuildpackBuildSource())
+	fmt.Println("Buildpack:", source.GetBuildpackBuildBuildpack())
 
-  for _, env := range source.GetBuildpackBuildEnv() {
-    fmt.Println("Env:", env.Name, "=", env.Value)
-  }
+	for _, env := range source.GetBuildpackBuildEnv() {
+		fmt.Println("Env:", env.Name, "=", env.Value)
+	}
 
-  // Output: Name: my-buildpack-build
-  // Namespace: my-namespace
-  // Source: gcr.io/my-source-code-image
-  // Buildpack: java
-  // Env: JAVA_VERSION = 11
+	// Output: Name: my-buildpack-build
+	// Namespace: my-namespace
+	// Source: gcr.io/my-source-code-image
+	// Buildpack: java
+	// Env: JAVA_VERSION = 11
 }
 
 func ExampleKfSource_docker() {
-  source := NewKfSource()
+	source := NewKfSource()
 
-  source.SetName("my-docker-build")
-  source.SetNamespace("my-namespace")
-  source.SetContainerImageSource("mysql/mysql")
+	source.SetName("my-docker-build")
+	source.SetNamespace("my-namespace")
+	source.SetContainerImageSource("mysql/mysql")
 
-  fmt.Println("Name:", source.GetName())
-  fmt.Println("Namespace:", source.GetNamespace())
-  fmt.Println("Source:", source.GetContainerImageSource())
+	fmt.Println("Name:", source.GetName())
+	fmt.Println("Namespace:", source.GetNamespace())
+	fmt.Println("Source:", source.GetContainerImageSource())
 
-  // Output: Name: my-docker-build
-  // Namespace: my-namespace
-  // Source: mysql/mysql
+	// Output: Name: my-docker-build
+	// Namespace: my-namespace
+	// Source: mysql/mysql
 }
