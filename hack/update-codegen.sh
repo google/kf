@@ -16,7 +16,7 @@
 
 set -e
 
-export GO111MODULE=off
+export GO111MODULE=on
 
 GENERATOR_FLAGS=""
 while getopts "v" opt; do
@@ -29,15 +29,11 @@ while getopts "v" opt; do
 done
 
 HACK_DIR="${0%/*}"
-CODEGEN_PKG=vendor/k8s.io/code-generator
-
-# CODEGEN_PACKAGES=$(cat $HACK_DIR/codegen-packages.txt)
 KF_PACKAGE="github.com/google/kf"
 KF_PACKAGE_LOCATION="./"
 KF_RESOURCE="kf:v1alpha1"
 BUILD_RESOURCE="build:v1alpha1"
 HEADER_FILE=${KF_PACKAGE_LOCATION}/pkg/kf/internal/tools/option-builder/LICENSE_HEADER.go.txt
-KNATIVE_CODEGEN_PKG=vendor/knative.dev/pkg
 
 GENS=$1
 if [ "$GENS" = "" ]; then
@@ -45,11 +41,14 @@ if [ "$GENS" = "" ]; then
 fi
 
 code-generator-gen() {
-  echo running code-generator
   commit=$(cat go.mod | grep code-generator | grep =\> | tr '-' ' ' | awk '{print $NF}')
+  echo running code-generator $commit
+
+  CODEGEN_PKG=vendor/k8s.io/code-generator
   curl -LOJ https://raw.githubusercontent.com/kubernetes/code-generator/${commit}/generate-groups.sh
   chmod +x generate-groups.sh
-  mv generate-groups.sh ./vendor/k8s.io/code-generator
+  mkdir -p $CODEGEN_PKG
+  mv generate-groups.sh $CODEGEN_PKG/generate-groups.sh
 
   ${CODEGEN_PKG}/generate-groups.sh all \
     "$KF_PACKAGE/pkg/client" \
@@ -69,21 +68,24 @@ code-generator-gen() {
 }
 
 knative-injection-gen() {
-  echo running knative-injection-generator
   commit=$(cat go.mod | grep knative.dev/pkg | tr '-' ' ' | awk '{print $NF}')
+  echo running knative-injection-generator $commit
+
+  KNATIVE_CODEGEN_PKG=vendor/knative.dev/pkg/hack
   curl -LOJ https://raw.githubusercontent.com/knative/pkg/${commit}/hack/generate-knative.sh
   chmod +x generate-knative.sh
-  mkdir -p vendor/knative.dev/pkg/hack
-  mv generate-knative.sh ./vendor/knative.dev/pkg/hack
+  mkdir -p $KNATIVE_CODEGEN_PKG
+  mv generate-knative.sh $KNATIVE_CODEGEN_PKG/generate-knative.sh
+
   # Do Knative injection generation
-  bash -x ${KNATIVE_CODEGEN_PKG}/hack/generate-knative.sh \
+  ${KNATIVE_CODEGEN_PKG}/generate-knative.sh \
     "injection" \
     "github.com/google/kf/pkg/client" \
     "github.com/google/kf/pkg/apis" \
     "kf:v1alpha1" \
     --go-header-file $HEADER_FILE
 
-  bash -x ${KNATIVE_CODEGEN_PKG}/hack/generate-knative.sh \
+  ${KNATIVE_CODEGEN_PKG}/generate-knative.sh \
     "injection" \
     "github.com/google/kf/pkg/client/build" \
     "github.com/knative/build/pkg/apis" \
@@ -91,7 +93,6 @@ knative-injection-gen() {
     --go-header-file $HEADER_FILE
 }
 
-GO111MODULE=on
 go mod vendor
 
 case $GENS in
@@ -106,8 +107,5 @@ case $GENS in
     knative-injection-gen
     ;;
 esac
-
-
-
 
 gofmt -s -w .
