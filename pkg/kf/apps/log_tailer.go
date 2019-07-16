@@ -15,6 +15,7 @@
 package apps
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -38,7 +39,7 @@ type Logs interface {
 // DeployLogs writes the logs for the deploy step for the resourceVersion
 // to out. It blocks until the operation has completed.
 func (t *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespace string) error {
-	logger := log.New(out, "\033[32m[deploy-revision]\033[0m ", 0)
+	logger := log.New(out, "\033[32m[build]\033[0m ", 0)
 	logger.Printf("Starting app: %s\n", appName)
 	start := time.Now()
 
@@ -51,27 +52,30 @@ func (t *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespa
 	}
 	defer ws.Stop()
 
-	for e := range ws.ResultChan() {
+	ctx, cancel := context.WithCancel(context.Background())
 
-		fmt.Println("got a thing")
+	for e := range ws.ResultChan() {
 
 		s := e.Object.(*v1alpha1.App)
 
-		// Don't use status' that are reflecting old states
-		if s.Status.ObservedGeneration != s.Generation {
-			fmt.Println("it was old")
-		}
-
+		//var once sync.Once
 		if condition := s.Status.GetCondition(v1alpha1.AppConditionSourceReady); condition != nil {
 			switch condition.Status {
 			case corev1.ConditionTrue:
 				duration := time.Now().Sub(start)
 				logger.Printf("Built in %0.2f seconds\n", duration.Seconds())
+				cancel()
 				return nil
 			case corev1.ConditionFalse:
 				logger.Printf("Failed to build: %s\n", condition.Message)
+				cancel()
 				return fmt.Errorf("build failed: %s", condition.Message)
 			default:
+				go func() {
+					if err := t.sourcesClient.Tail(ctx, namespace, s.Status.LatestCreatedSourceName, out); err != nil {
+						fmt.Println(err)
+					}
+				}()
 				if condition.Message != "" {
 					logger.Printf("Updated state to: %s\n", condition.Message)
 				}

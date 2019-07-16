@@ -15,10 +15,7 @@
 package apps
 
 import (
-	"context"
 	"fmt"
-	"log"
-	"os"
 	"time"
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -75,16 +72,6 @@ func (p *appsClient) Push(appName, srcImage string, opts ...PushOption) error {
 	if err != nil {
 		return fmt.Errorf("failed to create app: %s", err)
 	}
-
-	out := cfg.Output
-	logger := log.New(out, "[kf build] ", 0)
-	logger.Println("Tailing build logs")
-	if err := p.sourcesClient.Tail(context.Background(), cfg.Namespace, appName, out); err != nil {
-		return err
-	}
-
-	fmt.Fprintln(os.Stderr, resultingApp.ResourceVersion)
-	fmt.Fprintln(os.Stderr, "cool beans")
 
 	if err := p.DeployLogs(cfg.Output, appName, resultingApp.ResourceVersion, cfg.Namespace); err != nil {
 		return err
