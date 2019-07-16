@@ -12,7 +12,7 @@ These instructions will walk you through deploying [Cloud Foundry UAA](github.co
     cd uaa-*
     ```
 
-2. Add a default servlet mapping for Tomcat (this is necessary as the
+1. Add a default servlet mapping for Tomcat (this is necessary as the
    Tomcat Cloud Native Buildpack does not include a global web.xml with this
    mapping.):
 
@@ -41,13 +41,13 @@ These instructions will walk you through deploying [Cloud Foundry UAA](github.co
     EOF
     ```
 
-3. Build the UAA app:
+1. Build the UAA app:
 
     ```sh
     ./gradlew :cloudfoundry-identity-uaa:war
     ```
 
-4. Create a sample deployment manifest. This snippet contains a functional UAA configuration. You should replace the embedded RSA keys and certs with your own:
+1. Create a sample deployment manifest. This snippet contains a functional UAA configuration. You should replace the embedded RSA keys and certs with your own:
 
     ```sh
     cat >uaa/build/libs/manifest.yml <<EOF
@@ -130,20 +130,20 @@ These instructions will walk you through deploying [Cloud Foundry UAA](github.co
     EOF
     ```
 
-5. Deploy:
+1. Deploy:
 
     ```sh
     cd uaa/build/libs
     kf push uaa --container-registry="gcr.io/<REPLACE>"
     ```
 
-6. Use the proxy feature to access the deployed app:
+1. Use the proxy feature to access the deployed app:
 
     ```sh
     kf proxy uaa
     ```
 
-7. In a separate terminal, curl the endpoint via the proxy:
+1. In a separate terminal, curl the endpoint via the proxy:
 
     ```sh
     curl 'http://localhost:8080/info' -i -H 'Accept: application/json'
