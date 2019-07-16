@@ -133,6 +133,12 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		}
 
 		app.Status.PropagateSourceStatus(actual)
+
+		if condition.IsPending() {
+			r.Logger.Info("Waiting for source; exiting early")
+			return nil
+		}
+
 	}
 
 	// TODO(josephlewis42) we should grab info to create the VCAP_SERVICES

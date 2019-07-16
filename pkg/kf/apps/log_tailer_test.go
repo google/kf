@@ -21,11 +21,12 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/kf/pkg/kf"
+	v1alpha1fake "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1/fake"
+	"github.com/google/kf/pkg/kf/apps"
+	sourcesfake "github.com/google/kf/pkg/kf/sources/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	servicefake "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1/fake"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -78,18 +79,20 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
-			ctrl, fakeServing := buildLogWatchFakes(
+			ctrl, fakeApps := buildLogWatchFakes(
 				t,
 				tc.events, nil,
 				tc.serviceWatchErr, nil,
 			)
 
-			fakeServing.PrependWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
+			fakeApps.PrependWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
 				testWatch(t, action, "services", tc.namespace, tc.resourceVersion)
 				return false, nil, nil
 			}))
 
-			lt := kf.NewLogTailer(fakeServing)
+			sourceClient := sourcesfake.NewFakeClient(ctrl)
+
+			lt := apps.NewClient(fakeApps, sourceClient)
 
 			var buffer bytes.Buffer
 			gotErr := lt.DeployLogs(&buffer, tc.appName, tc.resourceVersion, tc.namespace)
@@ -175,10 +178,10 @@ func buildLogWatchFakes(
 	t *testing.T,
 	serviceEvents, buildEvents []watch.Event,
 	serviceErr, buildErr error,
-) (*gomock.Controller, *servicefake.FakeServingV1alpha1) {
+) (*gomock.Controller, *v1alpha1fake.FakeKfV1alpha1) {
 	ctrl := gomock.NewController(t)
-	fakeServiceWatcher := NewFakeWatcher(ctrl)
-	fakeServiceWatcher.
+	fakeWatcher := NewFakeWatcher(ctrl)
+	fakeWatcher.
 		EXPECT().
 		ResultChan().
 		DoAndReturn(func() <-chan watch.Event {
@@ -186,18 +189,18 @@ func buildLogWatchFakes(
 		})
 
 	// Ensure Stop is invoked to clean up resources.
-	fakeServiceWatcher.
+	fakeWatcher.
 		EXPECT().
 		Stop().
 		AnyTimes()
 
-	fakeServing := &servicefake.FakeServingV1alpha1{
+	fakeKfClient := &v1alpha1fake.FakeKfV1alpha1{
 		Fake: &ktesting.Fake{},
 	}
 
-	fakeServing.AddWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
-		return true, fakeServiceWatcher, serviceErr
+	fakeKfClient.AddWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
+		return true, fakeWatcher, serviceErr
 	}))
 
-	return ctrl, fakeServing
+	return ctrl, fakeKfClient
 }

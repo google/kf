@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"sync"
 	"time"
 
 	"k8s.io/apimachinery/pkg/fields"
@@ -46,35 +47,61 @@ func (t *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespa
 	defer ws.Stop()
 
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
+	var once sync.Once
 	for e := range ws.ResultChan() {
 
 		s := e.Object.(*v1alpha1.App)
 
-		//var once sync.Once
-		if condition := s.Status.GetCondition(v1alpha1.AppConditionSourceReady); condition != nil {
-			switch condition.Status {
-			case corev1.ConditionTrue:
-				duration := time.Now().Sub(start)
-				logger.Printf("Built in %0.2f seconds\n", duration.Seconds())
-				cancel()
-				return nil
-			case corev1.ConditionFalse:
-				logger.Printf("Failed to build: %s\n", condition.Message)
-				cancel()
-				return fmt.Errorf("build failed: %s", condition.Message)
-			default:
-				go func() {
+		sourceReady := s.Status.GetCondition(v1alpha1.AppConditionSourceReady)
+		if sourceReady == nil {
+			continue
+		}
+
+		switch sourceReady.Status {
+		case corev1.ConditionTrue:
+			duration := time.Now().Sub(start)
+			logger.Printf("Built in %0.2f seconds\n", duration.Seconds())
+			cancel()
+		case corev1.ConditionFalse:
+			logger.Printf("Failed to build: %s\n", sourceReady.Message)
+			cancel()
+			return fmt.Errorf("build failed: %s", sourceReady.Message)
+		default:
+			go once.Do(
+				func() {
 					if err := t.sourcesClient.Tail(ctx, namespace, s.Status.LatestCreatedSourceName, out); err != nil {
 						fmt.Println(err)
 					}
-				}()
-				if condition.Message != "" {
-					logger.Printf("Updated state to: %s\n", condition.Message)
-				}
+				},
+			)
+			if sourceReady.Message != "" {
+				logger.Printf("Updated state to: %s\n", sourceReady.Message)
+			}
+			continue
+		}
+
+		appReady := s.Status.GetCondition(v1alpha1.AppConditionReady)
+		if appReady == nil {
+			continue
+		}
+
+		switch appReady.Status {
+		case corev1.ConditionTrue:
+			duration := time.Now().Sub(start)
+			logger.Printf("Deployed in %0.2f seconds\n", duration.Seconds())
+			return nil
+		case corev1.ConditionFalse:
+			logger.Printf("Failed to deploy: %s\n", appReady.Message)
+			return fmt.Errorf("deploy failed: %s", appReady.Message)
+		default:
+			if appReady.Message != "" {
+				logger.Printf("Updated state to: %s\n", appReady.Message)
 			}
 		}
 	}
+
 	// Lost connection before ready, unknown status.
 	return errors.New("lost connection to Kubernetes")
 }
