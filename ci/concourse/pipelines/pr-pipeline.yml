@@ -92,6 +92,7 @@ jobs:
   - get: ci-image
   - get: ci-src
   - task: check
+    timeout: 1h30m
     config:
       platform: linux
       image_resource:

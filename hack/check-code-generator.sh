@@ -18,7 +18,6 @@
 
 set -eux
 
-hack/setup-codegen.sh
 hack/update-codegen.sh
 
 if [ ! -z "$(git status --porcelain)" ]; then
