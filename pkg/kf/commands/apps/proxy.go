@@ -77,7 +77,20 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister k
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Forwarding requests from http://%s to http://%s\n", listener.Addr(), gateway)
+			appHost := app.Status.URL.Host
+
+			w := cmd.OutOrStdout()
+			fmt.Fprintf(w, "Forwarding requests from %s to %s with host %s\n", listener.Addr(), gateway, appHost)
+			fmt.Fprintln(w, "Example GET:")
+			fmt.Fprintf(w, "  curl -H \"Host: %s\" http://%s\n", appHost, gateway)
+			fmt.Fprintln(w, "Example POST:")
+			fmt.Fprintf(w, "  curl --request POST -H \"Host: %s\" http://%s --data \"POST data\"\n", appHost, gateway)
+			fmt.Fprintln(w, "Browser link:")
+			fmt.Fprintf(w, "  http://%s\n", listener.Addr())
+
+			fmt.Fprintln(w)
+
+			fmt.Fprintln(w, "\033[33mNOTE: the first request may take some time if the app is scaled to zero\033[0m")
 
 			if noStart {
 				fmt.Fprintln(cmd.OutOrStdout(), "exiting because no-start flag was provided")
@@ -115,6 +128,7 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister k
 
 func createProxy(w io.Writer, appHost, gateway string) *httputil.ReverseProxy {
 	logger := log.New(w, fmt.Sprintf("\033[34m[%s via %s]\033[0m ", appHost, gateway), log.Ltime)
+
 	return &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.Host = appHost
