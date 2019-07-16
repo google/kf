@@ -20,10 +20,9 @@
 package apps_test
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	watch "k8s.io/apimachinery/pkg/watch"
+	reflect "reflect"
 )
 
 // FakeWatcher is a mock of Interface interface

@@ -77,8 +77,8 @@ func AssertErrorsEqual(t Failable, expected, actual error) {
 	}
 }
 
-// AssertErrorContains checks that all of the search strings
-// were in the error message.
+// AssertErrorContainsAll checks that all of the search strings
+// were in the error message. Case-insensitive.
 func AssertErrorContainsAll(t Failable, errorMsg error, expected []string) {
 	t.Helper()
 
@@ -86,13 +86,13 @@ func AssertErrorContainsAll(t Failable, errorMsg error, expected []string) {
 }
 
 // AssertContainsAll validates that all of the search strings were in the
-// main string.
+// main string. Case-insensitive.
 func AssertContainsAll(t Failable, haystack string, needles []string) {
 	t.Helper()
 
 	var missing []string
 	for _, needle := range needles {
-		if !strings.Contains(haystack, needle) {
+		if !strings.Contains(strings.ToLower(haystack), strings.ToLower(needle)) {
 			missing = append(missing, needle)
 		}
 	}

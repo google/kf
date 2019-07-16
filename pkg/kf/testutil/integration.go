@@ -280,7 +280,7 @@ func PanicOnError(ctx context.Context, t *testing.T, messagePrefix string, errs 
 	}()
 }
 
-// CombinedOutputStr writes the Stdout and Stderr string. It will return when
+// CombineOutputStr writes the Stdout and Stderr string. It will return when
 // ctx is done.
 func CombineOutputStr(ctx context.Context, t *testing.T, out KfTestOutput) []string {
 	lines := CombineOutput(ctx, t, out)
@@ -300,7 +300,7 @@ func CombineOutputStr(ctx context.Context, t *testing.T, out KfTestOutput) []str
 	}
 }
 
-// CombinedOutput writes the Stdout and Stderr to a channel for each line.
+// CombineOutput writes the Stdout and Stderr to a channel for each line.
 func CombineOutput(ctx context.Context, t *testing.T, out KfTestOutput) <-chan string {
 	lines := make(chan string)
 

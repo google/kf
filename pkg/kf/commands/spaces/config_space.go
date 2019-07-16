@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/quotas"
 	"github.com/google/kf/pkg/kf/internal/envutil"
 	"github.com/google/kf/pkg/kf/spaces"
 	"github.com/spf13/cobra"
@@ -50,6 +51,16 @@ func NewConfigSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 
 	for _, sm := range subcommands {
 		cmd.AddCommand(sm.ToCommand(client))
+	}
+
+	quotaCommands := []*cobra.Command{
+		quotas.NewCreateQuotaCommand(p, client),
+		quotas.NewGetQuotaCommand(p, client),
+		quotas.NewUpdateQuotaCommand(p, client),
+		quotas.NewDeleteQuotaCommand(p, client),
+	}
+	for _, qc := range quotaCommands {
+		cmd.AddCommand(qc)
 	}
 
 	return cmd

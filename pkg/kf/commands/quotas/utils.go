@@ -17,20 +17,20 @@ package quotas
 import (
 	"fmt"
 
-	"github.com/google/kf/pkg/kf/quotas"
+	"github.com/google/kf/pkg/kf/spaces"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-// setQuotaValues updates a KfQuota to have the inputted resource quota values.
-func setQuotaValues(memory string, cpu string, routes string, kfquota *quotas.KfQuota) error {
+// setQuotaValues updates a KfSpace to have the inputted resource quota values.
+func setQuotaValues(memory string, cpu string, routes string, kfspace *spaces.KfSpace) error {
 	var quotaInputs = []struct {
 		Value    string
 		Setter   func(r resource.Quantity)
 		Resetter func()
 	}{
-		{memory, kfquota.SetMemory, kfquota.ResetMemory},
-		{cpu, kfquota.SetCPU, kfquota.ResetCPU},
-		{routes, kfquota.SetServices, kfquota.ResetServices},
+		{memory, kfspace.SetMemory, kfspace.ResetMemory},
+		{cpu, kfspace.SetCPU, kfspace.ResetCPU},
+		{routes, kfspace.SetServices, kfspace.ResetServices},
 	}
 
 	// Only update resource quotas for inputted flags
