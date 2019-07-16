@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/kf/pkg/kf/buildpacks"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/internal/kf"
 	"github.com/spf13/cobra"
 )
@@ -28,14 +29,22 @@ import (
 func NewStacksCommand(p *config.KfParams, l buildpacks.Client) *cobra.Command {
 	var buildpacksCmd = &cobra.Command{
 		Use:   "stacks",
-		Short: "List stacks in current builder.",
+		Short: "List stacks in the builder for the current space.",
 		Args:  cobra.ExactArgs(0),
 		Long:  ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if p.Namespace != "default" && p.Namespace != "" {
-				fmt.Fprintf(cmd.OutOrStderr(), "NOTE: Buildpacks are global and are available to all spaces.")
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
 			}
-			stacks, err := l.Stacks()
+
+			space, err := p.GetTargetSpaceOrDefault()
+			if err != nil {
+				return err
+			}
+
+			fmt.Fprintf(cmd.OutOrStdout(), "Getting stacks in space: %s\n", p.Namespace)
+
+			stacks, err := l.Stacks(space.Spec.BuildpackBuild.BuilderImage)
 			if err != nil {
 				cmd.SilenceUsage = !kf.ConfigError(err)
 				return err

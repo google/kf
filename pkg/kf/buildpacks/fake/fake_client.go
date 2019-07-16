@@ -62,31 +62,31 @@ func (mr *FakeClientMockRecorder) Diagnose(arg0 interface{}) *gomock.Call {
 }
 
 // List mocks base method
-func (m *FakeClient) List() ([]buildpacks.Buildpack, error) {
+func (m *FakeClient) List(arg0 string) ([]buildpacks.Buildpack, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "List")
+	ret := m.ctrl.Call(m, "List", arg0)
 	ret0, _ := ret[0].([]buildpacks.Buildpack)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // List indicates an expected call of List
-func (mr *FakeClientMockRecorder) List() *gomock.Call {
+func (mr *FakeClientMockRecorder) List(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*FakeClient)(nil).List))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*FakeClient)(nil).List), arg0)
 }
 
 // Stacks mocks base method
-func (m *FakeClient) Stacks() ([]string, error) {
+func (m *FakeClient) Stacks(arg0 string) ([]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Stacks")
+	ret := m.ctrl.Call(m, "Stacks", arg0)
 	ret0, _ := ret[0].([]string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Stacks indicates an expected call of Stacks
-func (mr *FakeClientMockRecorder) Stacks() *gomock.Call {
+func (mr *FakeClientMockRecorder) Stacks(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stacks", reflect.TypeOf((*FakeClient)(nil).Stacks))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stacks", reflect.TypeOf((*FakeClient)(nil).Stacks), arg0)
 }

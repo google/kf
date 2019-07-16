@@ -26,9 +26,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/kf/pkg/kf/buildpacks"
 	"github.com/google/kf/pkg/kf/testutil"
-	build "github.com/knative/build/pkg/apis/build/v1alpha1"
-	"github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1/fake"
-	"k8s.io/apimachinery/pkg/runtime"
 	ktesting "k8s.io/client-go/testing"
 )
 
@@ -36,7 +33,7 @@ func TestClient_List(t *testing.T) {
 	t.Parallel()
 
 	action := func(c buildpacks.Client) (interface{}, error) {
-		return c.List()
+		return c.List("some-image")
 	}
 
 	setupTests(t, action, map[string]testSetup{
@@ -68,7 +65,7 @@ func TestClient_Stacks(t *testing.T) {
 	t.Parallel()
 
 	action := func(c buildpacks.Client) (interface{}, error) {
-		return c.Stacks()
+		return c.Stacks("some-image")
 	}
 
 	setupTests(t, action, map[string]testSetup{
@@ -96,11 +93,10 @@ func TestClient_Stacks(t *testing.T) {
 }
 
 type testSetup struct {
-	ReactorListErr         error
-	EmptyBuildTemplateList bool
-	HandleListAction       func(t *testing.T, action ktesting.Action)
-	RemoteImageFetcher     func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error)
-	HandleOutput           func(t *testing.T, output interface{}, err error)
+	ReactorListErr     error
+	HandleListAction   func(t *testing.T, action ktesting.Action)
+	RemoteImageFetcher func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error)
+	HandleOutput       func(t *testing.T, output interface{}, err error)
 }
 
 func setupTests(t *testing.T, action func(c buildpacks.Client) (interface{}, error), additionalTests map[string]testSetup) {
@@ -111,12 +107,6 @@ func setupTests(t *testing.T, action func(c buildpacks.Client) (interface{}, err
 				testutil.AssertEqual(t, "Resource", "clusterbuildtemplates", action.GetResource().Resource)
 				testutil.AssertEqual(t, "FieldSelector Field", "metadata.name", action.(ktesting.ListActionImpl).ListRestrictions.Fields.Requirements()[0].Field)
 				testutil.AssertEqual(t, "FieldSelector Value", "buildpack", action.(ktesting.ListActionImpl).ListRestrictions.Fields.Requirements()[0].Value)
-			},
-		},
-		"handles empty list of build templates": {
-			EmptyBuildTemplateList: true,
-			HandleOutput: func(t *testing.T, output interface{}, err error) {
-				testutil.AssertNil(t, "error", err)
 			},
 		},
 		"fetch image with default keychain": {
@@ -166,17 +156,6 @@ func setupTests(t *testing.T, action func(c buildpacks.Client) (interface{}, err
 
 	for tn, tc := range tests {
 		t.Run(tn, func(t *testing.T) {
-			fake := &fake.FakeBuildV1alpha1{
-				Fake: &ktesting.Fake{},
-			}
-
-			fake.AddReactor("*", "*", ktesting.ReactionFunc(func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
-				if tc.HandleListAction != nil {
-					tc.HandleListAction(t, action)
-				}
-
-				return true, buildTemplateList(tc.EmptyBuildTemplateList), tc.ReactorListErr
-			}))
 
 			rif := func(ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
 				if tc.RemoteImageFetcher == nil {
@@ -189,8 +168,7 @@ func setupTests(t *testing.T, action func(c buildpacks.Client) (interface{}, err
 			}
 
 			c := buildpacks.NewClient(
-				fake, // cbuild.BuildV1alpha1Interface
-				rif,  // RemoteImageFetcher
+				rif, // RemoteImageFetcher
 			)
 
 			output, gotErr := action(c)
@@ -209,26 +187,4 @@ func setEmptyConfig(fakeImage *FakeImage) {
 			},
 		},
 	}, nil).AnyTimes()
-}
-
-func buildTemplateList(empty bool) *build.ClusterBuildTemplateList {
-	if empty {
-		return &build.ClusterBuildTemplateList{}
-	}
-	builderImageDefault := "some-image"
-	return &build.ClusterBuildTemplateList{
-		Items: []build.ClusterBuildTemplate{{
-			Spec: build.BuildTemplateSpec{
-				Parameters: []build.ParameterSpec{
-					{
-						Name: "some-param",
-					},
-					{
-						Name:    "BUILDER_IMAGE",
-						Default: &builderImageDefault,
-					},
-				},
-			},
-		}},
-	}
 }

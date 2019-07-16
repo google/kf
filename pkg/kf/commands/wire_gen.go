@@ -199,9 +199,8 @@ func InjectVcapServices(p *config.KfParams) *cobra.Command {
 }
 
 func InjectBuildpacksClient(p *config.KfParams) buildpacks.Client {
-	buildV1alpha1Interface := config.GetBuildClient(p)
 	remoteImageFetcher := provideRemoteImageFetcher()
-	client := buildpacks.NewClient(buildV1alpha1Interface, remoteImageFetcher)
+	client := buildpacks.NewClient(remoteImageFetcher)
 	return client
 }
 
