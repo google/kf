@@ -1,32 +1,28 @@
-# kf
+# Kf
 
 [![knative.slack.com][slack-badge]][kf-slack]
 
-`kf` provides a `cf` like experience on top of Knative.
+`kf` provides a `cf`-like experience on top of Knative.
 
-`kf` aims to be fully compatible with CF applications and lifecycle; it supports
+`kf` aims to be fully compatible with CF applications and lifecycle. It supports
 logs, buildpacks, app manifests, routing, service brokers, and injected services.
 
 At the same time, it aims to improve the operational experience by supporting
 git-ops, self-healing infrastructure, containers, a service mesh, autoscaling,
 scale-to-zero, improved quota management and does it all on Kubernetes using
-industry-standard OSS tools (Knative, Istio, and Tekton).
+industry-standard OSS tools including Knative, Istio, and Tekton.
 
 ## Getting started
 
-Build a `kf` binary and follow our [install instructions](docs/install.md)
-for Knative.
+Follow the [install instructions](docs/install.md) to create a GKE cluster, install Kf into it, and deploy an app with the `kf` CLI.
 
 ## How to build
 
-**Dependencies:**
-
-[go mod](https://github.com/golang/go/wiki/Modules#quick-start)
-is used and required for dependencies
-
 **Requirements:**
 
-  - Golang `1.12`
+  - Golang `1.12` ([go mod](https://github.com/golang/go/wiki/Modules#quick-start)
+is used and required for dependencies)
+
 
 **Building:**
 
@@ -36,7 +32,7 @@ $ ./hack/build.sh
 
 **Notes:**
 
-- `kf` CLI must be built outside of the `$GOPATH` folder unless
+- The `kf` CLI must be built outside of the `$GOPATH` folder unless
 you explicitly use `export GO111MODULE=on`.
 
 ## Development and releasing

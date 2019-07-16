@@ -1,17 +1,12 @@
+# Install Kf
 
 ## Pre-requisites
 
 This guide is intended to provide you with all the commands you'll
-need to install `kf` into an existing Kubernetes cluster.
+need to install and use `kf`. It includes instructions for provisioning a new
+GKE cluster, as well as instructions for using an existing Kubernetes cluster.
 
-It assumes you have:
-
-* A Kubernetes cluster that:
-  * Can run containers as root.
-  * Has at least 12 vCPUs.
-  * Has at least 45G of memory.
-  * Has a minimum of three nodes.
-* A Docker compatible container registry that you can write to.
+You must have a Docker-compatible container registry that you can push to.
 
 ## Configure your registry
 
@@ -20,8 +15,7 @@ store your Docker registry details in an environment variable. This
 install guide uses Google Container Registry (GCR) on GKE.
 
 ```
-export KF_REGISTRY=<your-container-registry>
-e.g: export KF_REGISTRY=gcr.io/<PROJECT_ID>
+export KF_REGISTRY=gcr.io/<PROJECT_ID>
 ```
 
 ## Install `kf` CLI
@@ -29,7 +23,7 @@ e.g: export KF_REGISTRY=gcr.io/<PROJECT_ID>
 The `kf` CLI is built nightly from the master branch. It can be downloaded
 from the following URLs:
 
-### linux
+### Linux
 > https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/cli/kf-linux-latest
 ```sh
 wget https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/cli/kf-linux-latest -O kf
@@ -37,7 +31,7 @@ chmod +x kf
 sudo mv kf /usr/local/bin
 ```
 
-### mac
+### Mac
 > https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/cli/kf-darwin-latest
 ```sh
 wget https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/cli/kf-darwin-latest -O kf
@@ -45,61 +39,41 @@ chmod +x kf
 sudo mv kf /usr/local/bin
 ```
 
-### windows
+### Windows
 > https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/cli/kf-windows-latest.exe
+
+## Create a Kubernetes cluster
+
+* Google Cloud: [Create a GKE cluster](/docs/install/gke.md). Knative Serving and Istio will be installed with this cluster.
+* Existing: [Use an existing cluster](/docs/install/existing-cluster.md)
 
 ## Install dependencies
 
-`kf` uses Istio to route HTTP requests to the running applications and Knative
-to deploy and scale applications.
-
-> Note: Installing Istio and Knative Serve can be skipped if you are [using
-> Cloud Run on GKE](./install/Kf-with-CloudRun-on-GKE.md).
-
-Install Istio:
-
-```.sh
-kubectl apply --filename https://raw.githubusercontent.com/knative/serving/v0.6.1/third_party/istio-1.1.3/istio-crds.yaml && \
-kubectl apply --filename https://raw.githubusercontent.com/knative/serving/v0.6.1/third_party/istio-1.1.3/istio.yaml && \
-kubectl label namespace default istio-injection=enabled
-```
-
-Install Knative Serve:
-
-```.sh
-kubectl apply --filename https://github.com/knative/serving/releases/download/v0.6.1/serving.yaml \
---filename https://github.com/knative/serving/releases/download/v0.6.1/monitoring.yaml \
---filename https://raw.githubusercontent.com/knative/serving/v0.6.1/third_party/config/build/clusterrole.yaml
-```
-
-Install Knative Build:
+### Knative Build:
 
 ```.sh
 kubectl apply --filename https://github.com/knative/build/releases/download/v0.6.0/build.yaml
 ```
 
-> If you want to go more in depth installing Knative check out [their docs][knative].
+> If you want more information about installing Knative, see [their docs][knative].
 
-## Install kf
-
-kf has controllers, reconcilers and webhooks that must be installed. The kf
-containers and YAML are built nightly from the master branch. It can be
-installed using the following:
-
-```sh
-kubectl apply -f https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/releases/release-latest.yaml
-```
-
-## Install the service catalog
-
-You can install the service catalog from the `third_party` directory included
-in this repo:
+### Service Catalog:
 
 ```.sh
 kubectl apply -R -f third_party/service-catalog/manifests/catalog/templates
 ```
 
-You should be able to see an empty marketplace at this point by running.
+## Install Kf
+
+Kf has controllers, reconcilers and webhooks that must be installed. The Kf
+containers and YAML are built nightly from the master branch. Install the latest
+nightly snapshot (note: it does not offer an upgrade path) with:
+
+```sh
+kubectl apply -f https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/releases/release-latest.yaml
+```
+
+You should be able to see an empty marketplace at this point by running:
 
 ```.sh
 kf marketplace
@@ -107,7 +81,7 @@ kf marketplace
 
 ## Test your installation
 
-At this point, your installation is set up and ready for use with `kf`.
+Your installation is set up and ready for use with `kf`.
 
 Run `kf doctor` to validate it. You should see output like the following:
 
@@ -134,6 +108,14 @@ PASS
 ```
 
 If the result is a failure, re-run the commands in the previous sections.
+
+## Create and target a space
+
+```sh
+kf create-space demo \
+  --container-registry $KF_REGISTRY
+kf target -s demo
+```
 
 ## Push your first app
 
