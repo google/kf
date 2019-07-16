@@ -15,6 +15,8 @@
 package apps
 
 import (
+	"io"
+
 	cv1alpha1 "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/sources"
 )
@@ -22,7 +24,10 @@ import (
 // ClientExtension holds additional functions that should be exposed by client.
 type ClientExtension interface {
 	DeleteInForeground(namespace string, name string) error
-	Push(appName, srcImageName string, opts ...PushOption) error
+
+	// DeployLogs writes the logs for the build and deploy stage to the given
+	// out.  The method exits once the logs are done streaming.
+	DeployLogs(out io.Writer, appName, resourceVersion, namespace string) error
 }
 
 type appsClient struct {

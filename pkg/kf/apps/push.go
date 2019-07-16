@@ -27,15 +27,25 @@ import (
 
 //go:generate go run ../internal/tools/option-builder/option-builder.go push-options.yml push_options.go
 
-// Pusher deploys applicationapp.
+// pusher deploys source code to Knative. It should be created via NewPusher.
+type pusher struct {
+	appsClient Client
+}
+
+// Pusher deploys applications.
 type Pusher interface {
 	// Push deploys an application.
 	Push(appName, srcImageName string, opts ...PushOption) error
 }
 
-// Push deploys an application to Knative. It can be configured via
-// Optionapp.
-func (p *appsClient) Push(appName, srcImage string, opts ...PushOption) error {
+// NewPusher creates a new Pusher.
+func NewPusher(client Client) Pusher {
+	return &pusher{
+		appsClient: client,
+	}
+}
+
+func newApp(appName, srcImage string, opts ...PushOption) (*v1alpha1.App, error) {
 
 	cfg := PushOptionDefaults().Extend(opts).toConfig()
 
@@ -44,7 +54,7 @@ func (p *appsClient) Push(appName, srcImage string, opts ...PushOption) error {
 		var err error
 		envs = envutil.MapToEnvVars(cfg.EnvironmentVariables)
 		if err != nil {
-			return kf.ConfigErr{Reason: err.Error()}
+			return nil, kf.ConfigErr{Reason: err.Error()}
 		}
 	}
 
@@ -68,16 +78,27 @@ func (p *appsClient) Push(appName, srcImage string, opts ...PushOption) error {
 		app.SetEnvVars(envs)
 	}
 
-	resultingApp, err := p.Upsert(cfg.Namespace, app.ToApp(), mergeApps)
+	return app.ToApp(), nil
+}
+
+// Push deploys an application to Knative. It can be configured via
+// Optionapp.
+func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
+	cfg := PushOptionDefaults().Extend(opts).toConfig()
+
+	app, err := newApp(appName, srcImage, opts...)
 	if err != nil {
 		return fmt.Errorf("failed to create app: %s", err)
 	}
 
-	if err := p.DeployLogs(cfg.Output, appName, resultingApp.ResourceVersion, cfg.Namespace); err != nil {
-		return err
+	resultingApp, err := p.appsClient.Upsert(app.Namespace, app, mergeApps)
+	if err != nil {
+		return fmt.Errorf("failed to push app: %s", err)
 	}
 
-	// wait a small amount of time for the build to be created
+	if err := p.appsClient.DeployLogs(cfg.Output, appName, resultingApp.ResourceVersion, app.Namespace); err != nil {
+		return err
+	}
 
 	_, err = fmt.Fprintf(cfg.Output, "%q successfully deployed\n", appName)
 	if err != nil {

@@ -65,6 +65,7 @@ var AppsSet = wire.NewSet(
 	SourcesSet,
 	provideAppsGetter,
 	apps.NewClient,
+	apps.NewPusher,
 )
 
 func provideAppsGetter(ki kfv1alpha1.KfV1alpha1Interface) kfv1alpha1.AppsGetter {

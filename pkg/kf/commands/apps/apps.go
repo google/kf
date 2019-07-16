@@ -64,8 +64,11 @@ func NewAppsCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 					continue
 				}
 
-				// TODO: re-add hosts with route CRDs
-				host := ""
+				var host string
+				url := app.Status.URL
+				if url != nil {
+					host = url.Host
+				}
 
 				fmt.Fprintf(w, "%s\t%s\t%v\t%v\t%s\t%s\n",
 					app.Name,

@@ -20,10 +20,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf"
 	"github.com/google/kf/pkg/kf/apps"
 	appsfake "github.com/google/kf/pkg/kf/apps/fake"
-	kffake "github.com/google/kf/pkg/kf/fake"
 	"github.com/google/kf/pkg/kf/internal/envutil"
 	"github.com/google/kf/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
@@ -54,16 +52,6 @@ func TestPush_Logs(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			expectedNamespace := "some-namespace"
 
-			fakeLogs := kffake.NewFakeLogTailer(ctrl)
-			fakeLogs.EXPECT().
-				DeployLogs(
-					gomock.Not(gomock.Nil()), // out,
-					tc.appName,               // appName
-					tc.appName+"-version",    // resourceVersion
-					expectedNamespace,        // namespace
-				).
-				Return(tc.logErr)
-
 			fakeApps := appsfake.NewFakeClient(ctrl)
 			fakeApps.EXPECT().
 				Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
@@ -72,18 +60,25 @@ func TestPush_Logs(t *testing.T) {
 						ResourceVersion: tc.appName + "-version",
 					},
 				}, nil)
+			fakeApps.EXPECT().
+				DeployLogs(
+					gomock.Not(gomock.Nil()), // out,
+					tc.appName,               // appName
+					tc.appName+"-version",    // resourceVersion
+					expectedNamespace,        // namespace
+				).
+				Return(tc.logErr)
 
-			p := kf.NewPusher(
-				fakeLogs,
+			p := apps.NewPusher(
 				fakeApps,
 			)
 
 			gotErr := p.Push(
 				tc.appName,
 				tc.srcImage,
-				kf.WithPushNamespace(expectedNamespace),
-				kf.WithPushContainerRegistry("some-container-registry"),
-				kf.WithPushServiceAccount("some-service-account"),
+				apps.WithPushNamespace(expectedNamespace),
+				apps.WithPushContainerRegistry("some-container-registry"),
+				apps.WithPushServiceAccount("some-service-account"),
 			)
 
 			testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
@@ -98,17 +93,17 @@ func TestPush(t *testing.T) {
 		appName   string
 		srcImage  string
 		buildpack string
-		opts      kf.PushOptions
+		opts      apps.PushOptions
 		setup     func(t *testing.T, appsClient *appsfake.FakeClient)
 		assert    func(t *testing.T, err error)
 	}{
 		"pushes app to a configured namespace": {
 			appName:  "some-app",
 			srcImage: "some-image",
-			opts: kf.PushOptions{
-				kf.WithPushNamespace("some-namespace"),
-				kf.WithPushContainerRegistry("some-reg.io"),
-				kf.WithPushServiceAccount("some-service-account"),
+			opts: apps.PushOptions{
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushServiceAccount("some-service-account"),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
@@ -122,9 +117,9 @@ func TestPush(t *testing.T) {
 		"pushes app to default namespace": {
 			appName:  "some-app",
 			srcImage: "some-image",
-			opts: kf.PushOptions{
-				kf.WithPushContainerRegistry("some-reg.io"),
-				kf.WithPushServiceAccount("some-service-account"),
+			opts: apps.PushOptions{
+				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushServiceAccount("some-service-account"),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
@@ -139,20 +134,20 @@ func TestPush(t *testing.T) {
 			appName:   "some-app",
 			srcImage:  "some-image",
 			buildpack: "some-buildpack",
-			opts: kf.PushOptions{
-				kf.WithPushContainerRegistry("some-reg.io"),
-				kf.WithPushServiceAccount("some-service-account"),
-				kf.WithPushBuildpack("some-buildpack"),
+			opts: apps.PushOptions{
+				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushServiceAccount("some-service-account"),
+				apps.WithPushBuildpack("some-buildpack"),
 			},
 		},
 		"pushes app with proper Service config": {
 			appName:   "some-app",
 			srcImage:  "some-image",
 			buildpack: "some-buildpack",
-			opts: kf.PushOptions{
-				kf.WithPushNamespace("myns"),
-				kf.WithPushContainerRegistry("some-reg.io"),
-				kf.WithPushServiceAccount("some-service-account"),
+			opts: apps.PushOptions{
+				apps.WithPushNamespace("myns"),
+				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushServiceAccount("some-service-account"),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
@@ -172,11 +167,11 @@ func TestPush(t *testing.T) {
 			appName:   "some-app",
 			srcImage:  "some-image",
 			buildpack: "some-buildpack",
-			opts: kf.PushOptions{
-				kf.WithPushNamespace("default"),
-				kf.WithPushContainerRegistry("some-reg.io"),
-				kf.WithPushServiceAccount("some-service-account"),
-				kf.WithPushBuildpack("some-buildpack"),
+			opts: apps.PushOptions{
+				apps.WithPushNamespace("default"),
+				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushServiceAccount("some-service-account"),
+				apps.WithPushBuildpack("some-buildpack"),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
@@ -202,9 +197,9 @@ func TestPush(t *testing.T) {
 			appName:   "some-app",
 			srcImage:  "some-image",
 			buildpack: "some-buildpack",
-			opts: kf.PushOptions{
-				kf.WithPushContainerRegistry("some-reg.io"),
-				kf.WithPushEnvironmentVariables(map[string]string{"ENV1": "val1", "ENV2": "val2"}),
+			opts: apps.PushOptions{
+				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushEnvironmentVariables(map[string]string{"ENV1": "val1", "ENV2": "val2"}),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
@@ -223,15 +218,15 @@ func TestPush(t *testing.T) {
 		"deployer returns an error": {
 			appName:  "some-app",
 			srcImage: "some-image",
-			opts: kf.PushOptions{
-				kf.WithPushContainerRegistry("some-reg.io"),
-				kf.WithPushServiceAccount("some-service-account"),
+			opts: apps.PushOptions{
+				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushServiceAccount("some-service-account"),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).Return(nil, errors.New("some-error"))
 			},
 			assert: func(t *testing.T, err error) {
-				testutil.AssertErrorsEqual(t, errors.New("failed to create app: some-error"), err)
+				testutil.AssertErrorsEqual(t, errors.New("failed to push app: some-error"), err)
 			},
 		},
 		"set ports to h2c for gRPC": {
@@ -255,9 +250,9 @@ func TestPush(t *testing.T) {
 			assert: func(t *testing.T, err error) {
 				testutil.AssertNil(t, "err", err)
 			},
-			opts: kf.PushOptions{
-				kf.WithPushContainerRegistry("some-reg.io"),
-				kf.WithPushGrpc(true),
+			opts: apps.PushOptions{
+				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushGrpc(true),
 			},
 		},
 	} {
@@ -275,20 +270,14 @@ func TestPush(t *testing.T) {
 
 			ctrl := gomock.NewController(t)
 
-			fakeLogs := kffake.NewFakeLogTailer(ctrl)
-			fakeLogs.EXPECT().
+			fakeApps := appsfake.NewFakeClient(ctrl)
+			fakeApps.EXPECT().
 				DeployLogs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 				AnyTimes()
 
-			fakeApps := appsfake.NewFakeClient(ctrl)
-
 			tc.setup(t, fakeApps)
 
-			p := kf.NewPusher(
-				fakeLogs,
-				fakeApps,
-			)
-
+			p := apps.NewPusher(fakeApps)
 			gotErr := p.Push(tc.appName, tc.srcImage, tc.opts...)
 			tc.assert(t, gotErr)
 			if gotErr != nil {

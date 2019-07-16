@@ -23,6 +23,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	apps "github.com/google/kf/pkg/kf/apps"
+	io "io"
 	reflect "reflect"
 )
 
@@ -102,6 +103,20 @@ func (mr *FakeClientMockRecorder) DeleteInForeground(arg0, arg1 interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteInForeground", reflect.TypeOf((*FakeClient)(nil).DeleteInForeground), arg0, arg1)
 }
 
+// DeployLogs mocks base method
+func (m *FakeClient) DeployLogs(arg0 io.Writer, arg1, arg2, arg3 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeployLogs", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeployLogs indicates an expected call of DeployLogs
+func (mr *FakeClientMockRecorder) DeployLogs(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeployLogs", reflect.TypeOf((*FakeClient)(nil).DeployLogs), arg0, arg1, arg2, arg3)
+}
+
 // Get mocks base method
 func (m *FakeClient) Get(arg0, arg1 string, arg2 ...apps.GetOption) (*v1alpha1.App, error) {
 	m.ctrl.T.Helper()
@@ -140,25 +155,6 @@ func (mr *FakeClientMockRecorder) List(arg0 interface{}, arg1 ...interface{}) *g
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*FakeClient)(nil).List), varargs...)
-}
-
-// Push mocks base method
-func (m *FakeClient) Push(arg0, arg1 string, arg2 ...apps.PushOption) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Push", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Push indicates an expected call of Push
-func (mr *FakeClientMockRecorder) Push(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Push", reflect.TypeOf((*FakeClient)(nil).Push), varargs...)
 }
 
 // Transform mocks base method

@@ -59,7 +59,7 @@ func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string) error {
 }
 
 // NewPushCommand creates a push command.
-func NewPushCommand(p *config.KfParams, client apps.Client, b SrcImageBuilder) *cobra.Command {
+func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, b SrcImageBuilder) *cobra.Command {
 	var (
 		containerRegistry string
 		sourceImage       string
@@ -182,13 +182,13 @@ func NewPushCommand(p *config.KfParams, client apps.Client, b SrcImageBuilder) *
 					app.Env[k] = v
 				}
 
-				err = client.Push(app.Name, imageName,
+				err = pusher.Push(app.Name, imageName,
 					apps.WithPushNamespace(p.Namespace),
 					apps.WithPushContainerRegistry(containerRegistry),
 					apps.WithPushServiceAccount(serviceAccount),
 					apps.WithPushEnvironmentVariables(app.Env),
 					apps.WithPushGrpc(grpc),
-			 	  apps.WithPushBuildpack(buildpack),
+					apps.WithPushBuildpack(buildpack),
 					apps.WithPushMinScale(minScale),
 					apps.WithPushMaxScale(maxScale),
 				)

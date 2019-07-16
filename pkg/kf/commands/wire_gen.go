@@ -51,8 +51,9 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 	buildTailer := provideSourcesBuildTailer()
 	client := sources.NewClient(sourcesGetter, buildTailer)
 	appsClient := apps.NewClient(appsGetter, client)
+	pusher := apps.NewPusher(appsClient)
 	srcImageBuilder := provideSrcImageBuilder()
-	command := apps2.NewPushCommand(p, appsClient, srcImageBuilder)
+	command := apps2.NewPushCommand(p, appsClient, pusher, srcImageBuilder)
 	return command
 }
 
@@ -388,7 +389,7 @@ func provideBuildTailer() builds2.BuildTailer {
 
 var AppsSet = wire.NewSet(
 	SourcesSet,
-	provideAppsGetter, apps.NewClient,
+	provideAppsGetter, apps.NewClient, apps.NewPusher,
 )
 
 func provideAppsGetter(ki v1alpha1.KfV1alpha1Interface) v1alpha1.AppsGetter {

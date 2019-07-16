@@ -29,13 +29,6 @@ import (
 	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Logs handles build and deploy logs.
-type Logs interface {
-	// DeployLogs writes the logs for the build and deploy stage to the given
-	// out.  The method exits once the logs are done streaming.
-	DeployLogs(out io.Writer, appName, resourceVersion, namespace string) error
-}
-
 // DeployLogs writes the logs for the deploy step for the resourceVersion
 // to out. It blocks until the operation has completed.
 func (t *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespace string) error {
