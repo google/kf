@@ -15,7 +15,9 @@
 package apps
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -52,6 +54,8 @@ func (p *appsClient) Push(appName, srcImage string, opts ...PushOption) error {
 	src := sources.NewKfSource()
 	src.SetBuildpackBuildSource(srcImage)
 	src.SetBuildpackBuildRegistry(cfg.ContainerRegistry)
+	src.SetBuildpackBuildEnv(envs)
+	src.SetBuildpackBuildBuildpack(cfg.Buildpack)
 
 	app := NewKfApp()
 	app.SetName(appName)
@@ -70,6 +74,13 @@ func (p *appsClient) Push(appName, srcImage string, opts ...PushOption) error {
 	resultingApp, err := p.Upsert(cfg.Namespace, app.ToApp(), mergeApps)
 	if err != nil {
 		return fmt.Errorf("failed to create app: %s", err)
+	}
+
+	out := cfg.Output
+	logger := log.New(out, "[kf build] ", 0)
+	logger.Println("Tailing build logs")
+	if err := p.sourcesClient.Tail(context.Background(), cfg.Namespace, appName, out); err != nil {
+		return err
 	}
 
 	fmt.Fprintln(os.Stderr, resultingApp.ResourceVersion)
@@ -116,4 +127,3 @@ func JoinRepositoryImage(repository, imageName string) string {
 func BuildName() string {
 	return fmt.Sprintf("build-%d", time.Now().UnixNano())
 }
-

@@ -16,6 +16,7 @@ package apps
 
 import (
 	cv1alpha1 "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/sources"
 )
 
 // ClientExtension holds additional functions that should be exposed by client.
@@ -25,19 +26,21 @@ type ClientExtension interface {
 }
 
 type appsClient struct {
+	sourcesClient sources.Client
 	coreClient
 }
 
 // NewClient creates a new space client.
-func NewClient(kclient cv1alpha1.AppsGetter) Client {
+func NewClient(kclient cv1alpha1.AppsGetter, sourcesClient sources.Client) Client {
 	return &appsClient{
-		coreClient{
+		coreClient: coreClient{
 			kclient: kclient,
 			upsertMutate: MutatorList{
 				LabelSetMutator(map[string]string{"app.kubernetes.io/managed-by": "kf"}),
 			},
 			membershipValidator: AllPredicate(), // all spaces can be managed by Kf
 		},
+		sourcesClient: sourcesClient,
 	}
 }
 
