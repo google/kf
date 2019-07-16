@@ -90,7 +90,7 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister k
 
 			fmt.Fprintln(w)
 
-			fmt.Fprintln(w, "\033[33m[NOTE: the first request may take some time if the app is scaled to zero]\033[0m")
+			fmt.Fprintln(w, "\033[33mNOTE: the first request may take some time if the app is scaled to zero\033[0m")
 
 			if noStart {
 				fmt.Fprintln(cmd.OutOrStdout(), "exiting because no-start flag was provided")
