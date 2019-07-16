@@ -21,6 +21,7 @@ import (
 
 // ClientExtension holds additional functions that should be exposed by client.
 type ClientExtension interface {
+	Restart(namespace, name string) error
 }
 
 type appsClient struct {
@@ -38,4 +39,13 @@ func NewClient(kclient cv1alpha1.KfV1alpha1Interface) Client {
 			membershipValidator: func(_ *v1alpha1.App) bool { return true },
 		},
 	}
+}
+
+// Restart causes the controller to create a new revision for the knative
+// service.
+func (ac *appsClient) Restart(namespace, name string) error {
+	return ac.coreClient.Transform(namespace, name, func(a *v1alpha1.App) error {
+		a.Spec.Template.UpdateRequests++
+		return nil
+	})
 }

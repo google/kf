@@ -30,7 +30,10 @@ type appsClient struct {
 }
 
 // NewClient creates a new application client.
-func NewClient(kclient cserving.ServingV1alpha1Interface, envInjector systemenvinjector.SystemEnvInjectorInterface) Client {
+func NewClient(
+	kclient cserving.ServingV1alpha1Interface,
+	envInjector systemenvinjector.SystemEnvInjectorInterface,
+) Client {
 	return &appsClient{
 		coreClient{
 			kclient: kclient,

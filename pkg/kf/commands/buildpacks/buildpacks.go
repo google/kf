@@ -29,7 +29,7 @@ import (
 func NewBuildpacksCommand(p *config.KfParams, l buildpacks.Client) *cobra.Command {
 	var buildpacksCmd = &cobra.Command{
 		Use:   "buildpacks",
-		Short: "List buildpacks in the current space.",
+		Short: "List buildpacks in current builder",
 		Args:  cobra.ExactArgs(0),
 		Long:  ``,
 		RunE: func(cmd *cobra.Command, args []string) error {

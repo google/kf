@@ -82,6 +82,13 @@ func InjectScale(p *config.KfParams) *cobra.Command {
 	return command
 }
 
+func InjectRestart(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	client := kfapps.NewClient(kfV1alpha1Interface)
+	command := apps2.NewRestartCommand(p, client)
+	return command
+}
+
 func InjectProxy(p *config.KfParams) *cobra.Command {
 	servingV1alpha1Interface := config.GetServingClient(p)
 	systemEnvInjectorInterface := provideSystemEnvInjector(p)
