@@ -21,11 +21,6 @@ commands will need to be adjusted for use in a Windows environment.
    gcloud auth login
    ```
 
-## Create a Kubernetes cluster with Cloud Run
-
-> [Cloud Run on GKE](https://cloud.google.com/run/docs/gke/setup) is a hosted
-> offering on top of GKE that builds around Istio and Knative Serving.
-
 ### Setup environment variables
 
 We will use these environment variables to simplify the installation.
@@ -53,13 +48,17 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 
 If you have an existing network you wish to use, customize the `NETWORK` env var set previously to point to your network and skip this step.
 
+```sh
+gcloud compute networks create $CLUSTER_NAME
+```
+
 ### Create the Kubernetes cluster
 
 ```sh
 gcloud beta container clusters create $CLUSTER_NAME \
   --zone $ZONE \
   --no-enable-basic-auth \
-  --cluster-version "1.12.8-gke.10" \
+  --cluster-version "1.13.6-gke.13" \
   --machine-type "n1-standard-1" \
   --image-type "COS" \
   --disk-type "pd-standard" \

@@ -63,11 +63,11 @@ kubectl apply --filename https://github.com/knative/build/releases/download/v0.6
 kubectl apply -R -f third_party/service-catalog/manifests/catalog/templates
 ```
 
-## Install kf
+## Install Kf
 
-Kf has controllers, reconcilers and webhooks that must be installed. The kf
-containers and YAML are built nightly from the master branch. It can be
-installed using the following:
+Kf has controllers, reconcilers and webhooks that must be installed. The Kf
+containers and YAML are built nightly from the master branch. Install the latest
+nightly snapshot (note: it does not offer an upgrade path) with:
 
 ```sh
 kubectl apply -f https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/releases/release-latest.yaml
@@ -112,9 +112,9 @@ If the result is a failure, re-run the commands in the previous sections.
 ## Create and target a space
 
 ```sh
-kf create-space demo-space \
+kf create-space demo \
   --container-registry $KF_REGISTRY
-kf target -s demo-space
+kf target -s demo
 ```
 
 ## Push your first app
