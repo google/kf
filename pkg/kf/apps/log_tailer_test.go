@@ -21,17 +21,15 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	v1alpha1fake "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1/fake"
 	"github.com/google/kf/pkg/kf/apps"
 	sourcesfake "github.com/google/kf/pkg/kf/sources/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	ktesting "k8s.io/client-go/testing"
-	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
 
@@ -53,8 +51,20 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			appName:         "some-app",
 			namespace:       "default",
 			resourceVersion: "some-version",
-			events:          append(createMsgEvents("some-app", "", "msg-1", "msg-2"), createMsgEvents("some-app", "True", "")...),
-			wantedMsgs:      []string{"msg-1", "msg-2"},
+			events: createMsgEvents("some-app", duckv1beta1.Conditions{
+				{
+					Type:    "SourceReady",
+					Status:  "True",
+					Message: "msg-1",
+				},
+				{
+					Type:    "Ready",
+					Status:  "True",
+					Message: "msg-2",
+				},
+			},
+			),
+			wantedMsgs: []string{"msg-1", "msg-2"},
 		},
 		"watch service returns an error, return error": {
 			appName:         "some-app",
@@ -67,8 +77,19 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			appName:         "some-app",
 			namespace:       "default",
 			resourceVersion: "some-version",
-			events:          createMsgEvents("some-app", "False", "some-error"),
-			wantErr:         errors.New("deployment failed: some-error"),
+			events: createMsgEvents("some-app", duckv1beta1.Conditions{
+				{
+					Type:    "SourceReady",
+					Status:  "True",
+					Message: "some-error",
+				},
+				{
+					Type:    "Ready",
+					Status:  "False",
+					Message: "some-error",
+				},
+			}),
+			wantErr: errors.New("deployment failed: some-error"),
 		},
 		"watch fails, return error": {
 			appName:         "some-app",
@@ -86,12 +107,11 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			)
 
 			fakeApps.PrependWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
-				testWatch(t, action, "services", tc.namespace, tc.resourceVersion)
+				testWatch(t, action, "apps", tc.namespace, tc.resourceVersion)
 				return false, nil, nil
 			}))
 
 			sourceClient := sourcesfake.NewFakeClient(ctrl)
-
 			lt := apps.NewClient(fakeApps, sourceClient)
 
 			var buffer bytes.Buffer
@@ -124,7 +144,7 @@ func testWatch(t *testing.T, action ktesting.Action, resource, namespace, resour
 	testutil.AssertEqual(t, "resourceVersion", resourceVersion, action.(ktesting.WatchActionImpl).WatchRestrictions.ResourceVersion)
 
 	if !action.Matches("watch", resource) {
-		t.Fatal("wrong action")
+		t.Fatalf("wrong action: %s", resource)
 	}
 }
 
@@ -137,24 +157,20 @@ func createEvents(es []watch.Event) <-chan watch.Event {
 	return c
 }
 
-func createMsgEvents(appName string, status corev1.ConditionStatus, msgs ...string) []watch.Event {
+func createMsgEvents(appName string, conditions duckv1beta1.Conditions) []watch.Event {
 	var es []watch.Event
-	for _, m := range msgs {
-		es = append(es, watch.Event{
-			Object: &serving.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: appName,
-				},
-				Status: serving.ServiceStatus{
-					Status: duckv1beta1.Status{
-						Conditions: []apis.Condition{
-							{Type: "Ready", Status: status, Message: m},
-						},
-					},
+	es = append(es, watch.Event{
+		Object: &v1alpha1.App{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: appName,
+			},
+			Status: v1alpha1.AppStatus{
+				Status: duckv1beta1.Status{
+					Conditions: conditions,
 				},
 			},
-		})
-	}
+		},
+	})
 	return es
 }
 

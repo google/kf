@@ -45,6 +45,13 @@ func TestKfApp_ToApp(t *testing.T) {
 			Kind:       "App",
 			APIVersion: "kf.dev/v1alpha1",
 		},
+		Spec: v1alpha1.AppSpec{
+			Template: v1alpha1.AppSpecTemplate{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{}},
+				},
+			},
+		},
 	}
 	expected.Name = "foo"
 

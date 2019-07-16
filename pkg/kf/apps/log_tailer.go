@@ -38,8 +38,9 @@ func (t *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespa
 	start := time.Now()
 
 	ws, err := t.kclient.Apps(namespace).Watch(k8smeta.ListOptions{
-		FieldSelector: fields.OneTermEqualSelector("metadata.name", appName).String(),
-		Watch:         true,
+		ResourceVersion: resourceVersion,
+		FieldSelector:   fields.OneTermEqualSelector("metadata.name", appName).String(),
+		Watch:           true,
 	})
 	if err != nil {
 		return err
@@ -57,6 +58,9 @@ func (t *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespa
 		sourceReady := s.Status.GetCondition(v1alpha1.AppConditionSourceReady)
 		if sourceReady == nil {
 			continue
+		}
+		if sourceReady.Message != "" {
+			logger.Printf("Updated state to: %s\n", sourceReady.Message)
 		}
 
 		switch sourceReady.Status {
@@ -76,15 +80,15 @@ func (t *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespa
 					}
 				},
 			)
-			if sourceReady.Message != "" {
-				logger.Printf("Updated state to: %s\n", sourceReady.Message)
-			}
 			continue
 		}
 
 		appReady := s.Status.GetCondition(v1alpha1.AppConditionReady)
 		if appReady == nil {
 			continue
+		}
+		if appReady.Message != "" {
+			logger.Printf("Updated state to: %s\n", appReady.Message)
 		}
 
 		switch appReady.Status {
@@ -94,11 +98,7 @@ func (t *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespa
 			return nil
 		case corev1.ConditionFalse:
 			logger.Printf("Failed to deploy: %s\n", appReady.Message)
-			return fmt.Errorf("deploy failed: %s", appReady.Message)
-		default:
-			if appReady.Message != "" {
-				logger.Printf("Updated state to: %s\n", appReady.Message)
-			}
+			return fmt.Errorf("deployment failed: %s", appReady.Message)
 		}
 	}
 

@@ -44,7 +44,7 @@ func ExampleKfSource_buildpack() {
 	// Namespace: my-namespace
 	// Source: gcr.io/my-source-code-image
 	// Buildpack: java
-	// Registry: gcr.io/saome-registry
+	// Registry: gcr.io/some-registry
 	// Env: JAVA_VERSION = 11
 }
 

@@ -26,9 +26,9 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
+	appsfake "github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	"github.com/google/kf/pkg/kf/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 )
 
@@ -189,7 +189,8 @@ func TestPushCommand(t *testing.T) {
 			}
 
 			ctrl := gomock.NewController(t)
-			fakePusher := fake.NewFakePusher(ctrl)
+			fakeApps := appsfake.NewFakeClient(ctrl)
+			fakePusher := appsfake.NewFakePusher(ctrl)
 
 			fakePusher.
 				EXPECT().
@@ -224,7 +225,7 @@ func TestPushCommand(t *testing.T) {
 				params.SetTargetSpaceToDefault()
 			}
 
-			c := NewPushCommand(params, fakePusher, tc.srcImageBuilder)
+			c := NewPushCommand(params, fakeApps, fakePusher, tc.srcImageBuilder)
 			buffer := &bytes.Buffer{}
 			c.SetOutput(buffer)
 			c.SetArgs(tc.args)
