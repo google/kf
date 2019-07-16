@@ -16,6 +16,8 @@ package resources
 
 import (
 	"errors"
+	"fmt"
+	"strconv"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
@@ -40,6 +42,16 @@ func MakeKnativeService(app *v1alpha1.App, space *v1alpha1.Space) (*serving.Serv
 
 	// don't modify the spec on the app
 	podSpec := app.Spec.Template.Spec.DeepCopy()
+
+	// XXX: Add a dummy environment variable that reflects the UpdateRequests.
+	// This will cause knative to create a new revision of the service.
+	podSpec.Containers[0].Env = append(
+		podSpec.Containers[0].Env,
+		corev1.EnvVar{
+			Name:  fmt.Sprintf("KF_UPDATE_REQUESTS_%v", app.UID),
+			Value: strconv.FormatInt(int64(app.Spec.Template.UpdateRequests), 10),
+		},
+	)
 
 	// At this point in the lifecycle there should be exactly one container
 	// if the webhhook is working but create one to avoid panics just in case.

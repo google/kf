@@ -128,6 +128,20 @@ func (mr *FakeClientMockRecorder) List(arg0 interface{}, arg1 ...interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*FakeClient)(nil).List), varargs...)
 }
 
+// Restart mocks base method
+func (m *FakeClient) Restart(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Restart", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Restart indicates an expected call of Restart
+func (mr *FakeClientMockRecorder) Restart(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Restart", reflect.TypeOf((*FakeClient)(nil).Restart), arg0, arg1)
+}
+
 // Transform mocks base method
 func (m *FakeClient) Transform(arg0, arg1 string, arg2 kfapps.Mutator) error {
 	m.ctrl.T.Helper()

@@ -39,7 +39,7 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister k
 
 	var proxy = &cobra.Command{
 		Use:     "proxy APP_NAME",
-		Short:   "Creates a proxy to an app on a local port.",
+		Short:   "Creates a proxy to an app on a local port",
 		Example: `  kf proxy myapp`,
 		Long: `
 	This command creates a local proxy to a remote gateway modifying the request

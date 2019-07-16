@@ -29,7 +29,7 @@ import (
 func NewStacksCommand(p *config.KfParams, l buildpacks.Client) *cobra.Command {
 	var buildpacksCmd = &cobra.Command{
 		Use:   "stacks",
-		Short: "List stacks in the builder for the current space.",
+		Short: "List stacks in current builder",
 		Args:  cobra.ExactArgs(0),
 		Long:  ``,
 		RunE: func(cmd *cobra.Command, args []string) error {

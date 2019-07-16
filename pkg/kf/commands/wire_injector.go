@@ -104,6 +104,11 @@ func InjectScale(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
+func InjectRestart(p *config.KfParams) *cobra.Command {
+	wire.Build(capps.NewRestartCommand, KfappsSet)
+	return nil
+}
+
 func InjectProxy(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		capps.NewProxyCommand,
