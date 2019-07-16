@@ -25,6 +25,7 @@ import (
 	"github.com/google/kf/pkg/kf/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	"knative.dev/pkg/apis"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -50,7 +51,15 @@ func TestNewProxyCommand(t *testing.T) {
 			ExpectedErr: nil,
 			Setup: func(t *testing.T, lister *fakeapps.FakeClient, istio *fake.FakeIstioClient) {
 				istio.EXPECT().ListIngresses(gomock.Any()).Return([]corev1.LoadBalancerIngress{{IP: "8.8.8.8"}}, nil)
-				lister.EXPECT().Get("default", "my-app").Return(&serving.Service{}, nil)
+				lister.EXPECT().Get("default", "my-app").Return(&serving.Service{
+					Status: serving.ServiceStatus{
+						RouteStatusFields: serving.RouteStatusFields{
+							URL: &apis.URL{
+								Host: "example.com",
+							},
+						},
+					},
+				}, nil)
 			},
 		},
 		"autodetect failure": {
