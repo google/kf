@@ -74,8 +74,6 @@ func provideAppsGetter(ki kfv1alpha1.KfV1alpha1Interface) kfv1alpha1.AppsGetter 
 func InjectPush(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		capps.NewPushCommand,
-		kf.NewPusher,
-		kf.NewLogTailer,
 		provideSrcImageBuilder,
 		AppsSet,
 	)

@@ -21,6 +21,7 @@ import (
 // ClientExtension holds additional functions that should be exposed by client.
 type ClientExtension interface {
 	DeleteInForeground(namespace string, name string) error
+	Push(appName, srcImageName string, opts ...PushOption) error
 }
 
 type appsClient struct {

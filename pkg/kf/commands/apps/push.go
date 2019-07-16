@@ -21,7 +21,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/google/kf/pkg/kf"
+	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/internal/envutil"
@@ -59,7 +59,7 @@ func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string) error {
 }
 
 // NewPushCommand creates a push command.
-func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *cobra.Command {
+func NewPushCommand(p *config.KfParams, client apps.Client, b SrcImageBuilder) *cobra.Command {
 	var (
 		containerRegistry string
 		sourceImage       string
@@ -159,7 +159,7 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 				case sourceImage != "":
 					imageName = sourceImage
 				default:
-					imageName = kf.JoinRepositoryImage(containerRegistry, kf.SourceImageName(p.Namespace, app.Name))
+					imageName = apps.JoinRepositoryImage(containerRegistry, apps.SourceImageName(p.Namespace, app.Name))
 
 					if err := b.BuildSrcImage(srcPath, imageName); err != nil {
 						return err
@@ -182,15 +182,15 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 					app.Env[k] = v
 				}
 
-				err = pusher.Push(app.Name, imageName,
-					kf.WithPushNamespace(p.Namespace),
-					kf.WithPushContainerRegistry(containerRegistry),
-					kf.WithPushServiceAccount(serviceAccount),
-					kf.WithPushEnvironmentVariables(app.Env),
-					kf.WithPushGrpc(grpc),
-					kf.WithPushBuildpack(buildpack),
-					kf.WithPushMinScale(minScale),
-					kf.WithPushMaxScale(maxScale),
+				err = client.Push(app.Name, imageName,
+					apps.WithPushNamespace(p.Namespace),
+					apps.WithPushContainerRegistry(containerRegistry),
+					apps.WithPushServiceAccount(serviceAccount),
+					apps.WithPushEnvironmentVariables(app.Env),
+					apps.WithPushGrpc(grpc),
+			 	  apps.WithPushBuildpack(buildpack),
+					apps.WithPushMinScale(minScale),
+					apps.WithPushMaxScale(maxScale),
 				)
 
 				cmd.SilenceUsage = !kfi.ConfigError(err)

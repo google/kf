@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package kf
+package apps
 
 import (
 	"errors"
@@ -23,11 +23,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/fields"
 
-	kf "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	ckf "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"knative.dev/pkg/apis"
 )
 
 // Logs handles build and deploy logs.
@@ -37,27 +35,14 @@ type Logs interface {
 	DeployLogs(out io.Writer, appName, resourceVersion, namespace string) error
 }
 
-// logTailer tails logs for a service. This includes the build and deploy
-// step. It should be created via NewLogTailer.
-type logTailer struct {
-	kfClient ckf.KfV1alpha1Interface
-}
-
-// NewLogTailer creates a new Logs.
-func NewLogTailer(kfClient ckf.KfV1alpha1Interface) Logs {
-	return &logTailer{
-		kfClient: kfClient,
-	}
-}
-
 // DeployLogs writes the logs for the deploy step for the resourceVersion
 // to out. It blocks until the operation has completed.
-func (t logTailer) DeployLogs(out io.Writer, appName, resourceVersion, namespace string) error {
+func (t *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespace string) error {
 	logger := log.New(out, "\033[32m[deploy-revision]\033[0m ", 0)
 	logger.Printf("Starting app: %s\n", appName)
 	start := time.Now()
 
-	ws, err := t.kfClient.Apps(namespace).Watch(k8smeta.ListOptions{
+	ws, err := t.kclient.Apps(namespace).Watch(k8smeta.ListOptions{
 		FieldSelector: fields.OneTermEqualSelector("metadata.name", appName).String(),
 		Watch:         true,
 	})
@@ -67,22 +52,25 @@ func (t logTailer) DeployLogs(out io.Writer, appName, resourceVersion, namespace
 	defer ws.Stop()
 
 	for e := range ws.ResultChan() {
-		s := e.Object.(*kf.App)
+
+		fmt.Println("got a thing")
+
+		s := e.Object.(*v1alpha1.App)
 
 		// Don't use status' that are reflecting old states
 		if s.Status.ObservedGeneration != s.Generation {
-			continue
+			fmt.Println("it was old")
 		}
 
-		if condition := s.Status.GetCondition(apis.ConditionReady); condition != nil {
+		if condition := s.Status.GetCondition(v1alpha1.AppConditionSourceReady); condition != nil {
 			switch condition.Status {
 			case corev1.ConditionTrue:
 				duration := time.Now().Sub(start)
-				logger.Printf("Started in %0.2f seconds\n", duration.Seconds())
+				logger.Printf("Built in %0.2f seconds\n", duration.Seconds())
 				return nil
 			case corev1.ConditionFalse:
-				logger.Printf("Failed to start: %s\n", condition.Message)
-				return fmt.Errorf("deployment failed: %s", condition.Message)
+				logger.Printf("Failed to build: %s\n", condition.Message)
+				return fmt.Errorf("build failed: %s", condition.Message)
 			default:
 				if condition.Message != "" {
 					logger.Printf("Updated state to: %s\n", condition.Message)

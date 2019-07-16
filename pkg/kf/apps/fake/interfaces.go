@@ -17,8 +17,20 @@ package fake
 import "github.com/google/kf/pkg/kf/apps"
 
 //go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_client.go --mock_names=Client=FakeClient github.com/google/kf/pkg/kf/apps/fake Client
+//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_pusher.go --mock_names=Pusher=FakePusher github.com/google/kf/pkg/kf/apps/fake Pusher
+//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_log_tailer.go --mock_names=LogTailer=FakeLogTailer github.com/google/kf/pkg/kf/apps/fake LogTailer
 
 // Client is the client for spaces.
 type Client interface {
 	apps.Client
+}
+
+// Pusher is implemented by kf.Pusher.
+type Pusher interface {
+	apps.Pusher
+}
+
+// LogTailer is implemented by kf.LogTailer.
+type LogTailer interface {
+	apps.Logs
 }

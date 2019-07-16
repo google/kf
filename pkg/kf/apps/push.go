@@ -12,30 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package kf
+package apps
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"time"
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/internal/envutil"
 	"github.com/google/kf/pkg/kf/internal/kf"
 	"github.com/google/kf/pkg/kf/sources"
 	corev1 "k8s.io/api/core/v1"
 )
 
-//go:generate go run internal/tools/option-builder/option-builder.go optionapp.yml optionapp.go
-
-// pusher deploys source code to Knative. It should be created via NewPusher.
-type pusher struct {
-	bl            Logs
-	appsClient    apps.Client
-	sourcesClient sources.Client
-}
+//go:generate go run ../internal/tools/option-builder/option-builder.go push-options.yml push_options.go
 
 // Pusher deploys applicationapp.
 type Pusher interface {
@@ -43,18 +34,9 @@ type Pusher interface {
 	Push(appName, srcImageName string, opts ...PushOption) error
 }
 
-// NewPusher creates a new Pusher.
-func NewPusher(bl Logs, appsClient apps.Client, sourcesClient sources.Client) Pusher {
-	return &pusher{
-		bl:            bl,
-		appsClient:    appsClient,
-		sourcesClient: sourcesClient,
-	}
-}
-
 // Push deploys an application to Knative. It can be configured via
 // Optionapp.
-func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
+func (p *appsClient) Push(appName, srcImage string, opts ...PushOption) error {
 
 	cfg := PushOptionDefaults().Extend(opts).toConfig()
 
@@ -71,7 +53,7 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 	src.SetBuildpackBuildSource(srcImage)
 	src.SetBuildpackBuildRegistry(cfg.ContainerRegistry)
 
-	app := apps.NewKfApp()
+	app := NewKfApp()
 	app.SetName(appName)
 	app.SetNamespace(cfg.Namespace)
 	app.SetServiceAccount(cfg.ServiceAccount)
@@ -85,7 +67,7 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 		app.SetEnvVars(envs)
 	}
 
-	resultingApp, err := p.appsClient.Upsert(cfg.Namespace, app.ToApp(), mergeApps)
+	resultingApp, err := p.Upsert(cfg.Namespace, app.ToApp(), mergeApps)
 	if err != nil {
 		return fmt.Errorf("failed to create app: %s", err)
 	}
@@ -93,18 +75,11 @@ func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
 	fmt.Fprintln(os.Stderr, resultingApp.ResourceVersion)
 	fmt.Fprintln(os.Stderr, "cool beans")
 
-	ctx := context.Background()
+	if err := p.DeployLogs(cfg.Output, appName, resultingApp.ResourceVersion, cfg.Namespace); err != nil {
+		return err
+	}
 
 	// wait a small amount of time for the build to be created
-
-	err = p.sourcesClient.Tail(ctx, cfg.Namespace, appName, os.Stdout)
-	if err != nil {
-		return err
-	}
-
-	if err := p.bl.DeployLogs(cfg.Output, appName, resultingApp.ResourceVersion, cfg.Namespace); err != nil {
-		return err
-	}
 
 	_, err = fmt.Fprintf(cfg.Output, "%q successfully deployed\n", appName)
 	if err != nil {
@@ -141,3 +116,4 @@ func JoinRepositoryImage(repository, imageName string) string {
 func BuildName() string {
 	return fmt.Sprintf("build-%d", time.Now().UnixNano())
 }
+

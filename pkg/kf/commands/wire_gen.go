@@ -46,15 +46,10 @@ import (
 
 func InjectPush(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
-	logs := kf.NewLogTailer(kfV1alpha1Interface)
 	appsGetter := provideAppsGetter(kfV1alpha1Interface)
 	client := apps.NewClient(appsGetter)
-	sourcesGetter := provideKfSources(kfV1alpha1Interface)
-	buildTailer := provideSourcesBuildTailer()
-	sourcesClient := sources.NewClient(sourcesGetter, buildTailer)
-	pusher := kf.NewPusher(logs, client, sourcesClient)
 	srcImageBuilder := provideSrcImageBuilder()
-	command := apps2.NewPushCommand(p, pusher, srcImageBuilder)
+	command := apps2.NewPushCommand(p, client, srcImageBuilder)
 	return command
 }
 
