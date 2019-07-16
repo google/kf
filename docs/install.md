@@ -44,7 +44,7 @@ sudo mv kf /usr/local/bin
 
 ## Create a Kubernetes cluster
 
-* Google Cloud: [Create a GKE cluster](/install/gke.md). Knative Serving and Istio will be installed with this cluster.
+* Google Cloud: [Create a GKE cluster](/docs/install/gke.md). Knative Serving and Istio will be installed with this cluster.
 * Existing: [Use an existing cluster](/docs/install/existing-cluster.md)
 
 ## Install dependencies

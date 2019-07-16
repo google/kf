@@ -83,4 +83,4 @@ gcloud container clusters get-credentials $CLUSTER_NAME
 ```
 
 ### Next steps
-Continue with the [install docs](docs/install.md) to install Kf into the cluster you just created.
+Continue with the [install docs](/docs/install.md) to install Kf into the cluster you just created.
