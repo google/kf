@@ -16,14 +16,13 @@ import (
 	buildpacks2 "github.com/google/kf/pkg/kf/commands/buildpacks"
 	builds2 "github.com/google/kf/pkg/kf/commands/builds"
 	"github.com/google/kf/pkg/kf/commands/config"
-	quotas2 "github.com/google/kf/pkg/kf/commands/quotas"
+	"github.com/google/kf/pkg/kf/commands/quotas"
 	routes2 "github.com/google/kf/pkg/kf/commands/routes"
 	servicebindings2 "github.com/google/kf/pkg/kf/commands/service-bindings"
 	services2 "github.com/google/kf/pkg/kf/commands/services"
 	spaces2 "github.com/google/kf/pkg/kf/commands/spaces"
 	"github.com/google/kf/pkg/kf/kfapps"
 	"github.com/google/kf/pkg/kf/logs"
-	"github.com/google/kf/pkg/kf/quotas"
 	"github.com/google/kf/pkg/kf/routes"
 	"github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/google/kf/pkg/kf/services"
@@ -258,43 +257,35 @@ func InjectConfigSpace(p *config.KfParams) *cobra.Command {
 	return command
 }
 
-func InjectQuotas(p *config.KfParams) *cobra.Command {
-	kubernetesInterface := config.GetKubernetes(p)
-	resourceQuotasGetter := provideQuotaGetter(kubernetesInterface)
-	client := quotas.NewClient(resourceQuotasGetter)
-	command := quotas2.NewListQuotasCommand(p, client)
-	return command
-}
-
 func InjectCreateQuota(p *config.KfParams) *cobra.Command {
-	kubernetesInterface := config.GetKubernetes(p)
-	resourceQuotasGetter := provideQuotaGetter(kubernetesInterface)
-	client := quotas.NewClient(resourceQuotasGetter)
-	command := quotas2.NewCreateQuotaCommand(p, client)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
+	client := spaces.NewClient(spacesGetter)
+	command := quotas.NewCreateQuotaCommand(p, client)
 	return command
 }
 
 func InjectUpdateQuota(p *config.KfParams) *cobra.Command {
-	kubernetesInterface := config.GetKubernetes(p)
-	resourceQuotasGetter := provideQuotaGetter(kubernetesInterface)
-	client := quotas.NewClient(resourceQuotasGetter)
-	command := quotas2.NewUpdateQuotaCommand(p, client)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
+	client := spaces.NewClient(spacesGetter)
+	command := quotas.NewUpdateQuotaCommand(p, client)
 	return command
 }
 
 func InjectGetQuota(p *config.KfParams) *cobra.Command {
-	kubernetesInterface := config.GetKubernetes(p)
-	resourceQuotasGetter := provideQuotaGetter(kubernetesInterface)
-	client := quotas.NewClient(resourceQuotasGetter)
-	command := quotas2.NewGetQuotaCommand(p, client)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
+	client := spaces.NewClient(spacesGetter)
+	command := quotas.NewGetQuotaCommand(p, client)
 	return command
 }
 
 func InjectDeleteQuota(p *config.KfParams) *cobra.Command {
-	kubernetesInterface := config.GetKubernetes(p)
-	resourceQuotasGetter := provideQuotaGetter(kubernetesInterface)
-	client := quotas.NewClient(resourceQuotasGetter)
-	command := quotas2.NewDeleteQuotaCommand(p, client)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
+	client := spaces.NewClient(spacesGetter)
+	command := quotas.NewDeleteQuotaCommand(p, client)
 	return command
 }
 
@@ -385,12 +376,6 @@ var SpacesSet = wire.NewSet(config.GetKfClient, provideKfSpaces, spaces.NewClien
 
 func provideKfSpaces(ki v1alpha1.KfV1alpha1Interface) v1alpha1.SpacesGetter {
 	return ki
-}
-
-var QuotasSet = wire.NewSet(config.GetKubernetes, provideQuotaGetter, quotas.NewClient)
-
-func provideQuotaGetter(ki kubernetes.Interface) v1.ResourceQuotasGetter {
-	return ki.CoreV1()
 }
 
 var NamespacesSet = wire.NewSet(

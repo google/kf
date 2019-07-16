@@ -19,26 +19,21 @@ import (
 	"text/tabwriter"
 
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
-	"github.com/google/kf/pkg/kf/quotas"
+	"github.com/google/kf/pkg/kf/spaces"
 	"github.com/spf13/cobra"
 )
 
 // NewGetQuotaCommand allows users to get quota info.
-func NewGetQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Command {
+func NewGetQuotaCommand(p *config.KfParams, client spaces.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "quota QUOTA",
-		Short: "Show kf quota info",
+		Use:   "quota SPACE_NAME",
+		Short: "Show quota info for a space",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := utils.ValidateNamespace(p); err != nil {
-				return err
-			}
+			spaceName := args[0]
+			fmt.Fprintf(cmd.OutOrStdout(), "Getting info for quota in space: %s\n", spaceName)
 
-			name := args[0]
-			fmt.Fprintf(cmd.OutOrStdout(), "Getting info for quota: %s\n", name)
-
-			quota, err := client.Get(p.Namespace, name)
+			space, err := client.Get(spaceName)
 			if err != nil {
 				return err
 			}
@@ -47,13 +42,12 @@ func NewGetQuotaCommand(p *config.KfParams, client quotas.Client) *cobra.Command
 			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 1, ' ', tabwriter.StripEscape)
 			defer w.Flush()
 
-			fmt.Fprintln(w, "NAME\tMEMORY\tCPU\tROUTES")
-			kfquota := quotas.NewFromResourceQuota(quota)
-			mem, _ := kfquota.GetMemory()
-			cpu, _ := kfquota.GetCPU()
-			routes, _ := kfquota.GetServices()
-			fmt.Fprintf(w, "%s\t%v\t%v\t%v\n",
-				kfquota.GetName(),
+			fmt.Fprintln(w, "MEMORY\tCPU\tROUTES")
+			kfspace := spaces.NewFromSpace(space)
+			mem, _ := kfspace.GetMemory()
+			cpu, _ := kfspace.GetCPU()
+			routes, _ := kfspace.GetServices()
+			fmt.Fprintf(w, "%v\t%v\t%v\n",
 				mem.String(),
 				cpu.String(),
 				routes.String())

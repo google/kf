@@ -34,7 +34,6 @@ import (
 	cspaces "github.com/google/kf/pkg/kf/commands/spaces"
 	"github.com/google/kf/pkg/kf/kfapps"
 	kflogs "github.com/google/kf/pkg/kf/logs"
-	"github.com/google/kf/pkg/kf/quotas"
 	"github.com/google/kf/pkg/kf/routes"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/google/kf/pkg/kf/services"
@@ -327,38 +326,26 @@ func InjectConfigSpace(p *config.KfParams) *cobra.Command {
 // Quotas Command //
 ////////////////////
 
-var QuotasSet = wire.NewSet(config.GetKubernetes, provideQuotaGetter, quotas.NewClient)
-
-func provideQuotaGetter(ki kubernetes.Interface) v1.ResourceQuotasGetter {
-	return ki.CoreV1()
-}
-
-func InjectQuotas(p *config.KfParams) *cobra.Command {
-	wire.Build(cquotas.NewListQuotasCommand, QuotasSet)
-
-	return nil
-}
-
 func InjectCreateQuota(p *config.KfParams) *cobra.Command {
-	wire.Build(cquotas.NewCreateQuotaCommand, QuotasSet)
+	wire.Build(cquotas.NewCreateQuotaCommand, SpacesSet)
 
 	return nil
 }
 
 func InjectUpdateQuota(p *config.KfParams) *cobra.Command {
-	wire.Build(cquotas.NewUpdateQuotaCommand, QuotasSet)
+	wire.Build(cquotas.NewUpdateQuotaCommand, SpacesSet)
 
 	return nil
 }
 
 func InjectGetQuota(p *config.KfParams) *cobra.Command {
-	wire.Build(cquotas.NewGetQuotaCommand, QuotasSet)
+	wire.Build(cquotas.NewGetQuotaCommand, SpacesSet)
 
 	return nil
 }
 
 func InjectDeleteQuota(p *config.KfParams) *cobra.Command {
-	wire.Build(cquotas.NewDeleteQuotaCommand, QuotasSet)
+	wire.Build(cquotas.NewDeleteQuotaCommand, SpacesSet)
 
 	return nil
 }
