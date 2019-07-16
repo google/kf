@@ -27,6 +27,11 @@ var SchemeGroupVersion = schema.GroupVersion{
 	Version: "v1alpha1",
 }
 
+var (
+	schemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
+	AddToScheme   = schemeBuilder.AddToScheme
+)
+
 // Kind takes an unqualified kind and returns back a Group qualified GroupKind
 func Kind(kind string) schema.GroupKind {
 	return SchemeGroupVersion.WithKind(kind).GroupKind()
@@ -36,11 +41,6 @@ func Kind(kind string) schema.GroupKind {
 func Resource(resource string) schema.GroupResource {
 	return SchemeGroupVersion.WithResource(resource).GroupResource()
 }
-
-var (
-	schemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
-	AddToScheme   = schemeBuilder.AddToScheme
-)
 
 // Adds the list of known types to the given scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {

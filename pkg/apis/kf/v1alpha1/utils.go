@@ -59,7 +59,7 @@ type SingleConditionManager interface {
 	// reconciliation process. Context should contain the action that failed.
 	MarkReconciliationError(context string, err error) error
 
-	// IsPending returns if the condition's state is not final.
+	// IsPending returns whether the condition's state is final or in progress.
 	IsPending() bool
 }
 
@@ -110,7 +110,7 @@ func (ci *conditionImpl) MarkReconciliationError(action string, err error) error
 	return errors.New(msg)
 }
 
-// IsPending returns if the condition's state is not final.
+// IsPending returns whether the condition's state is final or in progress.
 func (ci *conditionImpl) IsPending() bool {
 	cond := ci.manager.GetCondition(ci.destination)
 	return cond == nil || cond.Status == corev1.ConditionUnknown

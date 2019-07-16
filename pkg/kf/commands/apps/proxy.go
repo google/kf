@@ -97,7 +97,6 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister k
 				return nil
 			}
 
-			// TODO: fix when routes are here
 			return http.Serve(listener, createProxy(cmd.OutOrStdout(), app.Status.URL.Host, gateway))
 		},
 	}

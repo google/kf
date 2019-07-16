@@ -32,12 +32,12 @@ import (
 
 // DeployLogs writes the logs for the deploy step for the resourceVersion
 // to out. It blocks until the operation has completed.
-func (t *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespace string) error {
+func (a *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespace string) error {
 	logger := log.New(out, "\033[32m[build]\033[0m ", 0)
 	logger.Printf("Starting app: %s\n", appName)
 	start := time.Now()
 
-	ws, err := t.kclient.Apps(namespace).Watch(k8smeta.ListOptions{
+	ws, err := a.kclient.Apps(namespace).Watch(k8smeta.ListOptions{
 		ResourceVersion: resourceVersion,
 		FieldSelector:   fields.OneTermEqualSelector("metadata.name", appName).String(),
 		Watch:           true,
@@ -51,11 +51,11 @@ func (t *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespa
 	defer cancel()
 
 	var once sync.Once
+	var deployStart time.Time
 	for e := range ws.ResultChan() {
+		app := e.Object.(*v1alpha1.App)
 
-		s := e.Object.(*v1alpha1.App)
-
-		sourceReady := s.Status.GetCondition(v1alpha1.AppConditionSourceReady)
+		sourceReady := app.Status.GetCondition(v1alpha1.AppConditionSourceReady)
 		if sourceReady == nil {
 			continue
 		}
@@ -68,6 +68,7 @@ func (t *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespa
 			duration := time.Now().Sub(start)
 			logger.Printf("Built in %0.2f seconds\n", duration.Seconds())
 			cancel()
+			deployStart = time.Now()
 		case corev1.ConditionFalse:
 			logger.Printf("Failed to build: %s\n", sourceReady.Message)
 			cancel()
@@ -75,7 +76,7 @@ func (t *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespa
 		default:
 			go once.Do(
 				func() {
-					if err := t.sourcesClient.Tail(ctx, namespace, s.Status.LatestCreatedSourceName, out); err != nil {
+					if err := a.sourcesClient.Tail(ctx, namespace, app.Status.LatestCreatedSourceName, out); err != nil {
 						fmt.Println(err)
 					}
 				},
@@ -83,7 +84,7 @@ func (t *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespa
 			continue
 		}
 
-		appReady := s.Status.GetCondition(v1alpha1.AppConditionReady)
+		appReady := app.Status.GetCondition(v1alpha1.AppConditionReady)
 		if appReady == nil {
 			continue
 		}
@@ -93,8 +94,12 @@ func (t *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespa
 
 		switch appReady.Status {
 		case corev1.ConditionTrue:
-			duration := time.Now().Sub(start)
-			logger.Printf("Deployed in %0.2f seconds\n", duration.Seconds())
+			now := time.Now()
+			duration := now.Sub(start)
+			deployDuration := now.Sub(deployStart)
+			logger.Printf("Deployed took %0.2f seconds. Total time %0.2f seconds\n",
+				deployDuration.Seconds(),
+				duration.Seconds())
 			return nil
 		case corev1.ConditionFalse:
 			logger.Printf("Failed to deploy: %s\n", appReady.Message)
