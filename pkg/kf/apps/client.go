@@ -31,6 +31,7 @@ type ClientExtension interface {
 	// out.  The method exits once the logs are done streaming.
 	DeployLogs(out io.Writer, appName, resourceVersion, namespace string) error
 	Restart(namespace, name string) error
+	Restage(namespace, name string) error
 }
 
 type appsClient struct {
@@ -67,6 +68,15 @@ func (ac *appsClient) DeleteInForeground(namespace string, name string) error {
 func (ac *appsClient) Restart(namespace, name string) error {
 	return ac.coreClient.Transform(namespace, name, func(a *v1alpha1.App) error {
 		a.Spec.Template.UpdateRequests++
+		return nil
+	})
+}
+
+// Restage causes the controller to create a new build and then deploy the
+// resulting container.
+func (ac *appsClient) Restage(namespace, name string) error {
+	return ac.coreClient.Transform(namespace, name, func(a *v1alpha1.App) error {
+		a.Spec.Source.UpdateRequests++
 		return nil
 	})
 }
