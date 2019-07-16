@@ -23,20 +23,17 @@ import (
 	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/kf/pkg/kf/doctor"
-	build "github.com/knative/build/pkg/apis/build/v1alpha1"
-	cbuild "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Client is the main interface for interacting with Buildpacks.
 type Client interface {
 	doctor.Diagnosable
 
-	// List lists the buildpacks available.
-	List() ([]Buildpack, error)
+	// List lists the buildpacks available on the given builder image.
+	List(builderImage string) ([]Buildpack, error)
 
-	// Stacks lists the stacks available.
-	Stacks() ([]string, error)
+	// Stacks lists the stacks available on the given builder image.
+	Stacks(builderImage string) ([]string, error)
 }
 
 // Buildpack has the information from a Buildpack Builder.
@@ -51,17 +48,14 @@ type Buildpack struct {
 type RemoteImageFetcher func(ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error)
 
 type client struct {
-	build        cbuild.BuildV1alpha1Interface
 	imageFetcher RemoteImageFetcher
 }
 
 // NewClient creates a new Client.
 func NewClient(
-	b cbuild.BuildV1alpha1Interface,
 	imageFetcher RemoteImageFetcher,
 ) Client {
 	return &client{
-		build:        b,
 		imageFetcher: imageFetcher,
 	}
 }
@@ -69,8 +63,8 @@ func NewClient(
 const metadataLabel = "io.buildpacks.builder.metadata"
 
 // List lists the available buildpacks.
-func (c *client) List() ([]Buildpack, error) {
-	cfg, err := c.fetchConfig()
+func (c *client) List(builderImage string) ([]Buildpack, error) {
+	cfg, err := c.fetchConfig(builderImage)
 	if err != nil || cfg == nil {
 		return nil, err
 	}
@@ -86,8 +80,8 @@ func (c *client) List() ([]Buildpack, error) {
 }
 
 // Stacks lists the stacks available.
-func (c *client) Stacks() ([]string, error) {
-	cfg, err := c.fetchConfig()
+func (c *client) Stacks(builderImage string) ([]string, error) {
+	cfg, err := c.fetchConfig(builderImage)
 	if err != nil || cfg == nil {
 		return nil, err
 	}
@@ -107,20 +101,7 @@ func (c *client) Stacks() ([]string, error) {
 	return []string{stack.Stack.RunImage.Image}, nil
 }
 
-func (c *client) fetchConfig() (*gcrv1.ConfigFile, error) {
-	templates, err := c.build.ClusterBuildTemplates().List(metav1.ListOptions{
-		FieldSelector: "metadata.name=buildpack",
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	if len(templates.Items) == 0 {
-		return nil, nil
-	}
-
-	builderImage := c.fetchBuilderImageName(templates.Items[0].Spec.Parameters)
-
+func (c *client) fetchConfig(builderImage string) (*gcrv1.ConfigFile, error) {
 	imageRef, err := name.ParseReference(builderImage, name.WeakValidation)
 	if err != nil {
 		return nil, err
@@ -139,25 +120,6 @@ func (c *client) fetchConfig() (*gcrv1.ConfigFile, error) {
 	return cfg, nil
 }
 
-func (c *client) fetchBuilderImageName(params []build.ParameterSpec) string {
-	for _, p := range params {
-		if p.Name == "BUILDER_IMAGE" && p.Default != nil {
-			return *p.Default
-		}
-	}
-
-	return ""
-}
-
-// Diagnose checks to see if the cluster has buildpacks.
+// Diagnose checks to validate the cluster's buildpacks.
 func (c *client) Diagnose(d *doctor.Diagnostic) {
-	d.Run("Buildpacks", func(d *doctor.Diagnostic) {
-		buildpacks, err := c.List()
-		if err != nil {
-			d.Fatalf("Error fetching Buildpacks: %s", err)
-		}
-		if len(buildpacks) == 0 {
-			d.Fatal("Expected to find at least one buildpack")
-		}
-	})
 }

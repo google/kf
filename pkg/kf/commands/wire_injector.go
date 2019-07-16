@@ -260,7 +260,6 @@ func provideRemoteImageFetcher() buildpacks.RemoteImageFetcher {
 func InjectBuildpacksClient(p *config.KfParams) buildpacks.Client {
 	wire.Build(
 		buildpacks.NewClient,
-		config.GetBuildClient,
 		provideRemoteImageFetcher,
 	)
 	return nil
