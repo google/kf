@@ -313,12 +313,6 @@ func InjectConfigSpace(p *config.KfParams) *cobra.Command {
 // Quotas Command //
 ////////////////////
 
-// var QuotasSet = wire.NewSet(config.GetKubernetes, provideSpaceGetter, spaces.NewClient)
-
-// func provideSpaceGetter(ki kfv1alpha1.KfV1alpha1Interface) kfv1alpha1.SpacesGetter {
-// 	return ki
-// }
-
 func InjectCreateQuota(p *config.KfParams) *cobra.Command {
 	wire.Build(cquotas.NewCreateQuotaCommand, SpacesSet)
 
