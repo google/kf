@@ -53,7 +53,15 @@ func NewConfigSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		cmd.AddCommand(sm.ToCommand(client))
 	}
 
-	cmd.AddCommand(quotas.NewUpdateQuotaCommand(p, client))
+	quotaCommands := []*cobra.Command{
+		quotas.NewUpdateQuotaCommand(p, client),
+		quotas.NewGetQuotaCommand(p, client),
+		quotas.NewUpdateQuotaCommand(p, client),
+		quotas.NewDeleteQuotaCommand(p, client),
+	}
+	for _, qc := range quotaCommands {
+		cmd.AddCommand(qc)
+	}
 
 	return cmd
 }

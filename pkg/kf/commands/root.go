@@ -95,7 +95,6 @@ func NewKfCommand() *cobra.Command {
 		{
 			Message: "Quotas",
 			Commands: []*cobra.Command{
-				InjectQuotas(p),
 				InjectGetQuota(p),
 				InjectCreateQuota(p),
 				InjectUpdateQuota(p),
