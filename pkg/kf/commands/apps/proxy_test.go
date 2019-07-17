@@ -46,6 +46,21 @@ func TestNewProxyCommand(t *testing.T) {
 			Args:        []string{},
 			ExpectedErr: errors.New("accepts 1 arg(s), received 0"),
 		},
+		"no url for app": {
+			Namespace:   "default",
+			Args:        []string{"my-app", "--no-start=true"},
+			ExpectedErr: errors.New("No route for app my-app"),
+			Setup: func(t *testing.T, lister *fakeapps.FakeClient, istio *fake.FakeIstioClient) {
+				istio.EXPECT().ListIngresses(gomock.Any()).Return([]corev1.LoadBalancerIngress{{IP: "8.8.8.8"}}, nil)
+				lister.EXPECT().Get("default", "my-app").Return(&v1alpha1.App{
+					Status: v1alpha1.AppStatus{
+						RouteStatusFields: serving.RouteStatusFields{
+							URL: nil,
+						},
+					},
+				}, nil)
+			},
+		},
 		"minimal configuration": {
 			Namespace:   "default",
 			Args:        []string{"my-app", "--no-start=true"},
@@ -68,6 +83,15 @@ func TestNewProxyCommand(t *testing.T) {
 			Args:        []string{"my-app"},
 			ExpectedErr: errors.New("istio-failure"),
 			Setup: func(t *testing.T, lister *fakeapps.FakeClient, istio *fake.FakeIstioClient) {
+				lister.EXPECT().Get("default", "my-app").Return(&v1alpha1.App{
+					Status: v1alpha1.AppStatus{
+						RouteStatusFields: serving.RouteStatusFields{
+							URL: &apis.URL{
+								Host: "example.com",
+							},
+						},
+					},
+				}, nil)
 				istio.EXPECT().ListIngresses(gomock.Any()).Return(nil, errors.New("istio-failure"))
 			},
 		},

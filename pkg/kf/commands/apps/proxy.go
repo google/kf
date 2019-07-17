@@ -57,6 +57,16 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister k
 
 			cmd.SilenceUsage = true
 
+			app, err := appsClient.Get(p.Namespace, appName)
+			if err != nil {
+				return err
+			}
+
+			url := app.Status.URL
+			if url == nil {
+				return fmt.Errorf("No route for app %s", appName)
+			}
+
 			if gateway == "" {
 				fmt.Fprintln(cmd.OutOrStdout(), "Autodetecting app gateway. Specify a custom gateway using the --gateway flag.")
 
@@ -67,17 +77,12 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister k
 				gateway = ingress
 			}
 
-			app, err := appsClient.Get(p.Namespace, appName)
-			if err != nil {
-				return err
-			}
-
 			listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 			if err != nil {
 				return err
 			}
 
-			appHost := app.Status.URL.Host
+			appHost := url.Host
 
 			w := cmd.OutOrStdout()
 			fmt.Fprintf(w, "Forwarding requests from %s to %s with host %s\n", listener.Addr(), gateway, appHost)
