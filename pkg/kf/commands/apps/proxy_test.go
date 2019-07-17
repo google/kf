@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	fakeapps "github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/fake"
@@ -51,8 +52,8 @@ func TestNewProxyCommand(t *testing.T) {
 			ExpectedErr: nil,
 			Setup: func(t *testing.T, lister *fakeapps.FakeClient, istio *fake.FakeIstioClient) {
 				istio.EXPECT().ListIngresses(gomock.Any()).Return([]corev1.LoadBalancerIngress{{IP: "8.8.8.8"}}, nil)
-				lister.EXPECT().Get("default", "my-app").Return(&serving.Service{
-					Status: serving.ServiceStatus{
+				lister.EXPECT().Get("default", "my-app").Return(&v1alpha1.App{
+					Status: v1alpha1.AppStatus{
 						RouteStatusFields: serving.RouteStatusFields{
 							URL: &apis.URL{
 								Host: "example.com",

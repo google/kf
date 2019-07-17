@@ -32,7 +32,6 @@ import (
 	servicebindingscmd "github.com/google/kf/pkg/kf/commands/service-bindings"
 	servicescmd "github.com/google/kf/pkg/kf/commands/services"
 	cspaces "github.com/google/kf/pkg/kf/commands/spaces"
-	"github.com/google/kf/pkg/kf/kfapps"
 	kflogs "github.com/google/kf/pkg/kf/logs"
 	"github.com/google/kf/pkg/kf/routes"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
@@ -62,26 +61,21 @@ func provideBuildTailer() builds.BuildTailer {
 /////////////////
 
 var AppsSet = wire.NewSet(
+	SourcesSet,
+	provideAppsGetter,
 	apps.NewClient,
-	config.GetServingClient,
+	apps.NewPusher,
 	provideSystemEnvInjector,
 )
 
-var KfappsSet = wire.NewSet(
-	kfapps.NewClient,
-	config.GetKfClient,
-)
+func provideAppsGetter(ki kfv1alpha1.KfV1alpha1Interface) kfv1alpha1.AppsGetter {
+	return ki
+}
 
 func InjectPush(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		capps.NewPushCommand,
-		kf.NewPusher,
-		kf.NewLogTailer,
-		kf.NewDeployer,
-		config.GetBuildClient,
-		builds.NewClient,
 		provideSrcImageBuilder,
-		provideBuildTailer,
 		AppsSet,
 	)
 	return nil
@@ -100,12 +94,12 @@ func InjectApps(p *config.KfParams) *cobra.Command {
 }
 
 func InjectScale(p *config.KfParams) *cobra.Command {
-	wire.Build(capps.NewScaleCommand, KfappsSet)
+	wire.Build(capps.NewScaleCommand, AppsSet)
 	return nil
 }
 
 func InjectRestart(p *config.KfParams) *cobra.Command {
-	wire.Build(capps.NewRestartCommand, KfappsSet)
+	wire.Build(capps.NewRestartCommand, AppsSet)
 	return nil
 }
 
@@ -400,7 +394,6 @@ func InjectMapRoute(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		croutes.NewMapRouteCommand,
 		routes.NewClient,
-		config.GetKfClient,
 		AppsSet,
 	)
 	return nil

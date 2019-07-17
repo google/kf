@@ -14,7 +14,7 @@
 
 // This file was generated with option-builder.go, DO NOT EDIT IT.
 
-package kf
+package apps
 
 import (
 	"io"

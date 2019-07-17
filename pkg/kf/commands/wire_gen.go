@@ -11,17 +11,16 @@ import (
 	"github.com/google/kf/pkg/kf"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/buildpacks"
-	"github.com/google/kf/pkg/kf/builds"
+	builds2 "github.com/google/kf/pkg/kf/builds"
 	apps2 "github.com/google/kf/pkg/kf/commands/apps"
 	buildpacks2 "github.com/google/kf/pkg/kf/commands/buildpacks"
-	builds2 "github.com/google/kf/pkg/kf/commands/builds"
+	"github.com/google/kf/pkg/kf/commands/builds"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/quotas"
 	routes2 "github.com/google/kf/pkg/kf/commands/routes"
 	servicebindings2 "github.com/google/kf/pkg/kf/commands/service-bindings"
 	services2 "github.com/google/kf/pkg/kf/commands/services"
 	spaces2 "github.com/google/kf/pkg/kf/commands/spaces"
-	"github.com/google/kf/pkg/kf/kfapps"
 	"github.com/google/kf/pkg/kf/logs"
 	"github.com/google/kf/pkg/kf/routes"
 	"github.com/google/kf/pkg/kf/service-bindings"
@@ -45,57 +44,78 @@ import (
 // Injectors from wire_injector.go:
 
 func InjectPush(p *config.KfParams) *cobra.Command {
-	servingV1alpha1Interface := config.GetServingClient(p)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
 	systemEnvInjectorInterface := provideSystemEnvInjector(p)
-	client := apps.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
-	deployer := kf.NewDeployer(client)
-	logs := kf.NewLogTailer(servingV1alpha1Interface)
-	buildV1alpha1Interface := config.GetBuildClient(p)
-	buildTailer := provideBuildTailer()
-	clientInterface := builds.NewClient(buildV1alpha1Interface, buildTailer)
-	pusher := kf.NewPusher(deployer, logs, clientInterface)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	client := sources.NewClient(sourcesGetter, buildTailer)
+	appsClient := apps.NewClient(appsGetter, systemEnvInjectorInterface, client)
+	pusher := apps.NewPusher(appsClient)
 	srcImageBuilder := provideSrcImageBuilder()
-	command := apps2.NewPushCommand(p, pusher, srcImageBuilder)
+	command := apps2.NewPushCommand(p, appsClient, pusher, srcImageBuilder)
 	return command
 }
 
 func InjectDelete(p *config.KfParams) *cobra.Command {
-	servingV1alpha1Interface := config.GetServingClient(p)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
 	systemEnvInjectorInterface := provideSystemEnvInjector(p)
-	client := apps.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
-	command := apps2.NewDeleteCommand(p, client)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	client := sources.NewClient(sourcesGetter, buildTailer)
+	appsClient := apps.NewClient(appsGetter, systemEnvInjectorInterface, client)
+	command := apps2.NewDeleteCommand(p, appsClient)
 	return command
 }
 
 func InjectApps(p *config.KfParams) *cobra.Command {
-	servingV1alpha1Interface := config.GetServingClient(p)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
 	systemEnvInjectorInterface := provideSystemEnvInjector(p)
-	client := apps.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
-	command := apps2.NewAppsCommand(p, client)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	client := sources.NewClient(sourcesGetter, buildTailer)
+	appsClient := apps.NewClient(appsGetter, systemEnvInjectorInterface, client)
+	command := apps2.NewAppsCommand(p, appsClient)
 	return command
 }
 
 func InjectScale(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
-	client := kfapps.NewClient(kfV1alpha1Interface)
-	command := apps2.NewScaleCommand(p, client)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	client := sources.NewClient(sourcesGetter, buildTailer)
+	appsClient := apps.NewClient(appsGetter, systemEnvInjectorInterface, client)
+	command := apps2.NewScaleCommand(p, appsClient)
 	return command
 }
 
 func InjectRestart(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
-	client := kfapps.NewClient(kfV1alpha1Interface)
-	command := apps2.NewRestartCommand(p, client)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	client := sources.NewClient(sourcesGetter, buildTailer)
+	appsClient := apps.NewClient(appsGetter, systemEnvInjectorInterface, client)
+	command := apps2.NewRestartCommand(p, appsClient)
 	return command
 }
 
 func InjectProxy(p *config.KfParams) *cobra.Command {
-	servingV1alpha1Interface := config.GetServingClient(p)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
 	systemEnvInjectorInterface := provideSystemEnvInjector(p)
-	client := apps.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	client := sources.NewClient(sourcesGetter, buildTailer)
+	appsClient := apps.NewClient(appsGetter, systemEnvInjectorInterface, client)
 	kubernetesInterface := config.GetKubernetes(p)
 	ingressLister := kf.NewIstioClient(kubernetesInterface)
-	command := apps2.NewProxyCommand(p, client, ingressLister)
+	command := apps2.NewProxyCommand(p, appsClient, ingressLister)
 	return command
 }
 
@@ -107,26 +127,38 @@ func InjectLogs(p *config.KfParams) *cobra.Command {
 }
 
 func InjectEnv(p *config.KfParams) *cobra.Command {
-	servingV1alpha1Interface := config.GetServingClient(p)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
 	systemEnvInjectorInterface := provideSystemEnvInjector(p)
-	client := apps.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
-	command := apps2.NewEnvCommand(p, client)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	client := sources.NewClient(sourcesGetter, buildTailer)
+	appsClient := apps.NewClient(appsGetter, systemEnvInjectorInterface, client)
+	command := apps2.NewEnvCommand(p, appsClient)
 	return command
 }
 
 func InjectSetEnv(p *config.KfParams) *cobra.Command {
-	servingV1alpha1Interface := config.GetServingClient(p)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
 	systemEnvInjectorInterface := provideSystemEnvInjector(p)
-	client := apps.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
-	command := apps2.NewSetEnvCommand(p, client)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	client := sources.NewClient(sourcesGetter, buildTailer)
+	appsClient := apps.NewClient(appsGetter, systemEnvInjectorInterface, client)
+	command := apps2.NewSetEnvCommand(p, appsClient)
 	return command
 }
 
 func InjectUnsetEnv(p *config.KfParams) *cobra.Command {
-	servingV1alpha1Interface := config.GetServingClient(p)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
 	systemEnvInjectorInterface := provideSystemEnvInjector(p)
-	client := apps.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
-	command := apps2.NewUnsetEnvCommand(p, client)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	client := sources.NewClient(sourcesGetter, buildTailer)
+	appsClient := apps.NewClient(appsGetter, systemEnvInjectorInterface, client)
+	command := apps2.NewUnsetEnvCommand(p, appsClient)
 	return command
 }
 
@@ -321,9 +353,12 @@ func InjectDeleteRoute(p *config.KfParams) *cobra.Command {
 func InjectMapRoute(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	client := routes.NewClient(kfV1alpha1Interface)
-	servingV1alpha1Interface := config.GetServingClient(p)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
 	systemEnvInjectorInterface := provideSystemEnvInjector(p)
-	appsClient := apps.NewClient(servingV1alpha1Interface, systemEnvInjectorInterface)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	sourcesClient := sources.NewClient(sourcesGetter, buildTailer)
+	appsClient := apps.NewClient(appsGetter, systemEnvInjectorInterface, sourcesClient)
 	command := routes2.NewMapRouteCommand(p, client, appsClient)
 	return command
 }
@@ -340,7 +375,7 @@ func InjectBuilds(p *config.KfParams) *cobra.Command {
 	sourcesGetter := provideKfSources(kfV1alpha1Interface)
 	buildTailer := provideSourcesBuildTailer()
 	client := sources.NewClient(sourcesGetter, buildTailer)
-	command := builds2.NewListBuildsCommand(p, client)
+	command := builds.NewListBuildsCommand(p, client)
 	return command
 }
 
@@ -349,7 +384,7 @@ func InjectBuildLogs(p *config.KfParams) *cobra.Command {
 	sourcesGetter := provideKfSources(kfV1alpha1Interface)
 	buildTailer := provideSourcesBuildTailer()
 	client := sources.NewClient(sourcesGetter, buildTailer)
-	command := builds2.NewBuildLogsCommand(p, client)
+	command := builds.NewBuildLogsCommand(p, client)
 	return command
 }
 
@@ -359,13 +394,18 @@ func provideSrcImageBuilder() apps2.SrcImageBuilder {
 	return apps2.SrcImageBuilderFunc(kontext.BuildImage)
 }
 
-func provideBuildTailer() builds.BuildTailer {
-	return builds.BuildTailerFunc(logs2.Tail)
+func provideBuildTailer() builds2.BuildTailer {
+	return builds2.BuildTailerFunc(logs2.Tail)
 }
 
-var AppsSet = wire.NewSet(apps.NewClient, config.GetServingClient, provideSystemEnvInjector)
+var AppsSet = wire.NewSet(
+	SourcesSet,
+	provideAppsGetter, apps.NewClient, apps.NewPusher, provideSystemEnvInjector,
+)
 
-var KfappsSet = wire.NewSet(kfapps.NewClient, config.GetKfClient)
+func provideAppsGetter(ki v1alpha1.KfV1alpha1Interface) v1alpha1.AppsGetter {
+	return ki
+}
 
 func provideCoreV1(p *config.KfParams) v1.CoreV1Interface {
 	return config.GetKubernetes(p).CoreV1()
@@ -400,5 +440,5 @@ func provideKfSources(ki v1alpha1.KfV1alpha1Interface) v1alpha1.SourcesGetter {
 }
 
 func provideSourcesBuildTailer() sources.BuildTailer {
-	return builds.BuildTailerFunc(logs2.Tail)
+	return builds2.BuildTailerFunc(logs2.Tail)
 }

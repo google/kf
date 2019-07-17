@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"text/template"
@@ -57,7 +58,6 @@ type OptionsFile struct {
 
 func main() {
 	log.SetPrefix("option-builder ")
-	log.Println("starting")
 
 	pkg := flag.String("pkg", "", "overrides the package")
 	flag.Parse()
@@ -67,14 +67,19 @@ func main() {
 		log.Fatalln("use: option-builder.go /path/to/options.yml output-file.go")
 	}
 
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	optionsPath := args[0]
-	optionsOut := args[1]
+	optionsOut := filepath.Join(wd, args[1])
 
 	log.Printf("building %s from %s\n", optionsOut, optionsPath)
 
 	contents, err := ioutil.ReadFile(optionsPath)
 	if err != nil {
-		log.Fatalln(err)
+		log.Fatalln("could not read contents", err)
 	}
 
 	of := &OptionsFile{}

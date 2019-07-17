@@ -20,13 +20,13 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/internal/envutil"
 	"github.com/google/kf/pkg/kf/testutil"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 )
 
 func TestSetEnvCommand(t *testing.T) {
@@ -70,7 +70,7 @@ func TestSetEnvCommand(t *testing.T) {
 			Namespace: "some-namespace",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().Transform(gomock.Any(), "app-name", gomock.Any()).Do(func(namespace, appName string, mutator apps.Mutator) {
-					out := &serving.Service{}
+					out := &v1alpha1.App{}
 					err := mutator(out)
 					testutil.AssertNil(t, "mutator err", err)
 

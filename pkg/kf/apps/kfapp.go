@@ -15,8 +15,10 @@
 package apps
 
 import (
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+
 	"github.com/google/kf/pkg/kf/internal/envutil"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	"github.com/google/kf/pkg/kf/sources"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,7 +26,7 @@ import (
 
 // KfApp provides a facade around Knative services for accessing and mutating its
 // values.
-type KfApp serving.Service
+type KfApp v1alpha1.App
 
 // GetName retrieves the name of the app.
 func (k *KfApp) GetName() string {
@@ -46,19 +48,15 @@ func (k *KfApp) GetNamespace() string {
 	return k.Namespace
 }
 
-func (k *KfApp) getOrCreateRevisionTemplateSpec() *serving.RevisionTemplateSpec {
-	if k.Spec.Template == nil {
-		k.Spec.Template = &serving.RevisionTemplateSpec{}
-	}
-
-	return k.Spec.Template
+func (k *KfApp) getOrCreateRevisionTemplateSpec() *v1alpha1.AppSpecTemplate {
+	return &k.Spec.Template
 }
 
-func (k *KfApp) getRevisionTemplateSpecOrNil() *serving.RevisionTemplateSpec {
+func (k *KfApp) getRevisionTemplateSpecOrNil() *v1alpha1.AppSpecTemplate {
 	if k == nil {
 		return nil
 	}
-	return k.Spec.Template
+	return &k.Spec.Template
 }
 
 func (k *KfApp) getOrCreateContainer() *corev1.Container {
@@ -115,6 +113,11 @@ func (k *KfApp) SetServiceAccount(sa string) {
 	k.getOrCreateRevisionTemplateSpec().Spec.ServiceAccountName = sa
 }
 
+// SetSource sets the source the application will use to build.
+func (k *KfApp) SetSource(src sources.KfSource) {
+	k.Spec.Source = src.Spec
+}
+
 // GetServiceAccount returns the service account used by the container.
 func (k *KfApp) GetServiceAccount() string {
 	if rl := k.getRevisionTemplateSpecOrNil(); rl != nil {
@@ -149,24 +152,31 @@ func (k *KfApp) DeleteEnvVars(names []string) {
 	k.SetEnvVars(envutil.RemoveEnvVars(names, k.GetEnvVars()))
 }
 
-// ToService casts this alias back into a Service.
-func (k *KfApp) ToService() *serving.Service {
-	svc := serving.Service(*k)
-	return &svc
+// ToApp casts this alias back into an App.
+func (k *KfApp) ToApp() *v1alpha1.App {
+	app := v1alpha1.App(*k)
+	return &app
 }
 
 // NewKfApp creates a new KfApp.
 func NewKfApp() KfApp {
 	return KfApp{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "Service",
-			APIVersion: "serving.knative.dev/v1alpha1",
+			Kind:       "App",
+			APIVersion: "kf.dev/v1alpha1",
+		},
+		Spec: v1alpha1.AppSpec{
+			Template: v1alpha1.AppSpecTemplate{
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{{}},
+				},
+			},
 		},
 	}
 }
 
-// NewFromService creates a new KfApp from the given service pointer
-// modifications to the KfApp will affect the underling svc.
-func NewFromService(svc *serving.Service) *KfApp {
-	return (*KfApp)(svc)
+// NewFromApp creates a new KfApp from the given service pointer
+// modifications to the KfApp will affect the underling app.
+func NewFromApp(app *v1alpha1.App) *KfApp {
+	return (*KfApp)(app)
 }

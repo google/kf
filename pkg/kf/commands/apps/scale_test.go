@@ -21,9 +21,9 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/kfapps"
-	"github.com/google/kf/pkg/kf/kfapps/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 )
 
@@ -43,7 +43,7 @@ func TestNewScaleCommand(t *testing.T) {
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().
 					Transform("default", "my-app", gomock.Any()).
-					Do(func(_, _ string, m kfapps.Mutator) {
+					Do(func(_, _ string, m apps.Mutator) {
 						someInt := 9
 						app := v1alpha1.App{}
 						app.Spec.Instances.Min = &someInt
@@ -65,7 +65,7 @@ func TestNewScaleCommand(t *testing.T) {
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().
 					Transform("default", "my-app", gomock.Any()).
-					Do(func(_, _ string, m kfapps.Mutator) {
+					Do(func(_, _ string, m apps.Mutator) {
 						min, max := 3, 5
 						app := v1alpha1.App{}
 						app.Spec.Instances.Min = &min
@@ -98,7 +98,7 @@ func TestNewScaleCommand(t *testing.T) {
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().
 					Transform("default", "my-app", gomock.Any()).
-					Do(func(_, _ string, m kfapps.Mutator) {
+					Do(func(_, _ string, m apps.Mutator) {
 						app := v1alpha1.App{}
 						testutil.AssertNotNil(t, "mutator error", m(&app))
 					})
@@ -110,7 +110,7 @@ func TestNewScaleCommand(t *testing.T) {
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().
 					Transform("default", "my-app", gomock.Any()).
-					Do(func(_, _ string, m kfapps.Mutator) {
+					Do(func(_, _ string, m apps.Mutator) {
 						app := v1alpha1.App{}
 						testutil.AssertNotNil(t, "mutator error", m(&app))
 					})

@@ -17,16 +17,16 @@ package apps
 import (
 	"fmt"
 
+	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	"github.com/google/kf/pkg/kf/kfapps"
 	"github.com/spf13/cobra"
 )
 
 // NewRestartCommand creates a command capable of restarting an app.
 func NewRestartCommand(
 	p *config.KfParams,
-	client kfapps.Client,
+	client apps.Client,
 ) *cobra.Command {
 	var restart = &cobra.Command{
 		Use:   "restart APP_NAME",

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package kf_test
+package apps_test
 
 import (
 	"bytes"
@@ -21,20 +21,20 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/kf/pkg/kf"
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	v1alpha1fake "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1/fake"
+	"github.com/google/kf/pkg/kf/apps"
+	sourcesfake "github.com/google/kf/pkg/kf/sources/fake"
+	systemenvinjectorfake "github.com/google/kf/pkg/kf/systemenvinjector/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	servicefake "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1/fake"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	ktesting "k8s.io/client-go/testing"
-	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
 
-//go:generate mockgen --package kf_test --destination fake_watcher_test.go --mock_names=Interface=FakeWatcher --copyright_file internal/tools/option-builder/LICENSE_HEADER k8s.io/apimachinery/pkg/watch Interface
+//go:generate mockgen --package apps_test --destination fake_watcher_test.go --mock_names=Interface=FakeWatcher --copyright_file ../internal/tools/option-builder/LICENSE_HEADER k8s.io/apimachinery/pkg/watch Interface
 
 func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 	t.Parallel()
@@ -52,8 +52,20 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			appName:         "some-app",
 			namespace:       "default",
 			resourceVersion: "some-version",
-			events:          append(createMsgEvents("some-app", "", "msg-1", "msg-2"), createMsgEvents("some-app", "True", "")...),
-			wantedMsgs:      []string{"msg-1", "msg-2"},
+			events: createMsgEvents("some-app", duckv1beta1.Conditions{
+				{
+					Type:    "SourceReady",
+					Status:  "True",
+					Message: "msg-1",
+				},
+				{
+					Type:    "Ready",
+					Status:  "True",
+					Message: "msg-2",
+				},
+			},
+			),
+			wantedMsgs: []string{"msg-1", "msg-2"},
 		},
 		"watch service returns an error, return error": {
 			appName:         "some-app",
@@ -66,8 +78,19 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			appName:         "some-app",
 			namespace:       "default",
 			resourceVersion: "some-version",
-			events:          createMsgEvents("some-app", "False", "some-error"),
-			wantErr:         errors.New("deployment failed: some-error"),
+			events: createMsgEvents("some-app", duckv1beta1.Conditions{
+				{
+					Type:    "SourceReady",
+					Status:  "True",
+					Message: "some-error",
+				},
+				{
+					Type:    "Ready",
+					Status:  "False",
+					Message: "some-error",
+				},
+			}),
+			wantErr: errors.New("deployment failed: some-error"),
 		},
 		"watch fails, return error": {
 			appName:         "some-app",
@@ -78,18 +101,20 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
-			ctrl, fakeServing := buildLogWatchFakes(
+			ctrl, fakeApps := buildLogWatchFakes(
 				t,
 				tc.events, nil,
 				tc.serviceWatchErr, nil,
 			)
 
-			fakeServing.PrependWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
-				testWatch(t, action, "services", tc.namespace, tc.resourceVersion)
+			fakeApps.PrependWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
+				testWatch(t, action, "apps", tc.namespace, tc.resourceVersion)
 				return false, nil, nil
 			}))
 
-			lt := kf.NewLogTailer(fakeServing)
+			sourceClient := sourcesfake.NewFakeClient(ctrl)
+			seif := systemenvinjectorfake.NewFakeSystemEnvInjector(ctrl)
+			lt := apps.NewClient(fakeApps, seif, sourceClient)
 
 			var buffer bytes.Buffer
 			gotErr := lt.DeployLogs(&buffer, tc.appName, tc.resourceVersion, tc.namespace)
@@ -121,7 +146,7 @@ func testWatch(t *testing.T, action ktesting.Action, resource, namespace, resour
 	testutil.AssertEqual(t, "resourceVersion", resourceVersion, action.(ktesting.WatchActionImpl).WatchRestrictions.ResourceVersion)
 
 	if !action.Matches("watch", resource) {
-		t.Fatal("wrong action")
+		t.Fatalf("wrong action: %s", resource)
 	}
 }
 
@@ -134,24 +159,20 @@ func createEvents(es []watch.Event) <-chan watch.Event {
 	return c
 }
 
-func createMsgEvents(appName string, status corev1.ConditionStatus, msgs ...string) []watch.Event {
+func createMsgEvents(appName string, conditions duckv1beta1.Conditions) []watch.Event {
 	var es []watch.Event
-	for _, m := range msgs {
-		es = append(es, watch.Event{
-			Object: &serving.Service{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: appName,
-				},
-				Status: serving.ServiceStatus{
-					Status: duckv1beta1.Status{
-						Conditions: []apis.Condition{
-							{Type: "Ready", Status: status, Message: m},
-						},
-					},
+	es = append(es, watch.Event{
+		Object: &v1alpha1.App{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: appName,
+			},
+			Status: v1alpha1.AppStatus{
+				Status: duckv1beta1.Status{
+					Conditions: conditions,
 				},
 			},
-		})
-	}
+		},
+	})
 	return es
 }
 
@@ -175,10 +196,10 @@ func buildLogWatchFakes(
 	t *testing.T,
 	serviceEvents, buildEvents []watch.Event,
 	serviceErr, buildErr error,
-) (*gomock.Controller, *servicefake.FakeServingV1alpha1) {
+) (*gomock.Controller, *v1alpha1fake.FakeKfV1alpha1) {
 	ctrl := gomock.NewController(t)
-	fakeServiceWatcher := NewFakeWatcher(ctrl)
-	fakeServiceWatcher.
+	fakeWatcher := NewFakeWatcher(ctrl)
+	fakeWatcher.
 		EXPECT().
 		ResultChan().
 		DoAndReturn(func() <-chan watch.Event {
@@ -186,18 +207,18 @@ func buildLogWatchFakes(
 		})
 
 	// Ensure Stop is invoked to clean up resources.
-	fakeServiceWatcher.
+	fakeWatcher.
 		EXPECT().
 		Stop().
 		AnyTimes()
 
-	fakeServing := &servicefake.FakeServingV1alpha1{
+	fakeKfClient := &v1alpha1fake.FakeKfV1alpha1{
 		Fake: &ktesting.Fake{},
 	}
 
-	fakeServing.AddWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
-		return true, fakeServiceWatcher, serviceErr
+	fakeKfClient.AddWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
+		return true, fakeWatcher, serviceErr
 	}))
 
-	return ctrl, fakeServing
+	return ctrl, fakeKfClient
 }

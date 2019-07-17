@@ -1,6 +1,6 @@
 # This file contains options for option-builder.go
 ---
-package: kf
+package: apps
 imports: {"io":"", "os":""}
 common:
 - name: Namespace

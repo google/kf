@@ -17,16 +17,16 @@ package cfutil_test
 import (
 	"fmt"
 
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/internal/cfutil"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 )
 
 func ExampleCreateVcapApplication() {
-	svc := &serving.Service{}
-	svc.Name = "my-app"
-	svc.Namespace = "my-ns"
+	app := &v1alpha1.App{}
+	app.Name = "my-app"
+	app.Namespace = "my-ns"
 
-	env, err := cfutil.CreateVcapApplication(svc)
+	env, err := cfutil.CreateVcapApplication(app)
 	if err != nil {
 		panic(err)
 	}
