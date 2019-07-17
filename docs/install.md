@@ -138,6 +138,8 @@ You should be able to see an empty marketplace at this point by running.
 kf marketplace
 ```
 
+### Install Minibroker
+
 Most Cloud Foundry service brokers comply with the OSB specification.
 The following steps will guide you through installing a broker called
 "mini-broker" which will deploy services as helm charts directly into your cluster.
