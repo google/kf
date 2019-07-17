@@ -130,11 +130,11 @@ These instructions will walk you through deploying [Cloud Foundry UAA][uaa] as a
     EOF
     ```
 
-1. Deploy:
+1. Deploy (this assumes you've already `kf target`'d a space):
 
     ```sh
     cd uaa/build/libs
-    kf push uaa --container-registry="gcr.io/<REPLACE>"
+    kf push uaa
     ```
 
 1. Use the proxy feature to access the deployed app:
