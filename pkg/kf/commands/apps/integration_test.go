@@ -42,7 +42,7 @@ const (
 func TestIntegration_Push(t *testing.T) {
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
-		appName := fmt.Sprintf("integration-echo-%d", time.Now().UnixNano())
+		appName := fmt.Sprintf("integration-push-%d", time.Now().UnixNano())
 
 		kf.Target(ctx, "default")
 
@@ -171,7 +171,7 @@ func copyManifest(appName, appPath string, currentTime int64) (string, func(), e
 func TestIntegration_Delete(t *testing.T) {
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
-		appName := fmt.Sprintf("integration-echo-%d", time.Now().UnixNano())
+		appName := fmt.Sprintf("integration-delete-%d", time.Now().UnixNano())
 
 		kf.Target(ctx, "default")
 
@@ -257,7 +257,7 @@ func TestIntegration_Envs(t *testing.T) {
 func TestIntegration_Logs(t *testing.T) {
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
-		appName := fmt.Sprintf("integration-echo-%d", time.Now().UnixNano())
+		appName := fmt.Sprintf("integration-logs-%d", time.Now().UnixNano())
 
 		kf.Target(ctx, "default")
 
@@ -315,7 +315,7 @@ func TestIntegration_Logs(t *testing.T) {
 func TestIntegration_LogsNoContainer(t *testing.T) {
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
-		appName := fmt.Sprintf("integration-echo-%d", time.Now().UnixNano())
+		appName := fmt.Sprintf("integration-logs-noc-%d", time.Now().UnixNano())
 
 		output := kf.Logs(ctx, appName)
 
@@ -440,7 +440,7 @@ func testIntegration_Doctor(t *testing.T) {
 func TestIntegration_Push_Instances(t *testing.T) {
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
-		appName := fmt.Sprintf("integration-echo-%d", time.Now().UnixNano())
+		appName := fmt.Sprintf("integration-push-instances-%d", time.Now().UnixNano())
 
 		kf.Target(ctx, "default")
 
