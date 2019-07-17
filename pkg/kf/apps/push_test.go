@@ -163,7 +163,7 @@ func TestPush(t *testing.T) {
 					Return(&v1alpha1.App{}, nil)
 			},
 		},
-		"properly configures build": {
+		"properly configures buildpackBuild source": {
 			appName:   "some-app",
 			srcImage:  "some-image",
 			buildpack: "some-buildpack",
@@ -183,14 +183,6 @@ func TestPush(t *testing.T) {
 						testutil.AssertEqual(t, "buildpack", "some-buildpack", newObj.Spec.Source.BuildpackBuild.Buildpack)
 
 					}).Return(&v1alpha1.App{}, nil)
-
-				// appsClient.EXPECT().
-				// 	Tail(gomock.Any(), gomock.Any()).
-				// 	Return(nil)
-
-				// appsClient.EXPECT().
-				// 	Status(gomock.Any(), gomock.Any()).
-				// 	Return(true, nil)
 			},
 		},
 		"pushes app with environment variables": {

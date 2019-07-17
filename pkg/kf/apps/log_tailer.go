@@ -53,7 +53,6 @@ func (a *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespa
 	var once sync.Once
 	var sourceReadyOnce sync.Once
 	var deployStart time.Time
-	var tailErr error
 	for e := range ws.ResultChan() {
 		app := e.Object.(*v1alpha1.App)
 
@@ -79,6 +78,9 @@ func (a *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespa
 			cancel()
 			return fmt.Errorf("build failed: %s", sourceReady.Message)
 		default:
+
+			// This case should mean the Source is still in progress.
+			// It should be safe to tail the logs to show the user what's happening.
 			go once.Do(
 				func() {
 					// ignoring tail errs because they are spurious
@@ -86,9 +88,6 @@ func (a *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespa
 				},
 			)
 			continue
-		}
-		if tailErr != nil {
-			logger.Printf("Error tailing build logs: %s", tailErr)
 		}
 
 		appReady := app.Status.GetCondition(v1alpha1.AppConditionReady)

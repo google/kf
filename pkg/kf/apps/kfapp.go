@@ -113,7 +113,7 @@ func (k *KfApp) SetServiceAccount(sa string) {
 	k.getOrCreateRevisionTemplateSpec().Spec.ServiceAccountName = sa
 }
 
-// SetSource stes the source the application will use to build.
+// SetSource sets the source the application will use to build.
 func (k *KfApp) SetSource(src sources.KfSource) {
 	k.Spec.Source = src.Spec
 }

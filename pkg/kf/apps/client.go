@@ -38,7 +38,7 @@ type appsClient struct {
 	coreClient
 }
 
-// NewClient creates a new space client.
+// NewClient creates a new application client.
 func NewClient(
 	kclient cv1alpha1.AppsGetter,
 	envInjector systemenvinjector.SystemEnvInjectorInterface,
@@ -50,7 +50,7 @@ func NewClient(
 				envInjector.InjectSystemEnv,
 				LabelSetMutator(map[string]string{"app.kubernetes.io/managed-by": "kf"}),
 			},
-			membershipValidator: AllPredicate(), // all spaces can be managed by Kf
+			membershipValidator: AllPredicate(), // all apps can be managed by Kf
 		},
 		sourcesClient: sourcesClient,
 	}
