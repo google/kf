@@ -53,7 +53,8 @@ minibroker  redis                  Active  Helm Chart for redis
         BP_JAVA_VERSION: 8.*
     ```
 
-1. Deploy (this assumes you've already `kf target`'d a space): 
+1. Deploy (this assumes you've already `kf target`'d a space; see [these
+   docs][create-space] for more detail):
 
     ```sh
     kf push spring-music
@@ -81,23 +82,29 @@ minibroker  redis                  Active  Helm Chart for redis
     kf bind-service spring-music spring-music-db -c '{"postgresqlDatabase":"smdb", "postgresDatabase":"smdb"}'
     ```
 
-1. (Optional) Verify that the binding succeeded:
+1. Inject the bindings into the app's env:
+
+    ```sh
+    kf set-env spring-music VCAP_SERVICES '`kf vcap-services spring-music`'
+    ```
+
+1. Run `kf env spring-music` and verify that `VCAP_SERVICES` is set. It should
+   look similar to:
+
+    ```sh
+    NAME             VALUE
+    BP_JAVA_VERSION  8.*
+    VCAP_APPLICATION
+    {"application_name":"spring-music","name":"spring-music","space_name":"demo"}
+    VCAP_SERVICES
+    {"postgresql":[{"binding_name":"spring-music-db","instance_name":"spring-music-db","name":"kf-binding-spring-music-spring-music-db","label":"postgresql","tags":null,"plan":"11-4-0","credentials":{"Protocol":"postgresql","database":"smdb","host":"honorary-snail-postgresql.demo.svc.cluster.local","password":"***","port":"5432","postgresql-password":"***","uri":"postgresql://postgres:***@honorary-snail-postgresql.demo.svc.cluster.local:5432/smdb","username":"postgres"}}]}
+    ```
+
+1. (Optional) View the binding details:
 
     ```sh
     kf bindings
     ````
-
-1. (Optional) Verify that the `VCAP_SERVICES` env var has been injected in your Spring Music app:
-
-    ```sh
-    kf vcap-services spring-music
-    ```
-
-1. Re-push the application so it uses the new Postgres database:
-
-    ```sh
-    kf push spring-music
-    ```
 
 1. `kf proxy` to the app again and view it in your web browser. The Spring profile should be shown, indicating the Postgres service you created and bound is being used:
 
@@ -125,3 +132,4 @@ https://github.com/cloudfoundry-samples/spring-music/archive/fe15454c3b285bb8bdc
 [ss1]: sm1.png
 [ss2]: sm2.png
 [install-minibroker]: /docs/install.md#install-minibroker
+[create-space]: /docs/install.md#create-and-target-a-space
