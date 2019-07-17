@@ -188,7 +188,7 @@ func ExampleNewJSONEnvVar() {
 	// Output: INVENTORY {"Apples":true,"Bread":false}
 }
 
-func ExampleGetServiceEnvVars() {
+func ExampleGetAppEnvVars() {
 	var app v1alpha1.App
 	envutil.SetAppEnvVars(&app, []corev1.EnvVar{
 		{Name: "FOO", Value: "2"},
@@ -205,7 +205,7 @@ func ExampleGetServiceEnvVars() {
 	// Key BAR Value 0
 }
 
-func ExampleGetServiceEnvVars_emptyApp() {
+func ExampleGetAppEnvVars_emptyApp() {
 	env := envutil.GetAppEnvVars(nil)
 
 	fmt.Println(env)

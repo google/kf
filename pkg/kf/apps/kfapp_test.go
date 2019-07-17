@@ -133,7 +133,7 @@ func ExampleKfApp_GetNamespace() {
 	// Output: my-ns
 }
 
-func ExampleKfApp_GetAppAccount() {
+func ExampleKfApp_GetServiceAccount() {
 	myApp := NewKfApp()
 	fmt.Printf("Default: %q\n", myApp.GetServiceAccount())
 
