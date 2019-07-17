@@ -65,6 +65,7 @@ var AppsSet = wire.NewSet(
 	provideAppsGetter,
 	apps.NewClient,
 	apps.NewPusher,
+	provideSystemEnvInjector,
 )
 
 func provideAppsGetter(ki kfv1alpha1.KfV1alpha1Interface) kfv1alpha1.AppsGetter {
@@ -94,6 +95,11 @@ func InjectApps(p *config.KfParams) *cobra.Command {
 
 func InjectScale(p *config.KfParams) *cobra.Command {
 	wire.Build(capps.NewScaleCommand, AppsSet)
+	return nil
+}
+
+func InjectRestart(p *config.KfParams) *cobra.Command {
+	wire.Build(capps.NewRestartCommand, AppsSet)
 	return nil
 }
 
@@ -253,7 +259,6 @@ func provideRemoteImageFetcher() buildpacks.RemoteImageFetcher {
 func InjectBuildpacksClient(p *config.KfParams) buildpacks.Client {
 	wire.Build(
 		buildpacks.NewClient,
-		config.GetBuildClient,
 		provideRemoteImageFetcher,
 	)
 	return nil

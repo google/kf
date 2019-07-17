@@ -31,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	ktesting "k8s.io/client-go/testing"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
+	systemenvinjectorfake "github.com/google/kf/pkg/kf/systemenvinjector/fake"
 )
 
 //go:generate mockgen --package apps_test --destination fake_watcher_test.go --mock_names=Interface=FakeWatcher --copyright_file ../internal/tools/option-builder/LICENSE_HEADER k8s.io/apimachinery/pkg/watch Interface
@@ -112,7 +113,8 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			}))
 
 			sourceClient := sourcesfake.NewFakeClient(ctrl)
-			lt := apps.NewClient(fakeApps, sourceClient)
+      seif := systemenvinjectorfake.NewFakeSystemEnvInjector(ctrl)
+			lt := apps.NewClient(fakeApps, seif, sourceClient)
 
 			var buffer bytes.Buffer
 			gotErr := lt.DeployLogs(&buffer, tc.appName, tc.resourceVersion, tc.namespace)

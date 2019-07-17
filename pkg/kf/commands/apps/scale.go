@@ -39,7 +39,7 @@ func NewScaleCommand(
 
 	var scale = &cobra.Command{
 		Use:   "scale APP_NAME",
-		Short: "Change the instance count for an app.",
+		Short: "Change the instance count for an app",
 		Example: `
   kf scale myapp --i 3 # Scale to exactly 3 instances
   kf scale myapp --instances 3 # Scale to exactly 3 instances
