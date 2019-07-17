@@ -38,8 +38,9 @@ func TestNewScaleCommand(t *testing.T) {
 		Setup           func(t *testing.T, fake *fake.FakeClient)
 	}{
 		"updates app to exact instances": {
-			Namespace: "default",
-			Args:      []string{"my-app", "-i=3"},
+			Namespace:       "default",
+			Args:            []string{"my-app", "-i=3"},
+			ExpectedStrings: []string{"Stopped?: true", "Exactly: 3"},
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().
 					Transform("default", "my-app", gomock.Any()).
@@ -60,8 +61,9 @@ func TestNewScaleCommand(t *testing.T) {
 			},
 		},
 		"updates app auto scaling": {
-			Namespace: "default",
-			Args:      []string{"my-app", "--min=3", "--max=5"},
+			Namespace:       "default",
+			Args:            []string{"my-app", "--min=3", "--max=5"},
+			ExpectedStrings: []string{"Stopped?: true", "Min: 3", "Max: 5"},
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().
 					Transform("default", "my-app", gomock.Any()).
@@ -87,10 +89,28 @@ func TestNewScaleCommand(t *testing.T) {
 			Args:        []string{},
 			ExpectedErr: errors.New("accepts 1 arg(s), received 0"),
 		},
-		"flags not set": {
+		"flags not set, displays current value": {
+			Namespace:       "default",
+			Args:            []string{"my-app"},
+			ExpectedStrings: []string{"Stopped?: false", "Exactly: 99"},
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				exactly := 99
+				fake.EXPECT().Get("default", "my-app").Return(&v1alpha1.App{
+					Spec: v1alpha1.AppSpec{
+						Instances: v1alpha1.AppSpecInstances{
+							Exactly: &exactly,
+						},
+					},
+				}, nil)
+			},
+		},
+		"getting app fails": {
 			Namespace:   "default",
 			Args:        []string{"my-app"},
-			ExpectedErr: errors.New("--instances, --min, or --max flag are required"),
+			ExpectedErr: errors.New("failed to get app: some-error"),
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Get("default", "my-app").Return(nil, errors.New("some-error"))
+			},
 		},
 		"autoscale and exact flags set": {
 			Namespace: "default",
