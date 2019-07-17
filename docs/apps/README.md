@@ -2,4 +2,4 @@
 
 1. [UAA][uaa]
 
-[uaa]: /docs/apps/uaa/readme.md
+[uaa]: /docs/apps/uaa/README.md
