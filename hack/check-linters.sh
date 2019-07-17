@@ -31,4 +31,4 @@ go vet ./...
 
 # Checking for misspelled words
 GO111MODULE=off go get -u github.com/client9/misspell/cmd/misspell
-$(go env GOPATH)/bin/misspell -error .
+find . -type f -name '*' | grep -v vendor/ | xargs -n1 $(go env GOPATH)/bin/misspell -error
