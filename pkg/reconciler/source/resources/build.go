@@ -70,6 +70,7 @@ func makeContainerImageBuild(source *v1alpha1.Source) (*build.Build, error) {
 				}),
 		},
 		Spec: build.BuildSpec{
+			ServiceAccountName: source.Spec.ServiceAccount,
 			Template: &build.TemplateInstantiationSpec{
 				Name:      containerImageTemplate,
 				Kind:      "ClusterBuildTemplate",
@@ -119,7 +120,8 @@ func makeBuildpackBuild(source *v1alpha1.Source) (*build.Build, error) {
 				}),
 		},
 		Spec: build.BuildSpec{
-			Source: buildSource,
+			Source:             buildSource,
+			ServiceAccountName: source.Spec.ServiceAccount,
 			Template: &build.TemplateInstantiationSpec{
 				Name:      buildpackBuildTemplate,
 				Kind:      "ClusterBuildTemplate",
@@ -132,7 +134,7 @@ func makeBuildpackBuild(source *v1alpha1.Source) (*build.Build, error) {
 
 // MakeBuild creates a Build for a Source.
 func MakeBuild(source *v1alpha1.Source) (*build.Build, error) {
-	if source.Spec.ContainerImage.Image != "" {
+	if source.Spec.IsContainerBuild() {
 		return makeContainerImageBuild(source)
 	} else {
 		return makeBuildpackBuild(source)

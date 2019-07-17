@@ -52,6 +52,7 @@ func ExampleMakeBuild() {
 	source.Name = "my-source"
 	source.Namespace = "my-namespace"
 	source.Generation = 5
+	source.Spec.ServiceAccount = "some-account"
 	source.Spec.BuildpackBuild.Source = "some-source"
 	source.Spec.BuildpackBuild.Registry = "some-registry"
 	source.Spec.BuildpackBuild.BuildpackBuilder = "some-buildpack-builder"
@@ -70,6 +71,7 @@ func ExampleMakeBuild() {
 	fmt.Println("Name:", BuildName(source))
 	fmt.Println("Label Count:", len(build.Labels))
 	fmt.Println("Managed By:", build.Labels[managedByLabel])
+	fmt.Println("Service Account:", build.Spec.ServiceAccountName)
 	fmt.Println("Arg Count:", len(build.Spec.Template.Arguments))
 	fmt.Println("Output Image:", build.Spec.Template.Arguments[0].Value)
 	fmt.Println("Env:", build.Spec.Template.Env[0].Name, "=", build.Spec.Template.Env[0].Value)
@@ -77,6 +79,7 @@ func ExampleMakeBuild() {
 	// Output: Name: my-source-5
 	// Label Count: 1
 	// Managed By: kf
+	// Service Account: some-account
 	// Arg Count: 3
 	// Output Image: some-registry/app-my-namespace-my-source:5
 	// Env: some = variable
