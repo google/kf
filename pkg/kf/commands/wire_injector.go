@@ -103,6 +103,11 @@ func InjectRestart(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
+func InjectRestage(p *config.KfParams) *cobra.Command {
+	wire.Build(capps.NewRestageCommand, AppsSet)
+	return nil
+}
+
 func InjectProxy(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		capps.NewProxyCommand,

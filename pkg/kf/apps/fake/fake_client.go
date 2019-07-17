@@ -157,6 +157,20 @@ func (mr *FakeClientMockRecorder) List(arg0 interface{}, arg1 ...interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*FakeClient)(nil).List), varargs...)
 }
 
+// Restage mocks base method
+func (m *FakeClient) Restage(arg0, arg1 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Restage", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Restage indicates an expected call of Restage
+func (mr *FakeClientMockRecorder) Restage(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Restage", reflect.TypeOf((*FakeClient)(nil).Restage), arg0, arg1)
+}
+
 // Restart mocks base method
 func (m *FakeClient) Restart(arg0, arg1 string) error {
 	m.ctrl.T.Helper()

@@ -64,6 +64,7 @@ func NewKfCommand() *cobra.Command {
 				InjectDelete(p),
 				InjectApps(p),
 				InjectRestart(p),
+				InjectRestage(p),
 				InjectScale(p),
 				InjectLogs(p),
 				InjectProxy(p),
