@@ -25,13 +25,13 @@ import (
 	v1alpha1fake "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1/fake"
 	"github.com/google/kf/pkg/kf/apps"
 	sourcesfake "github.com/google/kf/pkg/kf/sources/fake"
+	systemenvinjectorfake "github.com/google/kf/pkg/kf/systemenvinjector/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	ktesting "k8s.io/client-go/testing"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
-	systemenvinjectorfake "github.com/google/kf/pkg/kf/systemenvinjector/fake"
 )
 
 //go:generate mockgen --package apps_test --destination fake_watcher_test.go --mock_names=Interface=FakeWatcher --copyright_file ../internal/tools/option-builder/LICENSE_HEADER k8s.io/apimachinery/pkg/watch Interface
@@ -113,7 +113,7 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			}))
 
 			sourceClient := sourcesfake.NewFakeClient(ctrl)
-      seif := systemenvinjectorfake.NewFakeSystemEnvInjector(ctrl)
+			seif := systemenvinjectorfake.NewFakeSystemEnvInjector(ctrl)
 			lt := apps.NewClient(fakeApps, seif, sourceClient)
 
 			var buffer bytes.Buffer
