@@ -56,8 +56,8 @@ code-generator-gen() {
     "$KF_PACKAGE/pkg/client" \
     "$KF_PACKAGE/pkg/apis" \
     "$KF_RESOURCE" \
-    --go-header-file="$HEADER_FILE"
-    ${GENERATOR_FLAGS} \
+    --go-header-file="$HEADER_FILE" \
+    ${GENERATOR_FLAGS}
   [ $? -ne 0 ] && echo Error running code-generator 1>&2 && exit 1
 
   ${CODEGEN_PKG}/generate-groups.sh \
@@ -65,8 +65,8 @@ code-generator-gen() {
     "$KF_PACKAGE/pkg/client/build" \
     "github.com/knative/build/pkg/apis" \
     "$BUILD_RESOURCE" \
-    --go-header-file="$HEADER_FILE"
-    ${GENERATOR_FLAGS} \
+    --go-header-file="$HEADER_FILE" \
+    ${GENERATOR_FLAGS}
   [ $? -ne 0 ] && echo Error running code-generator 1>&2 && exit 1
 
   return 0
