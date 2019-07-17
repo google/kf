@@ -24,6 +24,8 @@ import (
 type pushConfig struct {
 	// Buildpack is skip the detect buildpack step and use the given name
 	Buildpack string
+	// ContainerImage is the container to deploy
+	ContainerImage string
 	// ContainerRegistry is the container registry's URL
 	ContainerRegistry string
 	// EnvironmentVariables is set environment variables
@@ -40,6 +42,8 @@ type pushConfig struct {
 	Output io.Writer
 	// ServiceAccount is the service account to authenticate with
 	ServiceAccount string
+	// SourceImage is the source code as a container image
+	SourceImage string
 }
 
 // PushOption is a single option for configuring a pushConfig
@@ -72,6 +76,12 @@ func (opts PushOptions) Extend(other PushOptions) PushOptions {
 // if not set.
 func (opts PushOptions) Buildpack() string {
 	return opts.toConfig().Buildpack
+}
+
+// ContainerImage returns the last set value for ContainerImage or the empty value
+// if not set.
+func (opts PushOptions) ContainerImage() string {
+	return opts.toConfig().ContainerImage
 }
 
 // ContainerRegistry returns the last set value for ContainerRegistry or the empty value
@@ -122,10 +132,23 @@ func (opts PushOptions) ServiceAccount() string {
 	return opts.toConfig().ServiceAccount
 }
 
+// SourceImage returns the last set value for SourceImage or the empty value
+// if not set.
+func (opts PushOptions) SourceImage() string {
+	return opts.toConfig().SourceImage
+}
+
 // WithPushBuildpack creates an Option that sets skip the detect buildpack step and use the given name
 func WithPushBuildpack(val string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.Buildpack = val
+	}
+}
+
+// WithPushContainerImage creates an Option that sets the container to deploy
+func WithPushContainerImage(val string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.ContainerImage = val
 	}
 }
 
@@ -182,6 +205,13 @@ func WithPushOutput(val io.Writer) PushOption {
 func WithPushServiceAccount(val string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.ServiceAccount = val
+	}
+}
+
+// WithPushSourceImage creates an Option that sets the source code as a container image
+func WithPushSourceImage(val string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.SourceImage = val
 	}
 }
 

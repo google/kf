@@ -194,8 +194,8 @@ func TestPushCommand(t *testing.T) {
 
 			fakePusher.
 				EXPECT().
-				Push(gomock.Any(), gomock.Any(), gomock.Any()).
-				DoAndReturn(func(appName, srcImage string, opts ...apps.PushOption) error {
+				Push(gomock.Any(), gomock.Any()).
+				DoAndReturn(func(appName string, opts ...apps.PushOption) error {
 					testutil.AssertEqual(t, "app name", tc.args[0], appName)
 
 					expectOpts := apps.PushOptions(tc.wantOpts)
@@ -209,9 +209,10 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "min scale bound", expectOpts.MinScale(), actualOpts.MinScale())
 					testutil.AssertEqual(t, "max scale bound", expectOpts.MaxScale(), actualOpts.MaxScale())
 
-					if !strings.HasPrefix(srcImage, tc.wantImagePrefix) {
-						t.Errorf("Wanted srcImage to start with %s got: %s", tc.wantImagePrefix, srcImage)
+					if !strings.HasPrefix(actualOpts.SourceImage(), tc.wantImagePrefix) {
+						t.Errorf("Wanted srcImage to start with %s got: %s", tc.wantImagePrefix, actualOpts.SourceImage())
 					}
+					testutil.AssertEqual(t, "containerImage", expectOpts.ContainerImage(), actualOpts.ContainerImage())
 
 					return tc.pusherErr
 				})

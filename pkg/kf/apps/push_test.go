@@ -32,10 +32,11 @@ func TestPush_Logs(t *testing.T) {
 	t.Parallel()
 
 	for tn, tc := range map[string]struct {
-		appName  string
-		srcImage string
-		wantErr  error
-		logErr   error
+		appName        string
+		srcImage       string
+		containerImage string
+		wantErr        error
+		logErr         error
 	}{
 		"fetching logs succeeds": {
 			appName:  "some-app",
@@ -75,7 +76,8 @@ func TestPush_Logs(t *testing.T) {
 
 			gotErr := p.Push(
 				tc.appName,
-				tc.srcImage,
+				apps.WithPushSourceImage(tc.srcImage),
+				apps.WithPushContainerImage(tc.containerImage),
 				apps.WithPushNamespace(expectedNamespace),
 				apps.WithPushContainerRegistry("some-container-registry"),
 				apps.WithPushServiceAccount("some-service-account"),
@@ -98,9 +100,9 @@ func TestPush(t *testing.T) {
 		assert    func(t *testing.T, err error)
 	}{
 		"pushes app to a configured namespace": {
-			appName:  "some-app",
-			srcImage: "some-image",
+			appName: "some-app",
 			opts: apps.PushOptions{
+				apps.WithPushSourceImage("some-image"),
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushContainerRegistry("some-reg.io"),
 				apps.WithPushServiceAccount("some-service-account"),
@@ -115,9 +117,9 @@ func TestPush(t *testing.T) {
 			},
 		},
 		"pushes app to default namespace": {
-			appName:  "some-app",
-			srcImage: "some-image",
+			appName: "some-app",
 			opts: apps.PushOptions{
+				apps.WithPushSourceImage("some-image"),
 				apps.WithPushContainerRegistry("some-reg.io"),
 				apps.WithPushServiceAccount("some-service-account"),
 			},
@@ -132,9 +134,9 @@ func TestPush(t *testing.T) {
 		},
 		"pushes app with buildpack": {
 			appName:   "some-app",
-			srcImage:  "some-image",
 			buildpack: "some-buildpack",
 			opts: apps.PushOptions{
+				apps.WithPushSourceImage("some-image"),
 				apps.WithPushContainerRegistry("some-reg.io"),
 				apps.WithPushServiceAccount("some-service-account"),
 				apps.WithPushBuildpack("some-buildpack"),
@@ -142,9 +144,9 @@ func TestPush(t *testing.T) {
 		},
 		"pushes app with proper Service config": {
 			appName:   "some-app",
-			srcImage:  "some-image",
 			buildpack: "some-buildpack",
 			opts: apps.PushOptions{
+				apps.WithPushSourceImage("some-image"),
 				apps.WithPushNamespace("myns"),
 				apps.WithPushContainerRegistry("some-reg.io"),
 				apps.WithPushServiceAccount("some-service-account"),
@@ -165,9 +167,9 @@ func TestPush(t *testing.T) {
 		},
 		"properly configures buildpackBuild source": {
 			appName:   "some-app",
-			srcImage:  "some-image",
 			buildpack: "some-buildpack",
 			opts: apps.PushOptions{
+				apps.WithPushSourceImage("some-image"),
 				apps.WithPushNamespace("default"),
 				apps.WithPushContainerRegistry("some-reg.io"),
 				apps.WithPushServiceAccount("some-service-account"),
@@ -187,9 +189,9 @@ func TestPush(t *testing.T) {
 		},
 		"pushes app with environment variables": {
 			appName:   "some-app",
-			srcImage:  "some-image",
 			buildpack: "some-buildpack",
 			opts: apps.PushOptions{
+				apps.WithPushSourceImage("some-image"),
 				apps.WithPushContainerRegistry("some-reg.io"),
 				apps.WithPushEnvironmentVariables(map[string]string{"ENV1": "val1", "ENV2": "val2"}),
 			},
@@ -208,9 +210,9 @@ func TestPush(t *testing.T) {
 			},
 		},
 		"deployer returns an error": {
-			appName:  "some-app",
-			srcImage: "some-image",
+			appName: "some-app",
 			opts: apps.PushOptions{
+				apps.WithPushSourceImage("some-image"),
 				apps.WithPushContainerRegistry("some-reg.io"),
 				apps.WithPushServiceAccount("some-service-account"),
 			},
@@ -222,8 +224,12 @@ func TestPush(t *testing.T) {
 			},
 		},
 		"set ports to h2c for gRPC": {
-			appName:  "some-app",
-			srcImage: "some-image",
+			appName: "some-app",
+			opts: apps.PushOptions{
+				apps.WithPushSourceImage("some-image"),
+				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushGrpc(true),
+			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
@@ -241,10 +247,6 @@ func TestPush(t *testing.T) {
 			},
 			assert: func(t *testing.T, err error) {
 				testutil.AssertNil(t, "err", err)
-			},
-			opts: apps.PushOptions{
-				apps.WithPushContainerRegistry("some-reg.io"),
-				apps.WithPushGrpc(true),
 			},
 		},
 	} {
@@ -270,7 +272,7 @@ func TestPush(t *testing.T) {
 			tc.setup(t, fakeApps)
 
 			p := apps.NewPusher(fakeApps)
-			gotErr := p.Push(tc.appName, tc.srcImage, tc.opts...)
+			gotErr := p.Push(tc.appName, tc.opts...)
 			tc.assert(t, gotErr)
 			if gotErr != nil {
 				return
