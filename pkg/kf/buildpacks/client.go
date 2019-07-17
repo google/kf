@@ -107,7 +107,7 @@ func (c *client) fetchConfig(builderImage string) (*gcrv1.ConfigFile, error) {
 		return nil, err
 	}
 
-	image, err := c.imageFetcher(imageRef, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+	image, err := c.imageFetcher(imageRef, remote.WithAuth(authn.Anonymous))
 	if err != nil {
 		return nil, err
 	}
