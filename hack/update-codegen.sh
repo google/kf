@@ -24,6 +24,7 @@ while getopts "v" opt; do
     v)
       set -x
       GENERATOR_FLAGS="-v 5 ${GENERATOR_FLAGS}"
+      shift
       ;;
   esac
 done
@@ -50,21 +51,25 @@ code-generator-gen() {
   mkdir -p $CODEGEN_PKG
   mv generate-groups.sh $CODEGEN_PKG/generate-groups.sh
 
-  ${CODEGEN_PKG}/generate-groups.sh all \
+  ${CODEGEN_PKG}/generate-groups.sh \
+    all \
     "$KF_PACKAGE/pkg/client" \
     "$KF_PACKAGE/pkg/apis" \
     "$KF_RESOURCE" \
-    --go-header-file="$HEADER_FILE" \
-    "${GENERATOR_FLAGS}"
+    ${GENERATOR_FLAGS} \
+    --go-header-file="$HEADER_FILE"
   [ $? -ne 0 ] && echo Error running code-generator 1>&2 && exit 1
 
-  ${CODEGEN_PKG}/generate-groups.sh "deepcopy,client,informer,lister" \
+  ${CODEGEN_PKG}/generate-groups.sh \
+    "deepcopy,client,informer,lister" \
     "$KF_PACKAGE/pkg/client/build" \
     "github.com/knative/build/pkg/apis" \
     "$BUILD_RESOURCE" \
-    --go-header-file="$HEADER_FILE" \
-    "${GENERATOR_FLAGS}"
+    ${GENERATOR_FLAGS} \
+    --go-header-file="$HEADER_FILE"
   [ $? -ne 0 ] && echo Error running code-generator 1>&2 && exit 1
+
+  return 0
 }
 
 knative-injection-gen() {
@@ -84,6 +89,7 @@ knative-injection-gen() {
     "github.com/google/kf/pkg/apis" \
     "kf:v1alpha1" \
     --go-header-file $HEADER_FILE
+  [ $? -ne 0 ] && echo Error running injection-generator 1>&2 && exit 1
 
   ${KNATIVE_CODEGEN_PKG}/generate-knative.sh \
     "injection" \
@@ -91,6 +97,9 @@ knative-injection-gen() {
     "github.com/knative/build/pkg/apis" \
     "build:v1alpha1" \
     --go-header-file $HEADER_FILE
+  [ $? -ne 0 ] && echo Error running injection-generator 1>&2 && exit 1
+
+  return 0
 }
 
 go mod vendor
@@ -109,3 +118,5 @@ case $GENS in
 esac
 
 gofmt -s -w .
+[ $? -ne 0 ] && echo Error running gofmt 1>&2 && exit 1
+exit 0
