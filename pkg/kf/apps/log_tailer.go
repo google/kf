@@ -51,7 +51,9 @@ func (a *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespa
 	defer cancel()
 
 	var once sync.Once
+	var sourceReadyOnce sync.Once
 	var deployStart time.Time
+	var tailErr error
 	for e := range ws.ResultChan() {
 		app := e.Object.(*v1alpha1.App)
 
@@ -65,10 +67,13 @@ func (a *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespa
 
 		switch sourceReady.Status {
 		case corev1.ConditionTrue:
-			duration := time.Now().Sub(start)
-			logger.Printf("Built in %0.2f seconds\n", duration.Seconds())
-			cancel()
-			deployStart = time.Now()
+			// Only handle source success case once
+			sourceReadyOnce.Do(func() {
+				duration := time.Now().Sub(start)
+				logger.Printf("Built in %0.2f seconds\n", duration.Seconds())
+				cancel()
+				deployStart = time.Now()
+			})
 		case corev1.ConditionFalse:
 			logger.Printf("Failed to build: %s\n", sourceReady.Message)
 			cancel()
@@ -76,12 +81,14 @@ func (a *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespa
 		default:
 			go once.Do(
 				func() {
-					if err := a.sourcesClient.Tail(ctx, namespace, app.Status.LatestCreatedSourceName, out); err != nil {
-						fmt.Println(err)
-					}
+					// ignoring tail errs because they are spurious
+					a.sourcesClient.Tail(ctx, namespace, app.Status.LatestCreatedSourceName, out)
 				},
 			)
 			continue
+		}
+		if tailErr != nil {
+			logger.Printf("Error tailing build logs: %s", tailErr)
 		}
 
 		appReady := app.Status.GetCondition(v1alpha1.AppConditionReady)
@@ -97,9 +104,8 @@ func (a *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespa
 			now := time.Now()
 			duration := now.Sub(start)
 			deployDuration := now.Sub(deployStart)
-			logger.Printf("Deployed took %0.2f seconds. Total time %0.2f seconds\n",
-				deployDuration.Seconds(),
-				duration.Seconds())
+			logger.Printf("App took %0.2f seconds to become ready.\n", deployDuration.Seconds())
+			logger.Printf("Total deploy time %0.2f seconds\n", duration.Seconds())
 			return nil
 		case corev1.ConditionFalse:
 			logger.Printf("Failed to deploy: %s\n", appReady.Message)
