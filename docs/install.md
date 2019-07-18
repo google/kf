@@ -113,11 +113,19 @@ kf target -s demo
 
 ## Push your first app
 
-Now you can deploy your first app using `kf`.
+Now you can deploy your first app using `kf`. We will use a sample app
+available in this repo:
+
+```.sh
+# If you haven't already downloaded the repo
+git clone https://github.com/google/kf
+cd kf/sample/apps/helloworld
+```
+
 Run the following command to push it:
 
 ```.sh
-kf push helloworld --container-registry $KF_REGISTRY
+kf push helloworld
 ```
 
 ## (Optional) Install a service broker
