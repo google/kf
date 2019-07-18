@@ -167,6 +167,13 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					return err
 				}
 
+				// Read environment variables from cli args
+				envVars, err := envutil.ParseCLIEnvVars(envs)
+				if err != nil {
+					return err
+				}
+				envMap := envutil.EnvVarsToMap(envVars)
+
 				var imageName string
 				if containerImage == "" {
 
@@ -182,13 +189,6 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 						}
 					}
 
-					// Read environment variables from cli args
-					envVars, err := envutil.ParseCLIEnvVars(envs)
-					if err != nil {
-						return err
-					}
-					envMap := envutil.EnvVarsToMap(envVars)
-
 					if app.Env == nil {
 						app.Env = make(map[string]string)
 					}
@@ -197,6 +197,8 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					for k, v := range envMap {
 						app.Env[k] = v
 					}
+
+					envMap = app.Env
 				}
 
 				err = pusher.Push(app.Name,
@@ -205,7 +207,7 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					apps.WithPushNamespace(p.Namespace),
 					apps.WithPushContainerRegistry(containerRegistry),
 					apps.WithPushServiceAccount(serviceAccount),
-					apps.WithPushEnvironmentVariables(app.Env),
+					apps.WithPushEnvironmentVariables(envMap),
 					apps.WithPushGrpc(grpc),
 					apps.WithPushBuildpack(buildpack),
 					apps.WithPushMinScale(minScale),
@@ -282,7 +284,6 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		"",
 		"The docker image to deploy.",
 	)
-	pushCmd.Flags().MarkHidden("docker-image")
 
 	pushCmd.Flags().StringVarP(
 		&manifestFile,

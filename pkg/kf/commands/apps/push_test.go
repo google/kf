@@ -195,6 +195,21 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushMaxScale(1),
 			},
 		},
+		"container image with env vars": {
+			namespace: "some-namespace",
+			args: []string{
+				"app-name",
+				"--docker-image", "some-image",
+				"--env", "WHATNOW=BROWNCOW",
+			},
+			wantOpts: []apps.PushOption{
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushContainerImage("some-image"),
+				apps.WithPushMinScale(1),
+				apps.WithPushMaxScale(1),
+				apps.WithPushEnvironmentVariables(map[string]string{"WHATNOW": "BROWNCOW"}),
+			},
+		},
 		"inavlid buildpack and container image": {
 			namespace: "some-namespace",
 			args: []string{
