@@ -1,11 +1,10 @@
-
 # Configuring Routes
 
 Some applications are useful without being accessible on the Internet, but most probably need to be available outside of the cluster at one or more HTTP endpoints. In Kf, this is the job of routes.
 
 By default, each application is accessible to other applications in the cluster at the internal URI: `app-name.space-name.cluser.internal`. You can use these URIs when you deploy one or more applications in a cluster that need to directly communicate with one another; they allow traffic to go directly from one app to another rather than out of the cluster and back. This makes communications more secure, faster, and guaranteed to use the service in the local cluster.
 
-If your app needs to be available outside of the cluster, you'll need to 
+If your app needs to be available outside of the cluster, you'll need to create routes for them.
 
 ## The Internal URI
 
@@ -115,8 +114,18 @@ NOTE: If no other routes exist for the given host domain pair then another space
 
 ### Declarative Routes in Your App Manifest
 
-Routes can be managed declaratively in your app manifest file.
+Routes can be managed declaratively in your app manifest file. They will be created if they do not yet exist.
+
+```.yaml
+---
+applications:
+- name: my-app
+  # ...
+  routes:
+  - route: example.com
+  - route: www.example.com/path
+  - route: tcp.example.com:1234
+```
 
 NOTE: declaring routes in your manifest file will only create new routes, it will not delete routes you
 created manually or as part of a previous push.
-
