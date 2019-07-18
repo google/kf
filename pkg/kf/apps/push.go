@@ -35,7 +35,7 @@ type pusher struct {
 // Pusher deploys applications.
 type Pusher interface {
 	// Push deploys an application.
-	Push(appName, srcImageName string, opts ...PushOption) error
+	Push(appName string, opts ...PushOption) error
 }
 
 // NewPusher creates a new Pusher.
@@ -45,7 +45,7 @@ func NewPusher(client Client) Pusher {
 	}
 }
 
-func newApp(appName, srcImage string, opts ...PushOption) (*v1alpha1.App, error) {
+func newApp(appName string, opts ...PushOption) (*v1alpha1.App, error) {
 
 	cfg := PushOptionDefaults().Extend(opts).toConfig()
 
@@ -59,7 +59,8 @@ func newApp(appName, srcImage string, opts ...PushOption) (*v1alpha1.App, error)
 	}
 
 	src := sources.NewKfSource()
-	src.SetBuildpackBuildSource(srcImage)
+	src.SetBuildpackBuildSource(cfg.SourceImage)
+	src.SetContainerImageSource(cfg.ContainerImage)
 	src.SetBuildpackBuildRegistry(cfg.ContainerRegistry)
 	src.SetBuildpackBuildEnv(envs)
 	src.SetBuildpackBuildBuildpack(cfg.Buildpack)
@@ -83,10 +84,10 @@ func newApp(appName, srcImage string, opts ...PushOption) (*v1alpha1.App, error)
 
 // Push deploys an application to Knative. It can be configured via
 // Optionapp.
-func (p *pusher) Push(appName, srcImage string, opts ...PushOption) error {
+func (p *pusher) Push(appName string, opts ...PushOption) error {
 	cfg := PushOptionDefaults().Extend(opts).toConfig()
 
-	app, err := newApp(appName, srcImage, opts...)
+	app, err := newApp(appName, opts...)
 	if err != nil {
 		return fmt.Errorf("failed to create app: %s", err)
 	}

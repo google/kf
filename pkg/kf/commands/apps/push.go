@@ -63,6 +63,7 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 	var (
 		containerRegistry string
 		sourceImage       string
+		containerImage    string
 		manifestFile      string
 		instances         int
 		serviceAccount    string
@@ -92,13 +93,27 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 				return err
 			}
 
+			if containerImage != "" {
+				if containerRegistry != "" {
+					return errors.New("cannot use --container-registry and --docker-image simultaneously")
+				}
+				if buildpack != "" {
+					return errors.New("cannot use --buildpack and --docker-image simultaneously")
+				}
+				if path != "." { // the default value
+					return errors.New("cannot use --path and --docker-image simultaneously")
+				}
+			}
+
 			switch {
 			case containerRegistry != "":
 				break
 			case space.Spec.BuildpackBuild.ContainerRegistry != "":
 				containerRegistry = space.Spec.BuildpackBuild.ContainerRegistry
 			default:
-				return errors.New("container-registry is required")
+				if containerImage == "" {
+					return errors.New("container-registry is required for buildpack apps")
+				}
 			}
 
 			cmd.SilenceUsage = true
@@ -152,20 +167,6 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					return err
 				}
 
-				var imageName string
-
-				srcPath := filepath.Join(path, app.Path)
-				switch {
-				case sourceImage != "":
-					imageName = sourceImage
-				default:
-					imageName = apps.JoinRepositoryImage(containerRegistry, apps.SourceImageName(p.Namespace, app.Name))
-
-					if err := b.BuildSrcImage(srcPath, imageName); err != nil {
-						return err
-					}
-				}
-
 				// Read environment variables from cli args
 				envVars, err := envutil.ParseCLIEnvVars(envs)
 				if err != nil {
@@ -173,20 +174,40 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 				}
 				envMap := envutil.EnvVarsToMap(envVars)
 
-				if app.Env == nil {
-					app.Env = make(map[string]string)
+				var imageName string
+				if containerImage == "" {
+
+					srcPath := filepath.Join(path, app.Path)
+					switch {
+					case sourceImage != "":
+						imageName = sourceImage
+					default:
+						imageName = apps.JoinRepositoryImage(containerRegistry, apps.SourceImageName(p.Namespace, app.Name))
+
+						if err := b.BuildSrcImage(srcPath, imageName); err != nil {
+							return err
+						}
+					}
+
+					if app.Env == nil {
+						app.Env = make(map[string]string)
+					}
+
+					// Merge cli arg environment variables over manifest ones
+					for k, v := range envMap {
+						app.Env[k] = v
+					}
+
+					envMap = app.Env
 				}
 
-				// Merge cli arg environment variables over manifest ones
-				for k, v := range envMap {
-					app.Env[k] = v
-				}
-
-				err = pusher.Push(app.Name, imageName,
+				err = pusher.Push(app.Name,
+					apps.WithPushSourceImage(imageName),
+					apps.WithPushContainerImage(containerImage),
 					apps.WithPushNamespace(p.Namespace),
 					apps.WithPushContainerRegistry(containerRegistry),
 					apps.WithPushServiceAccount(serviceAccount),
-					apps.WithPushEnvironmentVariables(app.Env),
+					apps.WithPushEnvironmentVariables(envMap),
 					apps.WithPushGrpc(grpc),
 					apps.WithPushBuildpack(buildpack),
 					apps.WithPushMinScale(minScale),
@@ -256,6 +277,13 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		"The kontext image that has the source code.",
 	)
 	pushCmd.Flags().MarkHidden("source-image")
+
+	pushCmd.Flags().StringVar(
+		&containerImage,
+		"docker-image",
+		"",
+		"The docker image to deploy.",
+	)
 
 	pushCmd.Flags().StringVarP(
 		&manifestFile,
