@@ -32,15 +32,16 @@ import (
 )
 
 const (
-	// EnvGcpProjectID is the environment variable used to store the GCP
-	// project ID for the integration tests. If this is not set, then the
-	// integration tests are skipped.
-	EnvGcpProjectID = "GCP_PROJECT_ID"
+	// EnvDockerRegistry is the environment variable used to store the
+	// registry we will push containers to for the integration tests. If this
+	// is not set, then the integration tests are skipped.
+	EnvDockerRegistry = "DOCKER_REGISTRY"
 )
 
-// GCPProjectID returns the configured GCP Project ID.
-func GCPProjectID() string {
-	return os.Getenv(EnvGcpProjectID)
+// DockerRegistry returns the configured docker registry for the integration
+// tests.
+func DockerRegistry() string {
+	return os.Getenv(EnvDockerRegistry)
 }
 
 // RunIntegrationTest skips the tests if testing.Short() is true (via --short
@@ -51,9 +52,9 @@ func RunIntegrationTest(t *testing.T, test func(ctx context.Context, t *testing.
 		t.Skip()
 	}
 
-	projID := os.Getenv(EnvGcpProjectID)
+	projID := os.Getenv(EnvDockerRegistry)
 	if projID == "" {
-		t.Skipf("%s is required for integration tests... Skipping...", EnvGcpProjectID)
+		t.Skipf("%s is required for integration tests... Skipping...", EnvDockerRegistry)
 	}
 
 	// Setup context that will allow us to cleanup if the user wants to
