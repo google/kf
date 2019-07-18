@@ -79,7 +79,7 @@ gcloud beta container clusters create $CLUSTER_NAME \
 ### Target your cluster:
 
 ```sh
-gcloud container clusters get-credentials $CLUSTER_NAME
+gcloud container clusters get-credentials $CLUSTER_NAME --zone $ZONE
 ```
 
 ### Next steps
