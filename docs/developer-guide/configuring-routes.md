@@ -20,7 +20,7 @@ Routes allow you to create vanity URLs on top of the internal URI.
 ## Route Capabilities
 
 Routes tell the cluster's ingress gateway where to deliver traffic and what to do if no apps are available on the given address.
-By default, if no app is available on a route and the route recieves a request it reutrns an [HTTP 503 status code](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503).
+By default, if no app is available on a route and the route receives a request it returns an [HTTP 503 status code](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503).
 
 Routes are comprised of three parts: host, domain, and path. For example in the URI `payroll.mydatacenter.example.com/login` 
 
@@ -64,7 +64,7 @@ Developers can create routes using the `kf create-route` command.
 # Create a route in the targeted space to match traffic for myapp.example.com/*
 $ kf create-route example.com --hostname myapp
 
-# Create a route in the space mysapce to match traffic for myapp.example.com/*
+# Create a route in the space myspace to match traffic for myapp.example.com/*
 $ kf create-route -n myspace example.com --hostname myapp
 
 # Create a route in the targeted space to match traffic for myapp.example.com/mypath*
