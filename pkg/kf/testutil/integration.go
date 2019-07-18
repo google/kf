@@ -45,7 +45,7 @@ func DockerRegistry() string {
 }
 
 // RunIntegrationTest skips the tests if testing.Short() is true (via --short
-// flag) or if GCP_PROJECT_ID is not set. Otherwise it runs the given test.
+// flag) or if DOCKER_REGISTRY is not set. Otherwise it runs the given test.
 func RunIntegrationTest(t *testing.T, test func(ctx context.Context, t *testing.T)) {
 	t.Helper()
 	if testing.Short() {
@@ -64,18 +64,29 @@ func RunIntegrationTest(t *testing.T, test func(ctx context.Context, t *testing.
 	// Give everything time to clean up.
 	defer time.Sleep(time.Second)
 	defer cancel()
+	CancelOnSignal(ctx, cancel, t.Log)
+	t.Log()
 
+	test(ctx, t)
+}
+
+// CancelOnSignal watches for a kill signal. If it gets one, it invokes the
+// cancel function. An aditional signal will exit the process. If the given context finishes, the underlying go-routine
+// finishes.
+func CancelOnSignal(ctx context.Context, cancel func(), log func(args ...interface{})) {
 	go func() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt, os.Kill)
-		<-c
-		t.Log("Signal received... Cleaning up... (Hit Ctrl-C again to quit immediately)")
-		cancel()
-		<-c
-		os.Exit(1)
+		select {
+		case <-c:
+			log("Signal received... Cleaning up... (Hit Ctrl-C again to quit immediately)")
+			cancel()
+			<-c
+			os.Exit(1)
+		case <-ctx.Done():
+			return
+		}
 	}()
-
-	test(ctx, t)
 }
 
 // KfTestConfig is a configuration for a Kf Test.
@@ -796,6 +807,37 @@ func (k *Kf) Routes(ctx context.Context) []string {
 		},
 	})
 	PanicOnError(ctx, k.t, "routes", errs)
+	return CombineOutputStr(ctx, k.t, output)
+}
+
+// CreateSpace runs the create-space command.
+func (k *Kf) CreateSpace(ctx context.Context, space string) []string {
+	k.t.Helper()
+	Logf(k.t, "running create-space...")
+	defer Logf(k.t, "done running create-space.")
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: []string{
+			"create-space",
+			"--container-registry", DockerRegistry(),
+			space,
+		},
+	})
+	PanicOnError(ctx, k.t, "create-space", errs)
+	return CombineOutputStr(ctx, k.t, output)
+}
+
+// DeleteSpace runs the create-space command.
+func (k *Kf) DeleteSpace(ctx context.Context, space string) []string {
+	k.t.Helper()
+	Logf(k.t, "running delete-space...")
+	defer Logf(k.t, "done running delete-space.")
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: []string{
+			"delete-space",
+			space,
+		},
+	})
+	PanicOnError(ctx, k.t, "delete-space", errs)
 	return CombineOutputStr(ctx, k.t, output)
 }
 
