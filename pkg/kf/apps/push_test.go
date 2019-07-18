@@ -209,6 +209,20 @@ func TestPush(t *testing.T) {
 					Return(&v1alpha1.App{}, nil)
 			},
 		},
+		"pushes a container image": {
+			appName: "some-app",
+			opts: apps.PushOptions{
+				apps.WithPushContainerImage("some-image"),
+			},
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
+				appsClient.EXPECT().
+					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
+						testutil.AssertEqual(t, "containerImage", "some-image", newObj.Spec.Source.ContainerImage.Image)
+					}).
+					Return(&v1alpha1.App{}, nil)
+			},
+		},
 		"deployer returns an error": {
 			appName: "some-app",
 			opts: apps.PushOptions{

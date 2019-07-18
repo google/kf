@@ -93,13 +93,28 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 				return err
 			}
 
+			if containerImage != "" {
+				if containerRegistry != "" {
+					return errors.New("cannot use --container-registry and --docker-image simultaneously")
+				}
+				if buildpack != "" {
+					return errors.New("cannot use --buildpack and --docker-image simultaneously")
+				}
+				// the defualt value
+				if path != "." {
+					return errors.New("cannot use --path and --docker-image simultaneously")
+				}
+			}
+
 			switch {
 			case containerRegistry != "":
 				break
 			case space.Spec.BuildpackBuild.ContainerRegistry != "":
 				containerRegistry = space.Spec.BuildpackBuild.ContainerRegistry
 			default:
-				return errors.New("container-registry is required")
+				if containerImage == "" {
+					return errors.New("container-registry is required for buildpack apps")
+				}
 			}
 
 			cmd.SilenceUsage = true

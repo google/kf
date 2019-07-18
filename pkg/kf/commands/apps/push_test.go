@@ -146,7 +146,7 @@ func TestPushCommand(t *testing.T) {
 		"container-registry is not provided": {
 			namespace: "some-namespace",
 			args:      []string{"app-name"},
-			wantErr:   errors.New("container-registry is required"),
+			wantErr:   errors.New("container-registry is required for buildpack apps"),
 		},
 		"container-registry comes from space": {
 			namespace: "some-namespace",
@@ -181,6 +181,46 @@ func TestPushCommand(t *testing.T) {
 				"--env", "invalid",
 			},
 			wantErr: errors.New("malformed environment variable: invalid"),
+		},
+		"container image": {
+			namespace: "some-namespace",
+			args: []string{
+				"app-name",
+				"--docker-image", "some-image",
+			},
+			wantOpts: []apps.PushOption{
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushContainerImage("some-image"),
+				apps.WithPushMinScale(1),
+				apps.WithPushMaxScale(1),
+			},
+		},
+		"inavlid buildpack and container image": {
+			namespace: "some-namespace",
+			args: []string{
+				"app-name",
+				"--docker-image", "some-image",
+				"--buildpack", "some-buildpack",
+			},
+			wantErr: errors.New("cannot use --buildpack and --docker-image simultaneously"),
+		},
+		"inavlid container registry and container image": {
+			namespace: "some-namespace",
+			args: []string{
+				"app-name",
+				"--docker-image", "some-image",
+				"--container-registry", "some-registry",
+			},
+			wantErr: errors.New("cannot use --container-registry and --docker-image simultaneously"),
+		},
+		"inavlid path and container image": {
+			namespace: "some-namespace",
+			args: []string{
+				"app-name",
+				"--docker-image", "some-image",
+				"--path", "some-path",
+			},
+			wantErr: errors.New("cannot use --path and --docker-image simultaneously"),
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
