@@ -50,7 +50,7 @@ func TestIntegration_Push(t *testing.T) {
 		// replies with the same body that was posted.
 		kf.Push(ctx, appName,
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
-			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
+			"--container-registry", DockerRegistry(),
 		)
 		defer kf.Delete(ctx, appName)
 
@@ -103,7 +103,7 @@ func TestIntegration_Push_manifest(t *testing.T) {
 		// Push an app with a manifest file.
 		kf.Push(ctx, appName,
 			"--path", appPath,
-			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
+			"--container-registry", DockerRegistry(),
 			"--manifest", newManifestFile,
 		)
 		defer kf.Delete(ctx, appName)
@@ -179,7 +179,7 @@ func TestIntegration_Delete(t *testing.T) {
 		// simplies replies with the same body that was posted.
 		kf.Push(ctx, appName,
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
-			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
+			"--container-registry", DockerRegistry(),
 		)
 
 		// This is only in place for cleanup if the test fails.
@@ -218,7 +218,7 @@ func TestIntegration_Envs(t *testing.T) {
 		// variables (ENV1 and ENV2).
 		kf.Push(ctx, appName,
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/envs"),
-			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
+			"--container-registry", DockerRegistry(),
 			"--env", "ENV1=VALUE1",
 			"--env=ENV2=VALUE2",
 		)
@@ -265,7 +265,7 @@ func TestIntegration_Logs(t *testing.T) {
 		// replies with the same body that was posted.
 		kf.Push(ctx, appName,
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
-			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
+			"--container-registry", DockerRegistry(),
 		)
 		defer kf.Delete(ctx, appName)
 
@@ -448,7 +448,7 @@ func TestIntegration_Push_Instances(t *testing.T) {
 		// replies with the same body that was posted.
 		kf.Push(ctx, appName,
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
-			"--container-registry", fmt.Sprintf("gcr.io/%s", GCPProjectID()),
+			"--container-registry", DockerRegistry(),
 			"--instances", "2",
 		)
 		defer kf.Delete(ctx, appName)
