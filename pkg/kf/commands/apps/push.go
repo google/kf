@@ -100,8 +100,7 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 				if buildpack != "" {
 					return errors.New("cannot use --buildpack and --docker-image simultaneously")
 				}
-				// the defualt value
-				if path != "." {
+				if path != "." { // the default value
 					return errors.New("cannot use --path and --docker-image simultaneously")
 				}
 			}
