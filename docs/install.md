@@ -73,12 +73,6 @@ nightly snapshot (note: it does not offer an upgrade path) with:
 kubectl apply -f https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/releases/release-latest.yaml
 ```
 
-You should be able to see an empty marketplace at this point by running:
-
-```.sh
-kf marketplace
-```
-
 ## Test your installation
 
 Your installation is set up and ready for use with `kf`.
@@ -137,6 +131,9 @@ You should be able to see an empty marketplace at this point by running.
 ```.sh
 kf marketplace
 ```
+
+> Note: This assumes you have already created and targeted a space as described
+in the previous section.
 
 ### Install Minibroker
 
