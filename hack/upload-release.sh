@@ -77,7 +77,7 @@ for os in $(echo linux darwin windows); do
   fi
 
   # Build
-  GOOS=${os} go build -o /tmp/${destination} "-X github.com/google/kf/pkg/kf/commands.Version=${hash}" ./cmd/kf
+  GOOS=${os} go build -o /tmp/${destination} --ldflags "-X github.com/google/kf/pkg/kf/commands.Version=${hash}" ./cmd/kf
 
   # Upload
   gsutil cp /tmp/${destination} ${CLI_RELEASE_BUCKET}/${destination}
