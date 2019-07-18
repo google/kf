@@ -143,6 +143,7 @@ func TestAppsCommand(t *testing.T) {
 				testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
 				return
 			}
+			testutil.AssertEqual(t, "SilenceUsage", true, c.SilenceUsage)
 
 			if tc.assert != nil {
 				tc.assert(t, buffer)

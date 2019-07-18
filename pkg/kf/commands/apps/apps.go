@@ -35,6 +35,7 @@ func NewAppsCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err
 			}
+			cmd.SilenceUsage = true
 
 			fmt.Fprintf(cmd.OutOrStdout(), "Getting apps in namespace: %s\n", p.Namespace)
 
