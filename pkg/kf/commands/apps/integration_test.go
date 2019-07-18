@@ -67,7 +67,7 @@ func TestIntegration_Push(t *testing.T) {
 		// for two reasons:
 		// 1. Test the proxy.
 		// 2. Tests work even if a domain isn't setup.
-		Logf(t, "hitting echo app to ensure its working...")
+		Logf(t, "hitting echo app to ensure it's working...")
 
 		// TODO: Use port 0 so that we don't have to worry about port
 		// collisions. This doesn't work yet:
@@ -80,7 +80,71 @@ func TestIntegration_Push(t *testing.T) {
 		data, err := ioutil.ReadAll(resp.Body)
 		AssertNil(t, "body error", err)
 		AssertEqual(t, "body", "testing", string(data))
-		Logf(t, "done hitting echo app to ensure its working.")
+		Logf(t, "done hitting echo app to ensure it's working.")
+	})
+}
+
+// TestIntegration_StopStart pushes the echo app and uses the proxy command
+// and then posts to it. It posts to it to ensure the app is ready. It then
+// stops it and ensures it can no longer reach the app. It then starts it and
+// tries posting to it again. It finally deletes the app.
+func TestIntegration_StopStart(t *testing.T) {
+	checkClusterStatus(t)
+	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+		appName := fmt.Sprintf("integration-push-%d", time.Now().UnixNano())
+
+		kf.Target(ctx, "default")
+
+		// Push an app and then clean it up. This pushes the echo app which
+		// replies with the same body that was posted.
+		kf.Push(ctx, appName,
+			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
+			"--container-registry", DockerRegistry(),
+		)
+		defer kf.Delete(ctx, appName)
+
+		// Hit the app via the proxy. This makes sure the app is handling
+		// traffic as expected and ensures the proxy works. We use the proxy
+		// for two reasons:
+		// 1. Test the proxy.
+		// 2. Tests work even if a domain isn't setup.
+		Logf(t, "hitting echo app to ensure it's working...")
+
+		// TODO: Use port 0 so that we don't have to worry about port
+		// collisions. This doesn't work yet:
+		// https://github.com/poy/kf/issues/46
+		go kf.Proxy(ctx, appName, 8085)
+
+		{
+			resp, respCancel := RetryPost(ctx, t, "http://localhost:8085", appTimeout, http.StatusOK, "testing")
+			defer resp.Body.Close()
+			defer respCancel()
+			Logf(t, "done hitting echo app to ensure it's working.")
+		}
+
+		Logf(t, "stoping echo app...")
+		kf.Stop(ctx, appName)
+		Logf(t, "done stopping echo app.")
+
+		{
+			Logf(t, "hitting echo app to ensure it's NOT working...")
+			resp, respCancel := RetryPost(ctx, t, "http://localhost:8085", appTimeout, http.StatusNotFound, "testing")
+			defer resp.Body.Close()
+			defer respCancel()
+			Logf(t, "done hitting echo app to ensure it's NOT working.")
+		}
+
+		Logf(t, "starting echo app...")
+		kf.Start(ctx, appName)
+		Logf(t, "done starting echo app.")
+
+		{
+			Logf(t, "hitting echo app to ensure it's working...")
+			resp, respCancel := RetryPost(ctx, t, "http://localhost:8085", appTimeout, http.StatusOK, "testing")
+			defer resp.Body.Close()
+			defer respCancel()
+			Logf(t, "done hitting echo app to ensure it's working.")
+		}
 	})
 }
 
@@ -466,7 +530,7 @@ func TestIntegration_Push_Instances(t *testing.T) {
 		// for two reasons:
 		// 1. Test the proxy.
 		// 2. Tests work even if a domain isn't setup.
-		Logf(t, "hitting echo app to ensure its working...")
+		Logf(t, "hitting echo app to ensure it's working...")
 
 		// TODO: Use port 0 so that we don't have to worry about port
 		// collisions. This doesn't work yet:
@@ -477,6 +541,6 @@ func TestIntegration_Push_Instances(t *testing.T) {
 		data, err := ioutil.ReadAll(resp.Body)
 		AssertNil(t, "body error", err)
 		AssertEqual(t, "body", "testing", string(data))
-		Logf(t, "done hitting echo app to ensure its working.")
+		Logf(t, "done hitting echo app to ensure it's working.")
 	})
 }
