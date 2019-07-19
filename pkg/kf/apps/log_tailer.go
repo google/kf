@@ -52,6 +52,8 @@ func (a *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespa
 		if err != nil {
 			return err
 		}
+		ws.Stop()
+
 		for e := range ws.ResultChan() {
 			app := e.Object.(*v1alpha1.App)
 
