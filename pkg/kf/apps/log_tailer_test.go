@@ -114,13 +114,6 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			}),
 			wantErr: errors.New("deployment failed: some-error"),
 		},
-		"watch fails, return error": {
-			appName:         "some-app",
-			namespace:       "default",
-			resourceVersion: "some-version",
-			events:          nil,
-			wantErr:         errors.New("lost connection to Kubernetes"),
-		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			ctrl, fakeApps := buildLogWatchFakes(
@@ -232,7 +225,8 @@ func buildLogWatchFakes(
 		ResultChan().
 		DoAndReturn(func() <-chan watch.Event {
 			return createEvents(serviceEvents)
-		})
+		}).
+		AnyTimes()
 
 	// Ensure Stop is invoked to clean up resources.
 	fakeWatcher.
