@@ -49,38 +49,57 @@ func TestIntegration_Push(t *testing.T) {
 		// replies with the same body that was posted.
 		kf.Push(ctx, appName,
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
-			"--container-registry", DockerRegistry(),
 		)
 		defer kf.Delete(ctx, appName)
-
-		// List the apps and make sure we can find a domain.
-		Logf(t, "ensuring app has domain...")
-		apps := kf.Apps(ctx)
-		if apps[appName].Domain == "" {
-			t.Fatalf("empty domain")
-		}
-		Logf(t, "done ensuring app has domain.")
-
-		// Hit the app via the proxy. This makes sure the app is handling
-		// traffic as expected and ensures the proxy works. We use the proxy
-		// for two reasons:
-		// 1. Test the proxy.
-		// 2. Tests work even if a domain isn't setup.
-		Logf(t, "hitting echo app to ensure it's working...")
-
-		// TODO: Use port 0 so that we don't have to worry about port
-		// collisions. This doesn't work yet:
-		// https://github.com/poy/kf/issues/46
-		go kf.Proxy(ctx, appName, 8080)
-		resp, respCancel := RetryPost(ctx, t, "http://localhost:8080", appTimeout, http.StatusOK, "testing")
-		defer resp.Body.Close()
-		defer respCancel()
-		AssertEqual(t, "status code", http.StatusOK, resp.StatusCode)
-		data, err := ioutil.ReadAll(resp.Body)
-		AssertNil(t, "body error", err)
-		AssertEqual(t, "body", "testing", string(data))
-		Logf(t, "done hitting echo app to ensure it's working.")
+		checkEchoApp(ctx, t, kf, appName, 8080)
 	})
+}
+
+// TestIntegration_Push_docker pushes the echo app via a prebuilt docker
+// image, lists it to ensure it can find a domain, uses the proxy command and
+// then posts to it. It finally deletes the app.
+func TestIntegration_Push_docker(t *testing.T) {
+	checkClusterStatus(t)
+	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+		appName := fmt.Sprintf("integration-push-%d", time.Now().UnixNano())
+
+		// Push an app and then clean it up. This pushes the echo app which
+		// replies with the same body that was posted.
+		kf.Push(ctx, appName,
+			"--docker-image=gcr.io/kf-releases/echo-app",
+		)
+		defer kf.Delete(ctx, appName)
+		checkEchoApp(ctx, t, kf, appName, 8086)
+	})
+}
+
+func checkEchoApp(ctx context.Context, t *testing.T, kf *Kf, appName string, proxyPort int) {
+	// List the apps and make sure we can find a domain.
+	Logf(t, "ensuring app has domain...")
+	apps := kf.Apps(ctx)
+	if apps[appName].Domain == "" {
+		t.Fatalf("empty domain")
+	}
+	Logf(t, "done ensuring app has domain.")
+
+	// Hit the app via the proxy. This makes sure the app is handling
+	// traffic as expected and ensures the proxy works. We use the proxy
+	// for two reasons:
+	// 1. Test the proxy.
+	// 2. Tests work even if a domain isn't setup.
+	Logf(t, "hitting echo app to ensure its working...")
+
+	// TODO: Use port 0 so that we don't have to worry about port collisions.
+	// This doesn't work yet: // https://github.com/poy/kf/issues/46
+	go kf.Proxy(ctx, appName, proxyPort)
+	resp, respCancel := RetryPost(ctx, t, fmt.Sprintf("http://localhost:%d", proxyPort), appTimeout, http.StatusOK, "testing")
+	defer resp.Body.Close()
+	defer respCancel()
+	AssertEqual(t, "status code", http.StatusOK, resp.StatusCode)
+	data, err := ioutil.ReadAll(resp.Body)
+	AssertNil(t, "body error", err)
+	AssertEqual(t, "body", "testing", string(data))
+	Logf(t, "done hitting echo app to ensure its working.")
 }
 
 // TestIntegration_StopStart pushes the echo app and uses the proxy command
