@@ -49,6 +49,7 @@ func (a *appsClient) DeployLogs(
 	var sourceReadyOnce sync.Once
 	var deployStart time.Time
 	for {
+		fmt.Println("starting the outer loop")
 		ws, err := a.kclient.Apps(namespace).Watch(k8smeta.ListOptions{
 			ResourceVersion: resourceVersion,
 			FieldSelector:   fields.OneTermEqualSelector("metadata.name", appName).String(),
@@ -57,7 +58,7 @@ func (a *appsClient) DeployLogs(
 		if err != nil {
 			return err
 		}
-		ws.Stop()
+		defer ws.Stop()
 
 		for e := range ws.ResultChan() {
 			app := e.Object.(*v1alpha1.App)
