@@ -156,23 +156,54 @@ type KfTest func(ctx context.Context, t *testing.T, kf *Kf)
 // the context.
 func RunKfTest(t *testing.T, test KfTest) {
 	t.Helper()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	CancelOnSignal(ctx, cancel, t.Log)
+	kfPath := CompileKf(ctx, t)
+
 	RunIntegrationTest(t, func(ctx context.Context, t *testing.T) {
 		t.Helper()
-		kfPath := CompileKf(ctx, t)
 
 		kf := KF(t, func(ctx context.Context, t *testing.T, cfg KfTestConfig) (KfTestOutput, <-chan error) {
 			return kf(ctx, t, kfPath, cfg)
 		})
 
+		// Create the space
+		spaceName := fmt.Sprintf("apps-integration-test-%d", time.Now().UnixNano())
+		kf.CreateSpace(ctx, spaceName)
+		defer kf.DeleteSpace(ctx, spaceName)
+
+		// Wait for space to become ready
+		RetryOnPanic(ctx, t, func() {
+			for _, s := range kf.Spaces(ctx) {
+				fmt.Println(s)
+				if strings.HasPrefix(s, spaceName) {
+					return
+				}
+			}
+			panic("did not find space " + spaceName)
+		})
+
+		ctx = ContextWithSpace(ctx, spaceName)
+
 		test(ctx, t, kf)
 	})
 }
+
+var (
+	compileKfOnce sync.Once
+	compiledKf    string
+)
 
 // CompileKf compiles the `kf` binary. It returns a string to the resulting
 // binary.
 func CompileKf(ctx context.Context, t *testing.T) string {
 	t.Helper()
-	return Compile(ctx, t, "./cmd/kf")
+	compileKfOnce.Do(func() {
+		t.Helper()
+		compiledKf = Compile(ctx, t, "./cmd/kf")
+	})
+	return compiledKf
 }
 
 // Compile compiles a path in the repo. It returns a path to the resulting
@@ -440,6 +471,7 @@ func (k *Kf) CreateQuota(ctx context.Context, quotaName string, extraArgs ...str
 
 	args := []string{
 		"create-quota",
+		"--namespace", SpaceFromContext(ctx),
 		quotaName,
 	}
 
@@ -455,7 +487,10 @@ func (k *Kf) Quotas(ctx context.Context) ([]string, error) {
 	Logf(k.t, "listing quotas...")
 	defer Logf(k.t, "done listing quotas.")
 	output, err := k.kf(ctx, k.t, KfTestConfig{
-		Args: []string{"quotas"},
+		Args: []string{
+			"quotas",
+			"--namespace", SpaceFromContext(ctx),
+		},
 	})
 
 	return CombineOutputStr(ctx, k.t, output), <-err
@@ -469,6 +504,7 @@ func (k *Kf) DeleteQuota(ctx context.Context, quotaName string) ([]string, error
 	output, err := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"delete-quota",
+			"--namespace", SpaceFromContext(ctx),
 			quotaName,
 		},
 	})
@@ -483,6 +519,7 @@ func (k *Kf) GetQuota(ctx context.Context, quotaName string) ([]string, error) {
 	output, err := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"quota",
+			"--namespace", SpaceFromContext(ctx),
 			quotaName,
 		},
 	})
@@ -498,6 +535,7 @@ func (k *Kf) UpdateQuota(ctx context.Context, quotaName string, extraArgs ...str
 
 	args := []string{
 		"update-quota",
+		"--namespace", SpaceFromContext(ctx),
 		quotaName,
 	}
 
@@ -516,6 +554,7 @@ func (k *Kf) Push(ctx context.Context, appName string, extraArgs ...string) {
 
 	args := []string{
 		"push",
+		"--namespace", SpaceFromContext(ctx),
 		appName,
 	}
 
@@ -534,6 +573,7 @@ func (k *Kf) Logs(ctx context.Context, appName string, extraArgs ...string) <-ch
 
 	args := []string{
 		"logs",
+		"--namespace", SpaceFromContext(ctx),
 		appName,
 	}
 
@@ -558,7 +598,10 @@ func (k *Kf) Apps(ctx context.Context) map[string]AppInfo {
 	defer Logf(k.t, "done listing apps.")
 	k.t.Helper()
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
-		Args: []string{"apps"},
+		Args: []string{
+			"apps",
+			"--namespace", SpaceFromContext(ctx),
+		},
 	})
 	PanicOnError(ctx, k.t, "apps", errs)
 	apps := CombineOutputStr(ctx, k.t, output)
@@ -602,6 +645,7 @@ func (k *Kf) Delete(ctx context.Context, appName string) {
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"delete",
+			"--namespace", SpaceFromContext(ctx),
 			appName,
 		},
 	})
@@ -647,6 +691,7 @@ func (k *Kf) Proxy(ctx context.Context, appName string, port int) {
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"proxy",
+			"--namespace", SpaceFromContext(ctx),
 			appName,
 			fmt.Sprintf("--port=%d", port),
 		},
@@ -663,6 +708,7 @@ func (k *Kf) SetEnv(ctx context.Context, appName, name, value string) {
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"set-env",
+			"--namespace", SpaceFromContext(ctx),
 			appName,
 			name,
 			value,
@@ -680,6 +726,7 @@ func (k *Kf) UnsetEnv(ctx context.Context, appName, name string) {
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"unset-env",
+			"--namespace", SpaceFromContext(ctx),
 			appName,
 			name,
 		},
@@ -696,6 +743,7 @@ func (k *Kf) Env(ctx context.Context, appName string) map[string]string {
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"env",
+			"--namespace", SpaceFromContext(ctx),
 			appName,
 		},
 	})
@@ -740,6 +788,7 @@ func (k *Kf) Buildpacks(ctx context.Context) []string {
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"buildpacks",
+			"--namespace", SpaceFromContext(ctx),
 		},
 	})
 	PanicOnError(ctx, k.t, "buildpacks", errs)
@@ -754,6 +803,7 @@ func (k *Kf) Stacks(ctx context.Context) []string {
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"stacks",
+			"--namespace", SpaceFromContext(ctx),
 		},
 	})
 	PanicOnError(ctx, k.t, "stacks", errs)
@@ -768,6 +818,7 @@ func (k *Kf) CreateRoute(ctx context.Context, domain string, extraArgs ...string
 
 	args := []string{
 		"create-route",
+		"--namespace", SpaceFromContext(ctx),
 		domain,
 	}
 
@@ -786,6 +837,7 @@ func (k *Kf) DeleteRoute(ctx context.Context, domain string, extraArgs ...string
 
 	args := []string{
 		"delete-route",
+		"--namespace", SpaceFromContext(ctx),
 		domain,
 	}
 
@@ -804,6 +856,7 @@ func (k *Kf) Routes(ctx context.Context) []string {
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"routes",
+			"--namespace", SpaceFromContext(ctx),
 		},
 	})
 	PanicOnError(ctx, k.t, "routes", errs)
@@ -841,6 +894,20 @@ func (k *Kf) DeleteSpace(ctx context.Context, space string) []string {
 	return CombineOutputStr(ctx, k.t, output)
 }
 
+// Spaces returns all the spaces from `kf spaces`
+func (k *Kf) Spaces(ctx context.Context) []string {
+	Logf(k.t, "listing spaces...")
+	defer Logf(k.t, "done listing spaces.")
+	k.t.Helper()
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: []string{
+			"spaces",
+		},
+	})
+	PanicOnError(ctx, k.t, "spaces", errs)
+	return CombineOutputStr(ctx, k.t, output)
+}
+
 // Target runs the target command.
 func (k *Kf) Target(ctx context.Context, namespace string) []string {
 	k.t.Helper()
@@ -855,4 +922,14 @@ func (k *Kf) Target(ctx context.Context, namespace string) []string {
 	})
 	PanicOnError(ctx, k.t, "target", errs)
 	return CombineOutputStr(ctx, k.t, output)
+}
+
+type spaceKey struct{}
+
+func ContextWithSpace(ctx context.Context, space string) context.Context {
+	return context.WithValue(ctx, spaceKey{}, space)
+}
+
+func SpaceFromContext(ctx context.Context) string {
+	return ctx.Value(spaceKey{}).(string)
 }

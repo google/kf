@@ -40,11 +40,9 @@ const (
 // domain, uses the proxy command and then posts to it. It finally deletes the
 // app.
 func TestIntegration_Push(t *testing.T) {
+	t.Parallel()
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
-		deleteSpace := setupSpace(ctx, t, kf)
-		defer deleteSpace()
-
 		appName := fmt.Sprintf("integration-push-%d", time.Now().UnixNano())
 
 		// Push an app and then clean it up. This pushes the echo app which
@@ -90,6 +88,7 @@ func TestIntegration_Push(t *testing.T) {
 // stops it and ensures it can no longer reach the app. It then starts it and
 // tries posting to it again. It finally deletes the app.
 func TestIntegration_StopStart(t *testing.T) {
+	t.Parallel()
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		appName := fmt.Sprintf("integration-push-%d", time.Now().UnixNano())
@@ -153,10 +152,9 @@ func TestIntegration_StopStart(t *testing.T) {
 // file. The app is identical to the echo app, and this fact is used to also
 // test manifest file environment variables. It finally deletes the app.
 func TestIntegration_Push_manifest(t *testing.T) {
+	t.Parallel()
+	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
-		deleteSpace := setupSpace(ctx, t, kf)
-		defer deleteSpace()
-
 		currentTime := time.Now().UnixNano()
 		appName := fmt.Sprintf("integration-manifest-%d", currentTime)
 		appPath := filepath.Join(RootDir(ctx, t), "samples", "apps", "manifest")
@@ -235,11 +233,9 @@ func copyManifest(appName, appPath string, currentTime int64) (string, func(), e
 // TestIntegration_Delete pushes an app and then deletes it. It then makes
 // sure it is marked as "Deleting".
 func TestIntegration_Delete(t *testing.T) {
+	t.Parallel()
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
-		deleteSpace := setupSpace(ctx, t, kf)
-		defer deleteSpace()
-
 		appName := fmt.Sprintf("integration-delete-%d", time.Now().UnixNano())
 
 		// Push an app and then clean it up. This pushes the echo app which
@@ -274,11 +270,9 @@ func TestIntegration_Delete(t *testing.T) {
 // pushing, and another via SetEnv. It then reads them via Env. It then unsets
 // one via Unset and reads them again via Env.
 func TestIntegration_Envs(t *testing.T) {
+	t.Parallel()
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
-		deleteSpace := setupSpace(ctx, t, kf)
-		defer deleteSpace()
-
 		appName := fmt.Sprintf("integration-envs-%d", time.Now().UnixNano())
 
 		// Push an app and then clean it up. This pushes the envs app which
@@ -323,11 +317,9 @@ func TestIntegration_Envs(t *testing.T) {
 // it's logs and then posts to it. It then waits for the expected logs. It
 // finally deletes the app.
 func TestIntegration_Logs(t *testing.T) {
+	t.Parallel()
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
-		deleteSpace := setupSpace(ctx, t, kf)
-		defer deleteSpace()
-
 		appName := fmt.Sprintf("integration-logs-%d", time.Now().UnixNano())
 
 		// Push an app and then clean it up. This pushes the echo app which
@@ -382,11 +374,9 @@ func TestIntegration_Logs(t *testing.T) {
 // reasonable amount of time when logging an application that doesn't have a
 // container (scaled to 0).
 func TestIntegration_LogsNoContainer(t *testing.T) {
+	t.Parallel()
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
-		deleteSpace := setupSpace(ctx, t, kf)
-		defer deleteSpace()
-
 		appName := fmt.Sprintf("integration-logs-noc-%d", time.Now().UnixNano())
 
 		output := kf.Logs(ctx, appName)
@@ -494,11 +484,9 @@ func checkVars(ctx context.Context, t *testing.T, kf *Kf, appName string, proxyP
 // instances, lists it to ensure it can find a domain, uses the proxy command
 // and then posts to it. It finally deletes the app.
 func TestIntegration_Push_Instances(t *testing.T) {
+	t.Parallel()
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
-		deleteSpace := setupSpace(ctx, t, kf)
-		defer deleteSpace()
-
 		appName := fmt.Sprintf("integration-push-instances-%d", time.Now().UnixNano())
 
 		// Push an app and then clean it up. This pushes the echo app which
@@ -536,15 +524,6 @@ func TestIntegration_Push_Instances(t *testing.T) {
 		AssertEqual(t, "body", "testing", string(data))
 		Logf(t, "done hitting echo app to ensure it's working.")
 	})
-}
-
-func setupSpace(ctx context.Context, t *testing.T, kf *Kf) func() {
-	spaceName := fmt.Sprintf("apps-integration-test-%d", time.Now().UnixNano())
-	kf.CreateSpace(ctx, spaceName)
-	kf.Target(ctx, spaceName)
-	return func() {
-		kf.DeleteSpace(ctx, spaceName)
-	}
 }
 
 var checkOnce sync.Once
