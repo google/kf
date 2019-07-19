@@ -54,6 +54,7 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 		buildpack         string
 		envs              []string
 		grpc              bool
+		routes            []string
 	)
 
 	var pushCmd = &cobra.Command{
