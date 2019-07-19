@@ -19,7 +19,7 @@
 set -eu
 
 # gofmt -s -d
-GOFMT_DIFF=$(IFS=$'\n' gofmt -s -d $( find . -type f -name '*.go' ) )
+GOFMT_DIFF=$(IFS=$'\n' gofmt -s -d $( find . -type f -name '*.go' | grep -v \./vendor/) )
 if [ -n "${GOFMT_DIFF}" ]; then
     echo "${GOFMT_DIFF}"
     echo
@@ -31,4 +31,6 @@ go vet ./...
 
 # Checking for misspelled words
 GO111MODULE=off go get -u github.com/client9/misspell/cmd/misspell
-$(go env GOPATH)/bin/misspell -error .
+
+# ignore vendor directory
+find . -type f -name '*' | grep -v ./vendor/ | xargs -n1 -P 20 $(go env GOPATH)/bin/misspell -error

@@ -19,11 +19,13 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
 	"github.com/google/kf/pkg/reconciler"
 	"github.com/google/kf/pkg/reconciler/app/resources"
+	"github.com/knative/serving/pkg/apis/autoscaling"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	servinglisters "github.com/knative/serving/pkg/client/listers/serving/v1alpha1"
 	"go.uber.org/zap"
@@ -40,10 +42,11 @@ import (
 type Reconciler struct {
 	*reconciler.Base
 
-	knativeServiceLister servinglisters.ServiceLister
-	sourceLister         kflisters.SourceLister
-	appLister            kflisters.AppLister
-	spaceLister          kflisters.SpaceLister
+	knativeServiceLister  servinglisters.ServiceLister
+	knativeRevisionLister servinglisters.RevisionLister
+	sourceLister          kflisters.SourceLister
+	appLister             kflisters.AppLister
+	spaceLister           kflisters.SpaceLister
 }
 
 // Check that our Reconciler implements controller.Reconciler
@@ -133,6 +136,12 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		}
 
 		app.Status.PropagateSourceStatus(actual)
+
+		if condition.IsPending() {
+			r.Logger.Info("Waiting for source; exiting early")
+			return nil
+		}
+
 	}
 
 	// TODO(josephlewis42) we should grab info to create the VCAP_SERVICES
@@ -168,7 +177,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 	// Making it to the bottom of the reconciler means we've synchronized.
 	app.Status.ObservedGeneration = app.Generation
 
-	return nil
+	return r.gcRevisions(ctx, app)
 }
 
 func (r *Reconciler) latestSource(app *v1alpha1.App) (*v1alpha1.Source, error) {
@@ -240,4 +249,61 @@ func (r *Reconciler) updateStatus(desired *v1alpha1.App) (*v1alpha1.App, error) 
 	existing.Status = desired.Status
 
 	return r.KfClientSet.KfV1alpha1().Apps(existing.GetNamespace()).UpdateStatus(existing)
+}
+
+// gcRevisions is necessary because Knative won't scale down revisions
+// that have a `minScale` greater than 0. Therefore we are going to delete the
+// older revisions. The revisions are keeping pods around when app has been
+// scaled up. Therefore, if we don't GC the revisions, we leak pods.
+// TODO: Reevaluate once https://github.com/knative/serving/issues/4183 is
+// resolved.
+func (r *Reconciler) gcRevisions(ctx context.Context, app *v1alpha1.App) error {
+	r.Logger.Debugf("Checking for revisions that need to adjust %s...", autoscaling.MinScaleAnnotationKey)
+	defer r.Logger.Debugf("Done checking for revisions that need to adjust %s.", autoscaling.MinScaleAnnotationKey)
+
+	if app.Status.LatestCreatedRevisionName != app.Status.LatestReadyRevisionName {
+		r.Logger.Debugf("Not willing to garbage collection Revisions while the latest is not ready...")
+		return nil
+	}
+
+	selector := labels.Set{"serving.knative.dev/configuration": app.Name}.AsSelector()
+	revs, err := r.knativeRevisionLister.Revisions(app.Namespace).List(selector)
+	if err != nil {
+		return err
+	}
+
+	if len(revs) == 0 {
+		return nil
+	}
+
+	revisionClient := r.ServingClientSet.ServingV1alpha1().Revisions(app.Namespace)
+
+	parseGeneration := func(rev *serving.Revision) int64 {
+		v, ok := rev.Labels["serving.knative.dev/configurationGeneration"]
+		if !ok {
+			r.Logger.Warnf("Revision did not contain ConfigurationGeneration")
+			return -1
+		}
+
+		x, err := strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			r.Logger.Warnf("Revision had an invalid ConfigurationGeneration: %s", err)
+			return -1
+		}
+		return x
+	}
+
+	// descending
+	sort.Slice(revs, func(i int, j int) bool {
+		return parseGeneration(revs[j]) < parseGeneration(revs[i])
+	})
+
+	// delete everything after the latest generation
+	for _, rev := range revs[1:] {
+		r.Logger.Infof("Garbage collecting Revision %s...", rev.Name)
+		if err := revisionClient.Delete(rev.Name, &metav1.DeleteOptions{}); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -73,12 +73,6 @@ nightly snapshot (note: it does not offer an upgrade path) with:
 kubectl apply -f https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/releases/release-latest.yaml
 ```
 
-You should be able to see an empty marketplace at this point by running:
-
-```.sh
-kf marketplace
-```
-
 ## Test your installation
 
 Your installation is set up and ready for use with `kf`.
@@ -119,11 +113,19 @@ kf target -s demo
 
 ## Push your first app
 
-Now you can deploy your first app using `kf`.
+Now you can deploy your first app using `kf`. We will use a sample app
+available in this repo:
+
+```.sh
+# If you haven't already downloaded the repo
+git clone https://github.com/google/kf
+cd kf/sample/apps/helloworld
+```
+
 Run the following command to push it:
 
 ```.sh
-kf push helloworld --container-registry $KF_REGISTRY
+kf push helloworld
 ```
 
 ## (Optional) Install a service broker
@@ -137,6 +139,11 @@ You should be able to see an empty marketplace at this point by running.
 ```.sh
 kf marketplace
 ```
+
+> Note: This assumes you have already created and targeted a space as described
+in the previous section.
+
+### Install Minibroker
 
 Most Cloud Foundry service brokers comply with the OSB specification.
 The following steps will guide you through installing a broker called

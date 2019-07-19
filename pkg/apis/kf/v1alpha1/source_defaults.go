@@ -44,6 +44,7 @@ func (k *SourceSpec) SetSpaceDefaults(space *Space) {
 			k.BuildpackBuild.Registry = space.Spec.BuildpackBuild.ContainerRegistry
 		}
 
-		k.BuildpackBuild.Env = space.Spec.BuildpackBuild.Env
+		// user defined values in buildpackbuild.env take priority from buildpackbuild.env
+		k.BuildpackBuild.Env = append(space.Spec.BuildpackBuild.Env, k.BuildpackBuild.Env...)
 	}
 }

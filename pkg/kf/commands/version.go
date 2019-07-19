@@ -12,9 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package apps provides a cf compatible way of managing Knative Services as
-// cf apps.
-package kfapps
+package commands
 
-//go:generate go run ../internal/tools/option-builder/option-builder.go --pkg kfapps ../internal/tools/clientgen/common-options.yml zz_generated.clientoptions.go
-//go:generate go run ../internal/tools/clientgen/genclient.go client.yml
+import (
+	"fmt"
+
+	"github.com/spf13/cobra"
+)
+
+// NewVersionCommand returns a command that displays the version.
+func NewVersionCommand(version, goos string) *cobra.Command {
+	return &cobra.Command{
+		Use:     "version",
+		Short:   "Display the CLI version",
+		Example: `  kf version`,
+		Args:    cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Fprintln(cmd.OutOrStdout(), "kf version", version, goos)
+			return nil
+		},
+	}
+}
+
+// Version is filled in via ldflags.
+var Version = "dev"

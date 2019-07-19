@@ -15,8 +15,8 @@
 package cfutil
 
 import (
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/internal/envutil"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -28,18 +28,18 @@ const (
 
 // CreateVcapApplication creates a VCAP_APPLICATION style environment variable
 // based on the values on the given service.
-func CreateVcapApplication(svc *serving.Service) (corev1.EnvVar, error) {
+func CreateVcapApplication(app *v1alpha1.App) (corev1.EnvVar, error) {
 	// You can find a list of values here:
 	// https://docs.run.pivotal.io/devguide/deploy-apps/environment-variable.html
 
 	// XXX: The values here are incomplete but are currently the best we can do.
 	values := map[string]interface{}{
 		// application_name The name assigned to the app when it was pushed.
-		"application_name": svc.Name,
+		"application_name": app.Name,
 		// name Identical to application_name.
-		"name": svc.Name,
+		"name": app.Name,
 		// space_name	Human-readable name of the space where the app is deployed.
-		"space_name": svc.Namespace,
+		"space_name": app.Namespace,
 	}
 
 	return envutil.NewJSONEnvVar(VcapApplicationEnvVarName, values)

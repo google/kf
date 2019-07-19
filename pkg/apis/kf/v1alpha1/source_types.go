@@ -46,6 +46,11 @@ type SourceSpec struct {
 	// +optional
 	UpdateRequests int `json:"updateRequests,omitempty"`
 
+	// ServiceAccount holds the service account the build will execute as.
+	// This can be used to attach credentials to the build.
+	// +optional
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+
 	// ContainerImage defines the container image for source.
 	// +optional
 	ContainerImage SourceSpecContainerImage `json:"containerImage,omitempty"`

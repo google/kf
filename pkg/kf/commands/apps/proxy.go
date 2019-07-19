@@ -39,7 +39,7 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister k
 
 	var proxy = &cobra.Command{
 		Use:     "proxy APP_NAME",
-		Short:   "Creates a proxy to an app on a local port.",
+		Short:   "Creates a proxy to an app on a local port",
 		Example: `  kf proxy myapp`,
 		Long: `
 	This command creates a local proxy to a remote gateway modifying the request
@@ -57,6 +57,16 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister k
 
 			cmd.SilenceUsage = true
 
+			app, err := appsClient.Get(p.Namespace, appName)
+			if err != nil {
+				return err
+			}
+
+			url := app.Status.URL
+			if url == nil {
+				return fmt.Errorf("No route for app %s", appName)
+			}
+
 			if gateway == "" {
 				fmt.Fprintln(cmd.OutOrStdout(), "Autodetecting app gateway. Specify a custom gateway using the --gateway flag.")
 
@@ -67,17 +77,25 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister k
 				gateway = ingress
 			}
 
-			app, err := appsClient.Get(p.Namespace, appName)
-			if err != nil {
-				return err
-			}
-
 			listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 			if err != nil {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Forwarding requests from http://%s to http://%s\n", listener.Addr(), gateway)
+			appHost := url.Host
+
+			w := cmd.OutOrStdout()
+			fmt.Fprintf(w, "Forwarding requests from %s to %s with host %s\n", listener.Addr(), gateway, appHost)
+			fmt.Fprintln(w, "Example GET:")
+			fmt.Fprintf(w, "  curl -H \"Host: %s\" http://%s\n", appHost, gateway)
+			fmt.Fprintln(w, "Example POST:")
+			fmt.Fprintf(w, "  curl --request POST -H \"Host: %s\" http://%s --data \"POST data\"\n", appHost, gateway)
+			fmt.Fprintln(w, "Browser link:")
+			fmt.Fprintf(w, "  http://%s\n", listener.Addr())
+
+			fmt.Fprintln(w)
+
+			fmt.Fprintln(w, "\033[33mNOTE: the first request may take some time if the app is scaled to zero\033[0m")
 
 			if noStart {
 				fmt.Fprintln(cmd.OutOrStdout(), "exiting because no-start flag was provided")
@@ -115,6 +133,7 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister k
 
 func createProxy(w io.Writer, appHost, gateway string) *httputil.ReverseProxy {
 	logger := log.New(w, fmt.Sprintf("\033[34m[%s via %s]\033[0m ", appHost, gateway), log.Ltime)
+
 	return &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.Host = appHost

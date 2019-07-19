@@ -16,20 +16,19 @@ package apps
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	"github.com/google/kf/pkg/kf/kfapps"
 	"github.com/spf13/cobra"
 )
 
 // NewScaleCommand creates a command capable of scaling an app.
 func NewScaleCommand(
 	p *config.KfParams,
-	client kfapps.Client,
+	client apps.Client,
 ) *cobra.Command {
 	var (
 		instances    int
@@ -39,8 +38,9 @@ func NewScaleCommand(
 
 	var scale = &cobra.Command{
 		Use:   "scale APP_NAME",
-		Short: "Change the instance count for an app.",
+		Short: "Change or view the instance count for an app",
 		Example: `
+  kf scale myapp # Displays current scaling
   kf scale myapp --i 3 # Scale to exactly 3 instances
   kf scale myapp --instances 3 # Scale to exactly 3 instances
   kf scale myapp --min 3 # Autoscaler won't scale below 3 instances
@@ -52,14 +52,22 @@ func NewScaleCommand(
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err
 			}
-
-			if instances < 0 && autoscaleMin < 0 && autoscaleMax < 0 {
-				return errors.New("--instances, --min, or --max flag are required")
-			}
+			cmd.SilenceUsage = true
 
 			appName := args[0]
 
-			cmd.SilenceUsage = true
+			if instances < 0 && autoscaleMin < 0 && autoscaleMax < 0 {
+				// Display current scaling properties.
+				app, err := client.Get(p.Namespace, appName)
+				if err != nil {
+					return fmt.Errorf("failed to get app: %s", err)
+				}
+				fmt.Fprintf(cmd.OutOrStderr(), app.Spec.Instances.PrettyPrint())
+
+				return nil
+			}
+
+			// Manipulate the scaling
 
 			mutator := func(app *v1alpha1.App) error {
 				app.Spec.Instances.Min = nil

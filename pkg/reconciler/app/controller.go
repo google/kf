@@ -22,6 +22,7 @@ import (
 	sourceinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/source"
 	spaceinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/space"
 	"github.com/google/kf/pkg/reconciler"
+	krevisioninformer "github.com/knative/serving/pkg/client/injection/informers/serving/v1alpha1/revision"
 	kserviceinformer "github.com/knative/serving/pkg/client/injection/informers/serving/v1alpha1/service"
 	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/configmap"
@@ -35,17 +36,19 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 
 	// Get informers off context
 	knativeServiceInformer := kserviceinformer.Get(ctx)
+	knativeRevisionInformer := krevisioninformer.Get(ctx)
 	sourceInformer := sourceinformer.Get(ctx)
 	appInformer := appinformer.Get(ctx)
 	spaceInformer := spaceinformer.Get(ctx)
 
 	// Create reconciler
 	c := &Reconciler{
-		Base:                 reconciler.NewBase(ctx, "app-controller", cmw),
-		knativeServiceLister: knativeServiceInformer.Lister(),
-		sourceLister:         sourceInformer.Lister(),
-		appLister:            appInformer.Lister(),
-		spaceLister:          spaceInformer.Lister(),
+		Base:                  reconciler.NewBase(ctx, "app-controller", cmw),
+		knativeServiceLister:  knativeServiceInformer.Lister(),
+		knativeRevisionLister: knativeRevisionInformer.Lister(),
+		sourceLister:          sourceInformer.Lister(),
+		appLister:             appInformer.Lister(),
+		spaceLister:           spaceInformer.Lister(),
 	}
 
 	impl := controller.NewImpl(c, logger, "Apps")

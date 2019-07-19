@@ -20,12 +20,12 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/internal/envutil"
 	"github.com/google/kf/pkg/kf/testutil"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 )
 
 func TestEnvCommand(t *testing.T) {
@@ -54,14 +54,14 @@ func TestEnvCommand(t *testing.T) {
 			Args:      []string{"app-name"},
 			Namespace: "some-namespace",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Get("some-namespace", "app-name").Return(&serving.Service{}, nil)
+				fake.EXPECT().Get("some-namespace", "app-name").Return(&v1alpha1.App{}, nil)
 			},
 		},
 		"empty results": {
 			Namespace: "default",
 			Args:      []string{"app-name"},
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Get("default", "app-name").Return(&serving.Service{}, nil)
+				fake.EXPECT().Get("default", "app-name").Return(&v1alpha1.App{}, nil)
 			},
 			ExpectedErr: nil, // explicitly expecting no failure with zero length list
 		},
@@ -75,7 +75,7 @@ func TestEnvCommand(t *testing.T) {
 					"name-2": "value-2",
 				}))
 
-				fake.EXPECT().Get("default", "app-name").Return(out.ToService(), nil)
+				fake.EXPECT().Get("default", "app-name").Return(out.ToApp(), nil)
 			},
 			ExpectedStrings: []string{"name-1", "value-1", "name-2", "value-2"},
 		},

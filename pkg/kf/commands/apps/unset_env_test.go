@@ -17,8 +17,9 @@ package apps
 import (
 	"bytes"
 	"errors"
-	"github.com/google/kf/pkg/kf/commands/utils"
 	"testing"
+
+	"github.com/google/kf/pkg/kf/commands/utils"
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/kf/apps"
@@ -68,15 +69,15 @@ func TestUnsetEnvCommand(t *testing.T) {
 			Args:      []string{"app-name", "NAME"},
 			Namespace: "some-namespace",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform(gomock.Any(), "app-name", gomock.Any()).Do(func(ns, app string, mutator apps.Mutator) {
+				fake.EXPECT().Transform(gomock.Any(), "app-name", gomock.Any()).Do(func(ns, appName string, mutator apps.Mutator) {
 					input := apps.NewKfApp()
 					input.SetEnvVars(envutil.MapToEnvVars(map[string]string{"NAME": "FOO", "PORT": "8080"}))
-					svc := input.ToService()
+					app := input.ToApp()
 
-					err := mutator(svc)
+					err := mutator(app)
 					testutil.AssertNil(t, "mutator err", err)
 
-					result := (*apps.KfApp)(svc)
+					result := (*apps.KfApp)(app)
 					actualVars := envutil.EnvVarsToMap(result.GetEnvVars())
 					testutil.AssertEqual(t, "final values", map[string]string{"PORT": "8080"}, actualVars)
 				})

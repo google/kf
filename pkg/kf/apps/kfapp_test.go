@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"testing"
 
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/testutil"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -35,15 +35,22 @@ func ExampleKfApp() {
 	// Output: nsname
 }
 
-func TestKfApp_ToService(t *testing.T) {
+func TestKfApp_ToApp(t *testing.T) {
 	app := NewKfApp()
 	app.SetName("foo")
-	actual := app.ToService()
+	actual := app.ToApp()
 
-	expected := &serving.Service{
+	expected := &v1alpha1.App{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "Service",
-			APIVersion: "serving.knative.dev/v1alpha1",
+			Kind:       "App",
+			APIVersion: "kf.dev/v1alpha1",
+		},
+		Spec: v1alpha1.AppSpec{
+			Template: v1alpha1.AppSpecTemplate{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{}},
+				},
+			},
 		},
 	}
 	expected.Name = "foo"
@@ -68,7 +75,7 @@ func ExampleKfApp_GetEnvVars() {
 	// Key BAR Value 0
 }
 
-func ExampleKfApp_GetEnvVars_emptyService() {
+func ExampleKfApp_GetEnvVars_emptyApp() {
 	myApp := NewKfApp()
 
 	env := myApp.GetEnvVars()

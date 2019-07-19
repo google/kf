@@ -15,31 +15,45 @@
 package apps
 
 import (
+	"io"
+
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	cv1alpha1 "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/sources"
 	"github.com/google/kf/pkg/kf/systemenvinjector"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 )
 
 // ClientExtension holds additional functions that should be exposed by client.
 type ClientExtension interface {
 	DeleteInForeground(namespace string, name string) error
+
+	// DeployLogs writes the logs for the build and deploy stage to the given
+	// out.  The method exits once the logs are done streaming.
+	DeployLogs(out io.Writer, appName, resourceVersion, namespace string) error
+	Restart(namespace, name string) error
+	Restage(namespace, name string) error
 }
 
 type appsClient struct {
+	sourcesClient sources.Client
 	coreClient
 }
 
 // NewClient creates a new application client.
-func NewClient(kclient cserving.ServingV1alpha1Interface, envInjector systemenvinjector.SystemEnvInjectorInterface) Client {
+func NewClient(
+	kclient cv1alpha1.AppsGetter,
+	envInjector systemenvinjector.SystemEnvInjectorInterface,
+	sourcesClient sources.Client) Client {
 	return &appsClient{
-		coreClient{
+		coreClient: coreClient{
 			kclient: kclient,
 			upsertMutate: MutatorList{
 				envInjector.InjectSystemEnv,
 				LabelSetMutator(map[string]string{"app.kubernetes.io/managed-by": "kf"}),
 			},
-			membershipValidator: func(_ *serving.Service) bool { return true },
+			membershipValidator: AllPredicate(), // all apps can be managed by Kf
 		},
+		sourcesClient: sourcesClient,
 	}
 }
 
@@ -47,4 +61,22 @@ func NewClient(kclient cserving.ServingV1alpha1Interface, envInjector systemenvi
 // a client. kf uses this to display correct lifecycle info.
 func (ac *appsClient) DeleteInForeground(namespace string, name string) error {
 	return ac.coreClient.Delete(namespace, name, WithDeleteForegroundDeletion(true))
+}
+
+// Restart causes the controller to create a new revision for the knative
+// service.
+func (ac *appsClient) Restart(namespace, name string) error {
+	return ac.coreClient.Transform(namespace, name, func(a *v1alpha1.App) error {
+		a.Spec.Template.UpdateRequests++
+		return nil
+	})
+}
+
+// Restage causes the controller to create a new build and then deploy the
+// resulting container.
+func (ac *appsClient) Restage(namespace, name string) error {
+	return ac.coreClient.Transform(namespace, name, func(a *v1alpha1.App) error {
+		a.Spec.Source.UpdateRequests++
+		return nil
+	})
 }

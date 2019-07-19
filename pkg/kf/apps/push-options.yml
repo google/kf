@@ -1,6 +1,6 @@
 # This file contains options for option-builder.go
 ---
-package: kf
+package: apps
 imports: {"io":"", "os":""}
 common:
 - name: Namespace
@@ -10,6 +10,12 @@ common:
 configs:
 - name: Push
   options:
+  - name: SourceImage
+    type: string
+    description: the source code as a container image
+  - name: ContainerImage
+    type: string
+    description: the container to deploy
   - name: Buildpack
     type: string
     description: skip the detect buildpack step and use the given name

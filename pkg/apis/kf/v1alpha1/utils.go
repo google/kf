@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
 	"knative.dev/pkg/apis"
 	cv1alpha3 "knative.dev/pkg/client/clientset/versioned/typed/istio/v1alpha3"
 )
@@ -57,6 +58,9 @@ type SingleConditionManager interface {
 	// MarkSourceReconciliationError marks the Source having some error during the
 	// reconciliation process. Context should contain the action that failed.
 	MarkReconciliationError(context string, err error) error
+
+	// IsPending returns whether the condition's state is final or in progress.
+	IsPending() bool
 }
 
 // NewSingleConditionManager sets up a manager for setting the conditions of
@@ -104,6 +108,12 @@ func (ci *conditionImpl) MarkReconciliationError(action string, err error) error
 	ci.manager.MarkFalse(ci.destination, "ReconciliationError", msg)
 
 	return errors.New(msg)
+}
+
+// IsPending returns whether the condition's state is final or in progress.
+func (ci *conditionImpl) IsPending() bool {
+	cond := ci.manager.GetCondition(ci.destination)
+	return cond == nil || cond.Status == corev1.ConditionUnknown
 }
 
 var (

@@ -15,6 +15,7 @@
 package v1alpha1
 
 import (
+	"github.com/google/kf/pkg/apis/kf"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -22,14 +23,19 @@ import (
 
 // SchemeGroupVersion is group version used to register these objects
 var SchemeGroupVersion = schema.GroupVersion{
-	Group:   "kf.dev",
+	Group:   kf.GroupName,
 	Version: "v1alpha1",
 }
 
 var (
-	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
-	AddToScheme   = SchemeBuilder.AddToScheme
+	schemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
+	AddToScheme   = schemeBuilder.AddToScheme
 )
+
+// Kind takes an unqualified kind and returns back a Group qualified GroupKind
+func Kind(kind string) schema.GroupKind {
+	return SchemeGroupVersion.WithKind(kind).GroupKind()
+}
 
 // Resource takes an unqualified resource and returns a Group qualified GroupResource
 func Resource(resource string) schema.GroupResource {
@@ -41,9 +47,13 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(
 		SchemeGroupVersion,
 		&App{},
+		&AppList{},
 		&Source{},
+		&SourceList{},
 		&Space{},
+		&SpaceList{},
 		&Route{},
+		&RouteList{},
 		&metav1.Status{},
 	)
 

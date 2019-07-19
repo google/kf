@@ -21,11 +21,11 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/testutil"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
@@ -66,7 +66,7 @@ func TestAppsCommand(t *testing.T) {
 				fakeLister.
 					EXPECT().
 					List(gomock.Any()).
-					Return([]serving.Service{
+					Return([]v1alpha1.App{
 						{ObjectMeta: metav1.ObjectMeta{Name: "service-a"}},
 						{ObjectMeta: metav1.ObjectMeta{Name: "service-b"}},
 					}, nil)
@@ -84,7 +84,7 @@ func TestAppsCommand(t *testing.T) {
 				fakeLister.
 					EXPECT().
 					List(gomock.Any()).
-					Return([]serving.Service{
+					Return([]v1alpha1.App{
 						{ObjectMeta: metav1.ObjectMeta{Name: "service-a", DeletionTimestamp: &dt}},
 					}, nil)
 			},
@@ -110,8 +110,8 @@ func TestAppsCommand(t *testing.T) {
 				fakeLister.
 					EXPECT().
 					List(gomock.Any()).
-					Return([]serving.Service{
-						{Status: serving.ServiceStatus{Status: duckv1beta1.Status{Conditions: []apis.Condition{{Type: "Ready", Status: "should-not-see-this"}}}}},
+					Return([]v1alpha1.App{
+						{Status: v1alpha1.AppStatus{Status: duckv1beta1.Status{Conditions: []apis.Condition{{Type: "Ready", Status: "should-not-see-this"}}}}},
 						{ObjectMeta: metav1.ObjectMeta{Name: "service-b"}},
 					}, nil)
 			},
@@ -143,6 +143,7 @@ func TestAppsCommand(t *testing.T) {
 				testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
 				return
 			}
+			testutil.AssertEqual(t, "SilenceUsage", true, c.SilenceUsage)
 
 			if tc.assert != nil {
 				tc.assert(t, buffer)

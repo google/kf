@@ -17,6 +17,7 @@ package commands
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/google/kf/pkg/kf/commands/config"
@@ -63,9 +64,11 @@ func NewKfCommand() *cobra.Command {
 				InjectPush(p),
 				InjectDelete(p),
 				InjectApps(p),
+				InjectRestart(p),
+				InjectRestage(p),
 				InjectScale(p),
-				InjectProxy(p),
 				InjectLogs(p),
+				InjectProxy(p),
 			},
 		},
 		{
@@ -153,6 +156,7 @@ func NewKfCommand() *cobra.Command {
 
 				completionCommand(rootCmd),
 				NewTargetCommand(p),
+				NewVersionCommand(Version, runtime.GOOS),
 			},
 		},
 	}

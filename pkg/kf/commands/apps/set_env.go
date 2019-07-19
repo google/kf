@@ -15,10 +15,10 @@
 package apps
 
 import (
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -45,7 +45,7 @@ func NewSetEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command 
 				{Name: name, Value: value},
 			}
 
-			return appClient.Transform(p.Namespace, appName, func(app *serving.Service) error {
+			return appClient.Transform(p.Namespace, appName, func(app *v1alpha1.App) error {
 				kfapp := (*apps.KfApp)(app)
 				kfapp.MergeEnvVars(toSet)
 

@@ -63,6 +63,9 @@ gsutil cp ${RELEASE_BUCKET}/${release_name} ${RELEASE_BUCKET}/release-latest.yam
 # Generate kf CLI #
 ###################
 
+hash=$(git rev-parse HEAD)
+[ -z "$hash" ] && echo "failed to read hash" && exit 1
+
 # Build and upload the binaries
 for os in $(echo linux darwin windows); do
   destination=kf-${os}-${current_time}
@@ -74,7 +77,7 @@ for os in $(echo linux darwin windows); do
   fi
 
   # Build
-  GOOS=${os} go build -o /tmp/${destination} ./cmd/kf
+  GOOS=${os} go build -o /tmp/${destination} --ldflags "-X github.com/google/kf/pkg/kf/commands.Version=${hash}" ./cmd/kf
 
   # Upload
   gsutil cp /tmp/${destination} ${CLI_RELEASE_BUCKET}/${destination}

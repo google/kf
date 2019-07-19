@@ -17,9 +17,11 @@ package apps
 import (
 	"errors"
 	"fmt"
+	"log"
+	"os"
 	"path/filepath"
 
-	"github.com/google/kf/pkg/kf"
+	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/internal/envutil"
@@ -39,14 +41,29 @@ type SrcImageBuilderFunc func(dir, srcImage string, rebase bool) error
 
 // BuildSrcImage implements SrcImageBuilder.
 func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string) error {
-	return f(dir, srcImage, false)
+	oldPrefix := log.Prefix()
+	oldFlags := log.Flags()
+
+	log.SetPrefix("\033[32m[source upload]\033[0m ")
+	log.SetFlags(0)
+	log.SetOutput(os.Stdout)
+
+	log.Printf("Uploading %s to image %s", dir, srcImage)
+	err := f(dir, srcImage, false)
+
+	log.SetPrefix(oldPrefix)
+	log.SetFlags(oldFlags)
+	log.SetOutput(os.Stderr)
+
+	return err
 }
 
 // NewPushCommand creates a push command.
-func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *cobra.Command {
+func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, b SrcImageBuilder) *cobra.Command {
 	var (
 		containerRegistry string
 		sourceImage       string
+		containerImage    string
 		manifestFile      string
 		instances         int
 		serviceAccount    string
@@ -77,13 +94,27 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 				return err
 			}
 
+			if containerImage != "" {
+				if containerRegistry != "" {
+					return errors.New("cannot use --container-registry and --docker-image simultaneously")
+				}
+				if buildpack != "" {
+					return errors.New("cannot use --buildpack and --docker-image simultaneously")
+				}
+				if path != "." { // the default value
+					return errors.New("cannot use --path and --docker-image simultaneously")
+				}
+			}
+
 			switch {
 			case containerRegistry != "":
 				break
 			case space.Spec.BuildpackBuild.ContainerRegistry != "":
 				containerRegistry = space.Spec.BuildpackBuild.ContainerRegistry
 			default:
-				return errors.New("container-registry is required")
+				if containerImage == "" {
+					return errors.New("container-registry is required for buildpack apps")
+				}
 			}
 
 			cmd.SilenceUsage = true
@@ -137,20 +168,6 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 					return err
 				}
 
-				var imageName string
-
-				srcPath := filepath.Join(path, app.Path)
-				switch {
-				case sourceImage != "":
-					imageName = sourceImage
-				default:
-					imageName = kf.JoinRepositoryImage(containerRegistry, kf.SourceImageName(p.Namespace, app.Name))
-
-					if err := b.BuildSrcImage(srcPath, imageName); err != nil {
-						return err
-					}
-				}
-
 				// Read environment variables from cli args
 				envVars, err := envutil.ParseCLIEnvVars(envs)
 				if err != nil {
@@ -158,24 +175,44 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 				}
 				envMap := envutil.EnvVarsToMap(envVars)
 
-				if app.Env == nil {
-					app.Env = make(map[string]string)
+				var imageName string
+				if containerImage == "" {
+
+					srcPath := filepath.Join(path, app.Path)
+					switch {
+					case sourceImage != "":
+						imageName = sourceImage
+					default:
+						imageName = apps.JoinRepositoryImage(containerRegistry, apps.SourceImageName(p.Namespace, app.Name))
+
+						if err := b.BuildSrcImage(srcPath, imageName); err != nil {
+							return err
+						}
+					}
+
+					if app.Env == nil {
+						app.Env = make(map[string]string)
+					}
+
+					// Merge cli arg environment variables over manifest ones
+					for k, v := range envMap {
+						app.Env[k] = v
+					}
+
+					envMap = app.Env
 				}
 
-				// Merge cli arg environment variables over manifest ones
-				for k, v := range envMap {
-					app.Env[k] = v
-				}
-
-				err = pusher.Push(app.Name, imageName,
-					kf.WithPushNamespace(p.Namespace),
-					kf.WithPushContainerRegistry(containerRegistry),
-					kf.WithPushServiceAccount(serviceAccount),
-					kf.WithPushEnvironmentVariables(app.Env),
-					kf.WithPushGrpc(grpc),
-					kf.WithPushBuildpack(buildpack),
-					kf.WithPushMinScale(minScale),
-					kf.WithPushMaxScale(maxScale),
+				err = pusher.Push(app.Name,
+					apps.WithPushSourceImage(imageName),
+					apps.WithPushContainerImage(containerImage),
+					apps.WithPushNamespace(p.Namespace),
+					apps.WithPushContainerRegistry(containerRegistry),
+					apps.WithPushServiceAccount(serviceAccount),
+					apps.WithPushEnvironmentVariables(envMap),
+					apps.WithPushGrpc(grpc),
+					apps.WithPushBuildpack(buildpack),
+					apps.WithPushMinScale(minScale),
+					apps.WithPushMaxScale(maxScale),
 				)
 
 				cmd.SilenceUsage = !kfi.ConfigError(err)
@@ -241,6 +278,13 @@ func NewPushCommand(p *config.KfParams, pusher kf.Pusher, b SrcImageBuilder) *co
 		"The kontext image that has the source code.",
 	)
 	pushCmd.Flags().MarkHidden("source-image")
+
+	pushCmd.Flags().StringVar(
+		&containerImage,
+		"docker-image",
+		"",
+		"The docker image to deploy.",
+	)
 
 	pushCmd.Flags().StringVarP(
 		&manifestFile,

@@ -30,11 +30,11 @@ trap finish EXIT
 
 if [ "${SKIP_INTEGRATION:-false}" = "true" ]; then
     echo "SKIP_INTEGRATION set to 'true'. Skipping integration tests..."
-    export GCP_PROJECT_ID=""
+    export DOCKER_REGISTRY=""
 else
-  if [ "${GCP_PROJECT_ID}" = "" ]; then
+  if [ "${DOCKER_REGISTRY}" = "" ]; then
     echo running integration tests
-    export GCP_PROJECT_ID=$(gcloud config get-value project)
+    export DOCKER_REGISTRY="gcr.io/$(gcloud config get-value project)"
   fi
 fi
 
