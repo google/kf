@@ -41,4 +41,7 @@ configs:
   - name: MaxScale
     type: int
     description: the upper scale bound
+  - name: NoStart
+    type: bool
+    description: setup the app without starting it
 - name: Deploy

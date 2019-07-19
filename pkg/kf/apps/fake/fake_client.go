@@ -104,17 +104,17 @@ func (mr *FakeClientMockRecorder) DeleteInForeground(arg0, arg1 interface{}) *go
 }
 
 // DeployLogs mocks base method
-func (m *FakeClient) DeployLogs(arg0 io.Writer, arg1, arg2, arg3 string) error {
+func (m *FakeClient) DeployLogs(arg0 io.Writer, arg1, arg2, arg3 string, arg4 bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeployLogs", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "DeployLogs", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeployLogs indicates an expected call of DeployLogs
-func (mr *FakeClientMockRecorder) DeployLogs(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+func (mr *FakeClientMockRecorder) DeployLogs(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeployLogs", reflect.TypeOf((*FakeClient)(nil).DeployLogs), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeployLogs", reflect.TypeOf((*FakeClient)(nil).DeployLogs), arg0, arg1, arg2, arg3, arg4)
 }
 
 // Get mocks base method

@@ -98,6 +98,16 @@ func InjectScale(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
+func InjectStart(p *config.KfParams) *cobra.Command {
+	wire.Build(capps.NewStartCommand, AppsSet)
+	return nil
+}
+
+func InjectStop(p *config.KfParams) *cobra.Command {
+	wire.Build(capps.NewStopCommand, AppsSet)
+	return nil
+}
+
 func InjectRestart(p *config.KfParams) *cobra.Command {
 	wire.Build(capps.NewRestartCommand, AppsSet)
 	return nil
