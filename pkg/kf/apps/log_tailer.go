@@ -16,7 +16,6 @@ package apps
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -125,7 +124,4 @@ func (a *appsClient) DeployLogs(
 		}
 		ws.Stop()
 	}
-
-	// Lost connection before ready, unknown status.
-	return errors.New("lost connection to Kubernetes")
 }
