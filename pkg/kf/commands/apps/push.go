@@ -71,6 +71,7 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		buildpack         string
 		envs              []string
 		grpc              bool
+		noStart           bool
 	)
 
 	var pushCmd = &cobra.Command{
@@ -212,6 +213,7 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					apps.WithPushBuildpack(buildpack),
 					apps.WithPushMinScale(minScale),
 					apps.WithPushMaxScale(maxScale),
+					apps.WithPushNoStart(noStart),
 				)
 
 				cmd.SilenceUsage = !kfi.ConfigError(err)
@@ -299,6 +301,13 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		"i",
 		-1, // -1 represents non-user input
 		"the number of instances (default is 1)",
+	)
+
+	pushCmd.Flags().BoolVar(
+		&noStart,
+		"no-start",
+		false,
+		"Do not start an app after pushing",
 	)
 
 	return pushCmd

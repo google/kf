@@ -29,7 +29,7 @@ type ClientExtension interface {
 
 	// DeployLogs writes the logs for the build and deploy stage to the given
 	// out.  The method exits once the logs are done streaming.
-	DeployLogs(out io.Writer, appName, resourceVersion, namespace string) error
+	DeployLogs(out io.Writer, appName, resourceVersion, namespace string, noStart bool) error
 	Restart(namespace, name string) error
 	Restage(namespace, name string) error
 }

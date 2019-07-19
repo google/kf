@@ -32,7 +32,13 @@ import (
 
 // DeployLogs writes the logs for the deploy step for the resourceVersion
 // to out. It blocks until the operation has completed.
-func (a *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespace string) error {
+func (a *appsClient) DeployLogs(
+	out io.Writer,
+	appName string,
+	resourceVersion string,
+	namespace string,
+	noStart bool,
+) error {
 	logger := log.New(out, "\033[32m[build]\033[0m ", 0)
 	logger.Printf("Starting app: %s\n", appName)
 	start := time.Now()
@@ -88,6 +94,11 @@ func (a *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespa
 				},
 			)
 			continue
+		}
+
+		if noStart {
+			logger.Printf("Total deploy time %0.2f seconds\n", time.Now().Sub(deployStart).Seconds())
+			return nil
 		}
 
 		appReady := app.Status.GetCondition(v1alpha1.AppConditionReady)
