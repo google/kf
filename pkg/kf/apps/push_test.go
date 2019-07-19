@@ -37,10 +37,16 @@ func TestPush_Logs(t *testing.T) {
 		containerImage string
 		wantErr        error
 		logErr         error
+		noStart        bool
 	}{
 		"fetching logs succeeds": {
 			appName:  "some-app",
 			srcImage: "some-image",
+		},
+		"NoStart gets passed through": {
+			appName:  "some-app",
+			srcImage: "some-image",
+			noStart:  true,
 		},
 		"fetching logs returns an error, no error": {
 			appName:  "some-app",
@@ -67,6 +73,7 @@ func TestPush_Logs(t *testing.T) {
 					tc.appName,               // appName
 					tc.appName+"-version",    // resourceVersion
 					expectedNamespace,        // namespace
+					tc.noStart,               // NoStart
 				).
 				Return(tc.logErr)
 
@@ -81,6 +88,7 @@ func TestPush_Logs(t *testing.T) {
 				apps.WithPushNamespace(expectedNamespace),
 				apps.WithPushContainerRegistry("some-container-registry"),
 				apps.WithPushServiceAccount("some-service-account"),
+				apps.WithPushNoStart(tc.noStart),
 			)
 
 			testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
@@ -263,6 +271,23 @@ func TestPush(t *testing.T) {
 				testutil.AssertNil(t, "err", err)
 			},
 		},
+		"NoStart sets stopped": {
+			appName:   "some-app",
+			srcImage:  "some-image",
+			buildpack: "some-buildpack",
+			opts: apps.PushOptions{
+				apps.WithPushNamespace("default"),
+				apps.WithPushNoStart(true),
+			},
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
+				appsClient.EXPECT().
+					Upsert(gomock.Any(), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
+						testutil.AssertEqual(t, "app.Spec.Instances.Stopped", true, newObj.Spec.Instances.Stopped)
+
+					}).Return(&v1alpha1.App{}, nil)
+			},
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			if tc.assert == nil {
@@ -280,7 +305,7 @@ func TestPush(t *testing.T) {
 
 			fakeApps := appsfake.NewFakeClient(ctrl)
 			fakeApps.EXPECT().
-				DeployLogs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+				DeployLogs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 				AnyTimes()
 
 			tc.setup(t, fakeApps)
