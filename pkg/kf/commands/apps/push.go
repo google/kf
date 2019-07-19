@@ -18,9 +18,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
@@ -28,6 +31,7 @@ import (
 	kfi "github.com/google/kf/pkg/kf/internal/kf"
 	"github.com/google/kf/pkg/kf/manifest"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // SrcImageBuilder creates and uploads a container image that contains the
@@ -71,7 +75,7 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		buildpack         string
 		envs              []string
 		grpc              bool
-		routes            []string
+		routes            []v1alpha1.Route
 	)
 
 	var pushCmd = &cobra.Command{
@@ -202,6 +206,12 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					envMap = app.Env
 				}
 
+				manifestRoutes := app.Routes
+				for _, route := range manifestRoutes {
+					// Parse route string from URL into hostname, domain, and path
+					routes = append(routes, createRoute(route.Route, p.Namespace))
+				}
+
 				err = pusher.Push(app.Name,
 					apps.WithPushSourceImage(imageName),
 					apps.WithPushContainerImage(containerImage),
@@ -213,6 +223,7 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					apps.WithPushBuildpack(buildpack),
 					apps.WithPushMinScale(minScale),
 					apps.WithPushMaxScale(maxScale),
+					apps.WithPushRoutes(routes),
 				)
 
 				cmd.SilenceUsage = !kfi.ConfigError(err)
@@ -330,4 +341,51 @@ func calculateScaleBounds(instances int, minScale, maxScale *int) (int, int, err
 		return *minScale, *maxScale, nil
 	}
 
+}
+
+func createRoute(appName string, routeStr string, ns string) v1alpha1.Route {
+	u, err := url.Parse(routeStr)
+	if err != nil {
+		panic(err)
+	}
+
+	parts := strings.SplitN(u.Hostname(), ".", 3)
+
+	var hostname string
+	var domain string
+	var urlPath string
+
+	if len(parts) == 3 {
+		// Has hostname
+		hostname = parts[0]
+		domain = strings.Join(parts[1:], ".")
+	} else {
+		// Only domain
+		hostname = ""
+		domain = strings.Join(parts, ".")
+	}
+
+	urlPath = u.EscapedPath()
+
+	r := &v1alpha1.Route{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "Route",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name: v1alpha1.GenerateName(
+				hostname,
+				domain,
+				urlPath,
+			),
+		},
+		Spec: v1alpha1.RouteSpec{
+			Hostname:            hostname,
+			Domain:              domain,
+			Path:                urlPath,
+			KnativeServiceNames: []string{appName},
+		},
+	}
+
+	return r
 }

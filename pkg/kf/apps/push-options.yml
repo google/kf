@@ -1,7 +1,7 @@
 # This file contains options for option-builder.go
 ---
 package: apps
-imports: {"io":"", "os":""}
+imports: {"io":"", "os":"", "github.com/google/kf/pkg/apis/kf/v1alpha1"}
 common:
 - name: Namespace
   type: string
@@ -41,4 +41,7 @@ configs:
   - name: MaxScale
     type: int
     description: the upper scale bound
+  - name: Routes
+    type: "[]v1alpha1.Route"
+    description: route names (multiple allowed) for the app
 - name: Deploy

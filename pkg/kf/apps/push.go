@@ -21,6 +21,7 @@ import (
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/internal/envutil"
 	"github.com/google/kf/pkg/kf/internal/kf"
+	"github.com/google/kf/pkg/kf/routes"
 	"github.com/google/kf/pkg/kf/sources"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -29,7 +30,8 @@ import (
 
 // pusher deploys source code to Knative. It should be created via NewPusher.
 type pusher struct {
-	appsClient Client
+	appsClient   Client
+	routesClient routes.Client
 }
 
 // Pusher deploys applications.
@@ -39,9 +41,10 @@ type Pusher interface {
 }
 
 // NewPusher creates a new Pusher.
-func NewPusher(client Client) Pusher {
+func NewPusher(appsClient Client, routesClient routes.Client) Pusher {
 	return &pusher{
-		appsClient: client,
+		appsClient:   appsClient,
+		routesClient: routesClient,
 	}
 }
 
@@ -95,6 +98,25 @@ func (p *pusher) Push(appName string, opts ...PushOption) error {
 	resultingApp, err := p.appsClient.Upsert(app.Namespace, app, mergeApps)
 	if err != nil {
 		return fmt.Errorf("failed to push app: %s", err)
+	}
+
+	merger := routes.Merger(func(newR, oldR *v1alpha1.Route) *v1alpha1.Route {
+		newR.ObjectMeta = *oldR.ObjectMeta.DeepCopy()
+
+		// Ensure the app isn't already there
+		for _, name := range oldR.Spec.KnativeServiceNames {
+			if name == appName {
+				continue
+			}
+			newR.Spec.KnativeServiceNames = append(newR.Spec.KnativeServiceNames, name)
+		}
+
+		return newR
+	})
+
+	routes := cfg.Routes
+	for _, route := range routes {
+		newRoute, err := p.routesClient.Upsert(cfg.Namespace, route, merger)
 	}
 
 	if err := p.appsClient.DeployLogs(cfg.Output, appName, resultingApp.ResourceVersion, app.Namespace); err != nil {
