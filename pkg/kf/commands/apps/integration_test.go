@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	appTimeout = 30 * time.Second
+	appTimeout = 90 * time.Second
 )
 
 // TestIntegration_Push pushes the echo app, lists it to ensure it can find a
@@ -478,52 +478,6 @@ func checkVars(ctx context.Context, t *testing.T, kf *Kf, appName string, proxyP
 	if !success {
 		t.Fatalf("unsuccessful in checking env vars")
 	}
-}
-
-// TestIntegration_Push_Instances pushes the echo app and specify two
-// instances, lists it to ensure it can find a domain, uses the proxy command
-// and then posts to it. It finally deletes the app.
-func TestIntegration_Push_Instances(t *testing.T) {
-	t.Parallel()
-	checkClusterStatus(t)
-	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
-		appName := fmt.Sprintf("integration-push-instances-%d", time.Now().UnixNano())
-
-		// Push an app and then clean it up. This pushes the echo app which
-		// replies with the same body that was posted.
-		kf.Push(ctx, appName,
-			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
-			"--container-registry", DockerRegistry(),
-			"--instances", "2",
-		)
-		defer kf.Delete(ctx, appName)
-
-		// List the apps and make sure we can find a domain.
-		Logf(t, "ensuring app has domain...")
-		apps := kf.Apps(ctx)
-		if apps[appName].Domain == "" {
-			t.Fatalf("empty domain")
-		}
-		Logf(t, "done ensuring app has domain.")
-
-		// Hit the app via the proxy. This makes sure the app is handling
-		// traffic as expected and ensures the proxy works. We use the proxy
-		// for two reasons:
-		// 1. Test the proxy.
-		// 2. Tests work even if a domain isn't setup.
-		Logf(t, "hitting echo app to ensure it's working...")
-
-		// TODO: Use port 0 so that we don't have to worry about port
-		// collisions. This doesn't work yet:
-		// https://github.com/poy/kf/issues/46
-		go kf.Proxy(ctx, appName, 8084)
-		resp, respCancel := RetryPost(ctx, t, "http://localhost:8084", 30*time.Second, http.StatusOK, "testing")
-		defer respCancel()
-		data, err := ioutil.ReadAll(resp.Body)
-		AssertNil(t, "body error", err)
-		AssertEqual(t, "body", "testing", string(data))
-		Logf(t, "done hitting echo app to ensure it's working.")
-	})
 }
 
 var checkOnce sync.Once

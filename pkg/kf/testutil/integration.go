@@ -661,6 +661,7 @@ func (k *Kf) Stop(ctx context.Context, appName string) {
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"stop",
+			"--namespace", SpaceFromContext(ctx),
 			appName,
 		},
 	})
@@ -676,6 +677,7 @@ func (k *Kf) Start(ctx context.Context, appName string) {
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
 		Args: []string{
 			"start",
+			"--namespace", SpaceFromContext(ctx),
 			appName,
 		},
 	})
