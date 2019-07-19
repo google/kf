@@ -598,6 +598,36 @@ func (k *Kf) Delete(ctx context.Context, appName string) {
 	StreamOutput(ctx, k.t, output)
 }
 
+// Stop stops an application.
+func (k *Kf) Stop(ctx context.Context, appName string) {
+	k.t.Helper()
+	Logf(k.t, "stopping %q...", appName)
+	defer Logf(k.t, "done stopping %q.", appName)
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: []string{
+			"stop",
+			appName,
+		},
+	})
+	PanicOnError(ctx, k.t, fmt.Sprintf("stop %q", appName), errs)
+	StreamOutput(ctx, k.t, output)
+}
+
+// Start starts an application.
+func (k *Kf) Start(ctx context.Context, appName string) {
+	k.t.Helper()
+	Logf(k.t, "starting %q...", appName)
+	defer Logf(k.t, "done starting %q.", appName)
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: []string{
+			"start",
+			appName,
+		},
+	})
+	PanicOnError(ctx, k.t, fmt.Sprintf("start %q", appName), errs)
+	StreamOutput(ctx, k.t, output)
+}
+
 // Proxy starts a proxy for an application.
 func (k *Kf) Proxy(ctx context.Context, appName string, port int) {
 	k.t.Helper()
