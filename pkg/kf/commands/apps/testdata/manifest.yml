@@ -1,0 +1,12 @@
+---
+applications:
+- name: docker-app
+  docker:
+    image: gcr.io/docker-app
+- name: buildpack-app
+  buildpack:
+  - java
+  - tomcat
+  path: example-app
+- name: auto-buildpack-app
+  path: example-app

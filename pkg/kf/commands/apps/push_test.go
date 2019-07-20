@@ -150,7 +150,10 @@ func TestPushCommand(t *testing.T) {
 		},
 		"container-registry comes from space": {
 			namespace: "some-namespace",
-			args:      []string{"app-name"},
+			args: []string{
+				"buildpack-app",
+				"--manifest", "testdata/manifest.yml",
+			},
 			targetSpace: &v1alpha1.Space{
 				Spec: v1alpha1.SpaceSpec{
 					BuildpackBuild: v1alpha1.SpaceSpecBuildpackBuild{
@@ -210,32 +213,55 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushEnvironmentVariables(map[string]string{"WHATNOW": "BROWNCOW"}),
 			},
 		},
-		"inavlid buildpack and container image": {
+		"invalid buildpack and container image": {
 			namespace: "some-namespace",
 			args: []string{
-				"app-name",
+				"buildpack-app",
 				"--docker-image", "some-image",
 				"--buildpack", "some-buildpack",
+				"--manifest", "testdata/manifest.yml",
 			},
-			wantErr: errors.New("cannot use --buildpack and --docker-image simultaneously"),
+			wantErr: errors.New("cannot use buildpack and docker image simultaneously"),
 		},
-		"inavlid container registry and container image": {
+		"invalid container registry and container image": {
 			namespace: "some-namespace",
 			args: []string{
-				"app-name",
+				"buildpack-app",
 				"--docker-image", "some-image",
 				"--container-registry", "some-registry",
+				"--manifest", "testdata/manifest.yml",
 			},
-			wantErr: errors.New("cannot use --container-registry and --docker-image simultaneously"),
+			wantErr: errors.New("--container-registry can only be used with source pushes, not containers"),
 		},
-		"inavlid path and container image": {
+		"invalid path and container image": {
 			namespace: "some-namespace",
 			args: []string{
-				"app-name",
+				"auto-buildpack-app",
 				"--docker-image", "some-image",
-				"--path", "some-path",
+				"--manifest", "testdata/manifest.yml",
 			},
-			wantErr: errors.New("cannot use --path and --docker-image simultaneously"),
+			wantErr: errors.New("cannot use path and docker image simultaneously"),
+		},
+		"docker app from manifest": {
+			namespace: "some-namespace",
+			args: []string{
+				"docker-app",
+				"--manifest", "testdata/manifest.yml",
+			},
+			wantOpts: []apps.PushOption{
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushContainerImage("gcr.io/docker-app"),
+				apps.WithPushMinScale(1),
+				apps.WithPushMaxScale(1),
+			},
+		},
+		"manifest missing app": {
+			namespace: "some-namespace",
+			args: []string{
+				"missing-app",
+				"--manifest", "testdata/manifest.yml",
+			},
+			wantErr: errors.New("no app missing-app found in the Manifest"),
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
