@@ -164,6 +164,7 @@ func TestPushCommand(t *testing.T) {
 			wantOpts: []apps.PushOption{
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushContainerRegistry("space-reg.io"),
+				apps.WithPushBuildpack("java,tomcat"),
 				apps.WithPushMinScale(1),
 				apps.WithPushMaxScale(1),
 			},
@@ -251,6 +252,21 @@ func TestPushCommand(t *testing.T) {
 			wantOpts: []apps.PushOption{
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushContainerImage("gcr.io/docker-app"),
+				apps.WithPushMinScale(1),
+				apps.WithPushMaxScale(1),
+			},
+		},
+		"buildpack app from manifest": {
+			namespace: "some-namespace",
+			args: []string{
+				"buildpack-app",
+				"--manifest", "testdata/manifest.yml",
+				"--container-registry", "some-registry.io",
+			},
+			wantOpts: []apps.PushOption{
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushBuildpack("java,tomcat"),
+				apps.WithPushContainerRegistry("some-registry.io"),
 				apps.WithPushMinScale(1),
 				apps.WithPushMaxScale(1),
 			},
