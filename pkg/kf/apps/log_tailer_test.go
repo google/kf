@@ -42,6 +42,7 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 	for tn, tc := range map[string]struct {
 		appName                  string
 		namespace                string
+		noStart                  bool
 		resourceVersion          string
 		serviceWatchErr          error
 		events                   []watch.Event
@@ -66,6 +67,27 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			},
 			),
 			wantedMsgs: []string{"msg-1", "msg-2"},
+		},
+		"NoStart don't display deployment messages": {
+			appName:         "some-app",
+			namespace:       "default",
+			resourceVersion: "some-version",
+			noStart:         true,
+			events: createMsgEvents("some-app", duckv1beta1.Conditions{
+				{
+					Type:    "SourceReady",
+					Status:  "True",
+					Message: "msg-1",
+				},
+				{
+					Type:    "Ready",
+					Status:  "True",
+					Message: "msg-2",
+				},
+			},
+			),
+			wantedMsgs:   []string{"msg-1"},
+			unwantedMsgs: []string{"msg-2"},
 		},
 		"watch service returns an error, return error": {
 			appName:         "some-app",
@@ -92,13 +114,6 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			}),
 			wantErr: errors.New("deployment failed: some-error"),
 		},
-		"watch fails, return error": {
-			appName:         "some-app",
-			namespace:       "default",
-			resourceVersion: "some-version",
-			events:          nil,
-			wantErr:         errors.New("lost connection to Kubernetes"),
-		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			ctrl, fakeApps := buildLogWatchFakes(
@@ -117,7 +132,13 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			lt := apps.NewClient(fakeApps, seif, sourceClient)
 
 			var buffer bytes.Buffer
-			gotErr := lt.DeployLogs(&buffer, tc.appName, tc.resourceVersion, tc.namespace)
+			gotErr := lt.DeployLogs(
+				&buffer,
+				tc.appName,
+				tc.resourceVersion,
+				tc.namespace,
+				tc.noStart,
+			)
 			if tc.wantErr != nil || gotErr != nil {
 				testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
 				return
@@ -204,7 +225,8 @@ func buildLogWatchFakes(
 		ResultChan().
 		DoAndReturn(func() <-chan watch.Event {
 			return createEvents(serviceEvents)
-		})
+		}).
+		AnyTimes()
 
 	// Ensure Stop is invoked to clean up resources.
 	fakeWatcher.

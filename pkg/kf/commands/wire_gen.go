@@ -93,6 +93,30 @@ func InjectScale(p *config.KfParams) *cobra.Command {
 	return command
 }
 
+func InjectStart(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	client := sources.NewClient(sourcesGetter, buildTailer)
+	appsClient := apps.NewClient(appsGetter, systemEnvInjectorInterface, client)
+	command := apps2.NewStartCommand(p, appsClient)
+	return command
+}
+
+func InjectStop(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	client := sources.NewClient(sourcesGetter, buildTailer)
+	appsClient := apps.NewClient(appsGetter, systemEnvInjectorInterface, client)
+	command := apps2.NewStopCommand(p, appsClient)
+	return command
+}
+
 func InjectRestart(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	appsGetter := provideAppsGetter(kfV1alpha1Interface)

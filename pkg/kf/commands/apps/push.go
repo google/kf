@@ -72,6 +72,7 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		envs              []string
 		grpc              bool
 		noManifest        bool
+		noStart           bool
 	)
 
 	var pushCmd = &cobra.Command{
@@ -173,6 +174,7 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					apps.WithPushGrpc(grpc),
 					apps.WithPushMinScale(minScale),
 					apps.WithPushMaxScale(maxScale),
+					apps.WithPushNoStart(noStart),
 				}
 
 				if app.Docker.Image == "" { // builpack app
@@ -311,6 +313,13 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		"i",
 		-1, // -1 represents non-user input
 		"the number of instances (default is 1)",
+	)
+
+	pushCmd.Flags().BoolVar(
+		&noStart,
+		"no-start",
+		false,
+		"Do not start an app after pushing",
 	)
 
 	return pushCmd

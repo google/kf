@@ -58,6 +58,7 @@ func TestPushCommand(t *testing.T) {
 				"--container-registry", "some-reg.io",
 				"--instances", "1",
 				"--path", "testdata/example-app",
+				"--no-start",
 			},
 			wantImagePrefix: "some-reg.io/src-some-namespace-example-app",
 			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
@@ -74,6 +75,7 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushEnvironmentVariables(map[string]string{"env1": "val1", "env2": "val2"}),
 				apps.WithPushMinScale(1),
 				apps.WithPushMaxScale(1),
+				apps.WithPushNoStart(true),
 			},
 		},
 		"uses current working directory for empty path": {
@@ -305,6 +307,7 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "env vars", expectOpts.EnvironmentVariables(), actualOpts.EnvironmentVariables())
 					testutil.AssertEqual(t, "min scale bound", expectOpts.MinScale(), actualOpts.MinScale())
 					testutil.AssertEqual(t, "max scale bound", expectOpts.MaxScale(), actualOpts.MaxScale())
+					testutil.AssertEqual(t, "no start", expectOpts.NoStart(), actualOpts.NoStart())
 
 					if !strings.HasPrefix(actualOpts.SourceImage(), tc.wantImagePrefix) {
 						t.Errorf("Wanted srcImage to start with %s got: %s", tc.wantImagePrefix, actualOpts.SourceImage())
