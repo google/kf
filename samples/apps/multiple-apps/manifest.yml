@@ -1,0 +1,6 @@
+---
+applications:
+- name: echo
+  path: ../echo
+- name: helloworld
+  path: ../helloworld
