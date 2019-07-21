@@ -536,6 +536,11 @@ func (in *SpaceSpecExecution) DeepCopyInto(out *SpaceSpecExecution) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	if in.Domains != nil {
+		in, out := &in.Domains, &out.Domains
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 

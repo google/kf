@@ -73,7 +73,9 @@ func (s *SpaceSpecBuildpackBuild) Validate(ctx context.Context) (errs *apis.Fiel
 
 // Validate makes sure that SpaceSpecExecution is properly configured.
 func (s *SpaceSpecExecution) Validate(ctx context.Context) (errs *apis.FieldError) {
-	// XXX: no validation
+	if len(s.Domains) == 0 {
+		errs = errs.Also(apis.ErrMissingField("domains"))
+	}
 	return errs
 }
 

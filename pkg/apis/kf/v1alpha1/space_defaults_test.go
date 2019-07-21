@@ -24,6 +24,8 @@ func ExampleSpace_SetDefaults() {
 	space.SetDefaults(context.Background())
 
 	fmt.Println("Builder:", space.Spec.BuildpackBuild.BuilderImage)
+	fmt.Println("Domains:", space.Spec.Execution.Domains)
 
 	// Output: Builder: gcr.io/kf-releases/buildpack-builder:latest
+	// Domains: [example.com]
 }

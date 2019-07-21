@@ -28,9 +28,13 @@ func TestSpaceValidation(t *testing.T) {
 		BuilderImage:      DefaultBuilderImage,
 		ContainerRegistry: "gcr.io/test",
 	}
+	goodExecuton := SpaceSpecExecution{
+		Domains: []string{DefaultDomain},
+	}
 
 	goodSpaceSpec := SpaceSpec{
 		BuildpackBuild: goodBuildpackBuild,
+		Execution:      goodExecuton,
 	}
 
 	cases := map[string]struct {
@@ -68,6 +72,7 @@ func TestSpaceValidation(t *testing.T) {
 			space: &Space{
 				ObjectMeta: metav1.ObjectMeta{Name: "valid"},
 				Spec: SpaceSpec{
+					Execution: goodExecuton,
 					BuildpackBuild: SpaceSpecBuildpackBuild{
 						BuilderImage: DefaultBuilderImage,
 					},
@@ -79,12 +84,25 @@ func TestSpaceValidation(t *testing.T) {
 			space: &Space{
 				ObjectMeta: metav1.ObjectMeta{Name: "valid"},
 				Spec: SpaceSpec{
+					Execution: goodExecuton,
 					BuildpackBuild: SpaceSpecBuildpackBuild{
 						ContainerRegistry: "gcr.io/test",
 					},
 				},
 			},
 			want: apis.ErrMissingField("spec.buildpackBuild.builderImage"),
+		},
+		"no domains": {
+			space: &Space{
+				ObjectMeta: metav1.ObjectMeta{Name: "valid"},
+				Spec: SpaceSpec{
+					BuildpackBuild: SpaceSpecBuildpackBuild{
+						ContainerRegistry: "gcr.io/test",
+						BuilderImage:      DefaultBuilderImage,
+					},
+				},
+			},
+			want: apis.ErrMissingField("spec.execution.domains"),
 		},
 	}
 

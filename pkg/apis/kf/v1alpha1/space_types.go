@@ -95,6 +95,11 @@ type SpaceSpecExecution struct {
 	// +patchMergeKey=name
 	// +patchStrategy=merge
 	Env []corev1.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
+
+	// Domains sets valid domains that can be used for routes in the space.
+	// The first entry in the slice is the default if a domain is not
+	// provided.
+	Domains []string
 }
 
 // SpaceSpecResourceLimits contains definitions for resource usage limits.

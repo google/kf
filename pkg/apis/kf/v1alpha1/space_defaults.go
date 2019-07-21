@@ -21,6 +21,9 @@ import (
 const (
 	// DefaultBuilderImage contains the default buildpack builder image.
 	DefaultBuilderImage = "gcr.io/kf-releases/buildpack-builder:latest"
+
+	// DefaultDomain contains the default domain.
+	DefaultDomain = "example.com"
 )
 
 // SetDefaults implements apis.Defaultable
@@ -50,7 +53,9 @@ func (k *SpaceSpecBuildpackBuild) SetDefaults(ctx context.Context) {
 
 // SetDefaults implements apis.Defaultable
 func (k *SpaceSpecExecution) SetDefaults(ctx context.Context) {
-	// XXX: currently no defaults to set
+	if len(k.Domains) == 0 {
+		k.Domains = append(k.Domains, DefaultDomain)
+	}
 }
 
 // SetDefaults implements apis.Defaultable

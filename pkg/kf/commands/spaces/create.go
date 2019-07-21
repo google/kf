@@ -27,6 +27,7 @@ import (
 func NewCreateSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Command {
 	var (
 		containerRegistry string
+		domains           []string
 	)
 
 	cmd := &cobra.Command{
@@ -41,6 +42,7 @@ func NewCreateSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 			toCreate := spaces.NewKfSpace()
 			toCreate.SetName(name)
 			toCreate.SetContainerRegistry(containerRegistry)
+			toCreate.AppendDomains(domains...)
 
 			if _, err := client.Create(toCreate.ToSpace()); err != nil {
 				return err
@@ -60,6 +62,13 @@ func NewCreateSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		"container-registry",
 		"",
 		"The container registry apps and sources will be stored in.",
+	)
+
+	cmd.Flags().StringArrayVar(
+		&domains,
+		"domain",
+		nil,
+		"Sets the valid domains for the space.",
 	)
 
 	return cmd
