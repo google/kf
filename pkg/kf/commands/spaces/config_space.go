@@ -16,7 +16,6 @@ package spaces
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -26,7 +25,6 @@ import (
 	"github.com/google/kf/pkg/kf/spaces"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
-	"knative.dev/pkg/kmp"
 )
 
 // NewConfigSpaceCommand creates a command that can set facets of a space.
@@ -89,33 +87,9 @@ func (sm spaceMutator) ToCommand(client spaces.Client) *cobra.Command {
 
 			cmd.SilenceUsage = true
 
-			return client.Transform(spaceName, func(space *v1alpha1.Space) error {
-				before := space.DeepCopy()
-
-				if err := mutator(space); err != nil {
-					return err
-				}
-
-				printDiff(cmd.OutOrStdout(), before, space)
-
-				return nil
-			})
+			diffPrintingMutator := spaces.DiffWrapper(cmd.OutOrStdout(), mutator)
+			return client.Transform(spaceName, diffPrintingMutator)
 		},
-	}
-}
-
-func printDiff(w io.Writer, original, new *v1alpha1.Space) {
-	diff, err := kmp.SafeDiff(original.Spec, new.Spec)
-	if err != nil {
-		fmt.Fprintf(w, "Couldn't format diff: %s\n", err.Error())
-		return
-	}
-
-	if diff != "" {
-		fmt.Fprintln(w, "Space Spec (-original +new):")
-		fmt.Fprintln(w, diff)
-	} else {
-		fmt.Fprintln(w, "No changes")
 	}
 }
 

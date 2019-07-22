@@ -53,6 +53,42 @@ func AllPredicate(children ...Predicate) Predicate {
 // Mutator is a function that changes {{.Type}}.
 type Mutator func(*{{.Type}}) error
 
+// DiffWrapper wraps a mutator and prints out the diff between the original object
+// and the one it returns if there's no error.
+func DiffWrapper(w io.Writer, mutator Mutator) Mutator {
+	return func(mutable *{{.Type}}) error {
+		before := mutable.DeepCopy()
+
+		if err := mutator(mutable); err != nil {
+			return err
+		}
+
+		FormatDiff(w, "old", "new", before, mutable)
+
+		return nil
+	}
+}
+
+// FormatDiff creates a diff between two {{.Type}}s and writes it to the given
+// writer.
+func FormatDiff(w io.Writer, leftName, rightName string, left, right *{{.Type}}) {
+	diff, err := kmp.SafeDiff(left, right)
+	switch {
+	case err != nil:
+		fmt.Fprintf(w, "couldn't format diff: %s\n", err.Error())
+
+	case diff == "":
+		fmt.Fprintln(w, "No changes")
+
+	default:
+		fmt.Fprintf(w, "{{.CF.Name}} Diff (-%s +%s):\n", leftName, rightName)
+		// go-cmp randomly chooses to prefix lines with non-breaking spaces or
+		// regular spaces to prevent people from using it as a real diff/patch
+		// tool. We normalize them so our outputs will be consistent.
+		fmt.Fprintln(w, strings.ReplaceAll(diff, " ", " "))
+	}
+}
+
 // List represents a collection of {{.Type}}.
 type List []{{.Type}}
 
