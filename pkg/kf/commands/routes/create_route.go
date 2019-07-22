@@ -25,14 +25,12 @@ import (
 	"github.com/google/kf/pkg/kf/routes"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	cv1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 // NewCreateRouteCommand creates a CreateRoute command.
 func NewCreateRouteCommand(
 	p *config.KfParams,
 	c routes.Client,
-	s cv1.NamespacesGetter,
 ) *cobra.Command {
 	var hostname, urlPath string
 
@@ -74,11 +72,6 @@ Instead use the --namespace flag.`)
 
 			cmd.SilenceUsage = true
 
-			ns, err := s.Namespaces().Get(space, metav1.GetOptions{})
-			if err != nil {
-				return fmt.Errorf("failed to fetch space: %s", err)
-			}
-
 			urlPath = path.Join("/", urlPath)
 
 			r := &v1alpha1.Route{
@@ -92,14 +85,6 @@ Instead use the --namespace flag.`)
 						domain,
 						urlPath,
 					),
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: "v1",
-							Kind:       "Namespace",
-							Name:       ns.Name,
-							UID:        ns.UID,
-						},
-					},
 				},
 				Spec: v1alpha1.RouteSpec{
 					Hostname: hostname,
