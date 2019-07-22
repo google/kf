@@ -15,9 +15,11 @@
 package gentest
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/google/kf/pkg/kf/testutil"
@@ -356,23 +358,18 @@ func ExampleDiffWrapper_changes() {
 	secret := &v1.Secret{}
 	secret.Type = "opaque"
 
-	wrapper := DiffWrapper(os.Stdout, func(s *v1.Secret) error {
+	contents := &bytes.Buffer{}
+	wrapper := DiffWrapper(contents, func(s *v1.Secret) error {
 		s.Type = "docker-creds"
 		return nil
 	})
 
 	fmt.Println("Error:", wrapper(secret))
+	firstLine := strings.Split(contents.String(), "\n")[0]
+	fmt.Println("First line:", firstLine)
 
-	// Output: OperatorConfig Diff (-old +new):
-	//   &v1.Secret{
-	//   	... // 2 identical fields
-	//   	Data:       nil,
-	//   	StringData: nil,
-	// - 	Type:       "opaque",
-	// + 	Type:       "docker-creds",
-	//   }
-	//
-	// Error: <nil>
+	// Output: Error: <nil>
+	// First line: OperatorConfig Diff (-old +new):
 }
 
 func ExampleDiffWrapper_err() {
