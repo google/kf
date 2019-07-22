@@ -75,7 +75,12 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		buildpack         string
 		envs              []string
 		grpc              bool
+<<<<<<< HEAD
 		routes            []v1alpha1.Route
+=======
+		noManifest        bool
+		noStart           bool
+>>>>>>> 5e1bbc2626e2ba6541bbf2a90631498663247f61
 	)
 
 	var pushCmd = &cobra.Command{
@@ -98,29 +103,6 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 				return err
 			}
 
-			if containerImage != "" {
-				if containerRegistry != "" {
-					return errors.New("cannot use --container-registry and --docker-image simultaneously")
-				}
-				if buildpack != "" {
-					return errors.New("cannot use --buildpack and --docker-image simultaneously")
-				}
-				if path != "." { // the default value
-					return errors.New("cannot use --path and --docker-image simultaneously")
-				}
-			}
-
-			switch {
-			case containerRegistry != "":
-				break
-			case space.Spec.BuildpackBuild.ContainerRegistry != "":
-				containerRegistry = space.Spec.BuildpackBuild.ContainerRegistry
-			default:
-				if containerImage == "" {
-					return errors.New("container-registry is required for buildpack apps")
-				}
-			}
-
 			cmd.SilenceUsage = true
 
 			appName := ""
@@ -135,20 +117,23 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 			}
 
 			var pushManifest *manifest.Manifest
-			if manifestFile != "" {
+			switch {
+			case noManifest:
+				if pushManifest, err = manifest.New(appName); err != nil {
+					return err
+				}
+			case manifestFile != "":
 				if pushManifest, err = manifest.NewFromFile(manifestFile); err != nil {
 					return fmt.Errorf("supplied manifest file %s resulted in error: %v", manifestFile, err)
 				}
-			} else {
-				pushManifest, err = manifest.CheckForManifest(path)
-				if err != nil {
+			default:
+				if pushManifest, err = manifest.CheckForManifest(path); err != nil {
 					return fmt.Errorf("error checking directory %s for manifest file: %v", path, err)
 				}
 
 				if pushManifest == nil {
-					// Use a default manifest
 					if pushManifest, err = manifest.New(appName); err != nil {
-						return errors.New("an app name is required if there is no manifest file")
+						return err
 					}
 				}
 			}
@@ -164,48 +149,85 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 				appsToDeploy = []manifest.Application{*app}
 			}
 
-			var minScale int
-			var maxScale int
-			for _, app := range appsToDeploy {
-				minScale, maxScale, err = calculateScaleBounds(instances, app.MinScale, app.MaxScale)
-				if err != nil {
-					return err
-				}
+			overrides := &manifest.Application{}
+			{
+				overrides.Docker.Image = containerImage
 
 				// Read environment variables from cli args
 				envVars, err := envutil.ParseCLIEnvVars(envs)
 				if err != nil {
 					return err
 				}
-				envMap := envutil.EnvVarsToMap(envVars)
+				overrides.Env = envutil.EnvVarsToMap(envVars)
 
-				var imageName string
-				if containerImage == "" {
+				if buildpack != "" {
+					overrides.Buildpacks = []string{buildpack}
+				}
+			}
 
+			for _, app := range appsToDeploy {
+				if err := app.Override(overrides); err != nil {
+					return err
+				}
+
+				minScale, maxScale, err := calculateScaleBounds(instances, app.MinScale, app.MaxScale)
+				if err != nil {
+					return err
+				}
+
+				pushOpts := []apps.PushOption{
+					apps.WithPushNamespace(p.Namespace),
+					apps.WithPushServiceAccount(serviceAccount),
+					apps.WithPushEnvironmentVariables(app.Env),
+					apps.WithPushGrpc(grpc),
+					apps.WithPushMinScale(minScale),
+					apps.WithPushMaxScale(maxScale),
+					apps.WithPushNoStart(noStart),
+				}
+
+				if app.Docker.Image == "" { // builpack app
+					registry := containerRegistry
+					switch {
+					case registry != "":
+						break
+					case space.Spec.BuildpackBuild.ContainerRegistry != "":
+						registry = space.Spec.BuildpackBuild.ContainerRegistry
+					default:
+						return errors.New("container-registry is required for buildpack apps")
+					}
+
+					var imageName string
 					srcPath := filepath.Join(path, app.Path)
 					switch {
 					case sourceImage != "":
 						imageName = sourceImage
 					default:
-						imageName = apps.JoinRepositoryImage(containerRegistry, apps.SourceImageName(p.Namespace, app.Name))
+						imageName = apps.JoinRepositoryImage(registry, apps.SourceImageName(p.Namespace, app.Name))
 
 						if err := b.BuildSrcImage(srcPath, imageName); err != nil {
 							return err
 						}
 					}
-
-					if app.Env == nil {
-						app.Env = make(map[string]string)
+					pushOpts = append(pushOpts,
+						apps.WithPushSourceImage(imageName),
+						apps.WithPushContainerRegistry(registry),
+						apps.WithPushBuildpack(app.Buildpack()),
+					)
+				} else {
+					if containerRegistry != "" {
+						return errors.New("--container-registry can only be used with source pushes, not containers")
+					}
+					if app.Buildpack() != "" {
+						return errors.New("cannot use buildpack and docker image simultaneously")
+					}
+					if app.Path != "" {
+						return errors.New("cannot use path and docker image simultaneously")
 					}
 
-					// Merge cli arg environment variables over manifest ones
-					for k, v := range envMap {
-						app.Env[k] = v
-					}
-
-					envMap = app.Env
+					pushOpts = append(pushOpts, apps.WithPushContainerImage(app.Docker.Image))
 				}
 
+<<<<<<< HEAD
 				manifestRoutes := app.Routes
 				for _, route := range manifestRoutes {
 					// Parse route string from URL into hostname, domain, and path
@@ -225,6 +247,9 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					apps.WithPushMaxScale(maxScale),
 					apps.WithPushRoutes(routes),
 				)
+=======
+				err = pusher.Push(app.Name, pushOpts...)
+>>>>>>> 5e1bbc2626e2ba6541bbf2a90631498663247f61
 
 				cmd.SilenceUsage = !kfi.ConfigError(err)
 
@@ -274,6 +299,13 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		"Setup the container to allow application to use gRPC.",
 	)
 
+	pushCmd.Flags().BoolVar(
+		&noManifest,
+		"no-manifest",
+		false,
+		"Ignore the manifest file.",
+	)
+
 	pushCmd.Flags().StringVarP(
 		&buildpack,
 		"buildpack",
@@ -311,6 +343,13 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		"i",
 		-1, // -1 represents non-user input
 		"the number of instances (default is 1)",
+	)
+
+	pushCmd.Flags().BoolVar(
+		&noStart,
+		"no-start",
+		false,
+		"Do not start an app after pushing",
 	)
 
 	return pushCmd

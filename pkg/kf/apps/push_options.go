@@ -39,6 +39,8 @@ type pushConfig struct {
 	MinScale int
 	// Namespace is the Kubernetes namespace to use
 	Namespace string
+	// NoStart is setup the app without starting it
+	NoStart bool
 	// Output is the io.Writer to write output such as build logs
 	Output io.Writer
 	// Routes is route names (multiple allowed) for the app
@@ -123,6 +125,12 @@ func (opts PushOptions) Namespace() string {
 	return opts.toConfig().Namespace
 }
 
+// NoStart returns the last set value for NoStart or the empty value
+// if not set.
+func (opts PushOptions) NoStart() bool {
+	return opts.toConfig().NoStart
+}
+
 // Output returns the last set value for Output or the empty value
 // if not set.
 func (opts PushOptions) Output() io.Writer {
@@ -200,6 +208,13 @@ func WithPushMinScale(val int) PushOption {
 func WithPushNamespace(val string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.Namespace = val
+	}
+}
+
+// WithPushNoStart creates an Option that sets setup the app without starting it
+func WithPushNoStart(val bool) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.NoStart = val
 	}
 }
 

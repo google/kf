@@ -73,6 +73,7 @@ func newApp(appName string, opts ...PushOption) (*v1alpha1.App, error) {
 	app.SetNamespace(cfg.Namespace)
 	app.SetServiceAccount(cfg.ServiceAccount)
 	app.SetSource(src)
+	app.Spec.Instances.Stopped = cfg.NoStart
 
 	if cfg.Grpc {
 		app.SetContainerPorts([]corev1.ContainerPort{{Name: "h2c", ContainerPort: 8080}})
@@ -119,11 +120,22 @@ func (p *pusher) Push(appName string, opts ...PushOption) error {
 		newRoute, err := p.routesClient.Upsert(cfg.Namespace, route, merger)
 	}
 
-	if err := p.appsClient.DeployLogs(cfg.Output, appName, resultingApp.ResourceVersion, app.Namespace); err != nil {
+	if err := p.appsClient.DeployLogs(
+		cfg.Output,
+		appName,
+		resultingApp.ResourceVersion,
+		app.Namespace,
+		cfg.NoStart,
+	); err != nil {
 		return err
 	}
 
-	_, err = fmt.Fprintf(cfg.Output, "%q successfully deployed\n", appName)
+	status := "deployed"
+	if cfg.NoStart {
+		status = "deployed without starting"
+	}
+
+	_, err = fmt.Fprintf(cfg.Output, "%q successfully %s\n", appName, status)
 	if err != nil {
 		return err
 	}

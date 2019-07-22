@@ -82,6 +82,7 @@ func NewMapRouteCommand(
 						domain,
 						urlPath,
 					),
+					OwnerReferences: ,
 				},
 				Spec: v1alpha1.RouteSpec{
 					Hostname:            hostname,

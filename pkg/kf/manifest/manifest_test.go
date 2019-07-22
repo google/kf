@@ -15,6 +15,7 @@
 package manifest_test
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -39,6 +40,24 @@ applications:
 				Applications: []manifest.Application{
 					{
 						Name: "MY-APP",
+					},
+				},
+			},
+		},
+		"docker": {
+			fileContent: `---
+applications:
+- name: MY-APP
+  docker:
+    image: "gcr.io/my-image"
+`,
+			expected: &manifest.Manifest{
+				Applications: []manifest.Application{
+					{
+						Name: "MY-APP",
+						Docker: manifest.AppDockerImage{
+							Image: "gcr.io/my-image",
+						},
 					},
 				},
 			},
@@ -92,4 +111,70 @@ applications:
 			testutil.AssertEqual(t, "manifest", tc.expected, actual)
 		})
 	}
+}
+
+func TestOverride(t *testing.T) {
+	cases := map[string]struct {
+		base     manifest.Application
+		override manifest.Application
+		expected manifest.Application
+	}{
+		"blank": {},
+		"basic fields, blank override": {
+			base:     manifest.Application{Name: "hello"},
+			override: manifest.Application{},
+			expected: manifest.Application{Name: "hello"},
+		},
+		"nested field, blank override": {
+			base:     manifest.Application{Docker: manifest.AppDockerImage{Image: "hello"}},
+			override: manifest.Application{},
+			expected: manifest.Application{Docker: manifest.AppDockerImage{Image: "hello"}},
+		},
+		"basic fields override": {
+			base:     manifest.Application{Name: "hello"},
+			override: manifest.Application{Name: "override"},
+			expected: manifest.Application{Name: "override"},
+		},
+		"nested field override": {
+			base:     manifest.Application{Docker: manifest.AppDockerImage{Image: "hello"}},
+			override: manifest.Application{Docker: manifest.AppDockerImage{Image: "override"}},
+			expected: manifest.Application{Docker: manifest.AppDockerImage{Image: "override"}},
+		},
+		"envs get merged": {
+			base:     manifest.Application{Env: map[string]string{"base": "base"}},
+			override: manifest.Application{Env: map[string]string{"override": "override"}},
+			expected: manifest.Application{Env: map[string]string{"base": "base", "override": "override"}},
+		},
+		"override env priority": {
+			base:     manifest.Application{Env: map[string]string{"base": "base"}},
+			override: manifest.Application{Env: map[string]string{"override": "override", "base": "override"}},
+			expected: manifest.Application{Env: map[string]string{"base": "override", "override": "override"}},
+		},
+		"buildpacks are strict override": {
+			base:     manifest.Application{Buildpacks: []string{"java", "maven"}},
+			override: manifest.Application{Buildpacks: []string{"node", "npm"}},
+			expected: manifest.Application{Buildpacks: []string{"node", "npm"}},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			base := &tc.base
+			err := base.Override(&tc.override)
+			testutil.AssertNil(t, "override err", err)
+			testutil.AssertEqual(t, "override", &tc.expected, base)
+		})
+	}
+}
+
+func ExampleApplication_Buildpack() {
+	app := manifest.Application{}
+	app.Buildpacks = []string{"java"}
+	fmt.Println("One:", app.Buildpack())
+
+	app.Buildpacks = []string{"maven", "java"}
+	fmt.Println("Two:", app.Buildpack())
+
+	// Output: One: java
+	// Two: maven,java
 }

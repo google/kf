@@ -16,7 +16,6 @@ package apps
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -30,88 +29,161 @@ import (
 	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type pushLogTailer struct {
+	client               *appsClient
+	out                  io.Writer
+	logger               *log.Logger
+	appName              string
+	resourceVersion      string
+	namespace            string
+	noStart              bool
+	buildStartTime       time.Time
+	deployStartTime      time.Time
+	ctx                  context.Context
+	ctxCancel            func()
+	tailBuildLogsOnce    sync.Once
+	checkSourceReadyOnce sync.Once
+}
+
+func newPushLogTailer(
+	client *appsClient,
+	out io.Writer,
+	appName string,
+	resourceVersion string,
+	namespace string,
+	noStart bool,
+) *pushLogTailer {
+
+	t := &pushLogTailer{
+		client:          client,
+		out:             out,
+		appName:         appName,
+		resourceVersion: resourceVersion,
+		namespace:       namespace,
+		noStart:         noStart,
+	}
+
+	t.logger = log.New(out, "\033[32m[build]\033[0m ", 0)
+	t.logger.Printf("Starting app: %s\n", appName)
+	t.buildStartTime = time.Now()
+	t.ctx, t.ctxCancel = context.WithCancel(context.Background())
+	return t
+}
+
 // DeployLogs writes the logs for the deploy step for the resourceVersion
 // to out. It blocks until the operation has completed.
-func (a *appsClient) DeployLogs(out io.Writer, appName, resourceVersion, namespace string) error {
-	logger := log.New(out, "\033[32m[build]\033[0m ", 0)
-	logger.Printf("Starting app: %s\n", appName)
-	start := time.Now()
+func (a *appsClient) DeployLogs(
+	out io.Writer,
+	appName string,
+	resourceVersion string,
+	namespace string,
+	noStart bool,
+) error {
 
-	ws, err := a.kclient.Apps(namespace).Watch(k8smeta.ListOptions{
-		ResourceVersion: resourceVersion,
-		FieldSelector:   fields.OneTermEqualSelector("metadata.name", appName).String(),
+	t := newPushLogTailer(a, out, appName, resourceVersion, namespace, noStart)
+	defer t.ctxCancel()
+
+	for {
+		done, err := t.handleWatch()
+		if err != nil {
+			return err
+		}
+		if done {
+			return nil
+		}
+	}
+}
+
+func (t *pushLogTailer) handleWatch() (bool, error) {
+
+	ws, err := t.client.kclient.Apps(t.namespace).Watch(k8smeta.ListOptions{
+		ResourceVersion: t.resourceVersion,
+		FieldSelector:   fields.OneTermEqualSelector("metadata.name", t.appName).String(),
 		Watch:           true,
 	})
 	if err != nil {
-		return err
+		return true, err
 	}
 	defer ws.Stop()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	var once sync.Once
-	var sourceReadyOnce sync.Once
-	var deployStart time.Time
 	for e := range ws.ResultChan() {
 		app := e.Object.(*v1alpha1.App)
-
-		sourceReady := app.Status.GetCondition(v1alpha1.AppConditionSourceReady)
-		if sourceReady == nil {
-			continue
+		done, err := t.handleUpdate(app)
+		if err != nil {
+			return true, err
 		}
-		if sourceReady.Message != "" {
-			logger.Printf("Updated state to: %s\n", sourceReady.Message)
-		}
-
-		switch sourceReady.Status {
-		case corev1.ConditionTrue:
-			// Only handle source success case once
-			sourceReadyOnce.Do(func() {
-				duration := time.Now().Sub(start)
-				logger.Printf("Built in %0.2f seconds\n", duration.Seconds())
-				cancel()
-				deployStart = time.Now()
-			})
-		case corev1.ConditionFalse:
-			logger.Printf("Failed to build: %s\n", sourceReady.Message)
-			cancel()
-			return fmt.Errorf("build failed: %s", sourceReady.Message)
-		default:
-
-			// This case should mean the Source is still in progress.
-			// It should be safe to tail the logs to show the user what's happening.
-			go once.Do(
-				func() {
-					// ignoring tail errs because they are spurious
-					a.sourcesClient.Tail(ctx, namespace, app.Status.LatestCreatedSourceName, out)
-				},
-			)
-			continue
-		}
-
-		appReady := app.Status.GetCondition(v1alpha1.AppConditionReady)
-		if appReady == nil {
-			continue
-		}
-		if appReady.Message != "" {
-			logger.Printf("Updated state to: %s\n", appReady.Message)
-		}
-
-		switch appReady.Status {
-		case corev1.ConditionTrue:
-			now := time.Now()
-			duration := now.Sub(start)
-			deployDuration := now.Sub(deployStart)
-			logger.Printf("App took %0.2f seconds to become ready.\n", deployDuration.Seconds())
-			logger.Printf("Total deploy time %0.2f seconds\n", duration.Seconds())
-			return nil
-		case corev1.ConditionFalse:
-			logger.Printf("Failed to deploy: %s\n", appReady.Message)
-			return fmt.Errorf("deployment failed: %s", appReady.Message)
+		if done {
+			return true, nil
 		}
 	}
 
-	// Lost connection before ready, unknown status.
-	return errors.New("lost connection to Kubernetes")
+	return false, nil
+}
+
+func (t *pushLogTailer) handleUpdate(
+	app *v1alpha1.App,
+) (bool, error) {
+
+	sourceReady := app.Status.GetCondition(v1alpha1.AppConditionSourceReady)
+	if sourceReady == nil {
+		// source might still be creating
+		return false, nil
+	}
+	if sourceReady.Message != "" {
+		t.logger.Printf("Updated state to: %s\n", sourceReady.Message)
+	}
+
+	switch sourceReady.Status {
+	case corev1.ConditionTrue:
+		// Only handle source success case once
+		t.checkSourceReadyOnce.Do(func() {
+			duration := time.Now().Sub(t.buildStartTime)
+			t.logger.Printf("Built in %0.2f seconds\n", duration.Seconds())
+			t.ctxCancel()
+			t.deployStartTime = time.Now()
+		})
+	case corev1.ConditionFalse:
+		t.logger.Printf("Failed to build: %s\n", sourceReady.Message)
+		t.ctxCancel()
+		return true, fmt.Errorf("build failed: %s", sourceReady.Message)
+	default:
+
+		// This case should mean the Source is still in progress.
+		// It should be safe to tail the logs to show the user what's happening.
+		go t.tailBuildLogsOnce.Do(
+			func() {
+				// ignoring tail errs because they are spurious
+				t.client.sourcesClient.Tail(t.ctx, t.namespace, app.Status.LatestCreatedSourceName, t.out)
+			},
+		)
+		return false, nil
+	}
+
+	if t.noStart {
+		t.logger.Printf("Total deploy time %0.2f seconds\n", time.Now().Sub(t.deployStartTime).Seconds())
+		return true, nil
+	}
+
+	appReady := app.Status.GetCondition(v1alpha1.AppConditionReady)
+	if appReady == nil {
+		return false, nil
+	}
+	if appReady.Message != "" {
+		t.logger.Printf("Updated state to: %s\n", appReady.Message)
+	}
+
+	switch appReady.Status {
+	case corev1.ConditionTrue:
+		now := time.Now()
+		duration := now.Sub(t.buildStartTime)
+		deployDuration := now.Sub(t.deployStartTime)
+		t.logger.Printf("App took %0.2f seconds to become ready.\n", deployDuration.Seconds())
+		t.logger.Printf("Total deploy time %0.2f seconds\n", duration.Seconds())
+		return true, nil
+	case corev1.ConditionFalse:
+		t.logger.Printf("Failed to deploy: %s\n", appReady.Message)
+		return true, fmt.Errorf("deployment failed: %s", appReady.Message)
+	}
+
+	return false, nil
 }
