@@ -30,6 +30,8 @@ import (
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/testutil"
+	spacesfake "k8s.io/client-go/kubernetes/typed/core/v1/fake"
+	ktesting "k8s.io/client-go/testing"
 )
 
 func TestPushCommand(t *testing.T) {
@@ -290,6 +292,10 @@ func TestPushCommand(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			fakeApps := appsfake.NewFakeClient(ctrl)
 			fakePusher := appsfake.NewFakePusher(ctrl)
+			spacesfake := &spacesfake.FakeCoreV1{
+				Fake: &ktesting.Fake{},
+			}
+
 
 			fakePusher.
 				EXPECT().
@@ -326,7 +332,7 @@ func TestPushCommand(t *testing.T) {
 				params.SetTargetSpaceToDefault()
 			}
 
-			c := NewPushCommand(params, fakeApps, fakePusher, tc.srcImageBuilder)
+			c := NewPushCommand(params, fakeApps, fakePusher, tc.srcImageBuilder, spacesfake)
 			buffer := &bytes.Buffer{}
 			c.SetOutput(buffer)
 			c.SetArgs(tc.args)

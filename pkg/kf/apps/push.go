@@ -117,7 +117,10 @@ func (p *pusher) Push(appName string, opts ...PushOption) error {
 
 	routes := cfg.Routes
 	for _, route := range routes {
-		newRoute, err := p.routesClient.Upsert(cfg.Namespace, route, merger)
+		_, err := p.routesClient.Upsert(cfg.Namespace, route, merger)
+		if err != nil {
+			return fmt.Errorf("failed to add route: %s", err)
+		}
 	}
 
 	if err := p.appsClient.DeployLogs(

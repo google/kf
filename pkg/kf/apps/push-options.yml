@@ -45,6 +45,6 @@ configs:
     type: bool
     description: setup the app without starting it
   - name: Routes
-    type: "[]v1alpha1.Route"
+    type: "[]*v1alpha1.Route"
     description: route names (multiple allowed) for the app
 - name: Deploy
