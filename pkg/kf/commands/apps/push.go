@@ -75,12 +75,9 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		buildpack         string
 		envs              []string
 		grpc              bool
-<<<<<<< HEAD
-		routes            []v1alpha1.Route
-=======
 		noManifest        bool
 		noStart           bool
->>>>>>> 5e1bbc2626e2ba6541bbf2a90631498663247f61
+		routes            []v1alpha1.Route
 	)
 
 	var pushCmd = &cobra.Command{
@@ -175,6 +172,12 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					return err
 				}
 
+				manifestRoutes := app.Routes
+				for _, route := range manifestRoutes {
+					// Parse route string from URL into hostname, domain, and path
+					routes = append(routes, createRoute(route.Route, p.Namespace))
+				}
+
 				pushOpts := []apps.PushOption{
 					apps.WithPushNamespace(p.Namespace),
 					apps.WithPushServiceAccount(serviceAccount),
@@ -183,9 +186,10 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					apps.WithPushMinScale(minScale),
 					apps.WithPushMaxScale(maxScale),
 					apps.WithPushNoStart(noStart),
+					apps.WithPushRoutes(routes),
 				}
 
-				if app.Docker.Image == "" { // builpack app
+				if app.Docker.Image == "" { // buildpack app
 					registry := containerRegistry
 					switch {
 					case registry != "":
@@ -227,29 +231,7 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					pushOpts = append(pushOpts, apps.WithPushContainerImage(app.Docker.Image))
 				}
 
-<<<<<<< HEAD
-				manifestRoutes := app.Routes
-				for _, route := range manifestRoutes {
-					// Parse route string from URL into hostname, domain, and path
-					routes = append(routes, createRoute(route.Route, p.Namespace))
-				}
-
-				err = pusher.Push(app.Name,
-					apps.WithPushSourceImage(imageName),
-					apps.WithPushContainerImage(containerImage),
-					apps.WithPushNamespace(p.Namespace),
-					apps.WithPushContainerRegistry(containerRegistry),
-					apps.WithPushServiceAccount(serviceAccount),
-					apps.WithPushEnvironmentVariables(envMap),
-					apps.WithPushGrpc(grpc),
-					apps.WithPushBuildpack(buildpack),
-					apps.WithPushMinScale(minScale),
-					apps.WithPushMaxScale(maxScale),
-					apps.WithPushRoutes(routes),
-				)
-=======
 				err = pusher.Push(app.Name, pushOpts...)
->>>>>>> 5e1bbc2626e2ba6541bbf2a90631498663247f61
 
 				cmd.SilenceUsage = !kfi.ConfigError(err)
 
@@ -382,7 +364,7 @@ func calculateScaleBounds(instances int, minScale, maxScale *int) (int, int, err
 
 }
 
-func createRoute(appName string, routeStr string, ns string) v1alpha1.Route {
+func createRoute(appName string, routeStr string, ns string) *v1alpha1.Route {
 	u, err := url.Parse(routeStr)
 	if err != nil {
 		panic(err)
