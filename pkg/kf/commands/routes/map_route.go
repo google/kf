@@ -25,7 +25,6 @@ import (
 	"github.com/google/kf/pkg/kf/routes"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	cv1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 // NewMapRouteCommand creates a MapRoute command.
@@ -33,7 +32,6 @@ func NewMapRouteCommand(
 	p *config.KfParams,
 	routesClient routes.Client,
 	appsClient apps.Client,
-	nsGetter cv1.NamespacesGetter,
 ) *cobra.Command {
 	var hostname, urlPath string
 
@@ -59,11 +57,6 @@ func NewMapRouteCommand(
 				return fmt.Errorf("failed to fetch app: %s", err)
 			}
 
-			ns, err := nsGetter.Namespaces().Get(p.Namespace, metav1.GetOptions{})
-			if err != nil {
-				return fmt.Errorf("failed to fetch namespace: %s", err)
-			}
-
 			merger := routes.Merger(func(newR, oldR *v1alpha1.Route) *v1alpha1.Route {
 				newR.ObjectMeta = *oldR.ObjectMeta.DeepCopy()
 
@@ -84,20 +77,11 @@ func NewMapRouteCommand(
 					Kind: "Route",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Namespace: ns.Name,
 					Name: v1alpha1.GenerateName(
 						hostname,
 						domain,
 						urlPath,
 					),
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: "v1",
-							Kind:       "Namespace",
-							Name:       ns.Name,
-							UID:        ns.UID,
-						},
-					},
 				},
 				Spec: v1alpha1.RouteSpec{
 					Hostname:            hostname,

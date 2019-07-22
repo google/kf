@@ -30,8 +30,6 @@ import (
 	"github.com/google/kf/pkg/kf/testutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	spacesfake "k8s.io/client-go/kubernetes/typed/core/v1/fake"
-	ktesting "k8s.io/client-go/testing"
 )
 
 func TestMapRoute(t *testing.T) {
@@ -40,7 +38,7 @@ func TestMapRoute(t *testing.T) {
 	for tn, tc := range map[string]struct {
 		Namespace string
 		Args      []string
-		Setup     func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient, spacesfake *spacesfake.FakeCoreV1)
+		Setup     func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient)
 		Assert    func(t *testing.T, buffer *bytes.Buffer, err error)
 	}{
 		"wrong number of args": {
@@ -52,7 +50,7 @@ func TestMapRoute(t *testing.T) {
 		"fetching app fails": {
 			Args:      []string{"some-app", "example.com"},
 			Namespace: "some-space",
-			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient, spacesfake *spacesfake.FakeCoreV1) {
+			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
 				appsfake.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, errors.New("some-error"))
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
@@ -62,7 +60,7 @@ func TestMapRoute(t *testing.T) {
 		"transforming Route fails": {
 			Args:      []string{"some-app", "example.com"},
 			Namespace: "some-space",
-			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient, spacesfake *spacesfake.FakeCoreV1) {
+			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
 				appsfake.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&v1alpha1.App{}, nil)
 				routesfake.EXPECT().Upsert(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("some-error"))
 			},
@@ -73,7 +71,7 @@ func TestMapRoute(t *testing.T) {
 		"namespace": {
 			Args:      []string{"some-app", "example.com"},
 			Namespace: "some-space",
-			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient, spacesfake *spacesfake.FakeCoreV1) {
+			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
 				appsfake.EXPECT().Get("some-space", gomock.Any()).Return(&v1alpha1.App{}, nil)
 				routesfake.EXPECT().Upsert("some-space", gomock.Any(), gomock.Any())
 			},
@@ -83,7 +81,7 @@ func TestMapRoute(t *testing.T) {
 		},
 		"without namespace": {
 			Args: []string{"some-app", "example.com"},
-			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient, spacesfake *spacesfake.FakeCoreV1) {
+			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
 				appsfake.EXPECT().Get("some-space", gomock.Any()).Return(&v1alpha1.App{}, nil)
 				routesfake.EXPECT().Upsert("some-space", gomock.Any(), gomock.Any())
 			},
@@ -94,7 +92,7 @@ func TestMapRoute(t *testing.T) {
 		"fetches app": {
 			Args:      []string{"some-app", "example.com"},
 			Namespace: "some-space",
-			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient, spacesfake *spacesfake.FakeCoreV1) {
+			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
 				appsfake.EXPECT().Get(gomock.Any(), "some-app").Return(&v1alpha1.App{}, nil)
 				routesfake.EXPECT().Upsert(gomock.Any(), gomock.Any(), gomock.Any())
 			},
@@ -105,7 +103,7 @@ func TestMapRoute(t *testing.T) {
 		"transform Route": {
 			Args:      []string{"some-app", "example.com", "--hostname=some-host", "--path=some-path"},
 			Namespace: "some-space",
-			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient, spacesfake *spacesfake.FakeCoreV1) {
+			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
 				appsfake.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&v1alpha1.App{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "some-app",
@@ -141,7 +139,7 @@ func TestMapRoute(t *testing.T) {
 		"don't re-add app": {
 			Args:      []string{"some-app", "example.com", "--hostname=some-host", "--path=some-path"},
 			Namespace: "some-space",
-			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient, spacesfake *spacesfake.FakeCoreV1) {
+			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
 				appsfake.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&v1alpha1.App{}, nil)
 				routesfake.EXPECT().Upsert(gomock.Any(), gomock.Any(), gomock.Any()).Do(func(_ string, newR *v1alpha1.Route, m clientroutes.Merger) {
 					oldR := v1alpha1.Route{
@@ -162,12 +160,9 @@ func TestMapRoute(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			routesfake := routesfake.NewFakeClient(ctrl)
 			appsfake := appsfake.NewFakeClient(ctrl)
-			spacesfake := &spacesfake.FakeCoreV1{
-				Fake: &ktesting.Fake{},
-			}
 
 			if tc.Setup != nil {
-				tc.Setup(t, routesfake, appsfake, spacesfake)
+				tc.Setup(t, routesfake, appsfake)
 			}
 
 			var buffer bytes.Buffer
@@ -177,7 +172,6 @@ func TestMapRoute(t *testing.T) {
 				},
 				routesfake,
 				appsfake,
-				spacesfake,
 			)
 			cmd.SetArgs(tc.Args)
 			cmd.SetOutput(&buffer)

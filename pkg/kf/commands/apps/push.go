@@ -31,9 +31,7 @@ import (
 	kfi "github.com/google/kf/pkg/kf/internal/kf"
 	"github.com/google/kf/pkg/kf/manifest"
 	"github.com/spf13/cobra"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	cv1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 // SrcImageBuilder creates and uploads a container image that contains the
@@ -65,7 +63,7 @@ func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string) error {
 }
 
 // NewPushCommand creates a push command.
-func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, b SrcImageBuilder, nsGetter cv1.NamespacesGetter) *cobra.Command {
+func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, b SrcImageBuilder) *cobra.Command {
 	var (
 		containerRegistry string
 		sourceImage       string
@@ -100,11 +98,6 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 			space, err := p.GetTargetSpaceOrDefault()
 			if err != nil {
 				return err
-			}
-
-			ns, err := nsGetter.Namespaces().Get(p.Namespace, metav1.GetOptions{})
-			if err != nil {
-				return fmt.Errorf("failed to fetch namespace: %s", err)
 			}
 
 			cmd.SilenceUsage = true
@@ -182,7 +175,7 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 				manifestRoutes := app.Routes
 				for _, route := range manifestRoutes {
 					// Parse route string from URL into hostname, domain, and path
-					newRoute, err := createRoute(appName, route.Route, ns)
+					newRoute, err := createRoute(appName, route.Route, p.Namespace)
 					if err != nil {
 						return err
 					}
@@ -375,7 +368,7 @@ func calculateScaleBounds(instances int, minScale, maxScale *int) (int, int, err
 
 }
 
-func createRoute(appName string, routeStr string, ns *v1.Namespace) (*v1alpha1.Route, error) {
+func createRoute(appName string, routeStr string, namespace string) (*v1alpha1.Route, error) {
 	u, err := url.Parse(routeStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse route: %s", err)
@@ -404,20 +397,12 @@ func createRoute(appName string, routeStr string, ns *v1.Namespace) (*v1alpha1.R
 			Kind: "Route",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns.Name,
+			Namespace: namespace,
 			Name: v1alpha1.GenerateName(
 				hostname,
 				domain,
 				urlPath,
 			),
-			OwnerReferences: []metav1.OwnerReference{
-				{
-					APIVersion: "v1",
-					Kind:       "Namespace",
-					Name:       ns.Name,
-					UID:        ns.UID,
-				},
-			},
 		},
 		Spec: v1alpha1.RouteSpec{
 			Hostname:            hostname,

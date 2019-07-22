@@ -23,6 +23,7 @@ import (
 	"github.com/google/kf/pkg/kf/apps"
 	appsfake "github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/internal/envutil"
+	routesfake "github.com/google/kf/pkg/kf/routes/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -60,6 +61,7 @@ func TestPush_Logs(t *testing.T) {
 			expectedNamespace := "some-namespace"
 
 			fakeApps := appsfake.NewFakeClient(ctrl)
+			fakeRoutes := routesfake.NewFakeClient(ctrl)
 			fakeApps.EXPECT().
 				Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
 				Return(&v1alpha1.App{
@@ -79,6 +81,7 @@ func TestPush_Logs(t *testing.T) {
 
 			p := apps.NewPusher(
 				fakeApps,
+				fakeRoutes,
 			)
 
 			gotErr := p.Push(
@@ -302,15 +305,15 @@ func TestPush(t *testing.T) {
 			}
 
 			ctrl := gomock.NewController(t)
-
+			fakeRoutes := routesfake.NewFakeClient(ctrl)
 			fakeApps := appsfake.NewFakeClient(ctrl)
 			fakeApps.EXPECT().
 				DeployLogs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 				AnyTimes()
 
-			tc.setup(t, fakeApps)
+			tc.setup(t, fakeApps, fakeRoutes)
 
-			p := apps.NewPusher(fakeApps)
+			p := apps.NewPusher(fakeApps, fakeRoutes)
 			gotErr := p.Push(tc.appName, tc.opts...)
 			tc.assert(t, gotErr)
 			if gotErr != nil {
