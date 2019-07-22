@@ -21,17 +21,27 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/google/kf/pkg/kf/internal/envutil"
+	"github.com/imdario/mergo"
 	"gopkg.in/yaml.v2"
 )
 
 // Application is a configuration for a single 12-factor-app.
 type Application struct {
-	Name     string            `yaml:"name,omitempty"`
-	Path     string            `yaml:"path,omitempty"`
-	Env      map[string]string `yaml:"env,omitempty"`
-	MinScale *int              `yaml:"minScale,omitempty"`
-	MaxScale *int              `yaml:"maxScale,omitempty"`
+	Name       string            `yaml:"name,omitempty"`
+	Path       string            `yaml:"path,omitempty"`
+	Buildpacks []string          `yaml:"buildpacks,omitempty"`
+	Docker     AppDockerImage    `yaml:"docker,omitempty"`
+	Env        map[string]string `yaml:"env,omitempty"`
+	MinScale   *int              `yaml:"minScale,omitempty"`
+	MaxScale   *int              `yaml:"maxScale,omitempty"`
+}
+
+// AppDockerImage is the struct for docker configuration.
+type AppDockerImage struct {
+	Image string `yaml:"image,omitempty"`
 }
 
 // Manifest is an application's configuration.
@@ -112,4 +122,28 @@ func (m Manifest) App(name string) (*Application, error) {
 	}
 
 	return nil, fmt.Errorf("no app %s found in the Manifest", name)
+}
+
+// Override overrides values using corresponding non-empty values from overrides.
+// Environment variables are extended with override taking priority.
+func (app *Application) Override(overrides *Application) error {
+	appEnv := envutil.MapToEnvVars(app.Env)
+	overrideEnv := envutil.MapToEnvVars(overrides.Env)
+	combined := append(appEnv, overrideEnv...)
+
+	if err := mergo.Merge(app, overrides, mergo.WithOverride); err != nil {
+		return err
+	}
+
+	if len(combined) > 0 {
+		app.Env = envutil.EnvVarsToMap(envutil.DeduplicateEnvVars(combined))
+	}
+
+	return nil
+}
+
+// Buildpack joings toegether the buildpacks in order as a CSV to be compatible
+// with buildpacks v3.
+func (app *Application) Buildpack() string {
+	return strings.Join(app.Buildpacks, ",")
 }
