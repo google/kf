@@ -17,6 +17,7 @@ package gentest
 import (
 	"errors"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/google/kf/pkg/kf/testutil"
@@ -336,4 +337,52 @@ func TestClient_Upsert(t *testing.T) {
 			}
 		})
 	}
+}
+
+func ExampleDiffWrapper_noDiff() {
+	secret := &v1.Secret{}
+
+	wrapper := DiffWrapper(os.Stdout, func(s *v1.Secret) error {
+		// don't mutate the secret
+		return nil
+	})
+
+	wrapper(secret)
+
+	// Output: No changes
+}
+
+func ExampleDiffWrapper_changes() {
+	secret := &v1.Secret{}
+	secret.Type = "opaque"
+
+	wrapper := DiffWrapper(os.Stdout, func(s *v1.Secret) error {
+		s.Type = "docker-creds"
+		return nil
+	})
+
+	fmt.Println("Error:", wrapper(secret))
+
+	// Output: OperatorConfig Diff (-old +new):
+	//   &v1.Secret{
+	//   	... // 2 identical fields
+	//   	Data:       nil,
+	//   	StringData: nil,
+	// - 	Type:       "opaque",
+	// + 	Type:       "docker-creds",
+	//   }
+	//
+	// Error: <nil>
+}
+
+func ExampleDiffWrapper_err() {
+	secret := &v1.Secret{}
+
+	wrapper := DiffWrapper(os.Stdout, func(s *v1.Secret) error {
+		return errors.New("some-error")
+	})
+
+	fmt.Println(wrapper(secret))
+
+	// Output: some-error
 }
