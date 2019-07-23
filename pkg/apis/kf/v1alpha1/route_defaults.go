@@ -28,6 +28,6 @@ func (k *Route) SetDefaults(ctx context.Context) {
 // SetDefaults implements apis.Defaultable
 func (k *RouteSpec) SetDefaults(ctx context.Context) {
 	k.KnativeServiceNames = []string(algorithms.Dedupe(
-		algorithms.Dedupe(algorithms.Strings(k.KnativeServiceNames)),
+		algorithms.Strings(k.KnativeServiceNames),
 	).(algorithms.Strings))
 }

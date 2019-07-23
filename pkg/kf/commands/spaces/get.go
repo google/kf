@@ -79,6 +79,8 @@ func NewGetSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Command
 			execution := space.Spec.Execution
 			fmt.Fprintf(w, "Environment: %v variable(s)\n", len(execution.Env))
 			printEnvGroup(w, execution.Env)
+			fmt.Fprintf(w, "Domains: %d domain(s)\n", len(execution.Domains))
+			printDomains(w, execution.Domains)
 
 			fmt.Fprintln(w)
 			printAdditionalCommands(w, space.Name)
@@ -107,6 +109,16 @@ func printEnvGroup(out io.Writer, envVars []corev1.EnvVar) {
 	for _, env := range envVars {
 		fmt.Fprintf(w, "%s\t%s", env.Name, env.Value)
 		fmt.Fprintln(w)
+	}
+}
+
+func printDomains(out io.Writer, domains []v1alpha1.SpaceDomain) {
+	for _, domain := range domains {
+		suffix := ""
+		if domain.Default {
+			suffix = " (default)"
+		}
+		fmt.Fprintln(out, domain.Domain+suffix)
 	}
 }
 

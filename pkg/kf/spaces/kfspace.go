@@ -116,7 +116,17 @@ func (k *KfSpace) ResetServices() {
 	delete(k.Spec.ResourceLimits.SpaceQuota, v1.ResourceServices)
 }
 
-// ToSpace casts this alias back into a v1alpha.Space.
+// GetDomains gets the domains for the space.
+func (k *KfSpace) GetDomains() []v1alpha1.SpaceDomain {
+	return k.Spec.Execution.Domains
+}
+
+// AppendDomains appends to the domains for the space.
+func (k *KfSpace) AppendDomains(domains ...v1alpha1.SpaceDomain) {
+	k.Spec.Execution.Domains = append(k.Spec.Execution.Domains, domains...)
+}
+
+// ToSpace casts this alias back into a v1alpha1.Space.
 func (k *KfSpace) ToSpace() *v1alpha1.Space {
 	return (*v1alpha1.Space)(k)
 }

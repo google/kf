@@ -73,7 +73,38 @@ func (s *SpaceSpecBuildpackBuild) Validate(ctx context.Context) (errs *apis.Fiel
 
 // Validate makes sure that SpaceSpecExecution is properly configured.
 func (s *SpaceSpecExecution) Validate(ctx context.Context) (errs *apis.FieldError) {
-	// XXX: no validation
+	if len(s.Domains) == 0 {
+		return errs.Also(apis.ErrMissingField("domains"))
+	}
+
+	lastDefault := -1
+	for i, d := range s.Domains {
+		if !d.Default {
+			continue
+		}
+
+		if lastDefault >= 0 {
+			errs = errs.Also(
+				&apis.FieldError{
+					Paths:   []string{"domains"},
+					Message: "multiple defaults",
+					Details: "one domain must be set to default",
+				},
+			)
+		}
+		lastDefault = i
+	}
+
+	if lastDefault < 0 {
+		errs = errs.Also(
+			&apis.FieldError{
+				Paths:   []string{"domains"},
+				Message: "multiple defaults",
+				Details: "one domain must be set to default",
+			},
+		)
+	}
+
 	return errs
 }
 

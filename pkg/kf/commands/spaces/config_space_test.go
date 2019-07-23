@@ -16,6 +16,7 @@ package spaces
 
 import (
 	"bytes"
+	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -31,8 +32,9 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 	space := "my-space"
 
 	cases := map[string]struct {
-		args     []string
-		space    v1alpha1.Space
+		args  []string
+		space v1alpha1.Space
+		// TODO (#395): Test other failure cases.
 		wantErr  error
 		validate func(*testing.T, *v1alpha1.Space)
 	}{
@@ -125,6 +127,66 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 			args: []string{"set-buildpack-builder", space, "gcr.io/path/to/builder"},
 			validate: func(t *testing.T, space *v1alpha1.Space) {
 				testutil.AssertEqual(t, "container registry", "gcr.io/path/to/builder", space.Spec.BuildpackBuild.BuilderImage)
+			},
+		},
+
+		"append-domain valid": {
+			args: []string{"append-domain", space, "example.com"},
+			validate: func(t *testing.T, space *v1alpha1.Space) {
+				testutil.AssertEqual(t, "len(domains)", 1, len(space.Spec.Execution.Domains))
+				testutil.AssertEqual(t, "domains", "example.com", space.Spec.Execution.Domains[0].Domain)
+			},
+		},
+
+		"set-default-domain valid": {
+			space: v1alpha1.Space{
+				Spec: v1alpha1.SpaceSpec{
+					Execution: v1alpha1.SpaceSpecExecution{
+						Domains: []v1alpha1.SpaceDomain{
+							{Domain: "other-example.com", Default: true},
+							{Domain: "example.com"},
+						},
+					},
+				},
+			},
+			args: []string{"set-default-domain", space, "example.com"},
+			validate: func(t *testing.T, space *v1alpha1.Space) {
+				testutil.AssertEqual(t, "len(domains)", 2, len(space.Spec.Execution.Domains))
+				testutil.AssertEqual(t, "domains", "example.com", space.Spec.Execution.Domains[1].Domain)
+				testutil.AssertEqual(t, "default", true, space.Spec.Execution.Domains[1].Default)
+				testutil.AssertEqual(t, "unsets previous default", false, space.Spec.Execution.Domains[0].Default)
+			},
+		},
+
+		"set-default-domain invalid": {
+			space: v1alpha1.Space{
+				Spec: v1alpha1.SpaceSpec{
+					Execution: v1alpha1.SpaceSpecExecution{
+						Domains: []v1alpha1.SpaceDomain{
+							{Domain: "example.com"},
+						},
+					},
+				},
+			},
+			wantErr: errors.New("failed to find domain other-example.com"),
+			args:    []string{"set-default-domain", space, "other-example.com"},
+		},
+
+		"remove-domain valid": {
+			space: v1alpha1.Space{
+				Spec: v1alpha1.SpaceSpec{
+					Execution: v1alpha1.SpaceSpecExecution{
+						Domains: []v1alpha1.SpaceDomain{
+							{Domain: "example.com"},
+							{Domain: "other-example.com"},
+						},
+					},
+				},
+			},
+			args: []string{"remove-domain", space, "other-example.com"},
+			validate: func(t *testing.T, space *v1alpha1.Space) {
+				testutil.AssertEqual(t, "len(domains)", 1, len(space.Spec.Execution.Domains))
+				testutil.AssertEqual(t, "domains", "example.com", space.Spec.Execution.Domains[0].Domain)
 			},
 		},
 	}

@@ -188,27 +188,27 @@ func (r *Reconciler) reconcile(desired, actual *networking.VirtualService, delet
 
 	if deleted {
 		existing.OwnerReferences = algorithms.Delete(
-			resources.OwnerReferences(existing.OwnerReferences),
-			resources.OwnerReferences(desired.OwnerReferences),
-		).(resources.OwnerReferences)
+			v1alpha1.OwnerReferences(existing.OwnerReferences),
+			v1alpha1.OwnerReferences(desired.OwnerReferences),
+		).(v1alpha1.OwnerReferences)
 
 		existing.Spec.HTTP = algorithms.Delete(
-			resources.HTTPRoutes(existing.Spec.HTTP),
-			resources.HTTPRoutes(desired.Spec.HTTP),
-		).(resources.HTTPRoutes)
+			v1alpha1.HTTPRoutes(existing.Spec.HTTP),
+			v1alpha1.HTTPRoutes(desired.Spec.HTTP),
+		).(v1alpha1.HTTPRoutes)
 	} else {
 		existing.OwnerReferences = algorithms.Merge(
-			resources.OwnerReferences(existing.OwnerReferences),
-			resources.OwnerReferences(desired.OwnerReferences),
-		).(resources.OwnerReferences)
+			v1alpha1.OwnerReferences(existing.OwnerReferences),
+			v1alpha1.OwnerReferences(desired.OwnerReferences),
+		).(v1alpha1.OwnerReferences)
 
 		existing.Spec.HTTP = algorithms.Merge(
-			resources.HTTPRoutes(existing.Spec.HTTP),
-			resources.HTTPRoutes(desired.Spec.HTTP),
-		).(resources.HTTPRoutes)
+			v1alpha1.HTTPRoutes(existing.Spec.HTTP),
+			v1alpha1.HTTPRoutes(desired.Spec.HTTP),
+		).(v1alpha1.HTTPRoutes)
 
 		// Sort by reverse to defer to the longest matchers.
-		sort.Sort(sort.Reverse(resources.HTTPRoutes(existing.Spec.HTTP)))
+		sort.Sort(sort.Reverse(v1alpha1.HTTPRoutes(existing.Spec.HTTP)))
 	}
 
 	return r.SharedClientSet.
