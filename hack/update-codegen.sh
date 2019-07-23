@@ -116,11 +116,6 @@ kf-knative-gen() {
     "kf:v1alpha1"
 }
 
-kf-gen() {
-  kf-code-gen
-  kf-knative-gen
-}
-
 kbuild-code-gen() {
   code-generator-gen \
     "deepcopy,client,informer,lister" \
@@ -153,16 +148,6 @@ svccat-knative-gen() {
     "servicecatalog:v1beta1"
 }
 
-svccat-gen() {
-  svccat-codegen
-  svccat-knative-gen
-}
-
-kbuild-gen() {
-  kbuild-code-gen
-  kbuild-knative-gen
-}
-
 go mod vendor
 download-scripts
 
@@ -178,13 +163,16 @@ case $GENS in
     svccat-knative-gen
     ;;
   kf)
-    kf-gen
+    kf-code-gen
+    kf-knative-gen
     ;;
   kbuild)
-    kbuild-gen
+    kbuild-code-gen
+    kbuild-knative-gen
     ;;
   svccat)
-    svccat-gen
+    svccat-codegen
+    svccat-knative-gen
     ;;
   all)
     kf-gen
