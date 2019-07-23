@@ -237,7 +237,7 @@ func TestPush(t *testing.T) {
 		"pushes app with routes": {
 			appName: "some-app",
 			opts: apps.PushOptions{
-				apps.WithPushRoutes([]*v1alpha1.Route{&v1alpha1.Route{}, &v1alpha1.Route{}}),
+				apps.WithPushRoutes([]*v1alpha1.Route{{}, {}}),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
 				appsClient.EXPECT().
@@ -254,7 +254,7 @@ func TestPush(t *testing.T) {
 		"route returns an error": {
 			appName: "some-app",
 			opts: apps.PushOptions{
-				apps.WithPushRoutes([]*v1alpha1.Route{&v1alpha1.Route{}}),
+				apps.WithPushRoutes([]*v1alpha1.Route{{}}),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
 				appsClient.EXPECT().
