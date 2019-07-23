@@ -129,7 +129,7 @@ func TestMapRoute(t *testing.T) {
 						},
 					}
 					m(newR, &oldR)
-					testutil.AssertEqual(t, "names", []string{"some-app", "some-other-app"}, newR.Spec.KnativeServiceNames)
+					testutil.AssertEqual(t, "names", []string{"some-other-app", "some-app"}, newR.Spec.KnativeServiceNames)
 				})
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
