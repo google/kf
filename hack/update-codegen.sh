@@ -34,7 +34,7 @@ KF_PACKAGE="github.com/google/kf"
 KF_PACKAGE_LOCATION="./"
 KF_RESOURCE="kf:v1alpha1"
 BUILD_RESOURCE="build:v1alpha1"
-HEADER_FILE=${KF_PACKAGE_LOCATION}/pkg/internal/tools/option-builder/LICENSE_HEADER.go.txt
+HEADER_FILE=${KF_PACKAGE_LOCATION}/pkg/kf/internal/tools/option-builder/LICENSE_HEADER.go.txt
 
 GENS=$1
 if [ "$GENS" = "" ]; then
