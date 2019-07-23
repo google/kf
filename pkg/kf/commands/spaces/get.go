@@ -17,14 +17,10 @@ package spaces
 import (
 	"fmt"
 	"io"
-	"sort"
-	"text/tabwriter"
 
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/describe"
 	"github.com/google/kf/pkg/kf/spaces"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta/table"
 
 	"github.com/spf13/cobra"
 )
@@ -47,38 +43,30 @@ func NewGetSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Command
 
 			w := cmd.OutOrStdout()
 
-			fmt.Fprintln(w, "# Metadata")
-			fmt.Fprintf(w, "Name: %s\n", space.Name)
-			fmt.Fprintf(w, "Age: %s\n", table.ConvertToHumanReadableDateType(space.CreationTimestamp))
-
-			ready := ""
-			reason := ""
-			if cond := space.Status.GetCondition(v1alpha1.SpaceConditionReady); cond != nil {
-				ready = fmt.Sprintf("%v", cond.Status)
-				reason = cond.Reason
-			}
-
-			fmt.Fprintf(w, "Ready?: %s\n", ready)
-			fmt.Fprintf(w, "Reason: %q\n", reason)
-
+			describe.ObjectMeta(w, space.ObjectMeta)
 			fmt.Fprintln(w)
-			fmt.Fprintln(w, "# Security")
-			security := space.Spec.Security
-			fmt.Fprintf(w, "Developers can read logs? %v\n", security.EnableDeveloperLogsAccess)
 
+			describe.DuckStatus(w, space.Status.Status)
 			fmt.Fprintln(w)
-			fmt.Fprintln(w, "# Build")
-			buildpackBuild := space.Spec.BuildpackBuild
-			fmt.Fprintf(w, "Builder image: %q\n", buildpackBuild.BuilderImage)
-			fmt.Fprintf(w, "Container registry: %q\n", buildpackBuild.ContainerRegistry)
-			fmt.Fprintf(w, "Build environment: %v variable(s)\n", len(buildpackBuild.Env))
-			printEnvGroup(w, buildpackBuild.Env)
 
+			describe.SectionWriter(w, "Security", func(w io.Writer) {
+				security := space.Spec.Security
+				fmt.Fprintf(w, "Developers can read logs?\t%v\n", security.EnableDeveloperLogsAccess)
+			})
 			fmt.Fprintln(w)
-			fmt.Fprintln(w, "# Execution")
-			execution := space.Spec.Execution
-			fmt.Fprintf(w, "Environment: %v variable(s)\n", len(execution.Env))
-			printEnvGroup(w, execution.Env)
+
+			describe.SectionWriter(w, "Build", func(w io.Writer) {
+				buildpackBuild := space.Spec.BuildpackBuild
+				fmt.Fprintf(w, "Builder Image:\t%q\n", buildpackBuild.BuilderImage)
+				fmt.Fprintf(w, "Container Registry:\t%q\n", buildpackBuild.ContainerRegistry)
+				describe.EnvVars(w, buildpackBuild.Env)
+			})
+			fmt.Fprintln(w)
+
+			describe.SectionWriter(w, "Execution", func(w io.Writer) {
+				execution := space.Spec.Execution
+				describe.EnvVars(w, execution.Env)
+			})
 
 			fmt.Fprintln(w)
 			printAdditionalCommands(w, space.Name)
@@ -88,26 +76,6 @@ func NewGetSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Command
 	}
 
 	return cmd
-}
-
-func printEnvGroup(out io.Writer, envVars []corev1.EnvVar) {
-	if len(envVars) == 0 {
-		return
-	}
-
-	w := tabwriter.NewWriter(out, 8, 4, 1, ' ', tabwriter.StripEscape)
-	defer w.Flush()
-
-	fmt.Fprintln(w, "Variable Name\tAssigned Value")
-
-	sort.Slice(envVars, func(i int, j int) bool {
-		return envVars[i].Name < envVars[j].Name
-	})
-
-	for _, env := range envVars {
-		fmt.Fprintf(w, "%s\t%s", env.Name, env.Value)
-		fmt.Fprintln(w)
-	}
 }
 
 func printAdditionalCommands(w io.Writer, spaceName string) {
