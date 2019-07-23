@@ -50,7 +50,7 @@ func TestPushCommand(t *testing.T) {
 		},
 		{
 			hostname: "",
-			domain:   "example.com",
+			domain:   "www.example.com",
 			path:     "/foo",
 		},
 		{

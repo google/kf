@@ -103,15 +103,7 @@ func (p *pusher) Push(appName string, opts ...PushOption) error {
 
 	merger := routes.Merger(func(newR, oldR *v1alpha1.Route) *v1alpha1.Route {
 		newR.ObjectMeta = *oldR.ObjectMeta.DeepCopy()
-
-		// Ensure the app isn't already there
-		for _, name := range oldR.Spec.KnativeServiceNames {
-			if name == appName {
-				continue
-			}
-			newR.Spec.KnativeServiceNames = append(newR.Spec.KnativeServiceNames, name)
-		}
-
+		newR.Spec.KnativeServiceNames = append(oldR.Spec.KnativeServiceNames, appName)
 		return newR
 	})
 

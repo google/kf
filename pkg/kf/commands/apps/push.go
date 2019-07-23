@@ -421,12 +421,15 @@ func parseRouteStr(routeStr string) (string, string, string, error) {
 	if len(parts) == 3 {
 		// Has hostname
 		if parts[0] == "www" {
-			// "www" is a hostname exception
+			// "www" is a hostname exception.
+			// strip hostname and include "www" in the domain
 			hostname = ""
+			domain = strings.Join(parts, ".")
 		} else {
 			hostname = parts[0]
+			domain = strings.Join(parts[1:], ".")
 		}
-		domain = strings.Join(parts[1:], ".")
+
 	} else {
 		// Only domain
 		hostname = ""
