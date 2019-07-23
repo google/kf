@@ -51,17 +51,17 @@ code-generator-gen() {
   mkdir -p $CODEGEN_PKG
   mv generate-groups.sh $CODEGEN_PKG/generate-groups.sh
 
-  ONE=$1
-  TWO=$2
-  THR=$3
-  FOR=$4
+  GENERATORS=$1
+  OUTPUT_PACKAGE=$2
+  API_PACKAGE=$3
+  GROUP_VERSION=$4
 
-  echo "k8s code gen for $THR -> $FOR"
+  echo "k8s code gen for $API_PACKAGE -> $GROUP_VERSION"
   ${CODEGEN_PKG}/generate-groups.sh \
-    "$ONE" \
-    "$TWO" \
-    "$THR" \
-    "$FOR" \
+    "$GENERATORS" \
+    "$OUTPUT_PACKAGE" \
+    "$API_PACKAGE" \
+    "$GROUP_VERSION" \
     --go-header-file="$HEADER_FILE" \
     ${GENERATOR_FLAGS}
   [ $? -ne 0 ] && echo Error running code-generator 1>&2 && exit 1
@@ -79,17 +79,17 @@ knative-injection-gen() {
   mkdir -p $KNATIVE_CODEGEN_PKG
   mv generate-knative.sh $KNATIVE_CODEGEN_PKG/generate-knative.sh
 
-  ONE=$1
-  TWO=$2
-  THR=$3
-  FOR=$4
+  GENERATORS=$1
+  OUTPUT_PACKAGE=$2
+  API_PACKAGE=$3
+  GROUP_VERSION=$4
 
-  echo "knative injection gen for $THR -> $FOR"
+  echo "knative injection gen for $API_PACKAGE -> $GROUP_VERSION"
   ${KNATIVE_CODEGEN_PKG}/generate-knative.sh \
-    "$ONE" \
-    "$TWO" \
-    "$THR" \
-    "$FOR" \
+    "$GENERATORS" \
+    "$OUTPUT_PACKAGE" \
+    "$API_PACKAGE" \
+    "$GROUP_VERSION" \
     --go-header-file $HEADER_FILE
   [ $? -ne 0 ] && echo Error running injection-generator 1>&2 && exit 1
 
