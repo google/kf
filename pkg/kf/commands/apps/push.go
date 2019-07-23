@@ -369,28 +369,10 @@ func calculateScaleBounds(instances int, minScale, maxScale *int) (int, int, err
 }
 
 func createRoute(appName string, routeStr string, namespace string) (*v1alpha1.Route, error) {
-	u, err := url.Parse(routeStr)
+	hostname, domain, path, err := parseRouteStr(routeStr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse route: %s", err)
+		return nil, err
 	}
-
-	parts := strings.SplitN(u.Hostname(), ".", 3)
-
-	var hostname string
-	var domain string
-	var urlPath string
-
-	if len(parts) == 3 {
-		// Has hostname
-		hostname = parts[0]
-		domain = strings.Join(parts[1:], ".")
-	} else {
-		// Only domain
-		hostname = ""
-		domain = strings.Join(parts, ".")
-	}
-
-	urlPath = u.EscapedPath()
 
 	r := &v1alpha1.Route{
 		TypeMeta: metav1.TypeMeta{
@@ -401,16 +383,57 @@ func createRoute(appName string, routeStr string, namespace string) (*v1alpha1.R
 			Name: v1alpha1.GenerateName(
 				hostname,
 				domain,
-				urlPath,
+				path,
 			),
 		},
 		Spec: v1alpha1.RouteSpec{
 			Hostname:            hostname,
 			Domain:              domain,
-			Path:                urlPath,
+			Path:                path,
 			KnativeServiceNames: []string{appName},
 		},
 	}
 
 	return r, nil
+}
+
+// parseRouteStr parses a route URL into a hostname, domain, and path
+func parseRouteStr(routeStr string) (string, string, string, error) {
+	u, err := url.Parse(routeStr)
+	if err != nil {
+		return "", "", "", fmt.Errorf("failed to parse route: %s", err)
+	}
+	if u.Scheme == "" {
+		// Parsing URLs without schemes causes the hostname and domain to incorrectly be empty.
+		// We handle this by assuming the route has a HTTP scheme if scheme is not provided.
+		u, err = url.Parse("http://" + routeStr)
+		if err != nil {
+			return "", "", "", fmt.Errorf("failed to parse route: %s", err)
+		}
+	}
+
+	parts := strings.SplitN(u.Hostname(), ".", 3)
+
+	var hostname string
+	var domain string
+	var path string
+
+	if len(parts) == 3 {
+		// Has hostname
+		if parts[0] == "www" {
+			// "www" is a hostname exception
+			hostname = ""
+		} else {
+			hostname = parts[0]
+		}
+		domain = strings.Join(parts[1:], ".")
+	} else {
+		// Only domain
+		hostname = ""
+		domain = strings.Join(parts, ".")
+	}
+
+	path = u.EscapedPath()
+
+	return hostname, domain, path, nil
 }

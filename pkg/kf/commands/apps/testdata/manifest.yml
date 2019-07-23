@@ -12,4 +12,6 @@ applications:
   path: example-app
 - name: routes-app
   routes:
-  - route: host.example.com/foo
+  - route: example.com
+  - route: www.example.com/foo
+  - route: https://host.example.com/foo

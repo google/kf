@@ -33,28 +33,33 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type routeParts struct {
+	hostname string
+	domain   string
+	path     string
+}
+
 func TestPushCommand(t *testing.T) {
 	t.Parallel()
 
-	route := &v1alpha1.Route{
-		TypeMeta: metav1.TypeMeta{
-			Kind: "Route",
+	routes := createTestRoutes([]routeParts{
+		{
+			hostname: "",
+			domain:   "example.com",
+			path:     "",
 		},
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: "some-namespace",
-			Name: v1alpha1.GenerateName(
-				"host",
-				"example.com",
-				"/foo",
-			),
+		{
+			hostname: "",
+			domain:   "example.com",
+			path:     "/foo",
 		},
-		Spec: v1alpha1.RouteSpec{
-			Hostname:            "host",
-			Domain:              "example.com",
-			Path:                "/foo",
-			KnativeServiceNames: []string{"routes-app"},
+		{
+			hostname: "host",
+			domain:   "example.com",
+			path:     "/foo",
 		},
-	}
+	})
+
 	for tn, tc := range map[string]struct {
 		args            []string
 		namespace       string
@@ -312,7 +317,7 @@ func TestPushCommand(t *testing.T) {
 			containsRoutes: true,
 			wantOpts: []apps.PushOption{
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushRoutes([]*v1alpha1.Route{route}),
+				apps.WithPushRoutes(routes),
 				apps.WithPushContainerRegistry("some-registry.io"),
 				apps.WithPushMinScale(1),
 				apps.WithPushMaxScale(1),
@@ -345,15 +350,7 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "min scale bound", expectOpts.MinScale(), actualOpts.MinScale())
 					testutil.AssertEqual(t, "max scale bound", expectOpts.MaxScale(), actualOpts.MaxScale())
 					testutil.AssertEqual(t, "no start", expectOpts.NoStart(), actualOpts.NoStart())
-
-					if tc.containsRoutes {
-						for i, route := range expectOpts.Routes() {
-							testutil.AssertEqual(t, "route hostname", route.Spec.Hostname, actualOpts.Routes()[i].Spec.Hostname)
-							testutil.AssertEqual(t, "route domain", route.Spec.Domain, actualOpts.Routes()[i].Spec.Domain)
-							testutil.AssertEqual(t, "route path", route.Spec.Path, actualOpts.Routes()[i].Spec.Path)
-							testutil.AssertEqual(t, "route apps", route.Spec.KnativeServiceNames, actualOpts.Routes()[i].Spec.KnativeServiceNames)
-						}
-					}
+					testutil.AssertEqual(t, "routes", expectOpts.Routes(), actualOpts.Routes())
 
 					if !strings.HasPrefix(actualOpts.SourceImage(), tc.wantImagePrefix) {
 						t.Errorf("Wanted srcImage to start with %s got: %s", tc.wantImagePrefix, actualOpts.SourceImage())
@@ -388,4 +385,31 @@ func TestPushCommand(t *testing.T) {
 			ctrl.Finish()
 		})
 	}
+}
+
+func createTestRoutes(routes []routeParts) []*v1alpha1.Route {
+	newRoutes := []*v1alpha1.Route{}
+	for _, route := range routes {
+		r := &v1alpha1.Route{
+			TypeMeta: metav1.TypeMeta{
+				Kind: "Route",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "some-namespace",
+				Name: v1alpha1.GenerateName(
+					route.hostname,
+					route.domain,
+					route.path,
+				),
+			},
+			Spec: v1alpha1.RouteSpec{
+				Hostname:            route.hostname,
+				Domain:              route.domain,
+				Path:                route.path,
+				KnativeServiceNames: []string{"routes-app"},
+			},
+		}
+		newRoutes = append(newRoutes, r)
+	}
+	return newRoutes
 }
