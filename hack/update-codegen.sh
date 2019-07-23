@@ -34,7 +34,7 @@ KF_PACKAGE="github.com/google/kf"
 KF_PACKAGE_LOCATION="./"
 KF_RESOURCE="kf:v1alpha1"
 BUILD_RESOURCE="build:v1alpha1"
-HEADER_FILE=${KF_PACKAGE_LOCATION}/pkg/kf/internal/tools/option-builder/LICENSE_HEADER.go.txt
+HEADER_FILE=${KF_PACKAGE_LOCATION}/pkg/internal/tools/option-builder/LICENSE_HEADER.go.txt
 
 GENS=$1
 if [ "$GENS" = "" ]; then
@@ -51,20 +51,17 @@ code-generator-gen() {
   mkdir -p $CODEGEN_PKG
   mv generate-groups.sh $CODEGEN_PKG/generate-groups.sh
 
-  ${CODEGEN_PKG}/generate-groups.sh \
-    all \
-    "$KF_PACKAGE/pkg/client" \
-    "$KF_PACKAGE/pkg/apis" \
-    "$KF_RESOURCE" \
-    --go-header-file="$HEADER_FILE" \
-    ${GENERATOR_FLAGS}
-  [ $? -ne 0 ] && echo Error running code-generator 1>&2 && exit 1
+  ONE=$1
+  TWO=$2
+  THR=$3
+  FOR=$4
 
+  echo "k8s code gen for $THR -> $FOR"
   ${CODEGEN_PKG}/generate-groups.sh \
-    "deepcopy,client,informer,lister" \
-    "$KF_PACKAGE/pkg/client/build" \
-    "github.com/knative/build/pkg/apis" \
-    "$BUILD_RESOURCE" \
+    "$ONE" \
+    "$TWO" \
+    "$THR" \
+    "$FOR" \
     --go-header-file="$HEADER_FILE" \
     ${GENERATOR_FLAGS}
   [ $? -ne 0 ] && echo Error running code-generator 1>&2 && exit 1
@@ -82,38 +79,112 @@ knative-injection-gen() {
   mkdir -p $KNATIVE_CODEGEN_PKG
   mv generate-knative.sh $KNATIVE_CODEGEN_PKG/generate-knative.sh
 
-  # Do Knative injection generation
-  ${KNATIVE_CODEGEN_PKG}/generate-knative.sh \
-    "injection" \
-    "github.com/google/kf/pkg/client" \
-    "github.com/google/kf/pkg/apis" \
-    "kf:v1alpha1" \
-    --go-header-file $HEADER_FILE
-  [ $? -ne 0 ] && echo Error running injection-generator 1>&2 && exit 1
+  ONE=$1
+  TWO=$2
+  THR=$3
+  FOR=$4
 
+  echo "knative injection gen for $THR -> $FOR"
   ${KNATIVE_CODEGEN_PKG}/generate-knative.sh \
-    "injection" \
-    "github.com/google/kf/pkg/client/build" \
-    "github.com/knative/build/pkg/apis" \
-    "build:v1alpha1" \
+    "$ONE" \
+    "$TWO" \
+    "$THR" \
+    "$FOR" \
     --go-header-file $HEADER_FILE
   [ $? -ne 0 ] && echo Error running injection-generator 1>&2 && exit 1
 
   return 0
 }
 
+kf-code-gen() {
+  code-generator-gen \
+    all \discrepency
+    "$KF_PACKAGE/pkg/client" \
+    "$KF_PACKAGE/pkg/apis" \
+    "$KF_RESOURCE"
+}
+
+kf-knative-gen() {
+  knative-injection-gen \
+    "injection" \
+    "github.com/google/kf/pkg/client" \
+    "github.com/google/kf/pkg/apis" \
+    "kf:v1alpha1"
+}
+
+kf-gen() {
+  kf-code-gen
+  kf-knative-gen
+}
+
+kbuild-code-gen() {
+  code-generator-gen \
+    "deepcopy,client,informer,lister" \
+    "$KF_PACKAGE/pkg/client/build" \
+    "github.com/knative/build/pkg/apis" \
+    "$BUILD_RESOURCE"
+}
+
+kbuild-knative-gen() {
+  knative-injection-gen \
+    "injection" \
+    "github.com/google/kf/pkg/client/build" \
+    "github.com/knative/build/pkg/apis" \
+    "build:v1alpha1"
+}
+
+svccat-codegen() {
+  code-generator-gen \
+    "deepcopy,client,informer,lister" \
+    "$KF_PACKAGE/pkg/client/servicecatalog" \
+    "github.com/poy/service-catalog/pkg/apis" \
+    "servicecatalog:v1beta1"
+}
+
+svccat-knative-gen() {
+  knative-injection-gen \
+    "injection" \
+    "github.com/google/kf/pkg/client/servicecatalog" \
+    "github.com/poy/service-catalog/pkg/apis" \
+    "servicecatalog:v1beta1"
+}
+
+svccat-gen() {
+  svccat-codegen
+  svccat-knative-gen
+}
+
+kbuild-gen() {
+  kbuild-code-gen
+  kbuild-knative-gen
+}
+
 go mod vendor
 
 case $GENS in
   k8s)
-    code-generator-gen
+    kf-code-gen
+    kbuild-code-gen
+    svccat-code-gen
     ;;
   knative)
-    knative-injection-gen
+    kf-knative-gen
+    kbuild-knative-gen
+    svccat-knative-gen
+    ;;
+  kf)
+    kf-gen
+    ;;
+  kbuild)
+    kbuild-gen
+    ;;
+  svccat)
+    svccat-gen
     ;;
   all)
-    code-generator-gen
-    knative-injection-gen
+    kf-gen
+    kbuild-gen
+    svccat-gen
     ;;
 esac
 
