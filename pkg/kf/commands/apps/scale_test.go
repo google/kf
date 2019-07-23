@@ -40,7 +40,7 @@ func TestNewScaleCommand(t *testing.T) {
 		"updates app to exact instances": {
 			Namespace:       "default",
 			Args:            []string{"my-app", "-i=3"},
-			ExpectedStrings: []string{"Stopped?: true", "Exactly: 3"},
+			ExpectedStrings: []string{"Stopped?:", "true", "Exactly:", "3"},
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().
 					Transform("default", "my-app", gomock.Any()).
@@ -63,7 +63,7 @@ func TestNewScaleCommand(t *testing.T) {
 		"updates app auto scaling": {
 			Namespace:       "default",
 			Args:            []string{"my-app", "--min=3", "--max=5"},
-			ExpectedStrings: []string{"Stopped?: true", "Min: 3", "Max: 5"},
+			ExpectedStrings: []string{"Stopped?:", "true", "Min:", "3", "Min:", "5"},
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().
 					Transform("default", "my-app", gomock.Any()).
@@ -92,7 +92,7 @@ func TestNewScaleCommand(t *testing.T) {
 		"flags not set, displays current value": {
 			Namespace:       "default",
 			Args:            []string{"my-app"},
-			ExpectedStrings: []string{"Stopped?: false", "Exactly: 99"},
+			ExpectedStrings: []string{"Stopped?:", "false", "Exactly:", "99"},
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				exactly := 99
 				fake.EXPECT().Get("default", "my-app").Return(&v1alpha1.App{

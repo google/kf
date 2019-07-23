@@ -16,8 +16,6 @@ package v1alpha1
 
 import (
 	"context"
-	"fmt"
-	"strings"
 
 	"github.com/knative/serving/pkg/apis/serving"
 	v1 "k8s.io/api/core/v1"
@@ -77,33 +75,6 @@ func (instances *AppSpecInstances) Validate(ctx context.Context) (errs *apis.Fie
 	}
 
 	return errs
-}
-
-// PrettyPrint returns a string that pretty prints the spec. It assumes the
-// spec has already been validated.
-func (instances *AppSpecInstances) PrettyPrint() string {
-	hasExactly := instances.Exactly != nil
-	hasMin := instances.Min != nil
-	hasMax := instances.Max != nil
-
-	var builder strings.Builder
-	fmt.Fprintf(&builder, "Stopped?: %v\n", instances.Stopped)
-
-	if hasExactly {
-		fmt.Fprintf(&builder, "Exactly: %d\n", *instances.Exactly)
-	}
-
-	if hasMin {
-		fmt.Fprintf(&builder, "Min: %d\n", *instances.Min)
-	}
-
-	if hasMax {
-		fmt.Fprintf(&builder, "Max: %d\n", *instances.Max)
-	} else if !hasExactly {
-		fmt.Fprint(&builder, "Max: ∞\n")
-	}
-
-	return builder.String()
 }
 
 // ValidatePodSpec proxies Knative Serving's checks on PodSpec, except for

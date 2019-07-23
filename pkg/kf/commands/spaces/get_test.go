@@ -42,8 +42,8 @@ func TestNewGetSpaceCommand(t *testing.T) {
 	}}
 	goodSpace.Spec.BuildpackBuild.BuilderImage = "some/builder/image"
 	goodSpace.Spec.BuildpackBuild.ContainerRegistry = "some/container/registry"
-	goodSpace.Spec.BuildpackBuild.Env = []corev1.EnvVar{{}, {}}
-	goodSpace.Spec.Execution.Env = []corev1.EnvVar{{}, {}, {}}
+	goodSpace.Spec.BuildpackBuild.Env = []corev1.EnvVar{{Name: "BuildVar", Value: "BuildVal"}}
+	goodSpace.Spec.Execution.Env = []corev1.EnvVar{{Name: "ExecVar", Value: "ExecVal"}}
 	goodSpace.Spec.Execution.Domains = []v1alpha1.SpaceDomain{
 		{Domain: "domain-1.com", Default: true},
 		{Domain: "domain-2.com"},
@@ -62,22 +62,22 @@ func TestNewGetSpaceCommand(t *testing.T) {
 		"metadata": {
 			args:       []string{"my-space"},
 			space:      goodSpace,
-			wantOutput: []string{"# Metadata", "my-space", "Ready", "SomeMessage"},
+			wantOutput: []string{"Metadata", "my-space", "Ready", "SomeMessage"},
 		},
 		"security": {
 			args:       []string{"my-space"},
 			space:      goodSpace,
-			wantOutput: []string{"# Security", "read logs? true"},
+			wantOutput: []string{"Security", "read logs?", "true"},
 		},
 		"build": {
 			args:       []string{"my-space"},
 			space:      goodSpace,
-			wantOutput: []string{"# Build", "some/builder/image", "some/container/registry", "Build environment: 2 variable(s)"},
+			wantOutput: []string{"Build", "some/builder/image", "some/container/registry", "BuildVar", "BuildVal"},
 		},
 		"execution": {
 			args:       []string{"my-space"},
 			space:      goodSpace,
-			wantOutput: []string{"# Execution", "Environment: 3 variable(s)", "Domains: 2 domain(s)", "domain-1.com (default)", "domain-2.com"},
+			wantOutput: []string{"Execution", "ExecVar", "ExecVal", "domain-1.com", "domain-2.com"},
 		},
 		"client error": {
 			args:    []string{"my-space"},
