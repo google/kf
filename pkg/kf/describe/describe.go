@@ -19,6 +19,7 @@ import (
 	"io"
 	"sort"
 
+	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
@@ -142,6 +143,72 @@ func duckCondition(w io.Writer, cond apis.Condition) {
 		}
 		if cond.Reason != "" {
 			fmt.Fprintf(w, "Reason:\t%s\n", cond.Reason)
+		}
+	})
+}
+
+// SourceSpec describes the source of an application and the build process it
+// will undergo.
+func SourceSpec(w io.Writer, spec kfv1alpha1.SourceSpec) {
+
+	SectionWriter(w, string("Source"), func(w io.Writer) {
+		switch {
+		case spec.IsContainerBuild():
+			fmt.Fprintln(w, "Build Type:\tcontainer")
+		case spec.IsBuildpackBuild():
+			fmt.Fprintln(w, "Build Type:\tbuildpack")
+		default:
+			fmt.Fprintln(w, "Build Type:\tunknown")
+		}
+
+		if spec.ServiceAccount != "" {
+			fmt.Fprintf(w, "Service Account:\t%s\n", spec.ServiceAccount)
+		}
+
+		if spec.IsContainerBuild() {
+			SectionWriter(w, "Container Image", func(w io.Writer) {
+				containerImage := spec.ContainerImage
+
+				fmt.Fprintf(w, "Image:\t%s\n", containerImage.Image)
+			})
+		}
+
+		if spec.IsBuildpackBuild() {
+			SectionWriter(w, "Buildpack Build", func(w io.Writer) {
+				buildpackBuild := spec.BuildpackBuild
+
+				fmt.Fprintf(w, "Source:\t%s\n", buildpackBuild.Source)
+				fmt.Fprintf(w, "Stack:\t%s\n", buildpackBuild.Stack)
+				fmt.Fprintf(w, "Bulider:\t%s\n", buildpackBuild.BuildpackBuilder)
+				fmt.Fprintf(w, "Registry:\t%s\n", buildpackBuild.Registry)
+				EnvVars(w, buildpackBuild.Env)
+			})
+		}
+	})
+}
+
+// AppSpecInstances describes the scaling features of the app.
+func AppSpecInstances(w io.Writer, instances kfv1alpha1.AppSpecInstances) {
+
+	SectionWriter(w, string("Scale"), func(w io.Writer) {
+		hasExactly := instances.Exactly != nil
+		hasMin := instances.Min != nil
+		hasMax := instances.Max != nil
+
+		fmt.Fprintf(w, "Stopped?:\t%v\n", instances.Stopped)
+
+		if hasExactly {
+			fmt.Fprintf(w, "Exactly:\t%d\n", *instances.Exactly)
+		}
+
+		if hasMin {
+			fmt.Fprintf(w, "Min:\t%d\n", *instances.Min)
+		}
+
+		if hasMax {
+			fmt.Fprintf(w, "Max:\t%d\n", *instances.Max)
+		} else if !hasExactly {
+			fmt.Fprint(w, "Max:\t∞\n")
 		}
 	})
 }

@@ -19,6 +19,7 @@ import (
 	"os"
 	"testing"
 
+	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/describe"
 	"github.com/google/kf/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
@@ -194,4 +195,86 @@ func ExampleDuckStatus_succeeded() {
 	//   Conditions:
 	//     Type            Status  Updated    Message          Reason
 	//     NamespaceReady  False   <unknown>  couldn't create  NotOwned
+}
+
+func ExampleAppSpecInstances_exactly() {
+	exactly := 3
+	instances := kfv1alpha1.AppSpecInstances{}
+	instances.Stopped = true
+	instances.Exactly = &exactly
+
+	describe.AppSpecInstances(os.Stdout, instances)
+
+	// Output: Scale:
+	//   Stopped?:  true
+	//   Exactly:   3
+}
+
+func ExampleAppSpecInstances_minOnly() {
+	min := 3
+	instances := kfv1alpha1.AppSpecInstances{}
+	instances.Min = &min
+
+	describe.AppSpecInstances(os.Stdout, instances)
+
+	// Output: Scale:
+	//   Stopped?:  false
+	//   Min:       3
+	//   Max:       ∞
+}
+
+func ExampleAppSpecInstances_minMax() {
+	min := 3
+	max := 5
+	instances := kfv1alpha1.AppSpecInstances{}
+	instances.Min = &min
+	instances.Max = &max
+
+	describe.AppSpecInstances(os.Stdout, instances)
+
+	// Output: Scale:
+	//   Stopped?:  false
+	//   Min:       3
+	//   Max:       5
+}
+
+func ExampleSourceSpec_buildpack() {
+	spec := kfv1alpha1.SourceSpec{
+		ServiceAccount: "builder-account",
+		BuildpackBuild: kfv1alpha1.SourceSpecBuildpackBuild{
+			Source:           "gcr.io/my-registry/src-mysource",
+			Stack:            "cflinuxfs3",
+			BuildpackBuilder: "gcr.io/my-registry/my-builder:latest",
+			Registry:         "gcr.io/my-registry",
+		},
+	}
+
+	describe.SourceSpec(os.Stdout, spec)
+
+	// Output: Source:
+	//   Build Type:       buildpack
+	//   Service Account:  builder-account
+	//   Buildpack Build:
+	//     Source:    gcr.io/my-registry/src-mysource
+	//     Stack:     cflinuxfs3
+	//     Bulider:   gcr.io/my-registry/my-builder:latest
+	//     Registry:  gcr.io/my-registry
+	//     Environment: <empty>
+}
+
+func ExampleSourceSpec_docker() {
+	spec := kfv1alpha1.SourceSpec{
+		ServiceAccount: "builder-account",
+		ContainerImage: kfv1alpha1.SourceSpecContainerImage{
+			Image: "mysql/mysql",
+		},
+	}
+
+	describe.SourceSpec(os.Stdout, spec)
+
+	// Output: Source:
+	//   Build Type:       container
+	//   Service Account:  builder-account
+	//   Container Image:
+	//     Image:  mysql/mysql
 }

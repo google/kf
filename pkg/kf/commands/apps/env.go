@@ -15,12 +15,10 @@
 package apps
 
 import (
-	"fmt"
-	"text/tabwriter"
-
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
+	"github.com/google/kf/pkg/kf/describe"
 	"github.com/spf13/cobra"
 )
 
@@ -46,13 +44,7 @@ func NewEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command {
 			}
 
 			kfapp := (*apps.KfApp)(app)
-
-			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 1, ' ', tabwriter.StripEscape)
-			fmt.Fprintln(w, "NAME\tVALUE")
-			for _, env := range kfapp.GetEnvVars() {
-				fmt.Fprintf(w, "%s\t%s\n", env.Name, env.Value)
-			}
-			w.Flush()
+			describe.EnvVars(cmd.OutOrStdout(), kfapp.GetEnvVars())
 
 			return nil
 		},

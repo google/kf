@@ -16,17 +16,19 @@ package apps
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
+	"github.com/google/kf/pkg/kf/describe"
 	"github.com/spf13/cobra"
 )
 
 // NewGetAppCommand creates a command to get details about a single application.
 func NewGetAppCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 	var apps = &cobra.Command{
-		Use:     "app APPNAME",
+		Use:     "app APP_NAME",
 		Short:   "Get a pushed app",
 		Example: `  kf app my-app`,
 		Args:    cobra.ExactArgs(1),
@@ -45,83 +47,30 @@ func NewGetAppCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 				return err
 			}
 
-			var status, reason string
-			if cond := app.Status.GetCondition("Ready"); cond != nil {
-				status = fmt.Sprintf("%v", cond.Status)
-				reason = cond.Reason
-			}
-
-			if !app.DeletionTimestamp.IsZero() {
-				reason = "Deleting"
-			}
-
-			var host string
-			url := app.Status.URL
-			if url != nil {
-				host = url.Host
-			}
-
-			fmt.Fprintln(w, "Name:", app.Name)
-			fmt.Fprintln(w, "Space:", app.Namespace)
-			fmt.Fprintln(w, "Status:", status)
-			fmt.Fprintln(w, "Reason:", reason)
-			fmt.Fprintln(w, "Host:", host)
+			describe.ObjectMeta(w, app.ObjectMeta)
 			fmt.Fprintln(w)
 
-			fmt.Fprintln(w, "Scale")
-			instances := app.Spec.Instances
-			fmt.Fprintln(w, "Stopped?:", instances.Stopped)
-			if instances.Exactly != nil {
-				fmt.Fprintln(w, "Instances:", instances.Exactly)
-			}
-
-			if instances.Min != nil {
-				fmt.Fprintln(w, "Min:", instances.Min)
-			}
-
-			if instances.Max != nil {
-				fmt.Fprintln(w, "Max:", instances.Max)
-			}
-
-			fmt.Fprintln(w, "Source")
-			source := app.Spec.Source
-
-			switch {
-			case source.IsContainerBuild():
-				containerImage := source.ContainerImage
-				fmt.Fprintln(w, "Type: contaier")
-				fmt.Fprintln(w, "Image:", containerImage.Image)
-			case source.IsBuildpackBuild():
-				buildpackBuild := source.BuildpackBuild
-				fmt.Fprintln(w, "Type: buildpack")
-				fmt.Fprintln(w, "Source:", buildpackBuild.Source)
-				fmt.Fprintln(w, "Stack:", buildpackBuild.Stack)
-				fmt.Fprintln(w, "Builder:", buildpackBuild.BuildpackBuilder)
-				fmt.Fprintln(w, "Registry:", buildpackBuild.Registry)
-				fmt.Fprintln(w, "Env:")
-				for _, v := range buildpackBuild.Env {
-					fmt.Fprintln(w, "-", v.Name, "=", v.Value)
-				}
-			}
+			describe.DuckStatus(w, app.Status.Status)
 			fmt.Fprintln(w)
 
-			{
-				fmt.Fprintln(w, "Runtime")
-				// template := app.Spec.Template
+			describe.AppSpecInstances(w, app.Spec.Instances)
+			fmt.Fprintln(w)
+
+			describe.SourceSpec(w, app.Spec.Source)
+			fmt.Fprintln(w)
+
+			describe.SectionWriter(w, "Runtime", func(w io.Writer) {
 				status := app.Status
 
-				fmt.Fprintln(w, "Runtime Image:", status.Image)
-				//
-				// if len(template.Containers) >= 0 {
-				// 	container := template.Containers[0]
-				// 	fmt.Fprintln(w, "Env:")
-				// 	for _, v := range container.Env {
-				// 		fmt.Fprintln(w, "-", v.Name, "=", v.Value)
-				// 	}
-				// }
+				fmt.Fprintf(w, "Image:\t%s\n", status.Image)
+				if url := status.URL; url != nil {
+					fmt.Fprintf(w, "Host:\t%s\n", url.Host)
+				}
 
-				fmt.Fprintln(w)
-			}
+				kfApp := apps.NewFromApp(app)
+				describe.EnvVars(w, kfApp.GetEnvVars())
+			})
+			fmt.Fprintln(w)
 
 			return nil
 		},

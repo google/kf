@@ -93,6 +93,12 @@ func InjectApps(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
+func InjectGetApp(p *config.KfParams) *cobra.Command {
+	wire.Build(capps.NewGetAppCommand, AppsSet)
+
+	return nil
+}
+
 func InjectScale(p *config.KfParams) *cobra.Command {
 	wire.Build(capps.NewScaleCommand, AppsSet)
 	return nil

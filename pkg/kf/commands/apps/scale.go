@@ -22,6 +22,7 @@ import (
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
+	"github.com/google/kf/pkg/kf/describe"
 	"github.com/spf13/cobra"
 )
 
@@ -62,7 +63,7 @@ func NewScaleCommand(
 				if err != nil {
 					return fmt.Errorf("failed to get app: %s", err)
 				}
-				fmt.Fprintf(cmd.OutOrStderr(), app.Spec.Instances.PrettyPrint())
+				describe.AppSpecInstances(cmd.OutOrStderr(), app.Spec.Instances)
 
 				return nil
 			}
@@ -93,7 +94,7 @@ func NewScaleCommand(
 					return err
 				}
 
-				fmt.Fprintf(cmd.OutOrStderr(), app.Spec.Instances.PrettyPrint())
+				describe.AppSpecInstances(cmd.OutOrStderr(), app.Spec.Instances)
 
 				return nil
 			}
