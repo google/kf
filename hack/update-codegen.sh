@@ -41,22 +41,34 @@ if [ "$GENS" = "" ]; then
   GENS="all"
 fi
 
-code-generator-gen() {
+download-scripts() {
   commit=$(cat go.mod | grep code-generator | grep =\> | tr '-' ' ' | awk '{print $NF}')
-  echo running code-generator $commit
+  echo downloading code-generator script at commit $commit
 
   CODEGEN_PKG=vendor/k8s.io/code-generator
-  curl -LOJ https://raw.githubusercontent.com/kubernetes/code-generator/${commit}/generate-groups.sh
+  curl -sLOJ https://raw.githubusercontent.com/kubernetes/code-generator/${commit}/generate-groups.sh
   chmod +x generate-groups.sh
   mkdir -p $CODEGEN_PKG
   mv generate-groups.sh $CODEGEN_PKG/generate-groups.sh
+
+  commit=$(cat go.mod | grep knative.dev/pkg | tr '-' ' ' | awk '{print $NF}')
+  echo downloading knative-injection-generator script at commit $commit
+
+  KNATIVE_CODEGEN_PKG=vendor/knative.dev/pkg/hack
+  curl -sLOJ https://raw.githubusercontent.com/knative/pkg/${commit}/hack/generate-knative.sh
+  chmod +x generate-knative.sh
+  mkdir -p $KNATIVE_CODEGEN_PKG
+  mv generate-knative.sh $KNATIVE_CODEGEN_PKG/generate-knative.sh
+}
+
+code-generator-gen() {
 
   GENERATORS=$1
   OUTPUT_PACKAGE=$2
   API_PACKAGE=$3
   GROUP_VERSION=$4
 
-  echo "k8s code gen for $API_PACKAGE -> $GROUP_VERSION"
+  echo "k8s code gen for $API_PACKAGE at $GROUP_VERSION -> $OUTPUT_PACKAGE"
   ${CODEGEN_PKG}/generate-groups.sh \
     "$GENERATORS" \
     "$OUTPUT_PACKAGE" \
@@ -70,21 +82,13 @@ code-generator-gen() {
 }
 
 knative-injection-gen() {
-  commit=$(cat go.mod | grep knative.dev/pkg | tr '-' ' ' | awk '{print $NF}')
-  echo running knative-injection-generator $commit
-
-  KNATIVE_CODEGEN_PKG=vendor/knative.dev/pkg/hack
-  curl -LOJ https://raw.githubusercontent.com/knative/pkg/${commit}/hack/generate-knative.sh
-  chmod +x generate-knative.sh
-  mkdir -p $KNATIVE_CODEGEN_PKG
-  mv generate-knative.sh $KNATIVE_CODEGEN_PKG/generate-knative.sh
 
   GENERATORS=$1
   OUTPUT_PACKAGE=$2
   API_PACKAGE=$3
   GROUP_VERSION=$4
 
-  echo "knative injection gen for $API_PACKAGE -> $GROUP_VERSION"
+  echo "knative injection gen for $API_PACKAGE at $GROUP_VERSION -> $OUTPUT_PACKAGE"
   ${KNATIVE_CODEGEN_PKG}/generate-knative.sh \
     "$GENERATORS" \
     "$OUTPUT_PACKAGE" \
@@ -160,6 +164,7 @@ kbuild-gen() {
 }
 
 go mod vendor
+download-scripts
 
 case $GENS in
   k8s)
