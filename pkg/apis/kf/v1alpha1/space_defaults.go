@@ -33,14 +33,14 @@ const (
 
 // SetDefaults implements apis.Defaultable
 func (k *Space) SetDefaults(ctx context.Context) {
-	k.Spec.SetDefaults(ctx, k.Namespace)
+	k.Spec.SetDefaults(ctx, k.Name)
 }
 
 // SetDefaults implements apis.Defaultable
-func (k *SpaceSpec) SetDefaults(ctx context.Context, namespace string) {
+func (k *SpaceSpec) SetDefaults(ctx context.Context, name string) {
 	k.Security.SetDefaults(ctx)
 	k.BuildpackBuild.SetDefaults(ctx)
-	k.Execution.SetDefaults(ctx, namespace)
+	k.Execution.SetDefaults(ctx, name)
 	k.ResourceLimits.SetDefaults(ctx)
 }
 
@@ -57,12 +57,13 @@ func (k *SpaceSpecBuildpackBuild) SetDefaults(ctx context.Context) {
 }
 
 // SetDefaults implements apis.Defaultable
-func (k *SpaceSpecExecution) SetDefaults(ctx context.Context, namespace string) {
+func (k *SpaceSpecExecution) SetDefaults(ctx context.Context, name string) {
 	if len(k.Domains) == 0 {
 		k.Domains = append(
 			k.Domains,
 			SpaceDomain{
-				Domain: fmt.Sprintf(DefaultDomainTemplate, namespace),
+				Domain:  fmt.Sprintf(DefaultDomainTemplate, name),
+				Default: true,
 			},
 		)
 	}

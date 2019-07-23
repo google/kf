@@ -119,7 +119,11 @@ func TestSpaceValidation(t *testing.T) {
 					},
 				},
 			},
-			want: apis.ErrInvalidArrayValue(SpaceDomain{Domain: "example.com"}, "spec.execution.domains", 0),
+			want: &apis.FieldError{
+				Paths:   []string{"spec.execution.domains"},
+				Message: "multiple defaults",
+				Details: "one domain must be set to default",
+			},
 		},
 		"multiple default domains": {
 			space: &Space{
@@ -137,7 +141,11 @@ func TestSpaceValidation(t *testing.T) {
 					},
 				},
 			},
-			want: apis.ErrInvalidArrayValue(SpaceDomain{Domain: "other-example.com", Default: true}, "spec.execution.domains", 1),
+			want: &apis.FieldError{
+				Paths:   []string{"spec.execution.domains"},
+				Message: "multiple defaults",
+				Details: "one domain must be set to default",
+			},
 		},
 	}
 

@@ -258,15 +258,21 @@ func newSetDefaultDomainMutator() spaceMutator {
 			domain := args[0]
 
 			return func(space *v1alpha1.Space) error {
+				var found bool
 				for i, d := range space.Spec.Execution.Domains {
 					if d.Domain != domain {
+						space.Spec.Execution.Domains[i].Default = false
 						continue
 					}
+					found = true
 					space.Spec.Execution.Domains[i].Default = true
 					return nil
 				}
 
-				return fmt.Errorf("failed to find domain %s", domain)
+				if !found {
+					return fmt.Errorf("failed to find domain %s", domain)
+				}
+				return nil
 			}, nil
 		},
 	}

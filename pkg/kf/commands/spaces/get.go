@@ -114,7 +114,11 @@ func printEnvGroup(out io.Writer, envVars []corev1.EnvVar) {
 
 func printDomains(out io.Writer, domains []v1alpha1.SpaceDomain) {
 	for _, domain := range domains {
-		fmt.Fprintln(out, domain)
+		suffix := ""
+		if domain.Default {
+			suffix = " (default)"
+		}
+		fmt.Fprintln(out, domain.Domain+suffix)
 	}
 }
 

@@ -22,11 +22,15 @@ import (
 
 func ExampleSpace_SetDefaults() {
 	space := Space{}
-	space.Namespace = "mynamespace"
+	space.Name = "mynamespace"
 	space.SetDefaults(context.Background())
 
 	var domainNames []string
 	for _, domain := range space.Spec.Execution.Domains {
+		if domain.Default {
+			domainNames = append(domainNames, "*"+domain.Domain)
+			continue
+		}
 		domainNames = append(domainNames, domain.Domain)
 	}
 
@@ -34,7 +38,7 @@ func ExampleSpace_SetDefaults() {
 	fmt.Println("Domains:", strings.Join(domainNames, ", "))
 
 	// Output: Builder: gcr.io/kf-releases/buildpack-builder:latest
-	// Domains: mynamespace.kf.cluster.local
+	// Domains: *mynamespace.kf.cluster.local
 }
 
 func ExampleSpaceSpecExecution_SetDefaults_dedupe() {
@@ -43,7 +47,7 @@ func ExampleSpaceSpecExecution_SetDefaults_dedupe() {
 		Domains: []SpaceDomain{
 			{Domain: "example.com"},
 			{Domain: "other-example.com"},
-			{Domain: "example.com"},
+			{Domain: "example.com", Default: true},
 			{Domain: "other-example.com"},
 		},
 	}
@@ -51,10 +55,14 @@ func ExampleSpaceSpecExecution_SetDefaults_dedupe() {
 
 	var domainNames []string
 	for _, domain := range space.Spec.Execution.Domains {
+		if domain.Default {
+			domainNames = append(domainNames, "*"+domain.Domain)
+			continue
+		}
 		domainNames = append(domainNames, domain.Domain)
 	}
 
 	fmt.Println(strings.Join(domainNames, ", "))
 
-	// Output: example.com, other-example.com
+	// Output: *example.com, other-example.com
 }

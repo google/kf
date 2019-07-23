@@ -142,6 +142,12 @@ func (d SpaceDomains) Len() int {
 
 // Less implements Interface.
 func (d SpaceDomains) Less(i int, j int) bool {
+	// We don't want to lose default information.
+	if d[i].Domain == d[j].Domain {
+		d[i].Default = d[i].Default || d[j].Default
+		d[j].Default = d[i].Default || d[j].Default
+	}
+
 	return d[i].Domain < d[j].Domain
 }
 

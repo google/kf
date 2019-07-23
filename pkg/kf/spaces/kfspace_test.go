@@ -48,7 +48,7 @@ func TestKfSpace_ToSpace(t *testing.T) {
 	testutil.AssertEqual(t, "generated ns", expected, actual)
 }
 
-func ExampleKfSpace_AppendDomain() {
+func ExampleKfSpace_AppendDomains() {
 	space := NewKfSpace()
 	// Setup
 	space.AppendDomains(v1alpha1.SpaceDomain{Domain: "example.com"})

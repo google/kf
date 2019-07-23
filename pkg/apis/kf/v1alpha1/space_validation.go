@@ -84,13 +84,25 @@ func (s *SpaceSpecExecution) Validate(ctx context.Context) (errs *apis.FieldErro
 		}
 
 		if lastDefault >= 0 {
-			errs = errs.Also(apis.ErrInvalidArrayValue(d, "domains", i))
+			errs = errs.Also(
+				&apis.FieldError{
+					Paths:   []string{"domains"},
+					Message: "multiple defaults",
+					Details: "one domain must be set to default",
+				},
+			)
 		}
 		lastDefault = i
 	}
 
 	if lastDefault < 0 {
-		errs = errs.Also(apis.ErrInvalidArrayValue(s.Domains[0], "domains", 0))
+		errs = errs.Also(
+			&apis.FieldError{
+				Paths:   []string{"domains"},
+				Message: "multiple defaults",
+				Details: "one domain must be set to default",
+			},
+		)
 	}
 
 	return errs

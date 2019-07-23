@@ -44,8 +44,8 @@ func NewCreateSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 			toCreate.SetName(name)
 			toCreate.SetContainerRegistry(containerRegistry)
 
-			for _, domain := range domains {
-				toCreate.AppendDomains(v1alpha1.SpaceDomain{Domain: domain})
+			for i, domain := range domains {
+				toCreate.AppendDomains(v1alpha1.SpaceDomain{Domain: domain, Default: i == 0})
 			}
 
 			if _, err := client.Create(toCreate.ToSpace()); err != nil {
@@ -72,7 +72,7 @@ func NewCreateSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		&domains,
 		"domain",
 		nil,
-		"Sets the valid domains for the space.",
+		"Sets the valid domains for the space. The first provided domain will be the default.",
 	)
 
 	return cmd

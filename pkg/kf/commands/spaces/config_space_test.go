@@ -34,7 +34,7 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 	cases := map[string]struct {
 		args  []string
 		space v1alpha1.Space
-		// TODO (#395): Test failure cases or delete?
+		// TODO (#395): Test other failure cases.
 		wantErr  error
 		validate func(*testing.T, *v1alpha1.Space)
 	}{
@@ -143,7 +143,7 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 				Spec: v1alpha1.SpaceSpec{
 					Execution: v1alpha1.SpaceSpecExecution{
 						Domains: []v1alpha1.SpaceDomain{
-							{Domain: "other-example.com"},
+							{Domain: "other-example.com", Default: true},
 							{Domain: "example.com"},
 						},
 					},
@@ -154,6 +154,7 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 				testutil.AssertEqual(t, "len(domains)", 2, len(space.Spec.Execution.Domains))
 				testutil.AssertEqual(t, "domains", "example.com", space.Spec.Execution.Domains[1].Domain)
 				testutil.AssertEqual(t, "default", true, space.Spec.Execution.Domains[1].Default)
+				testutil.AssertEqual(t, "unsets previous default", false, space.Spec.Execution.Domains[0].Default)
 			},
 		},
 
