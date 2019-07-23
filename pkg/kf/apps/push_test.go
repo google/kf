@@ -251,7 +251,7 @@ func TestPush(t *testing.T) {
 				testutil.AssertNil(t, "err", err)
 			},
 		},
-		"routes returns an error": {
+		"route returns an error": {
 			appName: "some-app",
 			opts: apps.PushOptions{
 				apps.WithPushRoutes([]*v1alpha1.Route{&v1alpha1.Route{}}),
@@ -266,6 +266,19 @@ func TestPush(t *testing.T) {
 			},
 			assert: func(t *testing.T, err error) {
 				testutil.AssertErrorsEqual(t, errors.New("failed to add route: some-error"), err)
+			},
+		},
+		"routes do not get called": {
+			appName: "some-app",
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
+				appsClient.EXPECT().
+					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
+					Return(&v1alpha1.App{}, nil)
+				routesClient.EXPECT().
+					Upsert(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+			},
+			assert: func(t *testing.T, err error) {
+				testutil.AssertNil(t, "err", err)
 			},
 		},
 		"deployer returns an error": {

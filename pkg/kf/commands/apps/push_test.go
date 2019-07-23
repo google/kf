@@ -30,11 +30,31 @@ import (
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/testutil"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestPushCommand(t *testing.T) {
 	t.Parallel()
 
+	route := &v1alpha1.Route{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "Route",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "some-namespace",
+			Name: v1alpha1.GenerateName(
+				"host",
+				"example.com",
+				"/foo",
+			),
+		},
+		Spec: v1alpha1.RouteSpec{
+			Hostname:            "host",
+			Domain:              "example.com",
+			Path:                "/foo",
+			KnativeServiceNames: []string{"routes-app"},
+		},
+	}
 	for tn, tc := range map[string]struct {
 		args            []string
 		namespace       string
@@ -43,6 +63,7 @@ func TestPushCommand(t *testing.T) {
 		srcImageBuilder SrcImageBuilderFunc
 		wantImagePrefix string
 		targetSpace     *v1alpha1.Space
+		containsRoutes  bool
 
 		wantOpts []apps.PushOption
 	}{
@@ -281,6 +302,22 @@ func TestPushCommand(t *testing.T) {
 			},
 			wantErr: errors.New("no app missing-app found in the Manifest"),
 		},
+		"create and map routes from manifest": {
+			namespace: "some-namespace",
+			args: []string{
+				"routes-app",
+				"--container-registry", "some-registry.io",
+				"--manifest", "testdata/manifest.yml",
+			},
+			containsRoutes: true,
+			wantOpts: []apps.PushOption{
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushRoutes([]*v1alpha1.Route{route}),
+				apps.WithPushContainerRegistry("some-registry.io"),
+				apps.WithPushMinScale(1),
+				apps.WithPushMaxScale(1),
+			},
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			if tc.srcImageBuilder == nil {
@@ -290,7 +327,6 @@ func TestPushCommand(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			fakeApps := appsfake.NewFakeClient(ctrl)
 			fakePusher := appsfake.NewFakePusher(ctrl)
-
 
 			fakePusher.
 				EXPECT().
@@ -309,6 +345,15 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "min scale bound", expectOpts.MinScale(), actualOpts.MinScale())
 					testutil.AssertEqual(t, "max scale bound", expectOpts.MaxScale(), actualOpts.MaxScale())
 					testutil.AssertEqual(t, "no start", expectOpts.NoStart(), actualOpts.NoStart())
+
+					if tc.containsRoutes {
+						for i, route := range expectOpts.Routes() {
+							testutil.AssertEqual(t, "route hostname", route.Spec.Hostname, actualOpts.Routes()[i].Spec.Hostname)
+							testutil.AssertEqual(t, "route domain", route.Spec.Domain, actualOpts.Routes()[i].Spec.Domain)
+							testutil.AssertEqual(t, "route path", route.Spec.Path, actualOpts.Routes()[i].Spec.Path)
+							testutil.AssertEqual(t, "route apps", route.Spec.KnativeServiceNames, actualOpts.Routes()[i].Spec.KnativeServiceNames)
+						}
+					}
 
 					if !strings.HasPrefix(actualOpts.SourceImage(), tc.wantImagePrefix) {
 						t.Errorf("Wanted srcImage to start with %s got: %s", tc.wantImagePrefix, actualOpts.SourceImage())

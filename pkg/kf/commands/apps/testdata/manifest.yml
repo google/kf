@@ -10,3 +10,6 @@ applications:
   path: example-app
 - name: auto-buildpack-app
   path: example-app
+- name: routes-app
+  routes:
+  - route: host.example.com/foo
