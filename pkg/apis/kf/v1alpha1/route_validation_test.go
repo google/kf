@@ -90,8 +90,8 @@ func TestRouteValidation(t *testing.T) {
 			route: &Route{
 				ObjectMeta: goodObjMeta,
 				Spec: RouteSpec{
-					Hostname:            "www",
-					Domain: 			 "domain.com",
+					Hostname: "www",
+					Domain:   "domain.com",
 				},
 			},
 			want: &apis.FieldError{
