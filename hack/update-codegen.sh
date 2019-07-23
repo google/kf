@@ -102,7 +102,7 @@ knative-injection-gen() {
 
 kf-code-gen() {
   code-generator-gen \
-    all \discrepency
+    all \
     "$KF_PACKAGE/pkg/client" \
     "$KF_PACKAGE/pkg/apis" \
     "$KF_RESOURCE"
@@ -175,9 +175,12 @@ case $GENS in
     svccat-knative-gen
     ;;
   all)
-    kf-gen
-    kbuild-gen
-    svccat-gen
+    kf-code-gen
+    kf-knative-gen
+    kbuild-code-gen
+    kbuild-knative-gen
+    svccat-codegen
+    svccat-knative-gen
     ;;
 esac
 
