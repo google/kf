@@ -47,7 +47,7 @@ func TestNewCreateSpaceCommand(t *testing.T) {
 					Do(func(space *v1alpha1.Space) {
 						testutil.AssertEqual(t, "sets name", "my-ns", space.Name)
 						testutil.AssertEqual(t, "sets container registry", "some-registry", space.Spec.BuildpackBuild.ContainerRegistry)
-						testutil.AssertEqual(t, "sets domains", []string{"domain-1", "domain-2"}, space.Spec.Execution.Domains)
+						testutil.AssertEqual(t, "sets domains", []v1alpha1.SpaceDomain{{Domain: "domain-1"}, {Domain: "domain-2"}}, space.Spec.Execution.Domains)
 					})
 			},
 		},

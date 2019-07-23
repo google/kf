@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/algorithms"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/quotas"
 	"github.com/google/kf/pkg/kf/internal/envutil"
@@ -47,6 +48,9 @@ func NewConfigSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		newUnsetBuildpackEnvMutator(),
 		newSetContainerRegistryMutator(),
 		newSetBuildpackBuilderMutator(),
+		newAppendDomainMutator(),
+		newSetDefaultDomainMutator(),
+		newRemoveDomainMutator(),
 	}
 
 	for _, sm := range subcommands {
@@ -218,6 +222,69 @@ func newUnsetBuildpackEnvMutator() spaceMutator {
 
 			return func(space *v1alpha1.Space) error {
 				space.Spec.BuildpackBuild.Env = envutil.RemoveEnvVars([]string{name}, space.Spec.BuildpackBuild.Env)
+
+				return nil
+			}, nil
+		},
+	}
+}
+
+func newAppendDomainMutator() spaceMutator {
+	return spaceMutator{
+		Name:  "append-domain",
+		Short: "Append a domain for a space",
+		Args:  []string{"DOMAIN"},
+		Init: func(args []string) (spaces.Mutator, error) {
+			domain := args[0]
+
+			return func(space *v1alpha1.Space) error {
+				space.Spec.Execution.Domains = append(
+					space.Spec.Execution.Domains,
+					v1alpha1.SpaceDomain{Domain: domain},
+				)
+
+				return nil
+			}, nil
+		},
+	}
+}
+
+func newSetDefaultDomainMutator() spaceMutator {
+	return spaceMutator{
+		Name:  "set-default-domain",
+		Short: "Set a default domain for a space",
+		Args:  []string{"DOMAIN"},
+		Init: func(args []string) (spaces.Mutator, error) {
+			domain := args[0]
+
+			return func(space *v1alpha1.Space) error {
+				for i, d := range space.Spec.Execution.Domains {
+					if d.Domain != domain {
+						continue
+					}
+					space.Spec.Execution.Domains[i].Default = true
+					return nil
+				}
+
+				return fmt.Errorf("failed to find domain %s", domain)
+			}, nil
+		},
+	}
+}
+
+func newRemoveDomainMutator() spaceMutator {
+	return spaceMutator{
+		Name:  "remove-domain",
+		Short: "Remove a domain from a space",
+		Args:  []string{"DOMAIN"},
+		Init: func(args []string) (spaces.Mutator, error) {
+			domain := args[0]
+
+			return func(space *v1alpha1.Space) error {
+				space.Spec.Execution.Domains = []v1alpha1.SpaceDomain(algorithms.Delete(
+					v1alpha1.SpaceDomains(space.Spec.Execution.Domains),
+					v1alpha1.SpaceDomains{{Domain: domain}},
+				).(v1alpha1.SpaceDomains))
 
 				return nil
 			}, nil

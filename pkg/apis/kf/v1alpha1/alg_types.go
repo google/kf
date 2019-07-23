@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package resources
+package v1alpha1
 
 import (
 	"github.com/google/kf/pkg/kf/algorithms"
@@ -27,38 +27,38 @@ import (
 type OwnerReferences []metav1.OwnerReference
 
 // Set implements Interface.
-func (o OwnerReferences) Set(i int, a algorithms.Interface, j int, b algorithms.Interface) {
+func (d OwnerReferences) Set(i int, a algorithms.Interface, j int, b algorithms.Interface) {
 	a.(OwnerReferences)[i] = b.(OwnerReferences)[j]
 }
 
 // Append implements Interface.
-func (o OwnerReferences) Append(a algorithms.Interface) algorithms.Interface {
-	return append(o, a.(OwnerReferences)...)
+func (d OwnerReferences) Append(a algorithms.Interface) algorithms.Interface {
+	return append(d, a.(OwnerReferences)...)
 }
 
 // Clone implements Interface.
-func (o OwnerReferences) Clone() algorithms.Interface {
-	return append(OwnerReferences{}, o...)
+func (d OwnerReferences) Clone() algorithms.Interface {
+	return append(OwnerReferences{}, d...)
 }
 
 // Slice implements Interface.
-func (o OwnerReferences) Slice(i int, j int) algorithms.Interface {
-	return o[i:j]
+func (d OwnerReferences) Slice(i int, j int) algorithms.Interface {
+	return d[i:j]
 }
 
 // Len implements Interface.
-func (o OwnerReferences) Len() int {
-	return len(o)
+func (d OwnerReferences) Len() int {
+	return len(d)
 }
 
 // Less implements Interface.
-func (o OwnerReferences) Less(i int, j int) bool {
-	return o[i].UID < o[j].UID
+func (d OwnerReferences) Less(i int, j int) bool {
+	return d[i].UID < d[j].UID
 }
 
 // Swap implements Interface.
-func (o OwnerReferences) Swap(i int, j int) {
-	o[i], o[j] = o[j], o[i]
+func (d OwnerReferences) Swap(i int, j int) {
+	d[i], d[j] = d[j], d[i]
 }
 
 // HTTPRoutes implements the necessary interfaces for the algorithms
@@ -109,4 +109,43 @@ func (h HTTPRoutes) Less(i int, j int) bool {
 // Swap implements Interface.
 func (h HTTPRoutes) Swap(i int, j int) {
 	h[i], h[j] = h[j], h[i]
+}
+
+// SpaceDomains implements the necessary interfaces for the algorithms
+// package.
+type SpaceDomains []SpaceDomain
+
+// Set implements Interface.
+func (d SpaceDomains) Set(i int, a algorithms.Interface, j int, b algorithms.Interface) {
+	a.(SpaceDomains)[i] = b.(SpaceDomains)[j]
+}
+
+// Append implements Interface.
+func (d SpaceDomains) Append(a algorithms.Interface) algorithms.Interface {
+	return append(d, a.(SpaceDomains)...)
+}
+
+// Clone implements Interface.
+func (d SpaceDomains) Clone() algorithms.Interface {
+	return append(SpaceDomains{}, d...)
+}
+
+// Slice implements Interface.
+func (d SpaceDomains) Slice(i int, j int) algorithms.Interface {
+	return d[i:j]
+}
+
+// Len implements Interface.
+func (d SpaceDomains) Len() int {
+	return len(d)
+}
+
+// Less implements Interface.
+func (d SpaceDomains) Less(i int, j int) bool {
+	return d[i].Domain < d[j].Domain
+}
+
+// Swap implements Interface.
+func (d SpaceDomains) Swap(i int, j int) {
+	d[i], d[j] = d[j], d[i]
 }

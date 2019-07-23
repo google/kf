@@ -29,7 +29,7 @@ func TestSpaceValidation(t *testing.T) {
 		ContainerRegistry: "gcr.io/test",
 	}
 	goodExecuton := SpaceSpecExecution{
-		Domains: []string{DefaultDomain},
+		Domains: []SpaceDomain{{Domain: "example.com", Default: true}},
 	}
 
 	goodSpaceSpec := SpaceSpec{
@@ -103,6 +103,41 @@ func TestSpaceValidation(t *testing.T) {
 				},
 			},
 			want: apis.ErrMissingField("spec.execution.domains"),
+		},
+		"no default domain": {
+			space: &Space{
+				ObjectMeta: metav1.ObjectMeta{Name: "valid"},
+				Spec: SpaceSpec{
+					Execution: SpaceSpecExecution{
+						Domains: []SpaceDomain{
+							{Domain: "example.com"},
+						},
+					},
+					BuildpackBuild: SpaceSpecBuildpackBuild{
+						ContainerRegistry: "gcr.io/test",
+						BuilderImage:      DefaultBuilderImage,
+					},
+				},
+			},
+			want: apis.ErrInvalidArrayValue(SpaceDomain{Domain: "example.com"}, "spec.execution.domains", 0),
+		},
+		"multiple default domains": {
+			space: &Space{
+				ObjectMeta: metav1.ObjectMeta{Name: "valid"},
+				Spec: SpaceSpec{
+					Execution: SpaceSpecExecution{
+						Domains: []SpaceDomain{
+							{Domain: "example.com", Default: true},
+							{Domain: "other-example.com", Default: true},
+						},
+					},
+					BuildpackBuild: SpaceSpecBuildpackBuild{
+						ContainerRegistry: "gcr.io/test",
+						BuilderImage:      DefaultBuilderImage,
+					},
+				},
+			},
+			want: apis.ErrInvalidArrayValue(SpaceDomain{Domain: "other-example.com", Default: true}, "spec.execution.domains", 1),
 		},
 	}
 

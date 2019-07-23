@@ -16,26 +16,31 @@ package v1alpha1
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/google/kf/pkg/kf/algorithms"
 )
 
+// TODO(#396): We should pull these from a ConfigMap
 const (
 	// DefaultBuilderImage contains the default buildpack builder image.
 	DefaultBuilderImage = "gcr.io/kf-releases/buildpack-builder:latest"
 
-	// DefaultDomain contains the default domain.
-	DefaultDomain = "example.com"
+	// DefaultDomainTemplate contains the default domain template. It should
+	// be used with `fmt.Sprintf(DefaultDomainTemplate, namespace)`
+	DefaultDomainTemplate = "%s.kf.cluster.local"
 )
 
 // SetDefaults implements apis.Defaultable
 func (k *Space) SetDefaults(ctx context.Context) {
-	k.Spec.SetDefaults(ctx)
+	k.Spec.SetDefaults(ctx, k.Namespace)
 }
 
 // SetDefaults implements apis.Defaultable
-func (k *SpaceSpec) SetDefaults(ctx context.Context) {
+func (k *SpaceSpec) SetDefaults(ctx context.Context, namespace string) {
 	k.Security.SetDefaults(ctx)
 	k.BuildpackBuild.SetDefaults(ctx)
-	k.Execution.SetDefaults(ctx)
+	k.Execution.SetDefaults(ctx, namespace)
 	k.ResourceLimits.SetDefaults(ctx)
 }
 
@@ -52,10 +57,19 @@ func (k *SpaceSpecBuildpackBuild) SetDefaults(ctx context.Context) {
 }
 
 // SetDefaults implements apis.Defaultable
-func (k *SpaceSpecExecution) SetDefaults(ctx context.Context) {
+func (k *SpaceSpecExecution) SetDefaults(ctx context.Context, namespace string) {
 	if len(k.Domains) == 0 {
-		k.Domains = append(k.Domains, DefaultDomain)
+		k.Domains = append(
+			k.Domains,
+			SpaceDomain{
+				Domain: fmt.Sprintf(DefaultDomainTemplate, namespace),
+			},
+		)
 	}
+
+	k.Domains = []SpaceDomain(algorithms.Dedupe(
+		SpaceDomains(k.Domains),
+	).(SpaceDomains))
 }
 
 // SetDefaults implements apis.Defaultable

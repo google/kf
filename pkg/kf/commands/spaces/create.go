@@ -17,6 +17,7 @@ package spaces
 import (
 	"fmt"
 
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/spaces"
 
@@ -42,7 +43,10 @@ func NewCreateSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 			toCreate := spaces.NewKfSpace()
 			toCreate.SetName(name)
 			toCreate.SetContainerRegistry(containerRegistry)
-			toCreate.AppendDomains(domains...)
+
+			for _, domain := range domains {
+				toCreate.AppendDomains(v1alpha1.SpaceDomain{Domain: domain})
+			}
 
 			if _, err := client.Create(toCreate.ToSpace()); err != nil {
 				return err

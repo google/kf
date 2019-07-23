@@ -224,9 +224,9 @@ func ExampleMakeVirtualService() {
 	}
 
 	r := algorithms.Merge(
-		resources.HTTPRoutes(vs1.Spec.HTTP),
-		resources.HTTPRoutes(vs2.Spec.HTTP),
-	).(resources.HTTPRoutes)
+		v1alpha1.HTTPRoutes(vs1.Spec.HTTP),
+		v1alpha1.HTTPRoutes(vs2.Spec.HTTP),
+	).(v1alpha1.HTTPRoutes)
 
 	// Sort for display purposes
 	sort.Sort(r)
