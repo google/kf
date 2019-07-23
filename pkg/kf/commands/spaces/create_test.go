@@ -39,13 +39,15 @@ func TestNewCreateSpaceCommand(t *testing.T) {
 			wantErr: errors.New("accepts 1 arg(s), received 0"),
 		},
 		"object passed through": {
-			args: []string{"my-ns"},
+			args: []string{"my-ns", "--container-registry=some-registry", "--domain=domain-1", "--domain=domain-2"},
 			setup: func(t *testing.T, fakeSpaces *fake.FakeClient) {
 				fakeSpaces.
 					EXPECT().
 					Create(gomock.Any()).
 					Do(func(space *v1alpha1.Space) {
 						testutil.AssertEqual(t, "sets name", "my-ns", space.Name)
+						testutil.AssertEqual(t, "sets container registry", "some-registry", space.Spec.BuildpackBuild.ContainerRegistry)
+						testutil.AssertEqual(t, "sets domains", []v1alpha1.SpaceDomain{{Domain: "domain-1", Default: true}, {Domain: "domain-2"}}, space.Spec.Execution.Domains)
 					})
 			},
 		},

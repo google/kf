@@ -44,6 +44,10 @@ func TestNewGetSpaceCommand(t *testing.T) {
 	goodSpace.Spec.BuildpackBuild.ContainerRegistry = "some/container/registry"
 	goodSpace.Spec.BuildpackBuild.Env = []corev1.EnvVar{{Name: "BuildVar", Value: "BuildVal"}}
 	goodSpace.Spec.Execution.Env = []corev1.EnvVar{{Name: "ExecVar", Value: "ExecVal"}}
+	goodSpace.Spec.Execution.Domains = []v1alpha1.SpaceDomain{
+		{Domain: "domain-1.com", Default: true},
+		{Domain: "domain-2.com"},
+	}
 
 	cases := map[string]struct {
 		wantErr    error
@@ -73,7 +77,7 @@ func TestNewGetSpaceCommand(t *testing.T) {
 		"execution": {
 			args:       []string{"my-space"},
 			space:      goodSpace,
-			wantOutput: []string{"Execution", "ExecVar", "ExecVal"},
+			wantOutput: []string{"Execution", "ExecVar", "ExecVal", "domain-1.com", "domain-2.com"},
 		},
 		"client error": {
 			args:    []string{"my-space"},

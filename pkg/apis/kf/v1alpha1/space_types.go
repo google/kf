@@ -95,6 +95,12 @@ type SpaceSpecExecution struct {
 	// +patchMergeKey=name
 	// +patchStrategy=merge
 	Env []corev1.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
+
+	// Domains sets valid domains that can be used for routes in the space.
+	// +optional
+	// +patchMergeKey=name
+	// +patchStrategy=merge
+	Domains []SpaceDomain `json:"domains,omitempty" patchStrategy:"merge" patchMergeKey:"domain"`
 }
 
 // SpaceSpecResourceLimits contains definitions for resource usage limits.
@@ -109,6 +115,18 @@ type SpaceSpecResourceLimits struct {
 	// which sets default request/limit for resources per pod or container.
 	// +optional
 	ResourceDefaults []corev1.LimitRangeItem `json:"resourceDefaults,omitempty"`
+}
+
+// SpaceDomain stores information about a domain available in a space.
+type SpaceDomain struct {
+	// Domain is the valid domain that can be used in conjunction with a
+	// hostname and path for a route.
+	Domain string
+
+	// Default implies that this SpaceDomain is used when a domain is not
+	// specified. There can only be a single default set to true per space.
+	// NOTE: This may change in the future.
+	Default bool
 }
 
 // SpaceStatus represents information about the status of a Space.

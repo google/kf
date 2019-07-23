@@ -30,7 +30,10 @@ package {{.Package}}
 // Generator defined imports
 import (
 	"fmt"
+	"io"
+	"strings"
 
+	"knative.dev/pkg/kmp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

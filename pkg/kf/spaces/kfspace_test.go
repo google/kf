@@ -16,6 +16,7 @@ package spaces
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -45,4 +46,20 @@ func TestKfSpace_ToSpace(t *testing.T) {
 	expected.Name = "foo"
 
 	testutil.AssertEqual(t, "generated ns", expected, actual)
+}
+
+func ExampleKfSpace_AppendDomains() {
+	space := NewKfSpace()
+	// Setup
+	space.AppendDomains(v1alpha1.SpaceDomain{Domain: "example.com"})
+	space.AppendDomains(v1alpha1.SpaceDomain{Domain: "other-example.com"})
+
+	// Values
+	var domainNames []string
+	for _, domain := range space.Spec.Execution.Domains {
+		domainNames = append(domainNames, domain.Domain)
+	}
+	fmt.Println("Domains:", strings.Join(domainNames, ", "))
+
+	// Output: Domains: example.com, other-example.com
 }

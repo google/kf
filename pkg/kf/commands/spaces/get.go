@@ -66,9 +66,22 @@ func NewGetSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Command
 			describe.SectionWriter(w, "Execution", func(w io.Writer) {
 				execution := space.Spec.Execution
 				describe.EnvVars(w, execution.Env)
-			})
 
+				describe.SectionWriter(w, "Domains", func(w io.Writer) {
+					if len(execution.Domains) == 0 {
+						return
+					}
+
+					describe.TabbedWriter(w, func(w io.Writer) {
+						fmt.Fprintln(w, "Name\tDefault?")
+						for _, domain := range execution.Domains {
+							fmt.Fprintf(w, "%s\t%t\n", domain.Domain, domain.Default)
+						}
+					})
+				})
+			})
 			fmt.Fprintln(w)
+
 			printAdditionalCommands(w, space.Name)
 
 			return nil

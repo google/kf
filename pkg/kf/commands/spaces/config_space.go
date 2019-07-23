@@ -16,17 +16,16 @@ package spaces
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/algorithms"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/quotas"
 	"github.com/google/kf/pkg/kf/internal/envutil"
 	"github.com/google/kf/pkg/kf/spaces"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
-	"knative.dev/pkg/kmp"
 )
 
 // NewConfigSpaceCommand creates a command that can set facets of a space.
@@ -47,6 +46,9 @@ func NewConfigSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		newUnsetBuildpackEnvMutator(),
 		newSetContainerRegistryMutator(),
 		newSetBuildpackBuilderMutator(),
+		newAppendDomainMutator(),
+		newSetDefaultDomainMutator(),
+		newRemoveDomainMutator(),
 	}
 
 	for _, sm := range subcommands {
@@ -89,33 +91,9 @@ func (sm spaceMutator) ToCommand(client spaces.Client) *cobra.Command {
 
 			cmd.SilenceUsage = true
 
-			return client.Transform(spaceName, func(space *v1alpha1.Space) error {
-				before := space.DeepCopy()
-
-				if err := mutator(space); err != nil {
-					return err
-				}
-
-				printDiff(cmd.OutOrStdout(), before, space)
-
-				return nil
-			})
+			diffPrintingMutator := spaces.DiffWrapper(cmd.OutOrStdout(), mutator)
+			return client.Transform(spaceName, diffPrintingMutator)
 		},
-	}
-}
-
-func printDiff(w io.Writer, original, new *v1alpha1.Space) {
-	diff, err := kmp.SafeDiff(original.Spec, new.Spec)
-	if err != nil {
-		fmt.Fprintf(w, "Couldn't format diff: %s\n", err.Error())
-		return
-	}
-
-	if diff != "" {
-		fmt.Fprintln(w, "Space Spec (-original +new):")
-		fmt.Fprintln(w, diff)
-	} else {
-		fmt.Fprintln(w, "No changes")
 	}
 }
 
@@ -218,6 +196,75 @@ func newUnsetBuildpackEnvMutator() spaceMutator {
 
 			return func(space *v1alpha1.Space) error {
 				space.Spec.BuildpackBuild.Env = envutil.RemoveEnvVars([]string{name}, space.Spec.BuildpackBuild.Env)
+
+				return nil
+			}, nil
+		},
+	}
+}
+
+func newAppendDomainMutator() spaceMutator {
+	return spaceMutator{
+		Name:  "append-domain",
+		Short: "Append a domain for a space",
+		Args:  []string{"DOMAIN"},
+		Init: func(args []string) (spaces.Mutator, error) {
+			domain := args[0]
+
+			return func(space *v1alpha1.Space) error {
+				space.Spec.Execution.Domains = append(
+					space.Spec.Execution.Domains,
+					v1alpha1.SpaceDomain{Domain: domain},
+				)
+
+				return nil
+			}, nil
+		},
+	}
+}
+
+func newSetDefaultDomainMutator() spaceMutator {
+	return spaceMutator{
+		Name:  "set-default-domain",
+		Short: "Set a default domain for a space",
+		Args:  []string{"DOMAIN"},
+		Init: func(args []string) (spaces.Mutator, error) {
+			domain := args[0]
+
+			return func(space *v1alpha1.Space) error {
+				var found bool
+				for i, d := range space.Spec.Execution.Domains {
+					if d.Domain != domain {
+						space.Spec.Execution.Domains[i].Default = false
+						continue
+					}
+					found = true
+					space.Spec.Execution.Domains[i].Default = true
+					return nil
+				}
+
+				if !found {
+					return fmt.Errorf("failed to find domain %s", domain)
+				}
+				return nil
+			}, nil
+		},
+	}
+}
+
+func newRemoveDomainMutator() spaceMutator {
+	return spaceMutator{
+		Name:  "remove-domain",
+		Short: "Remove a domain from a space",
+		Args:  []string{"DOMAIN"},
+		Init: func(args []string) (spaces.Mutator, error) {
+			domain := args[0]
+
+			return func(space *v1alpha1.Space) error {
+				space.Spec.Execution.Domains = []v1alpha1.SpaceDomain(algorithms.Delete(
+					v1alpha1.SpaceDomains(space.Spec.Execution.Domains),
+					v1alpha1.SpaceDomains{{Domain: domain}},
+				).(v1alpha1.SpaceDomains))
 
 				return nil
 			}, nil
