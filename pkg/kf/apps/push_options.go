@@ -17,6 +17,7 @@
 package apps
 
 import (
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"io"
 	"os"
 )
@@ -42,6 +43,8 @@ type pushConfig struct {
 	NoStart bool
 	// Output is the io.Writer to write output such as build logs
 	Output io.Writer
+	// Routes is route names (multiple allowed) for the app
+	Routes []*v1alpha1.Route
 	// ServiceAccount is the service account to authenticate with
 	ServiceAccount string
 	// SourceImage is the source code as a container image
@@ -134,6 +137,12 @@ func (opts PushOptions) Output() io.Writer {
 	return opts.toConfig().Output
 }
 
+// Routes returns the last set value for Routes or the empty value
+// if not set.
+func (opts PushOptions) Routes() []*v1alpha1.Route {
+	return opts.toConfig().Routes
+}
+
 // ServiceAccount returns the last set value for ServiceAccount or the empty value
 // if not set.
 func (opts PushOptions) ServiceAccount() string {
@@ -213,6 +222,13 @@ func WithPushNoStart(val bool) PushOption {
 func WithPushOutput(val io.Writer) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.Output = val
+	}
+}
+
+// WithPushRoutes creates an Option that sets route names (multiple allowed) for the app
+func WithPushRoutes(val []*v1alpha1.Route) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.Routes = val
 	}
 }
 

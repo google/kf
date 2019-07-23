@@ -32,7 +32,6 @@ import (
 	logs2 "github.com/knative/build/pkg/logs"
 	"github.com/poy/kontext"
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
@@ -51,7 +50,8 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 	buildTailer := provideSourcesBuildTailer()
 	client := sources.NewClient(sourcesGetter, buildTailer)
 	appsClient := apps.NewClient(appsGetter, systemEnvInjectorInterface, client)
-	pusher := apps.NewPusher(appsClient)
+	routesClient := routes.NewClient(kfV1alpha1Interface)
+	pusher := apps.NewPusher(appsClient, routesClient)
 	srcImageBuilder := provideSrcImageBuilder()
 	command := apps2.NewPushCommand(p, appsClient, pusher, srcImageBuilder)
 	return command
@@ -385,9 +385,7 @@ func InjectRoutes(p *config.KfParams) *cobra.Command {
 func InjectCreateRoute(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	client := routes.NewClient(kfV1alpha1Interface)
-	kubernetesInterface := config.GetKubernetes(p)
-	namespacesGetter := providerNamespacesGetter(kubernetesInterface)
-	command := routes2.NewCreateRouteCommand(p, client, namespacesGetter)
+	command := routes2.NewCreateRouteCommand(p, client)
 	return command
 }
 
@@ -470,15 +468,6 @@ var SpacesSet = wire.NewSet(config.GetKfClient, provideKfSpaces, spaces.NewClien
 
 func provideKfSpaces(ki v1alpha1.KfV1alpha1Interface) v1alpha1.SpacesGetter {
 	return ki
-}
-
-var NamespacesSet = wire.NewSet(
-	provideCoreV1,
-	providerNamespacesGetter, config.GetKubernetes,
-)
-
-func providerNamespacesGetter(ki kubernetes.Interface) v1.NamespacesGetter {
-	return ki.CoreV1()
 }
 
 var SourcesSet = wire.NewSet(config.GetKfClient, provideSourcesBuildTailer, provideKfSources, sources.NewClient)

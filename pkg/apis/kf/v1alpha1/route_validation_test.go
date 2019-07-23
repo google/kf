@@ -86,6 +86,19 @@ func TestRouteValidation(t *testing.T) {
 			},
 			want: apis.ErrMissingField("spec.domain"),
 		},
+		"invalid hostname": {
+			route: &Route{
+				ObjectMeta: goodObjMeta,
+				Spec: RouteSpec{
+					Hostname: "www",
+					Domain:   "domain.com",
+				},
+			},
+			want: &apis.FieldError{
+				Message: "invalid value: hostname",
+				Paths:   []string{"spec.www"},
+			},
+		},
 		"multiple knativeServiceName": {
 			route: &Route{
 				ObjectMeta: goodObjMeta,

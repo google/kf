@@ -37,11 +37,17 @@ type Application struct {
 	Env        map[string]string `yaml:"env,omitempty"`
 	MinScale   *int              `yaml:"minScale,omitempty"`
 	MaxScale   *int              `yaml:"maxScale,omitempty"`
+	Routes     []Route           `yaml:"routes,omitempty"`
 }
 
 // AppDockerImage is the struct for docker configuration.
 type AppDockerImage struct {
 	Image string `yaml:"image,omitempty"`
+}
+
+// Route is a route name (including hostname, domain, and path) for an application.
+type Route struct {
+	Route string `yaml:"route,omitempty"`
 }
 
 // Manifest is an application's configuration.

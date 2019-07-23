@@ -30,10 +30,35 @@ import (
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/testutil"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+type routeParts struct {
+	hostname string
+	domain   string
+	path     string
+}
 
 func TestPushCommand(t *testing.T) {
 	t.Parallel()
+
+	routes := createTestRoutes([]routeParts{
+		{
+			hostname: "",
+			domain:   "example.com",
+			path:     "",
+		},
+		{
+			hostname: "",
+			domain:   "www.example.com",
+			path:     "/foo",
+		},
+		{
+			hostname: "host",
+			domain:   "example.com",
+			path:     "/foo",
+		},
+	})
 
 	for tn, tc := range map[string]struct {
 		args            []string
@@ -43,6 +68,7 @@ func TestPushCommand(t *testing.T) {
 		srcImageBuilder SrcImageBuilderFunc
 		wantImagePrefix string
 		targetSpace     *v1alpha1.Space
+		containsRoutes  bool
 
 		wantOpts []apps.PushOption
 	}{
@@ -281,6 +307,22 @@ func TestPushCommand(t *testing.T) {
 			},
 			wantErr: errors.New("no app missing-app found in the Manifest"),
 		},
+		"create and map routes from manifest": {
+			namespace: "some-namespace",
+			args: []string{
+				"routes-app",
+				"--container-registry", "some-registry.io",
+				"--manifest", "testdata/manifest.yml",
+			},
+			containsRoutes: true,
+			wantOpts: []apps.PushOption{
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushRoutes(routes),
+				apps.WithPushContainerRegistry("some-registry.io"),
+				apps.WithPushMinScale(1),
+				apps.WithPushMaxScale(1),
+			},
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			if tc.srcImageBuilder == nil {
@@ -308,6 +350,7 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "min scale bound", expectOpts.MinScale(), actualOpts.MinScale())
 					testutil.AssertEqual(t, "max scale bound", expectOpts.MaxScale(), actualOpts.MaxScale())
 					testutil.AssertEqual(t, "no start", expectOpts.NoStart(), actualOpts.NoStart())
+					testutil.AssertEqual(t, "routes", expectOpts.Routes(), actualOpts.Routes())
 
 					if !strings.HasPrefix(actualOpts.SourceImage(), tc.wantImagePrefix) {
 						t.Errorf("Wanted srcImage to start with %s got: %s", tc.wantImagePrefix, actualOpts.SourceImage())
@@ -342,4 +385,31 @@ func TestPushCommand(t *testing.T) {
 			ctrl.Finish()
 		})
 	}
+}
+
+func createTestRoutes(routes []routeParts) []*v1alpha1.Route {
+	newRoutes := []*v1alpha1.Route{}
+	for _, route := range routes {
+		r := &v1alpha1.Route{
+			TypeMeta: metav1.TypeMeta{
+				Kind: "Route",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "some-namespace",
+				Name: v1alpha1.GenerateName(
+					route.hostname,
+					route.domain,
+					route.path,
+				),
+			},
+			Spec: v1alpha1.RouteSpec{
+				Hostname:            route.hostname,
+				Domain:              route.domain,
+				Path:                route.path,
+				KnativeServiceNames: []string{"routes-app"},
+			},
+		}
+		newRoutes = append(newRoutes, r)
+	}
+	return newRoutes
 }
