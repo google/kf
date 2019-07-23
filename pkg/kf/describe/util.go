@@ -28,12 +28,10 @@ import (
 
 // TabbedWriter indents all tabbed output to be aligned.
 func TabbedWriter(w io.Writer, f func(io.Writer)) {
-	out := new(tabwriter.Writer)
-	out.Init(w, 0, 8, 2, ' ', 0)
+	out := tabwriter.NewWriter(w, 0, 8, 2, ' ', 0)
+	defer out.Flush()
 
 	f(out)
-
-	out.Flush()
 }
 
 // translateTimestampSince returns the elapsed time since timestamp in
