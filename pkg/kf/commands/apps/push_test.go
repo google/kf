@@ -186,12 +186,12 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushMaxScale(1),
 			},
 			setup: func(t *testing.T, f *svbFake.FakeClientInterface) {
-				f.EXPECT().Create("some-service-instance", "app-name", gomock.Any()).Do(func(instance, app string, opts ...servicebindings.CreateOption) {
+				f.EXPECT().GetOrCreate("some-service-instance", "app-name", gomock.Any()).Do(func(instance, app string, opts ...servicebindings.CreateOption) {
 					config := servicebindings.CreateOptions(opts)
 					testutil.AssertEqual(t, "params", map[string]interface{}{}, config.Params())
 					testutil.AssertEqual(t, "namespace", "some-namespace", config.Namespace())
 					testutil.AssertEqual(t, "binding-name", "some-service-instance", config.BindingName())
-				}).Return(dummyBindingInstance("app-name", "some-service-instance"), nil)
+				}).Return(dummyBindingInstance("app-name", "some-service-instance"), true, nil)
 			},
 		},
 		"service create error": {
@@ -352,7 +352,7 @@ func TestPushCommand(t *testing.T) {
 			args: []string{
 				"routes-app",
 				"--container-registry", "some-registry.io",
-				"--manifest", "testdata/manifest.yml",
+				"--manifest", "internal/testdata/manifest.yml",
 			},
 			containsRoutes: true,
 			wantOpts: []apps.PushOption{

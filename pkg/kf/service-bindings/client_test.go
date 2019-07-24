@@ -57,14 +57,14 @@ func TestClient_Create(t *testing.T) {
 	cases := map[string]ServiceBindingApiTestCase{
 		"server error": {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.apiserver.EXPECT().Update(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api error"))
+				deps.apiserver.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api error"))
 				_, err := client.Create("mydb", "myapp")
 				testutil.AssertErrorsEqual(t, errors.New("api error"), err)
 			},
 		},
 		"custom namespace": {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.apiserver.EXPECT().Update(gomock.Any(), "custom-ns", gomock.Any()).Return(nil, nil)
+				deps.apiserver.EXPECT().Create(gomock.Any(), "custom-ns", gomock.Any()).Return(nil, nil)
 
 				_, err := client.Create("mydb", "myapp", servicebindings.WithCreateNamespace("custom-ns"))
 				testutil.AssertNil(t, "create err", err)
@@ -72,7 +72,7 @@ func TestClient_Create(t *testing.T) {
 		},
 		"call semantics": {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.apiserver.EXPECT().Update(gomock.Any(), "custom-ns", gomock.Any()).DoAndReturn(func(grv schema.GroupVersionResource, ns string, obj runtime.Object) (runtime.Object, error) {
+				deps.apiserver.EXPECT().Create(gomock.Any(), "custom-ns", gomock.Any()).DoAndReturn(func(grv schema.GroupVersionResource, ns string, obj runtime.Object) (runtime.Object, error) {
 					testutil.AssertEqual(t, "group", "servicecatalog.k8s.io", grv.Group)
 					testutil.AssertEqual(t, "resource", "servicebindings", grv.Resource)
 
@@ -85,7 +85,7 @@ func TestClient_Create(t *testing.T) {
 		},
 		"default values": {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.apiserver.EXPECT().Update(gomock.Any(), "default", gomock.Any()).DoAndReturn(func(grv schema.GroupVersionResource, ns string, obj runtime.Object) (runtime.Object, error) {
+				deps.apiserver.EXPECT().Create(gomock.Any(), "default", gomock.Any()).DoAndReturn(func(grv schema.GroupVersionResource, ns string, obj runtime.Object) (runtime.Object, error) {
 					binding := obj.(*apiv1beta1.ServiceBinding)
 					testutil.AssertEqual(t, "name", "kf-binding-myapp-mydb", binding.Name)
 					testutil.AssertEqual(t, "namespace", "default", binding.Namespace)
@@ -100,7 +100,7 @@ func TestClient_Create(t *testing.T) {
 		},
 		"custom values": {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.apiserver.EXPECT().Update(gomock.Any(), "custom-ns", gomock.Any()).DoAndReturn(func(grv schema.GroupVersionResource, ns string, obj runtime.Object) (runtime.Object, error) {
+				deps.apiserver.EXPECT().Create(gomock.Any(), "custom-ns", gomock.Any()).DoAndReturn(func(grv schema.GroupVersionResource, ns string, obj runtime.Object) (runtime.Object, error) {
 					binding := obj.(*apiv1beta1.ServiceBinding)
 					testutil.AssertEqual(t, "name", "kf-binding-myapp-mydb", binding.Name)
 					testutil.AssertEqual(t, "namespace", "custom-ns", binding.Namespace)
