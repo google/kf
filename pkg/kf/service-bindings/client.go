@@ -72,11 +72,11 @@ func (c *Client) Create(serviceInstanceName, appName string, opts ...CreateOptio
 	cfg := CreateOptionDefaults().Extend(opts).toConfig()
 
 	if serviceInstanceName == "" {
-		return nil, errors.New("no service instance given. Can not create service binding")
+		return nil, errors.New("can't create service binding, no service instance given")
 	}
 
 	if appName == "" {
-		return nil, errors.New("no app name given. Can not create service binding")
+		return nil, errors.New("can't create service binding, no app name given")
 	}
 
 	bindingName := cfg.BindingName

@@ -63,17 +63,3 @@ func (mr *FakeSystemEnvInjectorMockRecorder) ComputeSystemEnv(arg0 interface{}) 
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComputeSystemEnv", reflect.TypeOf((*FakeSystemEnvInjector)(nil).ComputeSystemEnv), arg0)
 }
-
-// InjectSystemEnv mocks base method
-func (m *FakeSystemEnvInjector) InjectSystemEnv(arg0 *v1alpha1.App) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InjectSystemEnv", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// InjectSystemEnv indicates an expected call of InjectSystemEnv
-func (mr *FakeSystemEnvInjectorMockRecorder) InjectSystemEnv(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InjectSystemEnv", reflect.TypeOf((*FakeSystemEnvInjector)(nil).InjectSystemEnv), arg0)
-}
