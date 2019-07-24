@@ -25,12 +25,10 @@ import (
 	"github.com/google/kf/pkg/kf/algorithms"
 	"github.com/google/kf/pkg/reconciler"
 	"github.com/google/kf/pkg/reconciler/route/resources"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
 	networking "knative.dev/pkg/apis/istio/v1alpha3"
 	istiolisters "knative.dev/pkg/client/listers/istio/v1alpha3"
@@ -45,6 +43,7 @@ type Reconciler struct {
 
 	// listers index properties about resources
 	routeLister          kflisters.RouteLister
+	appLister            kflisters.AppLister
 	virtualServiceLister istiolisters.VirtualServiceLister
 }
 
@@ -98,36 +97,30 @@ func (r *Reconciler) reconcileRoute(ctx context.Context, namespace, name string,
 	return reconcileErr
 }
 
-func (r *Reconciler) ReconcileServiceDeletion(ctx context.Context, service *serving.Service) error {
-	// TODO(poy): This is O(n) where n is the number of apps in the
-	// namespace. We can get this down to O(1).
-	routes, err := r.routeLister.Routes(service.GetNamespace()).List(labels.Everything())
-	if err != nil {
-		return err
-	}
+func (r *Reconciler) ReconcileAppDeletion(ctx context.Context, app *v1alpha1.App) error {
+	for _, routeSpec := range app.Spec.Routes {
+		route, err := r.routeLister.Routes(app.GetNamespace()).Get(
+			v1alpha1.GenerateRouteNameFromSpec(routeSpec),
+		)
+		if err != nil {
+			return err
+		}
 
-	for _, route := range routes {
-		for i, ksvcName := range route.Spec.KnativeServiceNames {
-			if service.GetName() != ksvcName {
-				continue
-			}
+		// Don't modify the informers copy
+		toReconcile := route.DeepCopy()
 
-			// Don't modify the informers copy
-			toReconcile := route.DeepCopy()
+		// Remote the App
+		toReconcile.Spec.AppNames = []string((algorithms.Delete(
+			algorithms.Strings(toReconcile.Spec.AppNames),
+			algorithms.Strings{app.Name},
+		)).(algorithms.Strings))
 
-			// Remove the Knative Service
-			toReconcile.Spec.KnativeServiceNames = append(
-				toReconcile.Spec.KnativeServiceNames[:i],
-				toReconcile.Spec.KnativeServiceNames[i+1:]...,
-			)
-
-			// Update Route to not reference service
-			if _, err := r.KfClientSet.
-				KfV1alpha1().
-				Routes(service.GetNamespace()).
-				Update(toReconcile); err != nil {
-				return err
-			}
+		// Update Route to not reference service
+		if _, err := r.KfClientSet.
+			KfV1alpha1().
+			Routes(app.GetNamespace()).
+			Update(toReconcile); err != nil {
+			return err
 		}
 	}
 

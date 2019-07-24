@@ -22,12 +22,12 @@ import (
 	"github.com/google/kf/pkg/kf/testutil"
 )
 
-func TestRoute_SetDefaults_DedupeKnativeServiceNames(t *testing.T) {
+func TestRoute_SetDefaults_DedupeAppNames(t *testing.T) {
 	t.Parallel()
 
 	r := &Route{
 		Spec: RouteSpec{
-			KnativeServiceNames: []string{
+			AppNames: []string{
 				"d", "a", "d", "a", "b", "c",
 			},
 		},
@@ -35,6 +35,6 @@ func TestRoute_SetDefaults_DedupeKnativeServiceNames(t *testing.T) {
 
 	r.SetDefaults(context.Background())
 
-	testutil.AssertEqual(t, "len", 4, len(r.Spec.KnativeServiceNames))
-	testutil.AssertContainsAll(t, strings.Join(r.Spec.KnativeServiceNames, ""), []string{"a", "b", "c", "d"})
+	testutil.AssertEqual(t, "len", 4, len(r.Spec.AppNames))
+	testutil.AssertContainsAll(t, strings.Join(r.Spec.AppNames, ""), []string{"a", "b", "c", "d"})
 }

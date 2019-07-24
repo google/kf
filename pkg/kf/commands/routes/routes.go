@@ -57,7 +57,7 @@ func NewRoutesCommand(
 			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 2, ' ', tabwriter.StripEscape)
 			fmt.Fprintln(w, "HOST\tDOMAIN\tPATH\tAPPS")
 			for _, route := range routes {
-				apps := strings.Join(route.Spec.KnativeServiceNames, ", ")
+				apps := strings.Join(route.Spec.AppNames, ", ")
 				fmt.Fprintf(
 					w,
 					"%s\t%s\t%s\t%s\n",

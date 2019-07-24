@@ -37,7 +37,9 @@ func TestRouteValidation(t *testing.T) {
 		Namespace: "valid",
 	}
 	goodRouteSpec := RouteSpec{
-		Domain: "example.com",
+		RouteSpecFields: RouteSpecFields{
+			Domain: "example.com",
+		},
 	}
 
 	cases := map[string]struct {
@@ -80,8 +82,10 @@ func TestRouteValidation(t *testing.T) {
 			route: &Route{
 				ObjectMeta: goodObjMeta,
 				Spec: RouteSpec{
-					KnativeServiceNames: []string{"app-1"},
-					Domain:              "",
+					AppNames: []string{"app-1"},
+					RouteSpecFields: RouteSpecFields{
+						Domain: "",
+					},
 				},
 			},
 			want: apis.ErrMissingField("spec.domain"),
@@ -90,8 +94,10 @@ func TestRouteValidation(t *testing.T) {
 			route: &Route{
 				ObjectMeta: goodObjMeta,
 				Spec: RouteSpec{
-					Hostname: "www",
-					Domain:   "domain.com",
+					RouteSpecFields: RouteSpecFields{
+						Hostname: "www",
+						Domain:   "domain.com",
+					},
 				},
 			},
 			want: &apis.FieldError{
@@ -99,15 +105,17 @@ func TestRouteValidation(t *testing.T) {
 				Paths:   []string{"spec.www"},
 			},
 		},
-		"multiple knativeServiceName": {
+		"multiple appNames": {
 			route: &Route{
 				ObjectMeta: goodObjMeta,
 				Spec: RouteSpec{
-					KnativeServiceNames: []string{"app-1", "app-2", "app-3"},
-					Domain:              "example.com",
+					AppNames: []string{"app-1", "app-2", "app-3"},
+					RouteSpecFields: RouteSpecFields{
+						Domain: "example.com",
+					},
 				},
 			},
-			want: apis.ErrInvalidArrayValue("app-2", "spec.knativeServiceName", 1).Also(apis.ErrInvalidArrayValue("app-3", "spec.knativeServiceName", 2)),
+			want: apis.ErrInvalidArrayValue("app-2", "spec.appNames", 1).Also(apis.ErrInvalidArrayValue("app-3", "spec.appNames", 2)),
 		},
 		"fetching VirtualServices returns an error": {
 			setup: func(t *testing.T, fake *fake.FakeNetworkingV1alpha3) {

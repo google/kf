@@ -51,7 +51,7 @@ func NewUnmapRouteCommand(
 
 			mutator := routes.Mutator(func(r *v1alpha1.Route) error {
 				idx := -1
-				for i, s := range r.Spec.KnativeServiceNames {
+				for i, s := range r.Spec.AppNames {
 					if s == appName {
 						idx = i
 						break
@@ -62,15 +62,15 @@ func NewUnmapRouteCommand(
 					return fmt.Errorf("App %s not found", appName)
 				}
 
-				r.Spec.KnativeServiceNames = append(
-					r.Spec.KnativeServiceNames[:idx],
-					r.Spec.KnativeServiceNames[idx+1:]...,
+				r.Spec.AppNames = append(
+					r.Spec.AppNames[:idx],
+					r.Spec.AppNames[idx+1:]...,
 				)
 				return nil
 			})
 
 			urlPath = path.Join("/", urlPath)
-			ksvcName := v1alpha1.GenerateName(hostname, domain, urlPath)
+			ksvcName := v1alpha1.GenerateRouteName(hostname, domain, urlPath)
 			if err := c.Transform(p.Namespace, ksvcName, mutator); err != nil {
 				return fmt.Errorf("failed to unmap Route: %s", err)
 			}

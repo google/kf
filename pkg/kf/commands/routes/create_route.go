@@ -80,16 +80,18 @@ Instead use the --namespace flag.`)
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: space,
-					Name: v1alpha1.GenerateName(
+					Name: v1alpha1.GenerateRouteName(
 						hostname,
 						domain,
 						urlPath,
 					),
 				},
 				Spec: v1alpha1.RouteSpec{
-					Hostname: hostname,
-					Domain:   domain,
-					Path:     urlPath,
+					RouteSpecFields: v1alpha1.RouteSpecFields{
+						Hostname: hostname,
+						Domain:   domain,
+						Path:     urlPath,
+					},
 				},
 			}
 

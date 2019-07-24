@@ -45,9 +45,11 @@ func TestMakeVirtualService(t *testing.T) {
 					Labels:    map[string]string{"a": "1", "b": "2"},
 				},
 				Spec: v1alpha1.RouteSpec{
-					Hostname: "some-host",
-					Domain:   "example.com",
-					Path:     "some-path",
+					RouteSpecFields: v1alpha1.RouteSpecFields{
+						Hostname: "some-host",
+						Domain:   "example.com",
+						Path:     "some-path",
+					},
 				},
 			},
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
@@ -59,9 +61,11 @@ func TestMakeVirtualService(t *testing.T) {
 
 				route := &v1alpha1.Route{
 					Spec: v1alpha1.RouteSpec{
-						Hostname: "some-host",
-						Domain:   "example.com",
-						Path:     "/some-path",
+						RouteSpecFields: v1alpha1.RouteSpecFields{
+							Hostname: "some-host",
+							Domain:   "example.com",
+							Path:     "/some-path",
+						},
 					},
 				}
 
@@ -72,7 +76,7 @@ func TestMakeVirtualService(t *testing.T) {
 				testutil.AssertEqual(t, "ObjectMeta", metav1.ObjectMeta{
 					Name:      v1alpha1.GenerateName(route.Spec.Hostname, route.Spec.Domain),
 					Namespace: v1alpha1.KfNamespace,
-					Labels:    map[string]string{"a": "1", "b": "2"},
+					Labels:    map[string]string{resources.ManagedByLabel: "kf", "a": "1", "b": "2"},
 					Annotations: map[string]string{
 						"domain":   "example.com",
 						"hostname": "some-host",
@@ -87,9 +91,11 @@ func TestMakeVirtualService(t *testing.T) {
 		"Path Matchers": {
 			Route: &v1alpha1.Route{
 				Spec: v1alpha1.RouteSpec{
-					Hostname: "some-host",
-					Domain:   "example.com",
-					Path:     "/some-path",
+					RouteSpecFields: v1alpha1.RouteSpecFields{
+						Hostname: "some-host",
+						Domain:   "example.com",
+						Path:     "/some-path",
+					},
 				},
 			},
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
@@ -106,9 +112,11 @@ func TestMakeVirtualService(t *testing.T) {
 		"Route": {
 			Route: &v1alpha1.Route{
 				Spec: v1alpha1.RouteSpec{
-					Hostname: "some-host",
-					Domain:   "example.com",
-					Path:     "/some-path",
+					RouteSpecFields: v1alpha1.RouteSpecFields{
+						Hostname: "some-host",
+						Domain:   "example.com",
+						Path:     "/some-path",
+					},
 				},
 			},
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
@@ -126,9 +134,11 @@ func TestMakeVirtualService(t *testing.T) {
 		"when there aren't any bound services, setup fault to 503": {
 			Route: &v1alpha1.Route{
 				Spec: v1alpha1.RouteSpec{
-					Hostname: "some-host",
-					Domain:   "example.com",
-					Path:     "/some-path",
+					RouteSpecFields: v1alpha1.RouteSpecFields{
+						Hostname: "some-host",
+						Domain:   "example.com",
+						Path:     "/some-path",
+					},
 				},
 			},
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
@@ -148,10 +158,12 @@ func TestMakeVirtualService(t *testing.T) {
 					Namespace: "some-namespace",
 				},
 				Spec: v1alpha1.RouteSpec{
-					Hostname:            "some-host",
-					Domain:              "example.com",
-					Path:                "/some-path",
-					KnativeServiceNames: []string{"ksvc-1"},
+					RouteSpecFields: v1alpha1.RouteSpecFields{
+						Hostname: "some-host",
+						Domain:   "example.com",
+						Path:     "/some-path",
+					},
+					AppNames: []string{"ksvc-1"},
 				},
 			},
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
@@ -167,9 +179,11 @@ func TestMakeVirtualService(t *testing.T) {
 		"Hosts with subdomain": {
 			Route: &v1alpha1.Route{
 				Spec: v1alpha1.RouteSpec{
-					Hostname: "some-host",
-					Domain:   "example.com",
-					Path:     "/some-path",
+					RouteSpecFields: v1alpha1.RouteSpecFields{
+						Hostname: "some-host",
+						Domain:   "example.com",
+						Path:     "/some-path",
+					},
 				},
 			},
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
@@ -181,9 +195,11 @@ func TestMakeVirtualService(t *testing.T) {
 		"Hosts without subdomain": {
 			Route: &v1alpha1.Route{
 				Spec: v1alpha1.RouteSpec{
-					Hostname: "",
-					Domain:   "example.com",
-					Path:     "/some-path",
+					RouteSpecFields: v1alpha1.RouteSpecFields{
+						Hostname: "",
+						Domain:   "example.com",
+						Path:     "/some-path",
+					},
 				},
 			},
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
@@ -203,9 +219,11 @@ func TestMakeVirtualService(t *testing.T) {
 func ExampleMakeVirtualService() {
 	vs1, err := resources.MakeVirtualService(&v1alpha1.Route{
 		Spec: v1alpha1.RouteSpec{
-			Hostname: "some-host",
-			Domain:   "example.com",
-			Path:     "/some-path-1",
+			RouteSpecFields: v1alpha1.RouteSpecFields{
+				Hostname: "some-host",
+				Domain:   "example.com",
+				Path:     "/some-path-1",
+			},
 		},
 	})
 	if err != nil {
@@ -214,9 +232,11 @@ func ExampleMakeVirtualService() {
 
 	vs2, err := resources.MakeVirtualService(&v1alpha1.Route{
 		Spec: v1alpha1.RouteSpec{
-			Hostname: "some-host",
-			Domain:   "example.com",
-			Path:     "/some-path-2",
+			RouteSpecFields: v1alpha1.RouteSpecFields{
+				Hostname: "some-host",
+				Domain:   "example.com",
+				Path:     "/some-path-2",
+			},
 		},
 	})
 	if err != nil {

@@ -78,6 +78,11 @@ type AppSpec struct {
 
 	// Instances defines the scaling rules for the App.
 	Instances AppSpecInstances `json:"instances,omitempty"`
+
+	// Routes defines the routing rules for the App.
+	// +optional
+	// +patchStrategy=merge
+	Routes []RouteSpecFields `json:"routes,omitempty"`
 }
 
 // AppSpecTemplate defines an app's runtime configuration.

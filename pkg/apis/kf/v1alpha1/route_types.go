@@ -38,10 +38,17 @@ type Route struct {
 
 // RouteSpec contains the specification for a route.
 type RouteSpec struct {
-	// KnativeServiceNames contains the Kf Apps that are bound to the route.
+	// AppNames contains the Kf Apps that are bound to the route.
 	// +optional
-	KnativeServiceNames []string `json:"knativeServiceNames,omitempty"`
+	// +patchStrategy=merge
+	AppNames []string `json:"appNames,omitempty"`
 
+	// RouteSpecFields contains the fields of a route.
+	RouteSpecFields `json:",inline"`
+}
+
+// RouteSpecFields contains the fields of a route.
+type RouteSpecFields struct {
 	// Hostname is the hostname or subdomain of the route (e.g, in
 	// hostname.example.com it would be hostname).
 	// +optional
