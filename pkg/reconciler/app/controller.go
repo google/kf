@@ -49,8 +49,9 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	spaceInformer := spaceinformer.Get(ctx)
 	serviceBindingInformer := servicebindinginformer.Get(ctx)
 
-	// TODO: replace all of this code which eventually gets the systemEnvInjector
-	// with informers once service-binding creation is server side.
+	// TODO(#397): replace all of this code which eventually gets the
+	// systemEnvInjector with informers once service-binding creation is server
+	// side.
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		logger.Fatalf("Error getting config: %s", err.Error())
