@@ -38,7 +38,7 @@ export NETWORK=projects/$PROJECT_ID/global/networks/$CLUSTER_NAME
 ### Create a service account and give it `roles/storage.admin` on your project:
 
 ```sh
-gcloud iam service-accounts create $CLUSTER_NAME
+gcloud iam service-accounts create $CLUSTER_NAME --project $PROJECT_ID`
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member=serviceAccount:$SERVICE_ACCOUNT \
   --role="roles/storage.admin"
@@ -49,7 +49,7 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 If you have an existing network you wish to use, customize the `NETWORK` env var set previously to point to your network and skip this step.
 
 ```sh
-gcloud compute networks create $CLUSTER_NAME
+gcloud compute networks create $CLUSTER_NAME --project $PROJECT_ID
 ```
 
 ### Create the Kubernetes cluster
@@ -73,13 +73,14 @@ gcloud beta container clusters create $CLUSTER_NAME \
   --addons HorizontalPodAutoscaling,HttpLoadBalancing,Istio,CloudRun \
   --istio-config auth=MTLS_PERMISSIVE \
   --enable-autoupgrade \
-  --enable-autorepair
+  --enable-autorepair \
+  --project $PROJECT_ID
 ```
 
 ### Target your cluster:
 
 ```sh
-gcloud container clusters get-credentials $CLUSTER_NAME --zone $ZONE
+gcloud container clusters get-credentials $CLUSTER_NAME --zone $ZONE --project $PROJECT_ID
 ```
 
 ### Next steps
