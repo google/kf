@@ -74,6 +74,9 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		capps.NewPushCommand,
 		provideSrcImageBuilder,
+		servicebindings.NewClient,
+		config.GetServiceCatalogClient,
+		config.GetSecretClient,
 		AppsSet,
 		routes.NewClient,
 	)

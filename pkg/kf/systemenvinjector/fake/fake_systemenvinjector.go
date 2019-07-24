@@ -22,6 +22,7 @@ package fake
 import (
 	gomock "github.com/golang/mock/gomock"
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	v1 "k8s.io/api/core/v1"
 	reflect "reflect"
 )
 
@@ -48,16 +49,17 @@ func (m *FakeSystemEnvInjector) EXPECT() *FakeSystemEnvInjectorMockRecorder {
 	return m.recorder
 }
 
-// InjectSystemEnv mocks base method
-func (m *FakeSystemEnvInjector) InjectSystemEnv(arg0 *v1alpha1.App) error {
+// ComputeSystemEnv mocks base method
+func (m *FakeSystemEnvInjector) ComputeSystemEnv(arg0 *v1alpha1.App) ([]v1.EnvVar, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InjectSystemEnv", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "ComputeSystemEnv", arg0)
+	ret0, _ := ret[0].([]v1.EnvVar)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// InjectSystemEnv indicates an expected call of InjectSystemEnv
-func (mr *FakeSystemEnvInjectorMockRecorder) InjectSystemEnv(arg0 interface{}) *gomock.Call {
+// ComputeSystemEnv indicates an expected call of ComputeSystemEnv
+func (mr *FakeSystemEnvInjectorMockRecorder) ComputeSystemEnv(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InjectSystemEnv", reflect.TypeOf((*FakeSystemEnvInjector)(nil).InjectSystemEnv), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComputeSystemEnv", reflect.TypeOf((*FakeSystemEnvInjector)(nil).ComputeSystemEnv), arg0)
 }

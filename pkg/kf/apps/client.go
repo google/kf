@@ -48,7 +48,6 @@ func NewClient(
 		coreClient: coreClient{
 			kclient: kclient,
 			upsertMutate: MutatorList{
-				envInjector.InjectSystemEnv,
 				LabelSetMutator(map[string]string{"app.kubernetes.io/managed-by": "kf"}),
 			},
 			membershipValidator: AllPredicate(), // all apps can be managed by Kf

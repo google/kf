@@ -20,9 +20,9 @@ import (
 
 	"github.com/golang/mock/gomock"
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/internal/envutil"
 	"github.com/google/kf/pkg/kf/apps"
 	appsfake "github.com/google/kf/pkg/kf/apps/fake"
-	"github.com/google/kf/pkg/kf/internal/envutil"
 	routesfake "github.com/google/kf/pkg/kf/routes/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"

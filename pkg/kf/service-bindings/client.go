@@ -15,6 +15,7 @@
 package servicebindings
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/google/kf/pkg/kf/secrets"
@@ -38,6 +39,9 @@ const (
 type ClientInterface interface {
 	// Create binds a service instance to an app.
 	Create(serviceInstanceName, appName string, opts ...CreateOption) (*apiv1beta1.ServiceBinding, error)
+
+	// GetOrCreate binds a service instance to an app if a binding does not already exist.
+	GetOrCreate(serviceInstanceName, appName string, opts ...CreateOption) (*apiv1beta1.ServiceBinding, bool, error)
 
 	// Delete removes a service binding from an app.
 	Delete(serviceInstanceName, appName string, opts ...DeleteOption) error
@@ -67,6 +71,14 @@ type Client struct {
 func (c *Client) Create(serviceInstanceName, appName string, opts ...CreateOption) (*apiv1beta1.ServiceBinding, error) {
 	cfg := CreateOptionDefaults().Extend(opts).toConfig()
 
+	if serviceInstanceName == "" {
+		return nil, errors.New("can't create service binding, no service instance given")
+	}
+
+	if appName == "" {
+		return nil, errors.New("can't create service binding, no app name given")
+	}
+
 	bindingName := cfg.BindingName
 	if bindingName == "" {
 		bindingName = serviceInstanceName
@@ -92,6 +104,30 @@ func (c *Client) Create(serviceInstanceName, appName string, opts ...CreateOptio
 	}
 
 	return c.c.ServiceBindings(cfg.Namespace).Create(request)
+}
+
+// GetOrCreate binds a service instance to an app if a binding does not already exist.
+func (c *Client) GetOrCreate(serviceInstanceName, appName string, opts ...CreateOption) (*apiv1beta1.ServiceBinding, bool, error) {
+
+	cfg := CreateOptionDefaults().Extend(opts).toConfig()
+
+	bindings, err := c.List(
+		WithListServiceInstance(serviceInstanceName),
+		WithListAppName(appName),
+		WithListNamespace(cfg.Namespace))
+	if err != nil {
+		return nil, false, err
+	}
+
+	if len(bindings) == 0 {
+		b, err := c.Create(
+			serviceInstanceName,
+			appName,
+			opts...)
+		return b, true, err
+	}
+
+	return &bindings[0], false, nil
 }
 
 // Delete unbinds a service instance from an app.
