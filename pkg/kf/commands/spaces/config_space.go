@@ -19,10 +19,10 @@ import (
 	"strings"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/internal/envutil"
 	"github.com/google/kf/pkg/kf/algorithms"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/quotas"
-	"github.com/google/kf/pkg/internal/envutil"
 	"github.com/google/kf/pkg/kf/spaces"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
