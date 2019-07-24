@@ -75,14 +75,14 @@ func TestSystemEnvInjector(t *testing.T) {
 			}
 
 			injector := NewSystemEnvInjector(fakeClient)
-			actualErr := injector.InjectSystemEnv(svc)
+			actualEnv, actualErr := injector.ComputeSystemEnv(svc)
 
 			if tc.expectErr != nil || actualErr != nil {
 				testutil.AssertErrorsEqual(t, tc.expectErr, actualErr)
 				return
 			}
 
-			tc.validate(t, envutil.EnvVarsToMap(envutil.GetAppEnvVars(svc)))
+			tc.validate(t, envutil.EnvVarsToMap(actualEnv))
 		})
 	}
 }

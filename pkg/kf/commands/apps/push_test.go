@@ -94,7 +94,7 @@ func TestPushCommand(t *testing.T) {
 				"-e", "env2=val2",
 				"--container-registry", "some-reg.io",
 				"--instances", "1",
-				"--path", "internal/testdata/example-app",
+				"--path", "testdata/example-app",
 				"--no-start",
 			},
 			wantImagePrefix: "some-reg.io/src-some-namespace-example-app",
@@ -167,11 +167,11 @@ func TestPushCommand(t *testing.T) {
 		},
 		"bind-service-instance": {
 			namespace:    "some-namespace",
-			manifestFile: "internal/testdata/manifest-services.yaml",
+			manifestFile: "testdata/manifest-services.yaml",
 			args: []string{
 				"app-name",
 				"--container-registry", "some-reg.io",
-				"--manifest", "internal/testdata/manifest-services.yaml",
+				"--manifest", "testdata/manifest-services.yaml",
 			},
 			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
 				cwd, err := os.Getwd()
@@ -220,7 +220,7 @@ func TestPushCommand(t *testing.T) {
 			namespace: "some-namespace",
 			args: []string{
 				"buildpack-app",
-				"--manifest", "internal/testdata/manifest.yml",
+				"--manifest", "testdata/manifest.yml",
 			},
 			targetSpace: &v1alpha1.Space{
 				Spec: v1alpha1.SpaceSpec{
@@ -288,7 +288,7 @@ func TestPushCommand(t *testing.T) {
 				"buildpack-app",
 				"--docker-image", "some-image",
 				"--buildpack", "some-buildpack",
-				"--manifest", "internal/testdata/manifest.yml",
+				"--manifest", "testdata/manifest.yml",
 			},
 			wantErr: errors.New("cannot use buildpack and docker image simultaneously"),
 		},
@@ -298,7 +298,7 @@ func TestPushCommand(t *testing.T) {
 				"buildpack-app",
 				"--docker-image", "some-image",
 				"--container-registry", "some-registry",
-				"--manifest", "internal/testdata/manifest.yml",
+				"--manifest", "testdata/manifest.yml",
 			},
 			wantErr: errors.New("--container-registry can only be used with source pushes, not containers"),
 		},
@@ -307,7 +307,7 @@ func TestPushCommand(t *testing.T) {
 			args: []string{
 				"auto-buildpack-app",
 				"--docker-image", "some-image",
-				"--manifest", "internal/testdata/manifest.yml",
+				"--manifest", "testdata/manifest.yml",
 			},
 			wantErr: errors.New("cannot use path and docker image simultaneously"),
 		},
@@ -315,7 +315,7 @@ func TestPushCommand(t *testing.T) {
 			namespace: "some-namespace",
 			args: []string{
 				"docker-app",
-				"--manifest", "internal/testdata/manifest.yml",
+				"--manifest", "testdata/manifest.yml",
 			},
 			wantOpts: []apps.PushOption{
 				apps.WithPushNamespace("some-namespace"),
@@ -328,7 +328,7 @@ func TestPushCommand(t *testing.T) {
 			namespace: "some-namespace",
 			args: []string{
 				"buildpack-app",
-				"--manifest", "internal/testdata/manifest.yml",
+				"--manifest", "testdata/manifest.yml",
 				"--container-registry", "some-registry.io",
 			},
 			wantOpts: []apps.PushOption{
@@ -343,7 +343,7 @@ func TestPushCommand(t *testing.T) {
 			namespace: "some-namespace",
 			args: []string{
 				"missing-app",
-				"--manifest", "internal/testdata/manifest.yml",
+				"--manifest", "testdata/manifest.yml",
 			},
 			wantErr: errors.New("no app missing-app found in the Manifest"),
 		},
@@ -352,7 +352,7 @@ func TestPushCommand(t *testing.T) {
 			args: []string{
 				"routes-app",
 				"--container-registry", "some-registry.io",
-				"--manifest", "internal/testdata/manifest.yml",
+				"--manifest", "testdata/manifest.yml",
 			},
 			containsRoutes: true,
 			wantOpts: []apps.PushOption{
