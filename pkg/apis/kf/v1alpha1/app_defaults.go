@@ -20,6 +20,16 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+const (
+	// DefaultHealthCheckProbeTimeout holds the default timeout to be applied to
+	// healthchecks in seconds. This matches Cloud Foundry's default timeout.
+	DefaultHealthCheckProbeTimeout = 60
+
+	// DefaultHealthCheckProbeEndpoint is the default endpoint to use for HTTP
+	// Get health checks.
+	DefaultHealthCheckProbeEndpoint = "/"
+)
+
 // SetDefaults implements apis.Defaultable
 func (k *App) SetDefaults(ctx context.Context) {
 	k.Spec.SetDefaults(ctx)
@@ -27,9 +37,45 @@ func (k *App) SetDefaults(ctx context.Context) {
 
 // SetDefaults implements apis.Defaultable
 func (k *AppSpec) SetDefaults(ctx context.Context) {
+	k.Template.SetDefaults(ctx)
+}
+
+// SetDefaults implements apis.Defaultable
+func (k *AppSpecTemplate) SetDefaults(ctx context.Context) {
+
 	// We require at least one container, so if there isn't one, set a blank
 	// one.
-	if len(k.Template.Spec.Containers) == 0 {
-		k.Template.Spec.Containers = append(k.Template.Spec.Containers, corev1.Container{})
+	if len(k.Spec.Containers) == 0 {
+		k.Spec.Containers = append(k.Spec.Containers, corev1.Container{})
+	}
+
+	container := &k.Spec.Containers[0]
+	SetKfAppContainerDefaults(ctx, container)
+}
+
+// SetKfAppContainerDefaults sets the defaults for an application container.
+// This function MAY be context sensitive in the future.
+func SetKfAppContainerDefaults(_ context.Context, container *corev1.Container) {
+	// Default the probe to a TCP connection if unspecified
+	if container.ReadinessProbe == nil {
+		container.ReadinessProbe = &corev1.Probe{
+			Handler: corev1.Handler{
+				TCPSocket: &corev1.TCPSocketAction{},
+			},
+		}
+	}
+
+	readinessProbe := container.ReadinessProbe
+
+	// Default the probe timeout
+	if readinessProbe.TimeoutSeconds == 0 {
+		readinessProbe.TimeoutSeconds = DefaultHealthCheckProbeTimeout
+	}
+
+	// If the probe is HTTP, default the path
+	if http := readinessProbe.HTTPGet; http != nil {
+		if http.Path == "" {
+			http.Path = DefaultHealthCheckProbeEndpoint
+		}
 	}
 }

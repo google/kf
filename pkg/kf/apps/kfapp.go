@@ -152,6 +152,21 @@ func (k *KfApp) DeleteEnvVars(names []string) {
 	k.SetEnvVars(envutil.RemoveEnvVars(names, k.GetEnvVars()))
 }
 
+// GetHealthCheck gets the readiness probe or nil if one doesn't exist.
+func (k *KfApp) GetHealthCheck() *corev1.Probe {
+	if cont := k.getContainerOrNil(); cont != nil {
+		return cont.ReadinessProbe
+	}
+
+	return nil
+}
+
+// SetHealthCheck sets the readiness probe for the container.
+func (k *KfApp) SetHealthCheck(probe *corev1.Probe) {
+	container := k.getOrCreateContainer()
+	container.ReadinessProbe = probe
+}
+
 // ToApp casts this alias back into an App.
 func (k *KfApp) ToApp() *v1alpha1.App {
 	app := v1alpha1.App(*k)

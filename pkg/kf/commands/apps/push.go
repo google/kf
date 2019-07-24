@@ -61,18 +61,20 @@ func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string) error {
 // NewPushCommand creates a push command.
 func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, b SrcImageBuilder) *cobra.Command {
 	var (
-		containerRegistry string
-		sourceImage       string
-		containerImage    string
-		manifestFile      string
-		instances         int
-		serviceAccount    string
-		path              string
-		buildpack         string
-		envs              []string
-		grpc              bool
-		noManifest        bool
-		noStart           bool
+		containerRegistry  string
+		sourceImage        string
+		containerImage     string
+		manifestFile       string
+		instances          int
+		serviceAccount     string
+		path               string
+		buildpack          string
+		envs               []string
+		grpc               bool
+		noManifest         bool
+		noStart            bool
+		healthCheckType    string
+		healthCheckTimeout int
 	)
 
 	var pushCmd = &cobra.Command{
@@ -155,6 +157,12 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 				if buildpack != "" {
 					overrides.Buildpacks = []string{buildpack}
 				}
+
+				overrides.HealthCheckTimeout = healthCheckTimeout
+
+				if healthCheckType != "" {
+					overrides.HealthCheckType = healthCheckType
+				}
 			}
 
 			for _, app := range appsToDeploy {
@@ -167,6 +175,11 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					return err
 				}
 
+				healthCheck, err := apps.NewHealthCheck(app.HealthCheckType, app.HealthCheckHTTPEndpoint, app.HealthCheckTimeout)
+				if err != nil {
+					return err
+				}
+
 				pushOpts := []apps.PushOption{
 					apps.WithPushNamespace(p.Namespace),
 					apps.WithPushServiceAccount(serviceAccount),
@@ -175,6 +188,7 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					apps.WithPushMinScale(minScale),
 					apps.WithPushMaxScale(maxScale),
 					apps.WithPushNoStart(noStart),
+					apps.WithPushHealthCheck(healthCheck),
 				}
 
 				if app.Docker.Image == "" { // builpack app
@@ -320,6 +334,22 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		"no-start",
 		false,
 		"Do not start an app after pushing",
+	)
+
+	pushCmd.Flags().StringVarP(
+		&healthCheckType,
+		"health-check-type",
+		"u",
+		"",
+		"Application health check type (http or port, default: port)",
+	)
+
+	pushCmd.Flags().IntVarP(
+		&healthCheckTimeout,
+		"timeout",
+		"t",
+		0,
+		"Time (in seconds) allowed to elapse between starting up an app and the first healthy response from the app.",
 	)
 
 	return pushCmd

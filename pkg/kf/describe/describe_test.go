@@ -278,3 +278,36 @@ func ExampleSourceSpec_docker() {
 	//   Container Image:
 	//     Image:  mysql/mysql
 }
+
+func ExampleHealthCheck_nil() {
+	describe.HealthCheck(os.Stdout, nil)
+
+	// Output: Health Check: <empty>
+}
+
+func ExampleHealthCheck_http() {
+	describe.HealthCheck(os.Stdout, &corev1.Probe{
+		TimeoutSeconds: 42,
+		Handler: corev1.Handler{
+			HTTPGet: &corev1.HTTPGetAction{Path: "/healthz"},
+		},
+	})
+
+	// Output: Health Check:
+	//   Timeout:   42s
+	//   Type:      http
+	//   Endpoint:  /healthz
+}
+
+func ExampleHealthCheck_tcp() {
+	describe.HealthCheck(os.Stdout, &corev1.Probe{
+		TimeoutSeconds: 42,
+		Handler: corev1.Handler{
+			TCPSocket: &corev1.TCPSocketAction{},
+		},
+	})
+
+	// Output: Health Check:
+	//   Timeout:  42s
+	//   Type:     port (tcp)
+}
