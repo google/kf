@@ -120,7 +120,6 @@ func (c *Client) GetOrCreate(serviceInstanceName, appName string, opts ...Create
 	}
 
 	if len(bindings) == 0 {
-
 		b, err := c.Create(
 			serviceInstanceName,
 			appName,
