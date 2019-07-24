@@ -38,7 +38,7 @@ export NETWORK=projects/$PROJECT_ID/global/networks/$CLUSTER_NAME
 ### Create a service account and give it `roles/storage.admin` on your project:
 
 ```sh
-gcloud iam service-accounts create $CLUSTER_NAME --project $PROJECT_ID`
+gcloud iam service-accounts create $CLUSTER_NAME --project $PROJECT_ID
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member=serviceAccount:$SERVICE_ACCOUNT \
   --role="roles/storage.admin"
