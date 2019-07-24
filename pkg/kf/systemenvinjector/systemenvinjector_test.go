@@ -20,7 +20,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/internal/envutil"
+	"github.com/google/kf/pkg/internal/envutil"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	fakebindings "github.com/google/kf/pkg/kf/service-bindings/fake"
 	"github.com/google/kf/pkg/kf/testutil"

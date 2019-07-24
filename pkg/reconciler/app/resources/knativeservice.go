@@ -20,6 +20,8 @@ import (
 	"strconv"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/internal/envutil"
+	"github.com/google/kf/pkg/kf/systemenvinjector"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	servingv1beta1 "github.com/knative/serving/pkg/apis/serving/v1beta1"
 	"github.com/knative/serving/pkg/resources"
@@ -34,7 +36,12 @@ func KnativeServiceName(app *v1alpha1.App) string {
 }
 
 // MakeKnativeService creates a KnativeService from an app definition.
-func MakeKnativeService(app *v1alpha1.App, space *v1alpha1.Space) (*serving.Service, error) {
+func MakeKnativeService(
+	app *v1alpha1.App,
+	space *v1alpha1.Space,
+	systemEnvInjector systemenvinjector.SystemEnvInjectorInterface,
+) (*serving.Service, error) {
+
 	image := app.Status.Image
 	if image == "" {
 		return nil, errors.New("waiting for source image in latestReadySource")
@@ -63,8 +70,15 @@ func MakeKnativeService(app *v1alpha1.App, space *v1alpha1.Space) (*serving.Serv
 	// to be overridden.
 	podSpec.Containers[0].Env = append(space.Spec.Execution.Env, podSpec.Containers[0].Env...)
 
-	// TODO(josephlewis42) Add the ability to inject VCAP_SERVICES environment
-	// variables here.
+	computedEnv, err := systemEnvInjector.ComputeSystemEnv(app)
+	if err != nil {
+		return nil, err
+	}
+
+	podSpec.Containers[0].Env = append(podSpec.Containers[0].Env, computedEnv...)
+
+	podSpec.Containers[0].Env = envutil.DeduplicateEnvVars(podSpec.Containers[0].Env)
+
 	return &serving.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      KnativeServiceName(app),

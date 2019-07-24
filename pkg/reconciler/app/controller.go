@@ -21,9 +21,16 @@ import (
 	appinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/app"
 	sourceinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/source"
 	spaceinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/space"
+	servicebindinginformer "github.com/google/kf/pkg/client/servicecatalog/injection/informers/servicecatalog/v1beta1/servicebinding"
+	"github.com/google/kf/pkg/kf/secrets"
+	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
+	"github.com/google/kf/pkg/kf/systemenvinjector"
 	"github.com/google/kf/pkg/reconciler"
 	krevisioninformer "github.com/knative/serving/pkg/client/injection/informers/serving/v1alpha1/revision"
 	kserviceinformer "github.com/knative/serving/pkg/client/injection/informers/serving/v1alpha1/service"
+	svccatcv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/configmap"
 	"knative.dev/pkg/controller"
@@ -40,6 +47,26 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	sourceInformer := sourceinformer.Get(ctx)
 	appInformer := appinformer.Get(ctx)
 	spaceInformer := spaceinformer.Get(ctx)
+	serviceBindingInformer := servicebindinginformer.Get(ctx)
+
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		logger.Fatalf("Error getting config: %s", err.Error())
+	}
+
+	kubeClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		logger.Fatalf("Error building kubernetes clientset: %s", err.Error())
+	}
+
+	svccatClient, err := svccatcv1beta1.NewForConfig(config)
+	if err != nil {
+		logger.Fatalf("Error building service-catalog client: %s", err.Error())
+	}
+
+	secretsClient := secrets.NewClient(kubeClient)
+	bindingsClient := servicebindings.NewClient(svccatClient, secretsClient)
+	systemEnvInjector := systemenvinjector.NewSystemEnvInjector(bindingsClient)
 
 	// Create reconciler
 	c := &Reconciler{
@@ -49,6 +76,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		sourceLister:          sourceInformer.Lister(),
 		appLister:             appInformer.Lister(),
 		spaceLister:           spaceInformer.Lister(),
+		systemEnvInjector:     systemEnvInjector,
 	}
 
 	impl := controller.NewImpl(c, logger, "Apps")
@@ -64,6 +92,11 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	})
 
 	knativeServiceInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+		FilterFunc: controller.Filter(v1alpha1.SchemeGroupVersion.WithKind("App")),
+		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
+	})
+
+	serviceBindingInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.Filter(v1alpha1.SchemeGroupVersion.WithKind("App")),
 		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
 	})

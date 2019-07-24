@@ -1,0 +1,4 @@
+applications:
+- name: app-name
+  services:
+  - some-service-instance

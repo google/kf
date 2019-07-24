@@ -23,7 +23,7 @@ import (
 	spaces2 "github.com/google/kf/pkg/kf/commands/spaces"
 	"github.com/google/kf/pkg/kf/logs"
 	"github.com/google/kf/pkg/kf/routes"
-	"github.com/google/kf/pkg/kf/service-bindings"
+	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/google/kf/pkg/kf/sources"
 	"github.com/google/kf/pkg/kf/spaces"
@@ -32,7 +32,7 @@ import (
 	logs2 "github.com/knative/build/pkg/logs"
 	"github.com/poy/kontext"
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/kubernetes/typed/core/v1"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 import (
@@ -53,7 +53,10 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 	routesClient := routes.NewClient(kfV1alpha1Interface)
 	pusher := apps.NewPusher(appsClient, routesClient)
 	srcImageBuilder := provideSrcImageBuilder()
-	command := apps2.NewPushCommand(p, appsClient, pusher, srcImageBuilder)
+	servicecatalogV1beta1Interface := config.GetServiceCatalogClient(p)
+	clientInterface := config.GetSecretClient(p)
+	servicebindingsClientInterface := servicebindings.NewClient(servicecatalogV1beta1Interface, clientInterface)
+	command := apps2.NewPushCommand(p, appsClient, pusher, srcImageBuilder, servicebindingsClientInterface)
 	return command
 }
 
@@ -78,18 +81,6 @@ func InjectApps(p *config.KfParams) *cobra.Command {
 	client := sources.NewClient(sourcesGetter, buildTailer)
 	appsClient := apps.NewClient(appsGetter, systemEnvInjectorInterface, client)
 	command := apps2.NewAppsCommand(p, appsClient)
-	return command
-}
-
-func InjectGetApp(p *config.KfParams) *cobra.Command {
-	kfV1alpha1Interface := config.GetKfClient(p)
-	appsGetter := provideAppsGetter(kfV1alpha1Interface)
-	systemEnvInjectorInterface := provideSystemEnvInjector(p)
-	sourcesGetter := provideKfSources(kfV1alpha1Interface)
-	buildTailer := provideSourcesBuildTailer()
-	client := sources.NewClient(sourcesGetter, buildTailer)
-	appsClient := apps.NewClient(appsGetter, systemEnvInjectorInterface, client)
-	command := apps2.NewGetAppCommand(p, appsClient)
 	return command
 }
 

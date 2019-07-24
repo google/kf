@@ -17,7 +17,7 @@ package systemenvinjector
 import (
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/internal/cfutil"
-	"github.com/google/kf/pkg/kf/internal/envutil"
+	"github.com/google/kf/pkg/internal/envutil"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -26,6 +26,7 @@ import (
 // through.
 type SystemEnvInjectorInterface interface {
 	InjectSystemEnv(app *v1alpha1.App) error
+	ComputeSystemEnv(app *v1alpha1.App) (computed []corev1.EnvVar, err error)
 }
 
 // NewSystemEnvInjector creates a utility used to update v1alpha1.Apps with
