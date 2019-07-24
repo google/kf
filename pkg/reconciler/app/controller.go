@@ -49,21 +49,20 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	spaceInformer := spaceinformer.Get(ctx)
 	serviceBindingInformer := servicebindinginformer.Get(ctx)
 
+	// TODO: replace all of this code which eventually gets the systemEnvInjector
+	// with informers once service-binding creation is server side.
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		logger.Fatalf("Error getting config: %s", err.Error())
 	}
-
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		logger.Fatalf("Error building kubernetes clientset: %s", err.Error())
 	}
-
 	svccatClient, err := svccatcv1beta1.NewForConfig(config)
 	if err != nil {
 		logger.Fatalf("Error building service-catalog client: %s", err.Error())
 	}
-
 	secretsClient := secrets.NewClient(kubeClient)
 	bindingsClient := servicebindings.NewClient(svccatClient, secretsClient)
 	systemEnvInjector := systemenvinjector.NewSystemEnvInjector(bindingsClient)
