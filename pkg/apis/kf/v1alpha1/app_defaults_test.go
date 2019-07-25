@@ -40,7 +40,7 @@ func TestAppSpec_SetDefaults_ResourceLimits_Default(t *testing.T) {
 		Spec: AppSpec{
 			Template: AppSpecTemplate{
 				Spec: v1.PodSpec{
-					Containers: []v1.Container{v1.Container{}},
+					Containers: []v1.Container{{}},
 				},
 			},
 		},
@@ -67,7 +67,7 @@ func TestAppSpec_SetDefaults_ResourceLimits_AlreadySet(t *testing.T) {
 		Spec: AppSpec{
 			Template: AppSpecTemplate{
 				Spec: v1.PodSpec{
-					Containers: []v1.Container{v1.Container{
+					Containers: []v1.Container{{
 						Resources: v1.ResourceRequirements{
 							Requests: v1.ResourceList{
 								v1.ResourceMemory:           wantMem,
