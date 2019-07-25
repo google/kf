@@ -43,7 +43,7 @@ func NewHealthCheck(healthCheckType string, endpoint string, timeoutSeconds int)
 		probe.Handler.TCPSocket = &corev1.TCPSocketAction{}
 		return probe, nil
 
-	case "process":
+	case "process", "none":
 		return nil, errors.New("kf doesn't support the process health check type")
 
 	default:

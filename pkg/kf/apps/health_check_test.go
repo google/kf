@@ -39,6 +39,10 @@ func TestNewHealthCheck(t *testing.T) {
 			checkType: "process",
 			expectErr: errors.New("kf doesn't support the process health check type"),
 		},
+		"none is process type": {
+			checkType: "none",
+			expectErr: errors.New("kf doesn't support the process health check type"),
+		},
 		"http complete": {
 			checkType: "http",
 			endpoint:  "/healthz",
