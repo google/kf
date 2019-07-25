@@ -40,7 +40,7 @@ func NewMapRouteCommand(
 		Short: "Map a route to an app",
 		Example: `
   kf map-route myapp example.com --hostname myapp # myapp.example.com
-  kf map-route -n myspace myapp example.com --hostname myapp # myapp.example.com
+  kf map-route --namespace myspace myapp example.com --hostname myapp # myapp.example.com
   kf map-route myapp example.com --hostname myapp --path /mypath # myapp.example.com/mypath
   `,
 		Args: cobra.ExactArgs(2),
@@ -69,6 +69,7 @@ func NewMapRouteCommand(
 					Kind: "Route",
 				},
 				ObjectMeta: metav1.ObjectMeta{
+					Namespace: p.Namespace,
 					Name: v1alpha1.GenerateRouteName(
 						hostname,
 						domain,

@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -37,4 +38,14 @@ func TestRoute_SetDefaults_DedupeAppNames(t *testing.T) {
 
 	testutil.AssertEqual(t, "len", 4, len(r.Spec.AppNames))
 	testutil.AssertContainsAll(t, strings.Join(r.Spec.AppNames, ""), []string{"a", "b", "c", "d"})
+}
+
+func ExampleRoute_SetDefaults_prefixRoutes() {
+	r := &Route{}
+	r.Spec.Path = "some-path"
+	r.SetDefaults(context.Background())
+
+	fmt.Println("Route:", r.Spec.Path)
+
+	// Output: Route: /some-path
 }

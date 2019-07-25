@@ -40,7 +40,7 @@ func NewCreateRouteCommand(
 		Example: `
   # Using namespace (instead of SPACE)
   kf create-route example.com --hostname myapp # myapp.example.com
-  kf create-route -n myspace example.com --hostname myapp # myapp.example.com
+  kf create-route --namespace myspace example.com --hostname myapp # myapp.example.com
   kf create-route example.com --hostname myapp --path /mypath # myapp.example.com/mypath
 
   # [DEPRECATED] Using SPACE to match 'cf'

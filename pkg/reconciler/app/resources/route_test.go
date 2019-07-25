@@ -55,9 +55,15 @@ func TestMakeRoutes(t *testing.T) {
 			},
 		},
 		"adds app name in AppNames": {
+			space: v1alpha1.Space{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "some-space-name",
+				},
+			},
 			app: v1alpha1.App{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "some-app-name",
+					Name:      "some-app-name",
+					Namespace: "some-space-name",
 				},
 				Spec: v1alpha1.AppSpec{
 					Routes: []v1alpha1.RouteSpecFields{
@@ -93,7 +99,6 @@ func TestMakeRoutes(t *testing.T) {
 			},
 			assert: func(t *testing.T, routes []v1alpha1.Route) {
 				testutil.AssertEqual(t, "len(routes)", 1, len(routes))
-				testutil.AssertEqual(t, "route.ObjectMeta.Namespace", "some-namespace", routes[0].ObjectMeta.Namespace)
 				testutil.AssertEqual(
 					t,
 					"route.ObjectMeta.Name",
@@ -106,20 +111,6 @@ func TestMakeRoutes(t *testing.T) {
 					v1alpha1.ManagedByLabel: "kf",
 					v1alpha1.ComponentLabel: "route",
 				}, routes[0].ObjectMeta.Labels)
-
-				b := true
-				testutil.AssertEqual(
-					t,
-					"route.ObjectMeta.OwnerReferences",
-					[]metav1.OwnerReference{{
-						APIVersion:         "kf.dev/v1alpha1",
-						Kind:               "Space",
-						Name:               "some-space-name",
-						Controller:         &b,
-						BlockOwnerDeletion: &b,
-					}},
-					routes[0].ObjectMeta.OwnerReferences,
-				)
 			},
 		},
 	} {

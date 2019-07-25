@@ -69,6 +69,11 @@ func (status *AppStatus) KnativeServiceCondition() SingleConditionManager {
 	return NewSingleConditionManager(status.manage(), AppConditionKnativeServiceReady, "Knative Service")
 }
 
+// RouteCondition gets a manager for the state of the kf Route.
+func (status *AppStatus) RouteCondition() SingleConditionManager {
+	return NewSingleConditionManager(status.manage(), AppConditionRouteReady, "Route")
+}
+
 // PropagateSourceStatus copies the source status to the app's.
 func (status *AppStatus) PropagateSourceStatus(source *Source) {
 	status.LatestCreatedSourceName = source.Name
@@ -88,6 +93,15 @@ func (status *AppStatus) PropagateKnativeServiceStatus(service *serving.Service)
 	if PropagateCondition(status.manage(), AppConditionKnativeServiceReady, cond) {
 		status.ConfigurationStatusFields = service.Status.ConfigurationStatusFields
 		status.RouteStatusFields = service.Status.RouteStatusFields
+	}
+}
+
+// PropagateRouteStatus updates the kf Route status to reflect the underlying
+// route.
+func (status *AppStatus) PropagateRouteStatus(routes []*Route) {
+	for _, route := range routes {
+		cond := route.Status.GetCondition(apis.ConditionReady)
+		PropagateCondition(status.manage(), AppConditionRouteReady, cond)
 	}
 }
 

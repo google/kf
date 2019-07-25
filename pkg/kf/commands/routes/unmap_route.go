@@ -37,7 +37,7 @@ func NewUnmapRouteCommand(
 		Short: "Unmap a route from an app",
 		Example: `
   kf unmap-route myapp example.com --hostname myapp # myapp.example.com
-  kf unmap-route -n myspace myapp example.com --hostname myapp # myapp.example.com
+  kf unmap-route --namespace myspace myapp example.com --hostname myapp # myapp.example.com
   kf unmap-route myapp example.com --hostname myapp --path /mypath # myapp.example.com/mypath
   `,
 		Args: cobra.ExactArgs(2),

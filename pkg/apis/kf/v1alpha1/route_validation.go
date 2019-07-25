@@ -38,9 +38,6 @@ func (r *Route) Validate(ctx context.Context) (errs *apis.FieldError) {
 	if r.Name == "" {
 		errs = errs.Also(apis.ErrMissingField("name"))
 	}
-	if r.Namespace == "" {
-		errs = errs.Also(apis.ErrMissingField("namespace"))
-	}
 
 	errs = errs.Also(r.Spec.Validate(apis.WithinSpec(ctx)).ViaField("spec"))
 

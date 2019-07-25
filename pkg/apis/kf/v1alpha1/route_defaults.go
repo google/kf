@@ -16,13 +16,14 @@ package v1alpha1
 
 import (
 	"context"
+	"path"
 
 	"github.com/google/kf/pkg/kf/algorithms"
 )
 
 // GenerateRouteName creates the deterministic name for a Route.
-func GenerateRouteName(hostname, domain, path string) string {
-	return GenerateName(hostname, domain, path)
+func GenerateRouteName(hostname, domain, urlPath string) string {
+	return GenerateName(hostname, domain, path.Join("/", urlPath))
 }
 
 // GenerateRouteNameFromSpec creates the deterministic name for a Route.
@@ -40,6 +41,13 @@ func (k *RouteSpec) SetDefaults(ctx context.Context) {
 	k.AppNames = []string(algorithms.Dedupe(
 		algorithms.Strings(k.AppNames),
 	).(algorithms.Strings))
+
+	k.RouteSpecFields.SetDefaults(ctx)
+}
+
+// SetDefaults implements apis.Defaultable
+func (k *RouteSpecFields) SetDefaults(ctx context.Context) {
+	k.Path = path.Join("/", k.Path)
 }
 
 // SetSpaceDefaults sets the default values for the Route based on the space's

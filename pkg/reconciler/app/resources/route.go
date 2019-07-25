@@ -18,7 +18,6 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/knative/serving/pkg/resources"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"knative.dev/pkg/kmeta"
 )
 
 // MakeRouteLabels creates labels that can be used to tie a route to a
@@ -40,11 +39,8 @@ func MakeRoutes(app *v1alpha1.App, space *v1alpha1.Space) ([]v1alpha1.Route, err
 		routes = append(routes, v1alpha1.Route{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      v1alpha1.GenerateRouteName(appRoute.Hostname, appRoute.Domain, appRoute.Path),
-				Namespace: app.Namespace,
-				OwnerReferences: []metav1.OwnerReference{
-					*kmeta.NewControllerRef(space),
-				},
-				Labels: resources.UnionMaps(app.GetLabels(), MakeRouteLabels()),
+				Namespace: space.Name,
+				Labels:    resources.UnionMaps(app.GetLabels(), MakeRouteLabels()),
 			},
 			Spec: v1alpha1.RouteSpec{
 				AppNames:        []string{app.Name},

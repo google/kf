@@ -192,12 +192,13 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 	// Route Reconciler
 	{
 		r.Logger.Info("reconciling Routes")
-		condition := app.Status.KnativeServiceCondition()
+		condition := app.Status.RouteCondition()
 		desiredRoutes, err := resources.MakeRoutes(app, space)
 		if err != nil {
 			return condition.MarkTemplateError(err)
 		}
 
+		var actualRoutes []*v1alpha1.Route
 		for _, desired := range desiredRoutes {
 			actual, err := r.routeLister.Routes(desired.GetNamespace()).Get(desired.Name)
 			if apierrs.IsNotFound(err) {
@@ -212,8 +213,9 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 				return condition.MarkReconciliationError("updating existing", err)
 			}
 
-			// TODO: app should propogate v1alpha1.Route status
+			actualRoutes = append(actualRoutes, actual)
 		}
+		app.Status.PropagateRouteStatus(actualRoutes)
 	}
 
 	// Making it to the bottom of the reconciler means we've synchronized.

@@ -71,13 +71,6 @@ func TestRouteValidation(t *testing.T) {
 			},
 			want: apis.ErrMissingField("name"),
 		},
-		"missing namespace": {
-			route: &Route{
-				ObjectMeta: metav1.ObjectMeta{Name: "valid", Namespace: ""},
-				Spec:       goodRouteSpec,
-			},
-			want: apis.ErrMissingField("namespace"),
-		},
 		"missing domain": {
 			route: &Route{
 				ObjectMeta: goodObjMeta,
