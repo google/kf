@@ -23,6 +23,7 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/systemenvinjector"
 	"github.com/google/kf/pkg/reconciler"
 	"github.com/google/kf/pkg/reconciler/app/resources"
 	"github.com/knative/serving/pkg/apis/autoscaling"
@@ -47,6 +48,7 @@ type Reconciler struct {
 	sourceLister          kflisters.SourceLister
 	appLister             kflisters.AppLister
 	spaceLister           kflisters.SpaceLister
+	systemEnvInjector     systemenvinjector.SystemEnvInjectorInterface
 }
 
 // Check that our Reconciler implements controller.Reconciler
@@ -151,7 +153,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 	{
 		r.Logger.Info("reconciling Knative Serving")
 		condition := app.Status.KnativeServiceCondition()
-		desired, err := resources.MakeKnativeService(app, space)
+		desired, err := resources.MakeKnativeService(app, space, r.systemEnvInjector)
 		if err != nil {
 			return condition.MarkTemplateError(err)
 		}

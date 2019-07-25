@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/google/kf/pkg/kf/internal/envutil"
+	"github.com/google/kf/pkg/internal/envutil"
 	"github.com/imdario/mergo"
 	"gopkg.in/yaml.v2"
 )
@@ -35,6 +35,7 @@ type Application struct {
 	Buildpacks []string          `yaml:"buildpacks,omitempty"`
 	Docker     AppDockerImage    `yaml:"docker,omitempty"`
 	Env        map[string]string `yaml:"env,omitempty"`
+	Services   []string          `yaml:"services,omitempty"`
 	MinScale   *int              `yaml:"minScale,omitempty"`
 	MaxScale   *int              `yaml:"maxScale,omitempty"`
 	Routes     []Route           `yaml:"routes,omitempty"`

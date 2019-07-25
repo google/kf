@@ -19,7 +19,7 @@ import (
 	"time"
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/internal/envutil"
+	"github.com/google/kf/pkg/internal/envutil"
 	"github.com/google/kf/pkg/kf/internal/kf"
 	"github.com/google/kf/pkg/kf/routes"
 	"github.com/google/kf/pkg/kf/sources"
