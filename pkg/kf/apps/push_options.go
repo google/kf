@@ -19,6 +19,7 @@ package apps
 import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"io"
+	corev1 "k8s.io/api/core/v1"
 	"os"
 )
 
@@ -33,6 +34,8 @@ type pushConfig struct {
 	EnvironmentVariables map[string]string
 	// Grpc is setup the ports for the container to allow gRPC to work
 	Grpc bool
+	// HealthCheck is the health check to use on the app
+	HealthCheck *corev1.Probe
 	// MaxScale is the upper scale bound
 	MaxScale int
 	// MinScale is the lower scale bound
@@ -105,6 +108,12 @@ func (opts PushOptions) EnvironmentVariables() map[string]string {
 // if not set.
 func (opts PushOptions) Grpc() bool {
 	return opts.toConfig().Grpc
+}
+
+// HealthCheck returns the last set value for HealthCheck or the empty value
+// if not set.
+func (opts PushOptions) HealthCheck() *corev1.Probe {
+	return opts.toConfig().HealthCheck
 }
 
 // MaxScale returns the last set value for MaxScale or the empty value
@@ -187,6 +196,13 @@ func WithPushEnvironmentVariables(val map[string]string) PushOption {
 func WithPushGrpc(val bool) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.Grpc = val
+	}
+}
+
+// WithPushHealthCheck creates an Option that sets the health check to use on the app
+func WithPushHealthCheck(val *corev1.Probe) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.HealthCheck = val
 	}
 }
 

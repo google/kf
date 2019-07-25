@@ -16,9 +16,11 @@ package apps
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/describe"
 	"github.com/google/kf/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -168,4 +170,26 @@ func ExampleKfApp_GetContainerPorts() {
 
 	// Output: Default: []
 	// Open 8080 (HTTP)
+}
+
+func ExampleKfApp_GetHealthCheck() {
+	check, err := NewHealthCheck("http", "/healthz", 50)
+	if err != nil {
+		panic(err)
+	}
+
+	myApp := NewKfApp()
+	fmt.Printf("Default: %v\n", myApp.GetHealthCheck())
+
+	myApp.SetHealthCheck(check)
+
+	fmt.Println("After set:")
+	describe.HealthCheck(os.Stdout, myApp.GetHealthCheck())
+
+	// Output: Default: nil
+	// After set:
+	// Health Check:
+	//   Timeout:   50s
+	//   Type:      http
+	//   Endpoint:  /healthz
 }

@@ -33,6 +33,7 @@ import (
 	svbFake "github.com/google/kf/pkg/kf/service-bindings/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -70,10 +71,21 @@ func TestPushCommand(t *testing.T) {
 		},
 	})
 
+	defaultTCPHealthCheck := &corev1.Probe{
+		Handler: corev1.Handler{
+			TCPSocket: &corev1.TCPSocketAction{},
+		},
+	}
+
+	defaultOptions := []apps.PushOption{
+		apps.WithPushHealthCheck(defaultTCPHealthCheck),
+		apps.WithPushMinScale(1),
+		apps.WithPushMaxScale(1),
+	}
+
 	for tn, tc := range map[string]struct {
 		args            []string
 		namespace       string
-		manifestFile    string
 		wantErr         error
 		pusherErr       error
 		srcImageBuilder SrcImageBuilderFunc
@@ -95,6 +107,8 @@ func TestPushCommand(t *testing.T) {
 				"--instances", "1",
 				"--path", "testdata/example-app",
 				"--no-start",
+				"-u", "http",
+				"-t", "28",
 			},
 			wantImagePrefix: "some-reg.io/src-some-namespace-example-app",
 			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
@@ -102,17 +116,21 @@ func TestPushCommand(t *testing.T) {
 				testutil.AssertEqual(t, "path is abs", true, filepath.IsAbs(dir))
 				return nil
 			},
-			wantOpts: []apps.PushOption{
+			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushContainerRegistry("some-reg.io"),
 				apps.WithPushServiceAccount("some-service-account"),
 				apps.WithPushGrpc(true),
 				apps.WithPushBuildpack("some-buildpack"),
 				apps.WithPushEnvironmentVariables(map[string]string{"env1": "val1", "env2": "val2"}),
-				apps.WithPushMinScale(1),
-				apps.WithPushMaxScale(1),
 				apps.WithPushNoStart(true),
-			},
+				apps.WithPushHealthCheck(&corev1.Probe{
+					TimeoutSeconds: 28,
+					Handler: corev1.Handler{
+						HTTPGet: &corev1.HTTPGetAction{},
+					},
+				}),
+			),
 		},
 		"uses current working directory for empty path": {
 			namespace: "some-namespace",
@@ -126,12 +144,10 @@ func TestPushCommand(t *testing.T) {
 				testutil.AssertEqual(t, "path", cwd, dir)
 				return nil
 			},
-			wantOpts: []apps.PushOption{
+			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushContainerRegistry("some-reg.io"),
-				apps.WithPushMinScale(1),
-				apps.WithPushMaxScale(1),
-			},
+			),
 		},
 		"custom-source": {
 			namespace: "some-namespace",
@@ -141,12 +157,10 @@ func TestPushCommand(t *testing.T) {
 				"--source-image", "custom-reg.io/source-image:latest",
 			},
 			wantImagePrefix: "custom-reg.io/source-image:latest",
-			wantOpts: []apps.PushOption{
+			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushContainerRegistry("some-reg.io"),
-				apps.WithPushMinScale(1),
-				apps.WithPushMaxScale(1),
-			},
+			),
 		},
 		"specify-instances": {
 			namespace: "some-namespace",
@@ -157,16 +171,15 @@ func TestPushCommand(t *testing.T) {
 				"--source-image", "custom-reg.io/source-image:latest",
 			},
 			wantImagePrefix: "custom-reg.io/source-image:latest",
-			wantOpts: []apps.PushOption{
+			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushMinScale(2),
 				apps.WithPushMaxScale(2),
 				apps.WithPushContainerRegistry("some-reg.io"),
-			},
+			),
 		},
 		"bind-service-instance": {
-			namespace:    "some-namespace",
-			manifestFile: "testdata/manifest-services.yaml",
+			namespace: "some-namespace",
 			args: []string{
 				"app-name",
 				"--container-registry", "some-reg.io",
@@ -178,12 +191,10 @@ func TestPushCommand(t *testing.T) {
 				testutil.AssertEqual(t, "path", cwd, dir)
 				return nil
 			},
-			wantOpts: []apps.PushOption{
+			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushContainerRegistry("some-reg.io"),
-				apps.WithPushMinScale(1),
-				apps.WithPushMaxScale(1),
-			},
+			),
 			setup: func(t *testing.T, f *svbFake.FakeClientInterface) {
 				f.EXPECT().GetOrCreate("some-service-instance", "app-name", gomock.Any()).Do(func(instance, app string, opts ...servicebindings.CreateOption) {
 					config := servicebindings.CreateOptions(opts)
@@ -199,12 +210,10 @@ func TestPushCommand(t *testing.T) {
 			wantErr:         errors.New("some error"),
 			pusherErr:       errors.New("some error"),
 			wantImagePrefix: "some-reg.io/src-default-app-name",
-			wantOpts: []apps.PushOption{
+			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("default"),
 				apps.WithPushContainerRegistry("some-reg.io"),
-				apps.WithPushMinScale(1),
-				apps.WithPushMaxScale(1),
-			},
+			),
 		},
 		"namespace is not provided": {
 			args:    []string{"app-name"},
@@ -228,13 +237,11 @@ func TestPushCommand(t *testing.T) {
 					},
 				},
 			},
-			wantOpts: []apps.PushOption{
+			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushContainerRegistry("space-reg.io"),
 				apps.WithPushBuildpack("java,tomcat"),
-				apps.WithPushMinScale(1),
-				apps.WithPushMaxScale(1),
-			},
+			),
 		},
 		"SrcImageBuilder returns an error": {
 			namespace: "some-namespace",
@@ -259,12 +266,10 @@ func TestPushCommand(t *testing.T) {
 				"app-name",
 				"--docker-image", "some-image",
 			},
-			wantOpts: []apps.PushOption{
+			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushContainerImage("some-image"),
-				apps.WithPushMinScale(1),
-				apps.WithPushMaxScale(1),
-			},
+			),
 		},
 		"container image with env vars": {
 			namespace: "some-namespace",
@@ -273,13 +278,11 @@ func TestPushCommand(t *testing.T) {
 				"--docker-image", "some-image",
 				"--env", "WHATNOW=BROWNCOW",
 			},
-			wantOpts: []apps.PushOption{
+			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushContainerImage("some-image"),
-				apps.WithPushMinScale(1),
-				apps.WithPushMaxScale(1),
 				apps.WithPushEnvironmentVariables(map[string]string{"WHATNOW": "BROWNCOW"}),
-			},
+			),
 		},
 		"invalid buildpack and container image": {
 			namespace: "some-namespace",
@@ -316,12 +319,10 @@ func TestPushCommand(t *testing.T) {
 				"docker-app",
 				"--manifest", "testdata/manifest.yml",
 			},
-			wantOpts: []apps.PushOption{
+			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushContainerImage("gcr.io/docker-app"),
-				apps.WithPushMinScale(1),
-				apps.WithPushMaxScale(1),
-			},
+			),
 		},
 		"buildpack app from manifest": {
 			namespace: "some-namespace",
@@ -330,13 +331,11 @@ func TestPushCommand(t *testing.T) {
 				"--manifest", "testdata/manifest.yml",
 				"--container-registry", "some-registry.io",
 			},
-			wantOpts: []apps.PushOption{
+			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushBuildpack("java,tomcat"),
 				apps.WithPushContainerRegistry("some-registry.io"),
-				apps.WithPushMinScale(1),
-				apps.WithPushMaxScale(1),
-			},
+			),
 		},
 		"manifest missing app": {
 			namespace: "some-namespace",
@@ -353,13 +352,53 @@ func TestPushCommand(t *testing.T) {
 				"--container-registry", "some-registry.io",
 				"--manifest", "testdata/manifest.yml",
 			},
-			wantOpts: []apps.PushOption{
+			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushRoutes(routes),
 				apps.WithPushContainerRegistry("some-registry.io"),
-				apps.WithPushMinScale(1),
-				apps.WithPushMaxScale(1),
+			),
+		},
+		"http-health-check from manifest": {
+			namespace: "some-namespace",
+			args: []string{
+				"http-health-check-app",
+				"--manifest", "testdata/manifest.yml",
 			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushContainerImage("gcr.io/http-health-check-app"),
+				apps.WithPushHealthCheck(&corev1.Probe{
+					TimeoutSeconds: 42,
+					Handler: corev1.Handler{
+						HTTPGet: &corev1.HTTPGetAction{Path: "/healthz"},
+					},
+				}),
+			),
+		},
+		"tcp-health-check from manifest": {
+			namespace: "some-namespace",
+			args: []string{
+				"tcp-health-check-app",
+				"--manifest", "testdata/manifest.yml",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushContainerImage("gcr.io/tcp-health-check-app"),
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushHealthCheck(&corev1.Probe{
+					TimeoutSeconds: 33,
+					Handler: corev1.Handler{
+						TCPSocket: &corev1.TCPSocketAction{},
+					},
+				}),
+			),
+		},
+		"bad timeout": {
+			namespace: "some-namespace",
+			args: []string{
+				"tcp-health-check-app",
+				"-t", "-1",
+			},
+			wantErr: errors.New("health check timeouts can't be negative"),
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
@@ -390,6 +429,7 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "max scale bound", expectOpts.MaxScale(), actualOpts.MaxScale())
 					testutil.AssertEqual(t, "no start", expectOpts.NoStart(), actualOpts.NoStart())
 					testutil.AssertEqual(t, "routes", expectOpts.Routes(), actualOpts.Routes())
+					testutil.AssertEqual(t, "health check", expectOpts.HealthCheck(), actualOpts.HealthCheck())
 
 					if !strings.HasPrefix(actualOpts.SourceImage(), tc.wantImagePrefix) {
 						t.Errorf("Wanted srcImage to start with %s got: %s", tc.wantImagePrefix, actualOpts.SourceImage())
