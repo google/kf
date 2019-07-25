@@ -43,9 +43,7 @@ import (
 	"github.com/knative/build/pkg/logs"
 	"github.com/poy/kontext"
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 func provideSrcImageBuilder() capps.SrcImageBuilder {
@@ -76,7 +74,11 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		capps.NewPushCommand,
 		provideSrcImageBuilder,
+		servicebindings.NewClient,
+		config.GetServiceCatalogClient,
+		config.GetSecretClient,
 		AppsSet,
+		routes.NewClient,
 	)
 	return nil
 }
@@ -382,22 +384,11 @@ func InjectRoutes(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
-var NamespacesSet = wire.NewSet(
-	provideCoreV1,
-	providerNamespacesGetter,
-	config.GetKubernetes,
-)
-
-func providerNamespacesGetter(ki kubernetes.Interface) v1.NamespacesGetter {
-	return ki.CoreV1()
-}
-
 func InjectCreateRoute(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		croutes.NewCreateRouteCommand,
 		routes.NewClient,
 		config.GetKfClient,
-		NamespacesSet,
 	)
 	return nil
 }

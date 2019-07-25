@@ -20,7 +20,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/internal/envutil"
+	"github.com/google/kf/pkg/internal/envutil"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	fakebindings "github.com/google/kf/pkg/kf/service-bindings/fake"
 	"github.com/google/kf/pkg/kf/testutil"
@@ -75,14 +75,14 @@ func TestSystemEnvInjector(t *testing.T) {
 			}
 
 			injector := NewSystemEnvInjector(fakeClient)
-			actualErr := injector.InjectSystemEnv(svc)
+			actualEnv, actualErr := injector.ComputeSystemEnv(svc)
 
 			if tc.expectErr != nil || actualErr != nil {
 				testutil.AssertErrorsEqual(t, tc.expectErr, actualErr)
 				return
 			}
 
-			tc.validate(t, envutil.EnvVarsToMap(envutil.GetAppEnvVars(svc)))
+			tc.validate(t, envutil.EnvVarsToMap(actualEnv))
 		})
 	}
 }

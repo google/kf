@@ -88,7 +88,7 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			SetKfAppContainerDefaults(tc.template)
+			SetKfAppContainerDefaults(context.TODO(), tc.template)
 
 			testutil.AssertEqual(t, "expected", tc.expected, tc.template)
 		})

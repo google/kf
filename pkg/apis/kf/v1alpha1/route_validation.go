@@ -76,9 +76,14 @@ func (r *Route) Validate(ctx context.Context) (errs *apis.FieldError) {
 	return errs
 }
 
+// Validate makes sure that RouteSpec is properly configured.
 func (r *RouteSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
 	if r.Domain == "" {
 		errs = errs.Also(apis.ErrMissingField("domain"))
+	}
+
+	if r.Hostname == "www" {
+		errs = errs.Also(apis.ErrInvalidValue("hostname", r.Hostname))
 	}
 
 	// validate we only have one KnativeServiceNames.

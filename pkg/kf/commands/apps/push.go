@@ -18,16 +18,22 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/internal/envutil"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	"github.com/google/kf/pkg/kf/internal/envutil"
 	kfi "github.com/google/kf/pkg/kf/internal/kf"
 	"github.com/google/kf/pkg/kf/manifest"
+	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
+	"github.com/poy/service-catalog/cmd/svcat/output"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // SrcImageBuilder creates and uploads a container image that contains the
@@ -59,7 +65,7 @@ func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string) error {
 }
 
 // NewPushCommand creates a push command.
-func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, b SrcImageBuilder) *cobra.Command {
+func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, b SrcImageBuilder, serviceBindingClient servicebindings.ClientInterface) *cobra.Command {
 	var (
 		containerRegistry  string
 		sourceImage        string
@@ -73,6 +79,7 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		grpc               bool
 		noManifest         bool
 		noStart            bool
+		routes             []*v1alpha1.Route
 		healthCheckType    string
 		healthCheckTimeout int
 	)
@@ -175,6 +182,16 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					return err
 				}
 
+				manifestRoutes := app.Routes
+				for _, route := range manifestRoutes {
+					// Parse route string from URL into hostname, domain, and path
+					newRoute, err := createRoute(appName, route.Route, p.Namespace)
+					if err != nil {
+						return err
+					}
+					routes = append(routes, newRoute)
+				}
+
 				healthCheck, err := apps.NewHealthCheck(app.HealthCheckType, app.HealthCheckHTTPEndpoint, app.HealthCheckTimeout)
 				if err != nil {
 					return err
@@ -188,10 +205,11 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					apps.WithPushMinScale(minScale),
 					apps.WithPushMaxScale(maxScale),
 					apps.WithPushNoStart(noStart),
+					apps.WithPushRoutes(routes),
 					apps.WithPushHealthCheck(healthCheck),
 				}
 
-				if app.Docker.Image == "" { // builpack app
+				if app.Docker.Image == "" { // buildpack app
 					registry := containerRegistry
 					switch {
 					case registry != "":
@@ -233,6 +251,23 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					pushOpts = append(pushOpts, apps.WithPushContainerImage(app.Docker.Image))
 				}
 
+				// Bind service if set
+				for _, serviceInstance := range app.Services {
+
+					binding, created, err := serviceBindingClient.GetOrCreate(
+						serviceInstance,
+						app.Name,
+						servicebindings.WithCreateBindingName(serviceInstance),
+						servicebindings.WithCreateNamespace(p.Namespace))
+					if err != nil {
+						return err
+					}
+					if created {
+						output.WriteBindingDetails(cmd.OutOrStdout(), binding)
+					}
+
+				}
+
 				err = pusher.Push(app.Name, pushOpts...)
 
 				cmd.SilenceUsage = !kfi.ConfigError(err)
@@ -240,6 +275,7 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 				if err != nil {
 					return err
 				}
+
 			}
 
 			return nil
@@ -380,4 +416,77 @@ func calculateScaleBounds(instances int, minScale, maxScale *int) (int, int, err
 		return *minScale, *maxScale, nil
 	}
 
+}
+
+func createRoute(appName string, routeStr string, namespace string) (*v1alpha1.Route, error) {
+	hostname, domain, path, err := parseRouteStr(routeStr)
+	if err != nil {
+		return nil, err
+	}
+
+	r := &v1alpha1.Route{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "Route",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name: v1alpha1.GenerateName(
+				hostname,
+				domain,
+				path,
+			),
+		},
+		Spec: v1alpha1.RouteSpec{
+			Hostname:            hostname,
+			Domain:              domain,
+			Path:                path,
+			KnativeServiceNames: []string{appName},
+		},
+	}
+
+	return r, nil
+}
+
+// parseRouteStr parses a route URL into a hostname, domain, and path
+func parseRouteStr(routeStr string) (string, string, string, error) {
+	u, err := url.Parse(routeStr)
+	if err != nil {
+		return "", "", "", fmt.Errorf("failed to parse route: %s", err)
+	}
+	if u.Scheme == "" {
+		// Parsing URLs without schemes causes the hostname and domain to incorrectly be empty.
+		// We handle this by assuming the route has a HTTP scheme if scheme is not provided.
+		u, err = url.Parse("http://" + routeStr)
+		if err != nil {
+			return "", "", "", fmt.Errorf("failed to parse route: %s", err)
+		}
+	}
+
+	parts := strings.SplitN(u.Hostname(), ".", 3)
+
+	var hostname string
+	var domain string
+	var path string
+
+	if len(parts) == 3 {
+		// Has hostname
+		if parts[0] == "www" {
+			// "www" is a hostname exception.
+			// strip hostname and include "www" in the domain
+			hostname = ""
+			domain = strings.Join(parts, ".")
+		} else {
+			hostname = parts[0]
+			domain = strings.Join(parts[1:], ".")
+		}
+
+	} else {
+		// Only domain
+		hostname = ""
+		domain = strings.Join(parts, ".")
+	}
+
+	path = u.EscapedPath()
+
+	return hostname, domain, path, nil
 }

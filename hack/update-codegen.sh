@@ -41,30 +41,39 @@ if [ "$GENS" = "" ]; then
   GENS="all"
 fi
 
-code-generator-gen() {
+download-scripts() {
   commit=$(cat go.mod | grep code-generator | grep =\> | tr '-' ' ' | awk '{print $NF}')
-  echo running code-generator $commit
+  echo downloading code-generator script at commit $commit
 
   CODEGEN_PKG=vendor/k8s.io/code-generator
-  curl -LOJ https://raw.githubusercontent.com/kubernetes/code-generator/${commit}/generate-groups.sh
+  curl -sLOJ https://raw.githubusercontent.com/kubernetes/code-generator/${commit}/generate-groups.sh
   chmod +x generate-groups.sh
   mkdir -p $CODEGEN_PKG
   mv generate-groups.sh $CODEGEN_PKG/generate-groups.sh
 
-  ${CODEGEN_PKG}/generate-groups.sh \
-    all \
-    "$KF_PACKAGE/pkg/client" \
-    "$KF_PACKAGE/pkg/apis" \
-    "$KF_RESOURCE" \
-    --go-header-file="$HEADER_FILE" \
-    ${GENERATOR_FLAGS}
-  [ $? -ne 0 ] && echo Error running code-generator 1>&2 && exit 1
+  commit=$(cat go.mod | grep knative.dev/pkg | tr '-' ' ' | awk '{print $NF}')
+  echo downloading knative-injection-generator script at commit $commit
 
+  KNATIVE_CODEGEN_PKG=vendor/knative.dev/pkg/hack
+  curl -sLOJ https://raw.githubusercontent.com/knative/pkg/${commit}/hack/generate-knative.sh
+  chmod +x generate-knative.sh
+  mkdir -p $KNATIVE_CODEGEN_PKG
+  mv generate-knative.sh $KNATIVE_CODEGEN_PKG/generate-knative.sh
+}
+
+code-generator-gen() {
+
+  GENERATORS=$1
+  OUTPUT_PACKAGE=$2
+  API_PACKAGE=$3
+  GROUP_VERSION=$4
+
+  echo "k8s code gen for $API_PACKAGE at $GROUP_VERSION -> $OUTPUT_PACKAGE"
   ${CODEGEN_PKG}/generate-groups.sh \
-    "deepcopy,client,informer,lister" \
-    "$KF_PACKAGE/pkg/client/build" \
-    "github.com/knative/build/pkg/apis" \
-    "$BUILD_RESOURCE" \
+    "$GENERATORS" \
+    "$OUTPUT_PACKAGE" \
+    "$API_PACKAGE" \
+    "$GROUP_VERSION" \
     --go-header-file="$HEADER_FILE" \
     ${GENERATOR_FLAGS}
   [ $? -ne 0 ] && echo Error running code-generator 1>&2 && exit 1
@@ -73,47 +82,105 @@ code-generator-gen() {
 }
 
 knative-injection-gen() {
-  commit=$(cat go.mod | grep knative.dev/pkg | tr '-' ' ' | awk '{print $NF}')
-  echo running knative-injection-generator $commit
 
-  KNATIVE_CODEGEN_PKG=vendor/knative.dev/pkg/hack
-  curl -LOJ https://raw.githubusercontent.com/knative/pkg/${commit}/hack/generate-knative.sh
-  chmod +x generate-knative.sh
-  mkdir -p $KNATIVE_CODEGEN_PKG
-  mv generate-knative.sh $KNATIVE_CODEGEN_PKG/generate-knative.sh
+  GENERATORS=$1
+  OUTPUT_PACKAGE=$2
+  API_PACKAGE=$3
+  GROUP_VERSION=$4
 
-  # Do Knative injection generation
+  echo "knative injection gen for $API_PACKAGE at $GROUP_VERSION -> $OUTPUT_PACKAGE"
   ${KNATIVE_CODEGEN_PKG}/generate-knative.sh \
-    "injection" \
-    "github.com/google/kf/pkg/client" \
-    "github.com/google/kf/pkg/apis" \
-    "kf:v1alpha1" \
-    --go-header-file $HEADER_FILE
-  [ $? -ne 0 ] && echo Error running injection-generator 1>&2 && exit 1
-
-  ${KNATIVE_CODEGEN_PKG}/generate-knative.sh \
-    "injection" \
-    "github.com/google/kf/pkg/client/build" \
-    "github.com/knative/build/pkg/apis" \
-    "build:v1alpha1" \
+    "$GENERATORS" \
+    "$OUTPUT_PACKAGE" \
+    "$API_PACKAGE" \
+    "$GROUP_VERSION" \
     --go-header-file $HEADER_FILE
   [ $? -ne 0 ] && echo Error running injection-generator 1>&2 && exit 1
 
   return 0
 }
 
+kf-code-gen() {
+  code-generator-gen \
+    all \
+    "$KF_PACKAGE/pkg/client" \
+    "$KF_PACKAGE/pkg/apis" \
+    "$KF_RESOURCE"
+}
+
+kf-knative-gen() {
+  knative-injection-gen \
+    "injection" \
+    "github.com/google/kf/pkg/client" \
+    "github.com/google/kf/pkg/apis" \
+    "kf:v1alpha1"
+}
+
+kbuild-code-gen() {
+  code-generator-gen \
+    "deepcopy,client,informer,lister" \
+    "$KF_PACKAGE/pkg/client/build" \
+    "github.com/knative/build/pkg/apis" \
+    "$BUILD_RESOURCE"
+}
+
+kbuild-knative-gen() {
+  knative-injection-gen \
+    "injection" \
+    "github.com/google/kf/pkg/client/build" \
+    "github.com/knative/build/pkg/apis" \
+    "build:v1alpha1"
+}
+
+svccat-codegen() {
+  code-generator-gen \
+    "deepcopy,client,informer,lister" \
+    "$KF_PACKAGE/pkg/client/servicecatalog" \
+    "github.com/poy/service-catalog/pkg/apis" \
+    "servicecatalog:v1beta1"
+}
+
+svccat-knative-gen() {
+  knative-injection-gen \
+    "injection" \
+    "github.com/google/kf/pkg/client/servicecatalog" \
+    "github.com/poy/service-catalog/pkg/apis" \
+    "servicecatalog:v1beta1"
+}
+
 go mod vendor
+download-scripts
 
 case $GENS in
   k8s)
-    code-generator-gen
+    kf-code-gen
+    kbuild-code-gen
+    svccat-code-gen
     ;;
   knative)
-    knative-injection-gen
+    kf-knative-gen
+    kbuild-knative-gen
+    svccat-knative-gen
+    ;;
+  kf)
+    kf-code-gen
+    kf-knative-gen
+    ;;
+  kbuild)
+    kbuild-code-gen
+    kbuild-knative-gen
+    ;;
+  svccat)
+    svccat-codegen
+    svccat-knative-gen
     ;;
   all)
-    code-generator-gen
-    knative-injection-gen
+    kf-code-gen
+    kf-knative-gen
+    kbuild-code-gen
+    kbuild-knative-gen
+    svccat-codegen
+    svccat-knative-gen
     ;;
 esac
 

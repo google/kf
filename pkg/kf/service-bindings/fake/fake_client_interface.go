@@ -88,6 +88,27 @@ func (mr *FakeClientInterfaceMockRecorder) Delete(arg0, arg1 interface{}, arg2 .
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*FakeClientInterface)(nil).Delete), varargs...)
 }
 
+// GetOrCreate mocks base method
+func (m *FakeClientInterface) GetOrCreate(arg0, arg1 string, arg2 ...service_bindings.CreateOption) (*v1beta1.ServiceBinding, bool, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetOrCreate", varargs...)
+	ret0, _ := ret[0].(*v1beta1.ServiceBinding)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetOrCreate indicates an expected call of GetOrCreate
+func (mr *FakeClientInterfaceMockRecorder) GetOrCreate(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreate", reflect.TypeOf((*FakeClientInterface)(nil).GetOrCreate), varargs...)
+}
+
 // GetVcapServices mocks base method
 func (m *FakeClientInterface) GetVcapServices(arg0 string, arg1 ...service_bindings.GetVcapServicesOption) (service_bindings.VcapServicesMap, error) {
 	m.ctrl.T.Helper()

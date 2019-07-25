@@ -10,6 +10,11 @@ applications:
   path: example-app
 - name: auto-buildpack-app
   path: example-app
+- name: routes-app
+  routes:
+  - route: example.com
+  - route: www.example.com/foo
+  - route: https://host.example.com/foo
 - name: http-health-check-app
   docker:
     image: gcr.io/http-health-check-app

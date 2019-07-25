@@ -1,7 +1,7 @@
 # This file contains options for option-builder.go
 ---
 package: apps
-imports: {"io":"", "os":"", "k8s.io/api/core/v1":"corev1"}
+imports: {"io":"", "os":"", "k8s.io/api/core/v1":"corev1","github.com/google/kf/pkg/apis/kf/v1alpha1":""}
 common:
 - name: Namespace
   type: string
@@ -44,6 +44,9 @@ configs:
   - name: NoStart
     type: bool
     description: setup the app without starting it
+  - name: Routes
+    type: "[]*v1alpha1.Route"
+    description: route names (multiple allowed) for the app
   - name: HealthCheck
     type: "*corev1.Probe"
     description: the health check to use on the app

@@ -29,12 +29,47 @@ import (
 	appsfake "github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
+	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
+	svbFake "github.com/google/kf/pkg/kf/service-bindings/fake"
 	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+type routeParts struct {
+	hostname string
+	domain   string
+	path     string
+}
+
+func dummyBindingInstance(appName, instanceName string) *v1beta1.ServiceBinding {
+	instance := v1beta1.ServiceBinding{}
+	instance.Name = fmt.Sprintf("kf-binding-%s-%s", appName, instanceName)
+
+	return &instance
+}
 
 func TestPushCommand(t *testing.T) {
 	t.Parallel()
+
+	routes := createTestRoutes([]routeParts{
+		{
+			hostname: "",
+			domain:   "example.com",
+			path:     "",
+		},
+		{
+			hostname: "",
+			domain:   "www.example.com",
+			path:     "/foo",
+		},
+		{
+			hostname: "host",
+			domain:   "example.com",
+			path:     "/foo",
+		},
+	})
 
 	defaultTCPHealthCheck := &corev1.Probe{
 		Handler: corev1.Handler{
@@ -56,8 +91,9 @@ func TestPushCommand(t *testing.T) {
 		srcImageBuilder SrcImageBuilderFunc
 		wantImagePrefix string
 		targetSpace     *v1alpha1.Space
-
-		wantOpts []apps.PushOption
+		wantOpts        []apps.PushOption
+		setup           func(t *testing.T, f *svbFake.FakeClientInterface)
+		containsRoutes  bool
 	}{
 		"uses configured properties": {
 			namespace: "some-namespace",
@@ -142,6 +178,32 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushMaxScale(2),
 				apps.WithPushContainerRegistry("some-reg.io"),
 			),
+		},
+		"bind-service-instance": {
+			namespace: "some-namespace",
+			args: []string{
+				"app-name",
+				"--container-registry", "some-reg.io",
+				"--manifest", "testdata/manifest-services.yaml",
+			},
+			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
+				cwd, err := os.Getwd()
+				testutil.AssertNil(t, "cwd err", err)
+				testutil.AssertEqual(t, "path", cwd, dir)
+				return nil
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushContainerRegistry("some-reg.io"),
+			),
+			setup: func(t *testing.T, f *svbFake.FakeClientInterface) {
+				f.EXPECT().GetOrCreate("some-service-instance", "app-name", gomock.Any()).Do(func(instance, app string, opts ...servicebindings.CreateOption) {
+					config := servicebindings.CreateOptions(opts)
+					testutil.AssertEqual(t, "params", map[string]interface{}{}, config.Params())
+					testutil.AssertEqual(t, "namespace", "some-namespace", config.Namespace())
+					testutil.AssertEqual(t, "binding-name", "some-service-instance", config.BindingName())
+				}).Return(dummyBindingInstance("app-name", "some-service-instance"), true, nil)
+			},
 		},
 		"service create error": {
 			namespace:       "default",
@@ -284,6 +346,20 @@ func TestPushCommand(t *testing.T) {
 			},
 			wantErr: errors.New("no app missing-app found in the Manifest"),
 		},
+		"create and map routes from manifest": {
+			namespace: "some-namespace",
+			args: []string{
+				"routes-app",
+				"--container-registry", "some-registry.io",
+				"--manifest", "testdata/manifest.yml",
+			},
+			containsRoutes: true,
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushRoutes(routes),
+				apps.WithPushContainerRegistry("some-registry.io"),
+			),
+		},
 		"http-health-check from manifest": {
 			namespace: "some-namespace",
 			args: []string{
@@ -335,6 +411,7 @@ func TestPushCommand(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			fakeApps := appsfake.NewFakeClient(ctrl)
 			fakePusher := appsfake.NewFakePusher(ctrl)
+			svbClient := svbFake.NewFakeClientInterface(ctrl)
 
 			fakePusher.
 				EXPECT().
@@ -353,6 +430,7 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "min scale bound", expectOpts.MinScale(), actualOpts.MinScale())
 					testutil.AssertEqual(t, "max scale bound", expectOpts.MaxScale(), actualOpts.MaxScale())
 					testutil.AssertEqual(t, "no start", expectOpts.NoStart(), actualOpts.NoStart())
+					testutil.AssertEqual(t, "routes", expectOpts.Routes(), actualOpts.Routes())
 					testutil.AssertEqual(t, "health check", expectOpts.HealthCheck(), actualOpts.HealthCheck())
 
 					if !strings.HasPrefix(actualOpts.SourceImage(), tc.wantImagePrefix) {
@@ -372,7 +450,11 @@ func TestPushCommand(t *testing.T) {
 				params.SetTargetSpaceToDefault()
 			}
 
-			c := NewPushCommand(params, fakeApps, fakePusher, tc.srcImageBuilder)
+			if tc.setup != nil {
+				tc.setup(t, svbClient)
+			}
+
+			c := NewPushCommand(params, fakeApps, fakePusher, tc.srcImageBuilder, svbClient)
 			buffer := &bytes.Buffer{}
 			c.SetOutput(buffer)
 			c.SetArgs(tc.args)
@@ -388,4 +470,31 @@ func TestPushCommand(t *testing.T) {
 			ctrl.Finish()
 		})
 	}
+}
+
+func createTestRoutes(routes []routeParts) []*v1alpha1.Route {
+	newRoutes := []*v1alpha1.Route{}
+	for _, route := range routes {
+		r := &v1alpha1.Route{
+			TypeMeta: metav1.TypeMeta{
+				Kind: "Route",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: "some-namespace",
+				Name: v1alpha1.GenerateName(
+					route.hostname,
+					route.domain,
+					route.path,
+				),
+			},
+			Spec: v1alpha1.RouteSpec{
+				Hostname:            route.hostname,
+				Domain:              route.domain,
+				Path:                route.path,
+				KnativeServiceNames: []string{"routes-app"},
+			},
+		}
+		newRoutes = append(newRoutes, r)
+	}
+	return newRoutes
 }
