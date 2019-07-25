@@ -93,7 +93,6 @@ func TestPushCommand(t *testing.T) {
 		targetSpace     *v1alpha1.Space
 		wantOpts        []apps.PushOption
 		setup           func(t *testing.T, f *svbFake.FakeClientInterface)
-		containsRoutes  bool
 	}{
 		"uses configured properties": {
 			namespace: "some-namespace",
@@ -353,7 +352,6 @@ func TestPushCommand(t *testing.T) {
 				"--container-registry", "some-registry.io",
 				"--manifest", "testdata/manifest.yml",
 			},
-			containsRoutes: true,
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushRoutes(routes),

@@ -18,6 +18,14 @@ import (
 	"context"
 
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+)
+
+var (
+	defaultMem     = resource.MustParse("1Gi")
+	defaultStorage = resource.MustParse("1Gi")
+	defaultCPU     = resource.MustParse("1")
 )
 
 const (
@@ -77,5 +85,22 @@ func SetKfAppContainerDefaults(_ context.Context, container *corev1.Container) {
 		if http.Path == "" {
 			http.Path = DefaultHealthCheckProbeEndpoint
 		}
+	}
+
+	// Set default disk, RAM, and CPU limits on the application if they have not been custom set
+	if container.Resources.Requests == nil {
+		container.Resources.Requests = v1.ResourceList{}
+	}
+
+	if _, exists := container.Resources.Requests[corev1.ResourceMemory]; !exists {
+		container.Resources.Requests[corev1.ResourceMemory] = defaultMem
+	}
+
+	if _, exists := container.Resources.Requests[corev1.ResourceEphemeralStorage]; !exists {
+		container.Resources.Requests[corev1.ResourceEphemeralStorage] = defaultStorage
+	}
+
+	if _, exists := container.Resources.Requests[corev1.ResourceCPU]; !exists {
+		container.Resources.Requests[corev1.ResourceCPU] = defaultCPU
 	}
 }

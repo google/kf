@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/kf/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestAppSpec_SetDefaults_BlankContainer(t *testing.T) {
@@ -32,18 +33,61 @@ func TestAppSpec_SetDefaults_BlankContainer(t *testing.T) {
 	testutil.AssertEqual(t, "spec.template.spec.containers.name", "", app.Spec.Template.Spec.Containers[0].Name)
 }
 
+func TestAppSpec_SetDefaults_ResourceLimits_AlreadySet(t *testing.T) {
+	t.Parallel()
+
+	wantMem := resource.MustParse("2Gi")
+	wantStorage := resource.MustParse("2Gi")
+	wantCPU := resource.MustParse("2")
+
+	app := &App{
+		Spec: AppSpec{
+			Template: AppSpecTemplate{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{
+								corev1.ResourceMemory:           wantMem,
+								corev1.ResourceEphemeralStorage: wantStorage,
+								corev1.ResourceCPU:              wantCPU,
+							},
+						},
+					}},
+				},
+			},
+		},
+	}
+
+	app.SetDefaults(context.Background())
+
+	appResourceRequests := app.Spec.Template.Spec.Containers[0].Resources.Requests
+	testutil.AssertEqual(t, "default memory request", wantMem, appResourceRequests[corev1.ResourceMemory])
+	testutil.AssertEqual(t, "default storage request", wantStorage, appResourceRequests[corev1.ResourceEphemeralStorage])
+	testutil.AssertEqual(t, "default CPU request", wantCPU, appResourceRequests[corev1.ResourceCPU])
+}
+
 func TestSetKfAppContainerDefaults(t *testing.T) {
+	defaultContainer := &corev1.Container{}
+	SetKfAppContainerDefaults(context.Background(), defaultContainer)
+
 	cases := map[string]struct {
 		template *corev1.Container
 		expected *corev1.Container
 	}{
-		"default to TCP": {
+		"default everything": {
 			template: &corev1.Container{},
 			expected: &corev1.Container{
 				ReadinessProbe: &corev1.Probe{
 					TimeoutSeconds: DefaultHealthCheckProbeTimeout,
 					Handler: corev1.Handler{
 						TCPSocket: &corev1.TCPSocketAction{},
+					},
+				},
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:              defaultCPU,
+						corev1.ResourceMemory:           defaultMem,
+						corev1.ResourceEphemeralStorage: defaultStorage,
 					},
 				},
 			},
@@ -64,6 +108,7 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 						HTTPGet: &corev1.HTTPGetAction{Path: DefaultHealthCheckProbeEndpoint},
 					},
 				},
+				Resources: defaultContainer.Resources,
 			},
 		},
 		"full http doesn't get overwritten": {
@@ -80,6 +125,28 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 					TimeoutSeconds: 180,
 					Handler: corev1.Handler{
 						HTTPGet: &corev1.HTTPGetAction{Path: "/healthz"},
+					},
+				},
+				Resources: defaultContainer.Resources,
+			},
+		},
+		"resources don't get overwritten": {
+			template: &corev1.Container{
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:              resource.MustParse("2"),
+						corev1.ResourceMemory:           resource.MustParse("2Gi"),
+						corev1.ResourceEphemeralStorage: resource.MustParse("2Gi"),
+					},
+				},
+			},
+			expected: &corev1.Container{
+				ReadinessProbe: defaultContainer.ReadinessProbe,
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:              resource.MustParse("2"),
+						corev1.ResourceMemory:           resource.MustParse("2Gi"),
+						corev1.ResourceEphemeralStorage: resource.MustParse("2Gi"),
 					},
 				},
 			},
