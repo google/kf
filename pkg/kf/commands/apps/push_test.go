@@ -68,7 +68,6 @@ func TestPushCommand(t *testing.T) {
 		srcImageBuilder SrcImageBuilderFunc
 		wantImagePrefix string
 		targetSpace     *v1alpha1.Space
-		containsRoutes  bool
 
 		wantOpts []apps.PushOption
 	}{
@@ -314,7 +313,6 @@ func TestPushCommand(t *testing.T) {
 				"--container-registry", "some-registry.io",
 				"--manifest", "testdata/manifest.yml",
 			},
-			containsRoutes: true,
 			wantOpts: []apps.PushOption{
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushRoutes(routes),
