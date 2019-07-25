@@ -47,13 +47,10 @@ func TestAppSpec_SetDefaults_ResourceLimits_Default(t *testing.T) {
 	}
 	app.SetDefaults(context.Background())
 
-	wantMem := resource.MustParse("1Gi")
-	wantStorage := resource.MustParse("1Gi")
-	wantCPU := resource.MustParse("1")
-
-	testutil.AssertEqual(t, "default memory request", wantMem, app.Spec.Template.Spec.Containers[0].Resources.Requests[v1.ResourceMemory])
-	testutil.AssertEqual(t, "default storage request", wantStorage, app.Spec.Template.Spec.Containers[0].Resources.Requests[v1.ResourceEphemeralStorage])
-	testutil.AssertEqual(t, "default CPU request", wantCPU, app.Spec.Template.Spec.Containers[0].Resources.Requests[v1.ResourceCPU])
+	appResourceRequests := app.Spec.Template.Spec.Containers[0].Resources.Requests
+	testutil.AssertEqual(t, "default memory request", defaultMem, appResourceRequests[v1.ResourceMemory])
+	testutil.AssertEqual(t, "default storage request", defaultStorage, appResourceRequests[v1.ResourceEphemeralStorage])
+	testutil.AssertEqual(t, "default CPU request", defaultCPU, appResourceRequests[v1.ResourceCPU])
 }
 
 func TestAppSpec_SetDefaults_ResourceLimits_AlreadySet(t *testing.T) {
@@ -83,7 +80,8 @@ func TestAppSpec_SetDefaults_ResourceLimits_AlreadySet(t *testing.T) {
 
 	app.SetDefaults(context.Background())
 
-	testutil.AssertEqual(t, "default memory request", wantMem, app.Spec.Template.Spec.Containers[0].Resources.Requests[v1.ResourceMemory])
-	testutil.AssertEqual(t, "default storage request", wantStorage, app.Spec.Template.Spec.Containers[0].Resources.Requests[v1.ResourceEphemeralStorage])
-	testutil.AssertEqual(t, "default CPU request", wantCPU, app.Spec.Template.Spec.Containers[0].Resources.Requests[v1.ResourceCPU])
+	appResourceRequests := app.Spec.Template.Spec.Containers[0].Resources.Requests
+	testutil.AssertEqual(t, "default memory request", wantMem, appResourceRequests[v1.ResourceMemory])
+	testutil.AssertEqual(t, "default storage request", wantStorage, appResourceRequests[v1.ResourceEphemeralStorage])
+	testutil.AssertEqual(t, "default CPU request", wantCPU, appResourceRequests[v1.ResourceCPU])
 }

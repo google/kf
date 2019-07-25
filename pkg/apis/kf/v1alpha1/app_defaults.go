@@ -22,15 +22,11 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-var defaultMem = resource.MustParse("1Gi")
-var defaultStorage = resource.MustParse("1Gi")
-var defaultCPU = resource.MustParse("1")
-
-type defaultLimits struct {
-	memory  resource.Quantity
-	storage resource.Quantity
-	cpu     resource.Quantity
-}
+var (
+	defaultMem     = resource.MustParse("1Gi")
+	defaultStorage = resource.MustParse("1Gi")
+	defaultCPU     = resource.MustParse("1")
+)
 
 // SetDefaults implements apis.Defaultable
 func (k *App) SetDefaults(ctx context.Context) {
@@ -46,28 +42,24 @@ func (k *AppSpec) SetDefaults(ctx context.Context) {
 	}
 
 	// Set default disk, RAM, and CPU limits on the application if they have not been custom set
-	k.setResourceLimits(defaultLimits{
-		memory:  defaultMem,
-		storage: defaultStorage,
-		cpu:     defaultCPU,
-	})
+	k.setResourceRequests(defaultMem, defaultStorage, defaultCPU)
 }
 
-func (k *AppSpec) setResourceLimits(defaults defaultLimits) {
+func (k *AppSpec) setResourceRequests(memory resource.Quantity, storage resource.Quantity, cpu resource.Quantity) {
 	userContainer := &k.Template.Spec.Containers[0]
 	if userContainer.Resources.Requests == nil {
 		userContainer.Resources.Requests = v1.ResourceList{}
 	}
 
 	if _, exists := userContainer.Resources.Requests[corev1.ResourceMemory]; !exists {
-		userContainer.Resources.Requests[corev1.ResourceMemory] = defaults.memory
+		userContainer.Resources.Requests[corev1.ResourceMemory] = memory
 	}
 
 	if _, exists := userContainer.Resources.Requests[corev1.ResourceEphemeralStorage]; !exists {
-		userContainer.Resources.Requests[corev1.ResourceEphemeralStorage] = defaults.storage
+		userContainer.Resources.Requests[corev1.ResourceEphemeralStorage] = storage
 	}
 
 	if _, exists := userContainer.Resources.Requests[corev1.ResourceCPU]; !exists {
-		userContainer.Resources.Requests[corev1.ResourceCPU] = defaults.cpu
+		userContainer.Resources.Requests[corev1.ResourceCPU] = cpu
 	}
 }
