@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -189,17 +190,29 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 				}
 
 				if app.Memory != "" {
-					mem := resource.MustParse(app.Memory)
+					memStr, err := convertResourceQuantityStr(app.Memory)
+					if err != nil {
+						return err
+					}
+					mem := resource.MustParse(memStr)
 					memoryRequest = &mem
 				}
 
 				if app.DiskQuota != "" {
-					storage := resource.MustParse(app.DiskQuota)
+					storageStr, err := convertResourceQuantityStr(app.DiskQuota)
+					if err != nil {
+						return err
+					}
+					storage := resource.MustParse(storageStr)
 					storageRequest = &storage
 				}
 
 				if app.CPU != "" {
-					cpu := resource.MustParse(app.CPU)
+					cpuStr, err := convertResourceQuantityStr(app.CPU)
+					if err != nil {
+						return err
+					}
+					cpu := resource.MustParse(cpuStr)
 					cpuRequest = &cpu
 				}
 
@@ -482,3 +495,32 @@ func parseRouteStr(routeStr string) (string, string, string, error) {
 
 	return hostname, domain, path, nil
 }
+
+// convertResourceQuantityStr converts CF resource quantities into the equivalent k8s quantity strings.
+// CF interprets K, M, G, T as binary SI units while k8s interprets them as decimal, so we convert them here
+// into the k8s binary SI units (Ki, Mi, Gi, Ti)
+func convertResourceQuantityStr(r string) (string, error) {
+	// Break down resource quantity string into int and unit of measurement
+	// Below method breaks down "50G" into ["50G" "50" "G"]
+	parts := cfValidBytesPattern.FindStringSubmatch(strings.TrimSpace(r))
+	if len(parts) < 3 {
+		return "", errors.New("Byte quantity must be an integer with a unit of measurement like M, MB, G, or GB")
+	}
+	num := parts[1]
+	unit := strings.ToUpper(parts[2])
+	newUnit := unit
+	switch unit {
+	case "T":
+		newUnit = "Ti"
+	case "G":
+		newUnit = "Gi"
+	case "M":
+		newUnit = "Mi"
+	case "K":
+		newUnit = "Ki"
+	}
+
+	return num + newUnit, nil
+}
+
+var cfValidBytesPattern = regexp.MustCompile(`(?i)^(-?\d+)([KMGT])B?$`)
