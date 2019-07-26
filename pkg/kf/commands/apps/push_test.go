@@ -33,6 +33,7 @@ import (
 	svbFake "github.com/google/kf/pkg/kf/service-bindings/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -69,6 +70,10 @@ func TestPushCommand(t *testing.T) {
 			path:     "/foo",
 		},
 	})
+
+	wantMemory := resource.MustParse("2Gi")
+	wantDiskQuota := resource.MustParse("2Gi")
+	wantCPU := resource.MustParse("2")
 
 	for tn, tc := range map[string]struct {
 		args            []string
@@ -361,6 +366,23 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushMaxScale(1),
 			},
 		},
+		"resource requests from manifest": {
+			namespace: "some-namespace",
+			args: []string{
+				"resources-app",
+				"--manifest", "testdata/manifest.yml",
+				"--container-registry", "some-registry.io",
+			},
+			wantOpts: []apps.PushOption{
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushContainerRegistry("some-registry.io"),
+				apps.WithPushMinScale(1),
+				apps.WithPushMaxScale(1),
+				apps.WithPushMemory(&wantMemory),
+				apps.WithPushDiskQuota(&wantDiskQuota),
+				apps.WithPushCPU(&wantCPU),
+			},
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			if tc.srcImageBuilder == nil {
@@ -392,7 +414,7 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "routes", expectOpts.Routes(), actualOpts.Routes())
 					testutil.AssertEqual(t, "memory requests", expectOpts.Memory(), actualOpts.Memory())
 					testutil.AssertEqual(t, "storage requests", expectOpts.DiskQuota(), actualOpts.DiskQuota())
-					testutil.AssertEqual(t, "cpu requests", expectOpts.CPU(), actualOpts.Memory())
+					testutil.AssertEqual(t, "cpu requests", expectOpts.CPU(), actualOpts.CPU())
 
 					if !strings.HasPrefix(actualOpts.SourceImage(), tc.wantImagePrefix) {
 						t.Errorf("Wanted srcImage to start with %s got: %s", tc.wantImagePrefix, actualOpts.SourceImage())

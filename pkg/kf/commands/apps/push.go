@@ -208,11 +208,7 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 				}
 
 				if app.CPU != "" {
-					cpuStr, err := convertResourceQuantityStr(app.CPU)
-					if err != nil {
-						return err
-					}
-					cpu := resource.MustParse(cpuStr)
+					cpu := resource.MustParse(app.CPU)
 					cpuRequest = &cpu
 				}
 

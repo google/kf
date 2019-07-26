@@ -73,8 +73,6 @@ func newApp(appName string, opts ...PushOption) (*v1alpha1.App, error) {
 	app.SetNamespace(cfg.Namespace)
 	app.SetServiceAccount(cfg.ServiceAccount)
 	app.SetSource(src)
-
-	fmt.Println("about to set mem")
 	app.SetMemory(cfg.Memory)
 	app.SetStorage(cfg.DiskQuota)
 	app.SetCPU(cfg.CPU)
@@ -94,7 +92,6 @@ func newApp(appName string, opts ...PushOption) (*v1alpha1.App, error) {
 // Push deploys an application to Knative. It can be configured via
 // Optionapp.
 func (p *pusher) Push(appName string, opts ...PushOption) error {
-	fmt.Println("pushing app")
 	cfg := PushOptionDefaults().Extend(opts).toConfig()
 
 	app, err := newApp(appName, opts...)

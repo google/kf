@@ -104,7 +104,9 @@ func TestPush_Logs(t *testing.T) {
 func TestPush(t *testing.T) {
 	t.Parallel()
 
-	mem := resource.MustParse("1G")
+	mem := resource.MustParse("2Gi")
+	storage := resource.MustParse("2Gi")
+	cpu := resource.MustParse("2")
 
 	for tn, tc := range map[string]struct {
 		appName   string
@@ -289,12 +291,34 @@ func TestPush(t *testing.T) {
 			appName: "some-app",
 			opts: apps.PushOptions{
 				apps.WithPushMemory(&mem),
+				apps.WithPushDiskQuota(&storage),
+				apps.WithPushCPU(&cpu),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
 					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
 						testutil.AssertEqual(t, "memory", mem, newObj.Spec.Template.Spec.Containers[0].Resources.Requests[corev1.ResourceMemory])
+						testutil.AssertEqual(t, "storage", storage, newObj.Spec.Template.Spec.Containers[0].Resources.Requests[corev1.ResourceEphemeralStorage])
+						testutil.AssertEqual(t, "cpu", cpu, newObj.Spec.Template.Spec.Containers[0].Resources.Requests[corev1.ResourceCPU])
+					}).
+					Return(&v1alpha1.App{}, nil)
+			},
+		},
+		"pushes with not all resource requests": {
+			appName: "some-app",
+			opts: apps.PushOptions{
+				apps.WithPushMemory(&mem),
+			},
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
+				appsClient.EXPECT().
+					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
+						testutil.AssertEqual(t, "memory", mem, newObj.Spec.Template.Spec.Containers[0].Resources.Requests[corev1.ResourceMemory])
+						_, storageRequestExists := newObj.Spec.Template.Spec.Containers[0].Resources.Requests[corev1.ResourceEphemeralStorage]
+						_, cpuRequestExists := newObj.Spec.Template.Spec.Containers[0].Resources.Requests[corev1.ResourceCPU]
+						testutil.AssertEqual(t, "storage", false, storageRequestExists)
+						testutil.AssertEqual(t, "cpu", false, cpuRequestExists)
 					}).
 					Return(&v1alpha1.App{}, nil)
 			},
