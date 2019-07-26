@@ -68,6 +68,7 @@ func NewGetAppCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 				}
 
 				kfApp := apps.NewFromApp(app)
+				describe.HealthCheck(w, kfApp.GetHealthCheck())
 				describe.EnvVars(w, kfApp.GetEnvVars())
 			})
 			fmt.Fprintln(w)

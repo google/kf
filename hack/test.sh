@@ -58,4 +58,4 @@ else
   packages="$@"
 fi
 
-go test -timeout 30m $args $packages
+time go test -timeout 30m $args $packages

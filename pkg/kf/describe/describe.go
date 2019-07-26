@@ -212,3 +212,25 @@ func AppSpecInstances(w io.Writer, instances kfv1alpha1.AppSpecInstances) {
 		}
 	})
 }
+
+// HealthCheck prints a Readiness Probe in a friendly manner
+func HealthCheck(w io.Writer, healthCheck *corev1.Probe) {
+	SectionWriter(w, "Health Check", func(w io.Writer) {
+		if healthCheck == nil {
+			return
+		}
+
+		if healthCheck.TimeoutSeconds != 0 {
+			fmt.Fprintf(w, "Timeout:\t%ds\n", healthCheck.TimeoutSeconds)
+		}
+
+		if healthCheck.TCPSocket != nil {
+			fmt.Fprintln(w, "Type:\tport (tcp)")
+		}
+
+		if healthCheck.HTTPGet != nil {
+			fmt.Fprintln(w, "Type:\thttp")
+			fmt.Fprintf(w, "Endpoint:\t%s\n", healthCheck.HTTPGet.Path)
+		}
+	})
+}

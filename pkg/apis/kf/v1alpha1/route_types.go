@@ -16,11 +16,11 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +genclient:noStatus
 
 // Route is a high level structure that encompasses an Istio VirtualService
 // and configuration applied to it.
@@ -31,17 +31,21 @@ type Route struct {
 
 	// +optional
 	Spec RouteSpec `json:"spec,omitempty"`
-
-	// +optional
-	Status RouteStatus `json:"status,omitempty"`
 }
 
 // RouteSpec contains the specification for a route.
 type RouteSpec struct {
-	// KnativeServiceNames contains the Kf Apps that are bound to the route.
+	// AppNames contains the Kf Apps that are bound to the route.
 	// +optional
-	KnativeServiceNames []string `json:"knativeServiceNames,omitempty"`
+	// +patchStrategy=merge
+	AppNames []string `json:"appNames,omitempty"`
 
+	// RouteSpecFields contains the fields of a route.
+	RouteSpecFields `json:",inline"`
+}
+
+// RouteSpecFields contains the fields of a route.
+type RouteSpecFields struct {
 	// Hostname is the hostname or subdomain of the route (e.g, in
 	// hostname.example.com it would be hostname).
 	// +optional
@@ -55,12 +59,6 @@ type RouteSpec struct {
 	// Path is the URL path of the route.
 	// +optional
 	Path string `json:"path,omitempty"`
-}
-
-// RouteStatus represents information about the status of a Route.
-type RouteStatus struct {
-	// Pull in the fields from Knative's duckv1beta1 status field.
-	duckv1beta1.Status `json:",inline"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -182,6 +182,21 @@ func (k *KfApp) setResourceRequest(r v1.ResourceName, quantity *resource.Quantit
 		resourceRequests[r] = *quantity
 	}
 	k.getOrCreateContainer().Resources.Requests = resourceRequests
+
+// GetHealthCheck gets the readiness probe or nil if one doesn't exist.
+func (k *KfApp) GetHealthCheck() *corev1.Probe {
+	if cont := k.getContainerOrNil(); cont != nil {
+		return cont.ReadinessProbe
+	}
+
+	return nil
+}
+
+// SetHealthCheck sets the readiness probe for the container.
+func (k *KfApp) SetHealthCheck(probe *corev1.Probe) {
+	container := k.getOrCreateContainer()
+	container.ReadinessProbe = probe
+
 }
 
 // ToApp casts this alias back into an App.

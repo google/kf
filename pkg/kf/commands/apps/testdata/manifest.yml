@@ -15,8 +15,18 @@ applications:
   - route: example.com
   - route: www.example.com/foo
   - route: https://host.example.com/foo
+- name: http-health-check-app
+  docker:
+    image: gcr.io/http-health-check-app
+  health-check-type: http
+  timeout: 42
+  health-check-http-endpoint: /healthz
+- name: tcp-health-check-app
+  docker:
+    image: gcr.io/tcp-health-check-app
+  health-check-type: port
+  timeout: 33
 - name: resources-app
   memory: 2G
   disk_quota: 2G
   cpu: "2"
-  

@@ -20,6 +20,7 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"io"
 	"k8s.io/apimachinery/pkg/api/resource"
+	corev1 "k8s.io/api/core/v1"
 	"os"
 )
 
@@ -38,6 +39,8 @@ type pushConfig struct {
 	EnvironmentVariables map[string]string
 	// Grpc is setup the ports for the container to allow gRPC to work
 	Grpc bool
+	// HealthCheck is the health check to use on the app
+	HealthCheck *corev1.Probe
 	// MaxScale is the upper scale bound
 	MaxScale int
 	// Memory is app memory request
@@ -50,8 +53,8 @@ type pushConfig struct {
 	NoStart bool
 	// Output is the io.Writer to write output such as build logs
 	Output io.Writer
-	// Routes is route names (multiple allowed) for the app
-	Routes []*v1alpha1.Route
+	// Routes is routes for the app
+	Routes []v1alpha1.RouteSpecFields
 	// ServiceAccount is the service account to authenticate with
 	ServiceAccount string
 	// SourceImage is the source code as a container image
@@ -126,6 +129,12 @@ func (opts PushOptions) Grpc() bool {
 	return opts.toConfig().Grpc
 }
 
+// HealthCheck returns the last set value for HealthCheck or the empty value
+// if not set.
+func (opts PushOptions) HealthCheck() *corev1.Probe {
+	return opts.toConfig().HealthCheck
+}
+
 // MaxScale returns the last set value for MaxScale or the empty value
 // if not set.
 func (opts PushOptions) MaxScale() int {
@@ -164,7 +173,7 @@ func (opts PushOptions) Output() io.Writer {
 
 // Routes returns the last set value for Routes or the empty value
 // if not set.
-func (opts PushOptions) Routes() []*v1alpha1.Route {
+func (opts PushOptions) Routes() []v1alpha1.RouteSpecFields {
 	return opts.toConfig().Routes
 }
 
@@ -229,6 +238,13 @@ func WithPushGrpc(val bool) PushOption {
 	}
 }
 
+// WithPushHealthCheck creates an Option that sets the health check to use on the app
+func WithPushHealthCheck(val *corev1.Probe) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.HealthCheck = val
+	}
+}
+
 // WithPushMaxScale creates an Option that sets the upper scale bound
 func WithPushMaxScale(val int) PushOption {
 	return func(cfg *pushConfig) {
@@ -271,8 +287,8 @@ func WithPushOutput(val io.Writer) PushOption {
 	}
 }
 
-// WithPushRoutes creates an Option that sets route names (multiple allowed) for the app
-func WithPushRoutes(val []*v1alpha1.Route) PushOption {
+// WithPushRoutes creates an Option that sets routes for the app
+func WithPushRoutes(val []v1alpha1.RouteSpecFields) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.Routes = val
 	}

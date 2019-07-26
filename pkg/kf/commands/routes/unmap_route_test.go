@@ -77,7 +77,7 @@ func TestUnmapRoute(t *testing.T) {
 			Args:      []string{"some-app", "example.com", "--hostname=some-host", "--path=some-path"},
 			Namespace: "some-space",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform(gomock.Any(), v1alpha1.GenerateName("some-host", "example.com", "/some-path"), gomock.Any())
+				fake.EXPECT().Transform(gomock.Any(), v1alpha1.GenerateRouteName("some-host", "example.com", "/some-path"), gomock.Any())
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
@@ -90,7 +90,7 @@ func TestUnmapRoute(t *testing.T) {
 				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any()).Do(func(_, _ string, m clientroutes.Mutator) {
 					r := v1alpha1.Route{
 						Spec: v1alpha1.RouteSpec{
-							KnativeServiceNames: []string{"some-other-app"},
+							AppNames: []string{"some-other-app"},
 						},
 					}
 					testutil.AssertEqual(t, "err", errors.New("App some-app not found"), m(&r))
@@ -107,11 +107,11 @@ func TestUnmapRoute(t *testing.T) {
 				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any()).Do(func(_, _ string, m clientroutes.Mutator) {
 					r := v1alpha1.Route{
 						Spec: v1alpha1.RouteSpec{
-							KnativeServiceNames: []string{"some-app"},
+							AppNames: []string{"some-app"},
 						},
 					}
 					testutil.AssertNil(t, "err", m(&r))
-					testutil.AssertEqual(t, "names len", 0, len(r.Spec.KnativeServiceNames))
+					testutil.AssertEqual(t, "names len", 0, len(r.Spec.AppNames))
 				})
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
@@ -125,11 +125,11 @@ func TestUnmapRoute(t *testing.T) {
 				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any()).Do(func(_, _ string, m clientroutes.Mutator) {
 					r := v1alpha1.Route{
 						Spec: v1alpha1.RouteSpec{
-							KnativeServiceNames: []string{"some-other-app", "some-app"},
+							AppNames: []string{"some-other-app", "some-app"},
 						},
 					}
 					testutil.AssertNil(t, "err", m(&r))
-					testutil.AssertEqual(t, "names ", []string{"some-other-app"}, r.Spec.KnativeServiceNames)
+					testutil.AssertEqual(t, "names ", []string{"some-other-app"}, r.Spec.AppNames)
 				})
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {

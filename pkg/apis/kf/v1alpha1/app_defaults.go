@@ -28,6 +28,16 @@ var (
 	defaultCPU     = resource.MustParse("1")
 )
 
+const (
+	// DefaultHealthCheckProbeTimeout holds the default timeout to be applied to
+	// healthchecks in seconds. This matches Cloud Foundry's default timeout.
+	DefaultHealthCheckProbeTimeout = 60
+
+	// DefaultHealthCheckProbeEndpoint is the default endpoint to use for HTTP
+	// Get health checks.
+	DefaultHealthCheckProbeEndpoint = "/"
+)
+
 // SetDefaults implements apis.Defaultable
 func (k *App) SetDefaults(ctx context.Context) {
 	k.Spec.SetDefaults(ctx)
@@ -35,31 +45,62 @@ func (k *App) SetDefaults(ctx context.Context) {
 
 // SetDefaults implements apis.Defaultable
 func (k *AppSpec) SetDefaults(ctx context.Context) {
+	k.Template.SetDefaults(ctx)
+}
+
+// SetDefaults implements apis.Defaultable
+func (k *AppSpecTemplate) SetDefaults(ctx context.Context) {
+
 	// We require at least one container, so if there isn't one, set a blank
 	// one.
-	if len(k.Template.Spec.Containers) == 0 {
-		k.Template.Spec.Containers = append(k.Template.Spec.Containers, corev1.Container{})
+	if len(k.Spec.Containers) == 0 {
+		k.Spec.Containers = append(k.Spec.Containers, corev1.Container{})
+	}
+
+	container := &k.Spec.Containers[0]
+	SetKfAppContainerDefaults(ctx, container)
+}
+
+// SetKfAppContainerDefaults sets the defaults for an application container.
+// This function MAY be context sensitive in the future.
+func SetKfAppContainerDefaults(_ context.Context, container *corev1.Container) {
+	// Default the probe to a TCP connection if unspecified
+	if container.ReadinessProbe == nil {
+		container.ReadinessProbe = &corev1.Probe{
+			Handler: corev1.Handler{
+				TCPSocket: &corev1.TCPSocketAction{},
+			},
+		}
+	}
+
+	readinessProbe := container.ReadinessProbe
+
+	// Default the probe timeout
+	if readinessProbe.TimeoutSeconds == 0 {
+		readinessProbe.TimeoutSeconds = DefaultHealthCheckProbeTimeout
+	}
+
+	// If the probe is HTTP, default the path
+	if http := readinessProbe.HTTPGet; http != nil {
+		if http.Path == "" {
+			http.Path = DefaultHealthCheckProbeEndpoint
+		}
 	}
 
 	// Set default disk, RAM, and CPU limits on the application if they have not been custom set
-	k.setResourceRequests(defaultMem, defaultStorage, defaultCPU)
-}
-
-func (k *AppSpec) setResourceRequests(memory resource.Quantity, storage resource.Quantity, cpu resource.Quantity) {
-	userContainer := &k.Template.Spec.Containers[0]
-	if userContainer.Resources.Requests == nil {
-		userContainer.Resources.Requests = v1.ResourceList{}
+	if container.Resources.Requests == nil {
+		container.Resources.Requests = v1.ResourceList{}
 	}
 
-	if _, exists := userContainer.Resources.Requests[corev1.ResourceMemory]; !exists {
-		userContainer.Resources.Requests[corev1.ResourceMemory] = memory
+	if _, exists := container.Resources.Requests[corev1.ResourceMemory]; !exists {
+		container.Resources.Requests[corev1.ResourceMemory] = defaultMem
 	}
 
-	if _, exists := userContainer.Resources.Requests[corev1.ResourceEphemeralStorage]; !exists {
-		userContainer.Resources.Requests[corev1.ResourceEphemeralStorage] = storage
+	if _, exists := container.Resources.Requests[corev1.ResourceEphemeralStorage]; !exists {
+		container.Resources.Requests[corev1.ResourceEphemeralStorage] = defaultStorage
 	}
 
-	if _, exists := userContainer.Resources.Requests[corev1.ResourceCPU]; !exists {
-		userContainer.Resources.Requests[corev1.ResourceCPU] = cpu
+	if _, exists := container.Resources.Requests[corev1.ResourceCPU]; !exists {
+		container.Resources.Requests[corev1.ResourceCPU] = defaultCPU
 	}
 }

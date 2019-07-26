@@ -60,10 +60,12 @@ func TestRoutes(t *testing.T) {
 				fakeRoute.EXPECT().List(gomock.Any()).Return([]v1alpha1.Route{
 					{
 						Spec: v1alpha1.RouteSpec{
-							Hostname:            "host-1",
-							Domain:              "example.com",
-							Path:                "/path1",
-							KnativeServiceNames: []string{"app-1", "app-2"},
+							RouteSpecFields: v1alpha1.RouteSpecFields{
+								Hostname: "host-1",
+								Domain:   "example.com",
+								Path:     "/path1",
+							},
+							AppNames: []string{"app-1", "app-2"},
 						},
 					},
 				}, nil)

@@ -40,7 +40,7 @@ func NewMapRouteCommand(
 		Short: "Map a route to an app",
 		Example: `
   kf map-route myapp example.com --hostname myapp # myapp.example.com
-  kf map-route -n myspace myapp example.com --hostname myapp # myapp.example.com
+  kf map-route --namespace myspace myapp example.com --hostname myapp # myapp.example.com
   kf map-route myapp example.com --hostname myapp --path /mypath # myapp.example.com/mypath
   `,
 		Args: cobra.ExactArgs(2),
@@ -59,7 +59,7 @@ func NewMapRouteCommand(
 
 			merger := routes.Merger(func(newR, oldR *v1alpha1.Route) *v1alpha1.Route {
 				newR.ObjectMeta = *oldR.ObjectMeta.DeepCopy()
-				newR.Spec.KnativeServiceNames = append(oldR.Spec.KnativeServiceNames, appName)
+				newR.Spec.AppNames = append(oldR.Spec.AppNames, appName)
 				return newR
 			})
 
@@ -69,17 +69,20 @@ func NewMapRouteCommand(
 					Kind: "Route",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name: v1alpha1.GenerateName(
+					Namespace: p.Namespace,
+					Name: v1alpha1.GenerateRouteName(
 						hostname,
 						domain,
 						urlPath,
 					),
 				},
 				Spec: v1alpha1.RouteSpec{
-					Hostname:            hostname,
-					Domain:              domain,
-					Path:                urlPath,
-					KnativeServiceNames: []string{appName},
+					AppNames: []string{appName},
+					RouteSpecFields: v1alpha1.RouteSpecFields{
+						Hostname: hostname,
+						Domain:   domain,
+						Path:     urlPath,
+					},
 				},
 			}
 

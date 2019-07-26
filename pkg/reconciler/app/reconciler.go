@@ -48,6 +48,7 @@ type Reconciler struct {
 	sourceLister          kflisters.SourceLister
 	appLister             kflisters.AppLister
 	spaceLister           kflisters.SpaceLister
+	routeLister           kflisters.RouteLister
 	systemEnvInjector     systemenvinjector.SystemEnvInjectorInterface
 }
 
@@ -188,6 +189,34 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		app.Status.PropagateKnativeServiceStatus(actual)
 	}
 
+	// Route Reconciler
+	{
+		r.Logger.Info("reconciling Routes")
+		condition := app.Status.RouteCondition()
+		desiredRoutes, err := resources.MakeRoutes(app, space)
+		if err != nil {
+			return condition.MarkTemplateError(err)
+		}
+
+		var actualRoutes []*v1alpha1.Route
+		for _, desired := range desiredRoutes {
+			actual, err := r.routeLister.Routes(desired.GetNamespace()).Get(desired.Name)
+			if apierrs.IsNotFound(err) {
+				// Route doesn't exist, make one.
+				actual, err = r.KfClientSet.KfV1alpha1().Routes(desired.GetNamespace()).Create(&desired)
+				if err != nil {
+					return condition.MarkReconciliationError("creating", err)
+				}
+			} else if err != nil {
+				return condition.MarkReconciliationError("getting latest", err)
+			} else if actual, err = r.reconcileRoute(&desired, actual); err != nil {
+				return condition.MarkReconciliationError("updating existing", err)
+			}
+
+			actualRoutes = append(actualRoutes, actual)
+		}
+	}
+
 	// Making it to the bottom of the reconciler means we've synchronized.
 	app.Status.ObservedGeneration = app.Generation
 
@@ -245,6 +274,28 @@ func (r *Reconciler) reconcileKnativeService(desired, actual *serving.Service) (
 	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
 	existing.Spec = desired.Spec
 	return r.ServingClientSet.ServingV1alpha1().Services(existing.Namespace).Update(existing)
+}
+
+func (r *Reconciler) reconcileRoute(desired, actual *v1alpha1.Route) (*v1alpha1.Route, error) {
+	// Check for differences, if none we don't need to reconcile.
+	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
+	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
+
+	if semanticEqual {
+		return actual, nil
+	}
+
+	if _, err := kmp.SafeDiff(desired.Spec, actual.Spec); err != nil {
+		return nil, fmt.Errorf("failed to diff serving: %v", err)
+	}
+
+	// Don't modify the informers copy.
+	existing := actual.DeepCopy()
+
+	// Preserve the rest of the object (e.g. ObjectMeta except for labels).
+	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
+	existing.Spec = desired.Spec
+	return r.KfClientSet.KfV1alpha1().Routes(existing.Namespace).Update(existing)
 }
 
 func (r *Reconciler) updateStatus(desired *v1alpha1.App) (*v1alpha1.App, error) {

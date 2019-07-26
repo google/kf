@@ -78,6 +78,11 @@ type AppSpec struct {
 
 	// Instances defines the scaling rules for the App.
 	Instances AppSpecInstances `json:"instances,omitempty"`
+
+	// Routes defines the routing rules for the App.
+	// +optional
+	// +patchStrategy=merge
+	Routes []RouteSpecFields `json:"routes,omitempty"`
 }
 
 // AppSpecTemplate defines an app's runtime configuration.
@@ -163,8 +168,8 @@ type AppStatus struct {
 	// Pull in the fields from Knative's duckv1beta1 status field.
 	duckv1beta1.Status `json:",inline"`
 
-	// SourceStatusFields embeds the image and build name for the latest passing
-	// source.
+	// SourceStatusFields embeds the image and build name for the latest
+	// passing source.
 	SourceStatusFields `json:",inline"`
 
 	// Inline the latest serving.Service revisions that are ready
@@ -173,11 +178,12 @@ type AppStatus struct {
 	// Inline the latest Service route information.
 	serving.RouteStatusFields `json:",inline"`
 
-	// LatestReadySourceName contains the name of the source that was most recently
-	// built correctly.
+	// LatestReadySourceName contains the name of the source that was most
+	// recently built correctly.
 	LatestReadySourceName string `json:"latestReadySource,omitempty"`
 
-	// LatestCreatedSourceName contains the name of the source that was most recently created.
+	// LatestCreatedSourceName contains the name of the source that was most
+	// recently created.
 	LatestCreatedSourceName string `json:"latestSource,omitempty"`
 }
 

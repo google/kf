@@ -22,6 +22,7 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/gorilla/mux"
 	"github.com/knative/serving/pkg/network"
+	"github.com/knative/serving/pkg/resources"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	istio "knative.dev/pkg/apis/istio/common/v1alpha1"
 	networking "knative.dev/pkg/apis/istio/v1alpha3"
@@ -29,6 +30,7 @@ import (
 )
 
 const (
+	ManagedByLabel        = "app.kubernetes.io/managed-by"
 	KnativeIngressGateway = "knative-ingress-gateway.knative-serving.svc.cluster.local"
 	GatewayHost           = "istio-ingressgateway.istio-system.svc.cluster.local"
 )
@@ -62,7 +64,10 @@ func MakeVirtualService(route *v1alpha1.Route) (*networking.VirtualService, erro
 			OwnerReferences: []metav1.OwnerReference{
 				ownerRef,
 			},
-			Labels: route.GetLabels(),
+			Labels: resources.UnionMaps(
+				route.GetLabels(), map[string]string{
+					ManagedByLabel: "kf",
+				}),
 			Annotations: map[string]string{
 				"domain":   route.Spec.Domain,
 				"hostname": route.Spec.Hostname,
@@ -96,7 +101,7 @@ func buildHTTPRoute(route *v1alpha1.Route) ([]networking.HTTPRoute, error) {
 
 	var httpRoutes []networking.HTTPRoute
 
-	for _, ksvcName := range route.Spec.KnativeServiceNames {
+	for _, ksvcName := range route.Spec.AppNames {
 		httpRoutes = append(httpRoutes, networking.HTTPRoute{
 			Match: pathMatchers,
 			Route: buildRouteDestination(),

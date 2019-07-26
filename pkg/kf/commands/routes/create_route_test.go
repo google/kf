@@ -130,12 +130,14 @@ func TestCreateRoute(t *testing.T) {
 						},
 						ObjectMeta: metav1.ObjectMeta{
 							Namespace: "some-space",
-							Name:      v1alpha1.GenerateName("some-hostname", "example.com", "/somepath"),
+							Name:      v1alpha1.GenerateRouteName("some-hostname", "example.com", "/somepath"),
 						},
 						Spec: v1alpha1.RouteSpec{
-							Hostname: "some-hostname",
-							Domain:   "example.com",
-							Path:     "/somepath",
+							RouteSpecFields: v1alpha1.RouteSpecFields{
+								Hostname: "some-hostname",
+								Domain:   "example.com",
+								Path:     "/somepath",
+							},
 						},
 					},
 				)

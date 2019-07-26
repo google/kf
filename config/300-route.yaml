@@ -41,7 +41,7 @@ spec:
     JSONPath: .spec.path
   - name: Apps
     type: string
-    JSONPath: .spec.knativeServiceNames
+    JSONPath: .spec.appNames
   - name: Age
     type: date
     JSONPath: .metadata.creationTimestamp

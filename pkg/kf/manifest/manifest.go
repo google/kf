@@ -42,6 +42,19 @@ type Application struct {
 	DiskQuota  string            `yaml:"disk_quota,omitempty"`
 	Memory     string            `yaml:"memory,omitempty"`
 	CPU        string            `yaml:"cpu,omitempty"`
+
+	// HealthCheckTimeout holds the health check timeout.
+	// Note the serialized field is just timeout.
+	HealthCheckTimeout int `yaml:"timeout,omitempty"`
+
+	// HealthCheckType holds the type of health check that will be performed to
+	// determine if the app is alive. Either port or http, blank means port.
+	HealthCheckType string `yaml:"health-check-type,omitempty"`
+
+	// HealthCheckHTTPEndpoint holds the HTTP endpoint that will receive the
+	// get requests to determine liveness if HealthCheckType is http.
+	HealthCheckHTTPEndpoint string `yaml:"health-check-http-endpoint,omitempty"`
+
 }
 
 // AppDockerImage is the struct for docker configuration.
