@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"github.com/google/kf/pkg/kf/testutil"
+	corev1 "k8s.io/api/core/v1"
 	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
@@ -190,4 +191,59 @@ func TestGenerateName_ValidDNS(t *testing.T) {
 
 	// Only non-alphanumeric characters
 	validDNS(GenerateName(".", "-", "$"))
+}
+
+func TestIsStatusFinal(t *testing.T) {
+	cases := map[string]struct {
+		condition apis.Condition
+
+		wantFinal bool
+	}{
+		"ready unknown": {
+			condition: apis.Condition{Type: apis.ConditionReady, Status: corev1.ConditionUnknown},
+			wantFinal: false,
+		},
+		"ready true": {
+			condition: apis.Condition{Type: apis.ConditionReady, Status: corev1.ConditionTrue},
+			wantFinal: true,
+		},
+		"ready false": {
+			condition: apis.Condition{Type: apis.ConditionReady, Status: corev1.ConditionFalse},
+			wantFinal: true,
+		},
+		"succeeded unknown": {
+			condition: apis.Condition{Type: apis.ConditionSucceeded, Status: corev1.ConditionUnknown},
+			wantFinal: false,
+		},
+		"succeeded true": {
+			condition: apis.Condition{Type: apis.ConditionSucceeded, Status: corev1.ConditionTrue},
+			wantFinal: true,
+		},
+		"succeeded false": {
+			condition: apis.Condition{Type: apis.ConditionSucceeded, Status: corev1.ConditionFalse},
+			wantFinal: true,
+		},
+		"unknown type unknown": {
+			condition: apis.Condition{Type: "SecretStatus", Status: corev1.ConditionUnknown},
+			wantFinal: false,
+		},
+		"unknown type true": {
+			condition: apis.Condition{Type: "SecretStatus", Status: corev1.ConditionTrue},
+			wantFinal: false,
+		},
+		"unknown type false": {
+			condition: apis.Condition{Type: "SecretStatus", Status: corev1.ConditionFalse},
+			wantFinal: false,
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			duck := duckv1beta1.Status{Conditions: duckv1beta1.Conditions{tc.condition}}
+			actualFinal := IsStatusFinal(duck)
+
+			testutil.AssertEqual(t, "final", tc.wantFinal, actualFinal)
+
+		})
+	}
 }

@@ -16,9 +16,11 @@ package spaces
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/describe"
 	"github.com/google/kf/pkg/kf/spaces"
 
 	"github.com/spf13/cobra"
@@ -53,7 +55,14 @@ func NewCreateSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 			}
 
 			w := cmd.OutOrStdout()
+
+			fmt.Fprintln(w, "Space requested, waiting for subcomponents to be created")
+			space, err := client.WaitFor(name, 1*time.Second, nil, spaces.IsStatusFinal)
+			if err != nil {
+				return err
+			}
 			fmt.Fprintln(w, "Space created")
+			describe.DuckStatus(w, space.Status.Status)
 			fmt.Fprintln(w)
 
 			printAdditionalCommands(cmd.OutOrStdout(), name)

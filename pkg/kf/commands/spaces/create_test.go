@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -49,6 +50,8 @@ func TestNewCreateSpaceCommand(t *testing.T) {
 						testutil.AssertEqual(t, "sets container registry", "some-registry", space.Spec.BuildpackBuild.ContainerRegistry)
 						testutil.AssertEqual(t, "sets domains", []v1alpha1.SpaceDomain{{Domain: "domain-1", Default: true}, {Domain: "domain-2"}}, space.Spec.Execution.Domains)
 					})
+
+				fakeSpaces.EXPECT().WaitFor("my-ns", 1*time.Second, nil, gomock.Any()).Return(&v1alpha1.Space{}, nil)
 			},
 		},
 		"server failure": {

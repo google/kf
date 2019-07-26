@@ -21,10 +21,13 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/kf/pkg/kf/testutil"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	testclient "k8s.io/client-go/kubernetes/fake"
 	cv1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
@@ -382,4 +385,92 @@ func ExampleDiffWrapper_err() {
 	fmt.Println(wrapper(secret))
 
 	// Output: some-error
+}
+
+func TestConditionDeleted(t *testing.T) {
+	cases := map[string]struct {
+		apiErr error
+
+		wantDone bool
+		wantErr  error
+	}{
+		"not found error": {
+			apiErr:   apierrors.NewNotFound(schema.GroupResource{}, "my-secret"),
+			wantDone: true,
+		},
+		"nil error": {
+			apiErr:   nil,
+			wantDone: false,
+		},
+		"other error": {
+			apiErr:   errors.New("some-error"),
+			wantDone: true,
+			wantErr:  errors.New("some-error"),
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			actualDone, actualErr := ConditionDeleted(nil, tc.apiErr)
+
+			testutil.AssertErrorsEqual(t, tc.wantErr, actualErr)
+			testutil.AssertEqual(t, "done", tc.wantDone, actualDone)
+		})
+	}
+}
+
+func ExampleClient_WaitForE_conditionDeleted() {
+	mockK8s := testclient.NewSimpleClientset().CoreV1()
+	secretsClient := NewExampleClient(mockK8s)
+
+	instance, err := secretsClient.WaitForE("default", "secret-name", 1*time.Second, nil, ConditionDeleted)
+	fmt.Println("Instance:", instance)
+	fmt.Println("Error:", err)
+
+	// Output: Instance: nil
+	// Error: <nil>
+}
+
+func TestWrapPredicate(t *testing.T) {
+	cases := map[string]struct {
+		apiErr            error
+		predicateResponse bool
+
+		wantCall bool
+		wantDone bool
+		wantErr  error
+	}{
+		"errors are final": {
+			apiErr:   errors.New("some-error"),
+			wantDone: true,
+			wantErr:  errors.New("some-error"),
+		},
+		"no error returns response (false)": {
+			apiErr:            nil,
+			predicateResponse: false,
+			wantCall:          true,
+			wantDone:          false,
+		},
+		"no error returns response (true)": {
+			apiErr:            nil,
+			predicateResponse: true,
+			wantCall:          true,
+			wantDone:          true,
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			called := false
+			wrapped := wrapPredicate(func(_ *v1.Secret) bool {
+				called = true
+				return tc.predicateResponse
+			})
+			actualDone, actualErr := wrapped(nil, tc.apiErr)
+
+			testutil.AssertErrorsEqual(t, tc.wantErr, actualErr)
+			testutil.AssertEqual(t, "done", tc.wantDone, actualDone)
+			testutil.AssertEqual(t, "predicate called", tc.wantCall, called)
+		})
+	}
 }

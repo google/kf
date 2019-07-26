@@ -45,6 +45,8 @@ type Client interface {
 	Delete({{ $nssig }} name string, opts ...DeleteOption) error
 	List({{ $nssig }} opts ...ListOption) ([]{{.Type}}, error)
 	Upsert({{ $nssig }} newObj *{{.Type}}, merge Merger) (*{{.Type}}, error)
+	WaitFor({{ $nssig }} name string, interval time.Duration, timeout *time.Duration, condition Predicate) (*{{.Type}}, error)
+	WaitForE({{ $nssig }} name string, interval time.Duration, timeout *time.Duration, condition ConditionFuncE) (*{{.Type}}, error)
 
 	// ClientExtension can be used by the developer to extend the client.
 	ClientExtension
@@ -174,7 +176,6 @@ func (cfg listConfig) ToListOptions() (resp metav1.ListOptions) {
 	return
 }
 
-
 // Merger is a type to merge an existing value with a new one.
 type Merger func(newObj, oldObj *{{.Type}}) *{{.Type}}
 
@@ -195,5 +196,64 @@ func (core *coreClient) Upsert({{ $nssig }} newObj *{{.Type}}, merge Merger) (*{
 	}
 
 	return core.Create({{ $nsparam }} newObj)
+}
+
+// WaitFor is a convenience wrapper for WaitForE that fails if the error
+// passed is non-nil. It allows the use of Predicates instead of ConditionFuncE.
+func (core *coreClient) WaitFor({{ $nssig }} name string, interval time.Duration, timeout *time.Duration, condition Predicate) (*{{.Type}}, error) {
+	return core.WaitForE({{ $nsparam }} name, interval, timeout, wrapPredicate(condition))
+}
+
+// ConditionFuncE is a callback used by WaitForE. Done should be set to true
+// once the condition succeeds and shouldn't be called anymore. The error
+// error will be passed back to the user.
+//
+// This function MAY retrieve a nil instance and an apiErr. It's up to the
+// function to decide how to handle the apiErr.
+type ConditionFuncE func(instance *{{.Type}}, apiErr error) (done bool, err error)
+
+// WaitForE polls for the given object every interval until the condition
+// function becomes done or the timeout expires. The first poll occurs
+// immediately after the function is invoked.
+//
+// The function polls infinitely if no timeout is supplied.
+func (core *coreClient) WaitForE({{ $nssig }} name string, interval time.Duration, timeout *time.Duration, condition ConditionFuncE) (instance *{{.Type}}, err error) {
+	if timeout == nil {
+		notimeout := time.Duration(math.MaxInt64)
+		timeout = &notimeout
+	}
+
+	err = wait.PollImmediate(interval, *timeout, func() (bool, error) {
+		instance, err = core.kclient.{{ .Kubernetes.Plural }}({{ $ns }}).Get(name, metav1.GetOptions{})
+		return condition(instance, err)
+	})
+
+	return
+}
+
+// ConditionDeleted is a ConditionFuncE that succeeds if the error returned by
+// the cluster was a not found error.
+func ConditionDeleted(_ *{{.Type}}, apiErr error) (bool, error) {
+	if apiErr != nil {
+		if apierrors.IsNotFound(apiErr) {
+			apiErr = nil
+		}
+
+		return true, apiErr
+	}
+
+	return false, nil
+}
+
+// wrapPredicate converts a predicate to a ConditionFuncE that fails if the
+// error is not nil
+func wrapPredicate(condition Predicate) ConditionFuncE {
+	return func(obj *{{.Type}}, err error) (bool, error) {
+		if err != nil {
+			return true, err
+		}
+
+		return condition(obj), nil
+	}
 }
 `))

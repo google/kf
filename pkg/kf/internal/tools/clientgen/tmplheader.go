@@ -31,9 +31,13 @@ package {{.Package}}
 import (
 	"fmt"
 	"io"
+	"math"
 	"strings"
+	"time"
 
 	"knative.dev/pkg/kmp"
+	"k8s.io/apimachinery/pkg/util/wait"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
