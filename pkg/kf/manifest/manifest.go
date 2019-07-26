@@ -39,6 +39,9 @@ type Application struct {
 	MinScale   *int              `yaml:"minScale,omitempty"`
 	MaxScale   *int              `yaml:"maxScale,omitempty"`
 	Routes     []Route           `yaml:"routes,omitempty"`
+	DiskQuota  string            `yaml:"disk_quota,omitempty"`
+	Memory     string            `yaml:"memory,omitempty"`
+	CPU        string            `yaml:"cpu,omitempty"`
 }
 
 // AppDockerImage is the struct for docker configuration.

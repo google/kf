@@ -21,6 +21,7 @@ import (
 	"github.com/google/kf/pkg/kf/sources"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -150,6 +151,37 @@ func (k *KfApp) MergeEnvVars(env []corev1.EnvVar) {
 // DeleteEnvVars removes environment variables with the given key.
 func (k *KfApp) DeleteEnvVars(names []string) {
 	k.SetEnvVars(envutil.RemoveEnvVars(names, k.GetEnvVars()))
+}
+
+// SetMemory sets memory request for the app.
+func (k *KfApp) SetMemory(memory *resource.Quantity) {
+	k.setResourceRequest(corev1.ResourceMemory, memory)
+}
+
+// SetStorage sets disk storage request for the app.
+func (k *KfApp) SetStorage(storage *resource.Quantity) {
+	k.setResourceRequest(corev1.ResourceEphemeralStorage, storage)
+}
+
+// SetCPU sets CPU request for the app.
+func (k *KfApp) SetCPU(cpu *resource.Quantity) {
+	k.setResourceRequest(corev1.ResourceCPU, cpu)
+}
+
+// Set a resource request for an app. Request amount can be cleared by passing in nil
+func (k *KfApp) setResourceRequest(r v1.ResourceName, quantity *resource.Quantity) {
+	resourceRequests := k.getOrCreateContainer().Resources.Requests
+
+	if resourceRequests == nil {
+		resourceRequests = v1.ResourceList{}
+	}
+
+	if quantity == nil {
+		delete(resourceRequests, r)
+	} else {
+		resourceRequests[r] = *quantity
+	}
+	k.getOrCreateContainer().Resources.Requests = resourceRequests
 }
 
 // ToApp casts this alias back into an App.

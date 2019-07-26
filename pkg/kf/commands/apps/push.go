@@ -33,6 +33,7 @@ import (
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/poy/service-catalog/cmd/svcat/output"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -80,6 +81,9 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		noManifest        bool
 		noStart           bool
 		routes            []*v1alpha1.Route
+		memoryRequest     *resource.Quantity
+		storageRequest    *resource.Quantity
+		cpuRequest        *resource.Quantity
 	)
 
 	var pushCmd = &cobra.Command{
@@ -184,6 +188,21 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					routes = append(routes, newRoute)
 				}
 
+				if app.Memory != "" {
+					mem := resource.MustParse(app.Memory)
+					memoryRequest = &mem
+				}
+
+				if app.DiskQuota != "" {
+					storage := resource.MustParse(app.DiskQuota)
+					storageRequest = &storage
+				}
+
+				if app.CPU != "" {
+					cpu := resource.MustParse(app.CPU)
+					cpuRequest = &cpu
+				}
+
 				pushOpts := []apps.PushOption{
 					apps.WithPushNamespace(p.Namespace),
 					apps.WithPushServiceAccount(serviceAccount),
@@ -193,6 +212,9 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					apps.WithPushMaxScale(maxScale),
 					apps.WithPushNoStart(noStart),
 					apps.WithPushRoutes(routes),
+					apps.WithPushMemory(memoryRequest),
+					apps.WithPushDiskQuota(storageRequest),
+					apps.WithPushCPU(cpuRequest),
 				}
 
 				if app.Docker.Image == "" { // buildpack app

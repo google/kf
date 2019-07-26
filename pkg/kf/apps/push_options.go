@@ -19,22 +19,29 @@ package apps
 import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"io"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"os"
 )
 
 type pushConfig struct {
 	// Buildpack is skip the detect buildpack step and use the given name
 	Buildpack string
+	// CPU is CPU limit
+	CPU *resource.Quantity
 	// ContainerImage is the container to deploy
 	ContainerImage string
 	// ContainerRegistry is the container registry's URL
 	ContainerRegistry string
+	// DiskQuota is disk storage quota for the app
+	DiskQuota *resource.Quantity
 	// EnvironmentVariables is set environment variables
 	EnvironmentVariables map[string]string
 	// Grpc is setup the ports for the container to allow gRPC to work
 	Grpc bool
 	// MaxScale is the upper scale bound
 	MaxScale int
+	// Memory is app memory limit
+	Memory *resource.Quantity
 	// MinScale is the lower scale bound
 	MinScale int
 	// Namespace is the Kubernetes namespace to use
@@ -83,6 +90,12 @@ func (opts PushOptions) Buildpack() string {
 	return opts.toConfig().Buildpack
 }
 
+// CPU returns the last set value for CPU or the empty value
+// if not set.
+func (opts PushOptions) CPU() *resource.Quantity {
+	return opts.toConfig().CPU
+}
+
 // ContainerImage returns the last set value for ContainerImage or the empty value
 // if not set.
 func (opts PushOptions) ContainerImage() string {
@@ -93,6 +106,12 @@ func (opts PushOptions) ContainerImage() string {
 // if not set.
 func (opts PushOptions) ContainerRegistry() string {
 	return opts.toConfig().ContainerRegistry
+}
+
+// DiskQuota returns the last set value for DiskQuota or the empty value
+// if not set.
+func (opts PushOptions) DiskQuota() *resource.Quantity {
+	return opts.toConfig().DiskQuota
 }
 
 // EnvironmentVariables returns the last set value for EnvironmentVariables or the empty value
@@ -111,6 +130,12 @@ func (opts PushOptions) Grpc() bool {
 // if not set.
 func (opts PushOptions) MaxScale() int {
 	return opts.toConfig().MaxScale
+}
+
+// Memory returns the last set value for Memory or the empty value
+// if not set.
+func (opts PushOptions) Memory() *resource.Quantity {
+	return opts.toConfig().Memory
 }
 
 // MinScale returns the last set value for MinScale or the empty value
@@ -162,6 +187,13 @@ func WithPushBuildpack(val string) PushOption {
 	}
 }
 
+// WithPushCPU creates an Option that sets CPU limit
+func WithPushCPU(val *resource.Quantity) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.CPU = val
+	}
+}
+
 // WithPushContainerImage creates an Option that sets the container to deploy
 func WithPushContainerImage(val string) PushOption {
 	return func(cfg *pushConfig) {
@@ -173,6 +205,13 @@ func WithPushContainerImage(val string) PushOption {
 func WithPushContainerRegistry(val string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.ContainerRegistry = val
+	}
+}
+
+// WithPushDiskQuota creates an Option that sets disk storage quota for the app
+func WithPushDiskQuota(val *resource.Quantity) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.DiskQuota = val
 	}
 }
 
@@ -194,6 +233,13 @@ func WithPushGrpc(val bool) PushOption {
 func WithPushMaxScale(val int) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.MaxScale = val
+	}
+}
+
+// WithPushMemory creates an Option that sets app memory limit
+func WithPushMemory(val *resource.Quantity) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.Memory = val
 	}
 }
 

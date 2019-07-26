@@ -26,6 +26,7 @@ import (
 	routesfake "github.com/google/kf/pkg/kf/routes/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -102,6 +103,9 @@ func TestPush_Logs(t *testing.T) {
 
 func TestPush(t *testing.T) {
 	t.Parallel()
+
+	mem := resource.MustParse("1G")
+
 	for tn, tc := range map[string]struct {
 		appName   string
 		srcImage  string
@@ -279,6 +283,20 @@ func TestPush(t *testing.T) {
 			},
 			assert: func(t *testing.T, err error) {
 				testutil.AssertNil(t, "err", err)
+			},
+		},
+		"pushes with resource requests": {
+			appName: "some-app",
+			opts: apps.PushOptions{
+				apps.WithPushMemory(&mem),
+			},
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
+				appsClient.EXPECT().
+					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
+						testutil.AssertEqual(t, "memory", mem, newObj.Spec.Template.Spec.Containers[0].Resources.Requests[corev1.ResourceMemory])
+					}).
+					Return(&v1alpha1.App{}, nil)
 			},
 		},
 		"deployer returns an error": {

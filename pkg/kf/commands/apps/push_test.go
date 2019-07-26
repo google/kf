@@ -390,6 +390,9 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "max scale bound", expectOpts.MaxScale(), actualOpts.MaxScale())
 					testutil.AssertEqual(t, "no start", expectOpts.NoStart(), actualOpts.NoStart())
 					testutil.AssertEqual(t, "routes", expectOpts.Routes(), actualOpts.Routes())
+					testutil.AssertEqual(t, "memory requests", expectOpts.Memory(), actualOpts.Memory())
+					testutil.AssertEqual(t, "storage requests", expectOpts.DiskQuota(), actualOpts.DiskQuota())
+					testutil.AssertEqual(t, "cpu requests", expectOpts.CPU(), actualOpts.Memory())
 
 					if !strings.HasPrefix(actualOpts.SourceImage(), tc.wantImagePrefix) {
 						t.Errorf("Wanted srcImage to start with %s got: %s", tc.wantImagePrefix, actualOpts.SourceImage())
