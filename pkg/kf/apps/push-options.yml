@@ -49,11 +49,11 @@ configs:
     description: route names (multiple allowed) for the app
   - name: DiskQuota
     type: "*resource.Quantity"
-    description: disk storage quota for the app
+    description: app disk storage quota
   - name: Memory
     type: "*resource.Quantity"
-    description: app memory limit
+    description: app memory request
   - name: CPU
     type: "*resource.Quantity"
-    description: CPU limit
+    description: app CPU request
 - name: Deploy

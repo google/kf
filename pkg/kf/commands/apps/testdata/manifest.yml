@@ -19,3 +19,4 @@ applications:
   memory: 2G
   disk_quota: 2G
   cpu: "2"
+  

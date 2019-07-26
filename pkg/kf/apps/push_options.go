@@ -26,13 +26,13 @@ import (
 type pushConfig struct {
 	// Buildpack is skip the detect buildpack step and use the given name
 	Buildpack string
-	// CPU is CPU limit
+	// CPU is app CPU request
 	CPU *resource.Quantity
 	// ContainerImage is the container to deploy
 	ContainerImage string
 	// ContainerRegistry is the container registry's URL
 	ContainerRegistry string
-	// DiskQuota is disk storage quota for the app
+	// DiskQuota is app disk storage quota
 	DiskQuota *resource.Quantity
 	// EnvironmentVariables is set environment variables
 	EnvironmentVariables map[string]string
@@ -40,7 +40,7 @@ type pushConfig struct {
 	Grpc bool
 	// MaxScale is the upper scale bound
 	MaxScale int
-	// Memory is app memory limit
+	// Memory is app memory request
 	Memory *resource.Quantity
 	// MinScale is the lower scale bound
 	MinScale int
@@ -187,7 +187,7 @@ func WithPushBuildpack(val string) PushOption {
 	}
 }
 
-// WithPushCPU creates an Option that sets CPU limit
+// WithPushCPU creates an Option that sets app CPU request
 func WithPushCPU(val *resource.Quantity) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.CPU = val
@@ -208,7 +208,7 @@ func WithPushContainerRegistry(val string) PushOption {
 	}
 }
 
-// WithPushDiskQuota creates an Option that sets disk storage quota for the app
+// WithPushDiskQuota creates an Option that sets app disk storage quota
 func WithPushDiskQuota(val *resource.Quantity) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.DiskQuota = val
@@ -236,7 +236,7 @@ func WithPushMaxScale(val int) PushOption {
 	}
 }
 
-// WithPushMemory creates an Option that sets app memory limit
+// WithPushMemory creates an Option that sets app memory request
 func WithPushMemory(val *resource.Quantity) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.Memory = val
