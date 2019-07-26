@@ -16,9 +16,20 @@ package v1alpha1
 
 import (
 	"context"
+	"path"
 
 	"github.com/google/kf/pkg/kf/algorithms"
 )
+
+// GenerateRouteName creates the deterministic name for a Route.
+func GenerateRouteName(hostname, domain, urlPath string) string {
+	return GenerateName(hostname, domain, path.Join("/", urlPath))
+}
+
+// GenerateRouteNameFromSpec creates the deterministic name for a Route.
+func GenerateRouteNameFromSpec(spec RouteSpecFields) string {
+	return GenerateName(spec.Hostname, spec.Domain, spec.Path)
+}
 
 // SetDefaults implements apis.Defaultable
 func (k *Route) SetDefaults(ctx context.Context) {
@@ -27,7 +38,41 @@ func (k *Route) SetDefaults(ctx context.Context) {
 
 // SetDefaults implements apis.Defaultable
 func (k *RouteSpec) SetDefaults(ctx context.Context) {
-	k.KnativeServiceNames = []string(algorithms.Dedupe(
-		algorithms.Strings(k.KnativeServiceNames),
+	k.AppNames = []string(algorithms.Dedupe(
+		algorithms.Strings(k.AppNames),
 	).(algorithms.Strings))
+
+	k.RouteSpecFields.SetDefaults(ctx)
+}
+
+// SetDefaults implements apis.Defaultable
+func (k *RouteSpecFields) SetDefaults(ctx context.Context) {
+	k.Path = path.Join("/", k.Path)
+}
+
+// SetSpaceDefaults sets the default values for the Route based on the space's
+// settings.
+func (k *Route) SetSpaceDefaults(space *Space) {
+	k.Spec.SetSpaceDefaults(space)
+}
+
+// SetSpaceDefaults sets the default values for the RouteSpec based on the
+// space's settings.
+func (k *RouteSpec) SetSpaceDefaults(space *Space) {
+	k.RouteSpecFields.SetSpaceDefaults(space)
+}
+
+// SetSpaceDefaults sets the default values for the RouteSpec based on the
+// space's settings.
+func (k *RouteSpecFields) SetSpaceDefaults(space *Space) {
+	if k.Domain == "" {
+		// Use space's default domain
+		for _, domain := range space.Spec.Execution.Domains {
+			if !domain.Default {
+				continue
+			}
+			k.Domain = domain.Domain
+			break
+		}
+	}
 }

@@ -112,7 +112,7 @@ func TestMapRoute(t *testing.T) {
 				}, nil)
 				routesfake.EXPECT().Upsert(gomock.Any(), gomock.Any(), gomock.Any()).Do(func(_ string, newR *v1alpha1.Route, m clientroutes.Merger) {
 					testutil.AssertEqual(t, "name",
-						v1alpha1.GenerateName(
+						v1alpha1.GenerateRouteName(
 							"some-host",
 							"example.com",
 							"/some-path",
@@ -125,11 +125,11 @@ func TestMapRoute(t *testing.T) {
 
 					oldR := v1alpha1.Route{
 						Spec: v1alpha1.RouteSpec{
-							KnativeServiceNames: []string{"some-other-app"},
+							AppNames: []string{"some-other-app"},
 						},
 					}
 					m(newR, &oldR)
-					testutil.AssertEqual(t, "names", []string{"some-other-app", "some-app"}, newR.Spec.KnativeServiceNames)
+					testutil.AssertEqual(t, "names", []string{"some-other-app", "some-app"}, newR.Spec.AppNames)
 				})
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
@@ -144,11 +144,11 @@ func TestMapRoute(t *testing.T) {
 				routesfake.EXPECT().Upsert(gomock.Any(), gomock.Any(), gomock.Any()).Do(func(_ string, newR *v1alpha1.Route, m clientroutes.Merger) {
 					oldR := v1alpha1.Route{
 						Spec: v1alpha1.RouteSpec{
-							KnativeServiceNames: []string{"some-app"},
+							AppNames: []string{"some-app"},
 						},
 					}
 					m(&oldR, newR)
-					testutil.AssertEqual(t, "names ", []string{"some-app"}, newR.Spec.KnativeServiceNames)
+					testutil.AssertEqual(t, "names ", []string{"some-app"}, newR.Spec.AppNames)
 				})
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {

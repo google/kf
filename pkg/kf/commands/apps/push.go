@@ -33,7 +33,6 @@ import (
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/poy/service-catalog/cmd/svcat/output"
 	"github.com/spf13/cobra"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // SrcImageBuilder creates and uploads a container image that contains the
@@ -79,7 +78,7 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		grpc               bool
 		noManifest         bool
 		noStart            bool
-		routes             []*v1alpha1.Route
+		routes             []v1alpha1.RouteSpecFields
 		healthCheckType    string
 		healthCheckTimeout int
 	)
@@ -185,7 +184,7 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 				manifestRoutes := app.Routes
 				for _, route := range manifestRoutes {
 					// Parse route string from URL into hostname, domain, and path
-					newRoute, err := createRoute(appName, route.Route, p.Namespace)
+					newRoute, err := createRoute(route.Route, p.Namespace)
 					if err != nil {
 						return err
 					}
@@ -418,33 +417,17 @@ func calculateScaleBounds(instances int, minScale, maxScale *int) (int, int, err
 
 }
 
-func createRoute(appName string, routeStr string, namespace string) (*v1alpha1.Route, error) {
+func createRoute(routeStr, namespace string) (v1alpha1.RouteSpecFields, error) {
 	hostname, domain, path, err := parseRouteStr(routeStr)
 	if err != nil {
-		return nil, err
+		return v1alpha1.RouteSpecFields{}, err
 	}
 
-	r := &v1alpha1.Route{
-		TypeMeta: metav1.TypeMeta{
-			Kind: "Route",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: namespace,
-			Name: v1alpha1.GenerateName(
-				hostname,
-				domain,
-				path,
-			),
-		},
-		Spec: v1alpha1.RouteSpec{
-			Hostname:            hostname,
-			Domain:              domain,
-			Path:                path,
-			KnativeServiceNames: []string{appName},
-		},
-	}
-
-	return r, nil
+	return v1alpha1.RouteSpecFields{
+		Hostname: hostname,
+		Domain:   domain,
+		Path:     path,
+	}, nil
 }
 
 // parseRouteStr parses a route URL into a hostname, domain, and path

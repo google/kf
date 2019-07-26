@@ -37,6 +37,8 @@ const (
 	// AppConditionSpaceReady is used to indicate when the space has an error that
 	// causes apps to not reconcile correctly.
 	AppConditionSpaceReady apis.ConditionType = "SpaceReady"
+	// AppConditionRouteReady is set when route is ready.
+	AppConditionRouteReady apis.ConditionType = "RouteReady"
 )
 
 func (status *AppStatus) manage() apis.ConditionManager {
@@ -65,6 +67,11 @@ func (status *AppStatus) SourceCondition() SingleConditionManager {
 // KnativeServiceCondition gets a manager for the state of the Knative Service.
 func (status *AppStatus) KnativeServiceCondition() SingleConditionManager {
 	return NewSingleConditionManager(status.manage(), AppConditionKnativeServiceReady, "Knative Service")
+}
+
+// RouteCondition gets a manager for the state of the kf Route.
+func (status *AppStatus) RouteCondition() SingleConditionManager {
+	return NewSingleConditionManager(status.manage(), AppConditionRouteReady, "Route")
 }
 
 // PropagateSourceStatus copies the source status to the app's.

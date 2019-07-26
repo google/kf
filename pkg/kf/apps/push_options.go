@@ -46,8 +46,8 @@ type pushConfig struct {
 	NoStart bool
 	// Output is the io.Writer to write output such as build logs
 	Output io.Writer
-	// Routes is route names (multiple allowed) for the app
-	Routes []*v1alpha1.Route
+	// Routes is routes for the app
+	Routes []v1alpha1.RouteSpecFields
 	// ServiceAccount is the service account to authenticate with
 	ServiceAccount string
 	// SourceImage is the source code as a container image
@@ -148,7 +148,7 @@ func (opts PushOptions) Output() io.Writer {
 
 // Routes returns the last set value for Routes or the empty value
 // if not set.
-func (opts PushOptions) Routes() []*v1alpha1.Route {
+func (opts PushOptions) Routes() []v1alpha1.RouteSpecFields {
 	return opts.toConfig().Routes
 }
 
@@ -241,8 +241,8 @@ func WithPushOutput(val io.Writer) PushOption {
 	}
 }
 
-// WithPushRoutes creates an Option that sets route names (multiple allowed) for the app
-func WithPushRoutes(val []*v1alpha1.Route) PushOption {
+// WithPushRoutes creates an Option that sets routes for the app
+func WithPushRoutes(val []v1alpha1.RouteSpecFields) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.Routes = val
 	}

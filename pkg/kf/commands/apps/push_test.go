@@ -34,7 +34,6 @@ import (
 	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type routeParts struct {
@@ -470,29 +469,14 @@ func TestPushCommand(t *testing.T) {
 	}
 }
 
-func createTestRoutes(routes []routeParts) []*v1alpha1.Route {
-	newRoutes := []*v1alpha1.Route{}
+func createTestRoutes(routes []routeParts) []v1alpha1.RouteSpecFields {
+	newRoutes := []v1alpha1.RouteSpecFields{}
 	for _, route := range routes {
-		r := &v1alpha1.Route{
-			TypeMeta: metav1.TypeMeta{
-				Kind: "Route",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: "some-namespace",
-				Name: v1alpha1.GenerateName(
-					route.hostname,
-					route.domain,
-					route.path,
-				),
-			},
-			Spec: v1alpha1.RouteSpec{
-				Hostname:            route.hostname,
-				Domain:              route.domain,
-				Path:                route.path,
-				KnativeServiceNames: []string{"routes-app"},
-			},
-		}
-		newRoutes = append(newRoutes, r)
+		newRoutes = append(newRoutes, v1alpha1.RouteSpecFields{
+			Hostname: route.hostname,
+			Domain:   route.domain,
+			Path:     route.path,
+		})
 	}
 	return newRoutes
 }

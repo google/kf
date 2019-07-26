@@ -23,7 +23,6 @@ import (
 	"github.com/google/kf/pkg/internal/envutil"
 	"github.com/google/kf/pkg/kf/apps"
 	appsfake "github.com/google/kf/pkg/kf/apps/fake"
-	routesfake "github.com/google/kf/pkg/kf/routes/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -61,7 +60,6 @@ func TestPush_Logs(t *testing.T) {
 			expectedNamespace := "some-namespace"
 
 			fakeApps := appsfake.NewFakeClient(ctrl)
-			fakeRoutes := routesfake.NewFakeClient(ctrl)
 			fakeApps.EXPECT().
 				Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
 				Return(&v1alpha1.App{
@@ -81,7 +79,6 @@ func TestPush_Logs(t *testing.T) {
 
 			p := apps.NewPusher(
 				fakeApps,
-				fakeRoutes,
 			)
 
 			gotErr := p.Push(
@@ -107,7 +104,7 @@ func TestPush(t *testing.T) {
 		srcImage  string
 		buildpack string
 		opts      apps.PushOptions
-		setup     func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient)
+		setup     func(t *testing.T, appsClient *appsfake.FakeClient)
 		assert    func(t *testing.T, err error)
 	}{
 		"pushes app to a configured namespace": {
@@ -118,7 +115,7 @@ func TestPush(t *testing.T) {
 				apps.WithPushContainerRegistry("some-reg.io"),
 				apps.WithPushServiceAccount("some-service-account"),
 			},
-			setup: func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
 					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
@@ -134,7 +131,7 @@ func TestPush(t *testing.T) {
 				apps.WithPushContainerRegistry("some-reg.io"),
 				apps.WithPushServiceAccount("some-service-account"),
 			},
-			setup: func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
 					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
@@ -162,7 +159,7 @@ func TestPush(t *testing.T) {
 				apps.WithPushContainerRegistry("some-reg.io"),
 				apps.WithPushServiceAccount("some-service-account"),
 			},
-			setup: func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
 					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
@@ -186,7 +183,7 @@ func TestPush(t *testing.T) {
 				apps.WithPushServiceAccount("some-service-account"),
 				apps.WithPushBuildpack("some-buildpack"),
 			},
-			setup: func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Any(), gomock.Any(), gomock.Any()).
 					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
@@ -206,7 +203,7 @@ func TestPush(t *testing.T) {
 				apps.WithPushContainerRegistry("some-reg.io"),
 				apps.WithPushEnvironmentVariables(map[string]string{"ENV1": "val1", "ENV2": "val2"}),
 			},
-			setup: func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
 					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
@@ -225,7 +222,7 @@ func TestPush(t *testing.T) {
 			opts: apps.PushOptions{
 				apps.WithPushContainerImage("some-image"),
 			},
-			setup: func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
 					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
@@ -237,45 +234,17 @@ func TestPush(t *testing.T) {
 		"pushes app with routes": {
 			appName: "some-app",
 			opts: apps.PushOptions{
-				apps.WithPushRoutes([]*v1alpha1.Route{{}, {}}),
+				apps.WithPushRoutes([]v1alpha1.RouteSpecFields{{Hostname: "host-1"}, {Hostname: "host-2"}}),
 			},
-			setup: func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
+						testutil.AssertEqual(t, "Routes", []v1alpha1.RouteSpecFields{
+							{Hostname: "host-1"}, {Hostname: "host-2"},
+						}, newObj.Spec.Routes)
+					}).
 					Return(&v1alpha1.App{}, nil)
-				routesClient.EXPECT().
-					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
-					Return(&v1alpha1.Route{}, nil).Times(2)
-			},
-			assert: func(t *testing.T, err error) {
-				testutil.AssertNil(t, "err", err)
-			},
-		},
-		"route returns an error": {
-			appName: "some-app",
-			opts: apps.PushOptions{
-				apps.WithPushRoutes([]*v1alpha1.Route{{}}),
-			},
-			setup: func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
-				appsClient.EXPECT().
-					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
-					Return(&v1alpha1.App{}, nil)
-				routesClient.EXPECT().
-					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
-					Return(nil, errors.New("some-error"))
-			},
-			assert: func(t *testing.T, err error) {
-				testutil.AssertErrorsEqual(t, errors.New("failed to add route: some-error"), err)
-			},
-		},
-		"routes do not get called": {
-			appName: "some-app",
-			setup: func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
-				appsClient.EXPECT().
-					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
-					Return(&v1alpha1.App{}, nil)
-				routesClient.EXPECT().
-					Upsert(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 			},
 			assert: func(t *testing.T, err error) {
 				testutil.AssertNil(t, "err", err)
@@ -288,7 +257,7 @@ func TestPush(t *testing.T) {
 				apps.WithPushContainerRegistry("some-reg.io"),
 				apps.WithPushServiceAccount("some-service-account"),
 			},
-			setup: func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).Return(nil, errors.New("some-error"))
 			},
 			assert: func(t *testing.T, err error) {
@@ -302,7 +271,7 @@ func TestPush(t *testing.T) {
 				apps.WithPushContainerRegistry("some-reg.io"),
 				apps.WithPushGrpc(true),
 			},
-			setup: func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
 					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
@@ -329,7 +298,7 @@ func TestPush(t *testing.T) {
 				apps.WithPushNamespace("default"),
 				apps.WithPushNoStart(true),
 			},
-			setup: func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Any(), gomock.Any(), gomock.Any()).
 					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
@@ -344,7 +313,7 @@ func TestPush(t *testing.T) {
 				tc.assert = func(t *testing.T, err error) {}
 			}
 			if tc.setup == nil {
-				tc.setup = func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
+				tc.setup = func(t *testing.T, appsClient *appsfake.FakeClient) {
 					appsClient.EXPECT().
 						Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
 						Return(&v1alpha1.App{}, nil)
@@ -352,15 +321,14 @@ func TestPush(t *testing.T) {
 			}
 
 			ctrl := gomock.NewController(t)
-			fakeRoutes := routesfake.NewFakeClient(ctrl)
 			fakeApps := appsfake.NewFakeClient(ctrl)
 			fakeApps.EXPECT().
 				DeployLogs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 				AnyTimes()
 
-			tc.setup(t, fakeApps, fakeRoutes)
+			tc.setup(t, fakeApps)
 
-			p := apps.NewPusher(fakeApps, fakeRoutes)
+			p := apps.NewPusher(fakeApps)
 			gotErr := p.Push(tc.appName, tc.opts...)
 			tc.assert(t, gotErr)
 			if gotErr != nil {

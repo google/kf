@@ -19,10 +19,9 @@ import (
 	"time"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	appinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/app"
 	routeinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/route"
 	"github.com/google/kf/pkg/reconciler"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	kserviceinformer "github.com/knative/serving/pkg/client/injection/informers/serving/v1alpha1/service"
 	virtualserviceinformer "knative.dev/pkg/client/injection/informers/istio/v1alpha3/virtualservice"
 
 	"k8s.io/client-go/tools/cache"
@@ -39,12 +38,13 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	// Get informers off context
 	vsInformer := virtualserviceinformer.Get(ctx)
 	routeInformer := routeinformer.Get(ctx)
-	serviceInformer := kserviceinformer.Get(ctx)
+	appInformer := appinformer.Get(ctx)
 
 	// Create reconciler
 	c := &Reconciler{
 		Base:                 reconciler.NewBase(ctx, "route-controller", cmw),
 		routeLister:          routeInformer.Lister(),
+		appLister:            appInformer.Lister(),
 		virtualServiceLister: vsInformer.Lister(),
 	}
 
@@ -60,18 +60,26 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
 	})
 
-	serviceInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
+	appInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		DeleteFunc: func(obj interface{}) {
 			start := time.Now()
-			service := obj.(*serving.Service)
-			namespaceAndName := service.GetNamespace() + "/" + service.GetName()
+			app := obj.(*v1alpha1.App)
 
-			c.Logger.Infof("Deleting references to service %s in routes", namespaceAndName)
+			c.Logger.Infof(
+				"Deleting references to apps %s/%s in routes",
+				app.GetNamespace(),
+				app.GetName(),
+			)
 
-			if err := c.ReconcileServiceDeletion(ctx, service); err != nil {
-				c.Logger.Warnf("failed to delete references to service %s in routes: %s", namespaceAndName, err)
+			if err := c.ReconcileAppDeletion(ctx, app); err != nil {
+				c.Logger.Warnf(
+					"failed to delete references to app %s/%s in routes: %s",
+					app.GetNamespace(),
+					app.GetName(),
+					err,
+				)
 			}
-			c.Logger.Infof("Reconcile (service deletion) succeeded. Time taken: %s.", time.Since(start))
+			c.Logger.Infof("Reconcile (app deletion) succeeded. Time taken: %s.", time.Since(start))
 		},
 	})
 

@@ -76,7 +76,7 @@ func TestDeleteRoute(t *testing.T) {
 			Args:      []string{"example.com", "--hostname=some-hostname", "--path=somepath"},
 			Namespace: "some-namespace",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				expectedName := v1alpha1.GenerateName("some-hostname", "example.com", "/somepath")
+				expectedName := v1alpha1.GenerateRouteName("some-hostname", "example.com", "/somepath")
 				fake.EXPECT().Delete(
 					gomock.Any(),
 					expectedName,

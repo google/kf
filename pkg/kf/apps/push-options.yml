@@ -44,10 +44,10 @@ configs:
   - name: NoStart
     type: bool
     description: setup the app without starting it
-  - name: Routes
-    type: "[]*v1alpha1.Route"
-    description: route names (multiple allowed) for the app
   - name: HealthCheck
     type: "*corev1.Probe"
     description: the health check to use on the app
+  - name: Routes
+    type: "[]v1alpha1.RouteSpecFields"
+    description: routes for the app
 - name: Deploy

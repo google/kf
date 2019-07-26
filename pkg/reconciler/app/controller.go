@@ -19,6 +19,7 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	appinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/app"
+	routeinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/route"
 	sourceinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/source"
 	spaceinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/space"
 	servicebindinginformer "github.com/google/kf/pkg/client/servicecatalog/injection/informers/servicecatalog/v1beta1/servicebinding"
@@ -47,6 +48,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	sourceInformer := sourceinformer.Get(ctx)
 	appInformer := appinformer.Get(ctx)
 	spaceInformer := spaceinformer.Get(ctx)
+	routeInformer := routeinformer.Get(ctx)
 	serviceBindingInformer := servicebindinginformer.Get(ctx)
 
 	// TODO(#397): replace all of this code which eventually gets the
@@ -77,6 +79,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		appLister:             appInformer.Lister(),
 		spaceLister:           spaceInformer.Lister(),
 		systemEnvInjector:     systemEnvInjector,
+		routeLister:           routeInformer.Lister(),
 	}
 
 	impl := controller.NewImpl(c, logger, "Apps")
