@@ -20,6 +20,8 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
 // Failable is an interface for testing.T like things. We can't use
@@ -28,6 +30,15 @@ import (
 type Failable interface {
 	Helper()
 	Fatalf(format string, args ...interface{})
+}
+
+// Assert causes a test to fail if the two values are not DeepEqual to
+// one another.
+func Assert(t Failable, m gomock.Matcher, actual interface{}) {
+	t.Helper()
+	if !m.Matches(actual) {
+		t.Fatalf(m.String())
+	}
 }
 
 // AssertEqual causes a test to fail if the two values are not DeepEqual to

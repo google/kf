@@ -11,10 +11,15 @@ applications:
 - name: auto-buildpack-app
   path: example-app
 - name: routes-app
+  no-route: false
+  random-route: false
   routes:
   - route: example.com
   - route: www.example.com/foo
   - route: https://host.example.com/foo
+- name: random-route-app
+  no-route: false
+  random-route: true
 - name: http-health-check-app
   docker:
     image: gcr.io/http-health-check-app

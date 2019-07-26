@@ -250,6 +250,99 @@ func TestPush(t *testing.T) {
 				testutil.AssertNil(t, "err", err)
 			},
 		},
+		"pushes app with default route": {
+			appName: "some-app",
+			opts: apps.PushOptions{
+				apps.WithPushDefaultRouteDomain("example.com"),
+			},
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
+				appsClient.EXPECT().
+					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
+						testutil.AssertEqual(t, "len(Routes)", 1, len(newObj.Spec.Routes))
+						testutil.AssertEqual(t, "Routes.Domain", "example.com", newObj.Spec.Routes[0].Domain)
+						testutil.AssertEqual(t, "Routes.Hostname", "some-app", newObj.Spec.Routes[0].Hostname)
+						testutil.AssertEqual(t, "Routes.Path", "", newObj.Spec.Routes[0].Path)
+					}).
+					Return(&v1alpha1.App{}, nil)
+			},
+			assert: func(t *testing.T, err error) {
+				testutil.AssertNil(t, "err", err)
+			},
+		},
+		"default route does not overwrite existing route": {
+			appName: "some-app",
+			opts: apps.PushOptions{
+				apps.WithPushDefaultRouteDomain("example.com"),
+			},
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
+				appsClient.EXPECT().
+					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
+						app := &v1alpha1.App{}
+						app.Spec.Routes = []v1alpha1.RouteSpecFields{
+							{Domain: "existing.com"},
+						}
+						app = merge(app, app)
+
+						testutil.AssertEqual(t, "len(Routes)", 1, len(app.Spec.Routes))
+						testutil.AssertEqual(t, "Routes.Domain", "existing.com", app.Spec.Routes[0].Domain)
+						testutil.AssertEqual(t, "Routes.Hostname", "", app.Spec.Routes[0].Hostname)
+						testutil.AssertEqual(t, "Routes.Path", "", app.Spec.Routes[0].Path)
+					}).
+					Return(&v1alpha1.App{}, nil)
+			},
+			assert: func(t *testing.T, err error) {
+				testutil.AssertNil(t, "err", err)
+			},
+		},
+		"pushes app with random route": {
+			appName: "some-app",
+			opts: apps.PushOptions{
+				apps.WithPushRandomRouteDomain("example.com"),
+			},
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
+				appsClient.EXPECT().
+					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
+						newObj = merge(newObj, newObj)
+						testutil.AssertEqual(t, "len(Routes)", 1, len(newObj.Spec.Routes))
+						testutil.AssertEqual(t, "Routes.Domain", "example.com", newObj.Spec.Routes[0].Domain)
+						testutil.Assert(t, gomock.Not(gomock.Eq("")), newObj.Spec.Routes[0].Hostname)
+						testutil.AssertEqual(t, "Routes.Path", "", newObj.Spec.Routes[0].Path)
+					}).
+					Return(&v1alpha1.App{}, nil)
+			},
+			assert: func(t *testing.T, err error) {
+				testutil.AssertNil(t, "err", err)
+			},
+		},
+		"random route does not overwrite existing route": {
+			appName: "some-app",
+			opts: apps.PushOptions{
+				apps.WithPushRandomRouteDomain("example.com"),
+			},
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
+				appsClient.EXPECT().
+					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
+						app := &v1alpha1.App{}
+						app.Spec.Routes = []v1alpha1.RouteSpecFields{
+							{Domain: "existing.com"},
+						}
+						app = merge(app, app)
+
+						testutil.AssertEqual(t, "len(Routes)", 1, len(app.Spec.Routes))
+						testutil.AssertEqual(t, "Routes.Domain", "existing.com", app.Spec.Routes[0].Domain)
+						testutil.AssertEqual(t, "Routes.Hostname", "", app.Spec.Routes[0].Hostname)
+						testutil.AssertEqual(t, "Routes.Path", "", app.Spec.Routes[0].Path)
+					}).
+					Return(&v1alpha1.App{}, nil)
+			},
+			assert: func(t *testing.T, err error) {
+				testutil.AssertNil(t, "err", err)
+			},
+		},
 		"deployer returns an error": {
 			appName: "some-app",
 			opts: apps.PushOptions{
