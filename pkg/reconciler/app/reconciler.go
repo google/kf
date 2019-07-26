@@ -215,7 +215,6 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 
 			actualRoutes = append(actualRoutes, actual)
 		}
-		app.Status.PropagateRouteStatus(actualRoutes)
 	}
 
 	// Making it to the bottom of the reconciler means we've synchronized.

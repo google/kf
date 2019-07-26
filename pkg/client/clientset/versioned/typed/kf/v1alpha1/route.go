@@ -35,7 +35,6 @@ type RoutesGetter interface {
 type RouteInterface interface {
 	Create(*v1alpha1.Route) (*v1alpha1.Route, error)
 	Update(*v1alpha1.Route) (*v1alpha1.Route, error)
-	UpdateStatus(*v1alpha1.Route) (*v1alpha1.Route, error)
 	Delete(name string, options *v1.DeleteOptions) error
 	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
 	Get(name string, options v1.GetOptions) (*v1alpha1.Route, error)
@@ -113,22 +112,6 @@ func (c *routes) Update(route *v1alpha1.Route) (result *v1alpha1.Route, err erro
 		Namespace(c.ns).
 		Resource("routes").
 		Name(route.Name).
-		Body(route).
-		Do().
-		Into(result)
-	return
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-
-func (c *routes) UpdateStatus(route *v1alpha1.Route) (result *v1alpha1.Route, err error) {
-	result = &v1alpha1.Route{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("routes").
-		Name(route.Name).
-		SubResource("status").
 		Body(route).
 		Do().
 		Into(result)

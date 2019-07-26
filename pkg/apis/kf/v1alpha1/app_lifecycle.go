@@ -96,15 +96,6 @@ func (status *AppStatus) PropagateKnativeServiceStatus(service *serving.Service)
 	}
 }
 
-// PropagateRouteStatus updates the kf Route status to reflect the underlying
-// route.
-func (status *AppStatus) PropagateRouteStatus(routes []*Route) {
-	for _, route := range routes {
-		cond := route.Status.GetCondition(apis.ConditionReady)
-		PropagateCondition(status.manage(), AppConditionRouteReady, cond)
-	}
-}
-
 // MarkSpaceHealthy notes that the space was able to be retrieved and
 // defaults can be applied from it.
 func (status *AppStatus) MarkSpaceHealthy() {

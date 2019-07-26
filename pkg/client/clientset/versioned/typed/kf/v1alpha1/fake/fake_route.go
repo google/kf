@@ -98,18 +98,6 @@ func (c *FakeRoutes) Update(route *v1alpha1.Route) (result *v1alpha1.Route, err 
 	return obj.(*v1alpha1.Route), err
 }
 
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeRoutes) UpdateStatus(route *v1alpha1.Route) (*v1alpha1.Route, error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(routesResource, "status", c.ns, route), &v1alpha1.Route{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.Route), err
-}
-
 // Delete takes name of the route and deletes it. Returns an error if one occurs.
 func (c *FakeRoutes) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.

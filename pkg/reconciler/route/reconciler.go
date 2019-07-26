@@ -17,7 +17,6 @@ package route
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"sort"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -80,21 +79,8 @@ func (r *Reconciler) reconcileRoute(ctx context.Context, namespace, name string,
 	// Don't modify the informers copy
 	toReconcile := original.DeepCopy()
 
-	// Reconcile this copy of the service and then write back any status
-	// updates regardless of whether the reconciliation errored out.
-	reconcileErr := r.ApplyChanges(ctx, toReconcile, deleted, logger)
-	if equality.Semantic.DeepEqual(original.Status, toReconcile.Status) {
-		// If we didn't change anything then don't call updateStatus.
-		// This is important because the copy we loaded from the informer's
-		// cache may be stale and we don't want to overwrite a prior update
-		// to status with this stale state.
-
-	} else if _, uErr := r.updateStatus(toReconcile); uErr != nil {
-		logger.Warnw("Failed to update Route status", zap.Error(uErr))
-		return uErr
-	}
-
-	return reconcileErr
+	// Reconcile this copy of the route.
+	return r.ApplyChanges(ctx, toReconcile, deleted, logger)
 }
 
 func (r *Reconciler) ReconcileAppDeletion(ctx context.Context, app *v1alpha1.App) error {
@@ -109,7 +95,7 @@ func (r *Reconciler) ReconcileAppDeletion(ctx context.Context, app *v1alpha1.App
 		// Don't modify the informers copy
 		toReconcile := route.DeepCopy()
 
-		// Remote the App
+		// Remove the App
 		toReconcile.Spec.AppNames = []string((algorithms.Delete(
 			algorithms.Strings(toReconcile.Spec.AppNames),
 			algorithms.Strings{app.Name},
@@ -131,7 +117,6 @@ func (r *Reconciler) ReconcileAppDeletion(ctx context.Context, app *v1alpha1.App
 // status of the Route .
 func (r *Reconciler) ApplyChanges(ctx context.Context, route *v1alpha1.Route, deleted bool, logger *zap.SugaredLogger) error {
 	route.SetDefaults(ctx)
-	route.Status.InitializeConditions()
 
 	// Sync VirtualService
 	{
@@ -152,8 +137,6 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, route *v1alpha1.Route, de
 		} else if actual, err = r.reconcile(desired, actual, deleted, logger); err != nil {
 			return err
 		}
-
-		route.Status.PropagateVirtualServiceStatus(actual)
 	}
 
 	return nil
@@ -208,26 +191,4 @@ func (r *Reconciler) reconcile(desired, actual *networking.VirtualService, delet
 		Networking().
 		VirtualServices(existing.GetNamespace()).
 		Update(existing)
-}
-
-func (r *Reconciler) updateStatus(desired *v1alpha1.Route) (*v1alpha1.Route, error) {
-	actual, err := r.routeLister.
-		Routes(desired.GetNamespace()).
-		Get(desired.Name)
-	if err != nil {
-		return nil, err
-	}
-	// If there's nothing to update, just return.
-	if reflect.DeepEqual(actual.Status, desired.Status) {
-		return actual, nil
-	}
-
-	// Don't modify the informers copy.
-	existing := actual.DeepCopy()
-	existing.Status = desired.Status
-
-	return r.KfClientSet.
-		KfV1alpha1().
-		Routes(existing.GetNamespace()).
-		UpdateStatus(existing)
 }
