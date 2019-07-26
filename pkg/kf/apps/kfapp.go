@@ -182,6 +182,7 @@ func (k *KfApp) setResourceRequest(r v1.ResourceName, quantity *resource.Quantit
 		resourceRequests[r] = *quantity
 	}
 	k.getOrCreateContainer().Resources.Requests = resourceRequests
+}
 
 // GetHealthCheck gets the readiness probe or nil if one doesn't exist.
 func (k *KfApp) GetHealthCheck() *corev1.Probe {

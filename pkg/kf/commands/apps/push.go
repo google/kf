@@ -35,7 +35,6 @@ import (
 	"github.com/poy/service-catalog/cmd/svcat/output"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // SrcImageBuilder creates and uploads a container image that contains the
@@ -84,9 +83,9 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		routes             []v1alpha1.RouteSpecFields
 		healthCheckType    string
 		healthCheckTimeout int
-    memoryRequest     *resource.Quantity
-		storageRequest    *resource.Quantity
-		cpuRequest        *resource.Quantity
+		memoryRequest      *resource.Quantity
+		storageRequest     *resource.Quantity
+		cpuRequest         *resource.Quantity
 	)
 
 	var pushCmd = &cobra.Command{
@@ -196,7 +195,7 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					}
 					routes = append(routes, newRoute)
 				}
-        
+
 				if app.Memory != "" {
 					memStr, err := convertResourceQuantityStr(app.Memory)
 					if err != nil {
@@ -218,7 +217,8 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 				if app.CPU != "" {
 					cpu := resource.MustParse(app.CPU)
 					cpuRequest = &cpu
-          
+				}
+
 				healthCheck, err := apps.NewHealthCheck(app.HealthCheckType, app.HealthCheckHTTPEndpoint, app.HealthCheckTimeout)
 				if err != nil {
 					return err
