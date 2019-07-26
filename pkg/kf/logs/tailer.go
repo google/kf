@@ -130,6 +130,19 @@ func (t *tailer) readLogs(ctx context.Context, name, namespace string, out io.Wr
 }
 
 func (t *tailer) readStream(ctx context.Context, name, namespace string, out io.Writer, opts v1.PodLogOptions) error {
+	pod, err := t.client.Pods(namespace).Get(name, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get Pod '%s': %s", name, err)
+	}
+
+	if pod.DeletionTimestamp != nil {
+		if _, err := io.WriteString(out, fmt.Sprintf("Pod '%s' is terminated\n", name)); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
 	// XXX: This is not tested at a unit level and instead defers to
 	// integration tests.
 	req := t.client.
