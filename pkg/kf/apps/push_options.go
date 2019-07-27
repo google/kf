@@ -19,8 +19,8 @@ package apps
 import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"io"
-	"k8s.io/apimachinery/pkg/api/resource"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"os"
 )
 

@@ -54,7 +54,6 @@ type Application struct {
 	// HealthCheckHTTPEndpoint holds the HTTP endpoint that will receive the
 	// get requests to determine liveness if HealthCheckType is http.
 	HealthCheckHTTPEndpoint string `yaml:"health-check-http-endpoint,omitempty"`
-
 }
 
 // AppDockerImage is the struct for docker configuration.

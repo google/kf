@@ -201,7 +201,10 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					if err != nil {
 						return err
 					}
-					mem := resource.MustParse(memStr)
+					mem, parseErr := resource.ParseQuantity(memStr)
+					if parseErr != nil {
+						return fmt.Errorf("couldn't parse resource quantity %s: %v", memStr, parseErr)
+					}
 					memoryRequest = &mem
 				}
 
@@ -210,12 +213,18 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					if err != nil {
 						return err
 					}
-					storage := resource.MustParse(storageStr)
+					storage, parseErr := resource.ParseQuantity(storageStr)
+					if parseErr != nil {
+						return fmt.Errorf("couldn't parse resource quantity %s: %v", storageStr, parseErr)
+					}
 					storageRequest = &storage
 				}
 
 				if app.CPU != "" {
-					cpu := resource.MustParse(app.CPU)
+					cpu, parseErr := resource.ParseQuantity(app.CPU)
+					if parseErr != nil {
+						return fmt.Errorf("couldn't parse resource quantity %s: %v", app.CPU, parseErr)
+					}
 					cpuRequest = &cpu
 				}
 

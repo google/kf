@@ -33,8 +33,8 @@ import (
 	svbFake "github.com/google/kf/pkg/kf/service-bindings/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 type routeParts struct {
@@ -74,7 +74,7 @@ func TestPushCommand(t *testing.T) {
 	wantMemory := resource.MustParse("2Gi")
 	wantDiskQuota := resource.MustParse("2Gi")
 	wantCPU := resource.MustParse("2")
-  
+
 	defaultTCPHealthCheck := &corev1.Probe{
 		Handler: corev1.Handler{
 			TCPSocket: &corev1.TCPSocketAction{},
@@ -417,7 +417,7 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushMemory(&wantMemory),
 				apps.WithPushDiskQuota(&wantDiskQuota),
 				apps.WithPushCPU(&wantCPU),
-      ),
+			),
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
