@@ -153,14 +153,53 @@ func (k *KfApp) DeleteEnvVars(names []string) {
 	k.SetEnvVars(envutil.RemoveEnvVars(names, k.GetEnvVars()))
 }
 
+// GetMemory gets memory request for the app.
+func (k *KfApp) GetMemory() *resource.Quantity {
+	if container := k.getContainerOrNil(); container != nil {
+		if resourceRequests := container.Resources.Requests; resourceRequests != nil {
+			memory, exists := resourceRequests[corev1.ResourceMemory]
+			if exists {
+				return &memory
+			}
+		}
+	}
+	return nil
+}
+
 // SetMemory sets memory request for the app.
 func (k *KfApp) SetMemory(memory *resource.Quantity) {
 	k.setResourceRequest(corev1.ResourceMemory, memory)
 }
 
+// GetStorage gets disk storage request for the app.
+func (k *KfApp) GetStorage() *resource.Quantity {
+	if container := k.getContainerOrNil(); container != nil {
+		if resourceRequests := container.Resources.Requests; resourceRequests != nil {
+			storage, exists := resourceRequests[corev1.ResourceEphemeralStorage]
+			if exists {
+				return &storage
+			}
+		}
+	}
+	return nil
+}
+
 // SetStorage sets disk storage request for the app.
 func (k *KfApp) SetStorage(storage *resource.Quantity) {
 	k.setResourceRequest(corev1.ResourceEphemeralStorage, storage)
+}
+
+// GetCPU gets CPU request for the app.
+func (k *KfApp) GetCPU() *resource.Quantity {
+	if container := k.getContainerOrNil(); container != nil {
+		if resourceRequests := container.Resources.Requests; resourceRequests != nil {
+			cpu, exists := resourceRequests[corev1.ResourceCPU]
+			if exists {
+				return &cpu
+			}
+		}
+	}
+	return nil
 }
 
 // SetCPU sets CPU request for the app.
