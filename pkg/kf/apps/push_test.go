@@ -263,13 +263,14 @@ func TestPush(t *testing.T) {
 				apps.WithPushDiskQuota(&storage),
 				apps.WithPushCPU(&cpu),
 			},
-			setup: func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
 					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
-						testutil.AssertEqual(t, "memory", mem, newObj.Spec.Template.Spec.Containers[0].Resources.Requests[corev1.ResourceMemory])
-						testutil.AssertEqual(t, "storage", storage, newObj.Spec.Template.Spec.Containers[0].Resources.Requests[corev1.ResourceEphemeralStorage])
-						testutil.AssertEqual(t, "cpu", cpu, newObj.Spec.Template.Spec.Containers[0].Resources.Requests[corev1.ResourceCPU])
+						resourceRequests := newObj.Spec.Template.Spec.Containers[0].Resources.Requests
+						testutil.AssertEqual(t, "memory", mem, resourceRequests[corev1.ResourceMemory])
+						testutil.AssertEqual(t, "storage", storage, resourceRequests[corev1.ResourceEphemeralStorage])
+						testutil.AssertEqual(t, "cpu", cpu, resourceRequests[corev1.ResourceCPU])
 					}).
 					Return(&v1alpha1.App{}, nil)
 			},
@@ -279,13 +280,14 @@ func TestPush(t *testing.T) {
 			opts: apps.PushOptions{
 				apps.WithPushMemory(&mem),
 			},
-			setup: func(t *testing.T, appsClient *appsfake.FakeClient, routesClient *routesfake.FakeClient) {
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
 					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
-						testutil.AssertEqual(t, "memory", mem, newObj.Spec.Template.Spec.Containers[0].Resources.Requests[corev1.ResourceMemory])
-						_, storageRequestExists := newObj.Spec.Template.Spec.Containers[0].Resources.Requests[corev1.ResourceEphemeralStorage]
-						_, cpuRequestExists := newObj.Spec.Template.Spec.Containers[0].Resources.Requests[corev1.ResourceCPU]
+						resourceRequests := newObj.Spec.Template.Spec.Containers[0].Resources.Requests
+						_, storageRequestExists := resourceRequests[corev1.ResourceEphemeralStorage]
+						_, cpuRequestExists := resourceRequests[corev1.ResourceCPU]
+						testutil.AssertEqual(t, "memory", mem, resourceRequests[corev1.ResourceMemory])
 						testutil.AssertEqual(t, "storage", false, storageRequestExists)
 						testutil.AssertEqual(t, "cpu", false, cpuRequestExists)
 					}).

@@ -170,7 +170,8 @@ func (k *KfApp) SetCPU(cpu *resource.Quantity) {
 
 // Set a resource request for an app. Request amount can be cleared by passing in nil
 func (k *KfApp) setResourceRequest(r v1.ResourceName, quantity *resource.Quantity) {
-	resourceRequests := k.getOrCreateContainer().Resources.Requests
+	container := k.getOrCreateContainer()
+	resourceRequests := container.Resources.Requests
 
 	if resourceRequests == nil {
 		resourceRequests = v1.ResourceList{}
@@ -181,7 +182,7 @@ func (k *KfApp) setResourceRequest(r v1.ResourceName, quantity *resource.Quantit
 	} else {
 		resourceRequests[r] = *quantity
 	}
-	k.getOrCreateContainer().Resources.Requests = resourceRequests
+	container.Resources.Requests = resourceRequests
 }
 
 // GetHealthCheck gets the readiness probe or nil if one doesn't exist.

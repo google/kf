@@ -56,6 +56,9 @@ func NewGetAppCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 			describe.AppSpecInstances(w, app.Spec.Instances)
 			fmt.Fprintln(w)
 
+			describe.AppSpecTemplate(w, app.Spec.Template)
+			fmt.Fprintln(w)
+
 			describe.SourceSpec(w, app.Spec.Source)
 			fmt.Fprintln(w)
 
