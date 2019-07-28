@@ -1,5 +1,10 @@
 ---
 applications:
+- name: instances-app
+  instances: 9
+- name: autoscaling-instances-app
+  min-scale: 9
+  max-scale: 11
 - name: docker-app
   docker:
     image: gcr.io/docker-app

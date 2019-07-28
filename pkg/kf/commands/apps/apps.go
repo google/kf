@@ -16,12 +16,15 @@ package apps
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // NewAppsCommand creates a apps command.
@@ -37,47 +40,84 @@ func NewAppsCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 			}
 			cmd.SilenceUsage = true
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Getting apps in namespace: %s\n", p.Namespace)
+			fmt.Fprintf(cmd.OutOrStdout(), "Getting apps in space %s\n", p.Namespace)
 
 			apps, err := appsClient.List(p.Namespace)
 			if err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Found %d apps in namespace %s\n", len(apps), p.Namespace)
 			fmt.Fprintln(cmd.OutOrStdout())
 
-			// Emulating:
-			// https://github.com/knative/serving/blob/master/config/300-service.yaml
-			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 1, ' ', tabwriter.StripEscape)
-			fmt.Fprintln(w, "NAME\tDOMAIN\tLATEST CREATED\tLATEST READY\tREADY\tREASON")
+			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 4, ' ', tabwriter.StripEscape)
+			fmt.Fprintln(w, "name\trequested state\tinstances\tmemory\tdisk\turls")
 			for _, app := range apps {
-				var status, reason string
-				if cond := app.Status.GetCondition("Ready"); cond != nil {
-					status = fmt.Sprintf("%v", cond.Status)
-					reason = cond.Reason
+
+				// Requested State
+				requestedState := "started"
+				if app.Spec.Instances.Stopped {
+					requestedState = "stopped"
+				} else if cond := app.Status.GetCondition("Ready"); cond != nil && cond.Status == "Pending" {
+					requestedState = "starting"
+				} else if !app.DeletionTimestamp.IsZero() {
+					requestedState = "deleting"
 				}
 
-				if !app.DeletionTimestamp.IsZero() {
-					reason = "Deleting"
+				// Instances
+				var instances string
+				switch {
+				case app.Spec.Instances.Exactly != nil:
+					instances = strconv.FormatInt(int64(*app.Spec.Instances.Exactly), 10)
+				case app.Spec.Instances.Min == nil && app.Spec.Instances.Max == nil:
+					instances = "?"
+				case app.Spec.Instances.Min != nil && app.Spec.Instances.Max != nil:
+					instances = fmt.Sprintf(
+						"%d - %d",
+						*app.Spec.Instances.Min,
+						*app.Spec.Instances.Max,
+					)
+				case app.Spec.Instances.Max != nil:
+					instances = fmt.Sprintf(
+						"0 - %d",
+						*app.Spec.Instances.Max,
+					)
+				case app.Spec.Instances.Min != nil:
+					instances = fmt.Sprintf(
+						"%d - ∞",
+						*app.Spec.Instances.Min,
+					)
+				}
+
+				// Memory & Disk
+				// TODO(#431): Persistent disks
+				var memory, disk string
+				if containers := app.Spec.Template.Spec.Containers; len(containers) > 0 {
+					if mem, ok := containers[0].Resources.Requests[corev1.ResourceMemory]; ok {
+						memory = mem.String()
+					}
+
+					if d, ok := containers[0].Resources.Requests[corev1.ResourceEphemeralStorage]; ok {
+						disk = d.String()
+					}
+				}
+
+				// URL
+				var urls []string
+				for _, route := range app.Spec.Routes {
+					urls = append(urls, route.String())
 				}
 
 				if app.Name == "" {
 					continue
 				}
 
-				var host string
-				url := app.Status.URL
-				if url != nil {
-					host = url.Host
-				}
-
-				fmt.Fprintf(w, "%s\t%s\t%v\t%v\t%s\t%s\n",
+				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
 					app.Name,
-					host,
-					app.Status.LatestCreatedRevisionName,
-					app.Status.LatestReadyRevisionName,
-					status,
-					reason)
+					requestedState,
+					instances,
+					memory,
+					disk,
+					strings.Join(urls, ", "),
+				)
 			}
 
 			w.Flush()
