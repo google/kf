@@ -66,8 +66,6 @@ func TestPushCommand(t *testing.T) {
 
 	defaultOptions := []apps.PushOption{
 		apps.WithPushHealthCheck(defaultTCPHealthCheck),
-		apps.WithPushMinScale(1),
-		apps.WithPushMaxScale(1),
 		apps.WithPushDefaultRouteDomain("example.com"),
 	}
 
@@ -112,6 +110,7 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushBuildpack("some-buildpack"),
 				apps.WithPushEnvironmentVariables(map[string]string{"env1": "val1", "env2": "val2"}),
 				apps.WithPushNoStart(true),
+				apps.WithPushExactScale(intPtr(1)),
 				apps.WithPushHealthCheck(&corev1.Probe{
 					TimeoutSeconds: 28,
 					Handler: corev1.Handler{
@@ -150,20 +149,77 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushContainerRegistry("some-reg.io"),
 			),
 		},
-		"specify-instances": {
+		"override manifest instances": {
 			namespace: "some-namespace",
 			args: []string{
-				"app-name",
+				"instances-app",
+				"--instances=11",
 				"--container-registry", "some-reg.io",
-				"--instances", "2",
 				"--source-image", "custom-reg.io/source-image:latest",
+				"--manifest", "testdata/manifest.yml",
 			},
-			wantImagePrefix: "custom-reg.io/source-image:latest",
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushMinScale(2),
-				apps.WithPushMaxScale(2),
 				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushExactScale(intPtr(11)),
+			),
+		},
+		"instances from manifest": {
+			namespace: "some-namespace",
+			args: []string{
+				"instances-app",
+				"--container-registry", "some-reg.io",
+				"--manifest", "testdata/manifest.yml",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushExactScale(intPtr(9)),
+			),
+		},
+		"override manifest min instances": {
+			namespace: "some-namespace",
+			args: []string{
+				"autoscaling-instances-app",
+				"--min-scale=11",
+				"--container-registry", "some-reg.io",
+				"--manifest", "testdata/manifest.yml",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushMinScale(intPtr(11)),
+				apps.WithPushMaxScale(intPtr(11)),
+			),
+		},
+		"override manifest max instances": {
+			namespace: "some-namespace",
+			args: []string{
+				"autoscaling-instances-app",
+				"--max-scale=13",
+				"--container-registry", "some-reg.io",
+				"--manifest", "testdata/manifest.yml",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushContainerRegistry("some-reg.io"),
+				// Manifest has 9 for min
+				apps.WithPushMinScale(intPtr(9)),
+				apps.WithPushMaxScale(intPtr(13)),
+			),
+		},
+		"min and max instances from manifest": {
+			namespace: "some-namespace",
+			args: []string{
+				"autoscaling-instances-app",
+				"--container-registry", "some-reg.io",
+				"--manifest", "testdata/manifest.yml",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushMinScale(intPtr(9)),
+				apps.WithPushMaxScale(intPtr(11)),
 			),
 		},
 		"bind-service-instance": {
@@ -514,6 +570,7 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "service account", expectOpts.ServiceAccount(), actualOpts.ServiceAccount())
 					testutil.AssertEqual(t, "grpc", expectOpts.Grpc(), actualOpts.Grpc())
 					testutil.AssertEqual(t, "env vars", expectOpts.EnvironmentVariables(), actualOpts.EnvironmentVariables())
+					testutil.AssertEqual(t, "exact scale bound", expectOpts.ExactScale(), actualOpts.ExactScale())
 					testutil.AssertEqual(t, "min scale bound", expectOpts.MinScale(), actualOpts.MinScale())
 					testutil.AssertEqual(t, "max scale bound", expectOpts.MaxScale(), actualOpts.MaxScale())
 					testutil.AssertEqual(t, "no start", expectOpts.NoStart(), actualOpts.NoStart())
@@ -576,4 +633,8 @@ func buildTestRoutes() []v1alpha1.RouteSpecFields {
 		buildRoute("", "www.example.com", "/foo"),
 		buildRoute("host", "example.com", "/foo"),
 	}
+}
+
+func intPtr(i int) *int {
+	return &i
 }

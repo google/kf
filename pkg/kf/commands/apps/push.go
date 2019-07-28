@@ -71,6 +71,8 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		containerImage     string
 		manifestFile       string
 		instances          int
+		minScale           int
+		maxScale           int
 		serviceAccount     string
 		path               string
 		buildpack          string
@@ -192,6 +194,21 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 				if cmd.Flags().Lookup("random-route").Changed {
 					overrides.RandomRoute = &randomRouteDomain
 				}
+
+				// Only override if the user explicitly set it.
+				if cmd.Flags().Lookup("instances").Changed {
+					overrides.Instances = &instances
+				}
+
+				// Only override if the user explicitly set it.
+				if cmd.Flags().Lookup("min-scale").Changed {
+					overrides.MinScale = &minScale
+				}
+
+				// Only override if the user explicitly set it.
+				if cmd.Flags().Lookup("max-scale").Changed {
+					overrides.MaxScale = &maxScale
+				}
 			}
 
 			for _, app := range appsToDeploy {
@@ -199,7 +216,7 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					return err
 				}
 
-				minScale, maxScale, err := calculateScaleBounds(instances, app.MinScale, app.MaxScale)
+				exactScale, minScale, maxScale, err := calculateScaleBounds(app.Instances, app.MinScale, app.MaxScale)
 				if err != nil {
 					return err
 				}
@@ -234,6 +251,7 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					apps.WithPushServiceAccount(serviceAccount),
 					apps.WithPushEnvironmentVariables(app.Env),
 					apps.WithPushGrpc(grpc),
+					apps.WithPushExactScale(exactScale),
 					apps.WithPushMinScale(minScale),
 					apps.WithPushMaxScale(maxScale),
 					apps.WithPushNoStart(noStart),
@@ -401,6 +419,20 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		"the number of instances (default is 1)",
 	)
 
+	pushCmd.Flags().IntVar(
+		&minScale,
+		"min-scale",
+		-1, // -1 represents non-user input
+		"the minium number of instances the autoscaler will scale to",
+	)
+
+	pushCmd.Flags().IntVar(
+		&maxScale,
+		"max-scale",
+		-1, // -1 represents non-user input
+		"the maximum number of instances the autoscaler will scale to",
+	)
+
 	pushCmd.Flags().BoolVar(
 		&noStart,
 		"no-start",
@@ -448,31 +480,19 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 	return pushCmd
 }
 
-func calculateScaleBounds(instances int, minScale, maxScale *int) (int, int, error) {
-	zero := 0
-	if instances != -1 {
+func calculateScaleBounds(instances, minScale, maxScale *int) (exact, min, max *int, err error) {
+	switch {
+	case instances != nil:
+		// Exactly
 		if minScale != nil || maxScale != nil {
-			return -1, -1, errors.New("couldn't set the -i flag and the minScale/maxScale flags in manifest together")
-		}
-		return instances, instances, nil
-	} else {
-		if minScale == nil && maxScale == nil {
-			// both default bounds are 1
-			return 1, 1, nil
+			return nil, nil, nil, errors.New("couldn't set the -i flag and the minScale/maxScale flags in manifest together")
 		}
 
-		// Set 0 as default value(unbound) if one of min or max is not set
-		if minScale == nil {
-			minScale = &zero
-		}
-
-		if maxScale == nil {
-			maxScale = &zero
-		}
-
-		return *minScale, *maxScale, nil
+		return instances, nil, nil, nil
+	default:
+		// Autoscaling or unset
+		return nil, minScale, maxScale, nil
 	}
-
 }
 
 func createRoute(routeStr, namespace string) (v1alpha1.RouteSpecFields, error) {

@@ -101,7 +101,25 @@ func (p *pusher) Push(appName string, opts ...PushOption) error {
 	var hasDefaultRoutes bool
 	app.Spec.Routes, hasDefaultRoutes = setupRoutes(cfg, app.Name, app.Spec.Routes)
 
-	resultingApp, err := p.appsClient.Upsert(app.Namespace, app, mergeApps(cfg, hasDefaultRoutes))
+	// Scaling
+	if cfg.ExactScale != nil {
+		// Exactly
+		app.Spec.Instances.Exactly = cfg.ExactScale
+	} else if !noCfgScaling(cfg) {
+		// Autoscaling or unset
+		app.Spec.Instances.Min = cfg.MinScale
+		app.Spec.Instances.Max = cfg.MaxScale
+	} else {
+		// Default to 1
+		singleInstance := 1
+		app.Spec.Instances.Exactly = &singleInstance
+	}
+
+	resultingApp, err := p.appsClient.Upsert(
+		app.Namespace,
+		app,
+		mergeApps(cfg, hasDefaultRoutes),
+	)
 	if err != nil {
 		return fmt.Errorf("failed to push app: %s", err)
 	}
@@ -156,11 +174,38 @@ func setupRoutes(cfg pushConfig, appName string, r []v1alpha1.RouteSpecFields) (
 	}
 }
 
+func noCfgScaling(cfg pushConfig) bool {
+	return cfg.MinScale == nil && cfg.MaxScale == nil && cfg.ExactScale == nil
+}
+
+func noScaling(app *v1alpha1.App) bool {
+	return app.Spec.Instances.Exactly == nil &&
+		app.Spec.Instances.Min == nil &&
+		app.Spec.Instances.Max == nil
+}
+
 func mergeApps(cfg pushConfig, hasDefaultRoutes bool) func(newapp, oldapp *v1alpha1.App) *v1alpha1.App {
 	return func(newapp, oldapp *v1alpha1.App) *v1alpha1.App {
 
 		if len(oldapp.Spec.Routes) > 0 && hasDefaultRoutes {
 			newapp.Spec.Routes = oldapp.Spec.Routes
+		}
+
+		// Scaling overrides
+		if noCfgScaling(cfg) {
+			// Looks like the user did not set a new value, use the old one
+			newapp.Spec.Instances.Exactly = oldapp.Spec.Instances.Exactly
+			newapp.Spec.Instances.Min = oldapp.Spec.Instances.Min
+			newapp.Spec.Instances.Max = oldapp.Spec.Instances.Max
+		}
+
+		// Default scaling
+		if noCfgScaling(cfg) && noScaling(oldapp) {
+			// No scaling in old or new, go with a default of 1. This is to
+			// match expectaions for CF users. See
+			// https://github.com/google/kf/issues/8 for more context.
+			singleInstance := 1
+			newapp.Spec.Instances.Exactly = &singleInstance
 		}
 
 		newapp.ResourceVersion = oldapp.ResourceVersion

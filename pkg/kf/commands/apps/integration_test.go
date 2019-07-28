@@ -55,11 +55,33 @@ func TestIntegration_Push(t *testing.T) {
 	})
 }
 
+// TestIntegration_Push_update pushes the echo app, uses the proxy command and
+// then posts to it. It then updates the app to the helloworld app by pushing
+// to the same app name. It finally deletes the app.
+func TestIntegration_Push_update(t *testing.T) {
+	t.Skip("TODO #372")
+	t.Parallel()
+	checkClusterStatus(t)
+	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+		appName := fmt.Sprintf("integration-push-%d", time.Now().UnixNano())
+
+		// Push an app and then clean it up. This pushes the echo app which
+		// replies with the same body that was posted.
+		kf.Push(ctx, appName,
+			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
+		)
+		defer kf.Delete(ctx, appName)
+		checkEchoApp(ctx, t, kf, appName, 8087)
+		checkHelloWorldApp(ctx, t, kf, appName, 8087)
+	})
+}
+
 // TestIntegration_Push_docker pushes the echo app via a prebuilt docker
 // image, lists it to ensure it can find a domain, uses the proxy command and
 // then posts to it. It finally deletes the app.
 func TestIntegration_Push_docker(t *testing.T) {
 	checkClusterStatus(t)
+	t.Parallel()
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		appName := fmt.Sprintf("integration-push-%d", time.Now().UnixNano())
 
@@ -73,14 +95,21 @@ func TestIntegration_Push_docker(t *testing.T) {
 	})
 }
 
-func checkEchoApp(ctx context.Context, t *testing.T, kf *Kf, appName string, proxyPort int) {
+func checkApp(
+	ctx context.Context,
+	t *testing.T,
+	kf *Kf,
+	appName string,
+	proxyPort int,
+	assert func(ctx context.Context, t *testing.T, addr string),
+) {
 	// List the apps and make sure we can find a domain.
-	Logf(t, "ensuring app has domain...")
+	Logf(t, "ensuring app has a route...")
 	apps := kf.Apps(ctx)
-	if apps[appName].Domain == "" {
-		t.Fatalf("empty domain")
+	if len(apps[appName].URLs) == 0 {
+		t.Fatalf("empty URLs")
 	}
-	Logf(t, "done ensuring app has domain.")
+	Logf(t, "done ensuring app has a route.")
 
 	// Hit the app via the proxy. This makes sure the app is handling
 	// traffic as expected and ensures the proxy works. We use the proxy
@@ -89,17 +118,46 @@ func checkEchoApp(ctx context.Context, t *testing.T, kf *Kf, appName string, pro
 	// 2. Tests work even if a domain isn't setup.
 	Logf(t, "hitting echo app to ensure its working...")
 
-	// TODO: Use port 0 so that we don't have to worry about port collisions.
-	// This doesn't work yet: // https://github.com/poy/kf/issues/46
+	// TODO(#46): Use port 0 so that we don't have to worry about port
+	// collisions.
 	go kf.Proxy(ctx, appName, proxyPort)
-	resp, respCancel := RetryPost(ctx, t, fmt.Sprintf("http://localhost:%d", proxyPort), appTimeout, http.StatusOK, "testing")
-	defer resp.Body.Close()
-	defer respCancel()
-	AssertEqual(t, "status code", http.StatusOK, resp.StatusCode)
-	data, err := ioutil.ReadAll(resp.Body)
-	AssertNil(t, "body error", err)
-	AssertEqual(t, "body", "testing", string(data))
-	Logf(t, "done hitting echo app to ensure its working.")
+	assert(ctx, t, fmt.Sprintf("http://localhost:%d", proxyPort))
+}
+
+func checkEchoApp(
+	ctx context.Context,
+	t *testing.T,
+	kf *Kf,
+	appName string,
+	proxyPort int,
+) {
+	checkApp(ctx, t, kf, appName, proxyPort, func(ctx context.Context, t *testing.T, addr string) {
+		resp, respCancel := RetryPost(ctx, t, addr, appTimeout, http.StatusOK, "testing")
+		defer resp.Body.Close()
+		defer respCancel()
+		data, err := ioutil.ReadAll(resp.Body)
+		AssertNil(t, "body error", err)
+		AssertEqual(t, "body", "testing", string(data))
+		Logf(t, "done hitting echo app to ensure its working.")
+	})
+}
+
+func checkHelloWorldApp(
+	ctx context.Context,
+	t *testing.T,
+	kf *Kf,
+	appName string,
+	proxyPort int,
+) {
+	checkApp(ctx, t, kf, appName, proxyPort, func(ctx context.Context, t *testing.T, addr string) {
+		// The helloworld app doesn't care if what verb you use (e.g., POST vs
+		// GET), so we'll just use the RetryPost method so we can get the
+		// retry logic.
+		resp, respCancel := RetryPost(ctx, t, addr, appTimeout, http.StatusOK, "testing")
+		defer resp.Body.Close()
+		defer respCancel()
+		Logf(t, "done hitting helloworld app to ensure its working.")
+	})
 }
 
 // TestIntegration_StopStart pushes the echo app and uses the proxy command
@@ -192,12 +250,12 @@ func TestIntegration_Push_manifest(t *testing.T) {
 		defer kf.Delete(ctx, appName)
 
 		// List the apps and make sure we can find a domain.
-		Logf(t, "ensuring app has domain...")
+		Logf(t, "ensuring app has a route...")
 		apps := kf.Apps(ctx)
-		if apps[appName].Domain == "" {
-			t.Fatalf("empty domain")
+		if len(apps[appName].URLs) == 0 {
+			t.Fatalf("empty URLs")
 		}
-		Logf(t, "done ensuring manifest-app has domain.")
+		Logf(t, "done ensuring app has a route.")
 
 		// TODO: Use port 0 so that we don't have to worry about port
 		// collisions. This doesn't work yet:
@@ -280,7 +338,7 @@ func TestIntegration_Delete(t *testing.T) {
 		// List the apps and make sure we can find the app.
 		Logf(t, "ensuring app is deleting...")
 		app := kf.Apps(ctx)[appName]
-		AssertEqual(t, "reason", "Deleting", app.Reason)
+		AssertEqual(t, "requested state", "deleting", app.RequestedState)
 		Logf(t, "done ensuring app is deleting.")
 	})
 }
@@ -462,12 +520,12 @@ func checkVars(ctx context.Context, t *testing.T, kf *Kf, appName string, proxyP
 		success = true
 		for k, v := range expectedVars {
 			if envs[k] != v {
-				Logf(t, "wrong: %s != %s", envs[k], v)
+				Logf(t, "(kf env) wrong: %s != %s", envs[k], v)
 				success = false
 				break
 			}
 			if appEnvs[k] != v {
-				Logf(t, "wrong: %s != %s", appEnvs[k], v)
+				Logf(t, "(response) wrong: %s != %s", appEnvs[k], v)
 				success = false
 				break
 			}
@@ -477,12 +535,12 @@ func checkVars(ctx context.Context, t *testing.T, kf *Kf, appName string, proxyP
 		// unset-env).
 		for _, k := range absentVars {
 			if _, ok := envs[k]; ok {
-				Logf(t, "wrong: %s still is present", k)
+				Logf(t, "(kf env) wrong: %s still is present", k)
 				success = false
 				break
 			}
 			if _, ok := appEnvs[k]; ok {
-				Logf(t, "wrong: %s still is present", k)
+				Logf(t, "(response) wrong: %s still is present", k)
 				success = false
 				break
 			}
