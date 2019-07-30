@@ -308,7 +308,7 @@ type Merger func(newObj, oldObj *v1alpha1.Source) *v1alpha1.Source
 func (core *coreClient) Upsert(namespace string, newObj *v1alpha1.Source, merge Merger) (*v1alpha1.Source, error) {
 	// NOTE: the field selector may be ignored by some Kubernetes resources
 	// so we double check down below.
-	existing, err := core.List(namespace, WithListfieldSelector(map[string]string{"metadata.name": newObj.Name}))
+	existing, err := core.List(namespace, WithListFieldSelector(map[string]string{"metadata.name": newObj.Name}))
 	if err != nil {
 		return nil, err
 	}

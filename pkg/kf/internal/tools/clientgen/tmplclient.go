@@ -183,7 +183,7 @@ type Merger func(newObj, oldObj *{{.Type}}) *{{.Type}}
 func (core *coreClient) Upsert({{ $nssig }} newObj *{{.Type}}, merge Merger) (*{{.Type}}, error) {
 	// NOTE: the field selector may be ignored by some Kubernetes resources
 	// so we double check down below.
-	existing, err := core.List({{ $nsparam }} WithListfieldSelector(map[string]string{"metadata.name": newObj.Name}))
+	existing, err := core.List({{ $nsparam }} WithListFieldSelector(map[string]string{"metadata.name": newObj.Name}))
 	if err != nil {
 		return nil, err
 	}
