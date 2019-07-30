@@ -83,12 +83,5 @@ func (r *RouteSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
 		errs = errs.Also(apis.ErrInvalidValue("hostname", r.Hostname))
 	}
 
-	// validate we only have one AppNames.
-	// TODO: We don't want to keep this:
-	// https://github.com/google/kf/issues/279
-	for i := 1; i < len(r.AppNames); i++ {
-		errs = errs.Also(apis.ErrInvalidArrayValue(r.AppNames[i], "appNames", i))
-	}
-
 	return errs
 }

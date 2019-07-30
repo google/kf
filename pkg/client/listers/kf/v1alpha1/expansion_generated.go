@@ -32,6 +32,14 @@ type RouteListerExpansion interface{}
 // RouteNamespaceLister.
 type RouteNamespaceListerExpansion interface{}
 
+// RouteClaimListerExpansion allows custom methods to be added to
+// RouteClaimLister.
+type RouteClaimListerExpansion interface{}
+
+// RouteClaimNamespaceListerExpansion allows custom methods to be added to
+// RouteClaimNamespaceLister.
+type RouteClaimNamespaceListerExpansion interface{}
+
 // SourceListerExpansion allows custom methods to be added to
 // SourceLister.
 type SourceListerExpansion interface{}

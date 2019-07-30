@@ -23,6 +23,7 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/algorithms"
 	"github.com/google/kf/pkg/kf/systemenvinjector"
 	"github.com/google/kf/pkg/reconciler"
 	"github.com/google/kf/pkg/reconciler/app/resources"
@@ -49,6 +50,7 @@ type Reconciler struct {
 	appLister             kflisters.AppLister
 	spaceLister           kflisters.SpaceLister
 	routeLister           kflisters.RouteLister
+	routeClaimLister      kflisters.RouteClaimLister
 	systemEnvInjector     systemenvinjector.SystemEnvInjectorInterface
 }
 
@@ -189,16 +191,46 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		app.Status.PropagateKnativeServiceStatus(actual)
 	}
 
+	// Routes and RouteClaims
+	desiredRoutes, desiredRouteClaims, err := resources.MakeRoutes(app, space)
+	condition := app.Status.RouteCondition()
+	if err != nil {
+		return condition.MarkTemplateError(err)
+	}
+
 	// Route Reconciler
 	{
 		r.Logger.Info("reconciling Routes")
-		condition := app.Status.RouteCondition()
-		desiredRoutes, err := resources.MakeRoutes(app, space)
+
+		// Delete Stale Routes
+		existingRoutes, err := r.routeLister.
+			Routes(app.GetNamespace()).
+			List(resources.MakeRouteAppSelector(app))
 		if err != nil {
-			return condition.MarkTemplateError(err)
+			return condition.MarkReconciliationError("scanning for stale routes", err)
 		}
 
-		var actualRoutes []*v1alpha1.Route
+		// Search to see if any of the existing routes are not in the desired
+		// list of routes and therefore stale. If they are, delete them.
+		for _, route := range existingRoutes {
+			if algorithms.Search(
+				0,
+				v1alpha1.Routes{*route},
+				v1alpha1.Routes(desiredRoutes),
+			) {
+				continue
+			}
+
+			// Not found in desired, must be stale.
+
+			if err := r.KfClientSet.
+				KfV1alpha1().
+				Routes(route.GetNamespace()).
+				Delete(route.Name, &metav1.DeleteOptions{}); err != nil {
+				return condition.MarkReconciliationError("deleting existing route", err)
+			}
+		}
+
 		for _, desired := range desiredRoutes {
 			actual, err := r.routeLister.Routes(desired.GetNamespace()).Get(desired.Name)
 			if apierrs.IsNotFound(err) {
@@ -212,8 +244,31 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			} else if actual, err = r.reconcileRoute(&desired, actual); err != nil {
 				return condition.MarkReconciliationError("updating existing", err)
 			}
+		}
+	}
 
-			actualRoutes = append(actualRoutes, actual)
+	// RouteClaim reconciler
+	{
+		r.Logger.Info("reconciling Route Claims")
+
+		for _, desired := range desiredRouteClaims {
+			actual, err := r.routeClaimLister.
+				RouteClaims(desired.GetNamespace()).
+				Get(desired.Name)
+			if apierrs.IsNotFound(err) {
+				// RouteClaim doesn't exist, make one.
+				actual, err = r.KfClientSet.
+					KfV1alpha1().
+					RouteClaims(desired.GetNamespace()).
+					Create(&desired)
+				if err != nil {
+					return condition.MarkReconciliationError("creating", err)
+				}
+			} else if err != nil {
+				return condition.MarkReconciliationError("getting latest", err)
+			} else if actual, err = r.reconcileRouteClaim(&desired, actual); err != nil {
+				return condition.MarkReconciliationError("updating existing", err)
+			}
 		}
 	}
 
@@ -295,7 +350,35 @@ func (r *Reconciler) reconcileRoute(desired, actual *v1alpha1.Route) (*v1alpha1.
 	// Preserve the rest of the object (e.g. ObjectMeta except for labels).
 	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
 	existing.Spec = desired.Spec
-	return r.KfClientSet.KfV1alpha1().Routes(existing.Namespace).Update(existing)
+	return r.KfClientSet.
+		KfV1alpha1().
+		Routes(existing.Namespace).
+		Update(existing)
+}
+
+func (r *Reconciler) reconcileRouteClaim(desired, actual *v1alpha1.RouteClaim) (*v1alpha1.RouteClaim, error) {
+	// Check for differences, if none we don't need to reconcile.
+	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
+	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
+
+	if semanticEqual {
+		return actual, nil
+	}
+
+	if _, err := kmp.SafeDiff(desired.Spec, actual.Spec); err != nil {
+		return nil, fmt.Errorf("failed to diff serving: %v", err)
+	}
+
+	// Don't modify the informers copy.
+	existing := actual.DeepCopy()
+
+	// Preserve the rest of the object (e.g. ObjectMeta except for labels).
+	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
+	existing.Spec = desired.Spec
+	return r.KfClientSet.
+		KfV1alpha1().
+		RouteClaims(existing.Namespace).
+		Update(existing)
 }
 
 func (r *Reconciler) updateStatus(desired *v1alpha1.App) (*v1alpha1.App, error) {

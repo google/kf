@@ -24,7 +24,7 @@ import (
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/routes"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	routesfake "github.com/google/kf/pkg/kf/routes/fake"
+	routesfake "github.com/google/kf/pkg/kf/routeclaims/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -124,15 +124,19 @@ func TestCreateRoute(t *testing.T) {
 			Setup: func(t *testing.T, routesfake *routesfake.FakeClient) {
 
 				routesfake.EXPECT().Create(gomock.Any(),
-					&v1alpha1.Route{
+					&v1alpha1.RouteClaim{
 						TypeMeta: metav1.TypeMeta{
-							Kind: "Route",
+							Kind: "RouteClaim",
 						},
 						ObjectMeta: metav1.ObjectMeta{
 							Namespace: "some-space",
-							Name:      v1alpha1.GenerateRouteName("some-hostname", "example.com", "/somepath"),
+							Name: v1alpha1.GenerateRouteClaimName(
+								"some-hostname",
+								"example.com",
+								"/somepath",
+							),
 						},
-						Spec: v1alpha1.RouteSpec{
+						Spec: v1alpha1.RouteClaimSpec{
 							RouteSpecFields: v1alpha1.RouteSpecFields{
 								Hostname: "some-hostname",
 								Domain:   "example.com",

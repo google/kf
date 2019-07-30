@@ -16,19 +16,24 @@ package routes
 
 import (
 	"fmt"
-	"path"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/algorithms"
+	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	"github.com/google/kf/pkg/kf/routes"
+	"github.com/google/kf/pkg/kf/routeclaims"
 	"github.com/spf13/cobra"
 )
 
-// NewDeleteRouteCommand creates a DeleteRoute command.
+// NewDeleteRouteCommand creates a DeleteRoute command. To delete a route and
+// not have the controller bring it back, delete is a multistep process.
+// First, unmap the route from each app that has it. Next, delete the
+// RouteClaim.
 func NewDeleteRouteCommand(
 	p *config.KfParams,
-	c routes.Client,
+	c routeclaims.Client,
+	a apps.Client,
 ) *cobra.Command {
 	var hostname, urlPath string
 
@@ -47,9 +52,51 @@ func NewDeleteRouteCommand(
 
 			domain := args[0]
 			cmd.SilenceUsage = true
+
+			route := v1alpha1.RouteSpecFields{
+				Hostname: hostname,
+				Domain:   domain,
+				Path:     urlPath,
+			}
+
+			// TODO: This is O(apps). We could do better if we lookup the
+			// routes with the proper labels first, then use their apps.
+			apps, err := a.List(
+				p.Namespace,
+				apps.WithListfilters([]apps.Predicate{
+					func(app *v1alpha1.App) bool {
+						return algorithms.Search(
+							0,
+							v1alpha1.RouteSpecFieldsSlice{route},
+							v1alpha1.RouteSpecFieldsSlice(app.Spec.Routes),
+						)
+					},
+				}),
+			)
+			if err != nil {
+				return fmt.Errorf("failed to list apps: %s", err)
+			}
+
+			for _, app := range apps {
+				fmt.Fprintf(cmd.OutOrStderr(), "Unmapping route from %s...\n", app.Name)
+				if err := unmapApp(
+					p.Namespace,
+					app.Name,
+					route,
+					a,
+				); err != nil {
+					return err
+				}
+			}
+
+			fmt.Fprintf(cmd.OutOrStderr(), "Deleting route claim...\n")
 			if err := c.Delete(
 				p.Namespace,
-				v1alpha1.GenerateRouteName(hostname, domain, path.Join("/", urlPath)),
+				v1alpha1.GenerateRouteClaimName(
+					hostname,
+					domain,
+					urlPath,
+				),
 			); err != nil {
 				return fmt.Errorf("failed to delete Route: %s", err)
 			}

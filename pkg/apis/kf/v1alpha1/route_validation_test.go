@@ -75,7 +75,7 @@ func TestRouteValidation(t *testing.T) {
 			route: &Route{
 				ObjectMeta: goodObjMeta,
 				Spec: RouteSpec{
-					AppNames: []string{"app-1"},
+					AppName: "app-1",
 					RouteSpecFields: RouteSpecFields{
 						Domain: "",
 					},
@@ -97,18 +97,6 @@ func TestRouteValidation(t *testing.T) {
 				Message: "invalid value: hostname",
 				Paths:   []string{"spec.www"},
 			},
-		},
-		"multiple appNames": {
-			route: &Route{
-				ObjectMeta: goodObjMeta,
-				Spec: RouteSpec{
-					AppNames: []string{"app-1", "app-2", "app-3"},
-					RouteSpecFields: RouteSpecFields{
-						Domain: "example.com",
-					},
-				},
-			},
-			want: apis.ErrInvalidArrayValue("app-2", "spec.appNames", 1).Also(apis.ErrInvalidArrayValue("app-3", "spec.appNames", 2)),
 		},
 		"fetching VirtualServices returns an error": {
 			setup: func(t *testing.T, fake *fake.FakeNetworkingV1alpha3) {

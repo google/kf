@@ -22,6 +22,7 @@ import (
 	services2 "github.com/google/kf/pkg/kf/commands/services"
 	spaces2 "github.com/google/kf/pkg/kf/commands/spaces"
 	"github.com/google/kf/pkg/kf/logs"
+	"github.com/google/kf/pkg/kf/routeclaims"
 	"github.com/google/kf/pkg/kf/routes"
 	"github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/google/kf/pkg/kf/services"
@@ -380,41 +381,58 @@ func InjectDeleteQuota(p *config.KfParams) *cobra.Command {
 func InjectRoutes(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	client := routes.NewClient(kfV1alpha1Interface)
-	command := routes2.NewRoutesCommand(p, client)
-	return command
-}
-
-func InjectCreateRoute(p *config.KfParams) *cobra.Command {
-	kfV1alpha1Interface := config.GetKfClient(p)
-	client := routes.NewClient(kfV1alpha1Interface)
-	command := routes2.NewCreateRouteCommand(p, client)
-	return command
-}
-
-func InjectDeleteRoute(p *config.KfParams) *cobra.Command {
-	kfV1alpha1Interface := config.GetKfClient(p)
-	client := routes.NewClient(kfV1alpha1Interface)
-	command := routes2.NewDeleteRouteCommand(p, client)
-	return command
-}
-
-func InjectMapRoute(p *config.KfParams) *cobra.Command {
-	kfV1alpha1Interface := config.GetKfClient(p)
-	client := routes.NewClient(kfV1alpha1Interface)
+	routeclaimsClient := routeclaims.NewClient(kfV1alpha1Interface)
 	appsGetter := provideAppsGetter(kfV1alpha1Interface)
 	systemEnvInjectorInterface := provideSystemEnvInjector(p)
 	sourcesGetter := provideKfSources(kfV1alpha1Interface)
 	buildTailer := provideSourcesBuildTailer()
 	sourcesClient := sources.NewClient(sourcesGetter, buildTailer)
 	appsClient := apps.NewClient(appsGetter, systemEnvInjectorInterface, sourcesClient)
-	command := routes2.NewMapRouteCommand(p, client, appsClient)
+	command := routes2.NewRoutesCommand(p, client, routeclaimsClient, appsClient)
+	return command
+}
+
+func InjectCreateRoute(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	client := routeclaims.NewClient(kfV1alpha1Interface)
+	command := routes2.NewCreateRouteCommand(p, client)
+	return command
+}
+
+func InjectDeleteRoute(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	client := routeclaims.NewClient(kfV1alpha1Interface)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	sourcesClient := sources.NewClient(sourcesGetter, buildTailer)
+	appsClient := apps.NewClient(appsGetter, systemEnvInjectorInterface, sourcesClient)
+	command := routes2.NewDeleteRouteCommand(p, client, appsClient)
+	return command
+}
+
+func InjectMapRoute(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	client := sources.NewClient(sourcesGetter, buildTailer)
+	appsClient := apps.NewClient(appsGetter, systemEnvInjectorInterface, client)
+	command := routes2.NewMapRouteCommand(p, appsClient)
 	return command
 }
 
 func InjectUnmapRoute(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
-	client := routes.NewClient(kfV1alpha1Interface)
-	command := routes2.NewUnmapRouteCommand(p, client)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	client := sources.NewClient(sourcesGetter, buildTailer)
+	appsClient := apps.NewClient(appsGetter, systemEnvInjectorInterface, client)
+	command := routes2.NewUnmapRouteCommand(p, appsClient)
 	return command
 }
 

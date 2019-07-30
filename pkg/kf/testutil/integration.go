@@ -24,7 +24,9 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"testing"
@@ -36,6 +38,10 @@ const (
 	// registry we will push containers to for the integration tests. If this
 	// is not set, then the integration tests are skipped.
 	EnvDockerRegistry = "DOCKER_REGISTRY"
+
+	// IntegrationTestDomain is the domain that the integration test spaces
+	// are setup with.
+	IntegrationTestDomain = "integration-tests.kf.dev"
 )
 
 // DockerRegistry returns the configured docker registry for the integration
@@ -174,10 +180,12 @@ func RunKfTest(t *testing.T, test KfTest) {
 		defer kf.DeleteSpace(ctx, spaceName)
 
 		// Wait for space to become ready
+		// TODO(#371): create-space should wait until the space is ready.
 		RetryOnPanic(ctx, t, func() {
 			for _, s := range kf.Spaces(ctx) {
-				fmt.Println(s)
-				if strings.HasPrefix(s, spaceName) {
+				if strings.HasPrefix(s, spaceName) &&
+					// Ensure space is marked "Ready True"
+					regexp.MustCompile(`\sTrue\s`).MatchString(s) {
 					return
 				}
 			}
@@ -375,12 +383,15 @@ func CombineOutput(ctx context.Context, t *testing.T, out KfTestOutput) <-chan s
 // This is so logs will stream out instead of only being displayed at the end
 // of the test.
 func Logf(t *testing.T, format string, i ...interface{}) {
+	line := fmt.Sprintf(format, i...)
+	lineWithPrefix := fmt.Sprintf("[%s] %s", t.Name(), line)
+
 	if testing.Verbose() {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf(format, i...))
+		fmt.Fprintln(os.Stderr, lineWithPrefix)
 		return
 	}
 
-	t.Logf(format, i...)
+	t.Logf(lineWithPrefix)
 }
 
 // StreamOutput writes the output of KfTestOutput to the testing.Log if
@@ -883,7 +894,7 @@ func (k *Kf) CreateSpace(ctx context.Context, space string) []string {
 		Args: []string{
 			"create-space",
 			"--container-registry", DockerRegistry(),
-			"--domain", "integration-tests.kf.dev",
+			"--domain", IntegrationTestDomain,
 			space,
 		},
 	})
@@ -938,10 +949,25 @@ func (k *Kf) Target(ctx context.Context, namespace string) []string {
 
 type spaceKey struct{}
 
+// ContextWithSpace returns a context that has the space information. The
+// space can be fetched via SpaceFromContext.
 func ContextWithSpace(ctx context.Context, space string) context.Context {
 	return context.WithValue(ctx, spaceKey{}, space)
 }
 
+// SpaceFromContext returns the space name given a context that has been setup
+// via ContextWithSpace.
 func SpaceFromContext(ctx context.Context) string {
 	return ctx.Value(spaceKey{}).(string)
+}
+
+// ExpectedAddr returns the expected address for integration tests given a
+// hostname and URL path.
+func ExpectedAddr(hostname, urlPath string) string {
+	hostnameDomain := IntegrationTestDomain
+	if hostname != "" {
+		hostnameDomain = fmt.Sprintf("%s.%s", hostname, IntegrationTestDomain)
+	}
+
+	return hostnameDomain + path.Join("/", urlPath)
 }
