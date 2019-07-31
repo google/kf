@@ -15,6 +15,8 @@
 package v1alpha1
 
 import (
+	"path"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -59,6 +61,15 @@ type RouteSpecFields struct {
 	// Path is the URL path of the route.
 	// +optional
 	Path string `json:"path,omitempty"`
+}
+
+// String returns a RouteSpecFields converted into an address.
+func (route RouteSpecFields) String() string {
+	var hostnamePrefix string
+	if route.Hostname != "" {
+		hostnamePrefix = route.Hostname + "."
+	}
+	return hostnamePrefix + route.Domain + path.Join("/", route.Path)
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

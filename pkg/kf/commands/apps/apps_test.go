@@ -44,7 +44,7 @@ func TestAppsCommand(t *testing.T) {
 			args:    []string{"invalid"},
 			wantErr: errors.New("accepts 0 arg(s), received 1"),
 		},
-		"returns error when miss namespace": {
+		"returns error when missing namespace": {
 			wantErr: errors.New(utils.EmptyNamespaceError),
 			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
 				fakeLister.
@@ -60,21 +60,52 @@ func TestAppsCommand(t *testing.T) {
 					List("some-namespace")
 			},
 		},
-		"formats multiple services": {
+		"formats multiple apps": {
 			namespace: "some-namespace",
 			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
 				fakeLister.
 					EXPECT().
 					List(gomock.Any()).
 					Return([]v1alpha1.App{
-						{ObjectMeta: metav1.ObjectMeta{Name: "service-a"}},
-						{ObjectMeta: metav1.ObjectMeta{Name: "service-b"}},
+						{ObjectMeta: metav1.ObjectMeta{Name: "app-a"}},
+						{ObjectMeta: metav1.ObjectMeta{Name: "app-b"}},
 					}, nil)
 			},
 			assert: func(t *testing.T, buffer *bytes.Buffer) {
-				header1 := "Getting apps in namespace: "
-				header2 := "Found 2 apps in namespace "
-				testutil.AssertContainsAll(t, buffer.String(), []string{header1, header2, "service-a", "service-b"})
+				header1 := "Getting apps in space "
+				testutil.AssertContainsAll(t, buffer.String(), []string{header1, "app-a", "app-b"})
+			},
+		},
+		"shows app started": {
+			namespace: "some-namespace",
+			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
+				fakeLister.
+					EXPECT().
+					List(gomock.Any()).
+					Return([]v1alpha1.App{
+						{ObjectMeta: metav1.ObjectMeta{Name: "app-a"}},
+					}, nil)
+			},
+			assert: func(t *testing.T, buffer *bytes.Buffer) {
+				header1 := "Getting apps in space "
+				testutil.AssertContainsAll(t, buffer.String(), []string{header1, "app-a", "started"})
+			},
+		},
+		"shows app stopped": {
+			namespace: "some-namespace",
+			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
+				app := v1alpha1.App{}
+				app.Name = "app-a"
+				app.Spec.Instances.Stopped = true
+
+				fakeLister.
+					EXPECT().
+					List(gomock.Any()).
+					Return([]v1alpha1.App{app}, nil)
+			},
+			assert: func(t *testing.T, buffer *bytes.Buffer) {
+				header1 := "Getting apps in space "
+				testutil.AssertContainsAll(t, buffer.String(), []string{header1, "app-a", "stopped"})
 			},
 		},
 		"shows app as deleting": {
@@ -85,16 +116,103 @@ func TestAppsCommand(t *testing.T) {
 					EXPECT().
 					List(gomock.Any()).
 					Return([]v1alpha1.App{
-						{ObjectMeta: metav1.ObjectMeta{Name: "service-a", DeletionTimestamp: &dt}},
+						{ObjectMeta: metav1.ObjectMeta{Name: "app-a", DeletionTimestamp: &dt}},
 					}, nil)
 			},
 			assert: func(t *testing.T, buffer *bytes.Buffer) {
-				header1 := "Getting apps in namespace: "
-				header2 := "Found 1 apps in namespace "
-				testutil.AssertContainsAll(t, buffer.String(), []string{header1, header2, "service-a", "Deleting"})
+				header1 := "Getting apps in space "
+				testutil.AssertContainsAll(t, buffer.String(), []string{header1, "app-a", "deleting"})
 			},
 		},
-		"list applications error, returns error": {
+		"shows app exact instances": {
+			namespace: "some-namespace",
+			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
+				app := v1alpha1.App{}
+				app.Name = "app-a"
+				app.Spec.Instances.Exactly = intPtr(99)
+
+				fakeLister.
+					EXPECT().
+					List(gomock.Any()).
+					Return([]v1alpha1.App{app}, nil)
+			},
+			assert: func(t *testing.T, buffer *bytes.Buffer) {
+				header1 := "Getting apps in space "
+				testutil.AssertContainsAll(t, buffer.String(), []string{header1, "app-a", "99"})
+			},
+		},
+		"shows app min and max instances": {
+			namespace: "some-namespace",
+			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
+				app := v1alpha1.App{}
+				app.Name = "app-a"
+				app.Spec.Instances.Min = intPtr(99)
+				app.Spec.Instances.Max = intPtr(101)
+
+				fakeLister.
+					EXPECT().
+					List(gomock.Any()).
+					Return([]v1alpha1.App{app}, nil)
+			},
+			assert: func(t *testing.T, buffer *bytes.Buffer) {
+				header1 := "Getting apps in space "
+				testutil.AssertContainsAll(t, buffer.String(), []string{header1, "app-a", "99 - 101"})
+			},
+		},
+		"shows app min instances": {
+			namespace: "some-namespace",
+			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
+				app := v1alpha1.App{}
+				app.Name = "app-a"
+				app.Spec.Instances.Min = intPtr(99)
+
+				fakeLister.
+					EXPECT().
+					List(gomock.Any()).
+					Return([]v1alpha1.App{app}, nil)
+			},
+			assert: func(t *testing.T, buffer *bytes.Buffer) {
+				header1 := "Getting apps in space "
+				testutil.AssertContainsAll(t, buffer.String(), []string{header1, "app-a", "99 - ∞"})
+			},
+		},
+		"shows app max instances": {
+			namespace: "some-namespace",
+			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
+				app := v1alpha1.App{}
+				app.Name = "app-a"
+				app.Spec.Instances.Max = intPtr(101)
+
+				fakeLister.
+					EXPECT().
+					List(gomock.Any()).
+					Return([]v1alpha1.App{app}, nil)
+			},
+			assert: func(t *testing.T, buffer *bytes.Buffer) {
+				header1 := "Getting apps in space "
+				testutil.AssertContainsAll(t, buffer.String(), []string{header1, "app-a", "0 - 101"})
+			},
+		},
+		"shows app urls": {
+			namespace: "some-namespace",
+			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
+				app := v1alpha1.App{}
+				app.Name = "app-a"
+				app.Spec.Routes = append(app.Spec.Routes, v1alpha1.RouteSpecFields{Domain: "example.com"})
+				app.Spec.Routes = append(app.Spec.Routes, v1alpha1.RouteSpecFields{Hostname: "somehost", Domain: "example.com"})
+				app.Spec.Routes = append(app.Spec.Routes, v1alpha1.RouteSpecFields{Hostname: "somehost", Domain: "example.com", Path: "somepath"})
+
+				fakeLister.
+					EXPECT().
+					List(gomock.Any()).
+					Return([]v1alpha1.App{app}, nil)
+			},
+			assert: func(t *testing.T, buffer *bytes.Buffer) {
+				header1 := "Getting apps in space "
+				testutil.AssertContainsAll(t, buffer.String(), []string{header1, "example.com/, somehost.example.com/, somehost.example.com/somepath"})
+			},
+		},
+		"listing apps fails": {
 			namespace: "some-namespace",
 			wantErr:   errors.New("some-error"),
 			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
@@ -104,7 +222,7 @@ func TestAppsCommand(t *testing.T) {
 					Return(nil, errors.New("some-error"))
 			},
 		},
-		"filters out configurations without a name": {
+		"filters out apps without a name": {
 			namespace: "some-namespace",
 			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
 				fakeLister.
@@ -112,7 +230,7 @@ func TestAppsCommand(t *testing.T) {
 					List(gomock.Any()).
 					Return([]v1alpha1.App{
 						{Status: v1alpha1.AppStatus{Status: duckv1beta1.Status{Conditions: []apis.Condition{{Type: "Ready", Status: "should-not-see-this"}}}}},
-						{ObjectMeta: metav1.ObjectMeta{Name: "service-b"}},
+						{ObjectMeta: metav1.ObjectMeta{Name: "app-b"}},
 					}, nil)
 			},
 			assert: func(t *testing.T, buffer *bytes.Buffer) {

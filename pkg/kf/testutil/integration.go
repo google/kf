@@ -181,7 +181,7 @@ func RunKfTest(t *testing.T, test KfTest) {
 					return
 				}
 			}
-			panic("did not find space " + spaceName)
+			panic(fmt.Sprintf("%s-> did not find space %s", t.Name(), spaceName))
 		})
 
 		ctx = ContextWithSpace(ctx, spaceName)
@@ -316,7 +316,7 @@ func PanicOnError(ctx context.Context, t *testing.T, messagePrefix string, errs 
 					Logf(t, "%s: %s", messagePrefix, err)
 					return
 				} else {
-					panic(fmt.Sprintf("%s: %s", messagePrefix, err))
+					panic(fmt.Sprintf("%s->%s: %s", t.Name(), messagePrefix, err))
 				}
 			}
 		}
@@ -587,9 +587,12 @@ func (k *Kf) Logs(ctx context.Context, appName string, extraArgs ...string) <-ch
 // AppInfo is the information returned by listing an app. It is returned by
 // ListApp.
 type AppInfo struct {
-	Name   string
-	Domain string
-	Reason string
+	Name           string
+	RequestedState string
+	Instances      string
+	Memory         string
+	Disk           string
+	URLs           []string
 }
 
 // Apps returns all the apps from `kf app`
@@ -617,20 +620,23 @@ func (k *Kf) Apps(ctx context.Context) map[string]AppInfo {
 			continue
 		}
 
-		domain := f[1]
-		if !strings.HasPrefix(domain, "http") {
-			domain = "http://" + domain
-		}
-
-		var reason string
+		name := f[0]
+		requestedState := f[1]
+		instances := f[2]
+		memory := f[3]
+		disk := f[4]
+		var urls []string
 		if len(f) > 5 {
-			reason = f[5]
+			urls = strings.Split(f[5], ",")
 		}
 
-		results[f[0]] = AppInfo{
-			Name:   f[0],
-			Domain: domain,
-			Reason: reason,
+		results[name] = AppInfo{
+			Name:           name,
+			RequestedState: requestedState,
+			Instances:      instances,
+			Memory:         memory,
+			Disk:           disk,
+			URLs:           urls,
 		}
 	}
 
@@ -762,7 +768,10 @@ func (k *Kf) Env(ctx context.Context, appName string) map[string]string {
 		if len(fields) < 2 {
 			continue
 		}
-		results[fields[0]] = fields[1]
+		// Remove the ':' suffix
+		key := fields[0]
+		key = key[:len(key)-1]
+		results[key] = fields[1]
 	}
 
 	return results
@@ -874,6 +883,7 @@ func (k *Kf) CreateSpace(ctx context.Context, space string) []string {
 		Args: []string{
 			"create-space",
 			"--container-registry", DockerRegistry(),
+			"--domain", "integration-tests.kf.dev",
 			space,
 		},
 	})

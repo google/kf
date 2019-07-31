@@ -36,11 +36,14 @@ configs:
     type: bool
     description: setup the ports for the container to allow gRPC to work
   - name: MinScale
-    type: int
+    type: "*int"
     description: the lower scale bound
   - name: MaxScale
-    type: int
+    type: "*int"
     description: the upper scale bound
+  - name: ExactScale
+    type: "*int"
+    description: scale exactly to this number of instances
   - name: NoStart
     type: bool
     description: setup the app without starting it

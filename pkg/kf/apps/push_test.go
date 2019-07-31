@@ -118,8 +118,8 @@ func TestPush(t *testing.T) {
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
-					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
-						testutil.AssertEqual(t, "namespace", "some-namespace", newObj.Namespace)
+					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
+						testutil.AssertEqual(t, "namespace", "some-namespace", newApp.Namespace)
 					}).
 					Return(&v1alpha1.App{}, nil)
 			},
@@ -134,8 +134,111 @@ func TestPush(t *testing.T) {
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
-					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
-						testutil.AssertEqual(t, "namespace", "default", newObj.Namespace)
+					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
+						testutil.AssertEqual(t, "namespace", "default", newApp.Namespace)
+					}).
+					Return(&v1alpha1.App{}, nil)
+			},
+		},
+		"pushes app with exact instances": {
+			appName:   "some-app",
+			buildpack: "some-buildpack",
+			opts: apps.PushOptions{
+				apps.WithPushSourceImage("some-image"),
+				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushServiceAccount("some-service-account"),
+				apps.WithPushExactScale(intPtr(9)),
+			},
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
+				appsClient.EXPECT().
+					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
+						oldApp := &v1alpha1.App{}
+						oldApp.Spec.Instances.Exactly = intPtr(9)
+						newApp = merge(newApp, oldApp)
+						testutil.Assert(t, gomock.Not(gomock.Nil()), newApp.Spec.Instances.Exactly)
+						testutil.AssertEqual(t, "instances.Exactly", 9, *newApp.Spec.Instances.Exactly)
+					}).
+					Return(&v1alpha1.App{}, nil)
+			},
+		},
+		"pushes app but leaves exact instances": {
+			appName:   "some-app",
+			buildpack: "some-buildpack",
+			opts: apps.PushOptions{
+				apps.WithPushSourceImage("some-image"),
+				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushServiceAccount("some-service-account"),
+			},
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
+				appsClient.EXPECT().
+					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
+						oldApp := &v1alpha1.App{}
+						oldApp.Spec.Instances.Exactly = intPtr(9)
+						newApp = merge(newApp, oldApp)
+						testutil.AssertEqual(t, "instances.Exactly", 9, *newApp.Spec.Instances.Exactly)
+					}).
+					Return(&v1alpha1.App{}, nil)
+			},
+		},
+		"pushes app with min and max instances": {
+			appName:   "some-app",
+			buildpack: "some-buildpack",
+			opts: apps.PushOptions{
+				apps.WithPushSourceImage("some-image"),
+				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushServiceAccount("some-service-account"),
+				apps.WithPushMinScale(intPtr(9)),
+				apps.WithPushMaxScale(intPtr(11)),
+			},
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
+				appsClient.EXPECT().
+					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
+						testutil.AssertEqual(t, "instances.Min", 9, *newApp.Spec.Instances.Min)
+						testutil.AssertEqual(t, "instances.Max", 11, *newApp.Spec.Instances.Max)
+					}).
+					Return(&v1alpha1.App{}, nil)
+			},
+		},
+		"pushes app but leaves min and max instances": {
+			appName:   "some-app",
+			buildpack: "some-buildpack",
+			opts: apps.PushOptions{
+				apps.WithPushSourceImage("some-image"),
+				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushServiceAccount("some-service-account"),
+			},
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
+				appsClient.EXPECT().
+					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
+						oldApp := &v1alpha1.App{}
+						oldApp.Spec.Instances.Min = intPtr(9)
+						oldApp.Spec.Instances.Max = intPtr(11)
+						newApp = merge(newApp, oldApp)
+						testutil.AssertEqual(t, "instances.Min", 9, *newApp.Spec.Instances.Min)
+						testutil.AssertEqual(t, "instances.Max", 11, *newApp.Spec.Instances.Max)
+					}).
+					Return(&v1alpha1.App{}, nil)
+			},
+		},
+		"pushes app with default of exactly 1 instance": {
+			appName:   "some-app",
+			buildpack: "some-buildpack",
+			opts: apps.PushOptions{
+				apps.WithPushSourceImage("some-image"),
+				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushServiceAccount("some-service-account"),
+			},
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
+				appsClient.EXPECT().
+					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
+						oldApp := &v1alpha1.App{}
+						newApp = merge(newApp, oldApp)
+						testutil.AssertEqual(t, "instances.Exactly", 1, *newApp.Spec.Instances.Exactly)
 					}).
 					Return(&v1alpha1.App{}, nil)
 			},
@@ -162,12 +265,12 @@ func TestPush(t *testing.T) {
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
-					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
-						ka := apps.NewFromApp(newObj)
+					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
+						ka := apps.NewFromApp(newApp)
 
-						testutil.AssertEqual(t, "service.Name", "some-app", newObj.Name)
-						testutil.AssertEqual(t, "service.Kind", "App", newObj.Kind)
-						testutil.AssertEqual(t, "service.APIVersion", "kf.dev/v1alpha1", newObj.APIVersion)
+						testutil.AssertEqual(t, "service.Name", "some-app", newApp.Name)
+						testutil.AssertEqual(t, "service.Kind", "App", newApp.Kind)
+						testutil.AssertEqual(t, "service.APIVersion", "kf.dev/v1alpha1", newApp.APIVersion)
 						testutil.AssertEqual(t, "Spec.ServiceAccountName", "some-service-account", ka.GetServiceAccount())
 					}).
 					Return(&v1alpha1.App{}, nil)
@@ -186,11 +289,11 @@ func TestPush(t *testing.T) {
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Any(), gomock.Any(), gomock.Any()).
-					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
-						testutil.AssertEqual(t, "namespace", "default", newObj.Namespace)
-						testutil.AssertEqual(t, "Spec.ServiceAccountName", "some-service-account", newObj.Spec.Template.Spec.ServiceAccountName)
-						testutil.AssertEqual(t, "image", "some-image", newObj.Spec.Source.BuildpackBuild.Source)
-						testutil.AssertEqual(t, "buildpack", "some-buildpack", newObj.Spec.Source.BuildpackBuild.Buildpack)
+					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
+						testutil.AssertEqual(t, "namespace", "default", newApp.Namespace)
+						testutil.AssertEqual(t, "Spec.ServiceAccountName", "some-service-account", newApp.Spec.Template.Spec.ServiceAccountName)
+						testutil.AssertEqual(t, "image", "some-image", newApp.Spec.Source.BuildpackBuild.Source)
+						testutil.AssertEqual(t, "buildpack", "some-buildpack", newApp.Spec.Source.BuildpackBuild.Buildpack)
 
 					}).Return(&v1alpha1.App{}, nil)
 			},
@@ -206,8 +309,8 @@ func TestPush(t *testing.T) {
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
-					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
-						actual := envutil.GetAppEnvVars(newObj)
+					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
+						actual := envutil.GetAppEnvVars(newApp)
 						envutil.SortEnvVars(actual)
 						testutil.AssertEqual(t, "envs",
 							[]corev1.EnvVar{{Name: "ENV1", Value: "val1"}, {Name: "ENV2", Value: "val2"}},
@@ -225,8 +328,8 @@ func TestPush(t *testing.T) {
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
-					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
-						testutil.AssertEqual(t, "containerImage", "some-image", newObj.Spec.Source.ContainerImage.Image)
+					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
+						testutil.AssertEqual(t, "containerImage", "some-image", newApp.Spec.Source.ContainerImage.Image)
 					}).
 					Return(&v1alpha1.App{}, nil)
 			},
@@ -239,10 +342,10 @@ func TestPush(t *testing.T) {
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
-					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
+					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
 						testutil.AssertEqual(t, "Routes", []v1alpha1.RouteSpecFields{
 							{Hostname: "host-1"}, {Hostname: "host-2"},
-						}, newObj.Spec.Routes)
+						}, newApp.Spec.Routes)
 					}).
 					Return(&v1alpha1.App{}, nil)
 			},
@@ -304,12 +407,12 @@ func TestPush(t *testing.T) {
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
-					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
-						newObj = merge(newObj, newObj)
-						testutil.AssertEqual(t, "len(Routes)", 1, len(newObj.Spec.Routes))
-						testutil.AssertEqual(t, "Routes.Domain", "example.com", newObj.Spec.Routes[0].Domain)
-						testutil.Assert(t, gomock.Not(gomock.Eq("")), newObj.Spec.Routes[0].Hostname)
-						testutil.AssertEqual(t, "Routes.Path", "", newObj.Spec.Routes[0].Path)
+					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
+						newApp = merge(newApp, newApp)
+						testutil.AssertEqual(t, "len(Routes)", 1, len(newApp.Spec.Routes))
+						testutil.AssertEqual(t, "Routes.Domain", "example.com", newApp.Spec.Routes[0].Domain)
+						testutil.Assert(t, gomock.Not(gomock.Eq("")), newApp.Spec.Routes[0].Hostname)
+						testutil.AssertEqual(t, "Routes.Path", "", newApp.Spec.Routes[0].Path)
 					}).
 					Return(&v1alpha1.App{}, nil)
 			},
@@ -325,7 +428,7 @@ func TestPush(t *testing.T) {
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
-					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
+					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
 						app := &v1alpha1.App{}
 						app.Spec.Routes = []v1alpha1.RouteSpecFields{
 							{Domain: "existing.com"},
@@ -367,8 +470,8 @@ func TestPush(t *testing.T) {
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
-					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
-						ka := apps.NewFromApp(newObj)
+					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
+						ka := apps.NewFromApp(newApp)
 
 						testutil.AssertEqual(
 							t,
@@ -394,8 +497,8 @@ func TestPush(t *testing.T) {
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Any(), gomock.Any(), gomock.Any()).
-					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
-						testutil.AssertEqual(t, "app.Spec.Instances.Stopped", true, newObj.Spec.Instances.Stopped)
+					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
+						testutil.AssertEqual(t, "app.Spec.Instances.Stopped", true, newApp.Spec.Instances.Stopped)
 
 					}).Return(&v1alpha1.App{}, nil)
 			},
@@ -431,4 +534,8 @@ func TestPush(t *testing.T) {
 			ctrl.Finish()
 		})
 	}
+}
+
+func intPtr(i int) *int {
+	return &i
 }
