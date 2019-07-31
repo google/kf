@@ -16,6 +16,9 @@ package apps
 
 import (
 	"fmt"
+	"math/rand"
+	"strconv"
+	"strings"
 	"time"
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -95,7 +98,10 @@ func (p *pusher) Push(appName string, opts ...PushOption) error {
 		return fmt.Errorf("failed to create app: %s", err)
 	}
 
-	resultingApp, err := p.appsClient.Upsert(app.Namespace, app, mergeApps)
+	var hasDefaultRoutes bool
+	app.Spec.Routes, hasDefaultRoutes = setupRoutes(cfg, app.Name, app.Spec.Routes)
+
+	resultingApp, err := p.appsClient.Upsert(app.Namespace, app, mergeApps(cfg, hasDefaultRoutes))
 	if err != nil {
 		return fmt.Errorf("failed to push app: %s", err)
 	}
@@ -122,12 +128,48 @@ func (p *pusher) Push(appName string, opts ...PushOption) error {
 	return nil
 }
 
-func mergeApps(newapp, oldapp *v1alpha1.App) *v1alpha1.App {
-	newapp.ResourceVersion = oldapp.ResourceVersion
-	newEnvs := envutil.GetAppEnvVars(newapp)
-	oldEnvs := envutil.GetAppEnvVars(oldapp)
-	envutil.SetAppEnvVars(newapp, envutil.DeduplicateEnvVars(append(oldEnvs, newEnvs...)))
-	return newapp
+func setupRoutes(cfg pushConfig, appName string, r []v1alpha1.RouteSpecFields) (routes []v1alpha1.RouteSpecFields, hasDefaultRoutes bool) {
+	switch {
+	case len(r) != 0:
+		// Don't overwrite the routes
+		return r, false
+	case cfg.DefaultRouteDomain != "":
+		return []v1alpha1.RouteSpecFields{
+			{
+				Domain:   cfg.DefaultRouteDomain,
+				Hostname: appName,
+			},
+		}, true
+	case cfg.RandomRouteDomain != "":
+		return []v1alpha1.RouteSpecFields{
+			{
+				Domain: cfg.RandomRouteDomain,
+				Hostname: strings.Join([]string{
+					appName,
+					strconv.FormatUint(rand.Uint64(), 36),
+					strconv.FormatUint(uint64(time.Now().UnixNano()), 36),
+				}, "-"),
+			},
+		}, true
+	default:
+		return nil, false
+	}
+}
+
+func mergeApps(cfg pushConfig, hasDefaultRoutes bool) func(newapp, oldapp *v1alpha1.App) *v1alpha1.App {
+	return func(newapp, oldapp *v1alpha1.App) *v1alpha1.App {
+
+		if len(oldapp.Spec.Routes) > 0 && hasDefaultRoutes {
+			newapp.Spec.Routes = oldapp.Spec.Routes
+		}
+
+		newapp.ResourceVersion = oldapp.ResourceVersion
+		newEnvs := envutil.GetAppEnvVars(newapp)
+		oldEnvs := envutil.GetAppEnvVars(oldapp)
+		envutil.SetAppEnvVars(newapp, envutil.DeduplicateEnvVars(append(oldEnvs, newEnvs...)))
+
+		return newapp
+	}
 }
 
 // AppImageName gets the image name for an application.

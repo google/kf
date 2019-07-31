@@ -30,15 +30,17 @@ import (
 
 // Application is a configuration for a single 12-factor-app.
 type Application struct {
-	Name       string            `yaml:"name,omitempty"`
-	Path       string            `yaml:"path,omitempty"`
-	Buildpacks []string          `yaml:"buildpacks,omitempty"`
-	Docker     AppDockerImage    `yaml:"docker,omitempty"`
-	Env        map[string]string `yaml:"env,omitempty"`
-	Services   []string          `yaml:"services,omitempty"`
-	MinScale   *int              `yaml:"minScale,omitempty"`
-	MaxScale   *int              `yaml:"maxScale,omitempty"`
-	Routes     []Route           `yaml:"routes,omitempty"`
+	Name        string            `yaml:"name,omitempty"`
+	Path        string            `yaml:"path,omitempty"`
+	Buildpacks  []string          `yaml:"buildpacks,omitempty"`
+	Docker      AppDockerImage    `yaml:"docker,omitempty"`
+	Env         map[string]string `yaml:"env,omitempty"`
+	Services    []string          `yaml:"services,omitempty"`
+	MinScale    *int              `yaml:"minScale,omitempty"`
+	MaxScale    *int              `yaml:"maxScale,omitempty"`
+	Routes      []Route           `yaml:"routes,omitempty"`
+	NoRoute     *bool             `yaml:"no-route,omitempty"`
+	RandomRoute *bool             `yaml:"random-route,omitempty"`
 
 	// HealthCheckTimeout holds the health check timeout.
 	// Note the serialized field is just timeout.
@@ -149,6 +151,21 @@ func (app *Application) Override(overrides *Application) error {
 	appEnv := envutil.MapToEnvVars(app.Env)
 	overrideEnv := envutil.MapToEnvVars(overrides.Env)
 	combined := append(appEnv, overrideEnv...)
+
+	if overrides.RandomRoute != nil {
+		app.RandomRoute = overrides.RandomRoute
+	}
+
+	if overrides.NoRoute != nil {
+		app.NoRoute = overrides.NoRoute
+
+		if *app.NoRoute && app.RandomRoute != nil && *app.RandomRoute {
+			return errors.New("can not use random-route and no-route together")
+		}
+	}
+	if len(overrides.Routes) > 0 {
+		app.Routes = overrides.Routes
+	}
 
 	if err := mergo.Merge(app, overrides, mergo.WithOverride); err != nil {
 		return err

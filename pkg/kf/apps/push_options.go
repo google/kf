@@ -30,6 +30,8 @@ type pushConfig struct {
 	ContainerImage string
 	// ContainerRegistry is the container registry's URL
 	ContainerRegistry string
+	// DefaultRouteDomain is Domain for a defaultroute. Only used if a route doesn't already exist
+	DefaultRouteDomain string
 	// EnvironmentVariables is set environment variables
 	EnvironmentVariables map[string]string
 	// Grpc is setup the ports for the container to allow gRPC to work
@@ -46,6 +48,8 @@ type pushConfig struct {
 	NoStart bool
 	// Output is the io.Writer to write output such as build logs
 	Output io.Writer
+	// RandomRouteDomain is Domain for a random route. Only used if a route doesn't already exist
+	RandomRouteDomain string
 	// Routes is routes for the app
 	Routes []v1alpha1.RouteSpecFields
 	// ServiceAccount is the service account to authenticate with
@@ -98,6 +102,12 @@ func (opts PushOptions) ContainerRegistry() string {
 	return opts.toConfig().ContainerRegistry
 }
 
+// DefaultRouteDomain returns the last set value for DefaultRouteDomain or the empty value
+// if not set.
+func (opts PushOptions) DefaultRouteDomain() string {
+	return opts.toConfig().DefaultRouteDomain
+}
+
 // EnvironmentVariables returns the last set value for EnvironmentVariables or the empty value
 // if not set.
 func (opts PushOptions) EnvironmentVariables() map[string]string {
@@ -146,6 +156,12 @@ func (opts PushOptions) Output() io.Writer {
 	return opts.toConfig().Output
 }
 
+// RandomRouteDomain returns the last set value for RandomRouteDomain or the empty value
+// if not set.
+func (opts PushOptions) RandomRouteDomain() string {
+	return opts.toConfig().RandomRouteDomain
+}
+
 // Routes returns the last set value for Routes or the empty value
 // if not set.
 func (opts PushOptions) Routes() []v1alpha1.RouteSpecFields {
@@ -182,6 +198,13 @@ func WithPushContainerImage(val string) PushOption {
 func WithPushContainerRegistry(val string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.ContainerRegistry = val
+	}
+}
+
+// WithPushDefaultRouteDomain creates an Option that sets Domain for a defaultroute. Only used if a route doesn't already exist
+func WithPushDefaultRouteDomain(val string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.DefaultRouteDomain = val
 	}
 }
 
@@ -238,6 +261,13 @@ func WithPushNoStart(val bool) PushOption {
 func WithPushOutput(val io.Writer) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.Output = val
+	}
+}
+
+// WithPushRandomRouteDomain creates an Option that sets Domain for a random route. Only used if a route doesn't already exist
+func WithPushRandomRouteDomain(val string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.RandomRouteDomain = val
 	}
 }
 

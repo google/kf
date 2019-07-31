@@ -78,9 +78,13 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		grpc               bool
 		noManifest         bool
 		noStart            bool
-		routes             []v1alpha1.RouteSpecFields
 		healthCheckType    string
 		healthCheckTimeout int
+
+		// Route Flags
+		rawRoutes         []string
+		noRoute           bool
+		randomRouteDomain bool
 	)
 
 	var pushCmd = &cobra.Command{
@@ -169,6 +173,25 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 				if healthCheckType != "" {
 					overrides.HealthCheckType = healthCheckType
 				}
+
+				if len(rawRoutes) > 0 {
+					overrides.Routes = nil
+					for _, rr := range rawRoutes {
+						overrides.Routes = append(overrides.Routes, manifest.Route{
+							Route: rr,
+						})
+					}
+				}
+
+				// Only override if the user explicitly set it.
+				if cmd.Flags().Lookup("no-route").Changed {
+					overrides.NoRoute = &noRoute
+				}
+
+				// Only override if the user explicitly set it.
+				if cmd.Flags().Lookup("random-route").Changed {
+					overrides.RandomRoute = &randomRouteDomain
+				}
 			}
 
 			for _, app := range appsToDeploy {
@@ -181,19 +204,29 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					return err
 				}
 
-				manifestRoutes := app.Routes
-				for _, route := range manifestRoutes {
-					// Parse route string from URL into hostname, domain, and path
-					newRoute, err := createRoute(route.Route, p.Namespace)
-					if err != nil {
-						return err
-					}
-					routes = append(routes, newRoute)
+				defaultDomain, err := spaceDefaultDomain(space)
+				if err != nil {
+					return err
+				}
+
+				routes, err := setupRoutes(space, app)
+				if err != nil {
+					return err
 				}
 
 				healthCheck, err := apps.NewHealthCheck(app.HealthCheckType, app.HealthCheckHTTPEndpoint, app.HealthCheckTimeout)
 				if err != nil {
 					return err
+				}
+
+				var randomRouteDomain string
+				if app.RandomRoute != nil && *app.RandomRoute {
+					randomRouteDomain = defaultDomain
+				}
+
+				var defaultRouteDomain string
+				if len(routes) == 0 && randomRouteDomain == "" && (app.NoRoute == nil || !*app.NoRoute) {
+					defaultRouteDomain = defaultDomain
 				}
 
 				pushOpts := []apps.PushOption{
@@ -206,6 +239,8 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					apps.WithPushNoStart(noStart),
 					apps.WithPushRoutes(routes),
 					apps.WithPushHealthCheck(healthCheck),
+					apps.WithPushRandomRouteDomain(randomRouteDomain),
+					apps.WithPushDefaultRouteDomain(defaultRouteDomain),
 				}
 
 				if app.Docker.Image == "" { // buildpack app
@@ -280,6 +315,8 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 			return nil
 		},
 	}
+
+	// TODO (#420): Generate flags from manifest
 
 	pushCmd.Flags().StringVar(
 		&containerRegistry,
@@ -387,6 +424,27 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		"Time (in seconds) allowed to elapse between starting up an app and the first healthy response from the app.",
 	)
 
+	pushCmd.Flags().BoolVar(
+		&noRoute,
+		"no-route",
+		false,
+		"Do not map a route to this app and remove routes from previous pushes of this app",
+	)
+
+	pushCmd.Flags().BoolVar(
+		&randomRouteDomain,
+		"random-route",
+		false,
+		"Create a random route for this app if the app doesn't have a route.",
+	)
+
+	pushCmd.Flags().StringArrayVar(
+		&rawRoutes,
+		"route",
+		nil,
+		"Use the routes flag to provide multiple HTTP and TCP routes. Each route for this app is created if it does not already exist.",
+	)
+
 	return pushCmd
 }
 
@@ -472,4 +530,31 @@ func parseRouteStr(routeStr string) (string, string, string, error) {
 	path = u.EscapedPath()
 
 	return hostname, domain, path, nil
+}
+
+func spaceDefaultDomain(space *v1alpha1.Space) (string, error) {
+	for _, domain := range space.Spec.Execution.Domains {
+		if domain.Default {
+			return domain.Domain, nil
+		}
+	}
+
+	return "", errors.New("space does not have a default domain")
+}
+
+func setupRoutes(space *v1alpha1.Space, app manifest.Application) (routes []v1alpha1.RouteSpecFields, err error) {
+	if app.NoRoute != nil && *app.NoRoute {
+		return nil, nil
+	}
+
+	for _, route := range app.Routes {
+		// Parse route string from URL into hostname, domain, and path
+		newRoute, err := createRoute(route.Route, space.Name)
+		if err != nil {
+			return nil, err
+		}
+		routes = append(routes, newRoute)
+	}
+
+	return routes, nil
 }
