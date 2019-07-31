@@ -18,6 +18,7 @@ import "github.com/google/kf/pkg/kf/apps"
 
 //go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_client.go --mock_names=Client=FakeClient github.com/google/kf/pkg/kf/apps/fake Client
 //go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_pusher.go --mock_names=Pusher=FakePusher github.com/google/kf/pkg/kf/apps/fake Pusher
+//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_watcher.go --mock_names=Interface=FakeWatcher k8s.io/apimachinery/pkg/watch Interface
 
 // Client is the client for spaces.
 type Client interface {

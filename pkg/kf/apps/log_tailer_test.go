@@ -21,9 +21,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	v1alpha1fake "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1/fake"
 	"github.com/google/kf/pkg/kf/apps"
+	appsfake "github.com/google/kf/pkg/kf/apps/fake"
 	sourcesfake "github.com/google/kf/pkg/kf/sources/fake"
 	systemenvinjectorfake "github.com/google/kf/pkg/kf/systemenvinjector/fake"
 	"github.com/google/kf/pkg/kf/testutil"
@@ -33,8 +34,6 @@ import (
 	ktesting "k8s.io/client-go/testing"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
-
-//go:generate mockgen --package apps_test --destination fake_watcher_test.go --mock_names=Interface=FakeWatcher --copyright_file ../internal/tools/option-builder/LICENSE_HEADER k8s.io/apimachinery/pkg/watch Interface
 
 func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 	t.Parallel()
@@ -219,7 +218,7 @@ func buildLogWatchFakes(
 	serviceErr, buildErr error,
 ) (*gomock.Controller, *v1alpha1fake.FakeKfV1alpha1) {
 	ctrl := gomock.NewController(t)
-	fakeWatcher := NewFakeWatcher(ctrl)
+	fakeWatcher := appsfake.NewFakeWatcher(ctrl)
 	fakeWatcher.
 		EXPECT().
 		ResultChan().

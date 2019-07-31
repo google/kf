@@ -106,13 +106,17 @@ func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, ou
 			// Time out waiting for a log.
 			return nil
 		case e := <-w.ResultChan():
-			if e.Type != watch.Added {
-				continue
+			switch e.Type {
+			case watch.Added:
+				go func(e watch.Event) {
+					t.readLogs(ctx, e.Object.(*v1.Pod).Name, namespace, out, opts)
+					cancel()
+				}(e)
+			case watch.Deleted:
+				if _, err := io.WriteString(out, fmt.Sprintf("Pod '%s' is deleted\n", e.Object.(*v1.Pod).Name)); err != nil {
+					return err
+				}
 			}
-			go func(e watch.Event) {
-				t.readLogs(ctx, e.Object.(*v1.Pod).Name, namespace, out, opts)
-				cancel()
-			}(e)
 		}
 	}
 }
