@@ -93,6 +93,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 // ApplyChanges updates the linked resources in the cluster with the current
 // status of the source.
 func (r *Reconciler) ApplyChanges(ctx context.Context, source *v1alpha1.Source) error {
+	source.Status.InitializeConditions()
+
 	// Sync build
 	{
 		desired, err := resources.MakeBuild(source)
