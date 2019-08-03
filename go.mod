@@ -10,6 +10,7 @@ require (
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/golang/mock v1.3.1
 	github.com/google/go-containerregistry v0.0.0-20190306174256-678f6c51f585
+	github.com/google/kf/pkg/kf/commands/install v0.0.0
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/google/wire v0.2.2
 	github.com/gorilla/mux v1.7.0
@@ -27,10 +28,11 @@ require (
 	github.com/rogpeppe/go-internal v1.3.0 // indirect
 	github.com/segmentio/textio v1.2.0
 	github.com/sirupsen/logrus v1.3.0 // indirect
-	github.com/spf13/cobra v0.0.3
+	github.com/spf13/cobra v0.0.5
 	go.opencensus.io v0.22.0 // indirect
 	go.uber.org/zap v1.9.1
 	google.golang.org/appengine v1.5.0 // indirect
+	gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c // indirect
 	gopkg.in/yaml.v2 v2.2.2
 	gotest.tools v2.2.0+incompatible // indirect
 	k8s.io/api v0.0.0
@@ -55,6 +57,7 @@ replace github.com/knative/pkg => github.com/poy/knative-pkg v99.0.0+incompatibl
 replace k8s.io/client-go => k8s.io/client-go v2.0.0-alpha.0.0.20190226174127-78295b709ec6+incompatible
 
 replace (
+	github.com/google/kf/pkg/kf/commands/install => ./pkg/kf/commands/install
 	k8s.io/api => k8s.io/api v0.0.0-20190528110122-9ad12a4af326
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190528110544-fa58353d80f3
 	k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20190221084156-01f179d85dbc
@@ -74,5 +77,4 @@ replace (
 	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.0.0-20190416155406-4c85c9b0ae06
 	k8s.io/metrics => k8s.io/metrics v0.0.0-20190528110627-05eb8901940c
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.0.0-20190528110419-48d5cc0538c7
-
 )
