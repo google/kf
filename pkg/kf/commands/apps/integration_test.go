@@ -71,8 +71,8 @@ func TestIntegration_Push_update(t *testing.T) {
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
 		)
 		defer kf.Delete(ctx, appName)
-		checkEchoApp(ctx, t, kf, appName, 8087)
-		checkHelloWorldApp(ctx, t, kf, appName, 8087)
+		checkEchoApp(ctx, t, kf, appName)
+		checkHelloWorldApp(ctx, t, kf, appName)
 	})
 }
 
@@ -91,7 +91,7 @@ func TestIntegration_Push_docker(t *testing.T) {
 			"--docker-image=gcr.io/kf-releases/echo-app",
 		)
 		defer kf.Delete(ctx, appName)
-		checkEchoApp(ctx, t, kf, appName, 8086)
+		checkEchoApp(ctx, t, kf, appName)
 	})
 }
 
@@ -118,7 +118,7 @@ func checkApp(
 	Logf(t, "hitting echo app to ensure its working...")
 
 	go kf.Proxy(ctx, appName)
-	assert(ctx, t, fmt.Sprintf("http://localhost:0"))
+	assert(ctx, t, "http://localhost:0")
 }
 
 func checkEchoApp(
@@ -185,7 +185,7 @@ func TestIntegration_StopStart(t *testing.T) {
 		go kf.Proxy(ctx, appName)
 
 		{
-			resp, respCancel := RetryPost(ctx, t, "http://localhost:8085", appTimeout, http.StatusOK, "testing")
+			resp, respCancel := RetryPost(ctx, t, "http://localhost:0", appTimeout, http.StatusOK, "testing")
 			defer resp.Body.Close()
 			defer respCancel()
 			Logf(t, "done hitting echo app to ensure it's working.")
@@ -197,7 +197,7 @@ func TestIntegration_StopStart(t *testing.T) {
 
 		{
 			Logf(t, "hitting echo app to ensure it's NOT working...")
-			resp, respCancel := RetryPost(ctx, t, "http://localhost:8085", appTimeout, http.StatusNotFound, "testing")
+			resp, respCancel := RetryPost(ctx, t, "http://localhost:0", appTimeout, http.StatusNotFound, "testing")
 			defer resp.Body.Close()
 			defer respCancel()
 			Logf(t, "done hitting echo app to ensure it's NOT working.")
@@ -209,7 +209,7 @@ func TestIntegration_StopStart(t *testing.T) {
 
 		{
 			Logf(t, "hitting echo app to ensure it's working...")
-			resp, respCancel := RetryPost(ctx, t, "http://localhost:8085", appTimeout, http.StatusOK, "testing")
+			resp, respCancel := RetryPost(ctx, t, "http://localhost:0", appTimeout, http.StatusOK, "testing")
 			defer resp.Body.Close()
 			defer respCancel()
 			Logf(t, "done hitting echo app to ensure it's working.")
@@ -407,7 +407,7 @@ func TestIntegration_Logs(t *testing.T) {
 		// than once because we can't guarantee much about logs.
 		expectedLogLine := fmt.Sprintf("testing-%d", time.Now().UnixNano())
 		for i := 0; i < 10; i++ {
-			resp, respCancel := RetryPost(ctx, t, "http://localhost:8083", appTimeout, http.StatusOK, expectedLogLine)
+			resp, respCancel := RetryPost(ctx, t, "http://localhost:0", appTimeout, http.StatusOK, expectedLogLine)
 			resp.Body.Close()
 			respCancel()
 		}
@@ -482,7 +482,7 @@ func checkVars(ctx context.Context, t *testing.T, kf *Kf, appName string, expect
 		// JSON. This checks to make sure everything is ACTUALLY being
 		// set from the app's perspective.
 		Logf(t, "hitting app %s to check the envs...", appName)
-		resp, respCancel := RetryPost(ctx, t, fmt.Sprintf("http://localhost:0"), appTimeout, http.StatusOK, "")
+		resp, respCancel := RetryPost(ctx, t, "http://localhost:0", appTimeout, http.StatusOK, "")
 		defer resp.Body.Close()
 		defer respCancel()
 		if resp.StatusCode != http.StatusOK {
