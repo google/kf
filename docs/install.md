@@ -34,7 +34,7 @@ sudo mv kf /usr/local/bin
 ### Mac
 > https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/cli/kf-darwin-latest
 ```sh
-wget https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/cli/kf-darwin-latest -O kf
+curl https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/cli/kf-darwin-latest --output kf
 chmod +x kf
 sudo mv kf /usr/local/bin
 ```
