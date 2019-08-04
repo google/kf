@@ -692,7 +692,7 @@ func (k *Kf) Start(ctx context.Context, appName string) {
 }
 
 // Proxy starts a proxy for an application.
-func (k *Kf) Proxy(ctx context.Context, appName string, port int) {
+func (k *Kf) Proxy(ctx context.Context, appName string) {
 	k.t.Helper()
 	Logf(k.t, "running proxy for %q...", appName)
 	defer Logf(k.t, "done running proxy for %q.", appName)
@@ -701,7 +701,7 @@ func (k *Kf) Proxy(ctx context.Context, appName string, port int) {
 			"proxy",
 			"--namespace", SpaceFromContext(ctx),
 			appName,
-			fmt.Sprintf("--port=%d", port),
+			fmt.Sprintf("--port=%d", 0),
 		},
 	})
 	PanicOnError(ctx, k.t, fmt.Sprintf("proxy %q", appName), errs)

@@ -51,7 +51,7 @@ func TestIntegration_Push(t *testing.T) {
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
 		)
 		defer kf.Delete(ctx, appName)
-		checkEchoApp(ctx, t, kf, appName, 8080)
+		checkEchoApp(ctx, t, kf, appName)
 	})
 }
 
@@ -100,7 +100,6 @@ func checkApp(
 	t *testing.T,
 	kf *Kf,
 	appName string,
-	proxyPort int,
 	assert func(ctx context.Context, t *testing.T, addr string),
 ) {
 	// List the apps and make sure we can find a domain.
@@ -118,10 +117,8 @@ func checkApp(
 	// 2. Tests work even if a domain isn't setup.
 	Logf(t, "hitting echo app to ensure its working...")
 
-	// TODO(#46): Use port 0 so that we don't have to worry about port
-	// collisions.
-	go kf.Proxy(ctx, appName, proxyPort)
-	assert(ctx, t, fmt.Sprintf("http://localhost:%d", proxyPort))
+	go kf.Proxy(ctx, appName)
+	assert(ctx, t, fmt.Sprintf("http://localhost:0"))
 }
 
 func checkEchoApp(
@@ -129,9 +126,8 @@ func checkEchoApp(
 	t *testing.T,
 	kf *Kf,
 	appName string,
-	proxyPort int,
 ) {
-	checkApp(ctx, t, kf, appName, proxyPort, func(ctx context.Context, t *testing.T, addr string) {
+	checkApp(ctx, t, kf, appName, func(ctx context.Context, t *testing.T, addr string) {
 		resp, respCancel := RetryPost(ctx, t, addr, appTimeout, http.StatusOK, "testing")
 		defer resp.Body.Close()
 		defer respCancel()
@@ -147,9 +143,8 @@ func checkHelloWorldApp(
 	t *testing.T,
 	kf *Kf,
 	appName string,
-	proxyPort int,
 ) {
-	checkApp(ctx, t, kf, appName, proxyPort, func(ctx context.Context, t *testing.T, addr string) {
+	checkApp(ctx, t, kf, appName, func(ctx context.Context, t *testing.T, addr string) {
 		// The helloworld app doesn't care if what verb you use (e.g., POST vs
 		// GET), so we'll just use the RetryPost method so we can get the
 		// retry logic.
@@ -187,10 +182,7 @@ func TestIntegration_StopStart(t *testing.T) {
 		// 2. Tests work even if a domain isn't setup.
 		Logf(t, "hitting echo app to ensure it's working...")
 
-		// TODO: Use port 0 so that we don't have to worry about port
-		// collisions. This doesn't work yet:
-		// https://github.com/poy/kf/issues/46
-		go kf.Proxy(ctx, appName, 8085)
+		go kf.Proxy(ctx, appName)
 
 		{
 			resp, respCancel := RetryPost(ctx, t, "http://localhost:8085", appTimeout, http.StatusOK, "testing")
@@ -257,13 +249,10 @@ func TestIntegration_Push_manifest(t *testing.T) {
 		}
 		Logf(t, "done ensuring app has a route.")
 
-		// TODO: Use port 0 so that we don't have to worry about port
-		// collisions. This doesn't work yet:
-		// https://github.com/poy/kf/issues/46
-		go kf.Proxy(ctx, appName, 8082)
+		go kf.Proxy(ctx, appName)
 
 		// Check manifest file environment variables by curling the app
-		checkVars(ctx, t, kf, appName, 8082, map[string]string{
+		checkVars(ctx, t, kf, appName, map[string]string{
 			"WHATNOW": "BROWNCOW",
 		}, nil)
 	})
@@ -365,12 +354,9 @@ func TestIntegration_Envs(t *testing.T) {
 		// This is only in place for cleanup if the test fails.
 		defer kf.Delete(ctx, appName)
 
-		// TODO: Use port 0 so that we don't have to worry about port
-		// collisions. This doesn't work yet:
-		// https://github.com/poy/kf/issues/46
-		go kf.Proxy(ctx, appName, 8081)
+		go kf.Proxy(ctx, appName)
 
-		checkVars(ctx, t, kf, appName, 8081, map[string]string{
+		checkVars(ctx, t, kf, appName, map[string]string{
 			"ENV1": "VALUE1", // Set on push
 			"ENV2": "VALUE2", // Set on push
 		}, nil)
@@ -383,7 +369,7 @@ func TestIntegration_Envs(t *testing.T) {
 			// Overwrite ENV2 via set-env
 			RetryOnPanic(ctx, t, func() { kf.SetEnv(ctx, appName, "ENV2", "OVERWRITE2") })
 
-			checkVars(ctx, t, kf, appName, 8081, map[string]string{
+			checkVars(ctx, t, kf, appName, map[string]string{
 				"ENV2": "OVERWRITE2", // Set on push and overwritten via set-env
 			}, []string{"ENV1"})
 		})
@@ -415,10 +401,7 @@ func TestIntegration_Logs(t *testing.T) {
 		// 1. Test the proxy.
 		// 2. Tests work even if a domain isn't setup.
 
-		// TODO: Use port 0 so that we don't have to worry about port
-		// collisions. This doesn't work yet:
-		// https://github.com/poy/kf/issues/46
-		go kf.Proxy(ctx, appName, 8083)
+		go kf.Proxy(ctx, appName)
 
 		// Write out an expected log line until the test dies. We do this more
 		// than once because we can't guarantee much about logs.
@@ -479,7 +462,7 @@ func TestIntegration_LogsNoContainer(t *testing.T) {
 // variables. It will retry for 5 seconds if the environment variables
 // aren't returning the correct values. This is to give the
 // enventually consistent system time to catch-up.
-func checkVars(ctx context.Context, t *testing.T, kf *Kf, appName string, proxyPort int, expectedVars map[string]string, absentVars []string) {
+func checkVars(ctx context.Context, t *testing.T, kf *Kf, appName string, expectedVars map[string]string, absentVars []string) {
 	ctx, cancel := context.WithTimeout(ctx, 90*time.Second)
 	defer cancel()
 
@@ -499,7 +482,7 @@ func checkVars(ctx context.Context, t *testing.T, kf *Kf, appName string, proxyP
 		// JSON. This checks to make sure everything is ACTUALLY being
 		// set from the app's perspective.
 		Logf(t, "hitting app %s to check the envs...", appName)
-		resp, respCancel := RetryPost(ctx, t, fmt.Sprintf("http://localhost:%d", proxyPort), appTimeout, http.StatusOK, "")
+		resp, respCancel := RetryPost(ctx, t, fmt.Sprintf("http://localhost:0"), appTimeout, http.StatusOK, "")
 		defer resp.Body.Close()
 		defer respCancel()
 		if resp.StatusCode != http.StatusOK {
