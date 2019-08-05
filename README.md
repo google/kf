@@ -4,6 +4,8 @@
 
 `kf` provides a `cf`-like experience on top of Knative.
 
+![](./docs/images/helloworld.gif)
+
 `kf` aims to be fully compatible with CF applications and lifecycle. It supports
 logs, buildpacks, app manifests, routing, service brokers, and injected services.
 

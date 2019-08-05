@@ -73,6 +73,8 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		containerImage     string
 		manifestFile       string
 		instances          int
+		minScale           int
+		maxScale           int
 		serviceAccount     string
 		path               string
 		buildpack          string
@@ -80,12 +82,16 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		grpc               bool
 		noManifest         bool
 		noStart            bool
-		routes             []v1alpha1.RouteSpecFields
 		healthCheckType    string
 		healthCheckTimeout int
 		memoryRequest      *resource.Quantity
 		storageRequest     *resource.Quantity
 		cpuRequest         *resource.Quantity
+
+		// Route Flags
+		rawRoutes         []string
+		noRoute           bool
+		randomRouteDomain bool
 	)
 
 	var pushCmd = &cobra.Command{
@@ -174,6 +180,40 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 				if healthCheckType != "" {
 					overrides.HealthCheckType = healthCheckType
 				}
+
+				if len(rawRoutes) > 0 {
+					overrides.Routes = nil
+					for _, rr := range rawRoutes {
+						overrides.Routes = append(overrides.Routes, manifest.Route{
+							Route: rr,
+						})
+					}
+				}
+
+				// Only override if the user explicitly set it.
+				if cmd.Flags().Lookup("no-route").Changed {
+					overrides.NoRoute = &noRoute
+				}
+
+				// Only override if the user explicitly set it.
+				if cmd.Flags().Lookup("random-route").Changed {
+					overrides.RandomRoute = &randomRouteDomain
+				}
+
+				// Only override if the user explicitly set it.
+				if cmd.Flags().Lookup("instances").Changed {
+					overrides.Instances = &instances
+				}
+
+				// Only override if the user explicitly set it.
+				if cmd.Flags().Lookup("min-scale").Changed {
+					overrides.MinScale = &minScale
+				}
+
+				// Only override if the user explicitly set it.
+				if cmd.Flags().Lookup("max-scale").Changed {
+					overrides.MaxScale = &maxScale
+				}
 			}
 
 			for _, app := range appsToDeploy {
@@ -181,19 +221,19 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					return err
 				}
 
-				minScale, maxScale, err := calculateScaleBounds(instances, app.MinScale, app.MaxScale)
+				exactScale, minScale, maxScale, err := calculateScaleBounds(app.Instances, app.MinScale, app.MaxScale)
 				if err != nil {
 					return err
 				}
 
-				manifestRoutes := app.Routes
-				for _, route := range manifestRoutes {
-					// Parse route string from URL into hostname, domain, and path
-					newRoute, err := createRoute(route.Route, p.Namespace)
-					if err != nil {
-						return err
-					}
-					routes = append(routes, newRoute)
+				defaultDomain, err := spaceDefaultDomain(space)
+				if err != nil {
+					return err
+				}
+
+				routes, err := setupRoutes(space, app)
+				if err != nil {
+					return err
 				}
 
 				if app.Memory != "" {
@@ -233,11 +273,22 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					return err
 				}
 
+				var randomRouteDomain string
+				if app.RandomRoute != nil && *app.RandomRoute {
+					randomRouteDomain = defaultDomain
+				}
+
+				var defaultRouteDomain string
+				if len(routes) == 0 && randomRouteDomain == "" && (app.NoRoute == nil || !*app.NoRoute) {
+					defaultRouteDomain = defaultDomain
+				}
+
 				pushOpts := []apps.PushOption{
 					apps.WithPushNamespace(p.Namespace),
 					apps.WithPushServiceAccount(serviceAccount),
 					apps.WithPushEnvironmentVariables(app.Env),
 					apps.WithPushGrpc(grpc),
+					apps.WithPushExactScale(exactScale),
 					apps.WithPushMinScale(minScale),
 					apps.WithPushMaxScale(maxScale),
 					apps.WithPushNoStart(noStart),
@@ -246,6 +297,8 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					apps.WithPushDiskQuota(storageRequest),
 					apps.WithPushCPU(cpuRequest),
 					apps.WithPushHealthCheck(healthCheck),
+					apps.WithPushRandomRouteDomain(randomRouteDomain),
+					apps.WithPushDefaultRouteDomain(defaultRouteDomain),
 				}
 
 				if app.Docker.Image == "" { // buildpack app
@@ -320,6 +373,8 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 			return nil
 		},
 	}
+
+	// TODO (#420): Generate flags from manifest
 
 	pushCmd.Flags().StringVar(
 		&containerRegistry,
@@ -404,6 +459,20 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		"the number of instances (default is 1)",
 	)
 
+	pushCmd.Flags().IntVar(
+		&minScale,
+		"min-scale",
+		-1, // -1 represents non-user input
+		"the minium number of instances the autoscaler will scale to",
+	)
+
+	pushCmd.Flags().IntVar(
+		&maxScale,
+		"max-scale",
+		-1, // -1 represents non-user input
+		"the maximum number of instances the autoscaler will scale to",
+	)
+
 	pushCmd.Flags().BoolVar(
 		&noStart,
 		"no-start",
@@ -427,34 +496,43 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 		"Time (in seconds) allowed to elapse between starting up an app and the first healthy response from the app.",
 	)
 
+	pushCmd.Flags().BoolVar(
+		&noRoute,
+		"no-route",
+		false,
+		"Do not map a route to this app and remove routes from previous pushes of this app",
+	)
+
+	pushCmd.Flags().BoolVar(
+		&randomRouteDomain,
+		"random-route",
+		false,
+		"Create a random route for this app if the app doesn't have a route.",
+	)
+
+	pushCmd.Flags().StringArrayVar(
+		&rawRoutes,
+		"route",
+		nil,
+		"Use the routes flag to provide multiple HTTP and TCP routes. Each route for this app is created if it does not already exist.",
+	)
+
 	return pushCmd
 }
 
-func calculateScaleBounds(instances int, minScale, maxScale *int) (int, int, error) {
-	zero := 0
-	if instances != -1 {
+func calculateScaleBounds(instances, minScale, maxScale *int) (exact, min, max *int, err error) {
+	switch {
+	case instances != nil:
+		// Exactly
 		if minScale != nil || maxScale != nil {
-			return -1, -1, errors.New("couldn't set the -i flag and the minScale/maxScale flags in manifest together")
-		}
-		return instances, instances, nil
-	} else {
-		if minScale == nil && maxScale == nil {
-			// both default bounds are 1
-			return 1, 1, nil
+			return nil, nil, nil, errors.New("couldn't set the -i flag and the minScale/maxScale flags in manifest together")
 		}
 
-		// Set 0 as default value(unbound) if one of min or max is not set
-		if minScale == nil {
-			minScale = &zero
-		}
-
-		if maxScale == nil {
-			maxScale = &zero
-		}
-
-		return *minScale, *maxScale, nil
+		return instances, nil, nil, nil
+	default:
+		// Autoscaling or unset
+		return nil, minScale, maxScale, nil
 	}
-
 }
 
 func createRoute(routeStr, namespace string) (v1alpha1.RouteSpecFields, error) {
@@ -542,3 +620,31 @@ func convertResourceQuantityStr(r string) (string, error) {
 }
 
 var cfValidBytesPattern = regexp.MustCompile(`(?i)^(-?\d+)([KMGT])B?$`)
+
+func spaceDefaultDomain(space *v1alpha1.Space) (string, error) {
+	for _, domain := range space.Spec.Execution.Domains {
+		if domain.Default {
+			return domain.Domain, nil
+		}
+	}
+
+	return "", errors.New("space does not have a default domain")
+}
+
+func setupRoutes(space *v1alpha1.Space, app manifest.Application) (routes []v1alpha1.RouteSpecFields, err error) {
+	if app.NoRoute != nil && *app.NoRoute {
+		return nil, nil
+	}
+
+	for _, route := range app.Routes {
+		// Parse route string from URL into hostname, domain, and path
+		newRoute, err := createRoute(route.Route, space.Name)
+		if err != nil {
+			return nil, err
+		}
+		routes = append(routes, newRoute)
+	}
+
+	return routes, nil
+}
+

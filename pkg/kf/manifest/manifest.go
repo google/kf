@@ -36,12 +36,19 @@ type Application struct {
 	Docker     AppDockerImage    `yaml:"docker,omitempty"`
 	Env        map[string]string `yaml:"env,omitempty"`
 	Services   []string          `yaml:"services,omitempty"`
-	MinScale   *int              `yaml:"minScale,omitempty"`
-	MaxScale   *int              `yaml:"maxScale,omitempty"`
-	Routes     []Route           `yaml:"routes,omitempty"`
 	DiskQuota  string            `yaml:"disk_quota,omitempty"`
 	Memory     string            `yaml:"memory,omitempty"`
 	CPU        string            `yaml:"cpu,omitempty"`
+	Instances  *int              `yaml:"instances,omitempty"`
+
+	// TODO(#95): These aren't CF proper. How do we expose these in the
+	// manifest?
+	MinScale *int `yaml:"min-scale,omitempty"`
+	MaxScale *int `yaml:"max-scale,omitempty"`
+
+	Routes      []Route `yaml:"routes,omitempty"`
+	NoRoute     *bool   `yaml:"no-route,omitempty"`
+	RandomRoute *bool   `yaml:"random-route,omitempty"`
 
 	// HealthCheckTimeout holds the health check timeout.
 	// Note the serialized field is just timeout.
@@ -149,9 +156,37 @@ func (m Manifest) App(name string) (*Application, error) {
 // Override overrides values using corresponding non-empty values from overrides.
 // Environment variables are extended with override taking priority.
 func (app *Application) Override(overrides *Application) error {
+
+	// TODO(#95) MinScale and MaxScale aren't CF proper and therefore may not
+	// stick around. We should warn the user, however there is no reason to
+	// not support it for now.
+	if app.MinScale != nil || app.MaxScale != nil {
+		fmt.Fprintf(os.Stderr, `
+WARNING! min-scale and max-scale is not a normal CF fields in a manifest.
+Therefore it is subject to change.
+Please follow the thread in https://github.com/google/kf/issues/95
+for more info.
+`)
+	}
+
 	appEnv := envutil.MapToEnvVars(app.Env)
 	overrideEnv := envutil.MapToEnvVars(overrides.Env)
 	combined := append(appEnv, overrideEnv...)
+
+	if overrides.RandomRoute != nil {
+		app.RandomRoute = overrides.RandomRoute
+	}
+
+	if overrides.NoRoute != nil {
+		app.NoRoute = overrides.NoRoute
+
+		if *app.NoRoute && app.RandomRoute != nil && *app.RandomRoute {
+			return errors.New("can not use random-route and no-route together")
+		}
+	}
+	if len(overrides.Routes) > 0 {
+		app.Routes = overrides.Routes
+	}
 
 	if err := mergo.Merge(app, overrides, mergo.WithOverride); err != nil {
 		return err

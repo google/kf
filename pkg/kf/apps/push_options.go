@@ -28,31 +28,37 @@ type pushConfig struct {
 	// Buildpack is skip the detect buildpack step and use the given name
 	Buildpack string
 	// CPU is app CPU request
-	CPU *resource.Quantity
-	// ContainerImage is the container to deploy
 	ContainerImage string
 	// ContainerRegistry is the container registry's URL
 	ContainerRegistry string
-	// DiskQuota is app disk storage quota
+	// DefaultRouteDomain is Domain for a defaultroute. Only used if a route doesn't already exist
+  CPU *resource.Quantity
+	// ContainerImage is the container to deploy
+	DefaultRouteDomain string
+  // DiskQuota is app disk storage quota
 	DiskQuota *resource.Quantity
 	// EnvironmentVariables is set environment variables
 	EnvironmentVariables map[string]string
+	// ExactScale is scale exactly to this number of instances
+	ExactScale *int
 	// Grpc is setup the ports for the container to allow gRPC to work
 	Grpc bool
 	// HealthCheck is the health check to use on the app
 	HealthCheck *corev1.Probe
 	// MaxScale is the upper scale bound
-	MaxScale int
+	MaxScale *int
 	// Memory is app memory request
 	Memory *resource.Quantity
 	// MinScale is the lower scale bound
-	MinScale int
+	MinScale *int
 	// Namespace is the Kubernetes namespace to use
 	Namespace string
 	// NoStart is setup the app without starting it
 	NoStart bool
 	// Output is the io.Writer to write output such as build logs
 	Output io.Writer
+	// RandomRouteDomain is Domain for a random route. Only used if a route doesn't already exist
+	RandomRouteDomain string
 	// Routes is routes for the app
 	Routes []v1alpha1.RouteSpecFields
 	// ServiceAccount is the service account to authenticate with
@@ -115,12 +121,23 @@ func (opts PushOptions) ContainerRegistry() string {
 // if not set.
 func (opts PushOptions) DiskQuota() *resource.Quantity {
 	return opts.toConfig().DiskQuota
+
+// DefaultRouteDomain returns the last set value for DefaultRouteDomain or the empty value
+// if not set.
+func (opts PushOptions) DefaultRouteDomain() string {
+	return opts.toConfig().DefaultRouteDomain
 }
 
 // EnvironmentVariables returns the last set value for EnvironmentVariables or the empty value
 // if not set.
 func (opts PushOptions) EnvironmentVariables() map[string]string {
 	return opts.toConfig().EnvironmentVariables
+}
+
+// ExactScale returns the last set value for ExactScale or the empty value
+// if not set.
+func (opts PushOptions) ExactScale() *int {
+	return opts.toConfig().ExactScale
 }
 
 // Grpc returns the last set value for Grpc or the empty value
@@ -137,7 +154,7 @@ func (opts PushOptions) HealthCheck() *corev1.Probe {
 
 // MaxScale returns the last set value for MaxScale or the empty value
 // if not set.
-func (opts PushOptions) MaxScale() int {
+func (opts PushOptions) MaxScale() *int {
 	return opts.toConfig().MaxScale
 }
 
@@ -149,7 +166,7 @@ func (opts PushOptions) Memory() *resource.Quantity {
 
 // MinScale returns the last set value for MinScale or the empty value
 // if not set.
-func (opts PushOptions) MinScale() int {
+func (opts PushOptions) MinScale() *int {
 	return opts.toConfig().MinScale
 }
 
@@ -169,6 +186,12 @@ func (opts PushOptions) NoStart() bool {
 // if not set.
 func (opts PushOptions) Output() io.Writer {
 	return opts.toConfig().Output
+}
+
+// RandomRouteDomain returns the last set value for RandomRouteDomain or the empty value
+// if not set.
+func (opts PushOptions) RandomRouteDomain() string {
+	return opts.toConfig().RandomRouteDomain
 }
 
 // Routes returns the last set value for Routes or the empty value
@@ -221,6 +244,13 @@ func WithPushContainerRegistry(val string) PushOption {
 func WithPushDiskQuota(val *resource.Quantity) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.DiskQuota = val
+  }
+}
+  
+// WithPushDefaultRouteDomain creates an Option that sets Domain for a defaultroute. Only used if a route doesn't already exist
+func WithPushDefaultRouteDomain(val string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.DefaultRouteDomain = val
 	}
 }
 
@@ -228,6 +258,13 @@ func WithPushDiskQuota(val *resource.Quantity) PushOption {
 func WithPushEnvironmentVariables(val map[string]string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.EnvironmentVariables = val
+	}
+}
+
+// WithPushExactScale creates an Option that sets scale exactly to this number of instances
+func WithPushExactScale(val *int) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.ExactScale = val
 	}
 }
 
@@ -246,7 +283,7 @@ func WithPushHealthCheck(val *corev1.Probe) PushOption {
 }
 
 // WithPushMaxScale creates an Option that sets the upper scale bound
-func WithPushMaxScale(val int) PushOption {
+func WithPushMaxScale(val *int) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.MaxScale = val
 	}
@@ -260,7 +297,7 @@ func WithPushMemory(val *resource.Quantity) PushOption {
 }
 
 // WithPushMinScale creates an Option that sets the lower scale bound
-func WithPushMinScale(val int) PushOption {
+func WithPushMinScale(val *int) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.MinScale = val
 	}
@@ -284,6 +321,13 @@ func WithPushNoStart(val bool) PushOption {
 func WithPushOutput(val io.Writer) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.Output = val
+	}
+}
+
+// WithPushRandomRouteDomain creates an Option that sets Domain for a random route. Only used if a route doesn't already exist
+func WithPushRandomRouteDomain(val string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.RandomRouteDomain = val
 	}
 }
 

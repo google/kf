@@ -37,12 +37,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-type routeParts struct {
-	hostname string
-	domain   string
-	path     string
-}
-
 func dummyBindingInstance(appName, instanceName string) *v1beta1.ServiceBinding {
 	instance := v1beta1.ServiceBinding{}
 	instance.Name = fmt.Sprintf("kf-binding-%s-%s", appName, instanceName)
@@ -52,24 +46,6 @@ func dummyBindingInstance(appName, instanceName string) *v1beta1.ServiceBinding 
 
 func TestPushCommand(t *testing.T) {
 	t.Parallel()
-
-	routes := createTestRoutes([]routeParts{
-		{
-			hostname: "",
-			domain:   "example.com",
-			path:     "",
-		},
-		{
-			hostname: "",
-			domain:   "www.example.com",
-			path:     "/foo",
-		},
-		{
-			hostname: "host",
-			domain:   "example.com",
-			path:     "/foo",
-		},
-	})
 
 	wantMemory := resource.MustParse("2Gi")
 	wantDiskQuota := resource.MustParse("2Gi")
@@ -81,10 +57,15 @@ func TestPushCommand(t *testing.T) {
 		},
 	}
 
+	defaultSpaceSpecExecution := v1alpha1.SpaceSpecExecution{
+		Domains: []v1alpha1.SpaceDomain{
+			{Domain: "example.com", Default: true},
+		},
+	}
+
 	defaultOptions := []apps.PushOption{
 		apps.WithPushHealthCheck(defaultTCPHealthCheck),
-		apps.WithPushMinScale(1),
-		apps.WithPushMaxScale(1),
+		apps.WithPushDefaultRouteDomain("example.com"),
 	}
 
 	for tn, tc := range map[string]struct {
@@ -128,6 +109,7 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushBuildpack("some-buildpack"),
 				apps.WithPushEnvironmentVariables(map[string]string{"env1": "val1", "env2": "val2"}),
 				apps.WithPushNoStart(true),
+				apps.WithPushExactScale(intPtr(1)),
 				apps.WithPushHealthCheck(&corev1.Probe{
 					TimeoutSeconds: 28,
 					Handler: corev1.Handler{
@@ -166,20 +148,77 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushContainerRegistry("some-reg.io"),
 			),
 		},
-		"specify-instances": {
+		"override manifest instances": {
 			namespace: "some-namespace",
 			args: []string{
-				"app-name",
+				"instances-app",
+				"--instances=11",
 				"--container-registry", "some-reg.io",
-				"--instances", "2",
 				"--source-image", "custom-reg.io/source-image:latest",
+				"--manifest", "testdata/manifest.yml",
 			},
-			wantImagePrefix: "custom-reg.io/source-image:latest",
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushMinScale(2),
-				apps.WithPushMaxScale(2),
 				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushExactScale(intPtr(11)),
+			),
+		},
+		"instances from manifest": {
+			namespace: "some-namespace",
+			args: []string{
+				"instances-app",
+				"--container-registry", "some-reg.io",
+				"--manifest", "testdata/manifest.yml",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushExactScale(intPtr(9)),
+			),
+		},
+		"override manifest min instances": {
+			namespace: "some-namespace",
+			args: []string{
+				"autoscaling-instances-app",
+				"--min-scale=11",
+				"--container-registry", "some-reg.io",
+				"--manifest", "testdata/manifest.yml",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushMinScale(intPtr(11)),
+				apps.WithPushMaxScale(intPtr(11)),
+			),
+		},
+		"override manifest max instances": {
+			namespace: "some-namespace",
+			args: []string{
+				"autoscaling-instances-app",
+				"--max-scale=13",
+				"--container-registry", "some-reg.io",
+				"--manifest", "testdata/manifest.yml",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushContainerRegistry("some-reg.io"),
+				// Manifest has 9 for min
+				apps.WithPushMinScale(intPtr(9)),
+				apps.WithPushMaxScale(intPtr(13)),
+			),
+		},
+		"min and max instances from manifest": {
+			namespace: "some-namespace",
+			args: []string{
+				"autoscaling-instances-app",
+				"--container-registry", "some-reg.io",
+				"--manifest", "testdata/manifest.yml",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushContainerRegistry("some-reg.io"),
+				apps.WithPushMinScale(intPtr(9)),
+				apps.WithPushMaxScale(intPtr(11)),
 			),
 		},
 		"bind-service-instance": {
@@ -209,8 +248,12 @@ func TestPushCommand(t *testing.T) {
 			},
 		},
 		"service create error": {
-			namespace:       "default",
-			args:            []string{"app-name", "--container-registry", "some-reg.io"},
+			namespace: "default",
+			args: []string{
+				"app-name",
+				"--container-registry",
+				"some-reg.io",
+			},
 			wantErr:         errors.New("some error"),
 			pusherErr:       errors.New("some error"),
 			wantImagePrefix: "some-reg.io/src-default-app-name",
@@ -236,6 +279,7 @@ func TestPushCommand(t *testing.T) {
 			},
 			targetSpace: &v1alpha1.Space{
 				Spec: v1alpha1.SpaceSpec{
+					Execution: defaultSpaceSpecExecution,
 					BuildpackBuild: v1alpha1.SpaceSpecBuildpackBuild{
 						ContainerRegistry: "space-reg.io",
 					},
@@ -358,8 +402,104 @@ func TestPushCommand(t *testing.T) {
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushRoutes(routes),
 				apps.WithPushContainerRegistry("some-registry.io"),
+				apps.WithPushRoutes(buildTestRoutes()),
+				apps.WithPushDefaultRouteDomain(""),
+			),
+		},
+		"create and map default routes": {
+			namespace: "some-namespace",
+			targetSpace: &v1alpha1.Space{
+				Spec: v1alpha1.SpaceSpec{
+					Execution: v1alpha1.SpaceSpecExecution{
+						Domains: []v1alpha1.SpaceDomain{
+							{Domain: "wrong.example.com"},
+							{Domain: "right.example.com", Default: true},
+						},
+					},
+				},
+			},
+			args: []string{
+				"routes-app",
+				"--container-registry", "some-registry.io",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushDefaultRouteDomain("right.example.com"),
+				apps.WithPushContainerRegistry("some-registry.io"),
+			),
+		},
+		"no-route prevents default route": {
+			namespace: "some-namespace",
+			args: []string{
+				"routes-app",
+				"--container-registry", "some-registry.io",
+				"--no-route",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushRoutes(nil),
+				apps.WithPushDefaultRouteDomain(""),
+				apps.WithPushContainerRegistry("some-registry.io"),
+			),
+		},
+		"no-route overrides manifest": {
+			namespace: "some-namespace",
+			args: []string{
+				"routes-app",
+				"--container-registry", "some-registry.io",
+				"--manifest", "testdata/manifest.yml",
+				"--no-route",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushRoutes(nil),
+				apps.WithPushDefaultRouteDomain(""),
+				apps.WithPushContainerRegistry("some-registry.io"),
+			),
+		},
+		"random-route and no-route both set": {
+			namespace: "some-namespace",
+			args: []string{
+				"random-route-app",
+				"--container-registry", "some-registry.io",
+				"--manifest", "testdata/manifest.yml",
+				"--no-route",
+			},
+			wantErr: errors.New("can not use random-route and no-route together"),
+		},
+		"random-route overrides manifest": {
+			namespace: "some-namespace",
+			args: []string{
+				"routes-app",
+				"--container-registry", "some-registry.io",
+				"--manifest", "testdata/manifest.yml",
+				"--random-route",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushRoutes(buildTestRoutes()),
+				apps.WithPushContainerRegistry("some-registry.io"),
+				apps.WithPushRandomRouteDomain("example.com"),
+				apps.WithPushDefaultRouteDomain(""),
+			),
+		},
+		"create and map routes from flags": {
+			namespace: "some-namespace",
+			args: []string{
+				"routes-app",
+				"--container-registry", "some-registry.io",
+				"--route=https://withscheme.example.com/path1",
+				"--route=noscheme.example.com",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushRoutes([]v1alpha1.RouteSpecFields{
+					buildRoute("withscheme", "example.com", "/path1"),
+					buildRoute("noscheme", "example.com", ""),
+				}),
+				apps.WithPushContainerRegistry("some-registry.io"),
+				apps.WithPushDefaultRouteDomain(""),
 			),
 		},
 		"http-health-check from manifest": {
@@ -444,6 +584,7 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "service account", expectOpts.ServiceAccount(), actualOpts.ServiceAccount())
 					testutil.AssertEqual(t, "grpc", expectOpts.Grpc(), actualOpts.Grpc())
 					testutil.AssertEqual(t, "env vars", expectOpts.EnvironmentVariables(), actualOpts.EnvironmentVariables())
+					testutil.AssertEqual(t, "exact scale bound", expectOpts.ExactScale(), actualOpts.ExactScale())
 					testutil.AssertEqual(t, "min scale bound", expectOpts.MinScale(), actualOpts.MinScale())
 					testutil.AssertEqual(t, "max scale bound", expectOpts.MaxScale(), actualOpts.MaxScale())
 					testutil.AssertEqual(t, "no start", expectOpts.NoStart(), actualOpts.NoStart())
@@ -452,6 +593,8 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "storage requests", expectOpts.DiskQuota(), actualOpts.DiskQuota())
 					testutil.AssertEqual(t, "cpu requests", expectOpts.CPU(), actualOpts.CPU())
 					testutil.AssertEqual(t, "health check", expectOpts.HealthCheck(), actualOpts.HealthCheck())
+					testutil.AssertEqual(t, "default route", expectOpts.DefaultRouteDomain(), actualOpts.DefaultRouteDomain())
+					testutil.AssertEqual(t, "random route", expectOpts.RandomRouteDomain(), actualOpts.RandomRouteDomain())
 
 					if !strings.HasPrefix(actualOpts.SourceImage(), tc.wantImagePrefix) {
 						t.Errorf("Wanted srcImage to start with %s got: %s", tc.wantImagePrefix, actualOpts.SourceImage())
@@ -468,6 +611,7 @@ func TestPushCommand(t *testing.T) {
 
 			if params.TargetSpace == nil {
 				params.SetTargetSpaceToDefault()
+				params.TargetSpace.Spec.Execution = defaultSpaceSpecExecution
 			}
 
 			if tc.setup != nil {
@@ -492,14 +636,22 @@ func TestPushCommand(t *testing.T) {
 	}
 }
 
-func createTestRoutes(routes []routeParts) []v1alpha1.RouteSpecFields {
-	newRoutes := []v1alpha1.RouteSpecFields{}
-	for _, route := range routes {
-		newRoutes = append(newRoutes, v1alpha1.RouteSpecFields{
-			Hostname: route.hostname,
-			Domain:   route.domain,
-			Path:     route.path,
-		})
+func buildRoute(hostname, domain, path string) v1alpha1.RouteSpecFields {
+	return v1alpha1.RouteSpecFields{
+		Hostname: hostname,
+		Domain:   domain,
+		Path:     path,
 	}
-	return newRoutes
+}
+
+func buildTestRoutes() []v1alpha1.RouteSpecFields {
+	return []v1alpha1.RouteSpecFields{
+		buildRoute("", "example.com", ""),
+		buildRoute("", "www.example.com", "/foo"),
+		buildRoute("host", "example.com", "/foo"),
+	}
+}
+
+func intPtr(i int) *int {
+	return &i
 }
