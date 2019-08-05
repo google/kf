@@ -15,6 +15,7 @@
 package install
 
 import (
+	"github.com/google/kf/pkg/kf/commands/install/gke"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +31,8 @@ func NewInstallCommand() *cobra.Command {
 	}
 
 	installers := []*cobra.Command{
-		NewGKECommand(),
+		// Add new installers below
+		gke.NewGKECommand(),
 	}
 
 	for _, kfi := range installers {

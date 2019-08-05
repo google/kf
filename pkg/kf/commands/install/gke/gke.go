@@ -12,26 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package install
+package gke
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path"
-	"regexp"
-	"strconv"
 	"strings"
-	"time"
 
-	"github.com/fatih/color"
-	"github.com/manifoldco/promptui"
+	. "github.com/google/kf/pkg/kf/commands/install/util"
 	"github.com/spf13/cobra"
 )
 
@@ -48,11 +40,6 @@ const (
 	Addons                = "HorizontalPodAutoscaling,HttpLoadBalancing,Istio,CloudRun"
 )
 
-var (
-	prefixColor = color.New(color.FgHiBlue, color.Bold)
-	labelColor  = color.New(color.FgHiYellow, color.Bold)
-)
-
 // NewGKECommand creates a command that can install kf to GKE+Cloud Run.
 // TODO: This installer is using gcloud and kubectl under the hood. We should
 // really replace gcloud with google.golang.org/api and kubectl with
@@ -62,22 +49,23 @@ func NewGKECommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "gke [subcommand]",
-		Short: "Install kf on GKE with Cloud Run",
+		Short: "Install kf on GKE with Cloud Run (Note: this will incur GCP costs)",
 		Long: `
 This interactive installer will walk you through the process of installing kf
 on GKE with Cloud Run. You MUST have gcloud and kubectl installed and
-available on the path.`,
+available on the path. Note: running this will incur costs to run GKE. See
+https://cloud.google.com/products/calculator/ to get an estimate.`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Print kubectl version
-			ctx := setContextOutput(context.Background(), cmd.ErrOrStderr())
-			version, err := kubectl(ctx, "version", "--short")
+			ctx := SetContextOutput(context.Background(), cmd.ErrOrStderr())
+			version, err := Kubectl(ctx, "version", "--short")
 			if err != nil {
 				return err
 			}
 			fmt.Fprintf(
 				cmd.ErrOrStderr(),
 				"%s\n%s\n",
-				labelColor.Sprint("kubectl version:"),
+				LabelColor.Sprint("kubectl version:"),
 				strings.Join(version, "\n"),
 			)
 
@@ -89,7 +77,7 @@ available on the path.`,
 			fmt.Fprintf(
 				cmd.ErrOrStderr(),
 				"%s\n%s\n",
-				labelColor.Sprint("gcloud version:"),
+				LabelColor.Sprint("gcloud version:"),
 				strings.Join(version, "\n"),
 			)
 
@@ -109,9 +97,9 @@ available on the path.`,
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
-			ctx := setContextOutput(context.Background(), cmd.ErrOrStderr())
-			ctx = setLogPrefix(ctx, "Install GKE+CR+Kf")
-			ctx = setVerbosity(ctx, verbose)
+			ctx := SetContextOutput(context.Background(), cmd.ErrOrStderr())
+			ctx = SetLogPrefix(ctx, "Install GKE+CR+Kf")
+			ctx = SetVerbosity(ctx, verbose)
 
 			// Select the desired project
 			projID, err := selectProject(ctx)
@@ -137,7 +125,7 @@ available on the path.`,
 
 			// Install Knative Build
 			Logf(ctx, "install Knative Build")
-			if _, err := kubectl(
+			if _, err := Kubectl(
 				ctx,
 				"apply",
 				"--filename",
@@ -153,7 +141,7 @@ available on the path.`,
 
 			// Install kf
 			Logf(ctx, "install kf")
-			if _, err := kubectl(
+			if _, err := Kubectl(
 				ctx,
 				"apply",
 				"--filename",
@@ -163,7 +151,11 @@ available on the path.`,
 			}
 
 			// Setup kf space
-			if err := setupSpace(ctx, projID); err != nil {
+			if err := SetupSpace(
+				ctx,
+				projID,
+				fmt.Sprintf("gcr.io/%s", projID),
+			); err != nil {
 				return err
 			}
 
@@ -183,7 +175,7 @@ available on the path.`,
 }
 
 func selectProject(ctx context.Context) (string, error) {
-	ctx = setLogPrefix(ctx, "Select Project")
+	ctx = SetLogPrefix(ctx, "Select Project")
 	projectList, err := projects(ctx)
 	if err != nil {
 		return "", err
@@ -192,7 +184,7 @@ func selectProject(ctx context.Context) (string, error) {
 	projectList = append([]string{"Create New Project"}, projectList...)
 
 	// Fetch the desired project
-	idx, result, err := selectPrompt(
+	idx, result, err := SelectPrompt(
 		ctx,
 		"Select Project",
 		projectList...,
@@ -213,7 +205,7 @@ func selectProject(ctx context.Context) (string, error) {
 }
 
 func selectCluster(ctx context.Context, projID string) (string, string, error) {
-	ctx = setLogPrefix(ctx, "Select Cluster")
+	ctx = SetLogPrefix(ctx, "Select Cluster")
 	clusterList, err := clusters(ctx, projID)
 	if err != nil {
 		return "", "", err
@@ -222,7 +214,7 @@ func selectCluster(ctx context.Context, projID string) (string, string, error) {
 	clusterList = append([]string{"Create New GKE Cluster"}, clusterList...)
 
 	// Fetch the desired cluster
-	idx, clusterName, err := selectPrompt(
+	idx, clusterName, err := SelectPrompt(
 		ctx,
 		"Select GKE Cluster",
 		clusterList...,
@@ -242,24 +234,14 @@ func selectCluster(ctx context.Context, projID string) (string, string, error) {
 	return clusterName, zone, err
 }
 
-func randName(prefix string, args ...interface{}) string {
-	return fmt.Sprintf(prefix, args...) + strconv.FormatInt(time.Now().UnixNano(), 36)
-}
-
-var (
-	nameRegexp = regexp.MustCompile(`^[a-z][0-9a-zA-Z-]{5,29}$`)
-	// hostnameRegexp is from https://stackoverflow.com/a/106223
-	hostnameRegexp = regexp.MustCompile(`^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$`)
-)
-
 func createProject(ctx context.Context) (string, error) {
-	ctx = setLogPrefix(ctx, "New Project")
+	ctx = SetLogPrefix(ctx, "New Project")
 
 	for {
-		name, err := namePrompt(
+		name, err := NamePrompt(
 			ctx,
-			labelColor.Sprint("Project Name (not ID): "),
-			randName("kf-"),
+			LabelColor.Sprint("Project Name (not ID): "),
+			RandName("kf-"),
 		)
 		if err != nil {
 			return "", err
@@ -296,69 +278,6 @@ func createProject(ctx context.Context) (string, error) {
 		Logf(ctx, "Created project %s with a project ID %s", name, projID)
 		return projID, nil
 	}
-}
-
-func hostnamePrompt(ctx context.Context, label, def string) (string, error) {
-	prompt := promptui.Prompt{
-		Label: labelColor.Sprint(label),
-		Validate: func(input string) error {
-			if !hostnameRegexp.MatchString(input) {
-				return errors.New("invalid hostname")
-			}
-			return nil
-		},
-		Default: def,
-	}
-
-	name, err := prompt.Run()
-	if err != nil {
-		return "", err
-	}
-
-	return name, nil
-}
-
-func namePrompt(ctx context.Context, label, def string) (string, error) {
-	prompt := promptui.Prompt{
-		Label: labelColor.Sprint(label),
-		Validate: func(input string) error {
-			if !nameRegexp.MatchString(input) {
-				return errors.New("invalid name")
-			}
-			return nil
-		},
-		Default: def,
-	}
-
-	name, err := prompt.Run()
-	if err != nil {
-		return "", err
-	}
-
-	return name, nil
-}
-
-func selectPrompt(
-	ctx context.Context,
-	label string,
-	items ...string,
-) (int, string, error) {
-	p := promptui.Select{
-		Label:             labelColor.Sprint(label),
-		StartInSearchMode: true,
-		Searcher:          searcher(items),
-		Items:             items,
-	}
-	return p.Run()
-}
-
-func selectYesNo(ctx context.Context, label string) (bool, error) {
-	idx, _, err := selectPrompt(ctx, label, "yes", "no")
-	if err != nil {
-		return false, err
-	}
-
-	return idx == 0, nil
 }
 
 // projects uses gcloud to list all the available projects.
@@ -425,7 +344,7 @@ func networks(ctx context.Context, projID string) ([]string, error) {
 }
 
 func createNewCluster(ctx context.Context, projID string) (string, string, error) {
-	ctx = setLogPrefix(ctx, "Create New GKE Config")
+	ctx = SetLogPrefix(ctx, "Create New GKE Config")
 
 	// Check billing for project
 	if err := ensureBilling(ctx, projID); err != nil {
@@ -474,14 +393,14 @@ func gkeClusterConfig(
 	network string,
 	err error,
 ) {
-	ctx = setLogPrefix(ctx, "GKE Cluster Config")
+	ctx = SetLogPrefix(ctx, "GKE Cluster Config")
 
 	// ClusterName
 	{
-		clusterName, err = namePrompt(
+		clusterName, err = NamePrompt(
 			ctx,
 			"Cluster Name: ",
-			randName("kf-"),
+			RandName("kf-"),
 		)
 		if err != nil {
 			return "", "", "", "", err
@@ -490,13 +409,13 @@ func gkeClusterConfig(
 
 	// Service Account
 	{
-		serviceAccountName := randName("kf-")
+		serviceAccountName := RandName("kf-")
 		serviceAccount = fmt.Sprintf(
 			"%s@%s.iam.gserviceaccount.com",
 			serviceAccountName,
 			projID,
 		)
-		ok, err := selectYesNo(
+		ok, err := SelectYesNo(
 			ctx,
 			fmt.Sprintf("Create service account %s?", serviceAccount),
 		)
@@ -527,7 +446,7 @@ func gkeClusterConfig(
 		case len(availableZones) == 1:
 			zone = availableZones[0]
 		default:
-			_, zone, err = selectPrompt(ctx, "Zone", availableZones...)
+			_, zone, err = SelectPrompt(ctx, "Zone", availableZones...)
 			if err != nil {
 				return "", "", "", "", err
 			}
@@ -545,7 +464,7 @@ func gkeClusterConfig(
 		case len(availableNetworks) == 1:
 			network = availableNetworks[0]
 		default:
-			_, network, err = selectPrompt(ctx, "Network", availableNetworks...)
+			_, network, err = SelectPrompt(ctx, "Network", availableNetworks...)
 			if err != nil {
 				return "", "", "", "", err
 			}
@@ -563,7 +482,7 @@ func buildGKECluster(
 	serviceAccount string,
 	network string,
 ) error {
-	ctx = setLogPrefix(ctx, "Create GKE Cluster")
+	ctx = SetLogPrefix(ctx, "Create GKE Cluster")
 	args := []string{
 		"beta", "container", "clusters", "create", clusterName,
 		"--zone", zone,
@@ -604,7 +523,7 @@ func targetCluster(
 	zone string,
 	projID string,
 ) error {
-	ctx = setLogPrefix(ctx, "Target Cluster")
+	ctx = SetLogPrefix(ctx, "Target Cluster")
 	Logf(ctx, "targeting cluster")
 	_, err := gcloud(
 		ctx,
@@ -620,7 +539,7 @@ func targetCluster(
 }
 
 func enableServiceAPI(ctx context.Context, projID, serviceName string) error {
-	ctx = setLogPrefix(ctx, "Enable Service API")
+	ctx = SetLogPrefix(ctx, "Enable Service API")
 	services, err := gcloud(
 		ctx,
 		"services",
@@ -638,7 +557,7 @@ func enableServiceAPI(ctx context.Context, projID, serviceName string) error {
 		return nil
 	}
 
-	ok, err := selectYesNo(ctx, fmt.Sprintf("Enable %s API?", serviceName))
+	ok, err := SelectYesNo(ctx, fmt.Sprintf("Enable %s API?", serviceName))
 	if err != nil {
 		return err
 	}
@@ -669,7 +588,7 @@ func createServiceAccount(
 	serviceAccount string,
 	projID string,
 ) error {
-	ctx = setLogPrefix(ctx, "Create Service Account")
+	ctx = SetLogPrefix(ctx, "Create Service Account")
 	Logf(ctx, "Creating service account %s", serviceAccount)
 	if _, err := gcloud(
 		ctx,
@@ -696,7 +615,7 @@ func createServiceAccount(
 }
 
 func ensureBilling(ctx context.Context, projID string) error {
-	ctx = setLogPrefix(ctx, "Ensure Billing")
+	ctx = SetLogPrefix(ctx, "Ensure Billing")
 
 	enabled, err := billingEnabled(ctx, projID)
 	if err != nil {
@@ -708,7 +627,7 @@ func ensureBilling(ctx context.Context, projID string) error {
 	}
 
 	Logf(ctx, "Looks like you need to enable billing for %s", projID)
-	ok, err := selectYesNo(ctx, fmt.Sprintf("Sync billing account for %s?", projID))
+	ok, err := SelectYesNo(ctx, fmt.Sprintf("Sync billing account for %s?", projID))
 	if err != nil {
 		return err
 	}
@@ -720,7 +639,7 @@ func ensureBilling(ctx context.Context, projID string) error {
 	if err != nil {
 		return err
 	}
-	_, accountID, err := selectPrompt(ctx, "Billing Account", availableAccounts...)
+	_, accountID, err := SelectPrompt(ctx, "Billing Account", availableAccounts...)
 	if err != nil {
 		return err
 	}
@@ -791,29 +710,8 @@ func linkBilling(ctx context.Context, projID, accountID string) error {
 	return err
 }
 
-func command(ctx context.Context, name string, args ...string) ([]string, error) {
-	if verbose, ok := ctx.Value(verboseType{}).(bool); ok && verbose {
-		ctx = setLogPrefix(ctx, name)
-		Logf(ctx, "%s %s", name, strings.Join(args, " "))
-	}
-
-	output, err := exec.CommandContext(ctx, name, args...).CombinedOutput()
-	if err != nil {
-		Logf(ctx, string(output))
-		return nil, err
-	}
-
-	var lines []string
-	scanner := bufio.NewScanner(bytes.NewReader(output))
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
-	}
-
-	return lines, scanner.Err()
-}
-
 func installServiceCatalog(ctx context.Context) error {
-	ctx = setLogPrefix(ctx, "Service Catalog")
+	ctx = SetLogPrefix(ctx, "Service Catalog")
 	Logf(ctx, "installing Service Catalog")
 	Logf(ctx, "downloading service catalog templates")
 	tempDir, err := ioutil.TempDir("", "kf-service-catalog")
@@ -827,7 +725,7 @@ func installServiceCatalog(ctx context.Context) error {
 
 	tmpKfPath := path.Join(tempDir, "kf")
 
-	if _, err := git(
+	if _, err := Git(
 		ctx,
 		"clone",
 		"https://github.com/google/kf",
@@ -837,7 +735,7 @@ func installServiceCatalog(ctx context.Context) error {
 	}
 
 	Logf(ctx, "applying templates")
-	if _, err := kubectl(
+	if _, err := Kubectl(
 		ctx,
 		"apply",
 		"-R",
@@ -849,99 +747,7 @@ func installServiceCatalog(ctx context.Context) error {
 	return nil
 }
 
-func setupSpace(ctx context.Context, projID string) error {
-	ctx = setLogPrefix(ctx, "kf setup")
-	ok, err := selectYesNo(ctx, "Setup kf space?")
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return nil
-	}
-
-	Logf(ctx, "Setting up kf space")
-	spaceName, err := namePrompt(ctx, "Space Name: ", randName("space-"))
-	if err != nil {
-		return err
-	}
-	domain, err := hostnamePrompt(ctx, "Domain: ", "example.com")
-	if err != nil {
-		return err
-	}
-
-	if _, err := kf(
-		ctx,
-		"create-space", spaceName,
-		"--domain", domain,
-		"--container-registry", fmt.Sprintf("gcr.io/%s", projID),
-	); err != nil {
-		return err
-	}
-
-	if _, err := kf(ctx, "target", "-s", spaceName); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // gcloud will run the command and block until its done.
 func gcloud(ctx context.Context, args ...string) ([]string, error) {
-	return command(ctx, "gcloud", args...)
-}
-
-// kubectl will run the command and block until its done.
-func kubectl(ctx context.Context, args ...string) ([]string, error) {
-	return command(ctx, "kubectl", args...)
-}
-
-// kf will run the command and block until its done.
-func kf(ctx context.Context, args ...string) ([]string, error) {
-	return command(ctx, "kf", args...)
-}
-
-// git will run the command and block until its done.
-func git(ctx context.Context, args ...string) ([]string, error) {
-	return command(ctx, "git", args...)
-}
-
-type loggerType struct{}
-
-func setContextOutput(ctx context.Context, out io.Writer) context.Context {
-	return context.WithValue(ctx, loggerType{}, out)
-}
-
-type loggerPrefixType struct{}
-
-func setLogPrefix(ctx context.Context, prefix string) context.Context {
-	return context.WithValue(ctx, loggerPrefixType{}, prefix)
-}
-
-type verboseType struct{}
-
-func setVerbosity(ctx context.Context, verbose bool) context.Context {
-	return context.WithValue(ctx, verboseType{}, verbose)
-}
-
-func Logf(ctx context.Context, v string, args ...interface{}) {
-	out := ctx.Value(loggerType{}).(io.Writer)
-
-	if !strings.HasSuffix(v, "\n") {
-		v += "\n"
-	}
-
-	if prefix, ok := ctx.Value(loggerPrefixType{}).(string); ok {
-		v = fmt.Sprintf("[%s] %s", prefixColor.Sprint(prefix), v)
-	}
-
-	fmt.Fprintf(out, v, args...)
-}
-
-func searcher(items []string) func(input string, index int) bool {
-	return func(input string, index int) bool {
-		item := strings.ToLower(items[index])
-		input = strings.TrimSpace(strings.ToLower(input))
-
-		return strings.Contains(item, input)
-	}
+	return Command(ctx, "gcloud", args...)
 }
