@@ -652,4 +652,3 @@ func setupRoutes(space *v1alpha1.Space, app manifest.Application) (routes []v1al
 
 	return routes, nil
 }
-

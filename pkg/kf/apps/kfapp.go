@@ -237,7 +237,6 @@ func (k *KfApp) GetHealthCheck() *corev1.Probe {
 func (k *KfApp) SetHealthCheck(probe *corev1.Probe) {
 	container := k.getOrCreateContainer()
 	container.ReadinessProbe = probe
-
 }
 
 // ToApp casts this alias back into an App.
