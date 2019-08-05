@@ -68,10 +68,4 @@ configs:
   - name: CPU
     type: "*resource.Quantity"
     description: app CPU request
-  - name: DefaultRouteDomain
-    type: string
-    description: Domain for a defaultroute. Only used if a route doesn't already exist
-  - name: RandomRouteDomain
-    type: string
-    description: Domain for a random route. Only used if a route doesn't already exist
 - name: Deploy
