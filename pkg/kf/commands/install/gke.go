@@ -62,12 +62,51 @@ func NewGKECommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "gke [subcommand]",
-		Short: "Install kf to GKE with Cloud Run",
+		Short: "Install kf on GKE with Cloud Run",
 		Long: `
-This interactive installer will walk you through a process to install GKE with
-Cloud Run and then kf. Its really just running scripts under the hood,
-therefore you have to have gcloud and kubectl installed and available in the
-path.`,
+This interactive installer will walk you through the process of installing kf
+on GKE with Cloud Run. You MUST have gcloud and kubectl installed and
+available on the path.`,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			// Print kubectl version
+			ctx := setContextOutput(context.Background(), cmd.ErrOrStderr())
+			version, err := kubectl(ctx, "version", "--short")
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(
+				cmd.ErrOrStderr(),
+				"%s\n%s\n",
+				labelColor.Sprint("kubectl version:"),
+				strings.Join(version, "\n"),
+			)
+
+			// Print gcloud version
+			version, err = gcloud(ctx, "version")
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(
+				cmd.ErrOrStderr(),
+				"%s\n%s\n",
+				labelColor.Sprint("gcloud version:"),
+				strings.Join(version, "\n"),
+			)
+
+			// Ensure gcloud alpha is available
+			// This is necessary because the user my have NEVER ran a `gcloud
+			// alpha` (or `beta`) command before and therefore their first one
+			// will ask if they really want to.
+			for _, v := range []string{"alpha", "beta"} {
+				// We don't care about the output if it succeeds.
+				_, err := gcloud(ctx, v, "help")
+				if err != nil {
+					return err
+				}
+			}
+
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 			ctx := setContextOutput(context.Background(), cmd.ErrOrStderr())
