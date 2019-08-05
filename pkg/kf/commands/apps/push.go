@@ -66,7 +66,13 @@ func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string) error {
 }
 
 // NewPushCommand creates a push command.
-func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, b SrcImageBuilder, serviceBindingClient servicebindings.ClientInterface) *cobra.Command {
+func NewPushCommand(
+	p *config.KfParams,
+	client apps.Client,
+	pusher apps.Pusher,
+	b SrcImageBuilder,
+	serviceBindingClient servicebindings.ClientInterface,
+) *cobra.Command {
 	var (
 		containerRegistry  string
 		sourceImage        string
@@ -119,12 +125,6 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 			appName := ""
 			if len(args) > 0 {
 				appName = args[0]
-			}
-
-			// Kontext has to have a absolute path.
-			path, err = filepath.Abs(path)
-			if err != nil {
-				return err
 			}
 
 			var pushManifest *manifest.Manifest
@@ -301,7 +301,8 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					apps.WithPushDefaultRouteDomain(defaultRouteDomain),
 				}
 
-				if app.Docker.Image == "" { // buildpack app
+				if app.Docker.Image == "" {
+					// buildpack app
 					registry := containerRegistry
 					switch {
 					case registry != "":
@@ -320,6 +321,11 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 					default:
 						imageName = apps.JoinRepositoryImage(registry, apps.SourceImageName(p.Namespace, app.Name))
 
+						// Kontext has to have a absolute path.
+						srcPath, err = filepath.Abs(srcPath)
+						if err != nil {
+							return err
+						}
 						if err := b.BuildSrcImage(srcPath, imageName); err != nil {
 							return err
 						}
@@ -345,7 +351,6 @@ func NewPushCommand(p *config.KfParams, client apps.Client, pusher apps.Pusher, 
 
 				// Bind service if set
 				for _, serviceInstance := range app.Services {
-
 					binding, created, err := serviceBindingClient.GetOrCreate(
 						serviceInstance,
 						app.Name,
