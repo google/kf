@@ -23,6 +23,7 @@ import (
 	"github.com/google/kf/pkg/kf/describe"
 	"github.com/google/kf/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -192,4 +193,37 @@ func ExampleKfApp_GetHealthCheck() {
 	//   Timeout:   50s
 	//   Type:      http
 	//   Endpoint:  /healthz
+}
+
+func ExampleKfApp_GetMemory() {
+	myApp := NewKfApp()
+	mem := resource.MustParse("1Gi")
+	myApp.SetMemory(&mem)
+
+	getMem := myApp.GetMemory()
+	fmt.Println((*getMem).String())
+
+	// Output: 1Gi
+}
+
+func ExampleKfApp_GetStorage() {
+	myApp := NewKfApp()
+	storage := resource.MustParse("2Gi")
+	myApp.SetStorage(&storage)
+
+	getStorage := myApp.GetStorage()
+	fmt.Println((*getStorage).String())
+
+	// Output: 2Gi
+}
+
+func ExampleKfApp_GetCPU() {
+	myApp := NewKfApp()
+	cpu := resource.MustParse("100m")
+	myApp.SetCPU(&cpu)
+
+	getCPU := myApp.GetCPU()
+	fmt.Println((*getCPU).String())
+
+	// Output: 100m
 }

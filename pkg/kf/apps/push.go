@@ -73,6 +73,9 @@ func newApp(appName string, opts ...PushOption) (*v1alpha1.App, error) {
 	app.SetNamespace(cfg.Namespace)
 	app.SetServiceAccount(cfg.ServiceAccount)
 	app.SetSource(src)
+	app.SetMemory(cfg.Memory)
+	app.SetStorage(cfg.DiskQuota)
+	app.SetCPU(cfg.CPU)
 	app.Spec.Instances.Stopped = cfg.NoStart
 	app.SetHealthCheck(cfg.HealthCheck)
 	app.Spec.Routes = cfg.Routes

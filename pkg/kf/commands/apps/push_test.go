@@ -34,13 +34,8 @@ import (
 	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
-
-type routeParts struct {
-	hostname string
-	domain   string
-	path     string
-}
 
 func dummyBindingInstance(appName, instanceName string) *v1beta1.ServiceBinding {
 	instance := v1beta1.ServiceBinding{}
@@ -51,6 +46,10 @@ func dummyBindingInstance(appName, instanceName string) *v1beta1.ServiceBinding 
 
 func TestPushCommand(t *testing.T) {
 	t.Parallel()
+
+	wantMemory := resource.MustParse("2Gi")
+	wantDiskQuota := resource.MustParse("2Gi")
+	wantCPU := resource.MustParse("2")
 
 	defaultTCPHealthCheck := &corev1.Probe{
 		Handler: corev1.Handler{
@@ -545,6 +544,21 @@ func TestPushCommand(t *testing.T) {
 			},
 			wantErr: errors.New("health check timeouts can't be negative"),
 		},
+		"resource requests from manifest": {
+			namespace: "some-namespace",
+			args: []string{
+				"resources-app",
+				"--manifest", "testdata/manifest.yml",
+				"--container-registry", "some-registry.io",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushContainerRegistry("some-registry.io"),
+				apps.WithPushMemory(&wantMemory),
+				apps.WithPushDiskQuota(&wantDiskQuota),
+				apps.WithPushCPU(&wantCPU),
+			),
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			if tc.srcImageBuilder == nil {
@@ -575,6 +589,9 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "max scale bound", expectOpts.MaxScale(), actualOpts.MaxScale())
 					testutil.AssertEqual(t, "no start", expectOpts.NoStart(), actualOpts.NoStart())
 					testutil.AssertEqual(t, "routes", expectOpts.Routes(), actualOpts.Routes())
+					testutil.AssertEqual(t, "memory requests", expectOpts.Memory(), actualOpts.Memory())
+					testutil.AssertEqual(t, "storage requests", expectOpts.DiskQuota(), actualOpts.DiskQuota())
+					testutil.AssertEqual(t, "cpu requests", expectOpts.CPU(), actualOpts.CPU())
 					testutil.AssertEqual(t, "health check", expectOpts.HealthCheck(), actualOpts.HealthCheck())
 					testutil.AssertEqual(t, "default route", expectOpts.DefaultRouteDomain(), actualOpts.DefaultRouteDomain())
 					testutil.AssertEqual(t, "random route", expectOpts.RandomRouteDomain(), actualOpts.RandomRouteDomain())

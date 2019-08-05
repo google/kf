@@ -213,6 +213,32 @@ func AppSpecInstances(w io.Writer, instances kfv1alpha1.AppSpecInstances) {
 	})
 }
 
+// AppSpecTemplate describes the runtime configurations of the app.
+func AppSpecTemplate(w io.Writer, template kfv1alpha1.AppSpecTemplate) {
+
+	SectionWriter(w, string("Resource requests"), func(w io.Writer) {
+		resourceRequests := template.Spec.Containers[0].Resources.Requests
+		if resourceRequests != nil {
+			memory, hasMemory := resourceRequests[corev1.ResourceMemory]
+			storage, hasStorage := resourceRequests[corev1.ResourceEphemeralStorage]
+			cpu, hasCPU := resourceRequests[corev1.ResourceCPU]
+
+			if hasMemory {
+				fmt.Fprintf(w, "Memory:\t%s\n", memory.String())
+			}
+
+			if hasStorage {
+				fmt.Fprintf(w, "Storage:\t%s\n", storage.String())
+			}
+
+			if hasCPU {
+				fmt.Fprintf(w, "CPU:\t%s\n", cpu.String())
+			}
+		}
+
+	})
+}
+
 // HealthCheck prints a Readiness Probe in a friendly manner
 func HealthCheck(w io.Writer, healthCheck *corev1.Probe) {
 	SectionWriter(w, "Health Check", func(w io.Writer) {

@@ -36,3 +36,7 @@ applications:
     image: gcr.io/tcp-health-check-app
   health-check-type: port
   timeout: 33
+- name: resources-app
+  memory: 2G
+  disk_quota: 2G
+  cpu: "2"

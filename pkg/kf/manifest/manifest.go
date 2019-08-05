@@ -36,6 +36,9 @@ type Application struct {
 	Docker     AppDockerImage    `yaml:"docker,omitempty"`
 	Env        map[string]string `yaml:"env,omitempty"`
 	Services   []string          `yaml:"services,omitempty"`
+	DiskQuota  string            `yaml:"disk_quota,omitempty"`
+	Memory     string            `yaml:"memory,omitempty"`
+	CPU        string            `yaml:"cpu,omitempty"`
 	Instances  *int              `yaml:"instances,omitempty"`
 
 	// TODO(#95): These aren't CF proper. How do we expose these in the

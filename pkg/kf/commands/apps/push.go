@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -33,6 +34,7 @@ import (
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/poy/service-catalog/cmd/svcat/output"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 // SrcImageBuilder creates and uploads a container image that contains the
@@ -88,6 +90,9 @@ func NewPushCommand(
 		noStart            bool
 		healthCheckType    string
 		healthCheckTimeout int
+		memoryRequest      *resource.Quantity
+		storageRequest     *resource.Quantity
+		cpuRequest         *resource.Quantity
 
 		// Route Flags
 		rawRoutes         []string
@@ -231,6 +236,38 @@ func NewPushCommand(
 					return err
 				}
 
+				if app.Memory != "" {
+					memStr, err := convertResourceQuantityStr(app.Memory)
+					if err != nil {
+						return err
+					}
+					mem, parseErr := resource.ParseQuantity(memStr)
+					if parseErr != nil {
+						return fmt.Errorf("couldn't parse resource quantity %s: %v", memStr, parseErr)
+					}
+					memoryRequest = &mem
+				}
+
+				if app.DiskQuota != "" {
+					storageStr, err := convertResourceQuantityStr(app.DiskQuota)
+					if err != nil {
+						return err
+					}
+					storage, parseErr := resource.ParseQuantity(storageStr)
+					if parseErr != nil {
+						return fmt.Errorf("couldn't parse resource quantity %s: %v", storageStr, parseErr)
+					}
+					storageRequest = &storage
+				}
+
+				if app.CPU != "" {
+					cpu, parseErr := resource.ParseQuantity(app.CPU)
+					if parseErr != nil {
+						return fmt.Errorf("couldn't parse resource quantity %s: %v", app.CPU, parseErr)
+					}
+					cpuRequest = &cpu
+				}
+
 				healthCheck, err := apps.NewHealthCheck(app.HealthCheckType, app.HealthCheckHTTPEndpoint, app.HealthCheckTimeout)
 				if err != nil {
 					return err
@@ -256,6 +293,9 @@ func NewPushCommand(
 					apps.WithPushMaxScale(maxScale),
 					apps.WithPushNoStart(noStart),
 					apps.WithPushRoutes(routes),
+					apps.WithPushMemory(memoryRequest),
+					apps.WithPushDiskQuota(storageRequest),
+					apps.WithPushCPU(cpuRequest),
 					apps.WithPushHealthCheck(healthCheck),
 					apps.WithPushRandomRouteDomain(randomRouteDomain),
 					apps.WithPushDefaultRouteDomain(defaultRouteDomain),
@@ -556,6 +596,35 @@ func parseRouteStr(routeStr string) (string, string, string, error) {
 
 	return hostname, domain, path, nil
 }
+
+// convertResourceQuantityStr converts CF resource quantities into the equivalent k8s quantity strings.
+// CF interprets K, M, G, T as binary SI units while k8s interprets them as decimal, so we convert them here
+// into the k8s binary SI units (Ki, Mi, Gi, Ti)
+func convertResourceQuantityStr(r string) (string, error) {
+	// Break down resource quantity string into int and unit of measurement
+	// Below method breaks down "50G" into ["50G" "50" "G"]
+	parts := cfValidBytesPattern.FindStringSubmatch(strings.TrimSpace(r))
+	if len(parts) < 3 {
+		return "", errors.New("Byte quantity must be an integer with a unit of measurement like M, MB, G, or GB")
+	}
+	num := parts[1]
+	unit := strings.ToUpper(parts[2])
+	newUnit := unit
+	switch unit {
+	case "T":
+		newUnit = "Ti"
+	case "G":
+		newUnit = "Gi"
+	case "M":
+		newUnit = "Mi"
+	case "K":
+		newUnit = "Ki"
+	}
+
+	return num + newUnit, nil
+}
+
+var cfValidBytesPattern = regexp.MustCompile(`(?i)^(-?\d+)([KMGT])B?$`)
 
 func spaceDefaultDomain(space *v1alpha1.Space) (string, error) {
 	for _, domain := range space.Spec.Execution.Domains {

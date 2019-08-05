@@ -20,18 +20,23 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"io"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"os"
 )
 
 type pushConfig struct {
 	// Buildpack is skip the detect buildpack step and use the given name
 	Buildpack string
+	// CPU is app CPU request
+	CPU *resource.Quantity
 	// ContainerImage is the container to deploy
 	ContainerImage string
 	// ContainerRegistry is the container registry's URL
 	ContainerRegistry string
 	// DefaultRouteDomain is Domain for a defaultroute. Only used if a route doesn't already exist
 	DefaultRouteDomain string
+	// DiskQuota is app disk storage quota
+	DiskQuota *resource.Quantity
 	// EnvironmentVariables is set environment variables
 	EnvironmentVariables map[string]string
 	// ExactScale is scale exactly to this number of instances
@@ -42,6 +47,8 @@ type pushConfig struct {
 	HealthCheck *corev1.Probe
 	// MaxScale is the upper scale bound
 	MaxScale *int
+	// Memory is app memory request
+	Memory *resource.Quantity
 	// MinScale is the lower scale bound
 	MinScale *int
 	// Namespace is the Kubernetes namespace to use
@@ -92,6 +99,12 @@ func (opts PushOptions) Buildpack() string {
 	return opts.toConfig().Buildpack
 }
 
+// CPU returns the last set value for CPU or the empty value
+// if not set.
+func (opts PushOptions) CPU() *resource.Quantity {
+	return opts.toConfig().CPU
+}
+
 // ContainerImage returns the last set value for ContainerImage or the empty value
 // if not set.
 func (opts PushOptions) ContainerImage() string {
@@ -108,6 +121,12 @@ func (opts PushOptions) ContainerRegistry() string {
 // if not set.
 func (opts PushOptions) DefaultRouteDomain() string {
 	return opts.toConfig().DefaultRouteDomain
+}
+
+// DiskQuota returns the last set value for DiskQuota or the empty value
+// if not set.
+func (opts PushOptions) DiskQuota() *resource.Quantity {
+	return opts.toConfig().DiskQuota
 }
 
 // EnvironmentVariables returns the last set value for EnvironmentVariables or the empty value
@@ -138,6 +157,12 @@ func (opts PushOptions) HealthCheck() *corev1.Probe {
 // if not set.
 func (opts PushOptions) MaxScale() *int {
 	return opts.toConfig().MaxScale
+}
+
+// Memory returns the last set value for Memory or the empty value
+// if not set.
+func (opts PushOptions) Memory() *resource.Quantity {
+	return opts.toConfig().Memory
 }
 
 // MinScale returns the last set value for MinScale or the empty value
@@ -195,6 +220,13 @@ func WithPushBuildpack(val string) PushOption {
 	}
 }
 
+// WithPushCPU creates an Option that sets app CPU request
+func WithPushCPU(val *resource.Quantity) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.CPU = val
+	}
+}
+
 // WithPushContainerImage creates an Option that sets the container to deploy
 func WithPushContainerImage(val string) PushOption {
 	return func(cfg *pushConfig) {
@@ -213,6 +245,13 @@ func WithPushContainerRegistry(val string) PushOption {
 func WithPushDefaultRouteDomain(val string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.DefaultRouteDomain = val
+	}
+}
+
+// WithPushDiskQuota creates an Option that sets app disk storage quota
+func WithPushDiskQuota(val *resource.Quantity) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.DiskQuota = val
 	}
 }
 
@@ -248,6 +287,13 @@ func WithPushHealthCheck(val *corev1.Probe) PushOption {
 func WithPushMaxScale(val *int) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.MaxScale = val
+	}
+}
+
+// WithPushMemory creates an Option that sets app memory request
+func WithPushMemory(val *resource.Quantity) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.Memory = val
 	}
 }
 

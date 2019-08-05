@@ -24,6 +24,7 @@ import (
 	"github.com/google/kf/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
@@ -310,4 +311,32 @@ func ExampleHealthCheck_tcp() {
 	// Output: Health Check:
 	//   Timeout:  42s
 	//   Type:     port (tcp)
+}
+
+func ExampleAppSpecTemplate_resourceRequests() {
+
+	wantMem := resource.MustParse("2Gi")
+	wantStorage := resource.MustParse("2Gi")
+	wantCPU := resource.MustParse("2")
+
+	spec := kfv1alpha1.AppSpecTemplate{
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{{
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory:           wantMem,
+						corev1.ResourceEphemeralStorage: wantStorage,
+						corev1.ResourceCPU:              wantCPU,
+					},
+				},
+			}},
+		},
+	}
+
+	describe.AppSpecTemplate(os.Stdout, spec)
+
+	// Output: Resource requests:
+	//   Memory:   2Gi
+	//   Storage:  2Gi
+	//   CPU:      2
 }
