@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -38,6 +37,8 @@ var (
 	PrefixColor = color.New(color.FgHiBlue, color.Bold)
 	// LabelColor is used for the prompt and select labels.
 	LabelColor = color.New(color.FgHiYellow, color.Bold)
+	// BenchmarkColor is used for the commands to report how long they took.
+	BenchmarkColor = color.New(color.FgHiGreen, color.Bold)
 )
 
 // Command runs a command with the given context and returns the output's
@@ -47,6 +48,11 @@ func Command(ctx context.Context, name string, args ...string) ([]string, error)
 	if verbose, ok := ctx.Value(verboseType{}).(bool); ok && verbose {
 		ctx = SetLogPrefix(ctx, name)
 		Logf(ctx, "%s %s", name, strings.Join(args, " "))
+
+		start := time.Now()
+		defer func() {
+			Logf(ctx, BenchmarkColor.Sprintf("%s took %v", name, time.Since(start)))
+		}()
 	}
 
 	output, err := exec.CommandContext(ctx, name, args...).CombinedOutput()
@@ -71,12 +77,7 @@ func Kubectl(ctx context.Context, args ...string) ([]string, error) {
 
 // kf will run the command and block until its done.
 func kf(ctx context.Context, args ...string) ([]string, error) {
-	kfPath, err := os.Executable()
-	if err != nil {
-		return nil, err
-	}
-
-	return Command(ctx, kfPath, args...)
+	return Command(ctx, "kf", args...)
 }
 
 // Git will run the command and block until its done.
@@ -170,16 +171,16 @@ func SelectPrompt(
 // SelectYesNo promts the user to select between yes and no. It will return
 // true if the user selects "yes", and false otherwise.
 func SelectYesNo(ctx context.Context, label string) (bool, error) {
-	idx, _, err := SelectPrompt(ctx, label, "yes", "no")
+	_, value, err := SelectPrompt(ctx, label, "yes", "no")
 	if err != nil {
 		return false, err
 	}
 
-	return idx == 0, nil
+	return value == "yes", nil
 }
 
 // SetupSpace asks the user if they would like to create a space.
-func SetupSpace(ctx context.Context, projID, containerRegistry string) error {
+func SetupSpace(ctx context.Context, containerRegistry string) error {
 	ctx = SetLogPrefix(ctx, "kf setup")
 	ok, err := SelectYesNo(ctx, "Setup kf space?")
 	if err != nil {

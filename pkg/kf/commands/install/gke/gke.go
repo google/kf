@@ -18,26 +18,22 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path"
 	"strings"
 
+	"github.com/google/kf/pkg/kf/commands/install/kf"
 	. "github.com/google/kf/pkg/kf/commands/install/util"
 	"github.com/spf13/cobra"
 )
 
 const (
-	KnativeBuildYAML      = "https://github.com/knative/build/releases/download/v0.7.0/build.yaml"
-	KfNightlyBuildYAML    = "https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/releases/release-latest.yaml"
-	GKEClusterVersion     = "1.13.7-gke.8"
-	MachineType           = "n1-standard-4"
-	ImageType             = "COS"
-	DiskType              = "pd-standard"
-	DiskSize              = "100"
-	NumNodes              = "3"
-	DefaultMaxPodsPerNode = "110"
-	Addons                = "HorizontalPodAutoscaling,HttpLoadBalancing,Istio,CloudRun"
+	gkeClusterVersion     = "1.13.7-gke.8"
+	machineType           = "n1-standard-4"
+	imageType             = "COS"
+	diskType              = "pd-standard"
+	diskSize              = "100"
+	numNodes              = "3"
+	defaultMaxPodsPerNode = "110"
+	addons                = "HorizontalPodAutoscaling,HttpLoadBalancing,Istio,CloudRun"
 )
 
 // NewGKECommand creates a command that can install kf to GKE+Cloud Run.
@@ -58,7 +54,7 @@ https://cloud.google.com/products/calculator/ to get an estimate.`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			// Print kubectl version
 			ctx := SetContextOutput(context.Background(), cmd.ErrOrStderr())
-			version, err := Kubectl(ctx, "version", "--short")
+			version, err := Kubectl(ctx, "version", "--short", "--client")
 			if err != nil {
 				return err
 			}
@@ -123,43 +119,8 @@ https://cloud.google.com/products/calculator/ to get an estimate.`,
 				return err
 			}
 
-			// Install Knative Build
-			Logf(ctx, "install Knative Build")
-			if _, err := Kubectl(
-				ctx,
-				"apply",
-				"--filename",
-				KnativeBuildYAML,
-			); err != nil {
-				return err
-			}
-
-			// Install Service Catalog
-			if err := installServiceCatalog(ctx); err != nil {
-				return err
-			}
-
 			// Install kf
-			Logf(ctx, "install kf")
-			if _, err := Kubectl(
-				ctx,
-				"apply",
-				"--filename",
-				KfNightlyBuildYAML,
-			); err != nil {
-				return err
-			}
-
-			// Setup kf space
-			if err := SetupSpace(
-				ctx,
-				projID,
-				fmt.Sprintf("gcr.io/%s", projID),
-			); err != nil {
-				return err
-			}
-
-			return nil
+			return kf.Install(ctx, fmt.Sprintf("gcr.io/%s", projID))
 		},
 	}
 
@@ -363,75 +324,72 @@ func createNewCluster(ctx context.Context, projID string) (string, string, error
 	}
 
 	// Grab GKE Settings from user
-	clusterName, serviceAccount, zone, network, err := gkeClusterConfig(ctx, projID)
+	gkeCfg, err := gkeClusterConfig(ctx, projID)
 	if err != nil {
 		return "", "", err
 	}
 
 	// Create the GKE Cluster
-	if err := buildGKECluster(
-		ctx,
-		projID,
-		clusterName,
-		zone,
-		serviceAccount,
-		network,
-	); err != nil {
+	if err := buildGKECluster(ctx, projID, gkeCfg); err != nil {
 		return "", "", err
 	}
 
-	return clusterName, zone, nil
+	return gkeCfg.clusterName, gkeCfg.zone, nil
+}
+
+type gkeConfig struct {
+	clusterName    string
+	serviceAccount string
+	zone           string
+	network        string
 }
 
 func gkeClusterConfig(
 	ctx context.Context,
 	projID string,
 ) (
-	clusterName string,
-	serviceAccount string,
-	zone string,
-	network string,
+	cfg gkeConfig,
 	err error,
 ) {
 	ctx = SetLogPrefix(ctx, "GKE Cluster Config")
 
 	// ClusterName
 	{
-		clusterName, err = NamePrompt(
+		cfg.clusterName, err = NamePrompt(
 			ctx,
 			"Cluster Name: ",
 			RandName("kf-"),
 		)
 		if err != nil {
-			return "", "", "", "", err
+			return gkeConfig{}, err
 		}
 	}
 
 	// Service Account
 	{
 		serviceAccountName := RandName("kf-")
-		serviceAccount = fmt.Sprintf(
+		cfg.serviceAccount = fmt.Sprintf(
 			"%s@%s.iam.gserviceaccount.com",
 			serviceAccountName,
 			projID,
 		)
 		ok, err := SelectYesNo(
 			ctx,
-			fmt.Sprintf("Create service account %s?", serviceAccount),
+			fmt.Sprintf("Create service account %s?", cfg.serviceAccount),
 		)
 		if err != nil {
-			return "", "", "", "", err
+			return gkeConfig{}, err
 		}
 		if !ok {
-			return "", "", "", "", errors.New("chose to not create service account")
+			return gkeConfig{}, errors.New("chose to not create service account")
 		}
 		if err = createServiceAccount(
 			ctx,
 			serviceAccountName,
-			serviceAccount,
+			cfg.serviceAccount,
 			projID,
 		); err != nil {
-			return "", "", "", "", err
+			return gkeConfig{}, err
 		}
 	}
 
@@ -440,15 +398,15 @@ func gkeClusterConfig(
 		availableZones, err := zones(ctx, projID)
 		switch {
 		case err != nil:
-			return "", "", "", "", err
+			return gkeConfig{}, err
 		case len(availableZones) == 0:
-			return "", "", "", "", errors.New("there was a listing your zones")
+			return gkeConfig{}, errors.New("there was a listing your zones")
 		case len(availableZones) == 1:
-			zone = availableZones[0]
+			cfg.zone = availableZones[0]
 		default:
-			_, zone, err = SelectPrompt(ctx, "Zone", availableZones...)
+			_, cfg.zone, err = SelectPrompt(ctx, "Zone", availableZones...)
 			if err != nil {
-				return "", "", "", "", err
+				return gkeConfig{}, err
 			}
 		}
 	}
@@ -458,15 +416,15 @@ func gkeClusterConfig(
 		availableNetworks, err := networks(ctx, projID)
 		switch {
 		case err != nil:
-			return "", "", "", "", err
+			return gkeConfig{}, err
 		case len(availableNetworks) == 0:
 			// We won't use a network
 		case len(availableNetworks) == 1:
-			network = availableNetworks[0]
+			cfg.network = availableNetworks[0]
 		default:
-			_, network, err = SelectPrompt(ctx, "Network", availableNetworks...)
+			_, cfg.network, err = SelectPrompt(ctx, "Network", availableNetworks...)
 			if err != nil {
-				return "", "", "", "", err
+				return gkeConfig{}, err
 			}
 		}
 	}
@@ -477,39 +435,36 @@ func gkeClusterConfig(
 func buildGKECluster(
 	ctx context.Context,
 	projID string,
-	clusterName string,
-	zone string,
-	serviceAccount string,
-	network string,
+	gkeCfg gkeConfig,
 ) error {
 	ctx = SetLogPrefix(ctx, "Create GKE Cluster")
 	args := []string{
-		"beta", "container", "clusters", "create", clusterName,
-		"--zone", zone,
+		"beta", "container", "clusters", "create", gkeCfg.clusterName,
+		"--zone", gkeCfg.zone,
 		"--no-enable-basic-auth",
-		"--cluster-version", GKEClusterVersion,
-		"--machine-type", MachineType,
-		"--image-type", ImageType,
-		"--disk-type", DiskType,
-		"--disk-size", DiskSize,
+		"--cluster-version", gkeClusterVersion,
+		"--machine-type", machineType,
+		"--image-type", imageType,
+		"--disk-type", diskType,
+		"--disk-size", diskSize,
 		"--metadata", "disable-legacy-endpoints=true",
-		"--service-account", serviceAccount,
-		"--num-nodes", NumNodes,
+		"--service-account", gkeCfg.serviceAccount,
+		"--num-nodes", numNodes,
 		"--enable-stackdriver-kubernetes",
 		"--enable-ip-alias",
-		"--default-max-pods-per-node", DefaultMaxPodsPerNode,
-		"--addons", Addons,
+		"--default-max-pods-per-node", defaultMaxPodsPerNode,
+		"--addons", addons,
 		"--istio-config", "auth=MTLS_PERMISSIVE",
 		"--enable-autoupgrade",
 		"--enable-autorepair",
 		"--project", projID,
 	}
 
-	if network != "" {
-		args = append(args, "--network", network)
+	if gkeCfg.network != "" {
+		args = append(args, "--network", gkeCfg.network)
 	}
 
-	Logf(ctx, "Creating %s GKE+CR cluster. This may take a moment", clusterName)
+	Logf(ctx, "Creating %s GKE cluster with Cloud Run. This may take a moment", gkeCfg.clusterName)
 	_, err := gcloud(
 		ctx,
 		args...,
@@ -708,43 +663,6 @@ func linkBilling(ctx context.Context, projID, accountID string) error {
 		accountID,
 	)
 	return err
-}
-
-func installServiceCatalog(ctx context.Context) error {
-	ctx = SetLogPrefix(ctx, "Service Catalog")
-	Logf(ctx, "installing Service Catalog")
-	Logf(ctx, "downloading service catalog templates")
-	tempDir, err := ioutil.TempDir("", "kf-service-catalog")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		Logf(ctx, "cleaning up %s", tempDir)
-		os.RemoveAll(tempDir)
-	}()
-
-	tmpKfPath := path.Join(tempDir, "kf")
-
-	if _, err := Git(
-		ctx,
-		"clone",
-		"https://github.com/google/kf",
-		tmpKfPath,
-	); err != nil {
-		return err
-	}
-
-	Logf(ctx, "applying templates")
-	if _, err := Kubectl(
-		ctx,
-		"apply",
-		"-R",
-		"--filename", path.Join(tmpKfPath, "third_party/service-catalog/manifests/catalog/templates"),
-	); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // gcloud will run the command and block until its done.
