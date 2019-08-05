@@ -16,6 +16,9 @@ package apps
 
 import (
 	"fmt"
+	"math/rand"
+	"strconv"
+	"strings"
 	"time"
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -98,7 +101,28 @@ func (p *pusher) Push(appName string, opts ...PushOption) error {
 		return fmt.Errorf("failed to create app: %s", err)
 	}
 
-	resultingApp, err := p.appsClient.Upsert(app.Namespace, app, mergeApps)
+	var hasDefaultRoutes bool
+	app.Spec.Routes, hasDefaultRoutes = setupRoutes(cfg, app.Name, app.Spec.Routes)
+
+	// Scaling
+	if cfg.ExactScale != nil {
+		// Exactly
+		app.Spec.Instances.Exactly = cfg.ExactScale
+	} else if !noCfgScaling(cfg) {
+		// Autoscaling or unset
+		app.Spec.Instances.Min = cfg.MinScale
+		app.Spec.Instances.Max = cfg.MaxScale
+	} else {
+		// Default to 1
+		singleInstance := 1
+		app.Spec.Instances.Exactly = &singleInstance
+	}
+
+	resultingApp, err := p.appsClient.Upsert(
+		app.Namespace,
+		app,
+		mergeApps(cfg, hasDefaultRoutes),
+	)
 	if err != nil {
 		return fmt.Errorf("failed to push app: %s", err)
 	}
@@ -125,12 +149,75 @@ func (p *pusher) Push(appName string, opts ...PushOption) error {
 	return nil
 }
 
-func mergeApps(newapp, oldapp *v1alpha1.App) *v1alpha1.App {
-	newapp.ResourceVersion = oldapp.ResourceVersion
-	newEnvs := envutil.GetAppEnvVars(newapp)
-	oldEnvs := envutil.GetAppEnvVars(oldapp)
-	envutil.SetAppEnvVars(newapp, envutil.DeduplicateEnvVars(append(oldEnvs, newEnvs...)))
-	return newapp
+func setupRoutes(cfg pushConfig, appName string, r []v1alpha1.RouteSpecFields) (routes []v1alpha1.RouteSpecFields, hasDefaultRoutes bool) {
+	switch {
+	case len(r) != 0:
+		// Don't overwrite the routes
+		return r, false
+	case cfg.DefaultRouteDomain != "":
+		return []v1alpha1.RouteSpecFields{
+			{
+				Domain:   cfg.DefaultRouteDomain,
+				Hostname: appName,
+			},
+		}, true
+	case cfg.RandomRouteDomain != "":
+		return []v1alpha1.RouteSpecFields{
+			{
+				Domain: cfg.RandomRouteDomain,
+				Hostname: strings.Join([]string{
+					appName,
+					strconv.FormatUint(rand.Uint64(), 36),
+					strconv.FormatUint(uint64(time.Now().UnixNano()), 36),
+				}, "-"),
+			},
+		}, true
+	default:
+		return nil, false
+	}
+}
+
+func noCfgScaling(cfg pushConfig) bool {
+	return cfg.MinScale == nil && cfg.MaxScale == nil && cfg.ExactScale == nil
+}
+
+func noScaling(app *v1alpha1.App) bool {
+	return app.Spec.Instances.Exactly == nil &&
+		app.Spec.Instances.Min == nil &&
+		app.Spec.Instances.Max == nil
+}
+
+func mergeApps(cfg pushConfig, hasDefaultRoutes bool) func(newapp, oldapp *v1alpha1.App) *v1alpha1.App {
+	return func(newapp, oldapp *v1alpha1.App) *v1alpha1.App {
+
+		if len(oldapp.Spec.Routes) > 0 && hasDefaultRoutes {
+			newapp.Spec.Routes = oldapp.Spec.Routes
+		}
+
+		// Scaling overrides
+		if noCfgScaling(cfg) {
+			// Looks like the user did not set a new value, use the old one
+			newapp.Spec.Instances.Exactly = oldapp.Spec.Instances.Exactly
+			newapp.Spec.Instances.Min = oldapp.Spec.Instances.Min
+			newapp.Spec.Instances.Max = oldapp.Spec.Instances.Max
+		}
+
+		// Default scaling
+		if noCfgScaling(cfg) && noScaling(oldapp) {
+			// No scaling in old or new, go with a default of 1. This is to
+			// match expectaions for CF users. See
+			// https://github.com/google/kf/issues/8 for more context.
+			singleInstance := 1
+			newapp.Spec.Instances.Exactly = &singleInstance
+		}
+
+		newapp.ResourceVersion = oldapp.ResourceVersion
+		newEnvs := envutil.GetAppEnvVars(newapp)
+		oldEnvs := envutil.GetAppEnvVars(oldapp)
+		envutil.SetAppEnvVars(newapp, envutil.DeduplicateEnvVars(append(oldEnvs, newEnvs...)))
+
+		return newapp
+	}
 }
 
 // AppImageName gets the image name for an application.

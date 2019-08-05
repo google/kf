@@ -17,11 +17,12 @@
 package apps
 
 import (
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"io"
+	"os"
+
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"os"
 )
 
 type pushConfig struct {
@@ -187,6 +188,12 @@ func (opts PushOptions) NoStart() bool {
 // if not set.
 func (opts PushOptions) Output() io.Writer {
 	return opts.toConfig().Output
+}
+
+// RandomRouteDomain returns the last set value for RandomRouteDomain or the empty value
+// if not set.
+func (opts PushOptions) RandomRouteDomain() string {
+	return opts.toConfig().RandomRouteDomain
 }
 
 // RandomRouteDomain returns the last set value for RandomRouteDomain or the empty value
