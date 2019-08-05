@@ -19,14 +19,17 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/google/kf/pkg/kf/commands/config"
 	build "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	cserving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	"github.com/segmentio/textio"
+	"github.com/spf13/cobra"
 	"k8s.io/client-go/rest"
 )
 
@@ -117,4 +120,29 @@ func parseCommandLine() (args []string, flags map[string][]string) {
 		log.Fatalf("failed to unmarshal flags: %s", err)
 	}
 	return args, flags
+}
+
+// FixOptionsInUsageFunc removes a misleading message about options from a
+// command's usage string.
+func FixOptionsInUsageFunc(command *cobra.Command) {
+	oldUsageFunc := command.UsageFunc()
+	command.SetUsageFunc(func(command *cobra.Command) error {
+
+		// capture usage function output
+		r, w, _ := os.Pipe()
+		command.SetOutput(w)
+		err := oldUsageFunc(command)
+		w.Close()
+		out, err2 := ioutil.ReadAll(r)
+
+		// remove the incorrect options sentence.
+		replacer := strings.NewReplacer("\n\nUse \""+command.CommandPath()+" options\" for a list of global command-line options (applies to all commands).\n", "")
+		out = []byte(replacer.Replace(string(out)))
+
+		os.Stderr.Write(out)
+		if err2 != nil {
+			return err2
+		}
+		return err
+	})
 }

@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/doctor"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	pkgdoctor "github.com/google/kf/pkg/kf/doctor"
 	"github.com/imdario/mergo"
 	"github.com/spf13/cobra"
@@ -167,6 +168,9 @@ func NewKfCommand() *cobra.Command {
 	// This will add the rest to a group under "Other Commands".
 	groups.Add(rootCmd)
 	templates.ActsAsRootCommand(rootCmd, nil, groups...)
+
+	// Fix the usage string containing options
+	utils.FixOptionsInUsageFunc(rootCmd)
 
 	return rootCmd
 }
