@@ -45,8 +45,8 @@ type Client interface {
 	Delete({{ $nssig }} name string, opts ...DeleteOption) error
 	List({{ $nssig }} opts ...ListOption) ([]{{.Type}}, error)
 	Upsert({{ $nssig }} newObj *{{.Type}}, merge Merger) (*{{.Type}}, error)
-	WaitFor({{ $nssig }} name string, interval time.Duration, timeout *time.Duration, condition Predicate) (*{{.Type}}, error)
-	WaitForE({{ $nssig }} name string, interval time.Duration, timeout *time.Duration, condition ConditionFuncE) (*{{.Type}}, error)
+	WaitFor(ctx context.Context, {{ $nssig }} name string, interval time.Duration, condition Predicate) (*{{.Type}}, error)
+	WaitForE(ctx context.Context, {{ $nssig }} name string, interval time.Duration, condition ConditionFuncE) (*{{.Type}}, error)
 
 	// ClientExtension can be used by the developer to extend the client.
 	ClientExtension
@@ -200,13 +200,13 @@ func (core *coreClient) Upsert({{ $nssig }} newObj *{{.Type}}, merge Merger) (*{
 
 // WaitFor is a convenience wrapper for WaitForE that fails if the error
 // passed is non-nil. It allows the use of Predicates instead of ConditionFuncE.
-func (core *coreClient) WaitFor({{ $nssig }} name string, interval time.Duration, timeout *time.Duration, condition Predicate) (*{{.Type}}, error) {
-	return core.WaitForE({{ $nsparam }} name, interval, timeout, wrapPredicate(condition))
+func (core *coreClient) WaitFor(ctx context.Context, {{ $nssig }} name string, interval time.Duration, condition Predicate) (*{{.Type}}, error) {
+	return core.WaitForE(ctx, {{ $nsparam }} name, interval, wrapPredicate(condition))
 }
 
 // ConditionFuncE is a callback used by WaitForE. Done should be set to true
 // once the condition succeeds and shouldn't be called anymore. The error
-// error will be passed back to the user.
+// will be passed back to the user.
 //
 // This function MAY retrieve a nil instance and an apiErr. It's up to the
 // function to decide how to handle the apiErr.
@@ -217,18 +217,23 @@ type ConditionFuncE func(instance *{{.Type}}, apiErr error) (done bool, err erro
 // immediately after the function is invoked.
 //
 // The function polls infinitely if no timeout is supplied.
-func (core *coreClient) WaitForE({{ $nssig }} name string, interval time.Duration, timeout *time.Duration, condition ConditionFuncE) (instance *{{.Type}}, err error) {
-	if timeout == nil {
-		notimeout := time.Duration(math.MaxInt64)
-		timeout = &notimeout
-	}
+func (core *coreClient) WaitForE(ctx context.Context, {{ $nssig }} name string, interval time.Duration, condition ConditionFuncE) (instance *{{.Type}}, err error) {
+	var done bool
+	tick := time.Tick(interval)
 
-	err = wait.PollImmediate(interval, *timeout, func() (bool, error) {
+	for {
 		instance, err = core.kclient.{{ .Kubernetes.Plural }}({{ $ns }}).Get(name, metav1.GetOptions{})
-		return condition(instance, err)
-	})
+		if done, err = condition(instance, err); done {
+			return
+		}
 
-	return
+		select {
+		case <-tick:
+			// repeat instance check
+		case <-ctx.Done():
+			return nil, errors.New("waiting for {{.CF.Name}} timed out")
+		}
+	}
 }
 
 // ConditionDeleted is a ConditionFuncE that succeeds if the error returned by

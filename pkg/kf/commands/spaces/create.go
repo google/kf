@@ -15,6 +15,7 @@
 package spaces
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -57,7 +58,7 @@ func NewCreateSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 			w := cmd.OutOrStdout()
 
 			fmt.Fprintln(w, "Space requested, waiting for subcomponents to be created")
-			space, err := client.WaitFor(name, 1*time.Second, nil, spaces.IsStatusFinal)
+			space, err := client.WaitFor(context.Background(), name, 1*time.Second, spaces.IsStatusFinal)
 			if err != nil {
 				return err
 			}

@@ -16,6 +16,7 @@ package gentest
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -423,12 +424,33 @@ func ExampleClient_WaitForE_conditionDeleted() {
 	mockK8s := testclient.NewSimpleClientset().CoreV1()
 	secretsClient := NewExampleClient(mockK8s)
 
-	instance, err := secretsClient.WaitForE("default", "secret-name", 1*time.Second, nil, ConditionDeleted)
+	instance, err := secretsClient.WaitForE(context.Background(), "default", "secret-name", 1*time.Second, ConditionDeleted)
 	fmt.Println("Instance:", instance)
 	fmt.Println("Error:", err)
 
 	// Output: Instance: nil
 	// Error: <nil>
+}
+
+func ExampleClient_WaitForE_timeout() {
+	mockK8s := testclient.NewSimpleClientset().CoreV1()
+	secretsClient := NewExampleClient(mockK8s)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
+	defer cancel()
+
+	called := 0
+	instance, err := secretsClient.WaitForE(ctx, "default", "secret-name", 100*time.Millisecond, func(_ *v1.Secret, _ error) (bool, error) {
+		called++
+		return false, nil
+	})
+	fmt.Println("Instance:", instance)
+	fmt.Println("Error:", err)
+	fmt.Println("Called?:", called) // 3 calls, immediately, 100ms later then 100ms after
+
+	// Output: Instance: nil
+	// Error: waiting for OperatorConfig timed out
+	// Called?: 3
 }
 
 func TestWrapPredicate(t *testing.T) {

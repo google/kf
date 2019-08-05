@@ -210,7 +210,7 @@ func (mr *FakeClientMockRecorder) Upsert(arg0, arg1, arg2 interface{}) *gomock.C
 }
 
 // WaitFor mocks base method
-func (m *FakeClient) WaitFor(arg0, arg1 string, arg2 time.Duration, arg3 *time.Duration, arg4 sources.Predicate) (*v1alpha1.Source, error) {
+func (m *FakeClient) WaitFor(arg0 context.Context, arg1, arg2 string, arg3 time.Duration, arg4 sources.Predicate) (*v1alpha1.Source, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WaitFor", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(*v1alpha1.Source)
@@ -225,7 +225,7 @@ func (mr *FakeClientMockRecorder) WaitFor(arg0, arg1, arg2, arg3, arg4 interface
 }
 
 // WaitForE mocks base method
-func (m *FakeClient) WaitForE(arg0, arg1 string, arg2 time.Duration, arg3 *time.Duration, arg4 sources.ConditionFuncE) (*v1alpha1.Source, error) {
+func (m *FakeClient) WaitForE(arg0 context.Context, arg1, arg2 string, arg3 time.Duration, arg4 sources.ConditionFuncE) (*v1alpha1.Source, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WaitForE", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(*v1alpha1.Source)

@@ -20,6 +20,7 @@
 package fake
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	spaces "github.com/google/kf/pkg/kf/spaces"
@@ -178,7 +179,7 @@ func (mr *FakeClientMockRecorder) Upsert(arg0, arg1 interface{}) *gomock.Call {
 }
 
 // WaitFor mocks base method
-func (m *FakeClient) WaitFor(arg0 string, arg1 time.Duration, arg2 *time.Duration, arg3 spaces.Predicate) (*v1alpha1.Space, error) {
+func (m *FakeClient) WaitFor(arg0 context.Context, arg1 string, arg2 time.Duration, arg3 spaces.Predicate) (*v1alpha1.Space, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WaitFor", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*v1alpha1.Space)
@@ -193,7 +194,7 @@ func (mr *FakeClientMockRecorder) WaitFor(arg0, arg1, arg2, arg3 interface{}) *g
 }
 
 // WaitForE mocks base method
-func (m *FakeClient) WaitForE(arg0 string, arg1 time.Duration, arg2 *time.Duration, arg3 spaces.ConditionFuncE) (*v1alpha1.Space, error) {
+func (m *FakeClient) WaitForE(arg0 context.Context, arg1 string, arg2 time.Duration, arg3 spaces.ConditionFuncE) (*v1alpha1.Space, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WaitForE", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(*v1alpha1.Space)

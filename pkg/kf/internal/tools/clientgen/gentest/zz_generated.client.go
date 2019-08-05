@@ -18,15 +18,15 @@ package gentest
 
 // Generator defined imports
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
-	"math"
 	"strings"
 	"time"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"knative.dev/pkg/kmp"
 )
 
@@ -175,8 +175,8 @@ type Client interface {
 	Delete(namespace string, name string, opts ...DeleteOption) error
 	List(namespace string, opts ...ListOption) ([]v1.Secret, error)
 	Upsert(namespace string, newObj *v1.Secret, merge Merger) (*v1.Secret, error)
-	WaitFor(namespace string, name string, interval time.Duration, timeout *time.Duration, condition Predicate) (*v1.Secret, error)
-	WaitForE(namespace string, name string, interval time.Duration, timeout *time.Duration, condition ConditionFuncE) (*v1.Secret, error)
+	WaitFor(ctx context.Context, namespace string, name string, interval time.Duration, condition Predicate) (*v1.Secret, error)
+	WaitForE(ctx context.Context, namespace string, name string, interval time.Duration, condition ConditionFuncE) (*v1.Secret, error)
 
 	// ClientExtension can be used by the developer to extend the client.
 	ClientExtension
@@ -330,13 +330,13 @@ func (core *coreClient) Upsert(namespace string, newObj *v1.Secret, merge Merger
 
 // WaitFor is a convenience wrapper for WaitForE that fails if the error
 // passed is non-nil. It allows the use of Predicates instead of ConditionFuncE.
-func (core *coreClient) WaitFor(namespace string, name string, interval time.Duration, timeout *time.Duration, condition Predicate) (*v1.Secret, error) {
-	return core.WaitForE(namespace, name, interval, timeout, wrapPredicate(condition))
+func (core *coreClient) WaitFor(ctx context.Context, namespace string, name string, interval time.Duration, condition Predicate) (*v1.Secret, error) {
+	return core.WaitForE(ctx, namespace, name, interval, wrapPredicate(condition))
 }
 
 // ConditionFuncE is a callback used by WaitForE. Done should be set to true
 // once the condition succeeds and shouldn't be called anymore. The error
-// error will be passed back to the user.
+// will be passed back to the user.
 //
 // This function MAY retrieve a nil instance and an apiErr. It's up to the
 // function to decide how to handle the apiErr.
@@ -347,18 +347,23 @@ type ConditionFuncE func(instance *v1.Secret, apiErr error) (done bool, err erro
 // immediately after the function is invoked.
 //
 // The function polls infinitely if no timeout is supplied.
-func (core *coreClient) WaitForE(namespace string, name string, interval time.Duration, timeout *time.Duration, condition ConditionFuncE) (instance *v1.Secret, err error) {
-	if timeout == nil {
-		notimeout := time.Duration(math.MaxInt64)
-		timeout = &notimeout
-	}
+func (core *coreClient) WaitForE(ctx context.Context, namespace string, name string, interval time.Duration, condition ConditionFuncE) (instance *v1.Secret, err error) {
+	var done bool
+	tick := time.Tick(interval)
 
-	err = wait.PollImmediate(interval, *timeout, func() (bool, error) {
+	for {
 		instance, err = core.kclient.Secrets(namespace).Get(name, metav1.GetOptions{})
-		return condition(instance, err)
-	})
+		if done, err = condition(instance, err); done {
+			return
+		}
 
-	return
+		select {
+		case <-tick:
+			// repeat instance check
+		case <-ctx.Done():
+			return nil, errors.New("waiting for OperatorConfig timed out")
+		}
+	}
 }
 
 // ConditionDeleted is a ConditionFuncE that succeeds if the error returned by
