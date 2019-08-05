@@ -18,10 +18,14 @@ package apps
 
 // Generator defined imports
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/kmp"
 )
@@ -171,6 +175,8 @@ type Client interface {
 	Delete(namespace string, name string, opts ...DeleteOption) error
 	List(namespace string, opts ...ListOption) ([]v1alpha1.App, error)
 	Upsert(namespace string, newObj *v1alpha1.App, merge Merger) (*v1alpha1.App, error)
+	WaitFor(ctx context.Context, namespace string, name string, interval time.Duration, condition Predicate) (*v1alpha1.App, error)
+	WaitForE(ctx context.Context, namespace string, name string, interval time.Duration, condition ConditionFuncE) (*v1alpha1.App, error)
 
 	// ClientExtension can be used by the developer to extend the client.
 	ClientExtension
@@ -320,4 +326,68 @@ func (core *coreClient) Upsert(namespace string, newObj *v1alpha1.App, merge Mer
 	}
 
 	return core.Create(namespace, newObj)
+}
+
+// WaitFor is a convenience wrapper for WaitForE that fails if the error
+// passed is non-nil. It allows the use of Predicates instead of ConditionFuncE.
+func (core *coreClient) WaitFor(ctx context.Context, namespace string, name string, interval time.Duration, condition Predicate) (*v1alpha1.App, error) {
+	return core.WaitForE(ctx, namespace, name, interval, wrapPredicate(condition))
+}
+
+// ConditionFuncE is a callback used by WaitForE. Done should be set to true
+// once the condition succeeds and shouldn't be called anymore. The error
+// will be passed back to the user.
+//
+// This function MAY retrieve a nil instance and an apiErr. It's up to the
+// function to decide how to handle the apiErr.
+type ConditionFuncE func(instance *v1alpha1.App, apiErr error) (done bool, err error)
+
+// WaitForE polls for the given object every interval until the condition
+// function becomes done or the timeout expires. The first poll occurs
+// immediately after the function is invoked.
+//
+// The function polls infinitely if no timeout is supplied.
+func (core *coreClient) WaitForE(ctx context.Context, namespace string, name string, interval time.Duration, condition ConditionFuncE) (instance *v1alpha1.App, err error) {
+	var done bool
+	tick := time.Tick(interval)
+
+	for {
+		instance, err = core.kclient.Apps(namespace).Get(name, metav1.GetOptions{})
+		if done, err = condition(instance, err); done {
+			return
+		}
+
+		select {
+		case <-tick:
+			// repeat instance check
+		case <-ctx.Done():
+			return nil, errors.New("waiting for App timed out")
+		}
+	}
+}
+
+// ConditionDeleted is a ConditionFuncE that succeeds if the error returned by
+// the cluster was a not found error.
+func ConditionDeleted(_ *v1alpha1.App, apiErr error) (bool, error) {
+	if apiErr != nil {
+		if apierrors.IsNotFound(apiErr) {
+			apiErr = nil
+		}
+
+		return true, apiErr
+	}
+
+	return false, nil
+}
+
+// wrapPredicate converts a predicate to a ConditionFuncE that fails if the
+// error is not nil
+func wrapPredicate(condition Predicate) ConditionFuncE {
+	return func(obj *v1alpha1.App, err error) (bool, error) {
+		if err != nil {
+			return true, err
+		}
+
+		return condition(obj), nil
+	}
 }
