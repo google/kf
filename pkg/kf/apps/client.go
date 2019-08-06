@@ -19,6 +19,7 @@ import (
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	cv1alpha1 "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/algorithms"
 	"github.com/google/kf/pkg/kf/sources"
 	"github.com/google/kf/pkg/kf/systemenvinjector"
 )
@@ -49,6 +50,19 @@ func NewClient(
 			kclient: kclient,
 			upsertMutate: MutatorList{
 				LabelSetMutator(map[string]string{"app.kubernetes.io/managed-by": "kf"}),
+
+				func(app *v1alpha1.App) error {
+					// Dedupe Routes
+					// TODO(https://github.com/knative/pkg/issues/542): Route
+					// already exists and the webhook can't dedupe for us.
+					app.Spec.Routes = []v1alpha1.RouteSpecFields(
+						algorithms.Dedupe(
+							v1alpha1.RouteSpecFieldsSlice(app.Spec.Routes),
+						).(v1alpha1.RouteSpecFieldsSlice),
+					)
+
+					return nil
+				},
 			},
 			membershipValidator: AllPredicate(), // all apps can be managed by Kf
 		},

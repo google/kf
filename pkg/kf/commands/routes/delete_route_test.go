@@ -21,10 +21,12 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	appsfake "github.com/google/kf/pkg/kf/apps/fake"
+	fakeapp "github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/routes"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	"github.com/google/kf/pkg/kf/routes/fake"
+	fakerouteclaims "github.com/google/kf/pkg/kf/routeclaims/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 )
 
@@ -34,7 +36,7 @@ func TestDeleteRoute(t *testing.T) {
 	for tn, tc := range map[string]struct {
 		Namespace string
 		Args      []string
-		Setup     func(t *testing.T, fake *fake.FakeClient)
+		Setup     func(t *testing.T, fakeRouteClaims *fakerouteclaims.FakeClient, fakeApps *appsfake.FakeClient)
 		Assert    func(t *testing.T, buffer *bytes.Buffer, err error)
 	}{
 		"wrong number of args": {
@@ -43,11 +45,37 @@ func TestDeleteRoute(t *testing.T) {
 				testutil.AssertErrorsEqual(t, errors.New("accepts 1 arg(s), received 2"), err)
 			},
 		},
+		"listing apps fails": {
+			Args:      []string{"example.com"},
+			Namespace: "some-namespace",
+			Setup: func(t *testing.T, fakeRouteClaims *fakerouteclaims.FakeClient, fakeApps *appsfake.FakeClient) {
+				fakeApps.EXPECT().List(gomock.Any(), gomock.Any()).Return(nil, errors.New("some-error"))
+			},
+			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
+				testutil.AssertErrorsEqual(t, errors.New("failed to list apps: some-error"), err)
+			},
+		},
+		"unmaping route fails": {
+			Args:      []string{"example.com"},
+			Namespace: "some-namespace",
+			Setup: func(t *testing.T, fakeRouteClaims *fakerouteclaims.FakeClient, fakeApps *appsfake.FakeClient) {
+				fakeApps.EXPECT().
+					List(gomock.Any(), gomock.Any()).
+					Return([]v1alpha1.App{{}}, nil)
+				fakeApps.EXPECT().
+					Transform(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(errors.New("some-error"))
+			},
+			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
+				testutil.AssertErrorsEqual(t, errors.New("failed to unmap Route: some-error"), err)
+			},
+		},
 		"deleting route fails": {
 			Args:      []string{"example.com"},
 			Namespace: "some-namespace",
-			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(errors.New("some-error"))
+			Setup: func(t *testing.T, fakeRouteClaims *fakerouteclaims.FakeClient, fakeApps *appsfake.FakeClient) {
+				fakeApps.EXPECT().List(gomock.Any(), gomock.Any())
+				fakeRouteClaims.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(errors.New("some-error"))
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertErrorsEqual(t, errors.New("failed to delete Route: some-error"), err)
@@ -56,8 +84,14 @@ func TestDeleteRoute(t *testing.T) {
 		"namespace": {
 			Args:      []string{"example.com"},
 			Namespace: "some-namespace",
-			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Delete("some-namespace", gomock.Any())
+			Setup: func(t *testing.T, fakeRouteClaims *fakerouteclaims.FakeClient, fakeApps *appsfake.FakeClient) {
+				fakeApps.EXPECT().
+					List("some-namespace", gomock.Any()).
+					Return([]v1alpha1.App{{}}, nil)
+				fakeApps.EXPECT().
+					Transform("some-namespace", gomock.Any(), gomock.Any())
+				fakeRouteClaims.EXPECT().
+					Delete("some-namespace", gomock.Any())
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
@@ -65,22 +99,34 @@ func TestDeleteRoute(t *testing.T) {
 		},
 		"without namespace": {
 			Args: []string{"example.com"},
-			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Delete("some-namespace", gomock.Any())
+			Setup: func(t *testing.T, fakeRouteClaims *fakerouteclaims.FakeClient, fakeApps *appsfake.FakeClient) {
+				fakeApps.EXPECT().
+					List("some-namespace", gomock.Any())
+				fakeApps.EXPECT().
+					Transform("some-namespace", gomock.Any(), gomock.Any())
+				fakeRouteClaims.EXPECT().
+					Delete("some-namespace", gomock.Any())
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertErrorsEqual(t, errors.New(utils.EmptyNamespaceError), err)
 			},
 		},
-		"delete route": {
+		"delete RouteClaim": {
 			Args:      []string{"example.com", "--hostname=some-hostname", "--path=somepath"},
 			Namespace: "some-namespace",
-			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				expectedName := v1alpha1.GenerateRouteName("some-hostname", "example.com", "/somepath")
-				fake.EXPECT().Delete(
-					gomock.Any(),
-					expectedName,
+			Setup: func(t *testing.T, fakeRouteClaims *fakerouteclaims.FakeClient, fakeApps *appsfake.FakeClient) {
+				fakeApps.EXPECT().
+					List(gomock.Any(), gomock.Any())
+				expectedName := v1alpha1.GenerateRouteClaimName(
+					"some-hostname",
+					"example.com",
+					"/somepath",
 				)
+				fakeRouteClaims.EXPECT().
+					Delete(
+						gomock.Any(),
+						expectedName,
+					)
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
@@ -89,10 +135,11 @@ func TestDeleteRoute(t *testing.T) {
 	} {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			fake := fake.NewFakeClient(ctrl)
+			fakeRouteClaims := fakerouteclaims.NewFakeClient(ctrl)
+			fakeApps := fakeapp.NewFakeClient(ctrl)
 
 			if tc.Setup != nil {
-				tc.Setup(t, fake)
+				tc.Setup(t, fakeRouteClaims, fakeApps)
 			}
 
 			var buffer bytes.Buffer
@@ -100,7 +147,8 @@ func TestDeleteRoute(t *testing.T) {
 				&config.KfParams{
 					Namespace: tc.Namespace,
 				},
-				fake,
+				fakeRouteClaims,
+				fakeApps,
 			)
 			cmd.SetArgs(tc.Args)
 			cmd.SetOutput(&buffer)

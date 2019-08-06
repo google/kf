@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package routes provides a cf compatible way of managing Istio
-// VirtualServices as cf routes.
+// Package routes provides a way of managing a v1alpha1.Route.
 package routes
 
 //go:generate go run ../internal/tools/option-builder/option-builder.go --pkg routes ../internal/tools/clientgen/common-options.yml zz_generated.clientoptions.go

@@ -34,6 +34,10 @@ func (c *FakeKfV1alpha1) Routes(namespace string) v1alpha1.RouteInterface {
 	return &FakeRoutes{c, namespace}
 }
 
+func (c *FakeKfV1alpha1) RouteClaims(namespace string) v1alpha1.RouteClaimInterface {
+	return &FakeRouteClaims{c, namespace}
+}
+
 func (c *FakeKfV1alpha1) Sources(namespace string) v1alpha1.SourceInterface {
 	return &FakeSources{c, namespace}
 }

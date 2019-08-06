@@ -22,7 +22,7 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	"github.com/google/kf/pkg/kf/routes"
+	"github.com/google/kf/pkg/kf/routeclaims"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -30,7 +30,7 @@ import (
 // NewCreateRouteCommand creates a CreateRoute command.
 func NewCreateRouteCommand(
 	p *config.KfParams,
-	c routes.Client,
+	c routeclaims.Client,
 ) *cobra.Command {
 	var hostname, urlPath string
 
@@ -74,19 +74,19 @@ Instead use the --namespace flag.`)
 
 			urlPath = path.Join("/", urlPath)
 
-			r := &v1alpha1.Route{
+			r := &v1alpha1.RouteClaim{
 				TypeMeta: metav1.TypeMeta{
-					Kind: "Route",
+					Kind: "RouteClaim",
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: space,
-					Name: v1alpha1.GenerateRouteName(
+					Name: v1alpha1.GenerateRouteClaimName(
 						hostname,
 						domain,
 						urlPath,
 					),
 				},
-				Spec: v1alpha1.RouteSpec{
+				Spec: v1alpha1.RouteClaimSpec{
 					RouteSpecFields: v1alpha1.RouteSpecFields{
 						Hostname: hostname,
 						Domain:   domain,

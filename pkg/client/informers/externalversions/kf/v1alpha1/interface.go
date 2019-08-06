@@ -26,6 +26,8 @@ type Interface interface {
 	Apps() AppInformer
 	// Routes returns a RouteInformer.
 	Routes() RouteInformer
+	// RouteClaims returns a RouteClaimInformer.
+	RouteClaims() RouteClaimInformer
 	// Sources returns a SourceInformer.
 	Sources() SourceInformer
 	// Spaces returns a SpaceInformer.
@@ -51,6 +53,11 @@ func (v *version) Apps() AppInformer {
 // Routes returns a RouteInformer.
 func (v *version) Routes() RouteInformer {
 	return &routeInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// RouteClaims returns a RouteClaimInformer.
+func (v *version) RouteClaims() RouteClaimInformer {
+	return &routeClaimInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Sources returns a SourceInformer.

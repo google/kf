@@ -35,15 +35,48 @@ type Route struct {
 	Spec RouteSpec `json:"spec,omitempty"`
 }
 
-// RouteSpec contains the specification for a route.
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// RouteList is a list of Route resources
+type RouteList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []Route `json:"items"`
+}
+
+// RouteSpec contains the specification for a Route.
 type RouteSpec struct {
-	// AppNames contains the Kf Apps that are bound to the route.
-	// +optional
-	// +patchStrategy=merge
-	AppNames []string `json:"appNames,omitempty"`
+	// AppName contains the Kf App that is bound to the route.
+	AppName string `json:"appName,omitempty"`
 
 	// RouteSpecFields contains the fields of a route.
 	RouteSpecFields `json:",inline"`
+}
+
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +genclient:noStatus
+
+// RouteClaim is similar to Route, however it is not associated with an App.
+// It is created (by the Route Controller) along with its associated Routes.
+type RouteClaim struct {
+	metav1.TypeMeta `json:",inline"`
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	// +optional
+	Spec RouteClaimSpec `json:"spec,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// RouteClaimList is a list of RouteClaim resources
+type RouteClaimList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []RouteClaim `json:"items"`
 }
 
 // RouteSpecFields contains the fields of a route.
@@ -72,12 +105,8 @@ func (route RouteSpecFields) String() string {
 	return hostnamePrefix + route.Domain + path.Join("/", route.Path)
 }
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// RouteList is a list of Route resources
-type RouteList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata"`
-
-	Items []Route `json:"items"`
+// RouteClaimSpec contains the specification for a RouteClaim.
+type RouteClaimSpec struct {
+	// RouteSpecFields contains the fields of a route.
+	RouteSpecFields `json:",inline"`
 }

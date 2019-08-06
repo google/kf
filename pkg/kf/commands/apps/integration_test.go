@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"sync"
 	"testing"
 	"time"
@@ -51,7 +52,7 @@ func TestIntegration_Push(t *testing.T) {
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
 		)
 		defer kf.Delete(ctx, appName)
-		checkEchoApp(ctx, t, kf, appName, 8080)
+		checkEchoApp(ctx, t, kf, appName, 8080, ExpectedAddr(appName, ""))
 	})
 }
 
@@ -71,8 +72,8 @@ func TestIntegration_Push_update(t *testing.T) {
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
 		)
 		defer kf.Delete(ctx, appName)
-		checkEchoApp(ctx, t, kf, appName, 8087)
-		checkHelloWorldApp(ctx, t, kf, appName, 8087)
+		checkEchoApp(ctx, t, kf, appName, 8087, ExpectedAddr(appName, ""))
+		checkHelloWorldApp(ctx, t, kf, appName, 8087, ExpectedAddr(appName, ""))
 	})
 }
 
@@ -91,72 +92,7 @@ func TestIntegration_Push_docker(t *testing.T) {
 			"--docker-image=gcr.io/kf-releases/echo-app",
 		)
 		defer kf.Delete(ctx, appName)
-		checkEchoApp(ctx, t, kf, appName, 8086)
-	})
-}
-
-func checkApp(
-	ctx context.Context,
-	t *testing.T,
-	kf *Kf,
-	appName string,
-	proxyPort int,
-	assert func(ctx context.Context, t *testing.T, addr string),
-) {
-	// List the apps and make sure we can find a domain.
-	Logf(t, "ensuring app has a route...")
-	apps := kf.Apps(ctx)
-	if len(apps[appName].URLs) == 0 {
-		t.Fatalf("empty URLs")
-	}
-	Logf(t, "done ensuring app has a route.")
-
-	// Hit the app via the proxy. This makes sure the app is handling
-	// traffic as expected and ensures the proxy works. We use the proxy
-	// for two reasons:
-	// 1. Test the proxy.
-	// 2. Tests work even if a domain isn't setup.
-	Logf(t, "hitting echo app to ensure its working...")
-
-	// TODO(#46): Use port 0 so that we don't have to worry about port
-	// collisions.
-	go kf.Proxy(ctx, appName, proxyPort)
-	assert(ctx, t, fmt.Sprintf("http://localhost:%d", proxyPort))
-}
-
-func checkEchoApp(
-	ctx context.Context,
-	t *testing.T,
-	kf *Kf,
-	appName string,
-	proxyPort int,
-) {
-	checkApp(ctx, t, kf, appName, proxyPort, func(ctx context.Context, t *testing.T, addr string) {
-		resp, respCancel := RetryPost(ctx, t, addr, appTimeout, http.StatusOK, "testing")
-		defer resp.Body.Close()
-		defer respCancel()
-		data, err := ioutil.ReadAll(resp.Body)
-		AssertNil(t, "body error", err)
-		AssertEqual(t, "body", "testing", string(data))
-		Logf(t, "done hitting echo app to ensure its working.")
-	})
-}
-
-func checkHelloWorldApp(
-	ctx context.Context,
-	t *testing.T,
-	kf *Kf,
-	appName string,
-	proxyPort int,
-) {
-	checkApp(ctx, t, kf, appName, proxyPort, func(ctx context.Context, t *testing.T, addr string) {
-		// The helloworld app doesn't care if what verb you use (e.g., POST vs
-		// GET), so we'll just use the RetryPost method so we can get the
-		// retry logic.
-		resp, respCancel := RetryPost(ctx, t, addr, appTimeout, http.StatusOK, "testing")
-		defer resp.Body.Close()
-		defer respCancel()
-		Logf(t, "done hitting helloworld app to ensure its working.")
+		checkEchoApp(ctx, t, kf, appName, 8086, ExpectedAddr(appName, ""))
 	})
 }
 
@@ -166,6 +102,7 @@ func checkHelloWorldApp(
 // tries posting to it again. It finally deletes the app.
 func TestIntegration_StopStart(t *testing.T) {
 	t.Parallel()
+	t.Skip("#445")
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		appName := fmt.Sprintf("integration-push-%d", time.Now().UnixNano())
@@ -187,9 +124,8 @@ func TestIntegration_StopStart(t *testing.T) {
 		// 2. Tests work even if a domain isn't setup.
 		Logf(t, "hitting echo app to ensure it's working...")
 
-		// TODO: Use port 0 so that we don't have to worry about port
-		// collisions. This doesn't work yet:
-		// https://github.com/poy/kf/issues/46
+		// TODO(#441): Use port 0 so that we don't have to worry about port
+		// collisions.
 		go kf.Proxy(ctx, appName, 8085)
 
 		{
@@ -226,7 +162,7 @@ func TestIntegration_StopStart(t *testing.T) {
 }
 
 // TestIntegration_Push_manifest pushes the manifest app, using a manifest.yml
-// file. The app is identical to the echo app, and this fact is used to also
+// file. The app is identical to the env app, and this fact is used to also
 // test manifest file environment variables. It finally deletes the app.
 func TestIntegration_Push_manifest(t *testing.T) {
 	t.Parallel()
@@ -249,23 +185,9 @@ func TestIntegration_Push_manifest(t *testing.T) {
 		)
 		defer kf.Delete(ctx, appName)
 
-		// List the apps and make sure we can find a domain.
-		Logf(t, "ensuring app has a route...")
-		apps := kf.Apps(ctx)
-		if len(apps[appName].URLs) == 0 {
-			t.Fatalf("empty URLs")
-		}
-		Logf(t, "done ensuring app has a route.")
-
-		// TODO: Use port 0 so that we don't have to worry about port
-		// collisions. This doesn't work yet:
-		// https://github.com/poy/kf/issues/46
-		go kf.Proxy(ctx, appName, 8082)
-
-		// Check manifest file environment variables by curling the app
-		checkVars(ctx, t, kf, appName, 8082, map[string]string{
+		checkEnvApp(ctx, t, kf, appName, 8082, map[string]string{
 			"WHATNOW": "BROWNCOW",
-		}, nil)
+		}, ExpectedAddr(appName, ""))
 	})
 }
 
@@ -365,15 +287,10 @@ func TestIntegration_Envs(t *testing.T) {
 		// This is only in place for cleanup if the test fails.
 		defer kf.Delete(ctx, appName)
 
-		// TODO: Use port 0 so that we don't have to worry about port
-		// collisions. This doesn't work yet:
-		// https://github.com/poy/kf/issues/46
-		go kf.Proxy(ctx, appName, 8081)
-
-		checkVars(ctx, t, kf, appName, 8081, map[string]string{
+		checkEnvApp(ctx, t, kf, appName, 8081, map[string]string{
 			"ENV1": "VALUE1", // Set on push
 			"ENV2": "VALUE2", // Set on push
-		}, nil)
+		}, ExpectedAddr(appName, ""))
 
 		t.Run("overwrite envs", func(t *testing.T) {
 			t.Skip("this is flaky as knative isn't fast at updating the env values")
@@ -383,7 +300,7 @@ func TestIntegration_Envs(t *testing.T) {
 			// Overwrite ENV2 via set-env
 			RetryOnPanic(ctx, t, func() { kf.SetEnv(ctx, appName, "ENV2", "OVERWRITE2") })
 
-			checkVars(ctx, t, kf, appName, 8081, map[string]string{
+			assertVars(ctx, t, kf, appName, 8081, map[string]string{
 				"ENV2": "OVERWRITE2", // Set on push and overwritten via set-env
 			}, []string{"ENV1"})
 		})
@@ -415,9 +332,8 @@ func TestIntegration_Logs(t *testing.T) {
 		// 1. Test the proxy.
 		// 2. Tests work even if a domain isn't setup.
 
-		// TODO: Use port 0 so that we don't have to worry about port
-		// collisions. This doesn't work yet:
-		// https://github.com/poy/kf/issues/46
+		// TODO(#441): Use port 0 so that we don't have to worry about port
+		// collisions.
 		go kf.Proxy(ctx, appName, 8083)
 
 		// Write out an expected log line until the test dies. We do this more
@@ -475,11 +391,19 @@ func TestIntegration_LogsNoContainer(t *testing.T) {
 	})
 }
 
-// checkVars uses Env and the output of the app to ensure the expected
-// variables. It will retry for 5 seconds if the environment variables
-// aren't returning the correct values. This is to give the
-// enventually consistent system time to catch-up.
-func checkVars(ctx context.Context, t *testing.T, kf *Kf, appName string, proxyPort int, expectedVars map[string]string, absentVars []string) {
+// assertVars uses Env and the output of the app to ensure the expected
+// variables. It will retry for a while if the environment variables aren't
+// returning the correct values. This is to give the enventually consistent
+// system time to catch-up.
+func assertVars(
+	ctx context.Context,
+	t *testing.T,
+	kf *Kf,
+	appName string,
+	proxyPort int,
+	expectedVars map[string]string,
+	absentVars []string,
+) {
 	ctx, cancel := context.WithTimeout(ctx, 90*time.Second)
 	defer cancel()
 
@@ -570,5 +494,87 @@ func checkClusterStatus(t *testing.T) {
 func testIntegration_Doctor(t *testing.T) {
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		kf.Doctor(ctx)
+	})
+}
+
+func checkApp(
+	ctx context.Context,
+	t *testing.T,
+	kf *Kf,
+	appName string,
+	expectedRoutes []string,
+	proxyPort int,
+	assert func(ctx context.Context, t *testing.T, addr string),
+) {
+	// List the apps and make sure we have the correct route.
+	Logf(t, "ensuring app's route...")
+	apps := kf.Apps(ctx)
+
+	sort.Strings(apps[appName].URLs)
+	AssertEqual(t, "routes", expectedRoutes, apps[appName].URLs)
+	Logf(t, "done ensuring app's route.")
+
+	// Hit the app via the proxy. This makes sure the app is handling
+	// traffic as expected and ensures the proxy works. We use the proxy
+	// for two reasons:
+	// 1. Test the proxy.
+	// 2. Tests work even if a domain isn't setup.
+	Logf(t, "hitting echo app to ensure its working...")
+
+	// TODO(#46): Use port 0 so that we don't have to worry about port
+	// collisions.
+	go kf.Proxy(ctx, appName, proxyPort)
+	assert(ctx, t, fmt.Sprintf("http://localhost:%d", proxyPort))
+}
+
+func checkEchoApp(
+	ctx context.Context,
+	t *testing.T,
+	kf *Kf,
+	appName string,
+	proxyPort int,
+	expectedRoutes ...string,
+) {
+	checkApp(ctx, t, kf, appName, expectedRoutes, proxyPort, func(ctx context.Context, t *testing.T, addr string) {
+		resp, respCancel := RetryPost(ctx, t, addr, appTimeout, http.StatusOK, "testing")
+		defer resp.Body.Close()
+		defer respCancel()
+		data, err := ioutil.ReadAll(resp.Body)
+		AssertNil(t, "body error", err)
+		AssertEqual(t, "body", "testing", string(data))
+		Logf(t, "done hitting echo app to ensure its working.")
+	})
+}
+
+func checkHelloWorldApp(
+	ctx context.Context,
+	t *testing.T,
+	kf *Kf,
+	appName string,
+	proxyPort int,
+	expectedRoutes ...string,
+) {
+	checkApp(ctx, t, kf, appName, expectedRoutes, proxyPort, func(ctx context.Context, t *testing.T, addr string) {
+		// The helloworld app doesn't care if what verb you use (e.g., POST vs
+		// GET), so we'll just use the RetryPost method so we can get the
+		// retry logic.
+		resp, respCancel := RetryPost(ctx, t, addr, appTimeout, http.StatusOK, "testing")
+		defer resp.Body.Close()
+		defer respCancel()
+		Logf(t, "done hitting helloworld app to ensure its working.")
+	})
+}
+
+func checkEnvApp(
+	ctx context.Context,
+	t *testing.T,
+	kf *Kf,
+	appName string,
+	proxyPort int,
+	expectedVars map[string]string,
+	expectedRoutes ...string,
+) {
+	checkApp(ctx, t, kf, appName, expectedRoutes, proxyPort, func(ctx context.Context, t *testing.T, addr string) {
+		assertVars(ctx, t, kf, appName, proxyPort, expectedVars, nil)
 	})
 }

@@ -15,14 +15,14 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: routes.kf.dev
+  name: routeclaims.kf.dev
 spec:
   group: kf.dev
   version: v1alpha1
   names:
-    kind: Route
-    plural: routes
-    singular: route
+    kind: RouteClaim
+    plural: routeclaims
+    singular: routeclaim
     categories:
     - all
     - kf
@@ -39,9 +39,6 @@ spec:
   - name: Path
     type: string
     JSONPath: .spec.path
-  - name: App
-    type: string
-    JSONPath: .spec.appName
   - name: Age
     type: date
     JSONPath: .metadata.creationTimestamp

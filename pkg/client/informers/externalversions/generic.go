@@ -55,6 +55,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kf().V1alpha1().Apps().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("routes"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kf().V1alpha1().Routes().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("routeclaims"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Kf().V1alpha1().RouteClaims().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("sources"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kf().V1alpha1().Sources().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("spaces"):

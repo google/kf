@@ -18,17 +18,18 @@ import (
 	"fmt"
 	"path"
 
-	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/algorithms"
+	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	"github.com/google/kf/pkg/kf/routes"
 	"github.com/spf13/cobra"
 )
 
 // NewUnmapRouteCommand creates a MapRoute command.
 func NewUnmapRouteCommand(
 	p *config.KfParams,
-	c routes.Client,
+	c apps.Client,
 ) *cobra.Command {
 	var hostname, urlPath string
 
@@ -49,32 +50,13 @@ func NewUnmapRouteCommand(
 			}
 			appName, domain := args[0], args[1]
 
-			mutator := routes.Mutator(func(r *v1alpha1.Route) error {
-				idx := -1
-				for i, s := range r.Spec.AppNames {
-					if s == appName {
-						idx = i
-						break
-					}
-				}
-
-				if idx < 0 {
-					return fmt.Errorf("App %s not found", appName)
-				}
-
-				r.Spec.AppNames = append(
-					r.Spec.AppNames[:idx],
-					r.Spec.AppNames[idx+1:]...,
-				)
-				return nil
-			})
-
-			urlPath = path.Join("/", urlPath)
-			ksvcName := v1alpha1.GenerateRouteName(hostname, domain, urlPath)
-			if err := c.Transform(p.Namespace, ksvcName, mutator); err != nil {
-				return fmt.Errorf("failed to unmap Route: %s", err)
+			route := v1alpha1.RouteSpecFields{
+				Hostname: hostname,
+				Domain:   domain,
+				Path:     path.Join("/", urlPath),
 			}
-			return nil
+
+			return unmapApp(p.Namespace, appName, route, c)
 		},
 	}
 
@@ -92,4 +74,34 @@ func NewUnmapRouteCommand(
 	)
 
 	return cmd
+}
+
+func unmapApp(
+	namespace string,
+	appName string,
+	route v1alpha1.RouteSpecFields,
+	c apps.Client,
+) error {
+	mutator := apps.Mutator(func(app *v1alpha1.App) error {
+		// Ensure the App has the Route, if not return an error.
+		if !algorithms.Search(
+			0,
+			v1alpha1.RouteSpecFieldsSlice{route},
+			v1alpha1.RouteSpecFieldsSlice(app.Spec.Routes),
+		) {
+			return fmt.Errorf("App %s not found", app.Name)
+		}
+
+		app.Spec.Routes = []v1alpha1.RouteSpecFields(
+			(algorithms.Delete(
+				v1alpha1.RouteSpecFieldsSlice(app.Spec.Routes),
+				v1alpha1.RouteSpecFieldsSlice{route},
+			)).(v1alpha1.RouteSpecFieldsSlice))
+		return nil
+	})
+
+	if err := c.Transform(namespace, appName, mutator); err != nil {
+		return fmt.Errorf("failed to unmap Route: %s", err)
+	}
+	return nil
 }

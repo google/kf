@@ -20,16 +20,13 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/apps"
 	appsfake "github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/routes"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	clientroutes "github.com/google/kf/pkg/kf/routes"
-	routesfake "github.com/google/kf/pkg/kf/routes/fake"
 	"github.com/google/kf/pkg/kf/testutil"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestMapRoute(t *testing.T) {
@@ -38,7 +35,7 @@ func TestMapRoute(t *testing.T) {
 	for tn, tc := range map[string]struct {
 		Namespace string
 		Args      []string
-		Setup     func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient)
+		Setup     func(t *testing.T, appsfake *appsfake.FakeClient)
 		Assert    func(t *testing.T, buffer *bytes.Buffer, err error)
 	}{
 		"wrong number of args": {
@@ -47,22 +44,13 @@ func TestMapRoute(t *testing.T) {
 				testutil.AssertErrorsEqual(t, errors.New("accepts 2 arg(s), received 3"), err)
 			},
 		},
-		"fetching app fails": {
+		"transforming App fails": {
 			Args:      []string{"some-app", "example.com"},
 			Namespace: "some-space",
-			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
-				appsfake.EXPECT().Get(gomock.Any(), gomock.Any()).Return(nil, errors.New("some-error"))
-			},
-			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
-				testutil.AssertErrorsEqual(t, errors.New("failed to fetch app: some-error"), err)
-			},
-		},
-		"transforming Route fails": {
-			Args:      []string{"some-app", "example.com"},
-			Namespace: "some-space",
-			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
-				appsfake.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&v1alpha1.App{}, nil)
-				routesfake.EXPECT().Upsert(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("some-error"))
+			Setup: func(t *testing.T, appsfake *appsfake.FakeClient) {
+				appsfake.EXPECT().
+					Transform(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(errors.New("some-error"))
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertErrorsEqual(t, errors.New("failed to map Route: some-error"), err)
@@ -71,9 +59,20 @@ func TestMapRoute(t *testing.T) {
 		"namespace": {
 			Args:      []string{"some-app", "example.com"},
 			Namespace: "some-space",
-			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
-				appsfake.EXPECT().Get("some-space", gomock.Any()).Return(&v1alpha1.App{}, nil)
-				routesfake.EXPECT().Upsert("some-space", gomock.Any(), gomock.Any())
+			Setup: func(t *testing.T, appsfake *appsfake.FakeClient) {
+				appsfake.EXPECT().
+					Transform("some-space", gomock.Any(), gomock.Any())
+			},
+			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
+				testutil.AssertNil(t, "err", err)
+			},
+		},
+		"app name": {
+			Args:      []string{"some-app", "example.com"},
+			Namespace: "some-space",
+			Setup: func(t *testing.T, appsfake *appsfake.FakeClient) {
+				appsfake.EXPECT().
+					Transform(gomock.Any(), "some-app", gomock.Any())
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
@@ -81,75 +80,46 @@ func TestMapRoute(t *testing.T) {
 		},
 		"without namespace": {
 			Args: []string{"some-app", "example.com"},
-			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
-				appsfake.EXPECT().Get("some-space", gomock.Any()).Return(&v1alpha1.App{}, nil)
-				routesfake.EXPECT().Upsert("some-space", gomock.Any(), gomock.Any())
+			Setup: func(t *testing.T, appsfake *appsfake.FakeClient) {
+				appsfake.EXPECT().
+					Transform("some-space", gomock.Any(), gomock.Any())
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertErrorsEqual(t, errors.New(utils.EmptyNamespaceError), err)
 			},
 		},
-		"fetches app": {
-			Args:      []string{"some-app", "example.com"},
-			Namespace: "some-space",
-			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
-				appsfake.EXPECT().Get(gomock.Any(), "some-app").Return(&v1alpha1.App{}, nil)
-				routesfake.EXPECT().Upsert(gomock.Any(), gomock.Any(), gomock.Any())
-			},
-			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
-				testutil.AssertNil(t, "err", err)
-			},
-		},
-		"transform Route": {
+		"transform App by adding new routes": {
 			Args:      []string{"some-app", "example.com", "--hostname=some-host", "--path=some-path"},
 			Namespace: "some-space",
-			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
-				appsfake.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&v1alpha1.App{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "some-app",
-						UID:  types.UID("some-uid"),
-					},
-				}, nil)
-				routesfake.EXPECT().Upsert(gomock.Any(), gomock.Any(), gomock.Any()).Do(func(_ string, newR *v1alpha1.Route, m clientroutes.Merger) {
-					testutil.AssertEqual(t, "name",
-						v1alpha1.GenerateRouteName(
-							"some-host",
-							"example.com",
-							"/some-path",
-						),
-						newR.Name,
-					)
-					testutil.AssertEqual(t, "Spec.Hostname", "some-host", newR.Spec.Hostname)
-					testutil.AssertEqual(t, "Spec.Domain", "example.com", newR.Spec.Domain)
-					testutil.AssertEqual(t, "Spec.Path", "/some-path", newR.Spec.Path)
+			Setup: func(t *testing.T, appsfake *appsfake.FakeClient) {
+				appsfake.EXPECT().
+					Transform(gomock.Any(), gomock.Any(), gomock.Any()).
+					Do(func(_, _ string, m apps.Mutator) {
+						oldApp := v1alpha1.App{}
+						testutil.AssertNil(t, "err", m(&oldApp))
 
-					oldR := v1alpha1.Route{
-						Spec: v1alpha1.RouteSpec{
-							AppNames: []string{"some-other-app"},
-						},
-					}
-					m(newR, &oldR)
-					testutil.AssertEqual(t, "names", []string{"some-other-app", "some-app"}, newR.Spec.AppNames)
-				})
-			},
-			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
-				testutil.AssertNil(t, "err", err)
+						testutil.AssertEqual(t, "Hostname", "some-host", oldApp.Spec.Routes[0].Hostname)
+						testutil.AssertEqual(t, "Domain", "example.com", oldApp.Spec.Routes[0].Domain)
+						testutil.AssertEqual(t, "Path", "/some-path", oldApp.Spec.Routes[0].Path)
+					})
 			},
 		},
-		"don't re-add app": {
+		"transform App and keep old routes": {
 			Args:      []string{"some-app", "example.com", "--hostname=some-host", "--path=some-path"},
 			Namespace: "some-space",
-			Setup: func(t *testing.T, routesfake *routesfake.FakeClient, appsfake *appsfake.FakeClient) {
-				appsfake.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&v1alpha1.App{}, nil)
-				routesfake.EXPECT().Upsert(gomock.Any(), gomock.Any(), gomock.Any()).Do(func(_ string, newR *v1alpha1.Route, m clientroutes.Merger) {
-					oldR := v1alpha1.Route{
-						Spec: v1alpha1.RouteSpec{
-							AppNames: []string{"some-app"},
-						},
-					}
-					m(&oldR, newR)
-					testutil.AssertEqual(t, "names ", []string{"some-app"}, newR.Spec.AppNames)
-				})
+			Setup: func(t *testing.T, appsfake *appsfake.FakeClient) {
+				appsfake.EXPECT().
+					Transform(gomock.Any(), gomock.Any(), gomock.Any()).
+					Do(func(_, _ string, m apps.Mutator) {
+						oldApp := v1alpha1.App{}
+						oldApp.Spec.Routes = []v1alpha1.RouteSpecFields{
+							{Domain: "other.example.com"},
+						}
+						testutil.AssertNil(t, "err", m(&oldApp))
+
+						// Existing Route
+						testutil.AssertEqual(t, "Domain", "other.example.com", oldApp.Spec.Routes[0].Domain)
+					})
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
@@ -158,11 +128,10 @@ func TestMapRoute(t *testing.T) {
 	} {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			routesfake := routesfake.NewFakeClient(ctrl)
 			appsfake := appsfake.NewFakeClient(ctrl)
 
 			if tc.Setup != nil {
-				tc.Setup(t, routesfake, appsfake)
+				tc.Setup(t, appsfake)
 			}
 
 			var buffer bytes.Buffer
@@ -170,7 +139,6 @@ func TestMapRoute(t *testing.T) {
 				&config.KfParams{
 					Namespace: tc.Namespace,
 				},
-				routesfake,
 				appsfake,
 			)
 			cmd.SetArgs(tc.Args)

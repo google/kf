@@ -18,19 +18,16 @@ import (
 	"fmt"
 	"path"
 
-	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	"github.com/google/kf/pkg/kf/routes"
 	"github.com/spf13/cobra"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // NewMapRouteCommand creates a MapRoute command.
 func NewMapRouteCommand(
 	p *config.KfParams,
-	routesClient routes.Client,
 	appsClient apps.Client,
 ) *cobra.Command {
 	var hostname, urlPath string
@@ -52,43 +49,23 @@ func NewMapRouteCommand(
 			}
 			appName, domain := args[0], args[1]
 
-			_, err := appsClient.Get(p.Namespace, appName)
-			if err != nil {
-				return fmt.Errorf("failed to fetch app: %s", err)
-			}
-
-			merger := routes.Merger(func(newR, oldR *v1alpha1.Route) *v1alpha1.Route {
-				newR.ObjectMeta = *oldR.ObjectMeta.DeepCopy()
-				newR.Spec.AppNames = append(oldR.Spec.AppNames, appName)
-				return newR
-			})
-
-			urlPath = path.Join("/", urlPath)
-			r := &v1alpha1.Route{
-				TypeMeta: metav1.TypeMeta{
-					Kind: "Route",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: p.Namespace,
-					Name: v1alpha1.GenerateRouteName(
-						hostname,
-						domain,
-						urlPath,
-					),
-				},
-				Spec: v1alpha1.RouteSpec{
-					AppNames: []string{appName},
-					RouteSpecFields: v1alpha1.RouteSpecFields{
+			mutator := func(app *v1alpha1.App) error {
+				app.Spec.Routes = append(
+					app.Spec.Routes,
+					v1alpha1.RouteSpecFields{
 						Hostname: hostname,
 						Domain:   domain,
-						Path:     urlPath,
+						Path:     path.Join("/", urlPath),
 					},
-				},
+				)
+				return nil
 			}
 
-			if _, err := routesClient.Upsert(p.Namespace, r, merger); err != nil {
+			err := appsClient.Transform(p.Namespace, appName, mutator)
+			if err != nil {
 				return fmt.Errorf("failed to map Route: %s", err)
 			}
+
 			return nil
 		},
 	}
