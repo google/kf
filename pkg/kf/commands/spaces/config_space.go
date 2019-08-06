@@ -26,7 +26,7 @@ import (
 	"github.com/google/kf/pkg/kf/spaces"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
-	"sigs.k8s.io/yaml"
+	k8syaml "sigs.k8s.io/yaml"
 )
 
 // NewConfigSpaceCommand creates a command that can set facets of a space.
@@ -306,7 +306,10 @@ func (sm spaceAccessor) ToCommand(client spaces.Client) *cobra.Command {
 
 			out := sm.Accessor(space)
 
-			m, err := yaml.Marshal(out)
+			// NOTE: use the K8s YAML marshal function because it works with builtin
+			// k8s types by marshaling using the JSON tags then converting to YAML
+			// as opposed to just using YAML tags natively.
+			m, err := k8syaml.Marshal(out)
 			if err != nil {
 				fmt.Fprintf(cmd.OutOrStdout(), "%#v", out)
 				return fmt.Errorf("couldn't convert value to YAML: %s", err)
