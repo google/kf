@@ -20,7 +20,6 @@ import (
 	"strconv"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/internal/envutil"
 	"github.com/google/kf/pkg/kf/systemenvinjector"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	servingv1beta1 "github.com/knative/serving/pkg/apis/serving/v1beta1"
@@ -70,14 +69,16 @@ func MakeKnativeService(
 	// to be overridden.
 	podSpec.Containers[0].Env = append(space.Spec.Execution.Env, podSpec.Containers[0].Env...)
 
-	computedEnv, err := systemEnvInjector.ComputeSystemEnv(app)
-	if err != nil {
-		return nil, err
+	// Inject VCAP env vars from secret
+	podSpec.Containers[0].EnvFrom = []corev1.EnvFromSource{
+		corev1.EnvFromSource{
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: SecretName(app, space),
+				},
+			},
+		},
 	}
-
-	podSpec.Containers[0].Env = append(podSpec.Containers[0].Env, computedEnv...)
-
-	podSpec.Containers[0].Env = envutil.DeduplicateEnvVars(podSpec.Containers[0].Env)
 
 	return &serving.Service{
 		ObjectMeta: metav1.ObjectMeta{
