@@ -35,6 +35,7 @@ import (
 func PropagateCondition(manager apis.ConditionManager, destination apis.ConditionType, source *apis.Condition) bool {
 	switch {
 	case source == nil:
+		manager.MarkUnknown(destination, "Unknown", "source status is nil")
 		return false
 	case source.IsFalse():
 		manager.MarkFalse(destination, source.Reason, source.Message)

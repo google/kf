@@ -38,7 +38,11 @@ func TestPropagateCondition(t *testing.T) {
 		expectReturn  bool
 	}{
 		"nil source": {
-			source: nil,
+			source:        nil,
+			expectMessage: "source status is nil",
+			expectStatus:  "Unknown",
+			expectReason:  "Unknown",
+			expectReturn:  false,
 		},
 		"unknown source": {
 			source:        &apis.Condition{Status: "Unknown", Message: "u-message", Reason: "UReason"},
@@ -74,11 +78,6 @@ func TestPropagateCondition(t *testing.T) {
 			testutil.AssertEqual(t, "return value", tc.expectReturn, returnValue)
 
 			resultCond := manager.GetCondition("TestCondition")
-			if tc.source == nil {
-				testutil.AssertEqual(t, "condition", (*apis.Condition)(nil), resultCond)
-				return
-			}
-
 			testutil.AssertEqual(t, "message", tc.expectMessage, resultCond.Message)
 			testutil.AssertEqual(t, "status", tc.expectStatus, string(resultCond.Status))
 			testutil.AssertEqual(t, "reason", tc.expectReason, resultCond.Reason)

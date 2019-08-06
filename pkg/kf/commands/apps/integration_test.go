@@ -60,7 +60,6 @@ func TestIntegration_Push(t *testing.T) {
 // then posts to it. It then updates the app to the helloworld app by pushing
 // to the same app name. It finally deletes the app.
 func TestIntegration_Push_update(t *testing.T) {
-	t.Skip("TODO #372")
 	t.Parallel()
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
@@ -73,7 +72,7 @@ func TestIntegration_Push_update(t *testing.T) {
 		)
 		defer kf.Delete(ctx, appName)
 		checkEchoApp(ctx, t, kf, appName, 8087, ExpectedAddr(appName, ""))
-		checkHelloWorldApp(ctx, t, kf, appName, 8087, ExpectedAddr(appName, ""))
+		checkHelloWorldApp(ctx, t, kf, appName, 8088, ExpectedAddr(appName, ""))
 	})
 }
 
