@@ -88,7 +88,10 @@ func NewRoutesCommand(
 	}
 }
 
-func groupRoutes(routes []v1alpha1.Route, claims []v1alpha1.RouteClaim) []v1alpha1.RouteSpecFields {
+func groupRoutes(
+	routes []v1alpha1.Route,
+	claims []v1alpha1.RouteClaim,
+) []v1alpha1.RouteSpecFields {
 	var fields v1alpha1.RouteSpecFieldsSlice
 	for _, r := range routes {
 		fields = append(fields, r.Spec.RouteSpecFields)

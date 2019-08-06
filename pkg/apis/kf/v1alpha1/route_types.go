@@ -48,7 +48,6 @@ type RouteList struct {
 // RouteSpec contains the specification for a Route.
 type RouteSpec struct {
 	// AppName contains the Kf App that is bound to the route.
-	// +optional
 	AppName string `json:"appName,omitempty"`
 
 	// RouteSpecFields contains the fields of a route.

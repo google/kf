@@ -75,6 +75,10 @@ func (r *Route) Validate(ctx context.Context) (errs *apis.FieldError) {
 
 // Validate makes sure that RouteSpec is properly configured.
 func (r *RouteSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
+	if r.AppName == "" {
+		errs = errs.Also(apis.ErrMissingField("appName"))
+	}
+
 	if r.Domain == "" {
 		errs = errs.Also(apis.ErrMissingField("domain"))
 	}

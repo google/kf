@@ -37,6 +37,7 @@ func TestRouteValidation(t *testing.T) {
 		Namespace: "valid",
 	}
 	goodRouteSpec := RouteSpec{
+		AppName: "some-app",
 		RouteSpecFields: RouteSpecFields{
 			Domain: "example.com",
 		},
@@ -71,6 +72,18 @@ func TestRouteValidation(t *testing.T) {
 			},
 			want: apis.ErrMissingField("name"),
 		},
+		"missing appName": {
+			route: &Route{
+				ObjectMeta: goodObjMeta,
+				Spec: RouteSpec{
+					AppName: "",
+					RouteSpecFields: RouteSpecFields{
+						Domain: "some-domain",
+					},
+				},
+			},
+			want: apis.ErrMissingField("spec.appName"),
+		},
 		"missing domain": {
 			route: &Route{
 				ObjectMeta: goodObjMeta,
@@ -87,6 +100,7 @@ func TestRouteValidation(t *testing.T) {
 			route: &Route{
 				ObjectMeta: goodObjMeta,
 				Spec: RouteSpec{
+					AppName: "some-app",
 					RouteSpecFields: RouteSpecFields{
 						Hostname: "www",
 						Domain:   "domain.com",
@@ -186,6 +200,5 @@ func TestRouteValidation(t *testing.T) {
 
 			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())
 		})
-
 	}
 }
