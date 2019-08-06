@@ -20,11 +20,13 @@
 package fake
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	apps "github.com/google/kf/pkg/kf/apps"
 	io "io"
 	reflect "reflect"
+	time "time"
 )
 
 // FakeClient is a mock of Client interface
@@ -232,4 +234,34 @@ func (m *FakeClient) Upsert(arg0 string, arg1 *v1alpha1.App, arg2 apps.Merger) (
 func (mr *FakeClientMockRecorder) Upsert(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upsert", reflect.TypeOf((*FakeClient)(nil).Upsert), arg0, arg1, arg2)
+}
+
+// WaitFor mocks base method
+func (m *FakeClient) WaitFor(arg0 context.Context, arg1, arg2 string, arg3 time.Duration, arg4 apps.Predicate) (*v1alpha1.App, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WaitFor", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(*v1alpha1.App)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// WaitFor indicates an expected call of WaitFor
+func (mr *FakeClientMockRecorder) WaitFor(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitFor", reflect.TypeOf((*FakeClient)(nil).WaitFor), arg0, arg1, arg2, arg3, arg4)
+}
+
+// WaitForE mocks base method
+func (m *FakeClient) WaitForE(arg0 context.Context, arg1, arg2 string, arg3 time.Duration, arg4 apps.ConditionFuncE) (*v1alpha1.App, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WaitForE", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(*v1alpha1.App)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// WaitForE indicates an expected call of WaitForE
+func (mr *FakeClientMockRecorder) WaitForE(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitForE", reflect.TypeOf((*FakeClient)(nil).WaitForE), arg0, arg1, arg2, arg3, arg4)
 }

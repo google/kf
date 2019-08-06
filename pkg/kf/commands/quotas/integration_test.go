@@ -26,12 +26,13 @@ import (
 )
 
 // Skipping quota integration tests for now.
-// TODO (juliaguo): Move tests into space e2e tests, or create and delete space in these tests
+// TODO(#442): Move tests into space e2e tests, or create and delete space
+// in these tests
 
-// TestIntegration_Create creates a resourcequota, then tries to retrieve the quota info.
-// It finally deletes the quota.
+// TestIntegration_Create creates a resourcequota, then tries to retrieve the
+// quota info.  It finally deletes the quota.
 func TestIntegration_Create(t *testing.T) {
-	t.Skip()
+	t.Skip("#442")
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		spaceName := fmt.Sprintf("integration-quota-space-%d", time.Now().UnixNano())
@@ -62,7 +63,7 @@ func TestIntegration_Create(t *testing.T) {
 // TestIntegration_Delete creates a quota and then deletes it. It then makes
 // sure the quota no longer exists.
 func TestIntegration_Delete(t *testing.T) {
-	t.Skip()
+	t.Skip("#442")
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		spaceName := fmt.Sprintf("integration-quota-space-%d", time.Now().UnixNano())
@@ -96,7 +97,7 @@ func TestIntegration_Delete(t *testing.T) {
 // It checks that the quota is saved with the new values.
 // Afterwards, the quota is deleted.
 func TestIntegration_Update(t *testing.T) {
-	t.Skip()
+	t.Skip("#442")
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		spaceName := fmt.Sprintf("integration-quota-%d", time.Now().UnixNano())
@@ -158,7 +159,7 @@ func checkClusterStatus(t *testing.T) {
 // testIntegration_Doctor runs the doctor command. It ensures the cluster the
 // tests are running against is in good shape.
 func testIntegration_Doctor(t *testing.T) {
-	t.Skip()
+	t.Skip("#442")
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		kf.Doctor(ctx)
 	})

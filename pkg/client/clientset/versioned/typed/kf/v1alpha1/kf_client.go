@@ -27,6 +27,7 @@ type KfV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	AppsGetter
 	RoutesGetter
+	RouteClaimsGetter
 	SourcesGetter
 	SpacesGetter
 }
@@ -42,6 +43,10 @@ func (c *KfV1alpha1Client) Apps(namespace string) AppInterface {
 
 func (c *KfV1alpha1Client) Routes(namespace string) RouteInterface {
 	return newRoutes(c, namespace)
+}
+
+func (c *KfV1alpha1Client) RouteClaims(namespace string) RouteClaimInterface {
+	return newRouteClaims(c, namespace)
 }
 
 func (c *KfV1alpha1Client) Sources(namespace string) SourceInterface {

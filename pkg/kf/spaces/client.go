@@ -15,6 +15,7 @@
 package spaces
 
 import (
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	cv1alpha1 "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
 )
 
@@ -31,4 +32,9 @@ func NewClient(kclient cv1alpha1.SpacesGetter) Client {
 		},
 		membershipValidator: AllPredicate(), // all spaces can be managed by Kf
 	}
+}
+
+// IsStatusFinal checks if the space has been fully synchronized.
+func IsStatusFinal(space *v1alpha1.Space) bool {
+	return v1alpha1.IsStatusFinal(space.Status.Status)
 }

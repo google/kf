@@ -54,6 +54,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&SpaceList{},
 		&Route{},
 		&RouteList{},
+		&RouteClaim{},
+		&RouteClaimList{},
 		&metav1.Status{},
 	)
 

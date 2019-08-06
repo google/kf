@@ -121,12 +121,12 @@ type SpaceSpecResourceLimits struct {
 type SpaceDomain struct {
 	// Domain is the valid domain that can be used in conjunction with a
 	// hostname and path for a route.
-	Domain string
+	Domain string `json:"domain"`
 
 	// Default implies that this SpaceDomain is used when a domain is not
 	// specified. There can only be a single default set to true per space.
 	// NOTE: This may change in the future.
-	Default bool
+	Default bool `json:"default,omitempty"`
 }
 
 // SpaceStatus represents information about the status of a Space.

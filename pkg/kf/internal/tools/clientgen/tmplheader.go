@@ -29,11 +29,15 @@ package {{.Package}}
 
 // Generator defined imports
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"knative.dev/pkg/kmp"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

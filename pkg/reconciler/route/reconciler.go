@@ -23,6 +23,7 @@ import (
 	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/algorithms"
 	"github.com/google/kf/pkg/reconciler"
+	appresources "github.com/google/kf/pkg/reconciler/app/resources"
 	"github.com/google/kf/pkg/reconciler/route/resources"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -42,7 +43,6 @@ type Reconciler struct {
 
 	// listers index properties about resources
 	routeLister          kflisters.RouteLister
-	appLister            kflisters.AppLister
 	virtualServiceLister istiolisters.VirtualServiceLister
 }
 
@@ -61,9 +61,16 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 	return r.reconcileRoute(ctx, namespace, name, logger)
 }
 
-func (r *Reconciler) reconcileRoute(ctx context.Context, namespace, name string, logger *zap.SugaredLogger) (err error) {
+func (r *Reconciler) reconcileRoute(
+	ctx context.Context,
+	namespace string,
+	name string,
+	logger *zap.SugaredLogger,
+) (err error) {
 	var deleted bool
-	original, err := r.routeLister.Routes(namespace).Get(name)
+	original, err := r.routeLister.
+		Routes(namespace).
+		Get(name)
 	switch {
 	case apierrs.IsNotFound(err):
 		logger.Errorf("Route %q no longer exists\n", name)
@@ -83,58 +90,51 @@ func (r *Reconciler) reconcileRoute(ctx context.Context, namespace, name string,
 	return r.ApplyChanges(ctx, toReconcile, deleted, logger)
 }
 
-func (r *Reconciler) ReconcileAppDeletion(ctx context.Context, app *v1alpha1.App) error {
-	for _, routeSpec := range app.Spec.Routes {
-		route, err := r.routeLister.Routes(app.GetNamespace()).Get(
-			v1alpha1.GenerateRouteNameFromSpec(routeSpec),
-		)
-		if err != nil {
-			return err
-		}
-
-		// Don't modify the informers copy
-		toReconcile := route.DeepCopy()
-
-		// Remove the App
-		toReconcile.Spec.AppNames = []string((algorithms.Delete(
-			algorithms.Strings(toReconcile.Spec.AppNames),
-			algorithms.Strings{app.Name},
-		)).(algorithms.Strings))
-
-		// Update Route to not reference service
-		if _, err := r.KfClientSet.
-			KfV1alpha1().
-			Routes(app.GetNamespace()).
-			Update(toReconcile); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // ApplyChanges updates the linked resources in the cluster with the current
 // status of the Route .
-func (r *Reconciler) ApplyChanges(ctx context.Context, route *v1alpha1.Route, deleted bool, logger *zap.SugaredLogger) error {
-	route.SetDefaults(ctx)
+func (r *Reconciler) ApplyChanges(
+	ctx context.Context,
+	origRoute *v1alpha1.Route,
+	deleted bool,
+	logger *zap.SugaredLogger,
+) error {
+	origRoute.SetDefaults(ctx)
 
 	// Sync VirtualService
 	{
-		desired, err := resources.MakeVirtualService(route)
+		// Fetch routes with the same Hostname+Domain+Path.
+		routes, err := r.routeLister.
+			Routes(origRoute.GetNamespace()).
+			List(appresources.MakeRouteSelector(origRoute.Spec.RouteSpecFields))
 		if err != nil {
 			return err
 		}
 
-		actual, err := r.virtualServiceLister.VirtualServices(desired.GetNamespace()).Get(desired.Name)
+		desired, err := resources.MakeVirtualService(routes)
+		if err != nil {
+			return err
+		}
+
+		actual, err := r.virtualServiceLister.
+			VirtualServices(desired.GetNamespace()).
+			Get(desired.Name)
 		if errors.IsNotFound(err) {
 			// VirtualService doesn't exist, make one.
-			actual, err = r.SharedClientSet.Networking().VirtualServices(desired.GetNamespace()).Create(desired)
+			actual, err = r.SharedClientSet.
+				Networking().
+				VirtualServices(desired.GetNamespace()).
+				Create(desired)
 			if err != nil {
 				return err
 			}
 		} else if err != nil {
 			return err
-		} else if actual, err = r.reconcile(desired, actual, deleted, logger); err != nil {
+		} else if actual, err = r.reconcile(
+			desired,
+			actual,
+			deleted,
+			logger,
+		); err != nil {
 			return err
 		}
 	}

@@ -15,6 +15,7 @@
 package resources
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"path"
@@ -35,23 +36,56 @@ const (
 	GatewayHost           = "istio-ingressgateway.istio-system.svc.cluster.local"
 )
 
+// MakeVirtualServiceLabels creates Labels that can be used to tie a
+// VirtualService to a Route.
+func MakeVirtualServiceLabels(spec v1alpha1.RouteSpecFields) map[string]string {
+	return map[string]string{
+		v1alpha1.ManagedByLabel: "kf",
+		v1alpha1.ComponentLabel: "virtualservice",
+		v1alpha1.RouteHostname:  spec.Hostname,
+		v1alpha1.RouteDomain:    spec.Domain,
+	}
+}
+
 // MakeVirtualService creates a VirtualService from a Route object.
-func MakeVirtualService(route *v1alpha1.Route) (*networking.VirtualService, error) {
-	hostDomain := route.Spec.Domain
-	if route.Spec.Hostname != "" {
-		hostDomain = route.Spec.Hostname + "." + route.Spec.Domain
+func MakeVirtualService(routes []*v1alpha1.Route) (*networking.VirtualService, error) {
+	if len(routes) == 0 {
+		return nil, errors.New("routes must not be empty")
 	}
 
-	httpRoute, err := buildHTTPRoute(route)
+	namespace := routes[0].Namespace
+	hostname := routes[0].Spec.RouteSpecFields.Hostname
+	domain := routes[0].Spec.RouteSpecFields.Domain
+	urlPath := routes[0].Spec.RouteSpecFields.Path
+	labels := MakeVirtualServiceLabels(routes[0].Spec.RouteSpecFields)
+
+	var (
+		ownerRefs []metav1.OwnerReference
+		appNames  []string
+	)
+	for _, route := range routes {
+		// Each route will own the VirtualService. Therefore none of them can be a
+		// controller.
+		ownerRef := *kmeta.NewControllerRef(route)
+		ownerRef.Controller = nil
+		ownerRef.BlockOwnerDeletion = nil
+		ownerRefs = append(ownerRefs, ownerRef)
+
+		// AppNames
+		if route.Spec.AppName != "" {
+			appNames = append(appNames, route.Spec.AppName)
+		}
+	}
+
+	hostDomain := domain
+	if hostname != "" {
+		hostDomain = hostname + "." + domain
+	}
+
+	httpRoute, err := buildHTTPRoute(namespace, urlPath, appNames)
 	if err != nil {
 		return nil, err
 	}
-
-	// Each route will own the VirtualService. Therefore none of them can be a
-	// controller.
-	ownerRef := *kmeta.NewControllerRef(route)
-	ownerRef.Controller = nil
-	ownerRef.BlockOwnerDeletion = nil
 
 	return &networking.VirtualService{
 		TypeMeta: metav1.TypeMeta{
@@ -59,19 +93,20 @@ func MakeVirtualService(route *v1alpha1.Route) (*networking.VirtualService, erro
 			Kind:       "VirtualService",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      v1alpha1.GenerateName(route.Spec.Hostname, route.Spec.Domain),
-			Namespace: v1alpha1.KfNamespace,
-			OwnerReferences: []metav1.OwnerReference{
-				ownerRef,
-			},
+			Name: v1alpha1.GenerateName(
+				hostname,
+				domain,
+			),
+			Namespace:       v1alpha1.KfNamespace,
+			OwnerReferences: ownerRefs,
 			Labels: resources.UnionMaps(
-				route.GetLabels(), map[string]string{
+				labels, map[string]string{
 					ManagedByLabel: "kf",
 				}),
 			Annotations: map[string]string{
-				"domain":   route.Spec.Domain,
-				"hostname": route.Spec.Hostname,
-				"space":    route.GetNamespace(),
+				"domain":   domain,
+				"hostname": hostname,
+				"space":    namespace,
 			},
 		},
 		Spec: networking.VirtualServiceSpec{
@@ -82,16 +117,16 @@ func MakeVirtualService(route *v1alpha1.Route) (*networking.VirtualService, erro
 	}, nil
 }
 
-func buildHTTPRoute(route *v1alpha1.Route) ([]networking.HTTPRoute, error) {
+func buildHTTPRoute(namespace, urlPath string, appNames []string) ([]networking.HTTPRoute, error) {
 	var pathMatchers []networking.HTTPMatchRequest
 
-	urlPath := path.Join("/", route.Spec.Path, "/")
+	urlPath = path.Join("/", urlPath, "/")
 	regexpPath, err := buildPathRegex(urlPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert path to regexp: %s", err)
 	}
 
-	if route.Spec.Path != "" {
+	if urlPath != "" {
 		pathMatchers = append(pathMatchers, networking.HTTPMatchRequest{
 			URI: &istio.StringMatch{
 				Regex: regexpPath,
@@ -101,12 +136,12 @@ func buildHTTPRoute(route *v1alpha1.Route) ([]networking.HTTPRoute, error) {
 
 	var httpRoutes []networking.HTTPRoute
 
-	for _, ksvcName := range route.Spec.AppNames {
+	for _, appName := range appNames {
 		httpRoutes = append(httpRoutes, networking.HTTPRoute{
 			Match: pathMatchers,
 			Route: buildRouteDestination(),
 			Rewrite: &networking.HTTPRewrite{
-				Authority: network.GetServiceHostname(ksvcName, route.GetNamespace()),
+				Authority: network.GetServiceHostname(appName, namespace),
 			},
 		})
 	}

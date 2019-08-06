@@ -17,28 +17,7 @@ package v1alpha1
 import (
 	"context"
 	"fmt"
-	"strings"
-	"testing"
-
-	"github.com/google/kf/pkg/kf/testutil"
 )
-
-func TestRoute_SetDefaults_DedupeAppNames(t *testing.T) {
-	t.Parallel()
-
-	r := &Route{
-		Spec: RouteSpec{
-			AppNames: []string{
-				"d", "a", "d", "a", "b", "c",
-			},
-		},
-	}
-
-	r.SetDefaults(context.Background())
-
-	testutil.AssertEqual(t, "len", 4, len(r.Spec.AppNames))
-	testutil.AssertContainsAll(t, strings.Join(r.Spec.AppNames, ""), []string{"a", "b", "c", "d"})
-}
 
 func ExampleRoute_SetDefaults_prefixRoutes() {
 	r := &Route{}

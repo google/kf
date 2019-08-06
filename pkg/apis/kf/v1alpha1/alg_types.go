@@ -15,6 +15,8 @@
 package v1alpha1
 
 import (
+	"path"
+
 	"github.com/google/kf/pkg/kf/algorithms"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis/istio/v1alpha3"
@@ -153,5 +155,88 @@ func (d SpaceDomains) Less(i int, j int) bool {
 
 // Swap implements Interface.
 func (d SpaceDomains) Swap(i int, j int) {
+	d[i], d[j] = d[j], d[i]
+}
+
+// Routes implements the necessary interfaces for the algorithms package.
+type Routes []Route
+
+// Set implements Interface.
+func (d Routes) Set(i int, a algorithms.Interface, j int, b algorithms.Interface) {
+	a.(Routes)[i] = b.(Routes)[j]
+}
+
+// Append implements Interface.
+func (d Routes) Append(a algorithms.Interface) algorithms.Interface {
+	return append(d, a.(Routes)...)
+}
+
+// Clone implements Interface.
+func (d Routes) Clone() algorithms.Interface {
+	return append(Routes{}, d...)
+}
+
+// Slice implements Interface.
+func (d Routes) Slice(i int, j int) algorithms.Interface {
+	return d[i:j]
+}
+
+// Len implements Interface.
+func (d Routes) Len() int {
+	return len(d)
+}
+
+// Less implements Interface.
+func (d Routes) Less(i int, j int) bool {
+	return d[i].Name < d[j].Name
+}
+
+// Swap implements Interface.
+func (d Routes) Swap(i int, j int) {
+	d[i], d[j] = d[j], d[i]
+}
+
+// RouteSpecFieldsSlice implements the necessary interfaces for the algorithms
+// package.
+type RouteSpecFieldsSlice []RouteSpecFields
+
+// Set implements Interface.
+func (d RouteSpecFieldsSlice) Set(i int, a algorithms.Interface, j int, b algorithms.Interface) {
+	a.(RouteSpecFieldsSlice)[i] = b.(RouteSpecFieldsSlice)[j]
+}
+
+// Append implements Interface.
+func (d RouteSpecFieldsSlice) Append(a algorithms.Interface) algorithms.Interface {
+	return append(d, a.(RouteSpecFieldsSlice)...)
+}
+
+// Clone implements Interface.
+func (d RouteSpecFieldsSlice) Clone() algorithms.Interface {
+	return append(RouteSpecFieldsSlice{}, d...)
+}
+
+// Slice implements Interface.
+func (d RouteSpecFieldsSlice) Slice(i int, j int) algorithms.Interface {
+	return d[i:j]
+}
+
+// Len implements Interface.
+func (d RouteSpecFieldsSlice) Len() int {
+	return len(d)
+}
+
+// Less implements Interface.
+func (d RouteSpecFieldsSlice) Less(i int, j int) bool {
+	// TODO(https://github.com/knative/pkg/issues/542):
+	// We can't garuntee that the path will have the '/' or not
+	// because webhooks can't yet modify slices.
+	d[i].Path = path.Join("/", d[i].Path)
+	d[j].Path = path.Join("/", d[j].Path)
+
+	return GenerateRouteNameFromSpec(d[i], "") < GenerateRouteNameFromSpec(d[j], "")
+}
+
+// Swap implements Interface.
+func (d RouteSpecFieldsSlice) Swap(i int, j int) {
 	d[i], d[j] = d[j], d[i]
 }

@@ -32,7 +32,7 @@ func MakeSecretLabels(app *v1alpha1.App) map[string]string {
 
 // SecretName gets the name of the secret for the given application.
 func SecretName(app *v1alpha1.App, space *v1alpha1.Space) string {
-	return fmt.Sprintf("env-vars-%s", app.Name)
+	return fmt.Sprintf("env-vars-%s-%s", app.Name, space.Name)
 }
 
 // MakeSecret creates a Secret containing the env vars for the given application.

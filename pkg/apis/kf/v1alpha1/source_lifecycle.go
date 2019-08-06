@@ -74,6 +74,7 @@ func (status *SourceStatus) PropagateBuildStatus(build *build.Build) {
 	}
 
 	status.BuildName = build.Name
+	status.manage().MarkUnknown(SourceConditionBuildSucceeded, "initializing", "Build in progress")
 
 	for _, condition := range build.Status.GetConditions() {
 		if condition.Type == "Succeeded" {

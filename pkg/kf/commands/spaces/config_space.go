@@ -26,6 +26,7 @@ import (
 	"github.com/google/kf/pkg/kf/spaces"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
+	k8syaml "sigs.k8s.io/yaml"
 )
 
 // NewConfigSpaceCommand creates a command that can set facets of a space.
@@ -55,15 +56,24 @@ func NewConfigSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		cmd.AddCommand(sm.ToCommand(client))
 	}
 
-	quotaCommands := []*cobra.Command{
+	accessors := []spaceAccessor{
+		newGetContainerRegistryAccessor(),
+		newGetBuildpackBuilderAccessor(),
+		newGetExecutionEnvAccessor(),
+		newGetBuildpackEnvAccessor(),
+		newGetDomainsAccessor(),
+	}
+
+	for _, sa := range accessors {
+		cmd.AddCommand(sa.ToCommand(client))
+	}
+
+	cmd.AddCommand(
 		quotas.NewCreateQuotaCommand(p, client),
 		quotas.NewGetQuotaCommand(p, client),
 		quotas.NewUpdateQuotaCommand(p, client),
 		quotas.NewDeleteQuotaCommand(p, client),
-	}
-	for _, qc := range quotaCommands {
-		cmd.AddCommand(qc)
-	}
+	)
 
 	return cmd
 }
@@ -268,6 +278,95 @@ func newRemoveDomainMutator() spaceMutator {
 
 				return nil
 			}, nil
+		},
+	}
+}
+
+type spaceAccessor struct {
+	Name     string
+	Short    string
+	Accessor func(space *v1alpha1.Space) interface{}
+}
+
+func (sm spaceAccessor) ToCommand(client spaces.Client) *cobra.Command {
+	return &cobra.Command{
+		Use:   fmt.Sprintf("%s SPACE_NAME", sm.Name),
+		Short: sm.Short,
+		Long:  sm.Short,
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			spaceName := args[0]
+
+			cmd.SilenceUsage = true
+
+			space, err := client.Get(spaceName)
+			if err != nil {
+				return err
+			}
+
+			out := sm.Accessor(space)
+
+			// NOTE: use the K8s YAML marshal function because it works with builtin
+			// k8s types by marshaling using the JSON tags then converting to YAML
+			// as opposed to just using YAML tags natively.
+			m, err := k8syaml.Marshal(out)
+			if err != nil {
+				fmt.Fprintf(cmd.OutOrStdout(), "%#v", out)
+				return fmt.Errorf("couldn't convert value to YAML: %s", err)
+			}
+
+			fmt.Fprint(cmd.OutOrStdout(), string(m))
+			return nil
+		},
+	}
+}
+
+func newGetContainerRegistryAccessor() spaceAccessor {
+	return spaceAccessor{
+		Name:  "get-container-registry",
+		Short: "Get the container registry used for builds.",
+		Accessor: func(space *v1alpha1.Space) interface{} {
+			return space.Spec.BuildpackBuild.ContainerRegistry
+		},
+	}
+}
+
+func newGetBuildpackBuilderAccessor() spaceAccessor {
+	return spaceAccessor{
+		Name:  "get-buildpack-builder",
+		Short: "Get the buildpack builder used for builds.",
+		Accessor: func(space *v1alpha1.Space) interface{} {
+			return space.Spec.BuildpackBuild.BuilderImage
+		},
+	}
+}
+
+func newGetExecutionEnvAccessor() spaceAccessor {
+	return spaceAccessor{
+		Name:  "get-execution-env",
+		Short: "Get the space-wide environment variables.",
+		Accessor: func(space *v1alpha1.Space) interface{} {
+			return space.Spec.Execution.Env
+		},
+	}
+}
+
+func newGetBuildpackEnvAccessor() spaceAccessor {
+	return spaceAccessor{
+		Name:  "get-buildpack-env",
+		Short: "Get the environment variables for buildpack builds in a space.",
+		Accessor: func(space *v1alpha1.Space) interface{} {
+			return space.Spec.BuildpackBuild.Env
+		},
+	}
+}
+
+func newGetDomainsAccessor() spaceAccessor {
+	return spaceAccessor{
+		Name:  "get-domains",
+		Short: "Get domains associated with the space.",
+		Accessor: func(space *v1alpha1.Space) interface{} {
+			return space.Spec.Execution.Domains
 		},
 	}
 }

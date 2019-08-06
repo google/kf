@@ -33,6 +33,7 @@ import (
 	servicescmd "github.com/google/kf/pkg/kf/commands/services"
 	cspaces "github.com/google/kf/pkg/kf/commands/spaces"
 	kflogs "github.com/google/kf/pkg/kf/logs"
+	"github.com/google/kf/pkg/kf/routeclaims"
 	"github.com/google/kf/pkg/kf/routes"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/google/kf/pkg/kf/services"
@@ -378,7 +379,8 @@ func InjectRoutes(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		croutes.NewRoutesCommand,
 		routes.NewClient,
-		config.GetKfClient,
+		routeclaims.NewClient,
+		AppsSet,
 	)
 	return nil
 }
@@ -386,7 +388,7 @@ func InjectRoutes(p *config.KfParams) *cobra.Command {
 func InjectCreateRoute(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		croutes.NewCreateRouteCommand,
-		routes.NewClient,
+		routeclaims.NewClient,
 		config.GetKfClient,
 	)
 	return nil
@@ -395,8 +397,8 @@ func InjectCreateRoute(p *config.KfParams) *cobra.Command {
 func InjectDeleteRoute(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		croutes.NewDeleteRouteCommand,
-		routes.NewClient,
-		config.GetKfClient,
+		routeclaims.NewClient,
+		AppsSet,
 	)
 	return nil
 }
@@ -404,7 +406,6 @@ func InjectDeleteRoute(p *config.KfParams) *cobra.Command {
 func InjectMapRoute(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		croutes.NewMapRouteCommand,
-		routes.NewClient,
 		AppsSet,
 	)
 	return nil
@@ -413,8 +414,7 @@ func InjectMapRoute(p *config.KfParams) *cobra.Command {
 func InjectUnmapRoute(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		croutes.NewUnmapRouteCommand,
-		routes.NewClient,
-		config.GetKfClient,
+		AppsSet,
 	)
 	return nil
 }

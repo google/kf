@@ -20,6 +20,8 @@ type AppExpansion interface{}
 
 type RouteExpansion interface{}
 
+type RouteClaimExpansion interface{}
+
 type SourceExpansion interface{}
 
 type SpaceExpansion interface{}

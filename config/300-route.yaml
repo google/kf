@@ -39,9 +39,9 @@ spec:
   - name: Path
     type: string
     JSONPath: .spec.path
-  - name: Apps
+  - name: App
     type: string
-    JSONPath: .spec.appNames
+    JSONPath: .spec.appName
   - name: Age
     type: date
     JSONPath: .metadata.creationTimestamp

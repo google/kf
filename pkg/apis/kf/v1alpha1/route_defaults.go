@@ -17,18 +17,32 @@ package v1alpha1
 import (
 	"context"
 	"path"
-
-	"github.com/google/kf/pkg/kf/algorithms"
 )
 
+const (
+	// RouteHostname is the hostname of a route.
+	RouteHostname = "route.kf.dev/hostname"
+	// RouteDomain is the domain of a route.
+	RouteDomain = "route.kf.dev/domain"
+	// RoutePath is the URL path of a route.
+	RoutePath = "route.kf.dev/path"
+	// RouteAppName is the App's name that owns the Route.
+	RouteAppName = "route.kf.dev/appname"
+)
+
+// GenerateRouteClaimName creates the deterministic name for a Route claim.
+func GenerateRouteClaimName(hostname, domain, urlPath string) string {
+	return GenerateRouteName(hostname, domain, urlPath, "")
+}
+
 // GenerateRouteName creates the deterministic name for a Route.
-func GenerateRouteName(hostname, domain, urlPath string) string {
-	return GenerateName(hostname, domain, path.Join("/", urlPath))
+func GenerateRouteName(hostname, domain, urlPath, appName string) string {
+	return GenerateName(hostname, domain, path.Join("/", urlPath), appName)
 }
 
 // GenerateRouteNameFromSpec creates the deterministic name for a Route.
-func GenerateRouteNameFromSpec(spec RouteSpecFields) string {
-	return GenerateName(spec.Hostname, spec.Domain, spec.Path)
+func GenerateRouteNameFromSpec(spec RouteSpecFields, appName string) string {
+	return GenerateName(spec.Hostname, spec.Domain, spec.Path, appName)
 }
 
 // SetDefaults implements apis.Defaultable
@@ -38,10 +52,6 @@ func (k *Route) SetDefaults(ctx context.Context) {
 
 // SetDefaults implements apis.Defaultable
 func (k *RouteSpec) SetDefaults(ctx context.Context) {
-	k.AppNames = []string(algorithms.Dedupe(
-		algorithms.Strings(k.AppNames),
-	).(algorithms.Strings))
-
 	k.RouteSpecFields.SetDefaults(ctx)
 }
 

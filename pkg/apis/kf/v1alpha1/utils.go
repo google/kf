@@ -25,6 +25,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"knative.dev/pkg/apis"
+	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 	cv1alpha3 "knative.dev/pkg/client/clientset/versioned/typed/istio/v1alpha3"
 )
 
@@ -34,6 +35,7 @@ import (
 func PropagateCondition(manager apis.ConditionManager, destination apis.ConditionType, source *apis.Condition) bool {
 	switch {
 	case source == nil:
+		manager.MarkUnknown(destination, "Unknown", "source status is nil")
 		return false
 	case source.IsFalse():
 		manager.MarkFalse(destination, source.Reason, source.Message)
@@ -166,4 +168,20 @@ func SetupIstioClient(ctx context.Context, istioClient cv1alpha3.VirtualServices
 
 func IstioClientFromContext(ctx context.Context) cv1alpha3.VirtualServicesGetter {
 	return ctx.Value(istioClientKey{}).(cv1alpha3.VirtualServicesGetter)
+}
+
+// IsStatusFinal returns true if the Ready or Succeeded conditions are True or
+// False for a Status.
+func IsStatusFinal(duck duckv1beta1.Status) bool {
+	// Ready conditions are used for long running tasks while Succeeded conditions
+	// are used for one time tasks so it's okay to include both.
+	if cond := duck.GetCondition(apis.ConditionReady); cond != nil {
+		return cond.IsTrue() || cond.IsFalse()
+	}
+
+	if cond := duck.GetCondition(apis.ConditionSucceeded); cond != nil {
+		return cond.IsTrue() || cond.IsFalse()
+	}
+
+	return false
 }

@@ -221,3 +221,96 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 		})
 	}
 }
+
+func TestNewConfigSpaceCommand_accessors(t *testing.T) {
+	space := v1alpha1.Space{
+		Spec: v1alpha1.SpaceSpec{
+			BuildpackBuild: v1alpha1.SpaceSpecBuildpackBuild{
+				ContainerRegistry: "gcr.io/foo",
+				BuilderImage:      "gcr.io/buildpack-builder:latest",
+				Env: envutil.MapToEnvVars(map[string]string{
+					"JAVA_VERSION": "11",
+					"BAR":          "BAZZ",
+				}),
+			},
+			Execution: v1alpha1.SpaceSpecExecution{
+				Env: envutil.MapToEnvVars(map[string]string{
+					"PROFILE": "development",
+					"BAR":     "BAZZ",
+				}),
+				Domains: []v1alpha1.SpaceDomain{
+					{Domain: "example.com", Default: true},
+					{Domain: "other-example.com"},
+				},
+			},
+		},
+	}
+
+	cases := map[string]struct {
+		args       []string
+		space      v1alpha1.Space
+		wantErr    error
+		wantOutput string
+	}{
+		"get-execution-env valid": {
+			args:  []string{"get-execution-env", "space-name"},
+			space: space,
+			wantOutput: `- name: BAR
+  value: BAZZ
+- name: PROFILE
+  value: development
+`,
+		},
+		"get-buildpack-env valid": {
+			args:  []string{"get-buildpack-env", "space-name"},
+			space: space,
+			wantOutput: `- name: BAR
+  value: BAZZ
+- name: JAVA_VERSION
+  value: "11"
+`,
+		},
+		"get-buildpack-builder valid": {
+			args:       []string{"get-buildpack-builder", "space-name"},
+			space:      space,
+			wantOutput: "gcr.io/buildpack-builder:latest\n",
+		},
+		"get-container-registry valid": {
+			args:       []string{"get-container-registry", "space-name"},
+			space:      space,
+			wantOutput: "gcr.io/foo\n",
+		},
+		"get-domains valid": {
+			args:  []string{"get-domains", "space-name"},
+			space: space,
+			wantOutput: `- default: true
+  domain: example.com
+- domain: other-example.com
+`,
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			fakeSpaces := fake.NewFakeClient(ctrl)
+
+			fakeSpaces.EXPECT().Get("space-name").Return(&tc.space, nil)
+
+			buffer := &bytes.Buffer{}
+
+			c := NewConfigSpaceCommand(&config.KfParams{}, fakeSpaces)
+			c.SetOutput(buffer)
+			c.SetArgs(tc.args)
+
+			gotErr := c.Execute()
+			if tc.wantErr != nil || gotErr != nil {
+				testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
+				return
+			}
+
+			testutil.AssertEqual(t, "output", tc.wantOutput, buffer.String())
+			ctrl.Finish()
+		})
+	}
+}
