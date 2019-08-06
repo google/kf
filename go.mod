@@ -39,6 +39,7 @@ require (
 	k8s.io/code-generator v0.0.0
 	k8s.io/kubernetes v1.15.0
 	knative.dev/pkg v0.0.0-20190626215608-1104d6c75533
+	sigs.k8s.io/yaml v1.1.0
 )
 
 // opencensus and go-cmp are fixed to satisfy unspecified dependencies in
