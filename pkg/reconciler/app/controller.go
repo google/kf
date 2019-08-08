@@ -23,6 +23,7 @@ import (
 	routeclaiminformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/routeclaim"
 	sourceinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/source"
 	spaceinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/space"
+	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/injection/client"
 	servicebindinginformer "github.com/google/kf/pkg/client/servicecatalog/injection/informers/servicecatalog/v1beta1/servicebinding"
 	"github.com/google/kf/pkg/kf/secrets"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
@@ -53,6 +54,8 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	routeClaimInformer := routeclaiminformer.Get(ctx)
 	serviceBindingInformer := servicebindinginformer.Get(ctx)
 
+	serviceCatalogClient := servicecatalogclient.Get(ctx)
+
 	// TODO(#397): replace all of this code which eventually gets the
 	// systemEnvInjector with informers once service-binding creation is server
 	// side.
@@ -75,6 +78,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	// Create reconciler
 	c := &Reconciler{
 		Base:                  reconciler.NewBase(ctx, "app-controller", cmw),
+		serviceCatalogClient:  serviceCatalogClient,
 		knativeServiceLister:  knativeServiceInformer.Lister(),
 		knativeRevisionLister: knativeRevisionInformer.Lister(),
 		sourceLister:          sourceInformer.Lister(),
@@ -83,6 +87,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		systemEnvInjector:     systemEnvInjector,
 		routeLister:           routeInformer.Lister(),
 		routeClaimLister:      routeClaimInformer.Lister(),
+		serviceBindingLister:  serviceBindingInformer.Lister(),
 	}
 
 	impl := controller.NewImpl(c, logger, "Apps")

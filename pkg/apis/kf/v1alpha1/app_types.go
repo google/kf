@@ -19,6 +19,7 @@ import (
 
 	"github.com/knative/serving/pkg/apis/autoscaling"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	svccatv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 
@@ -83,6 +84,11 @@ type AppSpec struct {
 	// +optional
 	// +patchStrategy=merge
 	Routes []RouteSpecFields `json:"routes,omitempty"`
+
+	// ServiceBindings defines the bindings to external services for the App.
+	// +optional
+	// +patchStrategy=merge
+	ServiceBindings []AppSpecServiceBinding `json:"serviceBindings,omitempty"`
 }
 
 // AppSpecTemplate defines an app's runtime configuration.
@@ -115,6 +121,21 @@ type AppSpecInstances struct {
 
 	// Max defines a maximum auto-scaling limit.
 	Max *int `json:"max,omitempty"`
+}
+
+// AppSpecServiceBinding is a binding to an external service.
+type AppSpecServiceBinding struct {
+
+	// InstanceRef is the service the app will bind to.
+	InstanceRef svccatv1beta1.LocalObjectReference
+
+	// Parameters is an arbitrary JSON to be injected into VCAP_SERVICES.
+	Parameters []byte
+
+	// BindingName is the name of the binding.
+	// If unspecified it will default to the service name
+	// +optional
+	BindingName string
 }
 
 // MinAnnotationValue returns the value autoscaling.knative.dev/minScale should

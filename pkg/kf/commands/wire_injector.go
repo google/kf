@@ -234,10 +234,8 @@ func InjectMarketplace(p *config.KfParams) *cobra.Command {
 /////////////////////
 func InjectBindingService(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		servicebindings.NewClient,
+		AppsSet,
 		servicebindingscmd.NewBindServiceCommand,
-		config.GetServiceCatalogClient,
-		config.GetSecretClient,
 	)
 	return nil
 }

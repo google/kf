@@ -23,6 +23,8 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
+	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
+	servicecataloglisters "github.com/google/kf/pkg/client/servicecatalog/listers/servicecatalog/v1beta1"
 	"github.com/google/kf/pkg/kf/algorithms"
 	"github.com/google/kf/pkg/kf/systemenvinjector"
 	"github.com/google/kf/pkg/reconciler"
@@ -30,6 +32,7 @@ import (
 	"github.com/knative/serving/pkg/apis/autoscaling"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	servinglisters "github.com/knative/serving/pkg/client/listers/serving/v1alpha1"
+	svccatv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -44,6 +47,7 @@ import (
 type Reconciler struct {
 	*reconciler.Base
 
+	serviceCatalogClient  servicecatalogclient.Interface
 	knativeServiceLister  servinglisters.ServiceLister
 	knativeRevisionLister servinglisters.RevisionLister
 	sourceLister          kflisters.SourceLister
@@ -51,6 +55,7 @@ type Reconciler struct {
 	spaceLister           kflisters.SpaceLister
 	routeLister           kflisters.RouteLister
 	routeClaimLister      kflisters.RouteClaimLister
+	serviceBindingLister  servicecataloglisters.ServiceBindingLister
 	systemEnvInjector     systemenvinjector.SystemEnvInjectorInterface
 }
 
@@ -272,6 +277,36 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		}
 	}
 
+	// reconcile service bindings
+	desiredServiceBindings, err := resources.MakeServiceBindings(app)
+	condition = app.Status.ServiceBindingCondition()
+	if err != nil {
+		return condition.MarkTemplateError(err)
+	}
+
+	{
+		r.Logger.Info("reconciling Service Bindings")
+
+		for _, desired := range desiredServiceBindings {
+			actual, err := r.serviceBindingLister.
+				ServiceBindings(desired.GetNamespace()).
+				Get(desired.Name)
+			if apierrs.IsNotFound(err) {
+				// ServiceBindings doesn't exist, make one.
+				actual, err = r.serviceCatalogClient.
+					ServicecatalogV1beta1().
+					ServiceBindings(desired.GetNamespace()).
+					Create(desired)
+				if err != nil {
+					return condition.MarkReconciliationError("creating", err)
+				}
+			} else if err != nil {
+				return condition.MarkReconciliationError("getting latest", err)
+			} else if actual, err = r.reconcileServiceBinding(desired, actual); err != nil {
+				return condition.MarkReconciliationError("updating existing", err)
+			}
+		}
+	}
 	// Making it to the bottom of the reconciler means we've synchronized.
 	app.Status.ObservedGeneration = app.Generation
 
@@ -381,6 +416,30 @@ func (r *Reconciler) reconcileRouteClaim(desired, actual *v1alpha1.RouteClaim) (
 		Update(existing)
 }
 
+func (r *Reconciler) reconcileServiceBinding(desired, actual *svccatv1beta1.ServiceBinding) (*svccatv1beta1.ServiceBinding, error) {
+	// Check for differences, if none we don't need to reconcile.
+	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
+	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
+
+	if semanticEqual {
+		return actual, nil
+	}
+
+	if _, err := kmp.SafeDiff(desired.Spec, actual.Spec); err != nil {
+		return nil, fmt.Errorf("failed to diff serving: %v", err)
+	}
+
+	// Don't modify the informers copy.
+	existing := actual.DeepCopy()
+
+	// Preserve the rest of the object (e.g. ObjectMeta except for labels).
+	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
+	existing.Spec = desired.Spec
+	return r.serviceCatalogClient.
+		ServicecatalogV1beta1().
+		ServiceBindings(existing.Namespace).
+		Update(existing)
+}
 func (r *Reconciler) updateStatus(desired *v1alpha1.App) (*v1alpha1.App, error) {
 	r.Logger.Info("updating status")
 	actual, err := r.appLister.Apps(desired.GetNamespace()).Get(desired.Name)

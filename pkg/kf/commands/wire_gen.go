@@ -257,10 +257,14 @@ func InjectMarketplace(p *config.KfParams) *cobra.Command {
 }
 
 func InjectBindingService(p *config.KfParams) *cobra.Command {
-	servicecatalogV1beta1Interface := config.GetServiceCatalogClient(p)
-	clientInterface := config.GetSecretClient(p)
-	servicebindingsClientInterface := servicebindings.NewClient(servicecatalogV1beta1Interface, clientInterface)
-	command := servicebindings2.NewBindServiceCommand(p, servicebindingsClientInterface)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
+	systemEnvInjectorInterface := provideSystemEnvInjector(p)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	client := sources.NewClient(sourcesGetter, buildTailer)
+	appsClient := apps.NewClient(appsGetter, systemEnvInjectorInterface, client)
+	command := servicebindings2.NewBindServiceCommand(p, appsClient)
 	return command
 }
 

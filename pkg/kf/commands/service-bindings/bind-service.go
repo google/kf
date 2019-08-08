@@ -15,17 +15,19 @@
 package servicebindings
 
 import (
+	"encoding/json"
+
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/google/kf/pkg/kf/services"
-	"github.com/poy/service-catalog/cmd/svcat/output"
-
+	svccatv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"
 )
 
 // NewBindServiceCommand allows users to bind apps to service instances.
-func NewBindServiceCommand(p *config.KfParams, client servicebindings.ClientInterface) *cobra.Command {
+func NewBindServiceCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 	var (
 		bindingName  string
 		configAsJSON string
@@ -56,17 +58,34 @@ func NewBindServiceCommand(p *config.KfParams, client servicebindings.ClientInte
 				return err
 			}
 
-			binding, err := client.Create(
-				instanceName,
-				appName,
-				servicebindings.WithCreateBindingName(bindingName),
-				servicebindings.WithCreateNamespace(p.Namespace),
-				servicebindings.WithCreateParams(params))
+			paramBytes, err := json.Marshal(params)
 			if err != nil {
 				return err
 			}
 
-			output.WriteBindingDetails(cmd.OutOrStdout(), binding)
+			binding := &v1alpha1.AppSpecServiceBinding{
+				InstanceRef: svccatv1beta1.LocalObjectReference{
+					Name: instanceName,
+				},
+				BindingName: bindingName,
+				Parameters:  paramBytes,
+			}
+
+			app, err := appsClient.Get(p.Namespace, appName)
+			if err != nil {
+				return err
+			}
+
+			k := apps.NewFromApp(app)
+			k.BindService(binding)
+			app = k.ToApp()
+
+			_, err = appsClient.Update(p.Namespace, app)
+			if err != nil {
+				return err
+			}
+
+			// output.WriteBindingDetails(cmd.OutOrStdout(), binding)
 			return nil
 		},
 	}

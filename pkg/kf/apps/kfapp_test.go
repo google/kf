@@ -22,6 +22,7 @@ import (
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/describe"
 	"github.com/google/kf/pkg/kf/testutil"
+	svccatv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -226,4 +227,40 @@ func ExampleKfApp_GetCPU() {
 	fmt.Println((*getCPU).String())
 
 	// Output: 100m
+}
+
+func ExampleKfApp_BindService() {
+	myApp := NewKfApp()
+	myApp.BindService(&v1alpha1.AppSpecServiceBinding{
+		InstanceRef: svccatv1beta1.LocalObjectReference{
+			Name: "some-service",
+		},
+		BindingName: "some-binding-name",
+	})
+	myApp.BindService(&v1alpha1.AppSpecServiceBinding{
+		InstanceRef: svccatv1beta1.LocalObjectReference{
+			Name: "another-service",
+		},
+		BindingName: "some-binding-name",
+	})
+	myApp.BindService(&v1alpha1.AppSpecServiceBinding{
+		InstanceRef: svccatv1beta1.LocalObjectReference{
+			Name: "third-service",
+		},
+		BindingName: "third",
+	})
+	myApp.BindService(&v1alpha1.AppSpecServiceBinding{
+		InstanceRef: svccatv1beta1.LocalObjectReference{
+			Name: "forth-service",
+		},
+		BindingName: "forth",
+	})
+	myApp.UnbindService("third")
+
+	for _, b := range myApp.GetServiceBindings() {
+		fmt.Println("Instance", b.InstanceRef.Name, "BindingName", b.BindingName)
+	}
+
+	// Output: Instance another-service BindingName some-binding-name
+	// Instance forth-service BindingName forth
 }

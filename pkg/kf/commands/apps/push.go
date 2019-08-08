@@ -32,7 +32,7 @@ import (
 	kfi "github.com/google/kf/pkg/kf/internal/kf"
 	"github.com/google/kf/pkg/kf/manifest"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
-	"github.com/poy/service-catalog/cmd/svcat/output"
+	svccatv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -350,19 +350,14 @@ func NewPushCommand(
 				}
 
 				// Bind service if set
+				var bindings []v1alpha1.AppSpecServiceBinding
 				for _, serviceInstance := range app.Services {
-					binding, created, err := serviceBindingClient.GetOrCreate(
-						serviceInstance,
-						app.Name,
-						servicebindings.WithCreateBindingName(serviceInstance),
-						servicebindings.WithCreateNamespace(p.Namespace))
-					if err != nil {
-						return err
+					binding := v1alpha1.AppSpecServiceBinding{
+						InstanceRef: svccatv1beta1.LocalObjectReference{
+							Name: serviceInstance,
+						},
 					}
-					if created {
-						output.WriteBindingDetails(cmd.OutOrStdout(), binding)
-					}
-
+					bindings = append(bindings, binding)
 				}
 
 				err = pusher.Push(app.Name, pushOpts...)

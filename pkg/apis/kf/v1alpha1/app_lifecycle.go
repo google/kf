@@ -39,6 +39,8 @@ const (
 	AppConditionSpaceReady apis.ConditionType = "SpaceReady"
 	// AppConditionRouteReady is set when route is ready.
 	AppConditionRouteReady apis.ConditionType = "RouteReady"
+	// AppConditionServiceBindingsReady is set when all service bindings are ready.
+	AppConditionServiceBindingsReady apis.ConditionType = "ServiceBindingsReady"
 )
 
 func (status *AppStatus) manage() apis.ConditionManager {
@@ -72,6 +74,11 @@ func (status *AppStatus) KnativeServiceCondition() SingleConditionManager {
 // RouteCondition gets a manager for the state of the kf Route.
 func (status *AppStatus) RouteCondition() SingleConditionManager {
 	return NewSingleConditionManager(status.manage(), AppConditionRouteReady, "Route")
+}
+
+// ServiceBindingCondition gets a manager for the state of the service bindings.
+func (status *AppStatus) ServiceBindingCondition() SingleConditionManager {
+	return NewSingleConditionManager(status.manage(), AppConditionServiceBindingsReady, "Service Bindings")
 }
 
 // PropagateSourceStatus copies the source status to the app's.

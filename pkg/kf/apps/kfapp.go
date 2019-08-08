@@ -239,6 +239,31 @@ func (k *KfApp) SetHealthCheck(probe *corev1.Probe) {
 	container.ReadinessProbe = probe
 }
 
+func (k *KfApp) GetServiceBindings() []v1alpha1.AppSpecServiceBinding {
+	return k.Spec.ServiceBindings
+}
+
+// BindService binds a service to an App.
+func (k *KfApp) BindService(binding *v1alpha1.AppSpecServiceBinding) {
+	for i, b := range k.Spec.ServiceBindings {
+		if b.BindingName == binding.BindingName {
+			k.Spec.ServiceBindings[i] = *binding
+			return
+		}
+	}
+	k.Spec.ServiceBindings = append(k.Spec.ServiceBindings, *binding)
+}
+
+// UnbindService unbinds a service from an App.
+func (k *KfApp) UnbindService(bindingName string) {
+	for i, binding := range k.Spec.ServiceBindings {
+		if binding.BindingName == bindingName {
+			k.Spec.ServiceBindings = append(k.Spec.ServiceBindings[:i], k.Spec.ServiceBindings[i+1:]...)
+			break
+		}
+	}
+}
+
 // ToApp casts this alias back into an App.
 func (k *KfApp) ToApp() *v1alpha1.App {
 	app := v1alpha1.App(*k)
