@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	gkeClusterVersion     = "1.13.7-gke.8"
+	gkeClusterVersion     = "1.13.6-gke.13"
 	machineType           = "n1-standard-4"
 	imageType             = "COS"
 	diskType              = "pd-standard"

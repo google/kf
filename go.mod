@@ -48,22 +48,19 @@ require (
 // knative/pkg; update once https://github.com/knative/pkg/pull/475 goes through
 replace go.opencensus.io => go.opencensus.io v0.20.2
 
-replace contrib.go.opencensus.io/exporter/stackdriver => contrib.go.opencensus.io/exporter/stackdriver v0.9.2
-
-replace github.com/google/go-cmp => github.com/google/go-cmp v0.3.0
-
 // Remove once https://github.com/google/kf/issues/238 is resolved
 replace github.com/knative/pkg => github.com/poy/knative-pkg v99.0.0+incompatible
 
-replace k8s.io/client-go => k8s.io/client-go v2.0.0-alpha.0.0.20190226174127-78295b709ec6+incompatible
-
 replace (
+	contrib.go.opencensus.io/exporter/stackdriver => contrib.go.opencensus.io/exporter/stackdriver v0.9.2
+	github.com/google/go-cmp => github.com/google/go-cmp v0.3.0
 	github.com/google/kf/pkg/kf/commands/install => ./pkg/kf/commands/install
 	k8s.io/api => k8s.io/api v0.0.0-20190528110122-9ad12a4af326
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190528110544-fa58353d80f3
 	k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20190221084156-01f179d85dbc
 	k8s.io/apiserver => k8s.io/apiserver v0.0.0-20190528110248-2d60c3dee270
 	k8s.io/cli-runtime => k8s.io/cli-runtime v0.0.0-20190528110732-ad79ea2fbc0f
+	k8s.io/client-go => k8s.io/client-go v0.0.0-20190226174127-78295b709ec6
 	k8s.io/cloud-provider => k8s.io/cloud-provider v0.0.0-20181009000525-95810021865e
 	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.0.0-20181003203521-0cc92547a631
 	k8s.io/code-generator => k8s.io/code-generator v0.0.0-20181128191024-b1289fc74931

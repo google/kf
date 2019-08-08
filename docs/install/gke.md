@@ -19,6 +19,7 @@ commands will need to be adjusted for use in a Windows environment.
 1. Authorize `gcloud`:
    ```sh
    gcloud auth login
+   gcloud auth configure-docker
    ```
 
 ### Setup environment variables
@@ -58,7 +59,7 @@ gcloud compute networks create $CLUSTER_NAME --project $PROJECT_ID
 gcloud beta container clusters create $CLUSTER_NAME \
   --zone $ZONE \
   --no-enable-basic-auth \
-  --cluster-version "1.13.7-gke.8" \
+  --cluster-version "1.13.6-gke.13" \
   --machine-type "n1-standard-1" \
   --image-type "COS" \
   --disk-type "pd-standard" \
