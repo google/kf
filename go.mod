@@ -40,7 +40,7 @@ require (
 	k8s.io/client-go v2.0.0-alpha.0.0.20190226174127-78295b709ec6+incompatible
 	k8s.io/code-generator v0.0.0
 	k8s.io/kubernetes v1.15.0
-	knative.dev/pkg v0.0.0-20190626215608-1104d6c75533
+	knative.dev/pkg v0.0.0-20190807140856-222dd25986d9
 	sigs.k8s.io/yaml v1.1.0
 )
 

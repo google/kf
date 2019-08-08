@@ -152,8 +152,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 
 	}
 
-	// TODO(josephlewis42) we should grab info to create the VCAP_SERVICES
-	// environment variable here and store it in a secret that can be injected.
+	// Reconcile VCAP env vars secret
 	{
 		r.Logger.Info("reconciling VCAP env variables")
 		condition := app.Status.EnvVarSecretCondition()
@@ -410,13 +409,13 @@ func (r *Reconciler) reconcileRouteClaim(desired, actual *v1alpha1.RouteClaim) (
 func (r *Reconciler) reconcileSecret(desired, actual *v1.Secret) (*v1.Secret, error) {
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
-	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.StringData, actual.StringData)
+	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Data, actual.Data)
 
 	if semanticEqual {
 		return actual, nil
 	}
 
-	if _, err := kmp.SafeDiff(desired.StringData, actual.StringData); err != nil {
+	if _, err := kmp.SafeDiff(desired.Data, actual.Data); err != nil {
 		return nil, fmt.Errorf("failed to diff secret: %v", err)
 	}
 
@@ -425,7 +424,7 @@ func (r *Reconciler) reconcileSecret(desired, actual *v1.Secret) (*v1.Secret, er
 
 	// Preserve the rest of the object (e.g. ObjectMeta except for labels).
 	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
-	existing.StringData = desired.StringData
+	existing.Data = desired.Data
 	return r.KubeClientSet.CoreV1().Secrets(existing.Namespace).Update(existing)
 }
 

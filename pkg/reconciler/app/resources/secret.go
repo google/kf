@@ -25,14 +25,9 @@ import (
 	"knative.dev/pkg/kmeta"
 )
 
-// MakeSecretLabels creates labels that can be used to tie a secret to env vars.
-func MakeSecretLabels(app *v1alpha1.App) map[string]string {
-	return app.ComponentLabels("secret")
-}
-
 // SecretName gets the name of the secret for the given application.
-func SecretName(app *v1alpha1.App, space *v1alpha1.Space) string {
-	return fmt.Sprintf("env-vars-%s-%s", app.Name, space.Name)
+func SecretName(app *v1alpha1.App) string {
+	return fmt.Sprintf("kf-injected-envs-%s", app.Name)
 }
 
 // MakeSecret creates a Secret containing the env vars for the given application.
@@ -44,18 +39,21 @@ func MakeSecret(app *v1alpha1.App, space *v1alpha1.Space, systemEnvInjector syst
 
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      SecretName(app, space),
+			Name:      SecretName(app),
 			Namespace: space.Name,
 			OwnerReferences: []metav1.OwnerReference{
 				*kmeta.NewControllerRef(app),
 			},
-			Labels: resources.UnionMaps(app.GetLabels(), MakeSecretLabels(app)),
+			Labels: resources.UnionMaps(app.GetLabels(), app.ComponentLabels("secret")),
 		},
 	}
 
-	// TODO: base64 encode these maybe
+	if secret.Data == nil {
+		secret.Data = make(map[string][]byte)
+	}
+
 	for _, envVar := range computedEnv {
-		secret.StringData[envVar.Name] = envVar.Value
+		secret.Data[envVar.Name] = []byte(envVar.Value)
 	}
 
 	return secret, nil
