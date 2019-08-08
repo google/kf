@@ -19,6 +19,7 @@ commands will need to be adjusted for use in a Windows environment.
 1. Authorize `gcloud`:
    ```sh
    gcloud auth login
+   gcloud auth configure-docker
    ```
 
 ### Setup environment variables
