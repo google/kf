@@ -10,6 +10,7 @@ require (
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/golang/mock v1.3.1
 	github.com/google/go-containerregistry v0.0.0-20190306174256-678f6c51f585
+	github.com/google/kf/pkg/kf/commands/install v0.0.0
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/google/wire v0.2.2
 	github.com/gorilla/mux v1.7.0
@@ -27,10 +28,11 @@ require (
 	github.com/rogpeppe/go-internal v1.3.0 // indirect
 	github.com/segmentio/textio v1.2.0
 	github.com/sirupsen/logrus v1.3.0 // indirect
-	github.com/spf13/cobra v0.0.3
+	github.com/spf13/cobra v0.0.5
 	go.opencensus.io v0.22.0 // indirect
 	go.uber.org/zap v1.9.1
 	google.golang.org/appengine v1.5.0 // indirect
+	gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c // indirect
 	gopkg.in/yaml.v2 v2.2.2
 	gotest.tools v2.2.0+incompatible // indirect
 	k8s.io/api v0.0.0
@@ -46,21 +48,19 @@ require (
 // knative/pkg; update once https://github.com/knative/pkg/pull/475 goes through
 replace go.opencensus.io => go.opencensus.io v0.20.2
 
-replace contrib.go.opencensus.io/exporter/stackdriver => contrib.go.opencensus.io/exporter/stackdriver v0.9.2
-
-replace github.com/google/go-cmp => github.com/google/go-cmp v0.3.0
-
 // Remove once https://github.com/google/kf/issues/238 is resolved
 replace github.com/knative/pkg => github.com/poy/knative-pkg v99.0.0+incompatible
 
-replace k8s.io/client-go => k8s.io/client-go v2.0.0-alpha.0.0.20190226174127-78295b709ec6+incompatible
-
 replace (
+	contrib.go.opencensus.io/exporter/stackdriver => contrib.go.opencensus.io/exporter/stackdriver v0.9.2
+	github.com/google/go-cmp => github.com/google/go-cmp v0.3.0
+	github.com/google/kf/pkg/kf/commands/install => ./pkg/kf/commands/install
 	k8s.io/api => k8s.io/api v0.0.0-20190528110122-9ad12a4af326
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190528110544-fa58353d80f3
 	k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20190221084156-01f179d85dbc
 	k8s.io/apiserver => k8s.io/apiserver v0.0.0-20190528110248-2d60c3dee270
 	k8s.io/cli-runtime => k8s.io/cli-runtime v0.0.0-20190528110732-ad79ea2fbc0f
+	k8s.io/client-go => k8s.io/client-go v0.0.0-20190226174127-78295b709ec6
 	k8s.io/cloud-provider => k8s.io/cloud-provider v0.0.0-20181009000525-95810021865e
 	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.0.0-20181003203521-0cc92547a631
 	k8s.io/code-generator => k8s.io/code-generator v0.0.0-20181128191024-b1289fc74931
@@ -75,5 +75,4 @@ replace (
 	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.0.0-20190416155406-4c85c9b0ae06
 	k8s.io/metrics => k8s.io/metrics v0.0.0-20190528110627-05eb8901940c
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.0.0-20190528110419-48d5cc0538c7
-
 )

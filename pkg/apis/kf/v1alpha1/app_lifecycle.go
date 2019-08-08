@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"knative.dev/pkg/apis"
 )
@@ -39,6 +40,8 @@ const (
 	AppConditionSpaceReady apis.ConditionType = "SpaceReady"
 	// AppConditionRouteReady is set when route is ready.
 	AppConditionRouteReady apis.ConditionType = "RouteReady"
+	// AppConditionEnvVarSecretReady is set when env var secret is ready.
+	AppConditionEnvVarSecretReady apis.ConditionType = "EnvVarSecretReady"
 	// AppConditionServiceBindingsReady is set when all service bindings are ready.
 	AppConditionServiceBindingsReady apis.ConditionType = "ServiceBindingsReady"
 )
@@ -48,6 +51,7 @@ func (status *AppStatus) manage() apis.ConditionManager {
 		AppConditionSourceReady,
 		AppConditionKnativeServiceReady,
 		AppConditionSpaceReady,
+		AppConditionEnvVarSecretReady,
 	).Manage(status)
 }
 
@@ -76,6 +80,11 @@ func (status *AppStatus) RouteCondition() SingleConditionManager {
 	return NewSingleConditionManager(status.manage(), AppConditionRouteReady, "Route")
 }
 
+// EnvVarSecretCondition gets a manager for the state of the env var secret.
+func (status *AppStatus) EnvVarSecretCondition() SingleConditionManager {
+	return NewSingleConditionManager(status.manage(), AppConditionEnvVarSecretReady, "Env Var Secret")
+}
+
 // ServiceBindingCondition gets a manager for the state of the service bindings.
 func (status *AppStatus) ServiceBindingCondition() SingleConditionManager {
 	return NewSingleConditionManager(status.manage(), AppConditionServiceBindingsReady, "Service Bindings")
@@ -101,6 +110,11 @@ func (status *AppStatus) PropagateKnativeServiceStatus(service *serving.Service)
 		status.ConfigurationStatusFields = service.Status.ConfigurationStatusFields
 		status.RouteStatusFields = service.Status.RouteStatusFields
 	}
+}
+
+// PropagateEnvVarSecretStatus updates the env var secret readiness status.
+func (status *AppStatus) PropagateEnvVarSecretStatus(secret *v1.Secret) {
+	status.manage().MarkTrue(AppConditionEnvVarSecretReady)
 }
 
 // MarkSpaceHealthy notes that the space was able to be retrieved and

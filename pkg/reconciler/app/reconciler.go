@@ -34,10 +34,12 @@ import (
 	servinglisters "github.com/knative/serving/pkg/client/listers/serving/v1alpha1"
 	svccatv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"go.uber.org/zap"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	v1listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/controller"
 	"knative.dev/pkg/kmp"
@@ -54,6 +56,7 @@ type Reconciler struct {
 	appLister             kflisters.AppLister
 	spaceLister           kflisters.SpaceLister
 	routeLister           kflisters.RouteLister
+	secretLister          v1listers.SecretLister
 	routeClaimLister      kflisters.RouteClaimLister
 	serviceBindingLister  servicecataloglisters.ServiceBindingLister
 	systemEnvInjector     systemenvinjector.SystemEnvInjectorInterface
@@ -154,8 +157,30 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 
 	}
 
-	// TODO(josephlewis42) we should grab info to create the VCAP_SERVICES
-	// environment variable here and store it in a secret that can be injected.
+	// Reconcile VCAP env vars secret
+	{
+		r.Logger.Info("reconciling env vars secret")
+		condition := app.Status.EnvVarSecretCondition()
+		desired, err := resources.MakeKfInjectedEnvSecret(app, space, r.systemEnvInjector)
+		if err != nil {
+			return condition.MarkTemplateError(err)
+		}
+
+		actual, err := r.secretLister.Secrets(desired.GetNamespace()).Get(desired.Name)
+		if apierrs.IsNotFound(err) {
+			actual, err = r.KubeClientSet.CoreV1().Secrets(desired.GetNamespace()).Create(desired)
+			if err != nil {
+				return condition.MarkReconciliationError("creating", err)
+			}
+		} else if err != nil {
+			return condition.MarkReconciliationError("getting latest", err)
+		} else if !metav1.IsControlledBy(actual, app) {
+			return condition.MarkChildNotOwned(desired.Name)
+		} else if actual, err = r.reconcileSecret(desired, actual); err != nil {
+			return condition.MarkReconciliationError("updating existing", err)
+		}
+		app.Status.PropagateEnvVarSecretStatus(actual)
+	}
 
 	// reconcile serving
 	{
@@ -416,6 +441,28 @@ func (r *Reconciler) reconcileRouteClaim(desired, actual *v1alpha1.RouteClaim) (
 		Update(existing)
 }
 
+func (r *Reconciler) reconcileSecret(desired, actual *v1.Secret) (*v1.Secret, error) {
+	// Check for differences, if none we don't need to reconcile.
+	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
+	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Data, actual.Data)
+
+	if semanticEqual {
+		return actual, nil
+	}
+
+	if _, err := kmp.SafeDiff(desired.Data, actual.Data); err != nil {
+		return nil, fmt.Errorf("failed to diff secret: %v", err)
+	}
+
+	// Don't modify the informers copy.
+	existing := actual.DeepCopy()
+
+	// Preserve the rest of the object (e.g. ObjectMeta except for labels).
+	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
+	existing.Data = desired.Data
+	return r.KubeClientSet.CoreV1().Secrets(existing.Namespace).Update(existing)
+}
+
 func (r *Reconciler) reconcileServiceBinding(desired, actual *svccatv1beta1.ServiceBinding) (*svccatv1beta1.ServiceBinding, error) {
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
@@ -426,7 +473,7 @@ func (r *Reconciler) reconcileServiceBinding(desired, actual *svccatv1beta1.Serv
 	}
 
 	if _, err := kmp.SafeDiff(desired.Spec, actual.Spec); err != nil {
-		return nil, fmt.Errorf("failed to diff serving: %v", err)
+		return nil, fmt.Errorf("failed to diff binding: %v", err)
 	}
 
 	// Don't modify the informers copy.
@@ -440,6 +487,7 @@ func (r *Reconciler) reconcileServiceBinding(desired, actual *svccatv1beta1.Serv
 		ServiceBindings(existing.Namespace).
 		Update(existing)
 }
+
 func (r *Reconciler) updateStatus(desired *v1alpha1.App) (*v1alpha1.App, error) {
 	r.Logger.Info("updating status")
 	actual, err := r.appLister.Apps(desired.GetNamespace()).Get(desired.Name)

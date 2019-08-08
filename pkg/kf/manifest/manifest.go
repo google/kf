@@ -162,8 +162,8 @@ func (app *Application) Override(overrides *Application) error {
 	// not support it for now.
 	if app.MinScale != nil || app.MaxScale != nil {
 		fmt.Fprintf(os.Stderr, `
-WARNING! min-scale and max-scale is not a normal CF fields in a manifest.
-Therefore it is subject to change.
+WARNING! min-scale and max-scale are not normal CF fields in a manifest.
+Therefore they are subject to change.
 Please follow the thread in https://github.com/google/kf/issues/95
 for more info.
 `)

@@ -54,7 +54,7 @@ type SingleConditionManager interface {
 	// the app.
 	MarkChildNotOwned(childName string) error
 
-	// MarkTemplateError marks the conditoin as having an error in its template.
+	// MarkTemplateError marks the condition as having an error in its template.
 	MarkTemplateError(err error) error
 
 	// MarkSourceReconciliationError marks the Source having some error during the

@@ -443,13 +443,13 @@ func RetryPost(
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			Logf(t, "failed to post (retrying...): %s", err)
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(1000 * time.Millisecond)
 			continue
 		}
 
 		if resp.StatusCode != expectedStatusCode {
 			Logf(t, "got %d, wanted %d (retrying...)", resp.StatusCode, expectedStatusCode)
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(1000 * time.Millisecond)
 			continue
 		}
 
