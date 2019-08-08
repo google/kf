@@ -119,7 +119,7 @@ available in this repo:
 ```.sh
 # If you haven't already downloaded the repo
 git clone https://github.com/google/kf
-cd kf/sample/apps/helloworld
+cd kf/samples/apps/helloworld
 ```
 
 Run the following command to push it:
