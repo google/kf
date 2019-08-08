@@ -73,7 +73,7 @@ func MakeKnativeService(
 
 	// Inject VCAP env vars from secret
 	podSpec.Containers[0].EnvFrom = []corev1.EnvFromSource{
-		corev1.EnvFromSource{
+		{
 			SecretRef: &corev1.SecretEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
 					Name: KfInjectedEnvSecretName(app),
