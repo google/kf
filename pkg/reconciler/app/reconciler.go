@@ -154,16 +154,16 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 
 	// Reconcile VCAP env vars secret
 	{
-		r.Logger.Info("reconciling VCAP env variables")
+		r.Logger.Info("reconciling env vars secret")
 		condition := app.Status.EnvVarSecretCondition()
-		desired, err := resources.MakeSecret(app, space, r.systemEnvInjector)
+		desired, err := resources.MakeKfInjectedEnvSecret(app, space, r.systemEnvInjector)
 		if err != nil {
 			return condition.MarkTemplateError(err)
 		}
 
 		actual, err := r.secretLister.Secrets(desired.GetNamespace()).Get(desired.Name)
 		if apierrs.IsNotFound(err) {
-			actual, err = r.KubeClientSet.CoreV1().Secrets(space.Name).Create(desired)
+			actual, err = r.KubeClientSet.CoreV1().Secrets(desired.GetNamespace()).Create(desired)
 			if err != nil {
 				return condition.MarkReconciliationError("creating", err)
 			}

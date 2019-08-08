@@ -76,7 +76,7 @@ func MakeKnativeService(
 		corev1.EnvFromSource{
 			SecretRef: &corev1.SecretEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: SecretName(app),
+					Name: KfInjectedEnvSecretName(app),
 				},
 			},
 		},

@@ -25,13 +25,13 @@ import (
 	"knative.dev/pkg/kmeta"
 )
 
-// SecretName gets the name of the secret for the given application.
-func SecretName(app *v1alpha1.App) string {
+// KfInjectedEnvSecretName gets the name of the secret for the given application.
+func KfInjectedEnvSecretName(app *v1alpha1.App) string {
 	return fmt.Sprintf("kf-injected-envs-%s", app.Name)
 }
 
-// MakeSecret creates a Secret containing the env vars for the given application.
-func MakeSecret(app *v1alpha1.App, space *v1alpha1.Space, systemEnvInjector systemenvinjector.SystemEnvInjectorInterface) (*v1.Secret, error) {
+// MakeKfInjectedEnvSecret creates a Secret containing the env vars for the given application.
+func MakeKfInjectedEnvSecret(app *v1alpha1.App, space *v1alpha1.Space, systemEnvInjector systemenvinjector.SystemEnvInjectorInterface) (*v1.Secret, error) {
 	computedEnv, err := systemEnvInjector.ComputeSystemEnv(app)
 	if err != nil {
 		return nil, err
@@ -39,20 +39,18 @@ func MakeSecret(app *v1alpha1.App, space *v1alpha1.Space, systemEnvInjector syst
 
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      SecretName(app),
+			Name:      KfInjectedEnvSecretName(app),
 			Namespace: space.Name,
 			OwnerReferences: []metav1.OwnerReference{
 				*kmeta.NewControllerRef(app),
 			},
 			Labels: resources.UnionMaps(app.GetLabels(), app.ComponentLabels("secret")),
 		},
-	}
-
-	if secret.Data == nil {
-		secret.Data = make(map[string][]byte)
+		Data: make(map[string][]byte),
 	}
 
 	for _, envVar := range computedEnv {
+		// k8s client handles base64 encoding and decoding the secret.Data value
 		secret.Data[envVar.Name] = []byte(envVar.Value)
 	}
 

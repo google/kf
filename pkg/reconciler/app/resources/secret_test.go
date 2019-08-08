@@ -26,21 +26,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func ExampleSecretName() {
+func ExampleKfInjectedEnvSecretName() {
 	app := &v1alpha1.App{}
 	app.Name = "my-app"
 	space := &v1alpha1.Space{}
 	space.Name = "my-space"
 
-	fmt.Println(SecretName(app))
+	fmt.Println(KfInjectedEnvSecretName(app))
 
 	// Output: kf-injected-envs-my-app
 }
 
-func TestMakeSecret_happyPath(t *testing.T) {
+func TestMakeKfInjectedEnvSecret_happyPath(t *testing.T) {
 	vcapApplication := v1.EnvVar{
 		Name:  "VCAP_APPLICATION",
-		Value: "{\"application_name\":\"some-app\"}",
+		Value: `{"application_name":"some-app"}`,
 	}
 
 	vcapServices := v1.EnvVar{
@@ -68,29 +68,29 @@ func TestMakeSecret_happyPath(t *testing.T) {
 		},
 	}
 
-	secret, err := MakeSecret(&app, &space, fakeInjector)
+	secret, err := MakeKfInjectedEnvSecret(&app, &space, fakeInjector)
 
 	testutil.AssertNil(t, "err", err)
 	testutil.AssertNotNil(t, "secret", secret)
 	testutil.AssertEqual(
 		t,
-		"secret.ObjectMeta.Name",
-		SecretName(&app),
-		secret.ObjectMeta.Name,
+		"secret.Name",
+		KfInjectedEnvSecretName(&app),
+		secret.Name,
 	)
 
-	testutil.AssertEqual(t, "secret.ObjectMeta.Labels", map[string]string{
+	testutil.AssertEqual(t, "secret.Labels", map[string]string{
 		"a":                     "1",
 		"b":                     "2",
 		v1alpha1.NameLabel:      "some-app-name",
 		v1alpha1.ManagedByLabel: "kf",
 		v1alpha1.ComponentLabel: "secret",
-	}, secret.ObjectMeta.Labels)
+	}, secret.Labels)
 
 	testutil.AssertEqual(t,
-		"OwnerReferences",
+		"secret.OwnerReferences",
 		"some-app-name",
-		secret.ObjectMeta.OwnerReferences[0].Name,
+		secret.OwnerReferences[0].Name,
 	)
 
 	testutil.AssertEqual(t,
