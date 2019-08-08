@@ -101,18 +101,14 @@ func TestIntegration_Push_docker(t *testing.T) {
 // tries posting to it again. It finally deletes the app.
 func TestIntegration_StopStart(t *testing.T) {
 	t.Parallel()
-	t.Skip("#445")
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		appName := fmt.Sprintf("integration-push-%d", time.Now().UnixNano())
-
-		kf.Target(ctx, "default")
 
 		// Push an app and then clean it up. This pushes the echo app which
 		// replies with the same body that was posted.
 		kf.Push(ctx, appName,
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
-			"--container-registry", DockerRegistry(),
 		)
 		defer kf.Delete(ctx, appName)
 
@@ -152,7 +148,7 @@ func TestIntegration_StopStart(t *testing.T) {
 
 		{
 			Logf(t, "hitting echo app to ensure it's working...")
-			resp, respCancel := RetryPost(ctx, t, "http://localhost:8085", appTimeout, http.StatusOK, "testing")
+			resp, respCancel := RetryPost(ctx, t, "http://localhost:8085", 5*time.Minute, http.StatusOK, "testing")
 			defer resp.Body.Close()
 			defer respCancel()
 			Logf(t, "done hitting echo app to ensure it's working.")
@@ -179,7 +175,6 @@ func TestIntegration_Push_manifest(t *testing.T) {
 		// Push an app with a manifest file.
 		kf.Push(ctx, appName,
 			"--path", appPath,
-			"--container-registry", DockerRegistry(),
 			"--manifest", newManifestFile,
 		)
 		defer kf.Delete(ctx, appName)
@@ -240,7 +235,6 @@ func TestIntegration_Delete(t *testing.T) {
 		// simplies replies with the same body that was posted.
 		kf.Push(ctx, appName,
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
-			"--container-registry", DockerRegistry(),
 		)
 
 		// This is only in place for cleanup if the test fails.
@@ -278,7 +272,6 @@ func TestIntegration_Envs(t *testing.T) {
 		// variables (ENV1 and ENV2).
 		kf.Push(ctx, appName,
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/envs"),
-			"--container-registry", DockerRegistry(),
 			"--env", "ENV1=VALUE1",
 			"--env=ENV2=VALUE2",
 		)
@@ -319,7 +312,6 @@ func TestIntegration_Logs(t *testing.T) {
 		// replies with the same body that was posted.
 		kf.Push(ctx, appName,
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
-			"--container-registry", DockerRegistry(),
 		)
 		defer kf.Delete(ctx, appName)
 
