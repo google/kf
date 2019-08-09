@@ -50,9 +50,12 @@ func AssertEqual(t Failable, fieldName string, expected, actual interface{}) {
 	fail := func() {
 		t.Helper()
 
-		// Ignore diff error
-		diff, _ := kmp.SafeDiff(expected, actual)
-		t.Fatalf("expected %s to be equal expected: %#v actual: %#v\ndiff: %s", fieldName, expected, actual, diff)
+		diff, err := kmp.SafeDiff(expected, actual)
+		if err == nil {
+			t.Fatalf("expected %s to be equal expected: %#v actual: %#v diff (-expected, +actual): %s", fieldName, expected, actual, diff)
+		} else {
+			t.Fatalf("expected %s to be equal expected: %#v actual: %#v", fieldName, expected, actual)
+		}
 	}
 
 	v1, v2 := reflect.ValueOf(expected), reflect.ValueOf(actual)

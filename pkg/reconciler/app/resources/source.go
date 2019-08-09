@@ -16,6 +16,7 @@ package resources
 
 import (
 	"fmt"
+	"path"
 
 	"strconv"
 
@@ -34,12 +35,10 @@ func MakeSourceLabels(app *v1alpha1.App) map[string]string {
 
 // BuildpackBulidImageDestination gets the image name for an application build.
 func BuildpackBulidImageDestination(app *v1alpha1.App, space *v1alpha1.Space, suffix int64) string {
-	return fmt.Sprintf("%s/app-%s-%s:%s",
-		space.Spec.BuildpackBuild.ContainerRegistry,
-		app.Namespace,
-		app.Name,
-		strconv.FormatInt(suffix, 36),
-	)
+	registry := space.Spec.BuildpackBuild.ContainerRegistry
+	image := fmt.Sprintf("app-%s-%s:%s", app.Namespace, app.Name, strconv.FormatInt(suffix, 36))
+
+	return path.Join(registry, image)
 }
 
 // MakeSource creates a source for the given application.

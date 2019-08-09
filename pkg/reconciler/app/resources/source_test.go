@@ -27,8 +27,14 @@ func TestMakeSourceLabels(t *testing.T) {
 	app := &v1alpha1.App{}
 	app.Name = "my-app"
 
-	// hard-code "build" here to ensure it doesn't change
-	expected := app.ComponentLabels("build")
+	// hard-code expected here to ensure it doesn't change, if it changes
+	// we could suddenly spawn up hundreds of buils all at once when a user
+	// upgrades
+	expected := map[string]string{
+		"app.kubernetes.io/component":  "build",
+		"app.kubernetes.io/managed-by": "kf",
+		"app.kubernetes.io/name":       "my-app",
+	}
 
 	actual := MakeSourceLabels(app)
 	testutil.AssertEqual(t, "labels", expected, actual)
@@ -40,12 +46,21 @@ func ExampleBuildpackBulidImageDestination() {
 	app.Namespace = "myspace"
 
 	space := &v1alpha1.Space{}
-	space.Name = "myspace"
 	space.Spec.BuildpackBuild.ContainerRegistry = "gcr.io/my-project"
 
 	fmt.Println(BuildpackBulidImageDestination(app, space, 22453731916))
 
 	// Output: gcr.io/my-project/app-myspace-myapp:abcdefg
+}
+
+func ExampleBuildpackBulidImageDestination_noRegistry() {
+	app := &v1alpha1.App{}
+	app.Name = "myapp"
+	app.Namespace = "myspace"
+
+	fmt.Println(BuildpackBulidImageDestination(app, &v1alpha1.Space{}, 22453731916))
+
+	// Output: app-myspace-myapp:abcdefg
 }
 
 func TestMakeSource(t *testing.T) {

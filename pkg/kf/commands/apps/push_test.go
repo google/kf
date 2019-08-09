@@ -84,10 +84,10 @@ func TestPushCommand(t *testing.T) {
 			args: []string{
 				"example-app",
 				"--buildpack", "some-buildpack",
-				"--container-registry", "some-reg.io",
 				"--grpc",
 				"--env", "env1=val1",
 				"-e", "env2=val2",
+				"--container-registry", "some-reg.io",
 				"--instances", "1",
 				"--path", "testdata/example-app",
 				"--no-start",
@@ -313,6 +313,16 @@ func TestPushCommand(t *testing.T) {
 				"--manifest", "testdata/manifest.yml",
 			},
 			wantErr: errors.New("cannot use buildpack and docker image simultaneously"),
+		},
+		"invalid container registry and container image": {
+			namespace: "some-namespace",
+			args: []string{
+				"buildpack-app",
+				"--docker-image", "some-image",
+				"--container-registry", "some-registry",
+				"--manifest", "testdata/manifest.yml",
+			},
+			wantErr: errors.New("--container-registry can only be used with source pushes, not containers"),
 		},
 		"invalid path and container image": {
 			namespace: "some-namespace",

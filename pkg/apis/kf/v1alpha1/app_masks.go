@@ -30,8 +30,6 @@ func AppSpecSourceMask(in SourceSpec) SourceSpec {
 	out.UpdateRequests = in.UpdateRequests
 	out.ContainerImage.Image = in.ContainerImage.Image
 
-	// TODO: decide if BuildpackBuilder should be allowed or disallowed.
-
 	// Disallowed fields
 	// This list is unnecessary, but added here for clarity
 	out.BuildpackBuild.Image = ""

@@ -84,7 +84,7 @@ type SourceSpecBuildpackBuild struct {
 	// BuildpackBuilder is the container image which builds the App.
 	BuildpackBuilder string `json:"buildpackBuilder"`
 
-	// Image is the destination of the built image.
+	// Image is the location to store the built image.
 	Image string `json:"image"`
 
 	// Env represents the environment variables to apply when building the App.
