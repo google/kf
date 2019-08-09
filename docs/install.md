@@ -60,7 +60,12 @@ kubectl apply --filename https://github.com/knative/build/releases/download/v0.6
 ### Service Catalog:
 
 ```.sh
-kubectl apply -R -f third_party/service-catalog/manifests/catalog/templates
+kubectl apply -f https://github.com/google/kf/raw/master/third_party/service-catalog/manifests/catalog/templates/apiregistration.yaml
+kubectl apply -f https://github.com/google/kf/raw/master/third_party/service-catalog/manifests/catalog/templates/apiserver-deployment.yaml
+kubectl apply -f https://github.com/google/kf/raw/master/third_party/service-catalog/manifests/catalog/templates/apiserver-service.yaml
+kubectl apply -f https://github.com/google/kf/raw/master/third_party/service-catalog/manifests/catalog/templates/controller-manager-deployment.yaml
+kubectl apply -f https://github.com/google/kf/raw/master/third_party/service-catalog/manifests/catalog/templates/rbac.yaml
+kubectl apply -f https://github.com/google/kf/raw/master/third_party/service-catalog/manifests/catalog/templates/serviceaccounts.yaml
 ```
 
 ## Install Kf
