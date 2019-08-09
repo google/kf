@@ -20,6 +20,7 @@ import (
 	"reflect"
 	"sort"
 	"strconv"
+	"time"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
@@ -122,7 +123,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 	{
 		r.Logger.Info("reconciling Source")
 		condition := app.Status.SourceCondition()
-		desired, err := resources.MakeSource(app, space)
+		desired, err := resources.MakeSource(app, space, time.Now().UnixNano())
 		if err != nil {
 			return condition.MarkTemplateError(err)
 		}

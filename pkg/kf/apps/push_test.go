@@ -87,8 +87,6 @@ func TestPush_Logs(t *testing.T) {
 				apps.WithPushSourceImage(tc.srcImage),
 				apps.WithPushContainerImage(tc.containerImage),
 				apps.WithPushNamespace(expectedNamespace),
-				apps.WithPushContainerRegistry("some-container-registry"),
-				apps.WithPushServiceAccount("some-service-account"),
 				apps.WithPushNoStart(tc.noStart),
 			)
 
@@ -118,8 +116,6 @@ func TestPush(t *testing.T) {
 			opts: apps.PushOptions{
 				apps.WithPushSourceImage("some-image"),
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushContainerRegistry("some-reg.io"),
-				apps.WithPushServiceAccount("some-service-account"),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
@@ -134,8 +130,6 @@ func TestPush(t *testing.T) {
 			appName: "some-app",
 			opts: apps.PushOptions{
 				apps.WithPushSourceImage("some-image"),
-				apps.WithPushContainerRegistry("some-reg.io"),
-				apps.WithPushServiceAccount("some-service-account"),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
@@ -151,8 +145,6 @@ func TestPush(t *testing.T) {
 			buildpack: "some-buildpack",
 			opts: apps.PushOptions{
 				apps.WithPushSourceImage("some-image"),
-				apps.WithPushContainerRegistry("some-reg.io"),
-				apps.WithPushServiceAccount("some-service-account"),
 				apps.WithPushExactScale(intPtr(9)),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
@@ -173,8 +165,6 @@ func TestPush(t *testing.T) {
 			buildpack: "some-buildpack",
 			opts: apps.PushOptions{
 				apps.WithPushSourceImage("some-image"),
-				apps.WithPushContainerRegistry("some-reg.io"),
-				apps.WithPushServiceAccount("some-service-account"),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
@@ -193,8 +183,6 @@ func TestPush(t *testing.T) {
 			buildpack: "some-buildpack",
 			opts: apps.PushOptions{
 				apps.WithPushSourceImage("some-image"),
-				apps.WithPushContainerRegistry("some-reg.io"),
-				apps.WithPushServiceAccount("some-service-account"),
 				apps.WithPushMinScale(intPtr(9)),
 				apps.WithPushMaxScale(intPtr(11)),
 			},
@@ -213,8 +201,6 @@ func TestPush(t *testing.T) {
 			buildpack: "some-buildpack",
 			opts: apps.PushOptions{
 				apps.WithPushSourceImage("some-image"),
-				apps.WithPushContainerRegistry("some-reg.io"),
-				apps.WithPushServiceAccount("some-service-account"),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
@@ -235,8 +221,6 @@ func TestPush(t *testing.T) {
 			buildpack: "some-buildpack",
 			opts: apps.PushOptions{
 				apps.WithPushSourceImage("some-image"),
-				apps.WithPushContainerRegistry("some-reg.io"),
-				apps.WithPushServiceAccount("some-service-account"),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
@@ -254,8 +238,6 @@ func TestPush(t *testing.T) {
 			buildpack: "some-buildpack",
 			opts: apps.PushOptions{
 				apps.WithPushSourceImage("some-image"),
-				apps.WithPushContainerRegistry("some-reg.io"),
-				apps.WithPushServiceAccount("some-service-account"),
 				apps.WithPushBuildpack("some-buildpack"),
 			},
 		},
@@ -265,19 +247,14 @@ func TestPush(t *testing.T) {
 			opts: apps.PushOptions{
 				apps.WithPushSourceImage("some-image"),
 				apps.WithPushNamespace("myns"),
-				apps.WithPushContainerRegistry("some-reg.io"),
-				apps.WithPushServiceAccount("some-service-account"),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
 					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
 					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
-						ka := apps.NewFromApp(newApp)
-
 						testutil.AssertEqual(t, "service.Name", "some-app", newApp.Name)
 						testutil.AssertEqual(t, "service.Kind", "App", newApp.Kind)
 						testutil.AssertEqual(t, "service.APIVersion", "kf.dev/v1alpha1", newApp.APIVersion)
-						testutil.AssertEqual(t, "Spec.ServiceAccountName", "some-service-account", ka.GetServiceAccount())
 					}).
 					Return(&v1alpha1.App{}, nil)
 			},
@@ -288,8 +265,6 @@ func TestPush(t *testing.T) {
 			opts: apps.PushOptions{
 				apps.WithPushSourceImage("some-image"),
 				apps.WithPushNamespace("default"),
-				apps.WithPushContainerRegistry("some-reg.io"),
-				apps.WithPushServiceAccount("some-service-account"),
 				apps.WithPushBuildpack("some-buildpack"),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
@@ -297,8 +272,6 @@ func TestPush(t *testing.T) {
 					Upsert(gomock.Any(), gomock.Any(), gomock.Any()).
 					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
 						testutil.AssertEqual(t, "namespace", "default", newApp.Namespace)
-						testutil.AssertEqual(t, "Spec.ServiceAccountName", "some-service-account", newApp.Spec.Template.Spec.ServiceAccountName)
-						testutil.AssertEqual(t, "image", "some-image", newApp.Spec.Source.BuildpackBuild.Source)
 						testutil.AssertEqual(t, "buildpack", "some-buildpack", newApp.Spec.Source.BuildpackBuild.Buildpack)
 
 					}).Return(&v1alpha1.App{}, nil)
@@ -309,7 +282,6 @@ func TestPush(t *testing.T) {
 			buildpack: "some-buildpack",
 			opts: apps.PushOptions{
 				apps.WithPushSourceImage("some-image"),
-				apps.WithPushContainerRegistry("some-reg.io"),
 				apps.WithPushEnvironmentVariables(map[string]string{"ENV1": "val1", "ENV2": "val2"}),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
@@ -494,8 +466,6 @@ func TestPush(t *testing.T) {
 			appName: "some-app",
 			opts: apps.PushOptions{
 				apps.WithPushSourceImage("some-image"),
-				apps.WithPushContainerRegistry("some-reg.io"),
-				apps.WithPushServiceAccount("some-service-account"),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).Return(nil, errors.New("some-error"))
@@ -507,8 +477,6 @@ func TestPush(t *testing.T) {
 		"set ports to h2c for gRPC": {
 			appName: "some-app",
 			opts: apps.PushOptions{
-				apps.WithPushSourceImage("some-image"),
-				apps.WithPushContainerRegistry("some-reg.io"),
 				apps.WithPushGrpc(true),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {

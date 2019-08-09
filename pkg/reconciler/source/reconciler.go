@@ -95,6 +95,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 func (r *Reconciler) ApplyChanges(ctx context.Context, source *v1alpha1.Source) error {
 	source.Status.InitializeConditions()
 
+	// Sources only get run once regardless of success or failure status.
+	if v1alpha1.IsStatusFinal(source.Status.Status) {
+		return nil
+	}
+
 	// Sync build
 	{
 		desired, err := resources.MakeBuild(source)

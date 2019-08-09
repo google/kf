@@ -84,11 +84,10 @@ func TestPushCommand(t *testing.T) {
 			args: []string{
 				"example-app",
 				"--buildpack", "some-buildpack",
-				"--service-account", "some-service-account",
+				"--container-registry", "some-reg.io",
 				"--grpc",
 				"--env", "env1=val1",
 				"-e", "env2=val2",
-				"--container-registry", "some-reg.io",
 				"--instances", "1",
 				"--path", "testdata/example-app",
 				"--no-start",
@@ -103,8 +102,6 @@ func TestPushCommand(t *testing.T) {
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushContainerRegistry("some-reg.io"),
-				apps.WithPushServiceAccount("some-service-account"),
 				apps.WithPushGrpc(true),
 				apps.WithPushBuildpack("some-buildpack"),
 				apps.WithPushEnvironmentVariables(map[string]string{"env1": "val1", "env2": "val2"}),
@@ -122,7 +119,6 @@ func TestPushCommand(t *testing.T) {
 			namespace: "some-namespace",
 			args: []string{
 				"app-name",
-				"--container-registry", "some-reg.io",
 			},
 			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
 				cwd, err := os.Getwd()
@@ -132,20 +128,17 @@ func TestPushCommand(t *testing.T) {
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushContainerRegistry("some-reg.io"),
 			),
 		},
 		"custom-source": {
 			namespace: "some-namespace",
 			args: []string{
 				"app-name",
-				"--container-registry", "some-reg.io",
 				"--source-image", "custom-reg.io/source-image:latest",
 			},
 			wantImagePrefix: "custom-reg.io/source-image:latest",
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushContainerRegistry("some-reg.io"),
 			),
 		},
 		"override manifest instances": {
@@ -153,13 +146,11 @@ func TestPushCommand(t *testing.T) {
 			args: []string{
 				"instances-app",
 				"--instances=11",
-				"--container-registry", "some-reg.io",
 				"--source-image", "custom-reg.io/source-image:latest",
 				"--manifest", "testdata/manifest.yml",
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushContainerRegistry("some-reg.io"),
 				apps.WithPushExactScale(intPtr(11)),
 			),
 		},
@@ -167,12 +158,10 @@ func TestPushCommand(t *testing.T) {
 			namespace: "some-namespace",
 			args: []string{
 				"instances-app",
-				"--container-registry", "some-reg.io",
 				"--manifest", "testdata/manifest.yml",
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushContainerRegistry("some-reg.io"),
 				apps.WithPushExactScale(intPtr(9)),
 			),
 		},
@@ -181,12 +170,10 @@ func TestPushCommand(t *testing.T) {
 			args: []string{
 				"autoscaling-instances-app",
 				"--min-scale=11",
-				"--container-registry", "some-reg.io",
 				"--manifest", "testdata/manifest.yml",
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushContainerRegistry("some-reg.io"),
 				apps.WithPushMinScale(intPtr(11)),
 				apps.WithPushMaxScale(intPtr(11)),
 			),
@@ -196,12 +183,10 @@ func TestPushCommand(t *testing.T) {
 			args: []string{
 				"autoscaling-instances-app",
 				"--max-scale=13",
-				"--container-registry", "some-reg.io",
 				"--manifest", "testdata/manifest.yml",
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushContainerRegistry("some-reg.io"),
 				// Manifest has 9 for min
 				apps.WithPushMinScale(intPtr(9)),
 				apps.WithPushMaxScale(intPtr(13)),
@@ -211,12 +196,10 @@ func TestPushCommand(t *testing.T) {
 			namespace: "some-namespace",
 			args: []string{
 				"autoscaling-instances-app",
-				"--container-registry", "some-reg.io",
 				"--manifest", "testdata/manifest.yml",
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushContainerRegistry("some-reg.io"),
 				apps.WithPushMinScale(intPtr(9)),
 				apps.WithPushMaxScale(intPtr(11)),
 			),
@@ -225,7 +208,6 @@ func TestPushCommand(t *testing.T) {
 			namespace: "some-namespace",
 			args: []string{
 				"app-name",
-				"--container-registry", "some-reg.io",
 				"--manifest", "testdata/manifest-services.yaml",
 			},
 			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
@@ -236,7 +218,6 @@ func TestPushCommand(t *testing.T) {
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushContainerRegistry("some-reg.io"),
 			),
 			setup: func(t *testing.T, f *svbFake.FakeClientInterface) {
 				f.EXPECT().GetOrCreate("some-service-instance", "app-name", gomock.Any()).Do(func(instance, app string, opts ...servicebindings.CreateOption) {
@@ -251,25 +232,18 @@ func TestPushCommand(t *testing.T) {
 			namespace: "default",
 			args: []string{
 				"app-name",
-				"--container-registry",
-				"some-reg.io",
+				"--container-registry", "some-reg.io",
 			},
 			wantErr:         errors.New("some error"),
 			pusherErr:       errors.New("some error"),
 			wantImagePrefix: "some-reg.io/src-default-app-name",
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("default"),
-				apps.WithPushContainerRegistry("some-reg.io"),
 			),
 		},
 		"namespace is not provided": {
 			args:    []string{"app-name"},
 			wantErr: errors.New(utils.EmptyNamespaceError),
-		},
-		"container-registry is not provided": {
-			namespace: "some-namespace",
-			args:      []string{"app-name"},
-			wantErr:   errors.New("container-registry is required for buildpack apps"),
 		},
 		"container-registry comes from space": {
 			namespace: "some-namespace",
@@ -287,13 +261,12 @@ func TestPushCommand(t *testing.T) {
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushContainerRegistry("space-reg.io"),
 				apps.WithPushBuildpack("java,tomcat"),
 			),
 		},
 		"SrcImageBuilder returns an error": {
 			namespace: "some-namespace",
-			args:      []string{"app-name", "--container-registry", "some-reg.io"},
+			args:      []string{"app-name"},
 			wantErr:   errors.New("some error"),
 			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
 				return errors.New("some error")
@@ -303,7 +276,6 @@ func TestPushCommand(t *testing.T) {
 			namespace: "some-namespace",
 			args: []string{
 				"app-name",
-				"--container-registry", "some-reg.io",
 				"--env", "invalid",
 			},
 			wantErr: errors.New("malformed environment variable: invalid"),
@@ -342,16 +314,6 @@ func TestPushCommand(t *testing.T) {
 			},
 			wantErr: errors.New("cannot use buildpack and docker image simultaneously"),
 		},
-		"invalid container registry and container image": {
-			namespace: "some-namespace",
-			args: []string{
-				"buildpack-app",
-				"--docker-image", "some-image",
-				"--container-registry", "some-registry",
-				"--manifest", "testdata/manifest.yml",
-			},
-			wantErr: errors.New("--container-registry can only be used with source pushes, not containers"),
-		},
 		"invalid path and container image": {
 			namespace: "some-namespace",
 			args: []string{
@@ -377,12 +339,10 @@ func TestPushCommand(t *testing.T) {
 			args: []string{
 				"buildpack-app",
 				"--manifest", "testdata/manifest.yml",
-				"--container-registry", "some-registry.io",
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushBuildpack("java,tomcat"),
-				apps.WithPushContainerRegistry("some-registry.io"),
 			),
 		},
 		"manifest missing app": {
@@ -397,12 +357,10 @@ func TestPushCommand(t *testing.T) {
 			namespace: "some-namespace",
 			args: []string{
 				"routes-app",
-				"--container-registry", "some-registry.io",
 				"--manifest", "testdata/manifest.yml",
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushContainerRegistry("some-registry.io"),
 				apps.WithPushRoutes(buildTestRoutes()),
 				apps.WithPushDefaultRouteDomain(""),
 			),
@@ -421,33 +379,28 @@ func TestPushCommand(t *testing.T) {
 			},
 			args: []string{
 				"routes-app",
-				"--container-registry", "some-registry.io",
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushDefaultRouteDomain("right.example.com"),
-				apps.WithPushContainerRegistry("some-registry.io"),
 			),
 		},
 		"no-route prevents default route": {
 			namespace: "some-namespace",
 			args: []string{
 				"routes-app",
-				"--container-registry", "some-registry.io",
 				"--no-route",
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushRoutes(nil),
 				apps.WithPushDefaultRouteDomain(""),
-				apps.WithPushContainerRegistry("some-registry.io"),
 			),
 		},
 		"no-route overrides manifest": {
 			namespace: "some-namespace",
 			args: []string{
 				"routes-app",
-				"--container-registry", "some-registry.io",
 				"--manifest", "testdata/manifest.yml",
 				"--no-route",
 			},
@@ -455,14 +408,12 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushRoutes(nil),
 				apps.WithPushDefaultRouteDomain(""),
-				apps.WithPushContainerRegistry("some-registry.io"),
 			),
 		},
 		"random-route and no-route both set": {
 			namespace: "some-namespace",
 			args: []string{
 				"random-route-app",
-				"--container-registry", "some-registry.io",
 				"--manifest", "testdata/manifest.yml",
 				"--no-route",
 			},
@@ -472,14 +423,12 @@ func TestPushCommand(t *testing.T) {
 			namespace: "some-namespace",
 			args: []string{
 				"routes-app",
-				"--container-registry", "some-registry.io",
 				"--manifest", "testdata/manifest.yml",
 				"--random-route",
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushRoutes(buildTestRoutes()),
-				apps.WithPushContainerRegistry("some-registry.io"),
 				apps.WithPushRandomRouteDomain("example.com"),
 				apps.WithPushDefaultRouteDomain(""),
 			),
@@ -488,7 +437,6 @@ func TestPushCommand(t *testing.T) {
 			namespace: "some-namespace",
 			args: []string{
 				"routes-app",
-				"--container-registry", "some-registry.io",
 				"--route=https://withscheme.example.com/path1",
 				"--route=noscheme.example.com",
 			},
@@ -498,7 +446,6 @@ func TestPushCommand(t *testing.T) {
 					buildRoute("withscheme", "example.com", "/path1"),
 					buildRoute("noscheme", "example.com", ""),
 				}),
-				apps.WithPushContainerRegistry("some-registry.io"),
 				apps.WithPushDefaultRouteDomain(""),
 			),
 		},
@@ -549,11 +496,9 @@ func TestPushCommand(t *testing.T) {
 			args: []string{
 				"resources-app",
 				"--manifest", "testdata/manifest.yml",
-				"--container-registry", "some-registry.io",
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushContainerRegistry("some-registry.io"),
 				apps.WithPushMemory(&wantMemory),
 				apps.WithPushDiskQuota(&wantDiskQuota),
 				apps.WithPushCPU(&wantCPU),
@@ -579,9 +524,7 @@ func TestPushCommand(t *testing.T) {
 					expectOpts := apps.PushOptions(tc.wantOpts)
 					actualOpts := apps.PushOptions(opts)
 					testutil.AssertEqual(t, "namespace", expectOpts.Namespace(), actualOpts.Namespace())
-					testutil.AssertEqual(t, "container registry", expectOpts.ContainerRegistry(), actualOpts.ContainerRegistry())
 					testutil.AssertEqual(t, "buildpack", expectOpts.Buildpack(), actualOpts.Buildpack())
-					testutil.AssertEqual(t, "service account", expectOpts.ServiceAccount(), actualOpts.ServiceAccount())
 					testutil.AssertEqual(t, "grpc", expectOpts.Grpc(), actualOpts.Grpc())
 					testutil.AssertEqual(t, "env vars", expectOpts.EnvironmentVariables(), actualOpts.EnvironmentVariables())
 					testutil.AssertEqual(t, "exact scale bound", expectOpts.ExactScale(), actualOpts.ExactScale())

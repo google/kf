@@ -39,6 +39,7 @@ func (spec *AppSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
 
 	errs = errs.Also(ValidatePodSpec(spec.Template.Spec).ViaField("template.spec"))
 	errs = errs.Also(spec.Instances.Validate(ctx).ViaField("instances"))
+	errs = errs.Also(apis.CheckDisallowedFields(spec.Source, AppSpecSourceMask(spec.Source)).ViaField("source"))
 
 	return errs
 }

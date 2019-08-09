@@ -84,8 +84,8 @@ type SourceSpecBuildpackBuild struct {
 	// BuildpackBuilder is the container image which builds the App.
 	BuildpackBuilder string `json:"buildpackBuilder"`
 
-	// Registry is the container registry which will store the built image.
-	Registry string `json:"registry"`
+	// Image is the destination of the built image.
+	Image string `json:"image"`
 
 	// Env represents the environment variables to apply when building the App.
 	Env []corev1.EnvVar `json:"env,omitempty"`

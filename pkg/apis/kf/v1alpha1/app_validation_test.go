@@ -31,6 +31,12 @@ func TestApp_Validate(t *testing.T) {
 			Containers: []corev1.Container{{}},
 		},
 	}
+	goodSource := SourceSpec{
+		BuildpackBuild: SourceSpecBuildpackBuild{
+			Source: "gcr.io/kf-source",
+			Stack:  "cflinuxfs3",
+		},
+	}
 
 	cases := map[string]struct {
 		spec App
@@ -44,6 +50,7 @@ func TestApp_Validate(t *testing.T) {
 				Spec: AppSpec{
 					Template:  goodTemplate,
 					Instances: goodInstances,
+					Source:    goodSource,
 				},
 			},
 		},
@@ -55,6 +62,7 @@ func TestApp_Validate(t *testing.T) {
 				Spec: AppSpec{
 					Template:  goodTemplate,
 					Instances: AppSpecInstances{Exactly: intPtr(-1)},
+					Source:    goodSource,
 				},
 			},
 			want: apis.ErrInvalidValue(-1, "spec.instances.exactly"),
@@ -67,9 +75,25 @@ func TestApp_Validate(t *testing.T) {
 				Spec: AppSpec{
 					Template:  AppSpecTemplate{},
 					Instances: goodInstances,
+					Source:    goodSource,
 				},
 			},
 			want: apis.ErrMissingField("spec.template.spec.containers"),
+		},
+		"invalid source fields": {
+			spec: App{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "valid",
+				},
+				Spec: AppSpec{
+					Template:  goodTemplate,
+					Instances: goodInstances,
+					Source: SourceSpec{
+						ServiceAccount: "not-user-settable",
+					},
+				},
+			},
+			want: apis.ErrDisallowedFields("spec.source.serviceAccount"),
 		},
 	}
 
