@@ -69,15 +69,18 @@ func MakeKnativeService(
 	// Execution environment variables come before others because they're built
 	// to be overridden.
 	podSpec.Containers[0].Env = append(space.Spec.Execution.Env, podSpec.Containers[0].Env...)
-
-	computedEnv, err := systemEnvInjector.ComputeSystemEnv(app)
-	if err != nil {
-		return nil, err
-	}
-
-	podSpec.Containers[0].Env = append(podSpec.Containers[0].Env, computedEnv...)
-
 	podSpec.Containers[0].Env = envutil.DeduplicateEnvVars(podSpec.Containers[0].Env)
+
+	// Inject VCAP env vars from secret
+	podSpec.Containers[0].EnvFrom = []corev1.EnvFromSource{
+		{
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: KfInjectedEnvSecretName(app),
+				},
+			},
+		},
+	}
 
 	return &serving.Service{
 		ObjectMeta: metav1.ObjectMeta{

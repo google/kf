@@ -36,6 +36,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/configmap"
 	"knative.dev/pkg/controller"
+	secretinformer "knative.dev/pkg/injection/informers/kubeinformers/corev1/secret"
 	"knative.dev/pkg/logging"
 )
 
@@ -52,6 +53,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	routeInformer := routeinformer.Get(ctx)
 	routeClaimInformer := routeclaiminformer.Get(ctx)
 	serviceBindingInformer := servicebindinginformer.Get(ctx)
+	secretInformer := secretinformer.Get(ctx)
 
 	// TODO(#397): replace all of this code which eventually gets the
 	// systemEnvInjector with informers once service-binding creation is server
@@ -79,6 +81,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		knativeRevisionLister: knativeRevisionInformer.Lister(),
 		sourceLister:          sourceInformer.Lister(),
 		appLister:             appInformer.Lister(),
+		secretLister:          secretInformer.Lister(),
 		spaceLister:           spaceInformer.Lister(),
 		systemEnvInjector:     systemEnvInjector,
 		routeLister:           routeInformer.Lister(),

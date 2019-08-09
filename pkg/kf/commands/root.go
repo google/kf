@@ -162,6 +162,7 @@ func NewKfCommand() *cobra.Command {
 				install.NewInstallCommand(),
 				NewTargetCommand(p),
 				NewVersionCommand(Version, runtime.GOOS),
+				NewDebugCommand(p),
 			},
 		},
 	}
