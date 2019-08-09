@@ -15,3 +15,10 @@
 FROM node:8.16.0-jessie-slim
 
 RUN apt update -y
+
+# Docsy deps
+RUN npm install -D --save autoprefixer
+RUN npm install -D --save postcss-cli
+RUN npm install -g firebase-tools
+RUN wget https://github.com/gohugoio/hugo/releases/download/v0.56.3/hugo_extended_0.56.3_Linux-64bit.deb \
+  && dpkg -i hugo*.deb
