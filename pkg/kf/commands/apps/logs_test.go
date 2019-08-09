@@ -17,7 +17,6 @@ package apps
 import (
 	"context"
 	"errors"
-	"io"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -81,7 +80,7 @@ func TestLogsCommand(t *testing.T) {
 			Setup: func(t *testing.T, fake *fake.FakeTailer) {
 				fake.EXPECT().
 					Tail(gomock.Not(gomock.Nil()), "some-app", gomock.Not(gomock.Nil()), gomock.Any()).
-					Do(func(ctx context.Context, appName string, out io.Writer, opts ...logs.TailOption) {
+					Do(func(ctx context.Context, appName string, out *logs.MutexWriter, opts ...logs.TailOption) {
 						testutil.AssertEqual(t, "namespace", "some-namespace", logs.TailOptions(opts).Namespace())
 						testutil.AssertEqual(t, "number lines", 15, logs.TailOptions(opts).NumberLines())
 						testutil.AssertEqual(t, "follow", true, logs.TailOptions(opts).Follow())

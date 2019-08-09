@@ -23,7 +23,6 @@ import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	logs "github.com/google/kf/pkg/kf/logs"
-	io "io"
 	reflect "reflect"
 )
 
@@ -51,7 +50,7 @@ func (m *FakeTailer) EXPECT() *FakeTailerMockRecorder {
 }
 
 // Tail mocks base method
-func (m *FakeTailer) Tail(arg0 context.Context, arg1 string, arg2 io.Writer, arg3 ...logs.TailOption) error {
+func (m *FakeTailer) Tail(arg0 context.Context, arg1 string, arg2 *logs.MutexWriter, arg3 ...logs.TailOption) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1, arg2}
 	for _, a := range arg3 {

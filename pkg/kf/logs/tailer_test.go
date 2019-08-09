@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
-	fakeapps "github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/logs"
 	"github.com/google/kf/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
@@ -33,6 +32,8 @@ import (
 	"k8s.io/client-go/kubernetes/typed/core/v1/fake"
 	ktesting "k8s.io/client-go/testing"
 )
+
+//go:generate mockgen --package logs_test --destination fake_watcher_test.go --mock_names=Interface=FakeWatcher --copyright_file ../internal/tools/option-builder/LICENSE_HEADER k8s.io/apimachinery/pkg/watch Interface
 
 func TestTailer_Tail(t *testing.T) {
 	t.Parallel()
@@ -146,24 +147,26 @@ func TestTailer_Tail(t *testing.T) {
 			},
 		},
 	} {
+		// Fix data race of tc
+		testCase := tc
 		t.Run(tn, func(t *testing.T) {
-			if tc.assert == nil {
-				tc.assert = func(t *testing.T, buf *bytes.Buffer, err error) {
+			if testCase.assert == nil {
+				testCase.assert = func(t *testing.T, buf *bytes.Buffer, err error) {
 					testutil.AssertNil(t, "err", err)
 				}
 			}
 
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			fakeWatcher := fakeapps.NewFakeWatcher(ctrl)
+			fakeWatcher := NewFakeWatcher(ctrl)
 			fakeWatcher.
 				EXPECT().
 				ResultChan().
 				DoAndReturn(func() <-chan watch.Event {
-					if len(tc.eventType) != 0 && tc.pod != nil {
+					if len(testCase.eventType) != 0 && testCase.pod != nil {
 						return createUpdatedEvent(watch.Event{
-							Type:   tc.eventType,
-							Object: tc.pod,
+							Type:   testCase.eventType,
+							Object: testCase.pod,
 						})
 					} else {
 						return nil
@@ -183,20 +186,26 @@ func TestTailer_Tail(t *testing.T) {
 			}
 
 			fakeClient.AddWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
-				return true, fakeWatcher, tc.watchErr
+				return true, fakeWatcher, testCase.watchErr
 			}))
 
-			if tc.pod != nil {
+			if testCase.pod != nil {
 				fakeClient.AddReactor("get", "pods", func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
 					testutil.AssertEqual(t, "namespace", "default", action.GetNamespace())
-					return true, tc.pod, nil
+					return true, testCase.pod.DeepCopy(), nil
 				})
 			}
 
 			buf := &bytes.Buffer{}
-			gotErr := logs.NewTailer(fakeClient).Tail(context.Background(), tc.appName, buf, tc.opts...)
+			mw := &logs.MutexWriter{
+				Writer: buf,
+			}
 
-			tc.assert(t, buf, gotErr)
+			gotErr := logs.NewTailer(fakeClient).Tail(context.Background(), testCase.appName, mw, testCase.opts...)
+
+			mw.Lock()
+			testCase.assert(t, buf, gotErr)
+			mw.Unlock()
 		})
 	}
 }

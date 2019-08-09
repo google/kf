@@ -45,11 +45,14 @@ func NewLogsCommand(p *config.KfParams, tailer logs.Tailer) *cobra.Command {
 				return err
 			}
 
+			writer := logs.MutexWriter{
+				Writer: cmd.OutOrStdout(),
+			}
 			appName := args[0]
 			if err := tailer.Tail(
 				context.Background(),
 				appName,
-				cmd.OutOrStdout(),
+				&writer,
 				logs.WithTailNamespace(p.Namespace),
 				logs.WithTailNumberLines(numberLines),
 				logs.WithTailFollow(follow),
