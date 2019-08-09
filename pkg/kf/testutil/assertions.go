@@ -31,6 +31,7 @@ import (
 type Failable interface {
 	Helper()
 	Fatalf(format string, args ...interface{})
+	Name() string
 }
 
 // Assert causes a test to fail if the two values are not DeepEqual to
@@ -52,9 +53,9 @@ func AssertEqual(t Failable, fieldName string, expected, actual interface{}) {
 
 		diff, err := kmp.SafeDiff(expected, actual)
 		if err == nil {
-			t.Fatalf("expected %s to be equal expected: %#v actual: %#v diff (-expected, +actual): %s", fieldName, expected, actual, diff)
+			t.Fatalf("%s: expected %s to be equal expected: %#v actual: %#v diff (-expected, +actual): %s", t.Name(), fieldName, expected, actual, diff)
 		} else {
-			t.Fatalf("expected %s to be equal expected: %#v actual: %#v", fieldName, expected, actual)
+			t.Fatalf("%s: expected %s to be equal expected: %#v actual: %#v",t.Name(), fieldName, expected, actual)
 		}
 	}
 
@@ -82,7 +83,7 @@ func AssertRegexp(t Failable, fieldName, pattern, actual string) {
 	t.Helper()
 
 	if !regexp.MustCompile(pattern).MatchString(actual) {
-		t.Fatalf("expected %s to match pattern: %s actual: %s", fieldName, pattern, actual)
+		t.Fatalf("%s: expected %s to match pattern: %s actual: %s", t.Name(), fieldName, pattern, actual)
 	}
 }
 
@@ -91,7 +92,7 @@ func AssertErrorsEqual(t Failable, expected, actual error) {
 	t.Helper()
 
 	if fmt.Sprint(expected) != fmt.Sprint(actual) {
-		t.Fatalf("wanted err: %v, got: %v", expected, actual)
+		t.Fatalf("%s: wanted err: %v, got: %v", t.Name(), expected, actual)
 	}
 }
 
@@ -116,7 +117,7 @@ func AssertContainsAll(t Failable, haystack string, needles []string) {
 	}
 
 	if len(missing) > 0 {
-		t.Fatalf("expected the values %v to be in %q but %v were missing", needles, haystack, missing)
+		t.Fatalf("%s: expected the values %v to be in %q but %v were missing", t.Name(), needles, haystack, missing)
 	}
 }
 
@@ -125,7 +126,7 @@ func AssertNil(t Failable, name string, value interface{}) {
 	t.Helper()
 
 	if value != nil {
-		t.Fatalf("expected %s to be nil but got: %v", name, value)
+		t.Fatalf("%s: expected %s to be nil but got: %v", t.Name(), name, value)
 	}
 }
 
@@ -134,7 +135,7 @@ func AssertNotNil(t Failable, name string, value interface{}) {
 	t.Helper()
 
 	if value == nil {
-		t.Fatalf("expected %s not to be nil", name)
+		t.Fatalf("%s: expected %s not to be nil", t.Name(), name)
 	}
 }
 
@@ -145,11 +146,11 @@ func AssertKeyWithValue(t Failable, m map[interface{}]interface{}, key, value in
 
 	a, ok := m[key]
 	if !ok {
-		t.Fatalf("expected %v to have key %v", m, key)
+		t.Fatalf("%s: expected %v to have key %v", t.Name(), m, key)
 	}
 
 	if !reflect.DeepEqual(value, a) {
-		t.Fatalf("expected %v to have key %v with value %v", m, key, value)
+		t.Fatalf("%s: expected %v to have key %v with value %v", t.Name(), m, key, value)
 	}
 }
 
@@ -161,6 +162,6 @@ func AssertJSONEqual(t Failable, expected, actual string) {
 	AssertNil(t, "actual JSON", json.Unmarshal([]byte(expected), &am))
 
 	if !reflect.DeepEqual(em, am) {
-		t.Fatalf("expected %q to equal %q", actual, expected)
+		t.Fatalf("%s: expected %q to equal %q", t.Name(), actual, expected)
 	}
 }
