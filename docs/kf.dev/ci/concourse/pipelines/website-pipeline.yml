@@ -20,10 +20,18 @@ vars:
 - &ci_git_uri ((ci_git_uri))
 - &ci_git_branch ((ci_website_git_branch))
 - &ci_image_uri ((ci_website_image_uri))
+- &ci_firebase_token ((ci_website_firebase_token))
 - &service_account_json ((service_account_json))
 # ---- end vars ----
 
 resources:
+- name: kf-master
+  type: git
+  source:
+    uri: https://github.com/google/kf
+    branch: master
+    paths:
+    - docs/kf.dev
 - name: ci-image-src
   type: git
   source:
@@ -47,3 +55,7 @@ jobs:
   - put: ci-image
     params:
       build: ci-image-src/docs/kf.dev/ci/concourse/image
+      #- name: website-publish
+      #  plan:
+      #  - get: kf-master
+      #    trigger: true
