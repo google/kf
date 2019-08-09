@@ -43,7 +43,9 @@ func BuildpackBulidImageDestination(app *v1alpha1.App, space *v1alpha1.Space, su
 
 // MakeSource creates a source for the given application.
 //
-// Suffix must be a unique base-36 string suitable for using as a label or name.
+// Suffix must be a unique int64 value to the app so the source doesn't conflict
+// with later sources. A monotonically increasing number should be used such as
+// a timestamp.
 func MakeSource(app *v1alpha1.App, space *v1alpha1.Space, suffix int64) (*v1alpha1.Source, error) {
 	source := app.Spec.Source.DeepCopy()
 

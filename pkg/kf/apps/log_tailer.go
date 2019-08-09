@@ -98,8 +98,9 @@ func (t *pushLogTailer) handleWatch() (bool, error) {
 
 	ws, err := t.client.kclient.Apps(t.namespace).Watch(k8smeta.ListOptions{
 		ResourceVersion: t.resourceVersion,
-		FieldSelector:   fields.OneTermEqualSelector("metadata.name", t.appName).String(),
-		Watch:           true,
+
+		FieldSelector: fields.OneTermEqualSelector("metadata.name", t.appName).String(),
+		Watch:         true,
 	})
 	if err != nil {
 		return true, err
@@ -107,7 +108,12 @@ func (t *pushLogTailer) handleWatch() (bool, error) {
 	defer ws.Stop()
 
 	for e := range ws.ResultChan() {
-		app := e.Object.(*v1alpha1.App)
+		app, ok := e.Object.(*v1alpha1.App)
+		if !ok {
+			t.logger.Printf("Unexpected type in watch stream: %T\n", e.Object)
+			continue
+		}
+
 		done, err := t.handleUpdate(app)
 		if err != nil {
 			return true, err

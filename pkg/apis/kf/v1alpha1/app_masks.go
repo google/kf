@@ -18,6 +18,10 @@ package v1alpha1
 // SourceSpec object bringing over only the fields allowed to be set in
 // the App by developers. This does not validate the contents or the bounds of
 // the provided fields.
+//
+// This function should be used with
+// godoc.org/knative.dev/pkg/apis#CheckDisallowedFields to validate that the
+// user hasn't set any fields they're not allowed to in the source of AppSpec.
 func AppSpecSourceMask(in SourceSpec) SourceSpec {
 	out := SourceSpec{}
 
