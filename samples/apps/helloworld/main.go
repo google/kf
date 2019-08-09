@@ -8,6 +8,7 @@ import (
 
 func main() {
 	http.ListenAndServe(port(), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println(fmt.Sprintf("got one request from %s", r.Host))
 		fmt.Fprintln(w, "hello kf!")
 	}))
 }

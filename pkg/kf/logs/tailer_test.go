@@ -25,6 +25,7 @@ import (
 	fakeapps "github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/logs"
 	"github.com/google/kf/pkg/kf/testutil"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -101,6 +102,22 @@ func TestTailer_Tail(t *testing.T) {
 				},
 			},
 		},
+		"writes logs about pending pod": {
+			appName:   "some-app",
+			eventType: watch.Added,
+			pod: &v1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "some-app-pod1",
+				},
+				Status: corev1.PodStatus{
+					Phase: corev1.PodPending,
+				},
+			},
+			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
+				testutil.AssertNil(t, "err", err)
+				testutil.AssertContainsAll(t, buf.String(), []string{"Pod 'default/some-app-pod1' is not running\n"})
+			},
+		},
 		"writes logs about deleted pod": {
 			appName:   "some-app",
 			eventType: watch.Deleted,
@@ -111,8 +128,7 @@ func TestTailer_Tail(t *testing.T) {
 			},
 			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
-
-				testutil.AssertContainsAll(t, buf.String(), []string{"Pod 'some-app-pod1' is deleted\n"})
+				testutil.AssertContainsAll(t, buf.String(), []string{"Pod 'default/some-app-pod1' is deleted\n"})
 			},
 		},
 		"writes logs about terminated pod": {
@@ -126,8 +142,7 @@ func TestTailer_Tail(t *testing.T) {
 			},
 			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
-
-				testutil.AssertContainsAll(t, buf.String(), []string{"Pod 'some-app-pod1' is terminated\n"})
+				testutil.AssertContainsAll(t, buf.String(), []string{"Pod 'default/some-app-pod1' is terminated\n"})
 			},
 		},
 	} {

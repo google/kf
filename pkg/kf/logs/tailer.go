@@ -23,9 +23,10 @@ import (
 	"time"
 
 	"k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 // Tailer reads the logs for a KF application. It should be created via
@@ -37,11 +38,11 @@ type Tailer interface {
 }
 
 type tailer struct {
-	client corev1.CoreV1Interface
+	client corev1client.CoreV1Interface
 }
 
 // NewTailer creates a new Tailer.
-func NewTailer(client corev1.CoreV1Interface) Tailer {
+func NewTailer(client corev1client.CoreV1Interface) Tailer {
 	return &tailer{
 		client: client,
 	}
@@ -106,14 +107,18 @@ func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, ou
 			// Time out waiting for a log.
 			return nil
 		case e := <-w.ResultChan():
+			pod, ok := e.Object.(*v1.Pod)
+			if !ok {
+				log.Printf("[WARN] watched object is not pod %s", err)
+			}
+
 			switch e.Type {
 			case watch.Added:
 				go func(e watch.Event) {
-					t.readLogs(ctx, e.Object.(*v1.Pod).Name, namespace, out, opts)
-					cancel()
+					t.readLogs(ctx, pod.Name, namespace, out, opts)
 				}(e)
 			case watch.Deleted:
-				if _, err := io.WriteString(out, fmt.Sprintf("Pod '%s' is deleted\n", e.Object.(*v1.Pod).Name)); err != nil {
+				if _, err := io.WriteString(out, fmt.Sprintf("[INFO] Pod '%s/%s' is deleted\n", namespace, pod.Name)); err != nil {
 					return err
 				}
 			}
@@ -122,29 +127,50 @@ func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, ou
 }
 
 func (t *tailer) readLogs(ctx context.Context, name, namespace string, out io.Writer, opts v1.PodLogOptions) {
-	for ctx.Err() == nil {
-		if err := t.readStream(ctx, name, namespace, out, opts); err != nil {
+	var err error
+	var stop bool
+
+	for ctx.Err() == nil && !stop {
+		if stop, err = t.readStream(ctx, name, namespace, out, opts); err != nil {
 			log.Printf("[WARN] %s", err)
 		}
 
 		if !opts.Follow {
 			return
 		}
+		// wait 5 seconds for pod running
+		time.Sleep(5 * time.Second)
 	}
 }
 
-func (t *tailer) readStream(ctx context.Context, name, namespace string, out io.Writer, opts v1.PodLogOptions) error {
+func (t *tailer) readStream(ctx context.Context, name, namespace string, out io.Writer, opts v1.PodLogOptions) (bool, error) {
+	stop := false
+
 	pod, err := t.client.Pods(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
-		return fmt.Errorf("failed to get Pod '%s': %s", name, err)
+		stop = true
+		return stop, fmt.Errorf("failed to get Pod '%s': %s", name, err)
 	}
 
-	if pod.DeletionTimestamp != nil {
-		if _, err := io.WriteString(out, fmt.Sprintf("Pod '%s' is terminated\n", name)); err != nil {
-			return err
+	if !pod.DeletionTimestamp.IsZero() {
+		if _, err := io.WriteString(out, fmt.Sprintf("[INFO] Pod '%s/%s' is terminated\n", namespace, name)); err != nil {
+			return stop, err
 		}
 
-		return nil
+		stop = true
+		return stop, nil
+	}
+
+	if pod.Status.Phase != corev1.PodRunning {
+		if _, err := io.WriteString(out, fmt.Sprintf("[INFO] Pod '%s/%s' is not running\n", namespace, name)); err != nil {
+			return stop, err
+		}
+
+		return stop, nil
+	}
+
+	if _, err := io.WriteString(out, fmt.Sprintf("[INFO] Pod '%s/%s' is running\n", namespace, pod.Name)); err != nil {
+		return stop, nil
 	}
 
 	// XXX: This is not tested at a unit level and instead defers to
@@ -156,17 +182,17 @@ func (t *tailer) readStream(ctx context.Context, name, namespace string, out io.
 
 	stream, err := req.Stream()
 	if err != nil {
-		return fmt.Errorf("failed to read stream: %s", err)
+		return stop, fmt.Errorf("failed to read stream: %s", err)
 	}
 	defer stream.Close()
 
 	if _, err := io.Copy(out, stream); err != nil {
 		if err == io.EOF {
-			return nil
+			return stop, nil
 		}
 
-		return err
+		return stop, err
 	}
 
-	return nil
+	return stop, nil
 }
