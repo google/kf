@@ -40,17 +40,21 @@ func Install(ctx context.Context, containerRegistry string) error {
 		return err
 	}
 
-	// kubectl apply various yaml files
-	for name, yaml := range map[string]string{
-		"Knative Build": KnativeBuildYAML,
-		"kf":            KfNightlyBuildYAML,
+	// kubectl apply various yaml files{
+	for _, yaml := range []struct {
+		name string
+		yaml string
+	}{
+		{name: "Knative Build", yaml: KnativeBuildYAML},
+		{name: "kf", yaml: KfNightlyBuildYAML},
 	} {
-		Logf(ctx, "install "+name)
+
+		Logf(ctx, "install "+yaml.name)
 		if _, err := Kubectl(
 			ctx,
 			"apply",
 			"--filename",
-			yaml,
+			yaml.yaml,
 		); err != nil {
 			return err
 		}
