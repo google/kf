@@ -16,6 +16,9 @@
 
 set -eux
 
+# Change to the project root directory
+cd "${0%/*}"/..
+
 # Login to gcloud
 set +x
 /bin/echo "$SERVICE_ACCOUNT_JSON" > key.json
@@ -47,14 +50,13 @@ mkdir -p $GOPATH/src/github.com/google/
 ln -s $PWD $GOPATH/src/github.com/google/kf
 cd $GOPATH/src/github.com/google/kf
 
-release_name=release-${current_time}.yaml
-# ko resolve
-# This publishes the images to KO_DOCKER_REPO and writes the yaml to
-# stdout.
-ko resolve --filename config > /tmp/${release_name}
+# Build artifacts
+tmp_dir=$(mktemp -d)
+./hack/build-release.sh ${tmp_dir}
 
 # save release to a bucket
-gsutil cp /tmp/${release_name} ${RELEASE_BUCKET}/${release_name}
+release_name=release-${current_time}.yaml
+gsutil cp ${tmp_dir}/release.yaml ${RELEASE_BUCKET}/${release_name}
 
 # Make this the latest
 gsutil cp ${RELEASE_BUCKET}/${release_name} ${RELEASE_BUCKET}/release-latest.yaml
@@ -63,24 +65,24 @@ gsutil cp ${RELEASE_BUCKET}/${release_name} ${RELEASE_BUCKET}/release-latest.yam
 # Generate kf CLI #
 ###################
 
-hash=$(git rev-parse HEAD)
-[ -z "$hash" ] && echo "failed to read hash" && exit 1
+# Upload the binaries
+for cli in $(ls ${tmp_dir}/bin); do
+  # Extract file extensions (e.g., .exe)
+  filename=$(basename -- "${cli}")
+  extension="${filename##*.}"
+  filename="${filename%.*}"
 
-# Build and upload the binaries
-for os in $(echo linux darwin windows); do
-  destination=kf-${os}-${current_time}
-  latest_destination=kf-${os}-latest
-  if [ ${os} = "windows" ]; then
-    # Windows only executes things with the .exe extension
-    destination=${destination}.exe
-    latest_destination=${latest_destination}.exe
+  destination=${filename}-${current_time}
+  latest_destination=${filename}-latest
+
+  # Check to see if it has a file extension
+  if [ "${extension}" != "${filename}" ]; then
+      destination=${destination}.${extension}
+      latest_destination=${latest_destination}.${extension}
   fi
 
-  # Build
-  GOOS=${os} go build -o /tmp/${destination} --ldflags "-X github.com/google/kf/pkg/kf/commands.Version=${hash}" ./cmd/kf
-
   # Upload
-  gsutil cp /tmp/${destination} ${CLI_RELEASE_BUCKET}/${destination}
+  gsutil cp ${tmp_dir}/bin/${cli} ${CLI_RELEASE_BUCKET}/${destination}
 
   # Make this the latest
   gsutil cp ${CLI_RELEASE_BUCKET}/${destination} ${CLI_RELEASE_BUCKET}/${latest_destination}

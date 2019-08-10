@@ -92,6 +92,14 @@ resources:
     start: 0:00
     stop: 1:00
     location: America/Los_Angeles
+- name: draft-github-release
+  type: github-release
+  source:
+    owner: google
+    repository: kf
+    access_token: *github_access_token
+    drafts: true
+    pre_release: true
 
 jobs:
 # builds the ci image for later steps/other pipelines
@@ -261,3 +269,58 @@ jobs:
       run:
         dir: kf-master
         path: hack/upload-release.sh
+
+# Cut a new release of kf
+# TODO: Consider semantic versioning resource:
+# https://github.com/concourse/semver-resource#gcs-driver
+# ATM, it seems like overkill and we should consider it when we are
+# releasing in a more automated way.
+- name: kf-release
+  plan:
+  - aggregate:
+    - get: kf-master
+      trigger: false
+  - task: create-release
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: *ci-image-source
+      params:
+        SERVICE_ACCOUNT_JSON: *release_service_account_json
+        GCP_PROJECT_ID: *gcp_project_id
+        KO_DOCKER_REPO: *ko_docker_release_repo
+        RELEASE_BUCKET: *release_bucket
+        CLI_RELEASE_BUCKET: *cli_release_bucket
+        VERSION_MAJOR: 0
+        VERSION_MINOR: 100
+        VERSION_PATCH: 0
+      inputs:
+      - name: kf-master
+      outputs:
+      - name: github-release
+      run:
+        dir: kf-master
+        path: sh
+        args:
+        - -exc
+        - |
+          # Build artifacts
+          ./hack/build-release.sh ../github-release
+
+          # Write release info
+          tag=$(echo "v${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+          echo "${tag}" > ../github-release/tag
+          echo "kf ${tag}" > ../github-release/name
+          echo "Draft notes need to be filled in manually" > ../github-release/body
+          echo "$(git rev-parse HEAD)" > ../github-release/commitish
+
+  - put: draft-github-release
+    params:
+      name: github-release/name
+      tag: github-release/tag
+      body: github-release/body
+      commitish: github-release/commitish
+      globs:
+      - github-release/release.yaml
+      - github-release/bin/*
