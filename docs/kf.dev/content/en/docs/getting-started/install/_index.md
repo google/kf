@@ -8,23 +8,22 @@ description: >
 ---
 
 [for-operators]: /docs/operators
+[gke]: https://cloud.google.com/kubernetes-engine/
 Follow these instructions to quickly configure and deploy a basic Kf
-installation on a new Google Kubernetes Engine (GKE) cluster. For a more
+installation on a new [Google Kubernetes Engine (GKE)][gke] cluster. For a more
 comprehensive installation guide for system operators/admins, please see the
 [Operators Guide][for-operators].
 
 ## Prerequisites
 
 ### Google Cloud
-[gke]: https://cloud.google.com/kubernetes-engine/
+[sign-up]: https://cloud.google.com
 [free]: https://cloud.google.com/free
-[new-project]: https://cloud.google.com/resource-manager/docs/creating-managing-projects
-These instructions assume Kf will be installed onto [Google Kubernetes Engine
-(GKE)][gke] in a Google Cloud Platform (GCP) project. If you do not have a GCP
-project, you can sign up for the [free tier][free].
+[create-billing]: https://cloud.google.com/billing/docs/how-to/manage-billing-account
 
-If you do not have an existing GCP project, create a new one by following [these
-instructions][new-project].
+1. If you do not have a GCP account, you can [sign up][sign-up] (and you may be eligible for [free credit][free]).
+2. If you do not have a GCP project, the installer can create one for you but you must
+first configure a billing account as described in [these instructions][create-billing].
 
 ### Workstation
 
@@ -65,9 +64,10 @@ sudo mv kf /usr/local/bin
 
 Run `kf install gke` in your terminal to begin the interactive installation.
 
-{{% alert title="Important" color="warning" %}}
-You are strongly encouraged to create a new cluster rather than use an existing
+{{% alert title="Important" color="secondary" %}}
+* You are strongly encouraged to create a new cluster rather than use an existing
 cluster.
+* The installer can use an existing GCP project or create a new one.
 {{% /alert %}}
 
 Output will look similar to this:
@@ -112,7 +112,30 @@ created by the installer:
  Name               Age     Ready   Reason
  space-bw6548xzu4i8 2h      True
  ```
- 
+
+### Hello, World!
+You can quickly deploy a simple "Hello, World!" sample app to further validate
+your configuration. Simply run these commands to do that:
+
+```sh
+git clone https://github.com/google/kf
+cd kf/samples/apps/helloworld
+kf push helloworld
+```
+
+Confirm the app is running:
+
+```sh
+kf apps
+```
+
+Once the app is running, open a proxy to your app and navigate to
+http://localhost:8080 in your browser:
+
+```sh
+kf proxy helloworld
+```
+
 {{% alert title="Ready!" color="primary" %}}
 [spring-music]: /docs/getting-started/spring-music
 Kf is installed and you're ready to deploy an application. Check out the [Spring
