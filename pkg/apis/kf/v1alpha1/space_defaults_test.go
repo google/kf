@@ -65,4 +65,16 @@ func ExampleSpaceSpecExecution_SetDefaults_dedupe() {
 	fmt.Println(strings.Join(domainNames, ", "))
 
 	// Output: *example.com, other-example.com
+
+}
+func ExampleSpaceSpecSecurity_SetDefaults_dedupe() {
+	space := Space{}
+	space.Spec.Security = SpaceSpecSecurity{
+		EnableDeveloperLogsAccess: false,
+	}
+	space.SetDefaults(context.Background())
+
+	fmt.Println("EnableDeveloperLogsAccess:", space.Spec.Security.EnableDeveloperLogsAccess)
+
+	// Output: EnableDeveloperLogsAccess: true
 }
