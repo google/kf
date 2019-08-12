@@ -18,10 +18,13 @@ import (
 	"fmt"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/systemenvinjector"
+	clientv1beta1 "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/typed/servicecatalog/v1beta1"
+	"github.com/google/kf/pkg/kf/cfutil"
 	"github.com/knative/serving/pkg/resources"
+	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clientcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"knative.dev/pkg/kmeta"
 )
 
@@ -31,8 +34,9 @@ func KfInjectedEnvSecretName(app *v1alpha1.App) string {
 }
 
 // MakeKfInjectedEnvSecret creates a Secret containing the env vars for the given application.
-func MakeKfInjectedEnvSecret(app *v1alpha1.App, space *v1alpha1.Space, systemEnvInjector systemenvinjector.SystemEnvInjectorInterface) (*v1.Secret, error) {
-	computedEnv, err := systemEnvInjector.ComputeSystemEnv(app)
+func MakeKfInjectedEnvSecret(app *v1alpha1.App, space *v1alpha1.Space, serviceBindings []apiv1beta1.ServiceBinding, client clientv1beta1.ServiceInstanceInterface, secretsClient clientcorev1.SecretInterface) (*v1.Secret, error) {
+
+	computedEnv, err := cfutil.ComputeSystemEnv(app, serviceBindings, client, secretsClient)
 	if err != nil {
 		return nil, err
 	}

@@ -26,7 +26,6 @@ import (
 	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
 	servicecataloglisters "github.com/google/kf/pkg/client/servicecatalog/listers/servicecatalog/v1beta1"
 	"github.com/google/kf/pkg/kf/algorithms"
-	"github.com/google/kf/pkg/kf/systemenvinjector"
 	"github.com/google/kf/pkg/reconciler"
 	"github.com/google/kf/pkg/reconciler/app/resources"
 	"github.com/knative/serving/pkg/apis/autoscaling"
@@ -59,7 +58,7 @@ type Reconciler struct {
 	secretLister          v1listers.SecretLister
 	routeClaimLister      kflisters.RouteClaimLister
 	serviceBindingLister  servicecataloglisters.ServiceBindingLister
-	systemEnvInjector     systemenvinjector.SystemEnvInjectorInterface
+	serviceInstanceLister servicecataloglisters.ServiceInstanceLister
 }
 
 // Check that our Reconciler implements controller.Reconciler
@@ -194,7 +193,9 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 	{
 		r.Logger.Info("reconciling env vars secret")
 		condition := app.Status.EnvVarSecretCondition()
-		desired, err := resources.MakeKfInjectedEnvSecret(app, space, r.systemEnvInjector)
+		desired, err := resources.MakeKfInjectedEnvSecret(app, space, actualServiceBindings,
+			r.serviceCatalogClient.ServicecatalogV1beta1().ServiceInstances(app.Namespace),
+			r.KubeClientSet.CoreV1().Secrets(app.Namespace))
 		if err != nil {
 			return condition.MarkTemplateError(err)
 		}
@@ -219,7 +220,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 	{
 		r.Logger.Info("reconciling Knative Serving")
 		condition := app.Status.KnativeServiceCondition()
-		desired, err := resources.MakeKnativeService(app, space, r.systemEnvInjector)
+		desired, err := resources.MakeKnativeService(app, space)
 		if err != nil {
 			return condition.MarkTemplateError(err)
 		}

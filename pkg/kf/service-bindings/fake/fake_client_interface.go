@@ -109,26 +109,6 @@ func (mr *FakeClientInterfaceMockRecorder) GetOrCreate(arg0, arg1 interface{}, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreate", reflect.TypeOf((*FakeClientInterface)(nil).GetOrCreate), varargs...)
 }
 
-// GetVcapServices mocks base method
-func (m *FakeClientInterface) GetVcapServices(arg0 string, arg1 ...service_bindings.GetVcapServicesOption) (service_bindings.VcapServicesMap, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0}
-	for _, a := range arg1 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "GetVcapServices", varargs...)
-	ret0, _ := ret[0].(service_bindings.VcapServicesMap)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetVcapServices indicates an expected call of GetVcapServices
-func (mr *FakeClientInterfaceMockRecorder) GetVcapServices(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0}, arg1...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetVcapServices", reflect.TypeOf((*FakeClientInterface)(nil).GetVcapServices), varargs...)
-}
-
 // List mocks base method
 func (m *FakeClientInterface) List(arg0 ...service_bindings.ListOption) ([]v1beta1.ServiceBinding, error) {
 	m.ctrl.T.Helper()

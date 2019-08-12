@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/kf/pkg/kf/cfutil"
 	"github.com/google/kf/pkg/kf/secrets"
 	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	clientv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
@@ -48,9 +49,6 @@ type ClientInterface interface {
 
 	// List queries Kubernetes for service bindings.
 	List(opts ...ListOption) ([]apiv1beta1.ServiceBinding, error)
-
-	// GetVcapServices gets a VCAP_SERVICES compatible environment variable.
-	GetVcapServices(appName string, opts ...GetVcapServicesOption) (VcapServicesMap, error)
 }
 
 // NewClient creates a new client capable of interacting with service catalog
@@ -170,7 +168,7 @@ func (c *Client) List(opts ...ListOption) ([]apiv1beta1.ServiceBinding, error) {
 }
 
 // GetVcapServices gets a VCAP_SERVICES compatible environment variable.
-func (c *Client) GetVcapServices(appName string, opts ...GetVcapServicesOption) (VcapServicesMap, error) {
+func (c *Client) GetVcapServices(appName string, opts ...GetVcapServicesOption) (cfutil.VcapServicesMap, error) {
 	cfg := GetVcapServicesOptionDefaults().Extend(opts).toConfig()
 
 	bindings, err := c.List(WithListAppName(appName), WithListNamespace(cfg.Namespace))
@@ -178,7 +176,7 @@ func (c *Client) GetVcapServices(appName string, opts ...GetVcapServicesOption) 
 		return nil, err
 	}
 
-	out := VcapServicesMap{}
+	out := cfutil.VcapServicesMap{}
 	for _, binding := range bindings {
 		instance, err := c.c.ServiceInstances(cfg.Namespace).Get(binding.Spec.InstanceRef.Name, v1.GetOptions{})
 		if err != nil {
@@ -194,7 +192,7 @@ func (c *Client) GetVcapServices(appName string, opts ...GetVcapServicesOption) 
 			}
 		}
 
-		out.Add(NewVcapService(*instance, binding, secret))
+		out.Add(cfutil.NewVcapService(*instance, binding, secret))
 	}
 
 	return out, nil

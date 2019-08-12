@@ -18,14 +18,17 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/google/kf/pkg/kf/cfutil"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
+	scv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"
+	clientcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 // NewVcapServicesCommand allows users to bind apps to service instances.
-func NewVcapServicesCommand(p *config.KfParams, client servicebindings.ClientInterface) *cobra.Command {
+func NewVcapServicesCommand(p *config.KfParams, client servicebindings.ClientInterface, serviceInstanceClient scv1beta1.ServicecatalogV1beta1Interface, coreClient clientcorev1.CoreV1Interface) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "vcap-services APP_NAME",
 		Short: "Print the VCAP_SERVICES environment variable for an app",
@@ -39,8 +42,18 @@ func NewVcapServicesCommand(p *config.KfParams, client servicebindings.ClientInt
 				return err
 			}
 
-			output, err := client.GetVcapServices(appName,
-				servicebindings.WithGetVcapServicesNamespace(p.Namespace))
+			bindings, err := client.List(servicebindings.WithListAppName(appName), servicebindings.WithListNamespace(p.Namespace))
+			if err != nil {
+				return err
+			}
+
+			services, err := cfutil.GetVcapServices(appName, bindings,
+				serviceInstanceClient.ServiceInstances(p.Namespace), coreClient.Secrets(p.Namespace))
+			if err != nil {
+				return err
+			}
+
+			output, err := cfutil.GetVcapServicesMap(appName, services)
 			if err != nil {
 				return err
 			}

@@ -20,7 +20,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	systemenvinjectorfake "github.com/google/kf/pkg/kf/systemenvinjector/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -386,6 +386,7 @@ github.com/poy/kontext v0.0.0-20190801225340-1f98414f4e12 h1:oqr2ATVxA+L8ymMwVeW
 github.com/poy/kontext v0.0.0-20190801225340-1f98414f4e12/go.mod h1:EZ/Zsx68w8CAzOTosTajuX/M9sL+2s1IMy8jpzuJm2Q=
 github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c h1:5tVj7ImrbnEHf8FNnasPiDBDuSaFRVq8r2ilMLfukzA=
 github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c/go.mod h1:D3X0fYjTImKyVV+A+FaU7e5xIDbU2VOdejI7m5KL0CA=
+github.com/poy/service-catalog v0.1.42 h1:OlEh9OmV5Gl34ESPOTGiugZsO+9XFcfLsw8RQCAVBNI=
 github.com/pquerna/ffjson v0.0.0-20180717144149-af8b230fcd20/go.mod h1:YARuvh7BUWHNhzDq2OM5tzR2RiCcN2D7sapiKyCel/M=
 github.com/prometheus/client_golang v0.0.0-20170531130054-e7e903064f5e/go.mod h1:7SWBe2y4D6OKWSNQJUaRYU/AaXPKyh/dDVn+NZz0KFw=
 github.com/prometheus/client_golang v0.9.1/go.mod h1:7SWBe2y4D6OKWSNQJUaRYU/AaXPKyh/dDVn+NZz0KFw=
@@ -679,6 +680,7 @@ k8s.io/sample-apiserver v0.0.0-20190528110419-48d5cc0538c7/go.mod h1:as99txZ98aZ
 k8s.io/utils v0.0.0-20190221042446-c2654d5206da/go.mod h1:8k8uAuAQ0rXslZKaEWd0c3oVhZz7sSzSiPnVZayjIX0=
 knative.dev/pkg v0.0.0-20190626215608-1104d6c75533 h1:MGc8u3z/TOBWoht1+RSfkedr4Yeu/8GZN2uIJI397UE=
 knative.dev/pkg v0.0.0-20190626215608-1104d6c75533/go.mod h1:pgODObA1dTyhNoFxPZTTjNWfx6F0aKsKzn+vaT9XO/Q=
+knative.dev/pkg v0.0.0-20190809195004-a690d27530bd h1:fuJ8hCA+SY2QiplbIRnB5802cnHWj+76Fv/mOUctymc=
 sigs.k8s.io/kustomize v2.0.3+incompatible/go.mod h1:MkjgH3RdOWrievjo6c9T245dYlB5QeXV4WCbnt/PEpU=
 sigs.k8s.io/yaml v1.1.0 h1:4A07+ZFc2wgJwo8YNlQpr1rVlgUDlxXHhPJciaPY5gs=
 sigs.k8s.io/yaml v1.1.0/go.mod h1:UJmg0vDUVViEyp3mgSv9WPwZCDxu4rQW1olrI1uml+o=

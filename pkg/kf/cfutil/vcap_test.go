@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package servicebindings_test
+package cfutil_test
 
 import (
 	"fmt"
 
-	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
+	cfutil "github.com/google/kf/pkg/kf/service-bindings"
 	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 )
 
 func ExampleVcapServicesMap_Add() {
-	m := servicebindings.VcapServicesMap{}
-	m.Add(servicebindings.VcapService{InstanceName: "instance-a", Label: "foo"})
-	m.Add(servicebindings.VcapService{InstanceName: "instance-b", Label: "foo"})
+	m := cfutil.VcapServicesMap{}
+	m.Add(cfutil.VcapService{InstanceName: "instance-a", Label: "foo"})
+	m.Add(cfutil.VcapService{InstanceName: "instance-b", Label: "foo"})
 
 	// Elements are registered by their Label.
 	fmt.Printf("Number of bindings: %d\n", len(m))
@@ -47,7 +47,7 @@ func ExampleNewVcapService() {
 	binding.Spec.InstanceRef.Name = "my-instance"
 	binding.Name = "my-binding"
 	binding.Labels = map[string]string{
-		servicebindings.BindingNameLabel: "custom-binding-name",
+		cfutil.BindingNameLabel: "custom-binding-name",
 	}
 
 	secret := corev1.Secret{}
@@ -56,7 +56,7 @@ func ExampleNewVcapService() {
 		"key2": []byte("value2"),
 	}
 
-	vs := servicebindings.NewVcapService(instance, binding, &secret)
+	vs := cfutil.NewVcapService(instance, binding, &secret)
 
 	fmt.Printf("Name: %s\n", vs.Name)
 	fmt.Printf("InstanceName: %s\n", vs.InstanceName)

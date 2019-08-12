@@ -24,9 +24,19 @@ import (
 	"knative.dev/pkg/kmeta"
 )
 
+const (
+	// AppNameLabel is the label used on bindings to define which app the binding belongs to.
+	AppNameLabel = "kf-app-name"
+	// BindingNameLabel is the label used on bindings to define what VCAP name the secret should be rooted under.
+	BindingNameLabel = "kf-binding-name"
+)
+
 // MakeServiceBindingLabels creates labels that can be used to tie a source to a build.
-func MakeServiceBindingLabels(app *v1alpha1.App) map[string]string {
-	return app.ComponentLabels("servicebinding")
+func MakeServiceBindingLabels(app *v1alpha1.App, bindingName string) map[string]string {
+	return resources.UnionMaps(app.ComponentLabels("servicebinding"), map[string]string{
+		AppNameLabel:     app.Name,
+		BindingNameLabel: bindingName,
+	})
 }
 
 func MakeServiceBindingName(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBinding) string {
@@ -56,6 +66,8 @@ func MakeServiceBindings(app *v1alpha1.App) ([]*svccatv1beta1.ServiceBinding, er
 
 func MakeServiceBinding(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBinding) (*svccatv1beta1.ServiceBinding, error) {
 
+	bindingName := MakeServiceBindingName(app, binding)
+
 	return &svccatv1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      MakeServiceBindingName(app, binding),
@@ -63,7 +75,7 @@ func MakeServiceBinding(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBindi
 			OwnerReferences: []metav1.OwnerReference{
 				*kmeta.NewControllerRef(app),
 			},
-			Labels: resources.UnionMaps(app.GetLabels(), MakeServiceBindingLabels(app)),
+			Labels: resources.UnionMaps(app.GetLabels(), MakeServiceBindingLabels(app, bindingName)),
 		},
 		Spec: svccatv1beta1.ServiceBindingSpec{
 			InstanceRef: binding.InstanceRef,

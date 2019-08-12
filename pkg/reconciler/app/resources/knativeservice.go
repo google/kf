@@ -21,7 +21,6 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/internal/envutil"
-	"github.com/google/kf/pkg/kf/systemenvinjector"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	servingv1beta1 "github.com/knative/serving/pkg/apis/serving/v1beta1"
 	"github.com/knative/serving/pkg/resources"
@@ -39,7 +38,6 @@ func KnativeServiceName(app *v1alpha1.App) string {
 func MakeKnativeService(
 	app *v1alpha1.App,
 	space *v1alpha1.Space,
-	systemEnvInjector systemenvinjector.SystemEnvInjectorInterface,
 ) (*serving.Service, error) {
 
 	image := app.Status.Image

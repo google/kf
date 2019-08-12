@@ -12,11 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package servicebindings
+package cfutil
 
 import (
+	"fmt"
+
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	clientv1beta1 "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/typed/servicecatalog/v1beta1"
+	"github.com/google/kf/pkg/internal/envutil"
 	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clientcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+)
+
+const (
+	// BindingNameLabel is the label used on bindings to define what VCAP name the secret should be rooted under.
+	BindingNameLabel = "kf-binding-name"
+	// AppNameLabel is the label used on bindings to define which app the binding belongs to.
+	AppNameLabel = "kf-app-name"
 )
 
 // VcapServicesMap mimics CF's VCAP_SERVICES environment variable.
@@ -80,4 +94,66 @@ func NewVcapService(instance apiv1beta1.ServiceInstance, binding apiv1beta1.Serv
 	}
 
 	return vs
+}
+
+func GetVcapServicesMap(appName string, services []VcapService) (VcapServicesMap, error) {
+	out := VcapServicesMap{}
+	for _, service := range services {
+		out.Add(service)
+	}
+	return out, nil
+}
+
+func GetVcapService(appName string, binding apiv1beta1.ServiceBinding, client clientv1beta1.ServiceInstanceInterface, secretsClient clientcorev1.SecretInterface) (VcapService, error) {
+
+	secret, err := secretsClient.Get(binding.Spec.SecretName, metav1.GetOptions{})
+	if err != nil {
+		return VcapService{}, fmt.Errorf("couldn't create VCAP_SERVICES, the secret for binding %s couldn't be fetched: %v", binding.Name, err)
+	}
+
+	serviceInstance, err := client.Get(binding.Spec.InstanceRef.Name, metav1.GetOptions{})
+	if err != nil {
+		return VcapService{}, nil
+	}
+
+	return NewVcapService(*serviceInstance, binding, secret), nil
+}
+
+func GetVcapServices(appName string, bindings []apiv1beta1.ServiceBinding, client clientv1beta1.ServiceInstanceInterface, secretsClient clientcorev1.SecretInterface) ([]VcapService, error) {
+	var services []VcapService
+	for _, binding := range bindings {
+		service, err := GetVcapService(appName, binding, client, secretsClient)
+		if err != nil {
+			return nil, err
+		}
+		services = append(services, service)
+	}
+
+	return services, nil
+}
+
+func ComputeSystemEnv(app *v1alpha1.App, serviceBindings []apiv1beta1.ServiceBinding, client clientv1beta1.ServiceInstanceInterface, secretsClient clientcorev1.SecretInterface) (computed []corev1.EnvVar, err error) {
+	va, err := CreateVcapApplication(app)
+	if err != nil {
+		return nil, err
+	}
+	computed = append(computed, va)
+
+	services, err := GetVcapServices(app.Name, serviceBindings, client, secretsClient)
+	if err != nil {
+		return nil, err
+	}
+
+	serviceMap, err := GetVcapServicesMap(app.Name, services)
+	if err != nil {
+		return nil, err
+	}
+
+	vsVar, err := envutil.NewJSONEnvVar("VCAP_SERVICES", serviceMap)
+	if err != nil {
+		return nil, err
+	}
+	computed = append(computed, vsVar)
+
+	return
 }
