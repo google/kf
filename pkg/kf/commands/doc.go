@@ -14,25 +14,4 @@
 
 package commands
 
-import (
-	"fmt"
-
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/spf13/cobra"
-)
-
-// NewTargetCommand creates a command that can set the default space.
-func NewTargetCommand(p *config.KfParams) *cobra.Command {
-	return newTarget(func(t target, cmd *cobra.Command, args []string) error {
-		if space, _ := t.Space(); space != "" {
-			p.Namespace = space
-			if err := config.Write(p.Config, p); err != nil {
-				return err
-			}
-		}
-
-		fmt.Fprintln(cmd.OutOrStdout(), "Current space is:", p.Namespace)
-
-		return nil
-	})
-}
+//go:generate go run ../internal/tools/command-generator/command-generator.go commands.yaml zz_generated.commands.go

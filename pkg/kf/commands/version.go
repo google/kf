@@ -21,17 +21,11 @@ import (
 )
 
 // NewVersionCommand returns a command that displays the version.
-func NewVersionCommand(version, goos string) *cobra.Command {
-	return &cobra.Command{
-		Use:     "version",
-		Short:   "Display the CLI version",
-		Example: `  kf version`,
-		Args:    cobra.ExactArgs(0),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Fprintln(cmd.OutOrStdout(), "kf version", version, goos)
-			return nil
-		},
-	}
+func NewVersionCommand(versionStr, goos string) *cobra.Command {
+	return newVersion(func(v version, cmd *cobra.Command, args []string) error {
+		fmt.Fprintln(cmd.OutOrStdout(), "kf version", versionStr, goos)
+		return nil
+	})
 }
 
 // Version is filled in via ldflags.

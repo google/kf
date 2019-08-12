@@ -26,20 +26,14 @@ import (
 
 // NewDebugCommand creates a command that prints debugging information.
 func NewDebugCommand(p *config.KfParams) *cobra.Command {
-	return &cobra.Command{
-		Use:     "debug",
-		Short:   "Show debugging information useful for filing a bug report",
-		Example: `  kf debug`,
-		Args:    cobra.ExactArgs(0),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			w := cmd.OutOrStdout()
+	return newDebug(func(d debug, cmd *cobra.Command, args []string) error {
+		w := cmd.OutOrStdout()
 
-			debugRuntime(w)
-			debugKfParams(w, p)
+		debugRuntime(w)
+		debugKfParams(w, p)
 
-			return nil
-		},
-	}
+		return nil
+	})
 }
 
 func debugKfParams(w io.Writer, p *config.KfParams) {

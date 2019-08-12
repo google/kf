@@ -1,0 +1,47 @@
+# This file is used to test the command-generator
+
+package: gentest
+commands:
+- name: test-command
+  short: some-short
+  long: some-long
+  aliases: [some-alias]
+  examples:
+  - first-example
+  - second-example
+  includeManifest: true
+  markdownPath: gendocs/markdown.md
+  args:
+  - name: arg_nonoptional
+    description: "arg_nonoptional desc"
+  - name: other_arg_nonoptional
+    description: "other_arg_nonoptional desc"
+  - name: arg_optional
+    description: "arg_optional desc"
+    optional: true
+  flags:
+  - long: flag-int64
+    type: int64
+    shorthand: a
+    default: 99
+    usage: "some int64 thing"
+  - long: flag-int
+    type: int
+    shorthand: b
+    default: 100
+    usage: "some int thing"
+  - long: flag-float64
+    type: float64
+    shorthand: c
+    default: 101.0
+    usage: "some float64 thing"
+  - long: flag-string
+    type: string
+    shorthand: d
+    default: "one hundred and two"
+    usage: "some string thing"
+  - long: flag-bool
+    type: bool
+    shorthand: e
+    default: true
+    usage: "some bool thing"

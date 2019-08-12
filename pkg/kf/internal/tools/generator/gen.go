@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"sort"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -86,4 +87,20 @@ func TemplateFuncs() template.FuncMap {
 		"genimports": GenImports,
 		"gennotice":  GenNotice,
 	}
+}
+
+// ExportedName returns a type/func name that will be exported.
+func ExportedName(name string) string {
+	if len(name) == 0 {
+		return ""
+	}
+	return strings.ToUpper(string(name[0])) + name[1:]
+}
+
+// UnexportedName returns a type/func name that will not be exported.
+func UnexportedName(name string) string {
+	if len(name) == 0 {
+		return ""
+	}
+	return strings.ToLower(string(name[0])) + name[1:]
 }

@@ -25,7 +25,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 	"text/template"
 
 	"github.com/google/kf/pkg/kf/internal/tools/generator"
@@ -100,7 +99,7 @@ func main() {
 		})
 
 		// Don't export the config name.
-		cfg.ConfigName = strings.ToLower(string(cfg.Name[0])) + cfg.Name[1:]
+		cfg.ConfigName = generator.UnexportedName(cfg.Name)
 
 		configs = append(configs, cfg)
 	}

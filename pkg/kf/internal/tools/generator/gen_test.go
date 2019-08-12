@@ -59,3 +59,23 @@ func ExampleGenLicense() {
 	// Output: license contains year? true
 	// license contains apache text? true
 }
+
+func ExampleExportedName() {
+	fmt.Println("Starts with upper:", ExportedName("SomeType"))
+	fmt.Println("Starts with lower:", ExportedName("someType"))
+	fmt.Println("Empty:", ExportedName(""))
+
+	// Output: Starts with upper: SomeType
+	// Starts with lower: SomeType
+	// Empty:
+}
+
+func ExampleUnexportedName() {
+	fmt.Println("Starts with upper:", UnexportedName("SomeType"))
+	fmt.Println("Starts with lower:", UnexportedName("someType"))
+	fmt.Println("Empty:", UnexportedName(""))
+
+	// Output: Starts with upper: someType
+	// Starts with lower: someType
+	// Empty:
+}
