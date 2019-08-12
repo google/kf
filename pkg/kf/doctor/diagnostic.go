@@ -84,6 +84,11 @@ func (d *Diagnostic) GatedRun(name string, f func(d *Diagnostic)) {
 	d.Run(name, f)
 }
 
+// Name returns the name of the Diagnostic.
+func (d *Diagnostic) Name() string {
+	return d.name
+}
+
 // Fatal is equivalent to Log followed by FailNow.
 func (d *Diagnostic) Fatal(args ...interface{}) {
 	d.Log(args...)

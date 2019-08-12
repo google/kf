@@ -32,12 +32,17 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 	space := "my-space"
 
 	cases := map[string]struct {
-		args  []string
-		space v1alpha1.Space
-		// TODO (#395): Test other failure cases.
+		args     []string
+		space    v1alpha1.Space
 		wantErr  error
 		validate func(*testing.T, *v1alpha1.Space)
 	}{
+		"invalid number of args": {
+			// Should have 2 more args
+			args:    []string{"set-container-registry"},
+			wantErr: errors.New("accepts 2 arg(s), received 0"),
+		},
+
 		"set-container-registry valid": {
 			args: []string{"set-container-registry", space, "gcr.io/foo"},
 			validate: func(t *testing.T, space *v1alpha1.Space) {
