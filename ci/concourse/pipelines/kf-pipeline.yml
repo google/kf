@@ -39,6 +39,11 @@ vars:
 - &cli_release_bucket ((cli_release_bucket))
 - &gcp_project_id ((gcp_project_id))
 
+# kf-release
+- &release_major_version ((release_major_version))
+- &release_minor_version ((release_minor_version))
+- &release_patch_version ((release_patch_version))
+
 # ---- end vars ----
 
 resource_types:
@@ -292,9 +297,9 @@ jobs:
         KO_DOCKER_REPO: *ko_docker_release_repo
         RELEASE_BUCKET: *release_bucket
         CLI_RELEASE_BUCKET: *cli_release_bucket
-        VERSION_MAJOR: 0
-        VERSION_MINOR: 100
-        VERSION_PATCH: 0
+        VERSION_MAJOR: *release_major_version
+        VERSION_MINOR: *release_minor_version
+        VERSION_PATCH: *release_patch_version
       inputs:
       - name: kf-master
       outputs:
