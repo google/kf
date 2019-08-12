@@ -46,7 +46,8 @@ func (k *SpaceSpec) SetDefaults(ctx context.Context, name string) {
 
 // SetDefaults implements apis.Defaultable
 func (k *SpaceSpecSecurity) SetDefaults(ctx context.Context) {
-	// XXX: currently no defaults to set
+	// TODO(#458): We eventually want this to be configurable.
+	k.EnableDeveloperLogsAccess = true
 }
 
 // SetDefaults implements apis.Defaultable
