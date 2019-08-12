@@ -127,15 +127,16 @@ type AppSpecInstances struct {
 type AppSpecServiceBinding struct {
 
 	// InstanceRef is the service the app will bind to.
-	InstanceRef svccatv1beta1.LocalObjectReference
+	InstanceRef svccatv1beta1.LocalObjectReference `json:"instanceRef"`
 
 	// Parameters is an arbitrary JSON to be injected into VCAP_SERVICES.
-	Parameters []byte
+	// +optional
+	Parameters []byte `json:"parameters,omitempty"`
 
 	// BindingName is the name of the binding.
 	// If unspecified it will default to the service name
 	// +optional
-	BindingName string
+	BindingName string `json:"bindingName,omitempty"`
 }
 
 // MinAnnotationValue returns the value autoscaling.knative.dev/minScale should

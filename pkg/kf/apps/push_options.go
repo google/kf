@@ -63,6 +63,8 @@ type pushConfig struct {
 	Routes []v1alpha1.RouteSpecFields
 	// ServiceAccount is the service account to authenticate with
 	ServiceAccount string
+	// ServiceBindings is Services to bind to the app
+	ServiceBindings []v1alpha1.AppSpecServiceBinding
 	// SourceImage is the source code as a container image
 	SourceImage string
 }
@@ -207,6 +209,12 @@ func (opts PushOptions) ServiceAccount() string {
 	return opts.toConfig().ServiceAccount
 }
 
+// ServiceBindings returns the last set value for ServiceBindings or the empty value
+// if not set.
+func (opts PushOptions) ServiceBindings() []v1alpha1.AppSpecServiceBinding {
+	return opts.toConfig().ServiceBindings
+}
+
 // SourceImage returns the last set value for SourceImage or the empty value
 // if not set.
 func (opts PushOptions) SourceImage() string {
@@ -343,6 +351,13 @@ func WithPushRoutes(val []v1alpha1.RouteSpecFields) PushOption {
 func WithPushServiceAccount(val string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.ServiceAccount = val
+	}
+}
+
+// WithPushServiceBindings creates an Option that sets Services to bind to the app
+func WithPushServiceBindings(val []v1alpha1.AppSpecServiceBinding) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.ServiceBindings = val
 	}
 }
 

@@ -104,7 +104,7 @@ func (r *Reconciler) reconcileApp(ctx context.Context, namespace, name string, l
 		// to status with this stale state.
 
 	} else if _, uErr := r.updateStatus(toReconcile); uErr != nil {
-		logger.Warnw("Failed to update Route status", zap.Error(uErr))
+		logger.Warnw("Failed to update App status", zap.Error(uErr))
 		return uErr
 	}
 
@@ -155,6 +155,39 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			return nil
 		}
 
+	}
+
+	// reconcile service bindings
+	desiredServiceBindings, err := resources.MakeServiceBindings(app)
+	var actualServiceBindings []svccatv1beta1.ServiceBinding
+	condition := app.Status.ServiceBindingCondition()
+	if err != nil {
+		return condition.MarkTemplateError(err)
+	}
+
+	{
+		r.Logger.Info("reconciling Service Bindings")
+
+		for _, desired := range desiredServiceBindings {
+			actual, err := r.serviceBindingLister.
+				ServiceBindings(desired.GetNamespace()).
+				Get(desired.Name)
+			if apierrs.IsNotFound(err) {
+				// ServiceBindings doesn't exist, make one.
+				actual, err = r.serviceCatalogClient.
+					ServicecatalogV1beta1().
+					ServiceBindings(desired.GetNamespace()).
+					Create(desired)
+				if err != nil {
+					return condition.MarkReconciliationError("creating", err)
+				}
+			} else if err != nil {
+				return condition.MarkReconciliationError("getting latest", err)
+			} else if actual, err = r.reconcileServiceBinding(desired, actual); err != nil {
+				return condition.MarkReconciliationError("updating existing", err)
+			}
+			actualServiceBindings = append(actualServiceBindings, *actual)
+		}
 	}
 
 	// Reconcile VCAP env vars secret
@@ -223,7 +256,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 
 	// Routes and RouteClaims
 	desiredRoutes, desiredRouteClaims, err := resources.MakeRoutes(app, space)
-	condition := app.Status.RouteCondition()
+	condition = app.Status.RouteCondition()
 	if err != nil {
 		return condition.MarkTemplateError(err)
 	}
@@ -302,36 +335,6 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		}
 	}
 
-	// reconcile service bindings
-	desiredServiceBindings, err := resources.MakeServiceBindings(app)
-	condition = app.Status.ServiceBindingCondition()
-	if err != nil {
-		return condition.MarkTemplateError(err)
-	}
-
-	{
-		r.Logger.Info("reconciling Service Bindings")
-
-		for _, desired := range desiredServiceBindings {
-			actual, err := r.serviceBindingLister.
-				ServiceBindings(desired.GetNamespace()).
-				Get(desired.Name)
-			if apierrs.IsNotFound(err) {
-				// ServiceBindings doesn't exist, make one.
-				actual, err = r.serviceCatalogClient.
-					ServicecatalogV1beta1().
-					ServiceBindings(desired.GetNamespace()).
-					Create(desired)
-				if err != nil {
-					return condition.MarkReconciliationError("creating", err)
-				}
-			} else if err != nil {
-				return condition.MarkReconciliationError("getting latest", err)
-			} else if actual, err = r.reconcileServiceBinding(desired, actual); err != nil {
-				return condition.MarkReconciliationError("updating existing", err)
-			}
-		}
-	}
 	// Making it to the bottom of the reconciler means we've synchronized.
 	app.Status.ObservedGeneration = app.Generation
 

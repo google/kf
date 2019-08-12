@@ -359,6 +359,7 @@ func NewPushCommand(
 					}
 					bindings = append(bindings, binding)
 				}
+				pushOpts = append(pushOpts, apps.WithPushServiceBindings(bindings))
 
 				err = pusher.Push(app.Name, pushOpts...)
 
