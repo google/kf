@@ -18,8 +18,6 @@ import (
 	"fmt"
 	"path"
 
-	"strconv"
-
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/knative/serving/pkg/resources"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,15 +26,18 @@ import (
 
 const buildComponentName = "build"
 
-// MakeSourceLabels creates labels that can be used to tie a source to a build.
-func MakeSourceLabels(app *v1alpha1.App) map[string]string {
-	return app.ComponentLabels(buildComponentName)
+// MakeSourceName creates the name of an Application's source.
+func MakeSourceName(app *v1alpha1.App) string {
+	return fmt.Sprintf("%s-%x", app.Name, app.Spec.Source.UpdateRequests)
 }
 
-// BuildpackBulidImageDestination gets the image name for an application build.
-func BuildpackBulidImageDestination(app *v1alpha1.App, space *v1alpha1.Space, suffix int64) string {
+// BuildpackBuildImageDestination gets the image name for an application build.
+func BuildpackBuildImageDestination(app *v1alpha1.App, space *v1alpha1.Space) string {
 	registry := space.Spec.BuildpackBuild.ContainerRegistry
-	image := fmt.Sprintf("app-%s-%s:%s", app.Namespace, app.Name, strconv.FormatInt(suffix, 36))
+
+	// Use underscores because those aren't permitted in k8s names so you can't
+	// cause accidental conflicts.
+	image := fmt.Sprintf("app_%s_%s:%x", app.Namespace, app.Name, app.Spec.Source.UpdateRequests)
 
 	return path.Join(registry, image)
 }
@@ -46,7 +47,7 @@ func BuildpackBulidImageDestination(app *v1alpha1.App, space *v1alpha1.Space, su
 // Suffix must be a unique int64 value to the app so the source doesn't conflict
 // with later sources. A monotonically increasing number should be used such as
 // a timestamp.
-func MakeSource(app *v1alpha1.App, space *v1alpha1.Space, suffix int64) (*v1alpha1.Source, error) {
+func MakeSource(app *v1alpha1.App, space *v1alpha1.Space) (*v1alpha1.Source, error) {
 	source := app.Spec.Source.DeepCopy()
 
 	source.ServiceAccount = space.Spec.Security.BuildServiceAccount
@@ -54,18 +55,18 @@ func MakeSource(app *v1alpha1.App, space *v1alpha1.Space, suffix int64) (*v1alph
 	if source.IsBuildpackBuild() {
 		// user defined values in buildpackbuild.env take priority from buildpackbuild.env
 		source.BuildpackBuild.Env = append(space.Spec.BuildpackBuild.Env, source.BuildpackBuild.Env...)
-		source.BuildpackBuild.Image = BuildpackBulidImageDestination(app, space, suffix)
+		source.BuildpackBuild.Image = BuildpackBuildImageDestination(app, space)
 		source.BuildpackBuild.BuildpackBuilder = space.Spec.BuildpackBuild.BuilderImage
 	}
 
 	return &v1alpha1.Source{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-%s", app.Name, strconv.FormatInt(suffix, 36)),
+			Name:      MakeSourceName(app),
 			Namespace: app.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*kmeta.NewControllerRef(app),
 			},
-			Labels: resources.UnionMaps(app.GetLabels(), MakeSourceLabels(app)),
+			Labels: resources.UnionMaps(app.GetLabels(), app.ComponentLabels(buildComponentName)),
 		},
 		Spec: *source,
 	}, nil

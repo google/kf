@@ -16,11 +16,11 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"sort"
 	"strconv"
-	"time"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
@@ -42,6 +42,10 @@ import (
 	"knative.dev/pkg/controller"
 	"knative.dev/pkg/kmp"
 	"knative.dev/pkg/logging"
+)
+
+var (
+	restageNeededErr = errors.New("a restage is needed to reflect the latest build settings")
 )
 
 type Reconciler struct {
@@ -126,15 +130,15 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 	{
 		r.Logger.Info("reconciling Source")
 		condition := app.Status.SourceCondition()
-		desired, err := resources.MakeSource(app, space, time.Now().UnixNano())
+		desired, err := resources.MakeSource(app, space)
 		if err != nil {
 			return condition.MarkTemplateError(err)
 		}
 
-		actual, err := r.latestSource(app)
-		if apierrs.IsNotFound(err) || !r.sourcesAreSemanticallyEqual(desired, actual) {
-			// Source doesn't exist or it's for the wrong version, make a new one.
-			actual, err = r.KfClientSet.KfV1alpha1().Sources(app.Namespace).Create(desired)
+		actual, err := r.sourceLister.Sources(desired.GetNamespace()).Get(desired.Name)
+		if apierrs.IsNotFound(err) {
+			// Source doesn't exist, create a new one
+			actual, err = r.KfClientSet.KfV1alpha1().Sources(desired.GetNamespace()).Create(desired)
 			if err != nil {
 				return condition.MarkReconciliationError("creating", err)
 			}
@@ -142,6 +146,8 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			return condition.MarkReconciliationError("getting latest", err)
 		} else if !metav1.IsControlledBy(actual, app) {
 			return condition.MarkChildNotOwned(desired.Name)
+		} else if !r.sourcesAreSemanticallyEqual(desired, actual) {
+			return condition.MarkReconciliationError("synchronizing", restageNeededErr)
 		}
 
 		app.Status.PropagateSourceStatus(actual)
@@ -150,7 +156,6 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			r.Logger.Info("Waiting for source; exiting early")
 			return nil
 		}
-
 	}
 
 	// Reconcile VCAP env vars secret
@@ -302,30 +307,6 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 	app.Status.ObservedGeneration = app.Generation
 
 	return r.gcRevisions(ctx, app)
-}
-
-func (r *Reconciler) latestSource(app *v1alpha1.App) (*v1alpha1.Source, error) {
-	// NOTE: this code polls the Kubernetes cluster directly rather than the
-	// cache to prevent multiple builds from kicking off.
-	selector := resources.MakeSourceLabels(app)
-	listOps := metav1.ListOptions{LabelSelector: labels.Set(selector).String()}
-	list, err := r.KfClientSet.KfV1alpha1().Sources(app.Namespace).List(listOps)
-	if err != nil {
-		return nil, err
-	}
-
-	items := list.Items
-
-	// sort descending
-	sort.Slice(items, func(i int, j int) bool {
-		return items[j].CreationTimestamp.Before(&items[i].CreationTimestamp)
-	})
-
-	if err == nil && len(items) > 0 {
-		return &items[0], nil
-	}
-
-	return nil, apierrs.NewNotFound(v1alpha1.Resource("sources"), fmt.Sprintf("source for %s", app.Name))
 }
 
 func (*Reconciler) sourcesAreSemanticallyEqual(desired, actual *v1alpha1.Source) bool {

@@ -55,7 +55,7 @@ func AssertEqual(t Failable, fieldName string, expected, actual interface{}) {
 		if err == nil {
 			t.Fatalf("%s: expected %s to be equal expected: %#v actual: %#v diff (-expected, +actual): %s", t.Name(), fieldName, expected, actual, diff)
 		} else {
-			t.Fatalf("%s: expected %s to be equal expected: %#v actual: %#v",t.Name(), fieldName, expected, actual)
+			t.Fatalf("%s: expected %s to be equal expected: %#v actual: %#v", t.Name(), fieldName, expected, actual)
 		}
 	}
 

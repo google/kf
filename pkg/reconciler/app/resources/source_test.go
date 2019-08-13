@@ -23,48 +23,32 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestMakeSourceLabels(t *testing.T) {
-	app := &v1alpha1.App{}
-	app.Name = "my-app"
-
-	// hard-code expected here to ensure it doesn't change, if it changes
-	// we could suddenly spawn up hundreds of buils all at once when a user
-	// upgrades
-	expected := map[string]string{
-		"app.kubernetes.io/component":  "build",
-		"app.kubernetes.io/managed-by": "kf",
-		"app.kubernetes.io/name":       "my-app",
-	}
-
-	actual := MakeSourceLabels(app)
-	testutil.AssertEqual(t, "labels", expected, actual)
-}
-
-func ExampleBuildpackBulidImageDestination() {
+func ExampleBuildpackBuildImageDestination() {
 	app := &v1alpha1.App{}
 	app.Name = "myapp"
 	app.Namespace = "myspace"
+	app.Spec.Source.UpdateRequests = 0xfacade
 
 	space := &v1alpha1.Space{}
 	space.Spec.BuildpackBuild.ContainerRegistry = "gcr.io/my-project"
 
-	fmt.Println(BuildpackBulidImageDestination(app, space, 22453731916))
+	fmt.Println(BuildpackBuildImageDestination(app, space))
 
-	// Output: gcr.io/my-project/app-myspace-myapp:abcdefg
+	// Output: gcr.io/my-project/app_myspace_myapp:facade
 }
 
-func ExampleBuildpackBulidImageDestination_noRegistry() {
+func ExampleBuildpackBuildImageDestination_noRegistry() {
 	app := &v1alpha1.App{}
 	app.Name = "myapp"
 	app.Namespace = "myspace"
+	app.Spec.Source.UpdateRequests = 0xfacade
 
-	fmt.Println(BuildpackBulidImageDestination(app, &v1alpha1.Space{}, 22453731916))
+	fmt.Println(BuildpackBuildImageDestination(app, &v1alpha1.Space{}))
 
-	// Output: app-myspace-myapp:abcdefg
+	// Output: app_myspace_myapp:facade
 }
 
 func TestMakeSource(t *testing.T) {
-	abcdefg := int64(22453731916)
 
 	space := v1alpha1.Space{
 		ObjectMeta: metav1.ObjectMeta{
@@ -97,9 +81,8 @@ func TestMakeSource(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		app    v1alpha1.App
-		space  v1alpha1.Space
-		suffix int64
+		app   v1alpha1.App
+		space v1alpha1.Space
 
 		expected v1alpha1.Source
 	}{
@@ -108,18 +91,18 @@ func TestMakeSource(t *testing.T) {
 				ObjectMeta: appObjectMeta,
 				Spec: v1alpha1.AppSpec{
 					Source: v1alpha1.SourceSpec{
+						UpdateRequests: 0xdeadbeef,
 						BuildpackBuild: v1alpha1.SourceSpecBuildpackBuild{
 							Source: "gcr.io/my-source-image:latest",
 						},
 					},
 				},
 			},
-			space:  space,
-			suffix: abcdefg,
+			space: space,
 
 			expected: v1alpha1.Source{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "mybuildpackapp-abcdefg",
+					Name:      "mybuildpackapp-deadbeef",
 					Namespace: "myspace",
 					Labels: map[string]string{
 						"app.kubernetes.io/component":  "build",
@@ -129,10 +112,11 @@ func TestMakeSource(t *testing.T) {
 					OwnerReferences: appOwnerRef,
 				},
 				Spec: v1alpha1.SourceSpec{
+					UpdateRequests: 0xdeadbeef,
 					ServiceAccount: "build-service-account",
 					BuildpackBuild: v1alpha1.SourceSpecBuildpackBuild{
 						Source: "gcr.io/my-source-image:latest",
-						Image:  "gcr.io/dest/app-myspace-mybuildpackapp:abcdefg",
+						Image:  "gcr.io/dest/app_myspace_mybuildpackapp:deadbeef",
 					},
 				},
 			},
@@ -142,18 +126,18 @@ func TestMakeSource(t *testing.T) {
 				ObjectMeta: appObjectMeta,
 				Spec: v1alpha1.AppSpec{
 					Source: v1alpha1.SourceSpec{
+						UpdateRequests: 0xfacade,
 						ContainerImage: v1alpha1.SourceSpecContainerImage{
 							Image: "mysql/mysql:v1",
 						},
 					},
 				},
 			},
-			space:  space,
-			suffix: abcdefg,
+			space: space,
 
 			expected: v1alpha1.Source{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "mybuildpackapp-abcdefg",
+					Name:      "mybuildpackapp-facade",
 					Namespace: "myspace",
 					Labels: map[string]string{
 						"app.kubernetes.io/component":  "build",
@@ -163,6 +147,7 @@ func TestMakeSource(t *testing.T) {
 					OwnerReferences: appOwnerRef,
 				},
 				Spec: v1alpha1.SourceSpec{
+					UpdateRequests: 0xfacade,
 					ServiceAccount: "build-service-account",
 					ContainerImage: v1alpha1.SourceSpecContainerImage{
 						Image: "mysql/mysql:v1",
@@ -174,7 +159,7 @@ func TestMakeSource(t *testing.T) {
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			actual, err := MakeSource(&tc.app, &tc.space, tc.suffix)
+			actual, err := MakeSource(&tc.app, &tc.space)
 			testutil.AssertNil(t, "MakeSource error", err)
 
 			testutil.AssertEqual(t, "Source", &tc.expected, actual)
