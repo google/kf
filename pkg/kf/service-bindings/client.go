@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/google/kf/pkg/kf/cfutil"
 	"github.com/google/kf/pkg/kf/secrets"
 	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	clientv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
@@ -165,37 +164,6 @@ func (c *Client) List(opts ...ListOption) ([]apiv1beta1.ServiceBinding, error) {
 	}
 
 	return filtered, nil
-}
-
-// GetVcapServices gets a VCAP_SERVICES compatible environment variable.
-func (c *Client) GetVcapServices(appName string, opts ...GetVcapServicesOption) (cfutil.VcapServicesMap, error) {
-	cfg := GetVcapServicesOptionDefaults().Extend(opts).toConfig()
-
-	bindings, err := c.List(WithListAppName(appName), WithListNamespace(cfg.Namespace))
-	if err != nil {
-		return nil, err
-	}
-
-	out := cfutil.VcapServicesMap{}
-	for _, binding := range bindings {
-		instance, err := c.c.ServiceInstances(cfg.Namespace).Get(binding.Spec.InstanceRef.Name, v1.GetOptions{})
-		if err != nil {
-			return nil, fmt.Errorf("couldn't create VCAP_SERVICES, couldn't get instance for binding %s: %v", binding.Name, err)
-		}
-
-		secret, err := c.sc.Get(binding.Spec.SecretName, secrets.WithGetNamespace(cfg.Namespace))
-		if err != nil {
-			if cfg.FailOnBadSecret {
-				return nil, fmt.Errorf("couldn't create VCAP_SERVICES, the secret for binding %s couldn't be fetched: %v", binding.Name, err)
-			} else {
-				continue
-			}
-		}
-
-		out.Add(cfutil.NewVcapService(*instance, binding, secret))
-	}
-
-	return out, nil
 }
 
 // serviceBindingName is the primary key for service bindings consisting of the

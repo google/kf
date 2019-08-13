@@ -20,7 +20,9 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	cfutilfake "github.com/google/kf/pkg/kf/cfutil/fake"
 	"github.com/google/kf/pkg/kf/testutil"
+	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -49,8 +51,9 @@ func TestMakeKfInjectedEnvSecret_happyPath(t *testing.T) {
 
 	envVars := []v1.EnvVar{vcapApplication, vcapServices}
 	ctrl := gomock.NewController(t)
-	fakeInjector := systemenvinjectorfake.NewFakeSystemEnvInjector(ctrl)
-	fakeInjector.EXPECT().ComputeSystemEnv(gomock.Any()).Return(envVars, nil)
+
+	fakeInjector := cfutilfake.NewFakeSystemEnvInjector(ctrl)
+	fakeInjector.EXPECT().ComputeSystemEnv(gomock.Any(), gomock.Any()).Return(envVars, nil)
 
 	app := v1alpha1.App{
 		ObjectMeta: metav1.ObjectMeta{
@@ -67,7 +70,9 @@ func TestMakeKfInjectedEnvSecret_happyPath(t *testing.T) {
 		},
 	}
 
-	secret, err := MakeKfInjectedEnvSecret(&app, &space, fakeInjector)
+	serviceBindings := []apiv1beta1.ServiceBinding{}
+
+	secret, err := MakeKfInjectedEnvSecret(&app, &space, serviceBindings, fakeInjector)
 
 	testutil.AssertNil(t, "err", err)
 	testutil.AssertNotNil(t, "secret", secret)

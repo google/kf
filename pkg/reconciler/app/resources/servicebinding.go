@@ -40,24 +40,20 @@ func MakeServiceBindingLabels(app *v1alpha1.App, bindingName string) map[string]
 }
 
 func MakeServiceBindingName(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBinding) string {
-
 	name := binding.BindingName
 	if name == "" {
 		name = binding.InstanceRef.Name
 	}
-
 	return fmt.Sprintf("kf-binding-%s-%s", app.Name, name)
 }
 
 func MakeServiceBindings(app *v1alpha1.App) ([]*svccatv1beta1.ServiceBinding, error) {
 	var bindings []*svccatv1beta1.ServiceBinding
 	for _, binding := range app.Spec.ServiceBindings {
-
 		serviceBinding, err := MakeServiceBinding(app, &binding)
 		if err != nil {
 			return nil, err
 		}
-
 		bindings = append(bindings, serviceBinding)
 	}
 	return bindings, nil
@@ -65,9 +61,7 @@ func MakeServiceBindings(app *v1alpha1.App) ([]*svccatv1beta1.ServiceBinding, er
 }
 
 func MakeServiceBinding(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBinding) (*svccatv1beta1.ServiceBinding, error) {
-
 	bindingName := MakeServiceBindingName(app, binding)
-
 	return &svccatv1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      MakeServiceBindingName(app, binding),

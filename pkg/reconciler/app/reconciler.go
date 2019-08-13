@@ -43,6 +43,7 @@ import (
 	"knative.dev/pkg/controller"
 	"knative.dev/pkg/kmp"
 	"knative.dev/pkg/logging"
+	"github.com/google/kf/pkg/kf/cfutil"
 )
 
 type Reconciler struct {
@@ -193,9 +194,11 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 	{
 		r.Logger.Info("reconciling env vars secret")
 		condition := app.Status.EnvVarSecretCondition()
-		desired, err := resources.MakeKfInjectedEnvSecret(app, space, actualServiceBindings,
+		systemEnvInjector := cfutil.NewSystemEnvInjector(
 			r.serviceCatalogClient.ServicecatalogV1beta1().ServiceInstances(app.Namespace),
 			r.KubeClientSet.CoreV1().Secrets(app.Namespace))
+		desired, err := resources.MakeKfInjectedEnvSecret(app, space, actualServiceBindings, systemEnvInjector)
+
 		if err != nil {
 			return condition.MarkTemplateError(err)
 		}

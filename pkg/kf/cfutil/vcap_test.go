@@ -17,7 +17,7 @@ package cfutil_test
 import (
 	"fmt"
 
-	cfutil "github.com/google/kf/pkg/kf/service-bindings"
+	"github.com/google/kf/pkg/kf/cfutil"
 	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 )
