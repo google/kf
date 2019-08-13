@@ -15,6 +15,8 @@
 package v1alpha1
 
 import (
+	"reflect"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
@@ -58,6 +60,23 @@ type SourceSpec struct {
 	// BuildpackBuild defines buildpack information for source.
 	// +optional
 	BuildpackBuild SourceSpecBuildpackBuild `json:"buildpackBuild,omitempty"`
+}
+
+// NeedsUpdateRequestsIncrement returns true if UpdateRequests needs to be
+// incremented to force a rebuild. This function should be used as a part of
+// defaulting and validating webhooks when SourceSpec is embedded.
+//
+// This can happen if a field in the source changes without also updating the
+// UpdateRequests.
+func (spec *SourceSpec) NeedsUpdateRequestsIncrement(old SourceSpec) bool {
+	updateRequestsChanged := old.UpdateRequests != spec.UpdateRequests
+
+	if !updateRequestsChanged {
+		specsChanged := !reflect.DeepEqual(&old, spec)
+		return specsChanged
+	}
+
+	return false
 }
 
 // SourceSpecContainerImage defines a container image for an App.

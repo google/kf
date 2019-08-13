@@ -20,6 +20,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"knative.dev/pkg/apis"
 )
 
 var (
@@ -45,7 +46,23 @@ func (k *App) SetDefaults(ctx context.Context) {
 
 // SetDefaults implements apis.Defaultable
 func (k *AppSpec) SetDefaults(ctx context.Context) {
+	k.SetSourceDefaults(ctx)
+
 	k.Template.SetDefaults(ctx)
+}
+
+// SetSourceDefaults implements apis.Defaultable for the embedded SourceSpec.
+func (k *AppSpec) SetSourceDefaults(ctx context.Context) {
+
+	// If the app source has changed without changing the UpdateRequests,
+	// update it.
+	if base := apis.GetBaseline(ctx); base != nil {
+		if old, ok := base.(*App); ok {
+			if k.Source.NeedsUpdateRequestsIncrement(old.Spec.Source) {
+				k.Source.UpdateRequests++
+			}
+		}
+	}
 }
 
 // SetDefaults implements apis.Defaultable

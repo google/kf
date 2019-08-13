@@ -21,6 +21,7 @@ import (
 	"github.com/google/kf/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"knative.dev/pkg/apis"
 )
 
 func TestAppSpec_SetDefaults_BlankContainer(t *testing.T) {
@@ -158,6 +159,80 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 			SetKfAppContainerDefaults(context.TODO(), tc.template)
 
 			testutil.AssertEqual(t, "expected", tc.expected, tc.template)
+		})
+	}
+}
+
+func TestAppSpec_SetSourceDefaults(t *testing.T) {
+	cases := map[string]struct {
+		old     *SourceSpec
+		current SourceSpec
+		want    SourceSpec
+	}{
+		"update autoincrement": {
+			old: &SourceSpec{
+				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			},
+			current: SourceSpec{
+				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			},
+			want: SourceSpec{
+				UpdateRequests: 1,
+				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			},
+		},
+		"update with increment": {
+			old: &SourceSpec{
+				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			},
+			current: SourceSpec{
+				UpdateRequests: 2,
+				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			},
+			want: SourceSpec{
+				UpdateRequests: 2,
+				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			},
+		},
+		"update no source change": {
+			old: &SourceSpec{
+				UpdateRequests: 3,
+				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			},
+			current: SourceSpec{
+				UpdateRequests: 3,
+				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			},
+			want: SourceSpec{
+				UpdateRequests: 3,
+				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			},
+		},
+		"create": {
+			current: SourceSpec{
+				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			},
+			want: SourceSpec{
+				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			ctx := context.TODO()
+			if tc.old != nil {
+				ctx = apis.WithinUpdate(ctx, &App{
+					Spec: AppSpec{
+						Source: *tc.old,
+					},
+				})
+			}
+
+			actual := &AppSpec{Source: tc.current}
+			actual.SetSourceDefaults(ctx)
+
+			testutil.AssertEqual(t, "defaulted", tc.want, actual.Source)
 		})
 	}
 }

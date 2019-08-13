@@ -104,7 +104,56 @@ func TestApp_Validate(t *testing.T) {
 			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())
 		})
 	}
+}
 
+func TestAppSpec_ValidateSourceSpec(t *testing.T) {
+	cases := map[string]struct {
+		old     *SourceSpec
+		current SourceSpec
+		want    *apis.FieldError
+	}{
+		"invalid source fields": {
+			current: SourceSpec{
+				ServiceAccount: "not-user-settable",
+			},
+			want: apis.ErrDisallowedFields("serviceAccount"),
+		},
+		"source changed incorrectly": {
+			old: &SourceSpec{
+				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			},
+			current: SourceSpec{
+				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			},
+			want: &apis.FieldError{Message: "must increment UpdateRequests with change to source", Paths: []string{"UpdateRequests"}},
+		},
+		"source changed with increment": {
+			old: &SourceSpec{
+				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			},
+			current: SourceSpec{
+				UpdateRequests: 2,
+				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			ctx := context.TODO()
+			if tc.old != nil {
+				ctx = apis.WithinUpdate(ctx, &App{
+					Spec: AppSpec{
+						Source: *tc.old,
+					},
+				})
+			}
+
+			got := (&AppSpec{Source: tc.current}).ValidateSourceSpec(ctx)
+
+			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())
+		})
+	}
 }
 
 func TestAppSpecInstances_Validate(t *testing.T) {
