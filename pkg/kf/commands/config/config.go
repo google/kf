@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"os"
 	"path"
 	"path/filepath"
@@ -266,7 +267,11 @@ func getRestConfig(p *KfParams) *rest.Config {
 	clientCfg := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, &clientcmd.ConfigOverrides{})
 	restCfg, err := clientCfg.ClientConfig()
 	if err != nil {
-		log.Fatalf("failed to build clientcmd: %s", err)
+		return &rest.Config{
+			Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+				return nil, fmt.Errorf("failed to build clientcmd: %s", err)
+			},
+		}
 	}
 
 	return restCfg
