@@ -91,6 +91,11 @@ func (r *Reconciler) reconcileApp(ctx context.Context, namespace, name string, l
 		return nil
 	}
 
+	if r.IsNamespaceTerminating(namespace) {
+		logger.Errorf("skipping sync for app %q, namespace %q is terminating\n", name, namespace)
+		return nil
+	}
+
 	// Don't modify the informers copy
 	toReconcile := original.DeepCopy()
 

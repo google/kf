@@ -58,6 +58,12 @@ func (k *AppSpec) SetSourceDefaults(ctx context.Context) {
 	// update it.
 	if base := apis.GetBaseline(ctx); base != nil {
 		if old, ok := base.(*App); ok {
+			// If the update is a post rather than a patch, pick up where the last
+			// source left off.
+			if k.Source.UpdateRequests == 0 {
+				k.Source.UpdateRequests = old.Spec.Source.UpdateRequests
+			}
+
 			if k.Source.NeedsUpdateRequestsIncrement(old.Spec.Source) {
 				k.Source.UpdateRequests++
 			}

@@ -70,6 +70,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 		return nil
 	}
 
+	if r.IsNamespaceTerminating(namespace) {
+		logger.Errorf("skipping sync for source %q, namespace %q is terminating\n", name, namespace)
+		return nil
+	}
+
 	// Don't modify the informers copy
 	toReconcile := original.DeepCopy()
 

@@ -208,6 +208,33 @@ func TestAppSpec_SetSourceDefaults(t *testing.T) {
 				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
 			},
 		},
+		"update post missing updaterequests": {
+			old: &SourceSpec{
+				UpdateRequests: 3,
+				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			},
+			current: SourceSpec{
+				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			},
+			want: SourceSpec{
+				UpdateRequests: 4,
+				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			},
+		},
+		"kf restage": {
+			old: &SourceSpec{
+				UpdateRequests: 3,
+				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			},
+			current: SourceSpec{
+				UpdateRequests: 4,
+				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			},
+			want: SourceSpec{
+				UpdateRequests: 4,
+				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			},
+		},
 		"create": {
 			current: SourceSpec{
 				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},

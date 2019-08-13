@@ -127,6 +127,17 @@ func TestAppSpec_ValidateSourceSpec(t *testing.T) {
 			},
 			want: &apis.FieldError{Message: "must increment UpdateRequests with change to source", Paths: []string{"UpdateRequests"}},
 		},
+		"source UpdateRequests less than last": {
+			old: &SourceSpec{
+				UpdateRequests: 42,
+				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			},
+			current: SourceSpec{
+				UpdateRequests: 5,
+				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			},
+			want: &apis.FieldError{Message: "UpdateRequests must be nondecreasing, previous value: 42 new value: 5", Paths: []string{"UpdateRequests"}},
+		},
 		"source changed with increment": {
 			old: &SourceSpec{
 				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
