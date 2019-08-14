@@ -43,10 +43,6 @@ func BuildpackBuildImageDestination(app *v1alpha1.App, space *v1alpha1.Space) st
 }
 
 // MakeSource creates a source for the given application.
-//
-// Suffix must be a unique int64 value to the app so the source doesn't conflict
-// with later sources. A monotonically increasing number should be used such as
-// a timestamp.
 func MakeSource(app *v1alpha1.App, space *v1alpha1.Space) (*v1alpha1.Source, error) {
 	source := app.Spec.Source.DeepCopy()
 

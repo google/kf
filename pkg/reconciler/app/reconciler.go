@@ -152,6 +152,13 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		} else if !metav1.IsControlledBy(actual, app) {
 			return condition.MarkChildNotOwned(desired.Name)
 		} else if !r.sourcesAreSemanticallyEqual(desired, actual) {
+			// This condition happens if properties the operator configures changes
+			// after an app is deployed. For example, the builder image or container
+			// registry.
+			//
+			// We don't want all the apps to automatically rebuild because the update
+			// might be partial or breaking. Instead it should be the job of a person
+			// or process to update all the apps after something like that.
 			return condition.MarkReconciliationError("synchronizing", restageNeededErr)
 		}
 
