@@ -18,6 +18,7 @@ import (
 	"path"
 
 	"github.com/google/kf/pkg/kf/algorithms"
+	svccatv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis/istio/v1alpha3"
 )
@@ -156,6 +157,44 @@ func (d SpaceDomains) Less(i int, j int) bool {
 // Swap implements Interface.
 func (d SpaceDomains) Swap(i int, j int) {
 	d[i], d[j] = d[j], d[i]
+}
+
+// Routes implements the necessary interfaces for the algorithms package.
+type ServiceBindings []svccatv1beta1.ServiceBinding
+
+// Set implements Interface.
+func (d ServiceBindings) Set(i int, a algorithms.Interface, j int, b algorithms.Interface) {
+	a.(ServiceBindings)[i] = b.(ServiceBindings)[j]
+}
+
+// Append implements Interface.
+func (d ServiceBindings) Append(a algorithms.Interface) algorithms.Interface {
+	return append(d, a.(ServiceBindings)...)
+}
+
+// Clone implements Interface.
+func (s ServiceBindings) Clone() algorithms.Interface {
+	return append(ServiceBindings{}, s...)
+}
+
+// Slice implements Interface.
+func (s ServiceBindings) Slice(i int, j int) algorithms.Interface {
+	return s[i:j]
+}
+
+// Len implements Interface.
+func (s ServiceBindings) Len() int {
+	return len(s)
+}
+
+// Less implements Interface.
+func (s ServiceBindings) Less(i int, j int) bool {
+	return s[i].Name < s[j].Name
+}
+
+// Swap implements Interface.
+func (s ServiceBindings) Swap(i int, j int) {
+	s[i], s[j] = s[j], s[i]
 }
 
 // Routes implements the necessary interfaces for the algorithms package.

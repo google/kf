@@ -22,14 +22,17 @@ import (
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
+	scv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 // NewVcapServicesCommand allows users to bind apps to service instances.
 func NewVcapServicesCommand(
 	p *config.KfParams,
 	client servicebindings.ClientInterface,
-	systemEnvInjector cfutil.SystemEnvInjector) *cobra.Command {
+	coreClient v1.CoreV1Interface,
+	svcatClient scv1beta1.ServicecatalogV1beta1Interface) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "vcap-services APP_NAME",
@@ -48,6 +51,7 @@ func NewVcapServicesCommand(
 			if err != nil {
 				return err
 			}
+			systemEnvInjector := cfutil.NewSystemEnvInjector(svcatClient.ServiceInstances(p.Namespace), coreClient.Secrets(p.Namespace))
 
 			services, err := systemEnvInjector.GetVcapServices(appName, bindings)
 			if err != nil {

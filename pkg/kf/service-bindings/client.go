@@ -75,9 +75,6 @@ func (c *Client) Create(serviceInstanceName, appName string, opts ...CreateOptio
 	}
 
 	bindingName := cfg.BindingName
-	if bindingName == "" {
-		bindingName = serviceInstanceName
-	}
 
 	parameters, err := json.Marshal(cfg.Params)
 	if err != nil {
@@ -92,8 +89,7 @@ func (c *Client) Create(serviceInstanceName, appName string, opts ...CreateOptio
 		BindingName: bindingName,
 	}
 	err = c.appsClient.Transform(cfg.Namespace, appName, func(app *v1alpha1.App) error {
-		k := apps.NewFromApp(app)
-		k.BindService(binding)
+		BindService(app, binding)
 		return nil
 	})
 	if err != nil {
@@ -107,8 +103,7 @@ func (c *Client) Create(serviceInstanceName, appName string, opts ...CreateOptio
 func (c *Client) Delete(serviceInstanceName, appName string, opts ...DeleteOption) error {
 	cfg := DeleteOptionDefaults().Extend(opts).toConfig()
 	return c.appsClient.Transform(cfg.Namespace, appName, func(app *v1alpha1.App) error {
-		k := apps.NewFromApp(app)
-		k.UnbindService(serviceInstanceName)
+		UnbindService(app, serviceInstanceName)
 		return nil
 	})
 }
@@ -148,4 +143,25 @@ func (c *Client) List(opts ...ListOption) ([]apiv1beta1.ServiceBinding, error) {
 // app name paired with the instance name to duplicate CF's 1:1 binding limit.
 func serviceBindingName(appName, instanceName string) string {
 	return fmt.Sprintf("kf-binding-%s-%s", appName, instanceName)
+}
+
+// BindService binds a service to an App.
+func BindService(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBinding) {
+	for i, b := range app.Spec.ServiceBindings {
+		if b.BindingName == binding.BindingName {
+			app.Spec.ServiceBindings[i] = *binding
+			return
+		}
+	}
+	app.Spec.ServiceBindings = append(app.Spec.ServiceBindings, *binding)
+}
+
+// UnbindService unbinds a service from an App.
+func UnbindService(app *v1alpha1.App, instanceName string) {
+	for i, binding := range app.Spec.ServiceBindings {
+		if binding.InstanceRef.Name == instanceName {
+			app.Spec.ServiceBindings = append(app.Spec.ServiceBindings[:i], app.Spec.ServiceBindings[i+1:]...)
+			break
+		}
+	}
 }

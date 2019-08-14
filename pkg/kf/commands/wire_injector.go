@@ -23,7 +23,6 @@ import (
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/buildpacks"
 	"github.com/google/kf/pkg/kf/builds"
-	"github.com/google/kf/pkg/kf/cfutil"
 	capps "github.com/google/kf/pkg/kf/commands/apps"
 	cbuildpacks "github.com/google/kf/pkg/kf/commands/buildpacks"
 	cbuilds "github.com/google/kf/pkg/kf/commands/builds"
@@ -43,10 +42,8 @@ import (
 	"github.com/google/wire"
 	"github.com/knative/build/pkg/logs"
 	"github.com/poy/kontext"
-	scv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
-	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 func provideSrcImageBuilder() capps.SrcImageBuilder {
@@ -252,19 +249,12 @@ func InjectUnbindService(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
-func provideSystemEnvInjector(p *config.KfParams,
-	coreClient v1.CoreV1Interface,
-	svcatClient scv1beta1.ServicecatalogV1beta1Interface) cfutil.SystemEnvInjector {
-	return cfutil.NewSystemEnvInjector(svcatClient.ServiceInstances(p.Namespace), coreClient.Secrets(p.Namespace))
-}
-
 func InjectVcapServices(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		servicebindings.NewClient,
 		servicebindingscmd.NewVcapServicesCommand,
 		config.GetServiceCatalogClient,
 		provideCoreV1,
-		provideSystemEnvInjector,
 		AppsSet,
 	)
 	return nil

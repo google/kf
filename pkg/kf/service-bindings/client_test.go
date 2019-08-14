@@ -16,6 +16,7 @@ package servicebindings_test
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -243,4 +244,40 @@ func TestClient_List(t *testing.T) {
 	for tn, tc := range cases {
 		t.Run(tn, tc.ExecuteTest)
 	}
+}
+
+func ExampleKfApp_BindService() {
+	myApp := &kfv1alpha1.App{}
+	servicebindings.BindService(myApp, &kfv1alpha1.AppSpecServiceBinding{
+		InstanceRef: apiv1beta1.LocalObjectReference{
+			Name: "some-service",
+		},
+		BindingName: "some-binding-name",
+	})
+	servicebindings.BindService(myApp, &kfv1alpha1.AppSpecServiceBinding{
+		InstanceRef: apiv1beta1.LocalObjectReference{
+			Name: "another-service",
+		},
+		BindingName: "some-binding-name",
+	})
+	servicebindings.BindService(myApp, &kfv1alpha1.AppSpecServiceBinding{
+		InstanceRef: apiv1beta1.LocalObjectReference{
+			Name: "third-service",
+		},
+		BindingName: "third",
+	})
+	servicebindings.BindService(myApp, &kfv1alpha1.AppSpecServiceBinding{
+		InstanceRef: apiv1beta1.LocalObjectReference{
+			Name: "forth-service",
+		},
+		BindingName: "forth",
+	})
+	servicebindings.UnbindService(myApp, "third")
+
+	for _, b := range myApp.Spec.ServiceBindings {
+		fmt.Println("Instance", b.InstanceRef.Name, "BindingName", b.BindingName)
+	}
+
+	// Output: Instance another-service BindingName some-binding-name
+	// Instance forth-service BindingName forth
 }

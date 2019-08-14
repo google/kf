@@ -167,6 +167,35 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		}
 		r.Logger.Info("reconciling Service Bindings")
 
+		// Delete Stale Service Bindings
+		existing, err := r.serviceBindingLister.
+			ServiceBindings(app.GetNamespace()).
+			List(resources.MakeServiceBindingAppSelector(app))
+		if err != nil {
+			return condition.MarkReconciliationError("scanning for stale routes", err)
+		}
+
+		// Search to see if any of the existing bindings are not in the desired
+		// list of and therefore stale. If they are, delete them.
+		for _, binding := range existing {
+			if algorithms.Search(
+				0,
+				v1alpha1.ServiceBindings{*binding},
+				v1alpha1.ServiceBindings(desiredServiceBindings),
+			) {
+				continue
+			}
+
+			// Not found in desired, must be stale.
+			if err := r.serviceCatalogClient.
+				ServicecatalogV1beta1().
+				ServiceBindings(binding.Namespace).
+				Delete(binding.Name, &metav1.DeleteOptions{}); err != nil {
+				return condition.MarkReconciliationError("deleting existing service binding", err)
+			}
+
+		}
+
 		for _, desired := range desiredServiceBindings {
 			actual, err := r.serviceBindingLister.
 				ServiceBindings(desired.GetNamespace()).
@@ -176,13 +205,13 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 				actual, err = r.serviceCatalogClient.
 					ServicecatalogV1beta1().
 					ServiceBindings(desired.GetNamespace()).
-					Create(desired)
+					Create(&desired)
 				if err != nil {
 					return condition.MarkReconciliationError("creating", err)
 				}
 			} else if err != nil {
 				return condition.MarkReconciliationError("getting latest", err)
-			} else if actual, err = r.reconcileServiceBinding(desired, actual); err != nil {
+			} else if actual, err = r.reconcileServiceBinding(&desired, actual); err != nil {
 				return condition.MarkReconciliationError("updating existing", err)
 			}
 			actualServiceBindings = append(actualServiceBindings, *actual)

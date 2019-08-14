@@ -12,7 +12,6 @@ import (
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/buildpacks"
 	builds2 "github.com/google/kf/pkg/kf/builds"
-	"github.com/google/kf/pkg/kf/cfutil"
 	apps2 "github.com/google/kf/pkg/kf/commands/apps"
 	buildpacks2 "github.com/google/kf/pkg/kf/commands/buildpacks"
 	"github.com/google/kf/pkg/kf/commands/builds"
@@ -32,7 +31,6 @@ import (
 	"github.com/google/wire"
 	logs2 "github.com/knative/build/pkg/logs"
 	"github.com/poy/kontext"
-	"github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes/typed/core/v1"
 )
@@ -284,8 +282,7 @@ func InjectVcapServices(p *config.KfParams) *cobra.Command {
 	servicecatalogV1beta1Interface := config.GetServiceCatalogClient(p)
 	clientInterface := servicebindings.NewClient(appsClient, servicecatalogV1beta1Interface)
 	coreV1Interface := provideCoreV1(p)
-	systemEnvInjector := provideSystemEnvInjector(p, coreV1Interface, servicecatalogV1beta1Interface)
-	command := servicebindings2.NewVcapServicesCommand(p, clientInterface, systemEnvInjector)
+	command := servicebindings2.NewVcapServicesCommand(p, clientInterface, coreV1Interface, servicecatalogV1beta1Interface)
 	return command
 }
 
@@ -472,12 +469,6 @@ func provideAppsGetter(ki v1alpha1.KfV1alpha1Interface) v1alpha1.AppsGetter {
 
 func provideCoreV1(p *config.KfParams) v1.CoreV1Interface {
 	return config.GetKubernetes(p).CoreV1()
-}
-
-func provideSystemEnvInjector(p *config.KfParams,
-	coreClient v1.CoreV1Interface,
-	svcatClient v1beta1.ServicecatalogV1beta1Interface) cfutil.SystemEnvInjector {
-	return cfutil.NewSystemEnvInjector(svcatClient.ServiceInstances(p.Namespace), coreClient.Secrets(p.Namespace))
 }
 
 /////////////////

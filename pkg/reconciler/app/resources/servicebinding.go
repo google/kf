@@ -15,12 +15,16 @@
 package resources
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/knative/serving/pkg/resources"
 	svccatv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
 	"knative.dev/pkg/kmeta"
 )
 
@@ -40,28 +44,42 @@ func MakeServiceBindingLabels(app *v1alpha1.App, bindingName string) map[string]
 }
 
 func MakeServiceBindingName(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBinding) string {
-	name := binding.BindingName
-	if name == "" {
-		name = binding.InstanceRef.Name
-	}
-	return fmt.Sprintf("kf-binding-%s-%s", app.Name, name)
+	return fmt.Sprintf("kf-binding-%s-%s", app.Name, binding.InstanceRef.Name)
 }
 
-func MakeServiceBindings(app *v1alpha1.App) ([]*svccatv1beta1.ServiceBinding, error) {
-	var bindings []*svccatv1beta1.ServiceBinding
+// MakeServiceBindingAppSelector creates a labels.Selector for listing all the
+// Service Bindings for the given App.
+func MakeServiceBindingAppSelector(app *v1alpha1.App) labels.Selector {
+	return labels.NewSelector().Add(
+		mustRequirement(AppNameLabel, selection.Equals, app.Name),
+	)
+}
+
+func MakeServiceBindings(app *v1alpha1.App) ([]svccatv1beta1.ServiceBinding, error) {
+	var bindings []svccatv1beta1.ServiceBinding
 	for _, binding := range app.Spec.ServiceBindings {
 		serviceBinding, err := MakeServiceBinding(app, &binding)
 		if err != nil {
 			return nil, err
 		}
-		bindings = append(bindings, serviceBinding)
+		bindings = append(bindings, *serviceBinding)
 	}
 	return bindings, nil
 
 }
 
 func MakeServiceBinding(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBinding) (*svccatv1beta1.ServiceBinding, error) {
-	bindingName := MakeServiceBindingName(app, binding)
+	var params interface{}
+	err := json.Unmarshal(binding.Parameters, &params)
+	if err != nil {
+		return nil, err
+	}
+
+	bindingName := binding.BindingName
+	if bindingName == "" {
+		bindingName = binding.InstanceRef.Name
+	}
+
 	return &svccatv1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      MakeServiceBindingName(app, binding),
@@ -73,6 +91,7 @@ func MakeServiceBinding(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBindi
 		},
 		Spec: svccatv1beta1.ServiceBindingSpec{
 			InstanceRef: binding.InstanceRef,
+			Parameters:  servicecatalog.BuildParameters(params),
 		},
 	}, nil
 }
