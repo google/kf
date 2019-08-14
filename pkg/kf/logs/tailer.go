@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"time"
 
@@ -33,7 +34,7 @@ import (
 type Tailer interface {
 	// Tail tails the logs from a KF application and writes them to the
 	// writer.
-	Tail(ctx context.Context, appName string, writer *MutexWriter, opts ...TailOption) error
+	Tail(ctx context.Context, appName string, out io.Writer, opts ...TailOption) error
 }
 
 type tailer struct {
@@ -48,7 +49,7 @@ func NewTailer(client corev1client.CoreV1Interface) Tailer {
 }
 
 // Tail tails the logs from a KF application and writes them to the writer.
-func (t *tailer) Tail(ctx context.Context, appName string, writer *MutexWriter, opts ...TailOption) error {
+func (t *tailer) Tail(ctx context.Context, appName string, out io.Writer, opts ...TailOption) error {
 	cfg := TailOptionDefaults().Extend(opts).toConfig()
 	if appName == "" {
 		return errors.New("appName is empty")
@@ -70,6 +71,10 @@ func (t *tailer) Tail(ctx context.Context, appName string, writer *MutexWriter, 
 	if cfg.NumberLines != 0 {
 		n := int64(cfg.NumberLines)
 		logOpts.TailLines = &(n)
+	}
+
+	writer := &MutexWriter{
+		Writer: out,
 	}
 
 	if err := t.watchForPods(ctx, namespace, appName, writer, logOpts); err != nil {
@@ -144,36 +149,32 @@ func (t *tailer) readLogs(ctx context.Context, name, namespace string, out *Mute
 }
 
 func (t *tailer) readStream(ctx context.Context, name, namespace string, mw *MutexWriter, opts v1.PodLogOptions) (bool, error) {
-	stop := false
-
 	pod, err := t.client.Pods(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
-		stop = true
-		return stop, fmt.Errorf("failed to get Pod '%s': %s", name, err)
+		return true, fmt.Errorf("failed to get Pod '%s': %s", name, err)
 	}
 
 	if !pod.DeletionTimestamp.IsZero() {
 		err = mw.Write(fmt.Sprintf("[INFO] Pod '%s/%s' is terminated\n", namespace, name))
 		if err != nil {
-			return stop, err
+			return false, err
 		}
 
-		stop = true
-		return stop, nil
+		return true, nil
 	}
 
 	if pod.Status.Phase != corev1.PodRunning {
 		err = mw.Write(fmt.Sprintf("[INFO] Pod '%s/%s' is not running\n", namespace, name))
 		if err != nil {
-			return stop, err
+			return false, err
 		}
 
-		return stop, nil
+		return false, nil
 	}
 
 	err = mw.Write(fmt.Sprintf("[INFO] Pod '%s/%s' is running\n", namespace, pod.Name))
 	if err != nil {
-		return stop, err
+		return false, err
 	}
 
 	// XXX: This is not tested at a unit level and instead defers to
@@ -185,14 +186,14 @@ func (t *tailer) readStream(ctx context.Context, name, namespace string, mw *Mut
 
 	stream, err := req.Stream()
 	if err != nil {
-		return stop, fmt.Errorf("failed to read stream: %s", err)
+		return false, fmt.Errorf("failed to read stream: %s", err)
 	}
 	defer stream.Close()
 
 	err = mw.CopyFrom(stream)
 	if err != nil {
-		return stop, err
+		return false, err
 	}
 
-	return stop, nil
+	return false, nil
 }

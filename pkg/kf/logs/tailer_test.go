@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
@@ -35,12 +36,33 @@ import (
 
 //go:generate mockgen --package logs_test --destination fake_watcher_test.go --mock_names=Interface=FakeWatcher --copyright_file ../internal/tools/option-builder/LICENSE_HEADER k8s.io/apimachinery/pkg/watch Interface
 
+type mutexBuffer struct {
+	b bytes.Buffer
+	sync.Mutex
+}
+
+func (mb *mutexBuffer) Read(p []byte) (n int, err error) {
+	mb.Lock()
+	defer mb.Unlock()
+	return mb.b.Read(p)
+}
+func (mb *mutexBuffer) Write(p []byte) (n int, err error) {
+	mb.Lock()
+	defer mb.Unlock()
+	return mb.b.Write(p)
+}
+func (mb *mutexBuffer) String() string {
+	mb.Lock()
+	defer mb.Unlock()
+	return mb.b.String()
+}
+
 func TestTailer_Tail(t *testing.T) {
 	t.Parallel()
 	for tn, tc := range map[string]struct {
 		appName        string
 		opts           []logs.TailOption
-		assert         func(t *testing.T, buf *bytes.Buffer, err error)
+		assert         func(t *testing.T, buf *mutexBuffer, err error)
 		eventType      watch.EventType
 		pod            *v1.Pod
 		expectedOutput string
@@ -67,7 +89,7 @@ func TestTailer_Tail(t *testing.T) {
 		},
 		"empty app name": {
 			appName: "",
-			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
+			assert: func(t *testing.T, buf *mutexBuffer, err error) {
 				testutil.AssertErrorsEqual(t, errors.New("appName is empty"), err)
 			},
 		},
@@ -76,14 +98,14 @@ func TestTailer_Tail(t *testing.T) {
 			opts: []logs.TailOption{
 				logs.WithTailNumberLines(-1),
 			},
-			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
+			assert: func(t *testing.T, buf *mutexBuffer, err error) {
 				testutil.AssertErrorsEqual(t, errors.New("number of lines must be greater than or equal to 0"), err)
 			},
 		},
 		"watching pods fails": {
 			appName:  "some-app",
 			watchErr: errors.New("some-error"),
-			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
+			assert: func(t *testing.T, buf *mutexBuffer, err error) {
 				testutil.AssertErrorsEqual(t, errors.New("failed to watch pods: some-error"), err)
 			},
 		},
@@ -114,7 +136,7 @@ func TestTailer_Tail(t *testing.T) {
 					Phase: corev1.PodPending,
 				},
 			},
-			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
+			assert: func(t *testing.T, buf *mutexBuffer, err error) {
 				testutil.AssertNil(t, "err", err)
 				testutil.AssertContainsAll(t, buf.String(), []string{"Pod 'default/some-app-pod1' is not running\n"})
 			},
@@ -127,7 +149,7 @@ func TestTailer_Tail(t *testing.T) {
 					Name: "some-app-pod1",
 				},
 			},
-			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
+			assert: func(t *testing.T, buf *mutexBuffer, err error) {
 				testutil.AssertNil(t, "err", err)
 				testutil.AssertContainsAll(t, buf.String(), []string{"Pod 'default/some-app-pod1' is deleted\n"})
 			},
@@ -141,7 +163,7 @@ func TestTailer_Tail(t *testing.T) {
 					DeletionTimestamp: &metav1.Time{Time: time.Now()},
 				},
 			},
-			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
+			assert: func(t *testing.T, buf *mutexBuffer, err error) {
 				testutil.AssertNil(t, "err", err)
 				testutil.AssertContainsAll(t, buf.String(), []string{"Pod 'default/some-app-pod1' is terminated\n"})
 			},
@@ -151,7 +173,7 @@ func TestTailer_Tail(t *testing.T) {
 		testCase := tc
 		t.Run(tn, func(t *testing.T) {
 			if testCase.assert == nil {
-				testCase.assert = func(t *testing.T, buf *bytes.Buffer, err error) {
+				testCase.assert = func(t *testing.T, buf *mutexBuffer, err error) {
 					testutil.AssertNil(t, "err", err)
 				}
 			}
@@ -196,16 +218,10 @@ func TestTailer_Tail(t *testing.T) {
 				})
 			}
 
-			buf := &bytes.Buffer{}
-			mw := &logs.MutexWriter{
-				Writer: buf,
-			}
+			buf := &mutexBuffer{}
+			gotErr := logs.NewTailer(fakeClient).Tail(context.Background(), testCase.appName, buf, testCase.opts...)
 
-			gotErr := logs.NewTailer(fakeClient).Tail(context.Background(), testCase.appName, mw, testCase.opts...)
-
-			mw.Lock()
 			testCase.assert(t, buf, gotErr)
-			mw.Unlock()
 		})
 	}
 }

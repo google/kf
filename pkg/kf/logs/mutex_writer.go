@@ -14,16 +14,18 @@ type MutexWriter struct {
 // Write writes string to Writer
 func (mw *MutexWriter) Write(s string) error {
 	mw.Lock()
+	defer mw.Unlock()
 	if _, err := io.WriteString(mw.Writer, s); err != nil {
 		return err
 	}
-	mw.Unlock()
+
 	return nil
 }
 
 // CopyFrom copies from s to to Writer
 func (mw *MutexWriter) CopyFrom(s io.ReadCloser) error {
 	mw.Lock()
+	defer mw.Unlock()
 	if _, err := io.Copy(mw.Writer, s); err != nil {
 		if err == io.EOF {
 			return nil
@@ -31,6 +33,6 @@ func (mw *MutexWriter) CopyFrom(s io.ReadCloser) error {
 
 		return err
 	}
-	mw.Unlock()
+
 	return nil
 }
