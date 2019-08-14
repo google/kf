@@ -1,0 +1,35 @@
+# Copyright 2019 the Service Broker Project Authors. All rights reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# This file registers the broker with the Service Catalog so the services can
+# be discovered and registered into the cluster.
+{{ if .Values.svccat.register }}
+---
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ClusterServiceBroker
+metadata:
+  name: {{ .Values.svccat.name }}
+  labels:
+    app.kubernetes.io/name: {{ include "gcp-service-broker.name" . }}
+    helm.sh/chart: {{ include "gcp-service-broker.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  url: http://{{ template "gcp-service-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+  authInfo:
+    basic:
+      secretRef:
+        name: "{{ template "gcp-service-broker.fullname" . }}-auth"
+        namespace: {{ .Release.Namespace | quote }}
+{{- end }}
