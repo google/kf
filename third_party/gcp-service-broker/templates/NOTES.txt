@@ -1,0 +1,23 @@
+{{- if .Values.svccat.register }}
+
+The broker has been registered with the Kubernetes Service Catalog. The catalog
+will update its service and plan listings once the broker becomes healthy.
+
+You can check on its status by running:
+
+  kubectl describe clusterservicebroker {{.Values.svccat.name}}
+
+{{- else }}
+
+The broker has been installed in Kubernetes, but still needs to be registered
+with the Service Catalog or Cloud Foundry.
+
+You can register it with Cloud Foundry by running:
+
+  SECRET={{ template "gcp-service-broker.fullname" . }}-auth
+  USERNAME="$(kubectl get secret $SECRET -o jsonpath='{.data.username}' | base64 --decode)"
+  PASSWORD="$(kubectl get secret $SECRET -o jsonpath='{.data.password}' | base64 --decode)"
+  URL=http://{{ template "gcp-service-broker.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+  cf create-service-broker {{ .Values.svccat.name }} $USERNAME $PASSWORD $URL
+
+{{- end }}
