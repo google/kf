@@ -9,7 +9,7 @@ description: >
 
 This example Spring application is an enterprise-ready link-shortener.
 The URL shortener has the following behaviour:
- 
+
  * URLs internal to your own domain get automatically redirected.
  * URLs on the Internet are scanned for vulnerabilities:
    * If the URL is malicious, the redirect is blocked.
@@ -39,8 +39,12 @@ git clone https://github.com/GoogleCloudPlatform/service-broker-samples.git
 cd service-broker-samples/link-shortener
 ```
 
-1. Open `manifest.yml` in your editor and add `BP_JAVA_VERSION: 8.*` to the
-   `env` section. This will ensure Java 8 is used to build and run the app you deploy.
+1. Open `manifest.yml` in your editor and edit the `env` section:
+
+  1. Set the value of `INTERNAL_DOMAIN_SUFFIX` to `"localhost:8080"`. This will
+     allow you to test the application locally after you deploy.
+
+  1. Add a `BP_JAVA_VERSION` key with a value of  `8.*` This will ensure Java 8 is used to build and run the app you deploy.
 
     The resulting `manifest.yml` should resemble:
 
@@ -52,19 +56,9 @@ cd service-broker-samples/link-shortener
 	  instances: 2
 	  env:
 		GOOGLE_API_KEY: "YOUR_API_KEY_HERE"
-		INTERNAL_DOMAIN_SUFFIX: "YOUR_DOMAIN_HERE"
+		INTERNAL_DOMAIN_SUFFIX: "localhost:8080"
 		BP_JAVA_VERSION: 8.*
 	```
-
-1. Open `pom.xml`, remove the `<parent>...</parent>` element, and replace it with:
-
-	```sh
-    <parent>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-parent</artifactId>
-      <version>2.1.7.RELEASE</version>
-    </parent>
-    ```
 
 1. Push the app, adding a parameter to ensure it doesn't start:
 
@@ -92,6 +86,24 @@ cd service-broker-samples/link-shortener
 	kf bind-service link-shortener short-links-db -c '{"role":"cloudsql.editor"}'
 	```
 
+## [Optional] Configure Safe Browsing API
+[safe-browsing]: https://developers.google.com/safe-browsing/v4/get-started
+The link shortener app can use Google's [Safe Browsing API][safe-browsing] to
+scan target URLs for vulnerabilities and to generate screenshots of the app.
+Follow these instructions to enable this functionality in the app.
+
+[enable-safe-browsing]:
+https://console.cloud.google.com/marketplace/details/google/safebrowsing.googleapis.com
+1. [Enable the Safe Browsing API][enable-safe-browsing]
+
+[create-creds]: https://console.cloud.google.com/apis/credentials
+1. Follow [these instructions][create-creds] to create an API token that will
+be used to authenticate requests to the Safe Browsing API (note: it is currently
+not possible to provision access to this API with the Google Service Broker).
+
+1. Edit `manifest.yml` and set `env.GOOGLE_API_KEY` to the value of the API key
+   you retrieved in the previous step.
+
 ## Deploy and test the app
 
 1. Once the application is bound, you can start it:
@@ -110,7 +122,13 @@ cd service-broker-samples/link-shortener
 
 ## Screenshots:
 
+**Link shortener landing page**
+
 ![Landing Page](landing.png)
+
+**External redirect**
+
+![External Redirect](external.png)
 
 ## Destroy
 
@@ -126,4 +144,3 @@ cd service-broker-samples/link-shortener
     ```sh
     kf delete link-shortener
     ```
-
