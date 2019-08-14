@@ -54,7 +54,7 @@ func NewBindServiceCommand(p *config.KfParams, client servicebindings.ClientInte
 				return err
 			}
 
-			_, err = client.Create(instanceName, appName, servicebindings.WithCreateParams(params))
+			_, err = client.Create(instanceName, appName, servicebindings.WithCreateParams(params), servicebindings.WithCreateNamespace(p.Namespace))
 			if err != nil {
 				return err
 			}

@@ -15,30 +15,18 @@
 package servicebindings_test
 
 import (
-	"bytes"
 	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/apps"
-	"github.com/google/kf/pkg/kf/apps/fake"
-	"github.com/google/kf/pkg/kf/commands/config"
 	servicebindingscmd "github.com/google/kf/pkg/kf/commands/service-bindings"
 	"github.com/google/kf/pkg/kf/commands/utils"
+	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
+	"github.com/google/kf/pkg/kf/service-bindings/fake"
 	"github.com/google/kf/pkg/kf/testutil"
-	"github.com/spf13/cobra"
 )
 
 func TestNewBindServiceCommand(t *testing.T) {
-
-	type serviceTest struct {
-		Args            []string
-		Setup           func(t *testing.T, f *fake.FakeClient)
-		Namespace       string
-		ExpectedErr     error
-		ExpectedStrings []string
-	}
 	cases := map[string]serviceTest{
 		"wrong number of args": {
 			Args:        []string{},
@@ -47,16 +35,12 @@ func TestNewBindServiceCommand(t *testing.T) {
 		"command params get passed correctly": {
 			Args:      []string{"APP_NAME", "SERVICE_INSTANCE", `--config={"ram_gb":4}`, "--binding-name=BINDING_NAME"},
 			Namespace: "custom-ns",
-			Setup: func(t *testing.T, f *fake.FakeClient) {
-				f.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&v1alpha1.App{}, nil)
-				f.EXPECT().Update(gomock.Any(), gomock.Any()).DoAndReturn(func(namespace string, app *v1alpha1.App) (*v1alpha1.App, error) {
-
-					testutil.AssertEqual(t, "service-instance", "SERVICE_INSTANCE", app.Spec.ServiceBindings[0].InstanceRef.Name)
-					testutil.AssertEqual(t, "binding-name", "BINDING_NAME", app.Spec.ServiceBindings[0].BindingName)
-					testutil.AssertEqual(t, "config", `{"ram_gb":4}`, string(app.Spec.ServiceBindings[0].Parameters))
-
-					return &v1alpha1.App{}, nil
-				})
+			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
+				f.EXPECT().Create("SERVICE_INSTANCE", "APP_NAME", gomock.Any()).Do(func(instance, app string, opts ...servicebindings.CreateOption) {
+					config := servicebindings.CreateOptions(opts)
+					testutil.AssertEqual(t, "params", map[string]interface{}{"ram_gb": 4.0}, config.Params())
+					testutil.AssertEqual(t, "namespace", "custom-ns", config.Namespace())
+				}).Return(dummyBindingRequestInstance("APP_NAME", "SERVICE_INSTANCE"), nil)
 			},
 		},
 		"empty namespace": {
@@ -66,16 +50,12 @@ func TestNewBindServiceCommand(t *testing.T) {
 		"defaults config": {
 			Args:      []string{"APP_NAME", "SERVICE_INSTANCE"},
 			Namespace: "custom-ns",
-			Setup: func(t *testing.T, f *fake.FakeClient) {
-				f.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&v1alpha1.App{}, nil)
-				f.EXPECT().Update(gomock.Any(), gomock.Any()).DoAndReturn(func(namespace string, app *v1alpha1.App) (*v1alpha1.App, error) {
-
-					testutil.AssertEqual(t, "service-instance", "SERVICE_INSTANCE", app.Spec.ServiceBindings[0].InstanceRef.Name)
-					testutil.AssertEqual(t, "binding-name", "SERVICE_INSTANCE", app.Spec.ServiceBindings[0].BindingName)
-					testutil.AssertEqual(t, "config", `{}`, string(app.Spec.ServiceBindings[0].Parameters))
-
-					return &v1alpha1.App{}, nil
-				})
+			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
+				f.EXPECT().Create("SERVICE_INSTANCE", "APP_NAME", gomock.Any()).Do(func(instance, app string, opts ...servicebindings.CreateOption) {
+					config := servicebindings.CreateOptions(opts)
+					testutil.AssertEqual(t, "params", map[string]interface{}{}, config.Params())
+					testutil.AssertEqual(t, "namespace", "custom-ns", config.Namespace())
+				}).Return(dummyBindingRequestInstance("APP_NAME", "SERVICE_INSTANCE"), nil)
 			},
 		},
 		"bad config path": {
@@ -86,37 +66,11 @@ func TestNewBindServiceCommand(t *testing.T) {
 		"bad server call": {
 			Args:      []string{"APP_NAME", "SERVICE_INSTANCE"},
 			Namespace: "custom-ns",
-			Setup: func(t *testing.T, f *fake.FakeClient) {
-				f.EXPECT().Get(gomock.Any(), gomock.Any()).Return(&v1alpha1.App{}, nil)
-				f.EXPECT().Update(gomock.Any(), gomock.Any()).Return(nil, errors.New("api-error"))
+			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
+				f.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api-error"))
 			},
 			ExpectedErr: errors.New("api-error"),
 		},
-	}
-
-	runTest := func(t *testing.T, tc serviceTest, newCommand func(p *config.KfParams, client apps.Client) *cobra.Command) {
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-		client := fake.NewFakeClient(ctrl)
-
-		if tc.Setup != nil {
-			tc.Setup(t, client)
-		}
-
-		buf := new(bytes.Buffer)
-		p := &config.KfParams{
-			Namespace: tc.Namespace,
-		}
-
-		cmd := newCommand(p, client)
-		cmd.SetOutput(buf)
-		cmd.SetArgs(tc.Args)
-		_, actualErr := cmd.ExecuteC()
-		if tc.ExpectedErr != nil || actualErr != nil {
-			testutil.AssertErrorsEqual(t, tc.ExpectedErr, actualErr)
-			return
-		}
-		testutil.AssertContainsAll(t, buf.String(), tc.ExpectedStrings)
 	}
 
 	for tn, tc := range cases {

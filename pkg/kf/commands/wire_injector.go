@@ -79,7 +79,6 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 		servicebindings.NewClient,
 		config.GetServiceCatalogClient,
 		AppsSet,
-		provideAppInterface,
 	)
 	return nil
 }
@@ -223,17 +222,12 @@ func InjectMarketplace(p *config.KfParams) *cobra.Command {
 ///////////////////////
 // Service Bindings //
 /////////////////////
-func provideAppInterface(p *config.KfParams, client kfv1alpha1.KfV1alpha1Interface) kfv1alpha1.AppInterface {
-	return client.Apps(p.Namespace)
-}
-
 func InjectBindingService(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		servicebindings.NewClient,
 		servicebindingscmd.NewBindServiceCommand,
 		config.GetServiceCatalogClient,
-		config.GetKfClient,
-		provideAppInterface,
+		AppsSet,
 	)
 	return nil
 }
@@ -243,8 +237,7 @@ func InjectListBindings(p *config.KfParams) *cobra.Command {
 		servicebindings.NewClient,
 		servicebindingscmd.NewListBindingsCommand,
 		config.GetServiceCatalogClient,
-		config.GetKfClient,
-		provideAppInterface,
+		AppsSet,
 	)
 	return nil
 }
@@ -254,8 +247,7 @@ func InjectUnbindService(p *config.KfParams) *cobra.Command {
 		servicebindings.NewClient,
 		servicebindingscmd.NewUnbindServiceCommand,
 		config.GetServiceCatalogClient,
-		config.GetKfClient,
-		provideAppInterface,
+		AppsSet,
 	)
 	return nil
 }
@@ -271,10 +263,9 @@ func InjectVcapServices(p *config.KfParams) *cobra.Command {
 		servicebindings.NewClient,
 		servicebindingscmd.NewVcapServicesCommand,
 		config.GetServiceCatalogClient,
-		config.GetKfClient,
 		provideCoreV1,
 		provideSystemEnvInjector,
-		provideAppInterface,
+		AppsSet,
 	)
 	return nil
 }

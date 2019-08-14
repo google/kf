@@ -20,11 +20,9 @@ import (
 	"fmt"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	kfclient "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
 	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	clientv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -52,15 +50,15 @@ type ClientInterface interface {
 
 // NewClient creates a new client capable of interacting with service catalog
 // services.
-func NewClient(client kfclient.AppInterface, svcatClient clientv1beta1.ServicecatalogV1beta1Interface) ClientInterface {
+func NewClient(appsClient apps.Client, svcatClient clientv1beta1.ServicecatalogV1beta1Interface) ClientInterface {
 	return &Client{
-		c:           client,
+		appsClient: appsClient,
 		svcatClient: svcatClient,
 	}
 }
 
 type Client struct {
-	c           kfclient.AppInterface
+	appsClient apps.Client
 	svcatClient clientv1beta1.ServicecatalogV1beta1Interface
 }
 
@@ -93,17 +91,11 @@ func (c *Client) Create(serviceInstanceName, appName string, opts ...CreateOptio
 		Parameters:  parameters,
 		BindingName: bindingName,
 	}
-
-	app, err := c.c.Get(appName, metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	k := apps.NewFromApp(app)
-	k.BindService(binding)
-	app = k.ToApp()
-
-	app, err = c.c.Update(app)
+	err = c.appsClient.Transform(cfg.Namespace, appName, func(app *v1alpha1.App) error {
+		k := apps.NewFromApp(app)
+		k.BindService(binding)
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -113,21 +105,12 @@ func (c *Client) Create(serviceInstanceName, appName string, opts ...CreateOptio
 
 // Delete unbinds a service instance from an app.
 func (c *Client) Delete(serviceInstanceName, appName string, opts ...DeleteOption) error {
-	app, err := c.c.Get(appName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-
-	k := apps.NewFromApp(app)
-	k.UnbindService(serviceInstanceName)
-	app = k.ToApp()
-
-	app, err = c.c.Update(app)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	cfg := DeleteOptionDefaults().Extend(opts).toConfig()
+	return c.appsClient.Transform(cfg.Namespace, appName, func(app *v1alpha1.App) error {
+		k := apps.NewFromApp(app)
+		k.UnbindService(serviceInstanceName)
+		return nil
+	})
 }
 
 // List queries Kubernetes for service bindings.

@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/google/kf/pkg/kf/service-bindings/fake"
@@ -33,6 +34,16 @@ type commandFactory func(p *config.KfParams, client servicebindings.ClientInterf
 func dummyBindingInstance(appName, instanceName string) *v1beta1.ServiceBinding {
 	instance := v1beta1.ServiceBinding{}
 	instance.Name = fmt.Sprintf("kf-binding-%s-%s", appName, instanceName)
+
+	return &instance
+}
+
+func dummyBindingRequestInstance(appName, instanceName string) *kfv1alpha1.AppSpecServiceBinding {
+	instance := kfv1alpha1.AppSpecServiceBinding{}
+	instance.BindingName = fmt.Sprintf("kf-binding-%s-%s", appName, instanceName)
+	instance.InstanceRef = v1beta1.LocalObjectReference{
+		Name: instanceName,
+	}
 
 	return &instance
 }
