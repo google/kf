@@ -137,11 +137,9 @@ func NewKfParamsFromFile(cfgPath string) (*KfParams, error) {
 
 // NewDefaultKfParams creates a KfParams with default values.
 func NewDefaultKfParams() *KfParams {
-	defaultParams := &KfParams{}
+	defaultParams := initKubeConfig()
 
-	initKubeConfig(defaultParams)
-
-	return defaultParams
+	return &defaultParams
 }
 
 // Write writes the current configuration to the path specified by the
@@ -278,7 +276,12 @@ func getRestConfig(p *KfParams) *rest.Config {
 
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
 	if p.KubeCfgFile != "" {
-		loadingRules.ExplicitPath = p.KubeCfgFile
+		fileList := filepath.SplitList(p.KubeCfgFile)
+		if len(fileList) > 1 {
+			loadingRules.Precedence = fileList
+		} else {
+			loadingRules.ExplicitPath = p.KubeCfgFile
+		}
 	}
 
 	clientCfg := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, &clientcmd.ConfigOverrides{})
@@ -294,8 +297,15 @@ func getRestConfig(p *KfParams) *rest.Config {
 	return restCfg
 }
 
-func initKubeConfig(p *KfParams) {
-	if p.KubeCfgFile == "" {
-		p.KubeCfgFile = filepath.Join(homedir.HomeDir(), ".kube", "config")
+func initKubeConfig() KfParams {
+	p := KfParams{}
+
+	p.KubeCfgFile = clientcmd.RecommendedHomeFile
+
+	// Override path to Kube config if env var is set
+	if configPathEnv, ok := os.LookupEnv(clientcmd.RecommendedConfigPathEnvVar); ok {
+		p.KubeCfgFile = configPathEnv
 	}
+
+	return p
 }

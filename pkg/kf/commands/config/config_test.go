@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -84,6 +85,40 @@ func ExampleWrite() {
 	}
 
 	// Output: Read namespace: my-namespace
+}
+
+func TestNewDefaultKfParams(t *testing.T) {
+	cases := map[string]struct {
+		configPathEnv string
+		expected      KfParams
+	}{
+		"KUBECONFIG set": {
+			configPathEnv: "kube-config.yml",
+			expected: KfParams{
+				KubeCfgFile: "kube-config.yml",
+			},
+		},
+		"KUBECONFIG not set": {
+			configPathEnv: "",
+			expected: KfParams{
+				KubeCfgFile: filepath.Join(homedir.HomeDir(), ".kube", "config"),
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			if len(tc.configPathEnv) != 0 {
+				os.Setenv("KUBECONFIG", tc.configPathEnv)
+			} else {
+				os.Unsetenv("KUBECONFIG")
+			}
+			defaultConfig := NewDefaultKfParams()
+
+			testutil.AssertEqual(t, "config", &tc.expected, defaultConfig)
+		})
+	}
+
 }
 
 func TestLoad(t *testing.T) {
