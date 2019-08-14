@@ -26,6 +26,7 @@ import (
 	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
 	servicecataloglisters "github.com/google/kf/pkg/client/servicecatalog/listers/servicecatalog/v1beta1"
 	"github.com/google/kf/pkg/kf/algorithms"
+	"github.com/google/kf/pkg/kf/cfutil"
 	"github.com/google/kf/pkg/reconciler"
 	"github.com/google/kf/pkg/reconciler/app/resources"
 	"github.com/knative/serving/pkg/apis/autoscaling"
@@ -43,7 +44,6 @@ import (
 	"knative.dev/pkg/controller"
 	"knative.dev/pkg/kmp"
 	"knative.dev/pkg/logging"
-	"github.com/google/kf/pkg/kf/cfutil"
 )
 
 type Reconciler struct {

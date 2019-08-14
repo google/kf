@@ -207,6 +207,9 @@ type AppStatus struct {
 	// LatestCreatedSourceName contains the name of the source that was most
 	// recently created.
 	LatestCreatedSourceName string `json:"latestSource,omitempty"`
+
+	// ServiceBindings are the bindings currently attached to the App.
+	ServiceBindings []svccatv1beta1.ServiceBinding `json:"serviceBindings,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

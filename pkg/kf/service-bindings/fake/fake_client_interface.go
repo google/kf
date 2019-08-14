@@ -21,6 +21,7 @@ package fake
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	service_bindings "github.com/google/kf/pkg/kf/service-bindings"
 	v1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	reflect "reflect"
@@ -50,14 +51,14 @@ func (m *FakeClientInterface) EXPECT() *FakeClientInterfaceMockRecorder {
 }
 
 // Create mocks base method
-func (m *FakeClientInterface) Create(arg0, arg1 string, arg2 ...service_bindings.CreateOption) (*v1beta1.ServiceBinding, error) {
+func (m *FakeClientInterface) Create(arg0, arg1 string, arg2 ...service_bindings.CreateOption) (*v1alpha1.AppSpecServiceBinding, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0, arg1}
 	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Create", varargs...)
-	ret0, _ := ret[0].(*v1beta1.ServiceBinding)
+	ret0, _ := ret[0].(*v1alpha1.AppSpecServiceBinding)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -86,27 +87,6 @@ func (mr *FakeClientInterfaceMockRecorder) Delete(arg0, arg1 interface{}, arg2 .
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*FakeClientInterface)(nil).Delete), varargs...)
-}
-
-// GetOrCreate mocks base method
-func (m *FakeClientInterface) GetOrCreate(arg0, arg1 string, arg2 ...service_bindings.CreateOption) (*v1beta1.ServiceBinding, bool, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "GetOrCreate", varargs...)
-	ret0, _ := ret[0].(*v1beta1.ServiceBinding)
-	ret1, _ := ret[1].(bool)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// GetOrCreate indicates an expected call of GetOrCreate
-func (mr *FakeClientInterfaceMockRecorder) GetOrCreate(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrCreate", reflect.TypeOf((*FakeClientInterface)(nil).GetOrCreate), varargs...)
 }
 
 // List mocks base method

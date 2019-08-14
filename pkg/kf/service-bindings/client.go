@@ -15,13 +15,16 @@
 package servicebindings
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
-	"github.com/google/kf/pkg/kf/secrets"
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	kfclient "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/apps"
 	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	clientv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
-	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -38,10 +41,7 @@ const (
 // and mapping the CF to Kubernetes concepts.
 type ClientInterface interface {
 	// Create binds a service instance to an app.
-	Create(serviceInstanceName, appName string, opts ...CreateOption) (*apiv1beta1.ServiceBinding, error)
-
-	// GetOrCreate binds a service instance to an app if a binding does not already exist.
-	GetOrCreate(serviceInstanceName, appName string, opts ...CreateOption) (*apiv1beta1.ServiceBinding, bool, error)
+	Create(serviceInstanceName, appName string, opts ...CreateOption) (*v1alpha1.AppSpecServiceBinding, error)
 
 	// Delete removes a service binding from an app.
 	Delete(serviceInstanceName, appName string, opts ...DeleteOption) error
@@ -52,20 +52,20 @@ type ClientInterface interface {
 
 // NewClient creates a new client capable of interacting with service catalog
 // services.
-func NewClient(c clientv1beta1.ServicecatalogV1beta1Interface, sc secrets.ClientInterface) ClientInterface {
+func NewClient(client kfclient.AppInterface, svcatClient clientv1beta1.ServicecatalogV1beta1Interface) ClientInterface {
 	return &Client{
-		c:  c,
-		sc: sc,
+		c:           client,
+		svcatClient: svcatClient,
 	}
 }
 
 type Client struct {
-	c  clientv1beta1.ServicecatalogV1beta1Interface
-	sc secrets.ClientInterface
+	c           kfclient.AppInterface
+	svcatClient clientv1beta1.ServicecatalogV1beta1Interface
 }
 
 // Create binds a service instance to an app.
-func (c *Client) Create(serviceInstanceName, appName string, opts ...CreateOption) (*apiv1beta1.ServiceBinding, error) {
+func (c *Client) Create(serviceInstanceName, appName string, opts ...CreateOption) (*v1alpha1.AppSpecServiceBinding, error) {
 	cfg := CreateOptionDefaults().Extend(opts).toConfig()
 
 	if serviceInstanceName == "" {
@@ -81,65 +81,60 @@ func (c *Client) Create(serviceInstanceName, appName string, opts ...CreateOptio
 		bindingName = serviceInstanceName
 	}
 
-	bindingReference := serviceBindingName(appName, serviceInstanceName)
-	request := &apiv1beta1.ServiceBinding{
-		ObjectMeta: v1.ObjectMeta{
-			Name:      bindingReference,
-			Namespace: cfg.Namespace,
-			Labels: map[string]string{
-				BindingNameLabel: bindingName,
-				AppNameLabel:     appName,
-			},
-		},
-		Spec: apiv1beta1.ServiceBindingSpec{
-			InstanceRef: apiv1beta1.LocalObjectReference{
-				Name: serviceInstanceName,
-			},
-			SecretName: bindingReference,
-			Parameters: servicecatalog.BuildParameters(cfg.Params),
-		},
-	}
-
-	return c.c.ServiceBindings(cfg.Namespace).Create(request)
-}
-
-// GetOrCreate binds a service instance to an app if a binding does not already exist.
-func (c *Client) GetOrCreate(serviceInstanceName, appName string, opts ...CreateOption) (*apiv1beta1.ServiceBinding, bool, error) {
-
-	cfg := CreateOptionDefaults().Extend(opts).toConfig()
-
-	bindings, err := c.List(
-		WithListServiceInstance(serviceInstanceName),
-		WithListAppName(appName),
-		WithListNamespace(cfg.Namespace))
+	parameters, err := json.Marshal(cfg.Params)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
-	if len(bindings) == 0 {
-		b, err := c.Create(
-			serviceInstanceName,
-			appName,
-			opts...)
-		return b, true, err
+	binding := &v1alpha1.AppSpecServiceBinding{
+		InstanceRef: apiv1beta1.LocalObjectReference{
+			Name: serviceInstanceName,
+		},
+		Parameters:  parameters,
+		BindingName: bindingName,
 	}
 
-	return &bindings[0], false, nil
+	app, err := c.c.Get(appName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	k := apps.NewFromApp(app)
+	k.BindService(binding)
+	app = k.ToApp()
+
+	app, err = c.c.Update(app)
+	if err != nil {
+		return nil, err
+	}
+
+	return binding, nil
 }
 
 // Delete unbinds a service instance from an app.
 func (c *Client) Delete(serviceInstanceName, appName string, opts ...DeleteOption) error {
-	cfg := DeleteOptionDefaults().Extend(opts).toConfig()
+	app, err := c.c.Get(appName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
 
-	bindingReference := serviceBindingName(appName, serviceInstanceName)
-	return c.c.ServiceBindings(cfg.Namespace).Delete(bindingReference, &v1.DeleteOptions{})
+	k := apps.NewFromApp(app)
+	k.UnbindService(serviceInstanceName)
+	app = k.ToApp()
+
+	app, err = c.c.Update(app)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // List queries Kubernetes for service bindings.
 func (c *Client) List(opts ...ListOption) ([]apiv1beta1.ServiceBinding, error) {
 	cfg := ListOptionDefaults().Extend(opts).toConfig()
 
-	bindings, err := c.c.ServiceBindings(cfg.Namespace).List(v1.ListOptions{})
+	bindings, err := c.svcatClient.ServiceBindings(cfg.Namespace).List(v1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}

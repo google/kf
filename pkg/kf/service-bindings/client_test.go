@@ -24,7 +24,6 @@ import (
 	"github.com/google/kf/pkg/kf/testutil"
 	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	testclient "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/fake"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -119,68 +118,6 @@ func TestClient_Create(t *testing.T) {
 		},
 	}
 
-	for tn, tc := range cases {
-		t.Run(tn, tc.ExecuteTest)
-	}
-}
-
-func TestClient_GetOrCreate(t *testing.T) {
-	emptyBindingList := &apiv1beta1.ServiceBindingList{
-		Items: []apiv1beta1.ServiceBinding{},
-	}
-	cases := map[string]ServiceBindingApiTestCase{
-		"first time create": {
-			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-
-				deps.apiserver.EXPECT().
-					List(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(emptyBindingList, nil)
-
-				deps.apiserver.EXPECT().Create(gomock.Any(), "custom-ns", gomock.Any()).DoAndReturn(func(grv schema.GroupVersionResource, ns string, obj runtime.Object) (runtime.Object, error) {
-					binding := obj.(*apiv1beta1.ServiceBinding)
-					testutil.AssertEqual(t, "name", "kf-binding-myapp-mydb", binding.Name)
-					testutil.AssertEqual(t, "namespace", "custom-ns", binding.Namespace)
-					testutil.AssertEqual(t, "labels", map[string]string{"kf-binding-name": "mydb", "kf-app-name": "myapp"}, binding.Labels)
-
-					return obj, nil
-				})
-
-				_, created, err := client.GetOrCreate("mydb", "myapp", servicebindings.WithCreateNamespace("custom-ns"))
-				testutil.AssertNil(t, "err", err)
-				testutil.AssertEqual(t, "created", true, created)
-			},
-		},
-		"already exists": {
-			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-
-				deps.apiserver.EXPECT().
-					List(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(&apiv1beta1.ServiceBindingList{
-						Items: []apiv1beta1.ServiceBinding{
-							{
-								ObjectMeta: metav1.ObjectMeta{
-									Name:      "kf-binding-myapp-mydb",
-									Namespace: "custom-ns",
-									Labels:    map[string]string{"kf-binding-name": "mydb", "kf-app-name": "myapp"},
-								},
-								Spec: apiv1beta1.ServiceBindingSpec{
-									InstanceRef: apiv1beta1.LocalObjectReference{
-										Name: "mydb",
-									},
-								},
-							},
-						},
-					}, nil)
-
-				binding, created, err := client.GetOrCreate("mydb", "myapp", servicebindings.WithCreateNamespace("custom-ns"))
-				testutil.AssertNil(t, "err", err)
-				testutil.AssertEqual(t, "created", false, created)
-				testutil.AssertEqual(t, "name", "kf-binding-myapp-mydb", binding.Name)
-				testutil.AssertEqual(t, "namespace", "custom-ns", binding.Namespace)
-				testutil.AssertEqual(t, "labels", map[string]string{"kf-binding-name": "mydb", "kf-app-name": "myapp"}, binding.Labels)
-			},
-		},
-	}
 	for tn, tc := range cases {
 		t.Run(tn, tc.ExecuteTest)
 	}

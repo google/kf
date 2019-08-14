@@ -20,5 +20,5 @@ import "github.com/google/kf/pkg/kf/cfutil"
 
 // SystemEnvInjector is implemented by cfutil.SystemEnvInjector
 type SystemEnvInjector interface {
- cfutil.SystemEnvInjector
+	cfutil.SystemEnvInjector
 }

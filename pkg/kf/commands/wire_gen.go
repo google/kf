@@ -53,10 +53,10 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 	appsClient := apps.NewClient(appsGetter, client)
 	pusher := apps.NewPusher(appsClient)
 	srcImageBuilder := provideSrcImageBuilder()
+	appInterface := provideAppInterface(p, kfV1alpha1Interface)
 	servicecatalogV1beta1Interface := config.GetServiceCatalogClient(p)
-	clientInterface := config.GetSecretClient(p)
-	servicebindingsClientInterface := servicebindings.NewClient(servicecatalogV1beta1Interface, clientInterface)
-	command := apps2.NewPushCommand(p, appsClient, pusher, srcImageBuilder, servicebindingsClientInterface)
+	clientInterface := servicebindings.NewClient(appInterface, servicecatalogV1beta1Interface)
+	command := apps2.NewPushCommand(p, appsClient, pusher, srcImageBuilder, clientInterface)
 	return command
 }
 
@@ -238,38 +238,39 @@ func InjectMarketplace(p *config.KfParams) *cobra.Command {
 
 func InjectBindingService(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
-	appsGetter := provideAppsGetter(kfV1alpha1Interface)
-	sourcesGetter := provideKfSources(kfV1alpha1Interface)
-	buildTailer := provideSourcesBuildTailer()
-	client := sources.NewClient(sourcesGetter, buildTailer)
-	appsClient := apps.NewClient(appsGetter, client)
-	command := servicebindings2.NewBindServiceCommand(p, appsClient)
+	appInterface := provideAppInterface(p, kfV1alpha1Interface)
+	servicecatalogV1beta1Interface := config.GetServiceCatalogClient(p)
+	clientInterface := servicebindings.NewClient(appInterface, servicecatalogV1beta1Interface)
+	command := servicebindings2.NewBindServiceCommand(p, clientInterface)
 	return command
 }
 
 func InjectListBindings(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	appInterface := provideAppInterface(p, kfV1alpha1Interface)
 	servicecatalogV1beta1Interface := config.GetServiceCatalogClient(p)
-	clientInterface := config.GetSecretClient(p)
-	servicebindingsClientInterface := servicebindings.NewClient(servicecatalogV1beta1Interface, clientInterface)
-	command := servicebindings2.NewListBindingsCommand(p, servicebindingsClientInterface)
+	clientInterface := servicebindings.NewClient(appInterface, servicecatalogV1beta1Interface)
+	command := servicebindings2.NewListBindingsCommand(p, clientInterface)
 	return command
 }
 
 func InjectUnbindService(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	appInterface := provideAppInterface(p, kfV1alpha1Interface)
 	servicecatalogV1beta1Interface := config.GetServiceCatalogClient(p)
-	clientInterface := config.GetSecretClient(p)
-	servicebindingsClientInterface := servicebindings.NewClient(servicecatalogV1beta1Interface, clientInterface)
-	command := servicebindings2.NewUnbindServiceCommand(p, servicebindingsClientInterface)
+	clientInterface := servicebindings.NewClient(appInterface, servicecatalogV1beta1Interface)
+	command := servicebindings2.NewUnbindServiceCommand(p, clientInterface)
 	return command
 }
 
 func InjectVcapServices(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	appInterface := provideAppInterface(p, kfV1alpha1Interface)
 	servicecatalogV1beta1Interface := config.GetServiceCatalogClient(p)
-	clientInterface := config.GetSecretClient(p)
-	servicebindingsClientInterface := servicebindings.NewClient(servicecatalogV1beta1Interface, clientInterface)
+	clientInterface := servicebindings.NewClient(appInterface, servicecatalogV1beta1Interface)
 	coreV1Interface := provideCoreV1(p)
 	systemEnvInjector := provideSystemEnvInjector(p, coreV1Interface, servicecatalogV1beta1Interface)
-	command := servicebindings2.NewVcapServicesCommand(p, servicebindingsClientInterface, systemEnvInjector)
+	command := servicebindings2.NewVcapServicesCommand(p, clientInterface, systemEnvInjector)
 	return command
 }
 
@@ -456,6 +457,13 @@ func provideAppsGetter(ki v1alpha1.KfV1alpha1Interface) v1alpha1.AppsGetter {
 
 func provideCoreV1(p *config.KfParams) v1.CoreV1Interface {
 	return config.GetKubernetes(p).CoreV1()
+}
+
+///////////////////////
+// Service Bindings //
+/////////////////////
+func provideAppInterface(p *config.KfParams, client v1alpha1.KfV1alpha1Interface) v1alpha1.AppInterface {
+	return client.Apps(p.Namespace)
 }
 
 func provideSystemEnvInjector(p *config.KfParams,

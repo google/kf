@@ -65,7 +65,6 @@ func NewVcapServicesCommand(
 			}
 
 			fmt.Fprintln(cmd.OutOrStdout(), string(out))
-
 			return nil
 		},
 	}
