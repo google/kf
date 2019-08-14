@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	svccatv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"knative.dev/pkg/apis"
@@ -115,6 +116,27 @@ func (status *AppStatus) PropagateKnativeServiceStatus(service *serving.Service)
 // PropagateEnvVarSecretStatus updates the env var secret readiness status.
 func (status *AppStatus) PropagateEnvVarSecretStatus(secret *v1.Secret) {
 	status.manage().MarkTrue(AppConditionEnvVarSecretReady)
+}
+
+// PropagateServiceBindingsStatus updates the service binding readiness status.
+func (status *AppStatus) PropagateServiceBindingsStatus(bindings []svccatv1beta1.ServiceBinding) {
+	status.ServiceBindings = bindings
+
+	for _, binding := range bindings {
+
+		for _, cond := range binding.Status.Conditions {
+			if cond.Type != svccatv1beta1.ServiceBindingConditionReady {
+				continue
+			}
+			if cond.Status != "Ready" {
+				status.manage().MarkFalse(AppConditionServiceBindingsReady, "service binding %s is not ready", binding.Name)
+				return
+			}
+		}
+
+	}
+
+	status.manage().MarkTrue(AppConditionServiceBindingsReady)
 }
 
 // MarkSpaceHealthy notes that the space was able to be retrieved and

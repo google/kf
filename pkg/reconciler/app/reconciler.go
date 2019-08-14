@@ -158,14 +158,13 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 	}
 
 	// reconcile service bindings
-	desiredServiceBindings, err := resources.MakeServiceBindings(app)
 	var actualServiceBindings []svccatv1beta1.ServiceBinding
-	condition := app.Status.ServiceBindingCondition()
-	if err != nil {
-		return condition.MarkTemplateError(err)
-	}
-
 	{
+		desiredServiceBindings, err := resources.MakeServiceBindings(app)
+		condition := app.Status.ServiceBindingCondition()
+		if err != nil {
+			return condition.MarkTemplateError(err)
+		}
 		r.Logger.Info("reconciling Service Bindings")
 
 		for _, desired := range desiredServiceBindings {
@@ -188,6 +187,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			}
 			actualServiceBindings = append(actualServiceBindings, *actual)
 		}
+		app.Status.PropagateServiceBindingsStatus(actualServiceBindings)
 	}
 
 	// Reconcile VCAP env vars secret
@@ -260,7 +260,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 
 	// Routes and RouteClaims
 	desiredRoutes, desiredRouteClaims, err := resources.MakeRoutes(app, space)
-	condition = app.Status.RouteCondition()
+	condition := app.Status.RouteCondition()
 	if err != nil {
 		return condition.MarkTemplateError(err)
 	}
