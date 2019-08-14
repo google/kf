@@ -120,7 +120,12 @@ func (status *AppStatus) PropagateEnvVarSecretStatus(secret *v1.Secret) {
 
 // PropagateServiceBindingsStatus updates the service binding readiness status.
 func (status *AppStatus) PropagateServiceBindingsStatus(bindings []svccatv1beta1.ServiceBinding) {
-	status.ServiceBindings = bindings
+
+	var bindingNames []string
+	for _, binding := range bindings {
+		bindingNames = append(bindingNames, binding.Name)
+	}
+	status.ServiceBindingNames = bindingNames
 
 	for _, binding := range bindings {
 
@@ -128,8 +133,12 @@ func (status *AppStatus) PropagateServiceBindingsStatus(bindings []svccatv1beta1
 			if cond.Type != svccatv1beta1.ServiceBindingConditionReady {
 				continue
 			}
-			if cond.Status != "Ready" {
-				status.manage().MarkFalse(AppConditionServiceBindingsReady, "service binding %s is not ready", binding.Name)
+			if cond.Status == "False" {
+				status.manage().MarkFalse(AppConditionServiceBindingsReady, "service binding %s failed: %v", binding.Name, cond.Reason)
+				return
+			}
+			if cond.Status == "Unknown" {
+				status.manage().MarkUnknown(AppConditionServiceBindingsReady, "service binding %s is not ready", binding.Name)
 				return
 			}
 		}

@@ -19,7 +19,6 @@
 package v1alpha1
 
 import (
-	v1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -193,12 +192,10 @@ func (in *AppStatus) DeepCopyInto(out *AppStatus) {
 	out.SourceStatusFields = in.SourceStatusFields
 	out.ConfigurationStatusFields = in.ConfigurationStatusFields
 	in.RouteStatusFields.DeepCopyInto(&out.RouteStatusFields)
-	if in.ServiceBindings != nil {
-		in, out := &in.ServiceBindings, &out.ServiceBindings
-		*out = make([]v1beta1.ServiceBinding, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
-		}
+	if in.ServiceBindingNames != nil {
+		in, out := &in.ServiceBindingNames, &out.ServiceBindingNames
+		*out = make([]string, len(*in))
+		copy(*out, *in)
 	}
 	return
 }

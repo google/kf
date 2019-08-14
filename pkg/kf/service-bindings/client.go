@@ -52,13 +52,13 @@ type ClientInterface interface {
 // services.
 func NewClient(appsClient apps.Client, svcatClient clientv1beta1.ServicecatalogV1beta1Interface) ClientInterface {
 	return &Client{
-		appsClient: appsClient,
+		appsClient:  appsClient,
 		svcatClient: svcatClient,
 	}
 }
 
 type Client struct {
-	appsClient apps.Client
+	appsClient  apps.Client
 	svcatClient clientv1beta1.ServicecatalogV1beta1Interface
 }
 
