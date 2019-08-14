@@ -33,4 +33,4 @@ go vet ./...
 GO111MODULE=off go get -u github.com/client9/misspell/cmd/misspell
 
 # ignore vendor directory
-find . -type f -name '*' | grep -v ./vendor/ | xargs -n1 -P 20 $(go env GOPATH)/bin/misspell -error
+find . -type f -name '*.go' | grep -v ./vendor/ | xargs -n1 -P 20 $(go env GOPATH)/bin/misspell -error

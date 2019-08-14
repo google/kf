@@ -42,7 +42,7 @@ func NewScaleCommand(
 		Short: "Change or view the instance count for an app",
 		Example: `
   kf scale myapp # Displays current scaling
-  kf scale myapp --i 3 # Scale to exactly 3 instances
+  kf scale myapp -i 3 # Scale to exactly 3 instances
   kf scale myapp --instances 3 # Scale to exactly 3 instances
   kf scale myapp --min 3 # Autoscaler won't scale below 3 instances
   kf scale myapp --max 5 # Autoscaler won't scale above 5 instances

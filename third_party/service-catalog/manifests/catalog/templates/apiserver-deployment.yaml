@@ -135,4 +135,5 @@ spec:
           - key: tls.key
             path: apiserver.key
       - name: etcd-data-dir
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: release-name-catalog-etcd
