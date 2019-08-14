@@ -26,6 +26,7 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	kf "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
+	svcatclient2 "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
 	"github.com/google/kf/pkg/kf/secrets"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/imdario/mergo"
@@ -228,6 +229,18 @@ func GetServiceCatalogClient(p *KfParams) scv1beta1.ServicecatalogV1beta1Interfa
 	}
 
 	return cs.ServicecatalogV1beta1()
+}
+
+// GetServiceCatalogClient returns a ServiceCatalogClient.
+func GetServiceCatalog(p *KfParams) svcatclient2.Interface {
+	config := getRestConfig(p)
+
+	cs, err := svcatclient2.NewForConfig(config)
+	if err != nil {
+		log.Fatalf("failed to build clientset: %s", err)
+	}
+
+	return cs
 }
 
 // GetSvcatApp returns a SvcatClient.

@@ -227,9 +227,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 	{
 		r.Logger.Info("reconciling env vars secret")
 		condition := app.Status.EnvVarSecretCondition()
-		systemEnvInjector := cfutil.NewSystemEnvInjector(
-			r.serviceCatalogClient.ServicecatalogV1beta1().ServiceInstances(app.Namespace),
-			r.KubeClientSet.CoreV1().Secrets(app.Namespace))
+		systemEnvInjector := cfutil.NewSystemEnvInjector(r.serviceCatalogClient, r.KubeClientSet)
 		desired, err := resources.MakeKfInjectedEnvSecret(app, space, actualServiceBindings, systemEnvInjector)
 
 		if err != nil {

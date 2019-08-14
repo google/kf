@@ -18,12 +18,12 @@ import (
 	"fmt"
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	clientv1beta1 "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/typed/servicecatalog/v1beta1"
+	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
 	"github.com/google/kf/pkg/internal/envutil"
 	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clientcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 type SystemEnvInjector interface {
@@ -33,16 +33,16 @@ type SystemEnvInjector interface {
 }
 
 type systemEnvInjector struct {
-	client        clientv1beta1.ServiceInstanceInterface
-	secretsClient clientcorev1.SecretInterface
+	client    servicecatalogclient.Interface
+	k8sclient kubernetes.Interface
 }
 
 func NewSystemEnvInjector(
-	client clientv1beta1.ServiceInstanceInterface,
-	secretsClient clientcorev1.SecretInterface) SystemEnvInjector {
+	client servicecatalogclient.Interface,
+	k8sclient kubernetes.Interface) SystemEnvInjector {
 	return &systemEnvInjector{
-		client:        client,
-		secretsClient: secretsClient,
+		client:    client,
+		k8sclient: k8sclient,
 	}
 }
 
@@ -56,12 +56,12 @@ func GetVcapServicesMap(appName string, services []VcapService) (VcapServicesMap
 
 func (s *systemEnvInjector) GetVcapService(appName string, binding apiv1beta1.ServiceBinding) (VcapService, error) {
 
-	secret, err := s.secretsClient.Get(binding.Spec.SecretName, metav1.GetOptions{})
+	secret, err := s.k8sclient.CoreV1().Secrets(binding.Namespace).Get(binding.Spec.SecretName, metav1.GetOptions{})
 	if err != nil {
 		return VcapService{}, fmt.Errorf("couldn't create VCAP_SERVICES, the secret for binding %s couldn't be fetched: %v", binding.Name, err)
 	}
 
-	serviceInstance, err := s.client.Get(binding.Spec.InstanceRef.Name, metav1.GetOptions{})
+	serviceInstance, err := s.client.ServicecatalogV1beta1().ServiceInstances(binding.Namespace).Get(binding.Spec.InstanceRef.Name, metav1.GetOptions{})
 	if err != nil {
 		return VcapService{}, nil
 	}

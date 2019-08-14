@@ -23,6 +23,7 @@ import (
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/buildpacks"
 	"github.com/google/kf/pkg/kf/builds"
+	"github.com/google/kf/pkg/kf/cfutil"
 	capps "github.com/google/kf/pkg/kf/commands/apps"
 	cbuildpacks "github.com/google/kf/pkg/kf/commands/buildpacks"
 	cbuilds "github.com/google/kf/pkg/kf/commands/builds"
@@ -254,7 +255,9 @@ func InjectVcapServices(p *config.KfParams) *cobra.Command {
 		servicebindings.NewClient,
 		servicebindingscmd.NewVcapServicesCommand,
 		config.GetServiceCatalogClient,
-		provideCoreV1,
+		config.GetKubernetes,
+		config.GetServiceCatalog,
+		cfutil.NewSystemEnvInjector,
 		AppsSet,
 	)
 	return nil

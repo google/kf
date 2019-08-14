@@ -272,7 +272,7 @@ func ExampleKfApp_BindService() {
 		},
 		BindingName: "forth",
 	})
-	servicebindings.UnbindService(myApp, "third")
+	servicebindings.UnbindService(myApp, "third-service")
 
 	for _, b := range myApp.Spec.ServiceBindings {
 		fmt.Println("Instance", b.InstanceRef.Name, "BindingName", b.BindingName)
