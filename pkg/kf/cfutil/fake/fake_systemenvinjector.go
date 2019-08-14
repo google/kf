@@ -67,7 +67,7 @@ func (mr *FakeSystemEnvInjectorMockRecorder) ComputeSystemEnv(arg0, arg1 interfa
 }
 
 // GetVcapService mocks base method
-func (m *FakeSystemEnvInjector) GetVcapService(arg0 string, arg1 v1beta1.ServiceBinding) (cfutil.VcapService, error) {
+func (m *FakeSystemEnvInjector) GetVcapService(arg0 string, arg1 *v1beta1.ServiceBinding) (cfutil.VcapService, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetVcapService", arg0, arg1)
 	ret0, _ := ret[0].(cfutil.VcapService)

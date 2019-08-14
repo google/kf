@@ -16,123 +16,129 @@ package cfutil_test
 
 import (
 	"testing"
+
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	svccatclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/fake"
+	"github.com/google/kf/pkg/kf/cfutil"
+	"github.com/google/kf/pkg/kf/testutil"
+	svccatv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sfake "k8s.io/client-go/kubernetes/fake"
 )
 
-func TestXxx(t *testing.T) {
-}
-
-/*
-func TestClient_GetVcapServices(t *testing.T) {
-	fakeInstance := apiv1beta1.ServiceInstance{}
-	fakeInstance.Name = "my-instance"
-
-	fakeBinding := apiv1beta1.ServiceBinding{}
-	fakeBinding.Name = "my-binding"
-	fakeBinding.Labels = map[string]string{
-		servicebindings.AppNameLabel:     "my-app",
-		servicebindings.BindingNameLabel: "binding-name",
-	}
-	fakeBinding.Spec.SecretName = "my-secret"
-	fakeBinding.Spec.InstanceRef.Name = fakeInstance.Name
-
-	fakeBindingList := &apiv1beta1.ServiceBindingList{
-		Items: []apiv1beta1.ServiceBinding{fakeBinding},
+var (
+	app = &v1alpha1.App{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-app",
+		},
 	}
 
-	emptyBindingList := &apiv1beta1.ServiceBindingList{
-		Items: []apiv1beta1.ServiceBinding{},
+	serviceInstance = &svccatv1beta1.ServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-instance",
+		},
+		Spec: svccatv1beta1.ServiceInstanceSpec{
+			PlanReference: svccatv1beta1.PlanReference{
+				ClusterServiceClassExternalName: "my-class",
+				ClusterServicePlanExternalName:  "my-plan",
+			},
+		},
 	}
 
-	fakeSecret := corev1.Secret{}
-	fakeSecret.Name = "my-secret"
-	fakeSecret.Data = map[string][]byte{
-		"key1": []byte("value1"),
-		"key2": []byte("value2"),
+	serviceBinding = &svccatv1beta1.ServiceBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-binding",
+			Labels: map[string]string{
+				"kf-binding-name": "my-binding-name",
+			},
+		},
+		Spec: svccatv1beta1.ServiceBindingSpec{
+			InstanceRef: svccatv1beta1.LocalObjectReference{
+				Name: "my-instance",
+			},
+		},
 	}
 
-	cases := map[string]ServiceBindingApiTestCase{
-		"api-error": {
-			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.apiserver.EXPECT().List(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api-error"))
-
-				_, err := client.GetVcapServices("my-app")
-				testutil.AssertErrorsEqual(t, errors.New("api-error"), err)
-			},
+	secret = &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "binding-secret",
 		},
-		"default options": {
-			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.apiserver.EXPECT().
-					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
-					Return(emptyBindingList, nil)
+	}
+)
 
-				_, err := client.GetVcapServices("my-app")
-				testutil.AssertNil(t, "GetVcapServices err", err)
-			},
-		},
-		"gets secret": {
-			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.apiserver.EXPECT().
-					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
-					Return(fakeBindingList, nil)
+func Test_GetVcapServices(t *testing.T) {
 
-				deps.apiserver.EXPECT().
-					Get(gomock.Any(), "default", "my-instance").
-					Return(&fakeInstance, nil)
+	svccatClient := svccatclient.NewSimpleClientset(serviceInstance)
+	k8sClient := k8sfake.NewSimpleClientset(secret)
 
-				deps.secrets.EXPECT().Get("my-secret", gomock.Any()).Return(&fakeSecret, nil)
+	systemEnvInjector := cfutil.NewSystemEnvInjector(svccatClient, k8sClient)
 
-				actualVcap, err := client.GetVcapServices("my-app")
-				testutil.AssertNil(t, "GetVcapServices err", err)
+	cases := map[string]struct {
+		Run func(t *testing.T, systemEnvInjector cfutil.SystemEnvInjector)
+	}{
+		"happy": {
+			Run: func(t *testing.T, systemEnvInjector cfutil.SystemEnvInjector) {
 
-				expectedVcap := servicebindings.VcapServicesMap{}
-				expectedVcap.Add(servicebindings.NewVcapService(fakeInstance, fakeBinding, &fakeSecret))
-				testutil.AssertEqual(t, "vcap services", expectedVcap, actualVcap)
-			},
-		},
-		"fail on bad secret": {
-			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.apiserver.EXPECT().
-					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
-					Return(fakeBindingList, nil)
-
-				deps.apiserver.EXPECT().
-					Get(gomock.Any(), "default", "my-instance").
-					Return(&fakeInstance, nil)
-
-				deps.secrets.EXPECT().
-					Get("my-secret", gomock.Any()).
-					Return(nil, errors.New("secret doesn't exist"))
-
-				_, actualErr := client.GetVcapServices("my-app", servicebindings.WithGetVcapServicesFailOnBadSecret(true))
-				expectedErr := errors.New("couldn't create VCAP_SERVICES, the secret for binding my-binding couldn't be fetched: secret doesn't exist")
-				testutil.AssertErrorsEqual(t, expectedErr, actualErr)
-			},
-		},
-		"no fail on bad secret": {
-			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-
-				deps.apiserver.EXPECT().
-					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
-					Return(fakeBindingList, nil)
-
-				deps.apiserver.EXPECT().
-					Get(gomock.Any(), "default", "my-instance").
-					Return(&fakeInstance, nil)
-
-				deps.secrets.EXPECT().Get("my-secret", gomock.Any()).Return(nil, errors.New("secret doesn't exist"))
-
-				// VCAP should be empty
-				actualVcap, err := client.GetVcapServices("my-app")
-				testutil.AssertNil(t, "GetVcapServices err", err)
-
-				expectedVcap := servicebindings.VcapServicesMap{}
-				testutil.AssertEqual(t, "vcap services", expectedVcap, actualVcap)
+				vcapService, err := systemEnvInjector.GetVcapService(app.Name, serviceBinding)
+				testutil.AssertNil(t, "error", err)
+				testutil.AssertEqual(t, "name", "my-binding", vcapService.Name)
+				testutil.AssertEqual(t, "instance name", "my-instance", vcapService.InstanceName)
+				testutil.AssertEqual(t, "label", "my-class", vcapService.Label)
+				testutil.AssertEqual(t, "tags", []string{}, vcapService.Tags)
+				testutil.AssertEqual(t, "plan", "my-plan", vcapService.Plan)
+				testutil.AssertEqual(t, "credentials", map[string]string{}, vcapService.Credentials)
+				testutil.AssertEqual(t, "binding name", "my-binding-name", vcapService.BindingName)
 			},
 		},
 	}
 
 	for tn, tc := range cases {
-		t.Run(tn, tc.ExecuteTest)
+		t.Run(tn, func(t *testing.T) { tc.Run(t, systemEnvInjector) })
 	}
 }
-*/
+
+func TestSystemEnvInjector(t *testing.T) {
+	t.Parallel()
+
+	svccatClient := svccatclient.NewSimpleClientset(serviceInstance)
+	k8sClient := k8sfake.NewSimpleClientset(secret)
+
+	systemEnvInjector := cfutil.NewSystemEnvInjector(svccatClient, k8sClient)
+
+	cases := map[string]struct {
+		Run func(t *testing.T, systemEnvInjector cfutil.SystemEnvInjector)
+	}{
+		"happy": {
+			Run: func(t *testing.T, systemEnvInjector cfutil.SystemEnvInjector) {
+
+				env, err := systemEnvInjector.ComputeSystemEnv(app, []svccatv1beta1.ServiceBinding{*serviceBinding})
+				testutil.AssertNil(t, "error", err)
+				testutil.AssertEqual(t, "env count", 2, len(env))
+				hasVcapApplication := false
+				hasVcapServices := false
+				for _, envVar := range env {
+					if envVar.Name == "VCAP_APPLICATION" {
+						hasVcapApplication = true
+					}
+					if envVar.Name == "VCAP_SERVICES" {
+						hasVcapServices = true
+					}
+
+				}
+
+				if !hasVcapServices {
+					t.Fatal("Expected map to contain VCAP_SERVICES")
+				}
+
+				if !hasVcapApplication {
+					t.Fatal("Expected map to contain VCAP_APPLICATION")
+				}
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) { tc.Run(t, systemEnvInjector) })
+	}
+}

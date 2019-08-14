@@ -27,7 +27,7 @@ import (
 )
 
 type SystemEnvInjector interface {
-	GetVcapService(appName string, binding apiv1beta1.ServiceBinding) (VcapService, error)
+	GetVcapService(appName string, binding *apiv1beta1.ServiceBinding) (VcapService, error)
 	GetVcapServices(appName string, bindings []apiv1beta1.ServiceBinding) ([]VcapService, error)
 	ComputeSystemEnv(app *v1alpha1.App, serviceBindings []apiv1beta1.ServiceBinding) (computed []corev1.EnvVar, err error)
 }
@@ -54,7 +54,7 @@ func GetVcapServicesMap(appName string, services []VcapService) (VcapServicesMap
 	return out, nil
 }
 
-func (s *systemEnvInjector) GetVcapService(appName string, binding apiv1beta1.ServiceBinding) (VcapService, error) {
+func (s *systemEnvInjector) GetVcapService(appName string, binding *apiv1beta1.ServiceBinding) (VcapService, error) {
 
 	secret, err := s.k8sclient.CoreV1().Secrets(binding.Namespace).Get(binding.Spec.SecretName, metav1.GetOptions{})
 	if err != nil {
@@ -66,13 +66,13 @@ func (s *systemEnvInjector) GetVcapService(appName string, binding apiv1beta1.Se
 		return VcapService{}, nil
 	}
 
-	return NewVcapService(*serviceInstance, binding, secret), nil
+	return NewVcapService(*serviceInstance, *binding, secret), nil
 }
 
 func (s *systemEnvInjector) GetVcapServices(appName string, bindings []apiv1beta1.ServiceBinding) ([]VcapService, error) {
 	var services []VcapService
 	for _, binding := range bindings {
-		service, err := s.GetVcapService(appName, binding)
+		service, err := s.GetVcapService(appName, &binding)
 		if err != nil {
 			return nil, err
 		}
