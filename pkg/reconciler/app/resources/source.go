@@ -16,6 +16,7 @@ package resources
 
 import (
 	"fmt"
+	"path"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/knative/serving/pkg/resources"
@@ -23,25 +24,45 @@ import (
 	"knative.dev/pkg/kmeta"
 )
 
-// MakeSourceLabels creates labels that can be used to tie a source to a build.
-func MakeSourceLabels(app *v1alpha1.App) map[string]string {
-	return app.ComponentLabels("build")
+const buildComponentName = "build"
+
+// MakeSourceName creates the name of an Application's source.
+func MakeSourceName(app *v1alpha1.App) string {
+	return fmt.Sprintf("%s-%x", app.Name, app.Spec.Source.UpdateRequests)
+}
+
+// BuildpackBuildImageDestination gets the image name for an application build.
+func BuildpackBuildImageDestination(app *v1alpha1.App, space *v1alpha1.Space) string {
+	registry := space.Spec.BuildpackBuild.ContainerRegistry
+
+	// Use underscores because those aren't permitted in k8s names so you can't
+	// cause accidental conflicts.
+	image := fmt.Sprintf("app_%s_%s:%x", app.Namespace, app.Name, app.Spec.Source.UpdateRequests)
+
+	return path.Join(registry, image)
 }
 
 // MakeSource creates a source for the given application.
 func MakeSource(app *v1alpha1.App, space *v1alpha1.Space) (*v1alpha1.Source, error) {
 	source := app.Spec.Source.DeepCopy()
 
-	source.SetSpaceDefaults(space)
+	source.ServiceAccount = space.Spec.Security.BuildServiceAccount
+
+	if source.IsBuildpackBuild() {
+		// user defined values in buildpackbuild.env take priority from buildpackbuild.env
+		source.BuildpackBuild.Env = append(space.Spec.BuildpackBuild.Env, source.BuildpackBuild.Env...)
+		source.BuildpackBuild.Image = BuildpackBuildImageDestination(app, space)
+		source.BuildpackBuild.BuildpackBuilder = space.Spec.BuildpackBuild.BuilderImage
+	}
 
 	return &v1alpha1.Source{
 		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: fmt.Sprintf("%s-", app.Name),
-			Namespace:    app.Namespace,
+			Name:      MakeSourceName(app),
+			Namespace: app.Namespace,
 			OwnerReferences: []metav1.OwnerReference{
 				*kmeta.NewControllerRef(app),
 			},
-			Labels: resources.UnionMaps(app.GetLabels(), MakeSourceLabels(app)),
+			Labels: resources.UnionMaps(app.GetLabels(), app.ComponentLabels(buildComponentName)),
 		},
 		Spec: *source,
 	}, nil

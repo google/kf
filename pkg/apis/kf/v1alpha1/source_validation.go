@@ -72,8 +72,8 @@ func (buildpackBuild *SourceSpecBuildpackBuild) Validate(ctx context.Context) (e
 		errs = errs.Also(apis.ErrMissingField("buildpackBuilder"))
 	}
 
-	if buildpackBuild.Registry == "" {
-		errs = errs.Also(apis.ErrMissingField("registry"))
+	if buildpackBuild.Image == "" {
+		errs = errs.Also(apis.ErrMissingField("image"))
 	}
 
 	return errs

@@ -81,7 +81,6 @@ func NewPushCommand(
 		instances          int
 		minScale           int
 		maxScale           int
-		serviceAccount     string
 		path               string
 		buildpack          string
 		envs               []string
@@ -105,7 +104,6 @@ func NewPushCommand(
 		Short: "Push a new app or sync changes to an existing app",
 		Example: `
   kf push myapp
-  kf push myapp --container-registry gcr.io/myproject
   kf push myapp --buildpack my.special.buildpack # Discover via kf buildpacks
   kf push myapp --env FOO=bar --env BAZ=foo
   `,
@@ -285,7 +283,6 @@ func NewPushCommand(
 
 				pushOpts := []apps.PushOption{
 					apps.WithPushNamespace(p.Namespace),
-					apps.WithPushServiceAccount(serviceAccount),
 					apps.WithPushEnvironmentVariables(app.Env),
 					apps.WithPushGrpc(grpc),
 					apps.WithPushExactScale(exactScale),
@@ -307,10 +304,8 @@ func NewPushCommand(
 					switch {
 					case registry != "":
 						break
-					case space.Spec.BuildpackBuild.ContainerRegistry != "":
-						registry = space.Spec.BuildpackBuild.ContainerRegistry
 					default:
-						return errors.New("container-registry is required for buildpack apps")
+						registry = space.Spec.BuildpackBuild.ContainerRegistry
 					}
 
 					var imageName string
@@ -332,7 +327,6 @@ func NewPushCommand(
 					}
 					pushOpts = append(pushOpts,
 						apps.WithPushSourceImage(imageName),
-						apps.WithPushContainerRegistry(registry),
 						apps.WithPushBuildpack(app.Buildpack()),
 					)
 				} else {
@@ -385,14 +379,7 @@ func NewPushCommand(
 		&containerRegistry,
 		"container-registry",
 		"",
-		"The container registry to push containers. Required if not targeting a Kf space.",
-	)
-
-	pushCmd.Flags().StringVar(
-		&serviceAccount,
-		"service-account",
-		"",
-		"The service account to enable access to the container registry",
+		"The container registry to push sources to. Required for buildpack builds not targeting a Kf space.",
 	)
 
 	pushCmd.Flags().StringVarP(

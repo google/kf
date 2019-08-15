@@ -24,37 +24,19 @@ import (
 func ExampleBuildName() {
 	source := &v1alpha1.Source{}
 	source.Name = "my-source"
-	source.Generation = 5
 
 	fmt.Println(BuildName(source))
 
-	// Output: my-source-5
-}
-
-func ExampleAppImageName() {
-	source := &v1alpha1.Source{}
-	source.Name = "my-source"
-	source.Namespace = "my-namespace"
-	source.Generation = 2
-
-	fmt.Println(AppImageName(source))
-	// Output: app-my-namespace-my-source:2
-}
-
-func ExampleJoinRepositoryImage() {
-	fmt.Println(JoinRepositoryImage("repo", "app"))
-
-	// Output: repo/app
+	// Output: my-source
 }
 
 func ExampleMakeBuild() {
 	source := &v1alpha1.Source{}
 	source.Name = "my-source"
 	source.Namespace = "my-namespace"
-	source.Generation = 5
 	source.Spec.ServiceAccount = "some-account"
 	source.Spec.BuildpackBuild.Source = "some-source"
-	source.Spec.BuildpackBuild.Registry = "some-registry"
+	source.Spec.BuildpackBuild.Image = "gcr.io/image:123"
 	source.Spec.BuildpackBuild.BuildpackBuilder = "some-buildpack-builder"
 	source.Spec.BuildpackBuild.Env = []corev1.EnvVar{
 		{
@@ -76,11 +58,11 @@ func ExampleMakeBuild() {
 	fmt.Println("Output Image:", build.Spec.Template.Arguments[0].Value)
 	fmt.Println("Env:", build.Spec.Template.Env[0].Name, "=", build.Spec.Template.Env[0].Value)
 
-	// Output: Name: my-source-5
+	// Output: Name: my-source
 	// Label Count: 1
 	// Managed By: kf
 	// Service Account: some-account
 	// Arg Count: 3
-	// Output Image: some-registry/app-my-namespace-my-source:5
+	// Output Image: gcr.io/image:123
 	// Env: some = variable
 }

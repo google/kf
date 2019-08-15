@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/knative/serving/pkg/apis/serving"
 	v1 "k8s.io/api/core/v1"
@@ -39,6 +40,30 @@ func (spec *AppSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
 
 	errs = errs.Also(ValidatePodSpec(spec.Template.Spec).ViaField("template.spec"))
 	errs = errs.Also(spec.Instances.Validate(ctx).ViaField("instances"))
+	errs = errs.Also(spec.ValidateSourceSpec(ctx).ViaField("source"))
+
+	return errs
+}
+
+// ValidateSourceSpec validats the SourceSpec embedded in the AppSpec.
+func (spec *AppSpec) ValidateSourceSpec(ctx context.Context) (errs *apis.FieldError) {
+	errs = errs.Also(apis.CheckDisallowedFields(spec.Source, AppSpecSourceMask(spec.Source)))
+
+	// Fail if the app source has changed without changing the UpdateRequests.
+	if base := apis.GetBaseline(ctx); base != nil {
+		if old, ok := base.(*App); ok {
+			previousValue := old.Spec.Source.UpdateRequests
+			newValue := spec.Source.UpdateRequests
+			if previousValue > newValue {
+				msg := fmt.Sprintf("UpdateRequests must be nondecreasing, previous value: %d new value: %d", previousValue, newValue)
+				errs = errs.Also(&apis.FieldError{Message: msg, Paths: []string{"UpdateRequests"}})
+			}
+
+			if spec.Source.NeedsUpdateRequestsIncrement(old.Spec.Source) {
+				errs = errs.Also(&apis.FieldError{Message: "must increment UpdateRequests with change to source", Paths: []string{"UpdateRequests"}})
+			}
+		}
+	}
 
 	return errs
 }

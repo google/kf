@@ -31,8 +31,6 @@ type pushConfig struct {
 	CPU *resource.Quantity
 	// ContainerImage is the container to deploy
 	ContainerImage string
-	// ContainerRegistry is the container registry's URL
-	ContainerRegistry string
 	// DefaultRouteDomain is Domain for a defaultroute. Only used if a route doesn't already exist
 	DefaultRouteDomain string
 	// DiskQuota is app disk storage quota
@@ -61,8 +59,6 @@ type pushConfig struct {
 	RandomRouteDomain string
 	// Routes is routes for the app
 	Routes []v1alpha1.RouteSpecFields
-	// ServiceAccount is the service account to authenticate with
-	ServiceAccount string
 	// SourceImage is the source code as a container image
 	SourceImage string
 }
@@ -109,12 +105,6 @@ func (opts PushOptions) CPU() *resource.Quantity {
 // if not set.
 func (opts PushOptions) ContainerImage() string {
 	return opts.toConfig().ContainerImage
-}
-
-// ContainerRegistry returns the last set value for ContainerRegistry or the empty value
-// if not set.
-func (opts PushOptions) ContainerRegistry() string {
-	return opts.toConfig().ContainerRegistry
 }
 
 // DefaultRouteDomain returns the last set value for DefaultRouteDomain or the empty value
@@ -201,12 +191,6 @@ func (opts PushOptions) Routes() []v1alpha1.RouteSpecFields {
 	return opts.toConfig().Routes
 }
 
-// ServiceAccount returns the last set value for ServiceAccount or the empty value
-// if not set.
-func (opts PushOptions) ServiceAccount() string {
-	return opts.toConfig().ServiceAccount
-}
-
 // SourceImage returns the last set value for SourceImage or the empty value
 // if not set.
 func (opts PushOptions) SourceImage() string {
@@ -231,13 +215,6 @@ func WithPushCPU(val *resource.Quantity) PushOption {
 func WithPushContainerImage(val string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.ContainerImage = val
-	}
-}
-
-// WithPushContainerRegistry creates an Option that sets the container registry's URL
-func WithPushContainerRegistry(val string) PushOption {
-	return func(cfg *pushConfig) {
-		cfg.ContainerRegistry = val
 	}
 }
 
@@ -336,13 +313,6 @@ func WithPushRandomRouteDomain(val string) PushOption {
 func WithPushRoutes(val []v1alpha1.RouteSpecFields) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.Routes = val
-	}
-}
-
-// WithPushServiceAccount creates an Option that sets the service account to authenticate with
-func WithPushServiceAccount(val string) PushOption {
-	return func(cfg *pushConfig) {
-		cfg.ServiceAccount = val
 	}
 }
 
