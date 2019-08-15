@@ -49,9 +49,9 @@ func MakeServiceBindingName(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceB
 
 // MakeServiceBindingAppSelector creates a labels.Selector for listing all the
 // Service Bindings for the given App.
-func MakeServiceBindingAppSelector(app *v1alpha1.App) labels.Selector {
+func MakeServiceBindingAppSelector(appName string) labels.Selector {
 	return labels.NewSelector().Add(
-		mustRequirement(AppNameLabel, selection.Equals, app.Name),
+		mustRequirement(AppNameLabel, selection.Equals, appName),
 	)
 }
 

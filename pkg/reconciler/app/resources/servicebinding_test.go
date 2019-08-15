@@ -16,9 +16,15 @@ package resources
 
 import (
 	"fmt"
+	"os"
+	"testing"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/describe"
+	"github.com/google/kf/pkg/kf/testutil"
 	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 func ExampleMakeServiceBindingLabels() {
@@ -33,15 +39,13 @@ func ExampleMakeServiceBindingLabels() {
 	app.Spec.ServiceBindings = []v1alpha1.AppSpecServiceBinding{*binding}
 
 	labels := MakeServiceBindingLabels(app, binding.BindingName)
-	for k, v := range labels {
-		fmt.Println(k, ":", v)
-	}
+	describe.Labels(os.Stdout, labels)
 
-	// Output: app.kubernetes.io/managed-by : kf
-	// app.kubernetes.io/name : my-app
-	// app.kubernetes.io/component : servicebinding
-	// kf-app-name : my-app
-	// kf-binding-name : cool-binding
+	// Output: app.kubernetes.io/component=servicebinding
+	// app.kubernetes.io/managed-by=kf
+	// app.kubernetes.io/name=my-app
+	// kf-app-name=my-app
+	// kf-binding-name=cool-binding
 }
 
 func ExampleMakeServiceBindingName() {
@@ -57,4 +61,56 @@ func ExampleMakeServiceBindingName() {
 	fmt.Println(MakeServiceBindingName(app, binding))
 
 	// Output: kf-binding-my-app-my-service
+}
+
+func TestMakeServiceBindingAppSelector(t *testing.T) {
+	t.Parallel()
+
+	s := MakeServiceBindingAppSelector("my-app")
+
+	good := labels.Set{
+		"kf-app-name": "my-app",
+	}
+	bad := labels.Set{
+		"kf-app-name": "not-my-app",
+	}
+
+	testutil.AssertEqual(t, "matches", true, s.Matches(good))
+	testutil.AssertEqual(t, "doesn't match", false, s.Matches(bad))
+}
+
+func TestMakeServiceBinding(t *testing.T) {
+	appSpecBinding := &v1alpha1.AppSpecServiceBinding{
+		InstanceRef: servicecatalogv1beta1.LocalObjectReference{
+			Name: "my-service-instance",
+		},
+		BindingName: "a-cool-binding",
+		Parameters:  []byte(`{"username":"me"}`),
+	}
+	app := &v1alpha1.App{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "my-app",
+			Namespace: "my-namespace",
+		},
+		Spec: v1alpha1.AppSpec{
+			ServiceBindings: []v1alpha1.AppSpecServiceBinding{*appSpecBinding},
+		},
+	}
+
+	binding, err := MakeServiceBinding(app, appSpecBinding)
+	testutil.AssertNil(t, "error", err)
+	testutil.AssertEqual(t, "name", "kf-binding-my-app-my-service-instance", binding.Name)
+	testutil.AssertEqual(t, "namespace", "my-namespace", binding.Namespace)
+	testutil.AssertEqual(t, "instance name", "my-service-instance", binding.Spec.InstanceRef.Name)
+	testutil.AssertEqual(t, "parameters", `{"username":"me"}`, string(binding.Spec.Parameters.Raw))
+
+	expectedLabels := map[string]string{
+		"app.kubernetes.io/component":  "servicebinding",
+		"app.kubernetes.io/managed-by": "kf",
+		"app.kubernetes.io/name":       "my-app",
+		"kf-app-name":                  "my-app",
+		"kf-binding-name":              "a-cool-binding",
+	}
+
+	testutil.AssertEqual(t, "labels", expectedLabels, binding.Labels)
 }

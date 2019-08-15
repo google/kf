@@ -170,7 +170,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		// Delete Stale Service Bindings
 		existing, err := r.serviceBindingLister.
 			ServiceBindings(app.GetNamespace()).
-			List(resources.MakeServiceBindingAppSelector(app))
+			List(resources.MakeServiceBindingAppSelector(app.Name))
 		if err != nil {
 			return condition.MarkReconciliationError("scanning for stale service bindings", err)
 		}

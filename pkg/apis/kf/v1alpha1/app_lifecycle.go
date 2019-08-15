@@ -132,7 +132,7 @@ func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalo
 			if cond.Type != servicecatalogv1beta1.ServiceBindingConditionReady {
 				continue
 			}
-			switch cond.Status{
+			switch cond.Status {
 			case servicecatalogv1beta1.ConditionFalse:
 				status.manage().MarkFalse(AppConditionServiceBindingsReady, "service binding %s failed: %v", binding.Name, cond.Reason)
 				return
