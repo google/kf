@@ -20,7 +20,7 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/knative/serving/pkg/resources"
-	svccatv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -55,8 +55,8 @@ func MakeServiceBindingAppSelector(app *v1alpha1.App) labels.Selector {
 	)
 }
 
-func MakeServiceBindings(app *v1alpha1.App) ([]svccatv1beta1.ServiceBinding, error) {
-	var bindings []svccatv1beta1.ServiceBinding
+func MakeServiceBindings(app *v1alpha1.App) ([]servicecatalogv1beta1.ServiceBinding, error) {
+	var bindings []servicecatalogv1beta1.ServiceBinding
 	for _, binding := range app.Spec.ServiceBindings {
 		serviceBinding, err := MakeServiceBinding(app, &binding)
 		if err != nil {
@@ -68,7 +68,7 @@ func MakeServiceBindings(app *v1alpha1.App) ([]svccatv1beta1.ServiceBinding, err
 
 }
 
-func MakeServiceBinding(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBinding) (*svccatv1beta1.ServiceBinding, error) {
+func MakeServiceBinding(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBinding) (*servicecatalogv1beta1.ServiceBinding, error) {
 	var params interface{}
 	err := json.Unmarshal(binding.Parameters, &params)
 	if err != nil {
@@ -80,7 +80,7 @@ func MakeServiceBinding(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBindi
 		bindingName = binding.InstanceRef.Name
 	}
 
-	return &svccatv1beta1.ServiceBinding{
+	return &servicecatalogv1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      MakeServiceBindingName(app, binding),
 			Namespace: app.Namespace,
@@ -89,7 +89,7 @@ func MakeServiceBinding(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBindi
 			},
 			Labels: resources.UnionMaps(app.GetLabels(), MakeServiceBindingLabels(app, bindingName)),
 		},
-		Spec: svccatv1beta1.ServiceBindingSpec{
+		Spec: servicecatalogv1beta1.ServiceBindingSpec{
 			InstanceRef: binding.InstanceRef,
 			Parameters:  servicecatalog.BuildParameters(params),
 		},

@@ -16,7 +16,7 @@ package v1alpha1
 
 import (
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	svccatv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"knative.dev/pkg/apis"
@@ -119,7 +119,7 @@ func (status *AppStatus) PropagateEnvVarSecretStatus(secret *v1.Secret) {
 }
 
 // PropagateServiceBindingsStatus updates the service binding readiness status.
-func (status *AppStatus) PropagateServiceBindingsStatus(bindings []svccatv1beta1.ServiceBinding) {
+func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalogv1beta1.ServiceBinding) {
 
 	var bindingNames []string
 	for _, binding := range bindings {
@@ -130,7 +130,7 @@ func (status *AppStatus) PropagateServiceBindingsStatus(bindings []svccatv1beta1
 	for _, binding := range bindings {
 
 		for _, cond := range binding.Status.Conditions {
-			if cond.Type != svccatv1beta1.ServiceBindingConditionReady {
+			if cond.Type != servicecatalogv1beta1.ServiceBindingConditionReady {
 				continue
 			}
 			if cond.Status == "False" {

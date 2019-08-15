@@ -18,10 +18,10 @@ import (
 	"testing"
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	svccatclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/fake"
+	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/fake"
 	"github.com/google/kf/pkg/kf/cfutil"
 	"github.com/google/kf/pkg/kf/testutil"
-	svccatv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
@@ -34,27 +34,27 @@ var (
 		},
 	}
 
-	serviceInstance = &svccatv1beta1.ServiceInstance{
+	serviceInstance = &servicecatalogv1beta1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-instance",
 		},
-		Spec: svccatv1beta1.ServiceInstanceSpec{
-			PlanReference: svccatv1beta1.PlanReference{
+		Spec: servicecatalogv1beta1.ServiceInstanceSpec{
+			PlanReference: servicecatalogv1beta1.PlanReference{
 				ClusterServiceClassExternalName: "my-class",
 				ClusterServicePlanExternalName:  "my-plan",
 			},
 		},
 	}
 
-	serviceBinding = &svccatv1beta1.ServiceBinding{
+	serviceBinding = &servicecatalogv1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-binding",
 			Labels: map[string]string{
 				"kf-binding-name": "my-binding-name",
 			},
 		},
-		Spec: svccatv1beta1.ServiceBindingSpec{
-			InstanceRef: svccatv1beta1.LocalObjectReference{
+		Spec: servicecatalogv1beta1.ServiceBindingSpec{
+			InstanceRef: servicecatalogv1beta1.LocalObjectReference{
 				Name: "my-instance",
 			},
 		},
@@ -69,10 +69,10 @@ var (
 
 func Test_GetVcapServices(t *testing.T) {
 
-	svccatClient := svccatclient.NewSimpleClientset(serviceInstance)
+	servicecatalogClient := servicecatalogclient.NewSimpleClientset(serviceInstance)
 	k8sClient := k8sfake.NewSimpleClientset(secret)
 
-	systemEnvInjector := cfutil.NewSystemEnvInjector(svccatClient, k8sClient)
+	systemEnvInjector := cfutil.NewSystemEnvInjector(servicecatalogClient, k8sClient)
 
 	cases := map[string]struct {
 		Run func(t *testing.T, systemEnvInjector cfutil.SystemEnvInjector)
@@ -101,10 +101,10 @@ func Test_GetVcapServices(t *testing.T) {
 func TestSystemEnvInjector(t *testing.T) {
 	t.Parallel()
 
-	svccatClient := svccatclient.NewSimpleClientset(serviceInstance)
+	servicecatalogClient := servicecatalogclient.NewSimpleClientset(serviceInstance)
 	k8sClient := k8sfake.NewSimpleClientset(secret)
 
-	systemEnvInjector := cfutil.NewSystemEnvInjector(svccatClient, k8sClient)
+	systemEnvInjector := cfutil.NewSystemEnvInjector(servicecatalogClient, k8sClient)
 
 	cases := map[string]struct {
 		Run func(t *testing.T, systemEnvInjector cfutil.SystemEnvInjector)
@@ -112,7 +112,7 @@ func TestSystemEnvInjector(t *testing.T) {
 		"happy": {
 			Run: func(t *testing.T, systemEnvInjector cfutil.SystemEnvInjector) {
 
-				env, err := systemEnvInjector.ComputeSystemEnv(app, []svccatv1beta1.ServiceBinding{*serviceBinding})
+				env, err := systemEnvInjector.ComputeSystemEnv(app, []servicecatalogv1beta1.ServiceBinding{*serviceBinding})
 				testutil.AssertNil(t, "error", err)
 				testutil.AssertEqual(t, "env count", 2, len(env))
 				hasVcapApplication := false

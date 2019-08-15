@@ -32,7 +32,7 @@ import (
 	"github.com/knative/serving/pkg/apis/autoscaling"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	servinglisters "github.com/knative/serving/pkg/client/listers/serving/v1alpha1"
-	svccatv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -158,7 +158,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 	}
 
 	// reconcile service bindings
-	var actualServiceBindings []svccatv1beta1.ServiceBinding
+	var actualServiceBindings []servicecatalogv1beta1.ServiceBinding
 	{
 		desiredServiceBindings, err := resources.MakeServiceBindings(app)
 		condition := app.Status.ServiceBindingCondition()
@@ -501,7 +501,7 @@ func (r *Reconciler) reconcileSecret(desired, actual *v1.Secret) (*v1.Secret, er
 	return r.KubeClientSet.CoreV1().Secrets(existing.Namespace).Update(existing)
 }
 
-func (r *Reconciler) reconcileServiceBinding(desired, actual *svccatv1beta1.ServiceBinding) (*svccatv1beta1.ServiceBinding, error) {
+func (r *Reconciler) reconcileServiceBinding(desired, actual *servicecatalogv1beta1.ServiceBinding) (*servicecatalogv1beta1.ServiceBinding, error) {
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
 	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)

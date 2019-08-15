@@ -19,7 +19,7 @@ import (
 
 	"github.com/knative/serving/pkg/apis/autoscaling"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	svccatv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 
@@ -127,7 +127,7 @@ type AppSpecInstances struct {
 type AppSpecServiceBinding struct {
 
 	// InstanceRef is the service the app will bind to.
-	InstanceRef svccatv1beta1.LocalObjectReference `json:"instanceRef"`
+	InstanceRef servicecatalogv1beta1.LocalObjectReference `json:"instanceRef"`
 
 	// Parameters is an arbitrary JSON to be injected into VCAP_SERVICES.
 	// +optional

@@ -18,7 +18,7 @@ import (
 	"path"
 
 	"github.com/google/kf/pkg/kf/algorithms"
-	svccatv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis/istio/v1alpha3"
 )
@@ -160,7 +160,7 @@ func (d SpaceDomains) Swap(i int, j int) {
 }
 
 // Routes implements the necessary interfaces for the algorithms package.
-type ServiceBindings []svccatv1beta1.ServiceBinding
+type ServiceBindings []servicecatalogv1beta1.ServiceBinding
 
 // Set implements Interface.
 func (d ServiceBindings) Set(i int, a algorithms.Interface, j int, b algorithms.Interface) {

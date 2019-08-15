@@ -34,7 +34,7 @@ import (
 	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	"github.com/poy/service-catalog/pkg/client/clientset_generated/clientset"
 	svcatclient "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset"
-	scv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
+	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	"github.com/poy/service-catalog/pkg/svcat"
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
 	"gopkg.in/yaml.v2"
@@ -220,7 +220,7 @@ func GetSecretClient(p *KfParams) secrets.ClientInterface {
 }
 
 // GetServiceCatalogClient returns a ServiceCatalogClient.
-func GetServiceCatalogClient(p *KfParams) scv1beta1.ServicecatalogV1beta1Interface {
+func GetServiceCatalogClient(p *KfParams) servicecatalogv1beta1.ServicecatalogV1beta1Interface {
 	config := getRestConfig(p)
 
 	cs, err := clientset.NewForConfig(config)
