@@ -211,6 +211,9 @@ type AppStatus struct {
 
 	// ServiceBindings are the bindings currently attached to the App.
 	ServiceBindingNames []string `json:"serviceBindings,omitempty"`
+
+	// ServiceBindingConditions are the conditions of the service bindings.
+	ServiceBindingConditions duckv1beta1.Conditions
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

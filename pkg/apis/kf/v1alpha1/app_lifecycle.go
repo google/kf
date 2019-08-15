@@ -15,6 +15,8 @@
 package v1alpha1
 
 import (
+	"fmt"
+
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	v1 "k8s.io/api/core/v1"
@@ -133,29 +135,41 @@ func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalo
 	}
 	status.ServiceBindingNames = bindingNames
 
+	var conditions duckv1beta1.Conditions
+
+	markTrue := true
 	for _, binding := range bindings {
 		for _, cond := range binding.Status.Conditions {
 			if cond.Type != servicecatalogv1beta1.ServiceBindingConditionReady {
 				continue
 			}
+			condition := apis.Condition{}
+			condition.Status = v1.ConditionStatus(cond.Status)
+			condition.Type = apis.ConditionType(fmt.Sprintf("ServiceBindingReady-%s", binding.Labels[ComponentLabel]))
+			condition.Reason = cond.Reason
+
 			switch cond.Status {
 			case servicecatalogv1beta1.ConditionFalse:
+				markTrue = false
 				status.manage().MarkFalse(AppConditionServiceBindingsReady, "service binding %s failed: %v", binding.Name, cond.Reason)
-				return
 			case servicecatalogv1beta1.ConditionUnknown:
+				markTrue = false
 				status.manage().MarkUnknown(AppConditionServiceBindingsReady, "service binding %s is not ready", binding.Name)
-				return
 			case servicecatalogv1beta1.ConditionTrue:
 				// continue the loop on True case
 			default:
+				markTrue = false
 				status.manage().MarkFalse(AppConditionServiceBindingsReady, "service binding %s condition %s had unknown status", binding.Name, cond.Type, cond.Status)
-				return
 			}
+			conditions = append(conditions, condition)
 		}
-
 	}
 
-	status.manage().MarkTrue(AppConditionServiceBindingsReady)
+	status.ServiceBindingConditions = conditions
+
+	if markTrue {
+		status.manage().MarkTrue(AppConditionServiceBindingsReady)
+	}
 }
 
 // MarkSpaceHealthy notes that the space was able to be retrieved and
