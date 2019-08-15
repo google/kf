@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	"context"
+	"encoding/json"
 
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -83,6 +84,9 @@ func (k *AppSpec) SetServiceBindingDefaults(ctx context.Context) {
 func (k *AppSpecServiceBinding) SetDefaults(ctx context.Context) {
 	if k.BindingName == "" {
 		k.BindingName = k.Instance
+	}
+	if string(k.Parameters) == "" {
+		k.Parameters = json.RawMessage("null")
 	}
 }
 
