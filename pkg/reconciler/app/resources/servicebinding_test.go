@@ -22,7 +22,6 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/describe"
 	"github.com/google/kf/pkg/kf/testutil"
-	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 )
@@ -31,36 +30,33 @@ func ExampleMakeServiceBindingLabels() {
 	app := &v1alpha1.App{}
 	app.Name = "my-app"
 	binding := &v1alpha1.AppSpecServiceBinding{
-		InstanceRef: servicecatalogv1beta1.LocalObjectReference{
-			Name: "my-service",
-		},
+		Instance:    "my-service",
 		BindingName: "cool-binding",
 	}
 	app.Spec.ServiceBindings = []v1alpha1.AppSpecServiceBinding{*binding}
 
-	labels := MakeServiceBindingLabels(app, binding.BindingName)
+	labels := MakeServiceBindingLabels(app, binding)
 	describe.Labels(os.Stdout, labels)
 
 	// Output: app.kubernetes.io/component=servicebinding
 	// app.kubernetes.io/managed-by=kf
 	// app.kubernetes.io/name=my-app
-	// kf-app-name=my-app
-	// kf-binding-name=cool-binding
+	// bindings.kf.dev/app-name=my-app
+	// bindings.kf.dev/binding-name=cool-binding
 }
 
 func ExampleMakeServiceBindingName() {
 	app := &v1alpha1.App{}
 	app.Name = "my-app"
 	binding := &v1alpha1.AppSpecServiceBinding{
-		InstanceRef: servicecatalogv1beta1.LocalObjectReference{
-			Name: "my-service",
-		},
+		Instance:    "my-service",
+		BindingName: "a-cool-binding",
 	}
 	app.Spec.ServiceBindings = []v1alpha1.AppSpecServiceBinding{*binding}
 
 	fmt.Println(MakeServiceBindingName(app, binding))
 
-	// Output: kf-binding-my-app-my-service
+	// Output: kf-binding-my-app-a-cool-binding
 }
 
 func TestMakeServiceBindingAppSelector(t *testing.T) {
@@ -69,10 +65,10 @@ func TestMakeServiceBindingAppSelector(t *testing.T) {
 	s := MakeServiceBindingAppSelector("my-app")
 
 	good := labels.Set{
-		"kf-app-name": "my-app",
+		"bindings.kf.dev/app-name": "my-app",
 	}
 	bad := labels.Set{
-		"kf-app-name": "not-my-app",
+		"bindings.kf.dev/app-name": "not-my-app",
 	}
 
 	testutil.AssertEqual(t, "matches", true, s.Matches(good))
@@ -81,9 +77,7 @@ func TestMakeServiceBindingAppSelector(t *testing.T) {
 
 func TestMakeServiceBinding(t *testing.T) {
 	appSpecBinding := &v1alpha1.AppSpecServiceBinding{
-		InstanceRef: servicecatalogv1beta1.LocalObjectReference{
-			Name: "my-service-instance",
-		},
+		Instance:    "my-service-instance",
 		BindingName: "a-cool-binding",
 		Parameters:  []byte(`{"username":"me"}`),
 	}
@@ -99,7 +93,7 @@ func TestMakeServiceBinding(t *testing.T) {
 
 	binding, err := MakeServiceBinding(app, appSpecBinding)
 	testutil.AssertNil(t, "error", err)
-	testutil.AssertEqual(t, "name", "kf-binding-my-app-my-service-instance", binding.Name)
+	testutil.AssertEqual(t, "name", "kf-binding-my-app-a-cool-binding", binding.Name)
 	testutil.AssertEqual(t, "namespace", "my-namespace", binding.Namespace)
 	testutil.AssertEqual(t, "instance name", "my-service-instance", binding.Spec.InstanceRef.Name)
 	testutil.AssertEqual(t, "parameters", `{"username":"me"}`, string(binding.Spec.Parameters.Raw))
@@ -108,8 +102,8 @@ func TestMakeServiceBinding(t *testing.T) {
 		"app.kubernetes.io/component":  "servicebinding",
 		"app.kubernetes.io/managed-by": "kf",
 		"app.kubernetes.io/name":       "my-app",
-		"kf-app-name":                  "my-app",
-		"kf-binding-name":              "a-cool-binding",
+		"bindings.kf.dev/app-name":     "my-app",
+		"bindings.kf.dev/binding-name": "a-cool-binding",
 	}
 
 	testutil.AssertEqual(t, "labels", expectedLabels, binding.Labels)

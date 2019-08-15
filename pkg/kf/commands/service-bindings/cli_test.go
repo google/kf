@@ -39,13 +39,10 @@ func dummyBindingInstance(appName, instanceName string) *v1beta1.ServiceBinding 
 }
 
 func dummyBindingRequestInstance(appName, instanceName string) *kfv1alpha1.AppSpecServiceBinding {
-	instance := kfv1alpha1.AppSpecServiceBinding{}
-	instance.BindingName = fmt.Sprintf("kf-binding-%s-%s", appName, instanceName)
-	instance.InstanceRef = v1beta1.LocalObjectReference{
-		Name: instanceName,
+	return &kfv1alpha1.AppSpecServiceBinding{
+		BindingName: fmt.Sprintf("kf-binding-%s-%s", appName, instanceName),
+		Instance:    instanceName,
 	}
-
-	return &instance
 }
 
 type serviceTest struct {

@@ -75,7 +75,7 @@ func TestClient_Create(t *testing.T) {
 					app := &kfv1alpha1.App{}
 					err := transformer(app)
 					testutil.AssertNil(t, "err", err)
-					testutil.AssertEqual(t, "Spec.InstanceRef.Name", "mydb", app.Spec.ServiceBindings[0].InstanceRef.Name)
+					testutil.AssertEqual(t, "Spec.InstanceRef.Name", "mydb", app.Spec.ServiceBindings[0].Instance)
 					return nil
 				})
 
@@ -89,7 +89,7 @@ func TestClient_Create(t *testing.T) {
 					app := &kfv1alpha1.App{}
 					err := transformer(app)
 					testutil.AssertNil(t, "err", err)
-					testutil.AssertEqual(t, "Spec.InstanceRef.Name", "mydb", app.Spec.ServiceBindings[0].InstanceRef.Name)
+					testutil.AssertEqual(t, "Spec.InstanceRef.Name", "mydb", app.Spec.ServiceBindings[0].Instance)
 					testutil.AssertEqual(t, "Spec.BindingName", "binding-name", app.Spec.ServiceBindings[0].BindingName)
 					testutil.AssertEqual(t, "Spec.InstanceRef.Parameters", `{"username":"my-user"}`, string(app.Spec.ServiceBindings[0].Parameters))
 					return nil
@@ -241,33 +241,25 @@ func TestClient_List(t *testing.T) {
 func ExampleBindService() {
 	myApp := &kfv1alpha1.App{}
 	servicebindings.BindService(myApp, &kfv1alpha1.AppSpecServiceBinding{
-		InstanceRef: servicecatalogv1beta1.LocalObjectReference{
-			Name: "some-service",
-		},
+		Instance:    "some-service",
 		BindingName: "some-binding-name",
 	})
 	servicebindings.BindService(myApp, &kfv1alpha1.AppSpecServiceBinding{
-		InstanceRef: servicecatalogv1beta1.LocalObjectReference{
-			Name: "another-service",
-		},
+		Instance:    "another-service",
 		BindingName: "some-binding-name",
 	})
 	servicebindings.BindService(myApp, &kfv1alpha1.AppSpecServiceBinding{
-		InstanceRef: servicecatalogv1beta1.LocalObjectReference{
-			Name: "third-service",
-		},
+		Instance:    "third-service",
 		BindingName: "third",
 	})
 	servicebindings.BindService(myApp, &kfv1alpha1.AppSpecServiceBinding{
-		InstanceRef: servicecatalogv1beta1.LocalObjectReference{
-			Name: "forth-service",
-		},
+		Instance:    "forth-service",
 		BindingName: "forth",
 	})
-	servicebindings.UnbindService(myApp, "third-service")
+	servicebindings.UnbindService(myApp, "third")
 
 	for _, b := range myApp.Spec.ServiceBindings {
-		fmt.Println("Instance", b.InstanceRef.Name, "BindingName", b.BindingName)
+		fmt.Println("Instance", b.Instance, "BindingName", b.BindingName)
 	}
 
 	// Output: Instance another-service BindingName some-binding-name

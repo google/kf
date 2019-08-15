@@ -82,9 +82,7 @@ func (c *Client) Create(serviceInstanceName, appName string, opts ...CreateOptio
 	}
 
 	binding := &v1alpha1.AppSpecServiceBinding{
-		InstanceRef: servicecatalogv1beta1.LocalObjectReference{
-			Name: serviceInstanceName,
-		},
+		Instance:    serviceInstanceName,
 		Parameters:  parameters,
 		BindingName: bindingName,
 	}
@@ -160,9 +158,9 @@ func BindService(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBinding) {
 }
 
 // UnbindService unbinds a service from an App.
-func UnbindService(app *v1alpha1.App, instanceName string) {
+func UnbindService(app *v1alpha1.App, bindingName string) {
 	for i, binding := range app.Spec.ServiceBindings {
-		if binding.InstanceRef.Name == instanceName {
+		if binding.BindingName == bindingName {
 			app.Spec.ServiceBindings = append(app.Spec.ServiceBindings[:i], app.Spec.ServiceBindings[i+1:]...)
 			break
 		}

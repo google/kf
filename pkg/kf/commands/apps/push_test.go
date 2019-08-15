@@ -219,9 +219,7 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushServiceBindings([]v1alpha1.AppSpecServiceBinding{
 					{
-						InstanceRef: v1beta1.LocalObjectReference{
-							Name: "some-service-instance",
-						},
+						Instance:    "some-service-instance",
 						BindingName: "some-service-instance",
 					},
 				}),

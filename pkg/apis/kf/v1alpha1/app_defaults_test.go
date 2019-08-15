@@ -263,3 +263,62 @@ func TestAppSpec_SetSourceDefaults(t *testing.T) {
 		})
 	}
 }
+
+func TestAppSpec_SetServiceBindingsDefaults(t *testing.T) {
+	cases := map[string]struct {
+		old     *[]AppSpecServiceBinding
+		current []AppSpecServiceBinding
+		want    []AppSpecServiceBinding
+	}{
+		"binding": {
+			current: []AppSpecServiceBinding{
+				{
+					Instance: "instance",
+				},
+			},
+			want: []AppSpecServiceBinding{
+				{
+					BindingName: "instance",
+					Instance:    "instance",
+				},
+			},
+		},
+		"binding update": {
+			old: &[]AppSpecServiceBinding{
+				{
+					BindingName: "some-binding",
+					Instance:    "instance",
+				},
+			},
+			current: []AppSpecServiceBinding{
+				{
+					Instance: "instance",
+				},
+			},
+			want: []AppSpecServiceBinding{
+				{
+					BindingName: "instance",
+					Instance:    "instance",
+				},
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			ctx := context.TODO()
+			if tc.old != nil {
+				ctx = apis.WithinUpdate(ctx, &App{
+					Spec: AppSpec{
+						ServiceBindings: *tc.old,
+					},
+				})
+			}
+
+			actual := &AppSpec{ServiceBindings: tc.current}
+			actual.SetServiceBindingDefaults(ctx)
+
+			testutil.AssertEqual(t, "defaulted", tc.want, actual.ServiceBindings)
+		})
+	}
+}

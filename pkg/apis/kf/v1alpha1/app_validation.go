@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/knative/serving/pkg/apis/serving"
@@ -41,11 +42,12 @@ func (spec *AppSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
 	errs = errs.Also(ValidatePodSpec(spec.Template.Spec).ViaField("template.spec"))
 	errs = errs.Also(spec.Instances.Validate(ctx).ViaField("instances"))
 	errs = errs.Also(spec.ValidateSourceSpec(ctx).ViaField("source"))
+	errs = errs.Also(spec.ValidateServiceBindings(ctx).ViaField("serviceBindings"))
 
 	return errs
 }
 
-// ValidateSourceSpec validats the SourceSpec embedded in the AppSpec.
+// ValidateSourceSpec validates the SourceSpec embedded in the AppSpec.
 func (spec *AppSpec) ValidateSourceSpec(ctx context.Context) (errs *apis.FieldError) {
 	errs = errs.Also(apis.CheckDisallowedFields(spec.Source, AppSpecSourceMask(spec.Source)))
 
@@ -123,6 +125,27 @@ func ValidatePodSpec(podSpec v1.PodSpec) (errs *apis.FieldError) {
 		errs = errs.Also(serving.ValidatePodSpec(*ps))
 	default:
 		errs = errs.Also(apis.ErrMultipleOneOf("containers"))
+	}
+
+	return errs
+}
+
+// ValidateServiceBindings validates each AppSpecServiceBinding for an App.
+func (spec *AppSpec) ValidateServiceBindings(ctx context.Context) (errs *apis.FieldError) {
+	for _, binding := range spec.ServiceBindings {
+		errs = errs.Also(binding.Validate(ctx))
+	}
+	return errs
+}
+
+// Validate validates the fields of an AppSpecServiceBinding.
+func (binding AppSpecServiceBinding) Validate(ctx context.Context) (errs *apis.FieldError) {
+	if binding.BindingName == "" {
+		errs = errs.Also(&apis.FieldError{Message: "can not be empty", Paths: []string{"bindingName"}})
+	}
+
+	if !json.Valid(binding.Parameters) {
+		errs = errs.Also(&apis.FieldError{Message: "must be valid JSON", Paths: []string{"parameters"}})
 	}
 
 	return errs

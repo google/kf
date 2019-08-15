@@ -30,21 +30,21 @@ import (
 
 const (
 	// AppNameLabel is the label used on bindings to define which app the binding belongs to.
-	AppNameLabel = "kf-app-name"
+	AppNameLabel = "bindings.kf.dev/app-name"
 	// BindingNameLabel is the label used on bindings to define what VCAP name the secret should be rooted under.
-	BindingNameLabel = "kf-binding-name"
+	BindingNameLabel = "bindings.kf.dev/binding-name"
 )
 
 // MakeServiceBindingLabels creates labels that can be used to tie a source to a build.
-func MakeServiceBindingLabels(app *v1alpha1.App, bindingName string) map[string]string {
+func MakeServiceBindingLabels(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBinding) map[string]string {
 	return resources.UnionMaps(app.ComponentLabels("servicebinding"), map[string]string{
 		AppNameLabel:     app.Name,
-		BindingNameLabel: bindingName,
+		BindingNameLabel: binding.BindingName,
 	})
 }
 
 func MakeServiceBindingName(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBinding) string {
-	return fmt.Sprintf("kf-binding-%s-%s", app.Name, binding.InstanceRef.Name)
+	return fmt.Sprintf("kf-binding-%s-%s", app.Name, binding.BindingName)
 }
 
 // MakeServiceBindingAppSelector creates a labels.Selector for listing all the
@@ -70,14 +70,8 @@ func MakeServiceBindings(app *v1alpha1.App) ([]servicecatalogv1beta1.ServiceBind
 
 func MakeServiceBinding(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBinding) (*servicecatalogv1beta1.ServiceBinding, error) {
 	var params interface{}
-	err := json.Unmarshal(binding.Parameters, &params)
-	if err != nil {
+	if err := json.Unmarshal(binding.Parameters, &params); err != nil {
 		return nil, err
-	}
-
-	bindingName := binding.BindingName
-	if bindingName == "" {
-		bindingName = binding.InstanceRef.Name
 	}
 
 	return &servicecatalogv1beta1.ServiceBinding{
@@ -87,11 +81,13 @@ func MakeServiceBinding(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBindi
 			OwnerReferences: []metav1.OwnerReference{
 				*kmeta.NewControllerRef(app),
 			},
-			Labels: resources.UnionMaps(app.GetLabels(), MakeServiceBindingLabels(app, bindingName)),
+			Labels: resources.UnionMaps(app.GetLabels(), MakeServiceBindingLabels(app, binding)),
 		},
 		Spec: servicecatalogv1beta1.ServiceBindingSpec{
-			InstanceRef: binding.InstanceRef,
-			Parameters:  servicecatalog.BuildParameters(params),
+			InstanceRef: servicecatalogv1beta1.LocalObjectReference{
+				Name: binding.Instance,
+			},
+			Parameters: servicecatalog.BuildParameters(params),
 		},
 	}, nil
 }
