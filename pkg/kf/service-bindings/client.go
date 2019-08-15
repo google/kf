@@ -20,9 +20,9 @@ import (
 	"fmt"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
 	"github.com/google/kf/pkg/kf/apps"
-	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	clientv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
+	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -45,12 +45,12 @@ type ClientInterface interface {
 	Delete(serviceInstanceName, appName string, opts ...DeleteOption) error
 
 	// List queries Kubernetes for service bindings.
-	List(opts ...ListOption) ([]apiv1beta1.ServiceBinding, error)
+	List(opts ...ListOption) ([]servicecatalogv1beta1.ServiceBinding, error)
 }
 
 // NewClient creates a new client capable of interacting with service catalog
 // services.
-func NewClient(appsClient apps.Client, svcatClient clientv1beta1.ServicecatalogV1beta1Interface) ClientInterface {
+func NewClient(appsClient apps.Client, svcatClient servicecatalogclient.Interface) ClientInterface {
 	return &Client{
 		appsClient:  appsClient,
 		svcatClient: svcatClient,
@@ -59,7 +59,7 @@ func NewClient(appsClient apps.Client, svcatClient clientv1beta1.ServicecatalogV
 
 type Client struct {
 	appsClient  apps.Client
-	svcatClient clientv1beta1.ServicecatalogV1beta1Interface
+	svcatClient servicecatalogclient.Interface
 }
 
 // Create binds a service instance to an app.
@@ -82,7 +82,7 @@ func (c *Client) Create(serviceInstanceName, appName string, opts ...CreateOptio
 	}
 
 	binding := &v1alpha1.AppSpecServiceBinding{
-		InstanceRef: apiv1beta1.LocalObjectReference{
+		InstanceRef: servicecatalogv1beta1.LocalObjectReference{
 			Name: serviceInstanceName,
 		},
 		Parameters:  parameters,
@@ -109,10 +109,13 @@ func (c *Client) Delete(serviceInstanceName, appName string, opts ...DeleteOptio
 }
 
 // List queries Kubernetes for service bindings.
-func (c *Client) List(opts ...ListOption) ([]apiv1beta1.ServiceBinding, error) {
+func (c *Client) List(opts ...ListOption) ([]servicecatalogv1beta1.ServiceBinding, error) {
 	cfg := ListOptionDefaults().Extend(opts).toConfig()
 
-	bindings, err := c.svcatClient.ServiceBindings(cfg.Namespace).List(v1.ListOptions{})
+	bindings, err := c.svcatClient.
+		ServicecatalogV1beta1().
+		ServiceBindings(cfg.Namespace).
+		List(v1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +124,7 @@ func (c *Client) List(opts ...ListOption) ([]apiv1beta1.ServiceBinding, error) {
 	filterByServiceInstance := cfg.ServiceInstance != ""
 	filterByAppName := cfg.AppName != ""
 
-	var filtered []apiv1beta1.ServiceBinding
+	var filtered []servicecatalogv1beta1.ServiceBinding
 	for _, binding := range bindings.Items {
 		if filterByServiceInstance && binding.Spec.InstanceRef.Name != cfg.ServiceInstance {
 			continue

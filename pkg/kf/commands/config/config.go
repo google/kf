@@ -26,15 +26,13 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	kf "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
-	svcatclient2 "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
+	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
 	"github.com/google/kf/pkg/kf/secrets"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/imdario/mergo"
 	build "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
-	"github.com/poy/service-catalog/pkg/client/clientset_generated/clientset"
 	svcatclient "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset"
-	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/typed/servicecatalog/v1beta1"
 	"github.com/poy/service-catalog/pkg/svcat"
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
 	"gopkg.in/yaml.v2"
@@ -220,22 +218,10 @@ func GetSecretClient(p *KfParams) secrets.ClientInterface {
 }
 
 // GetServiceCatalogClient returns a ServiceCatalogClient.
-func GetServiceCatalogClient(p *KfParams) servicecatalogv1beta1.ServicecatalogV1beta1Interface {
+func GetServiceCatalogClient(p *KfParams) servicecatalogclient.Interface {
 	config := getRestConfig(p)
 
-	cs, err := clientset.NewForConfig(config)
-	if err != nil {
-		log.Fatalf("failed to build clientset: %s", err)
-	}
-
-	return cs.ServicecatalogV1beta1()
-}
-
-// GetServiceCatalogClient returns a ServiceCatalogClient.
-func GetServiceCatalog(p *KfParams) svcatclient2.Interface {
-	config := getRestConfig(p)
-
-	cs, err := svcatclient2.NewForConfig(config)
+	cs, err := servicecatalogclient.NewForConfig(config)
 	if err != nil {
 		log.Fatalf("failed to build clientset: %s", err)
 	}

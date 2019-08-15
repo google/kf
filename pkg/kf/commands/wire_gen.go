@@ -52,8 +52,8 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 	appsClient := apps.NewClient(appsGetter, client)
 	pusher := apps.NewPusher(appsClient)
 	srcImageBuilder := provideSrcImageBuilder()
-	servicecatalogV1beta1Interface := config.GetServiceCatalogClient(p)
-	clientInterface := servicebindings.NewClient(appsClient, servicecatalogV1beta1Interface)
+	versionedInterface := config.GetServiceCatalogClient(p)
+	clientInterface := servicebindings.NewClient(appsClient, versionedInterface)
 	command := apps2.NewPushCommand(p, appsClient, pusher, srcImageBuilder, clientInterface)
 	return command
 }
@@ -241,8 +241,8 @@ func InjectBindingService(p *config.KfParams) *cobra.Command {
 	buildTailer := provideSourcesBuildTailer()
 	client := sources.NewClient(sourcesGetter, buildTailer)
 	appsClient := apps.NewClient(appsGetter, client)
-	servicecatalogV1beta1Interface := config.GetServiceCatalogClient(p)
-	clientInterface := servicebindings.NewClient(appsClient, servicecatalogV1beta1Interface)
+	versionedInterface := config.GetServiceCatalogClient(p)
+	clientInterface := servicebindings.NewClient(appsClient, versionedInterface)
 	command := servicebindings2.NewBindServiceCommand(p, clientInterface)
 	return command
 }
@@ -254,8 +254,8 @@ func InjectListBindings(p *config.KfParams) *cobra.Command {
 	buildTailer := provideSourcesBuildTailer()
 	client := sources.NewClient(sourcesGetter, buildTailer)
 	appsClient := apps.NewClient(appsGetter, client)
-	servicecatalogV1beta1Interface := config.GetServiceCatalogClient(p)
-	clientInterface := servicebindings.NewClient(appsClient, servicecatalogV1beta1Interface)
+	versionedInterface := config.GetServiceCatalogClient(p)
+	clientInterface := servicebindings.NewClient(appsClient, versionedInterface)
 	command := servicebindings2.NewListBindingsCommand(p, clientInterface)
 	return command
 }
@@ -267,8 +267,8 @@ func InjectUnbindService(p *config.KfParams) *cobra.Command {
 	buildTailer := provideSourcesBuildTailer()
 	client := sources.NewClient(sourcesGetter, buildTailer)
 	appsClient := apps.NewClient(appsGetter, client)
-	servicecatalogV1beta1Interface := config.GetServiceCatalogClient(p)
-	clientInterface := servicebindings.NewClient(appsClient, servicecatalogV1beta1Interface)
+	versionedInterface := config.GetServiceCatalogClient(p)
+	clientInterface := servicebindings.NewClient(appsClient, versionedInterface)
 	command := servicebindings2.NewUnbindServiceCommand(p, clientInterface)
 	return command
 }
@@ -280,9 +280,8 @@ func InjectVcapServices(p *config.KfParams) *cobra.Command {
 	buildTailer := provideSourcesBuildTailer()
 	client := sources.NewClient(sourcesGetter, buildTailer)
 	appsClient := apps.NewClient(appsGetter, client)
-	servicecatalogV1beta1Interface := config.GetServiceCatalogClient(p)
-	clientInterface := servicebindings.NewClient(appsClient, servicecatalogV1beta1Interface)
-	versionedInterface := config.GetServiceCatalog(p)
+	versionedInterface := config.GetServiceCatalogClient(p)
+	clientInterface := servicebindings.NewClient(appsClient, versionedInterface)
 	kubernetesInterface := config.GetKubernetes(p)
 	systemEnvInjector := cfutil.NewSystemEnvInjector(versionedInterface, kubernetesInterface)
 	command := servicebindings2.NewVcapServicesCommand(p, clientInterface, systemEnvInjector)

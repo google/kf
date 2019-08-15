@@ -256,7 +256,6 @@ func InjectVcapServices(p *config.KfParams) *cobra.Command {
 		servicebindingscmd.NewVcapServicesCommand,
 		config.GetServiceCatalogClient,
 		config.GetKubernetes,
-		config.GetServiceCatalog,
 		cfutil.NewSystemEnvInjector,
 		AppsSet,
 	)

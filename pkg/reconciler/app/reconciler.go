@@ -172,7 +172,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			ServiceBindings(app.GetNamespace()).
 			List(resources.MakeServiceBindingAppSelector(app))
 		if err != nil {
-			return condition.MarkReconciliationError("scanning for stale routes", err)
+			return condition.MarkReconciliationError("scanning for stale service bindings", err)
 		}
 
 		// Search to see if any of the existing bindings are not in the desired

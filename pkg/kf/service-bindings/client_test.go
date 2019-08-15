@@ -21,12 +21,12 @@ import (
 
 	"github.com/golang/mock/gomock"
 	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	testclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/fake"
 	"github.com/google/kf/pkg/kf/apps"
 	appsfake "github.com/google/kf/pkg/kf/apps/fake"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/google/kf/pkg/kf/testutil"
-	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	testclient "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset/fake"
+	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
 type fakeDependencies struct {
@@ -49,7 +49,7 @@ func (tc *ServiceBindingApiTestCase) ExecuteTest(t *testing.T) {
 	defer appsController.Finish()
 	fakeApps := appsfake.NewFakeClient(appsController)
 
-	client := servicebindings.NewClient(fakeApps, cs.ServicecatalogV1beta1())
+	client := servicebindings.NewClient(fakeApps, cs)
 	tc.Run(t, fakeDependencies{apiserver: fakeApiServer, appsClient: fakeApps}, client)
 }
 
@@ -148,7 +148,7 @@ func TestClient_List(t *testing.T) {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
 				deps.apiserver.EXPECT().
 					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
-					Return(&apiv1beta1.ServiceBindingList{}, nil)
+					Return(&servicecatalogv1beta1.ServiceBindingList{}, nil)
 
 				_, err := client.List()
 				testutil.AssertNil(t, "list err", err)
@@ -168,7 +168,7 @@ func TestClient_List(t *testing.T) {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
 				deps.apiserver.EXPECT().
 					List(gomock.Any(), "custom-ns", gomock.Any(), gomock.Any()).
-					Return(&apiv1beta1.ServiceBindingList{}, nil)
+					Return(&servicecatalogv1beta1.ServiceBindingList{}, nil)
 
 				_, err := client.List(servicebindings.WithListNamespace("custom-ns"))
 				testutil.AssertNil(t, "list err", err)
@@ -178,8 +178,8 @@ func TestClient_List(t *testing.T) {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
 				deps.apiserver.EXPECT().
 					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
-					Return(&apiv1beta1.ServiceBindingList{
-						Items: []apiv1beta1.ServiceBinding{
+					Return(&servicecatalogv1beta1.ServiceBindingList{
+						Items: []servicecatalogv1beta1.ServiceBinding{
 							{},
 							{},
 							{},
@@ -193,17 +193,17 @@ func TestClient_List(t *testing.T) {
 		},
 		"instances get filtered by app": {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				mybinding := apiv1beta1.ServiceBinding{}
+				mybinding := servicecatalogv1beta1.ServiceBinding{}
 				mybinding.Name = "bound-to-my-app"
 				mybinding.Labels = map[string]string{servicebindings.AppNameLabel: "my-app"}
 
-				otherbinding := apiv1beta1.ServiceBinding{}
+				otherbinding := servicecatalogv1beta1.ServiceBinding{}
 				otherbinding.Name = "bound-to-other-app"
 				otherbinding.Labels = map[string]string{servicebindings.AppNameLabel: "other-app"}
 
 				deps.apiserver.EXPECT().
 					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
-					Return(&apiv1beta1.ServiceBindingList{Items: []apiv1beta1.ServiceBinding{mybinding, otherbinding}}, nil)
+					Return(&servicecatalogv1beta1.ServiceBindingList{Items: []servicecatalogv1beta1.ServiceBinding{mybinding, otherbinding}}, nil)
 
 				list, err := client.List(servicebindings.WithListAppName("my-app"))
 				testutil.AssertNil(t, "list err", err)
@@ -213,17 +213,17 @@ func TestClient_List(t *testing.T) {
 		},
 		"instances get filtered by service": {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				mybinding := apiv1beta1.ServiceBinding{}
+				mybinding := servicecatalogv1beta1.ServiceBinding{}
 				mybinding.Name = "bound-to-my-service"
 				mybinding.Spec.InstanceRef.Name = "my-service"
 
-				otherbinding := apiv1beta1.ServiceBinding{}
+				otherbinding := servicecatalogv1beta1.ServiceBinding{}
 				otherbinding.Name = "bound-to-other-service"
 				otherbinding.Spec.InstanceRef.Name = "other-service"
 
 				deps.apiserver.EXPECT().
 					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
-					Return(&apiv1beta1.ServiceBindingList{Items: []apiv1beta1.ServiceBinding{mybinding, otherbinding}}, nil)
+					Return(&servicecatalogv1beta1.ServiceBindingList{Items: []servicecatalogv1beta1.ServiceBinding{mybinding, otherbinding}}, nil)
 
 				list, err := client.List(servicebindings.WithListServiceInstance("my-service"))
 				testutil.AssertNil(t, "list err", err)
@@ -241,25 +241,25 @@ func TestClient_List(t *testing.T) {
 func ExampleBindService() {
 	myApp := &kfv1alpha1.App{}
 	servicebindings.BindService(myApp, &kfv1alpha1.AppSpecServiceBinding{
-		InstanceRef: apiv1beta1.LocalObjectReference{
+		InstanceRef: servicecatalogv1beta1.LocalObjectReference{
 			Name: "some-service",
 		},
 		BindingName: "some-binding-name",
 	})
 	servicebindings.BindService(myApp, &kfv1alpha1.AppSpecServiceBinding{
-		InstanceRef: apiv1beta1.LocalObjectReference{
+		InstanceRef: servicecatalogv1beta1.LocalObjectReference{
 			Name: "another-service",
 		},
 		BindingName: "some-binding-name",
 	})
 	servicebindings.BindService(myApp, &kfv1alpha1.AppSpecServiceBinding{
-		InstanceRef: apiv1beta1.LocalObjectReference{
+		InstanceRef: servicecatalogv1beta1.LocalObjectReference{
 			Name: "third-service",
 		},
 		BindingName: "third",
 	})
 	servicebindings.BindService(myApp, &kfv1alpha1.AppSpecServiceBinding{
-		InstanceRef: apiv1beta1.LocalObjectReference{
+		InstanceRef: servicecatalogv1beta1.LocalObjectReference{
 			Name: "forth-service",
 		},
 		BindingName: "forth",
