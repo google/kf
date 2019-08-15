@@ -344,6 +344,7 @@ github.com/mvdan/xurls v0.0.0-20160110113200-1b768d7c393a/go.mod h1:tQlNn3BED8bE
 github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRWi+5nqEBWmkhHvq77mSJWrCKwh8bxhgT7d/eI7P4U=
 github.com/neelance/astrewrite v0.0.0-20160511093645-99348263ae86/go.mod h1:kHJEU3ofeGjhHklVoIGuVj85JJwZ6kWPaJwCIxgnFmo=
 github.com/neelance/sourcemap v0.0.0-20151028013722-8c68805598ab/go.mod h1:Qr6/a/Q4r9LP1IltGz7tA7iOK1WonHEYhu1HRBA7ZiM=
+github.com/nicksnyder/go-i18n v2.0.2+incompatible h1:Xt6dluut3s2zBUha8/3sj6atWMQbFioi9OMqUGH9khg=
 github.com/olekukonko/tablewriter v0.0.1 h1:b3iUnf1v+ppJiOfNX4yxxqfWKMQPZR5yoh8urCTFX88=
 github.com/olekukonko/tablewriter v0.0.1/go.mod h1:vsDQFd/mU46D+Z4whnwzcISnGGzXWMclvtLoiIKAKIo=
 github.com/onsi/ginkgo v0.0.0-20170318221715-67b9df7f55fe/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
@@ -385,7 +386,6 @@ github.com/poy/kontext v0.0.0-20190801225340-1f98414f4e12 h1:oqr2ATVxA+L8ymMwVeW
 github.com/poy/kontext v0.0.0-20190801225340-1f98414f4e12/go.mod h1:EZ/Zsx68w8CAzOTosTajuX/M9sL+2s1IMy8jpzuJm2Q=
 github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c h1:5tVj7ImrbnEHf8FNnasPiDBDuSaFRVq8r2ilMLfukzA=
 github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c/go.mod h1:D3X0fYjTImKyVV+A+FaU7e5xIDbU2VOdejI7m5KL0CA=
-github.com/poy/service-catalog v0.1.42 h1:OlEh9OmV5Gl34ESPOTGiugZsO+9XFcfLsw8RQCAVBNI=
 github.com/pquerna/ffjson v0.0.0-20180717144149-af8b230fcd20/go.mod h1:YARuvh7BUWHNhzDq2OM5tzR2RiCcN2D7sapiKyCel/M=
 github.com/prometheus/client_golang v0.0.0-20170531130054-e7e903064f5e/go.mod h1:7SWBe2y4D6OKWSNQJUaRYU/AaXPKyh/dDVn+NZz0KFw=
 github.com/prometheus/client_golang v0.9.1/go.mod h1:7SWBe2y4D6OKWSNQJUaRYU/AaXPKyh/dDVn+NZz0KFw=
