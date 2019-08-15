@@ -1,0 +1,47 @@
+---
+title: "kf unmap-route"
+slug: kf-unmap-route
+url: /docs/general-info/kf-cli/commands/kf-unmap-route/
+---
+## kf unmap-route
+
+Unmap a route from an app
+
+### Synopsis
+
+Unmap a route from an app
+
+```
+kf unmap-route APP_NAME DOMAIN [--hostname HOSTNAME] [--path PATH] [flags]
+```
+
+### Examples
+
+```
+
+  kf unmap-route myapp example.com --hostname myapp # myapp.example.com
+  kf unmap-route --namespace myspace myapp example.com --hostname myapp # myapp.example.com
+  kf unmap-route myapp example.com --hostname myapp --path /mypath # myapp.example.com/mypath
+  
+```
+
+### Options
+
+```
+  -h, --help              help for unmap-route
+      --hostname string   Hostname for the route
+      --path string       URL Path for the route
+```
+
+### Options inherited from parent commands
+
+```
+      --config string       config file (default is $HOME/.kf)
+      --kubeconfig string   kubectl config file (default is $HOME/.kube/config)
+      --namespace string    kubernetes namespace
+```
+
+### SEE ALSO
+
+* [kf](/docs/general-info/kf-cli/commands/kf/)	 - kf is like cf for Knative
+
