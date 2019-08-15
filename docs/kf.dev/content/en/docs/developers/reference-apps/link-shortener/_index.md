@@ -8,10 +8,10 @@ description: >
 ---
 
 This example Spring application is an enterprise-ready link-shortener.
-The URL shortener has the following behaviour:
+The URL shortener has the following behavior:
 
  * URLs internal to your own domain get automatically redirected.
- * URLs on the Internet are scanned for vulnerabilities:
+ * URLs on the internet are scanned for vulnerabilities:
    * If the URL is malicious, the redirect is blocked.
    * If the URL is benign, the user is shown a preview of the site and clicking
 through opens in a new tab to protect privacy.
@@ -25,7 +25,9 @@ that will incur billing charges on your GCP account.
 ## Prerequisites
 
 [google-broker]: /docs/operators/service-brokers/google-cloud/
-1. A Kf cluster and the `kf` CLI installed on your workstation
+[install-instructions]: /docs/getting-started/install
+1. **Kf**: Follow [these instructions][install-instructions] to create a new
+   Kubernetes cluster with Kf installed.
 1. **Google Service Broker**: Follow [these instructions][google-broker] to
    install.
 1. **`git`**: Git is required to clone a repository.
@@ -60,7 +62,7 @@ cd service-broker-samples/link-shortener
 		BP_JAVA_VERSION: 8.*
 	```
 
-1. Push the app, adding a parameter to ensure it doesn't start:
+1. Push the app, adding the `--no-start` flag to ensure it doesn't start:
 
 	```sh
 	kf push link-shortener --no-start
@@ -74,13 +76,14 @@ cd service-broker-samples/link-shortener
 	kf create-service google-cloudsql-mysql mysql-db-g1-small short-links-db
 	```
 
-1. Wait for it to spin up by repeatedly running:
+1. Service creation will take several minutes to complete. You can view its
+   status by running:
 
 	```sh
 	kf service short-links-db
 	```
 
-1. Bind it when ready:
+1. Bind it when it's ready:
 
 	```sh
 	kf bind-service link-shortener short-links-db -c '{"role":"cloudsql.editor"}'
