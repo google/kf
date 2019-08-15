@@ -12,7 +12,6 @@ import (
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/buildpacks"
 	builds2 "github.com/google/kf/pkg/kf/builds"
-	"github.com/google/kf/pkg/kf/cfutil"
 	apps2 "github.com/google/kf/pkg/kf/commands/apps"
 	buildpacks2 "github.com/google/kf/pkg/kf/commands/buildpacks"
 	"github.com/google/kf/pkg/kf/commands/builds"
@@ -274,17 +273,8 @@ func InjectUnbindService(p *config.KfParams) *cobra.Command {
 }
 
 func InjectVcapServices(p *config.KfParams) *cobra.Command {
-	kfV1alpha1Interface := config.GetKfClient(p)
-	appsGetter := provideAppsGetter(kfV1alpha1Interface)
-	sourcesGetter := provideKfSources(kfV1alpha1Interface)
-	buildTailer := provideSourcesBuildTailer()
-	client := sources.NewClient(sourcesGetter, buildTailer)
-	appsClient := apps.NewClient(appsGetter, client)
-	versionedInterface := config.GetServiceCatalogClient(p)
-	clientInterface := servicebindings.NewClient(appsClient, versionedInterface)
 	kubernetesInterface := config.GetKubernetes(p)
-	systemEnvInjector := cfutil.NewSystemEnvInjector(versionedInterface, kubernetesInterface)
-	command := servicebindings2.NewVcapServicesCommand(p, clientInterface, systemEnvInjector)
+	command := servicebindings2.NewVcapServicesCommand(p, kubernetesInterface)
 	return command
 }
 

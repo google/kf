@@ -23,7 +23,6 @@ import (
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/buildpacks"
 	"github.com/google/kf/pkg/kf/builds"
-	"github.com/google/kf/pkg/kf/cfutil"
 	capps "github.com/google/kf/pkg/kf/commands/apps"
 	cbuildpacks "github.com/google/kf/pkg/kf/commands/buildpacks"
 	cbuilds "github.com/google/kf/pkg/kf/commands/builds"
@@ -252,12 +251,8 @@ func InjectUnbindService(p *config.KfParams) *cobra.Command {
 
 func InjectVcapServices(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		servicebindings.NewClient,
 		servicebindingscmd.NewVcapServicesCommand,
-		config.GetServiceCatalogClient,
 		config.GetKubernetes,
-		cfutil.NewSystemEnvInjector,
-		AppsSet,
 	)
 	return nil
 }
