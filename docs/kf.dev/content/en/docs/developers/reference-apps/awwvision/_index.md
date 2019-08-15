@@ -13,7 +13,7 @@ description: >
 Awwvision is a Spring Boot application that uses the [Google Cloud Vision API][cloud-vision] to classify
 images from Reddit's [/r/aww][aww] subreddit, store the images and classifications in [Google Cloud
 Storage (GCS)][gcs], and display the labeled results in a web app. It uses the GCP Service Broker to
-authenticate to the Vision and Storage APIs.
+authenticate with the Vision and Storage APIs.
 
 [original]: https://github.com/GoogleCloudPlatform/cloud-vision/tree/master/python/awwvision
 Awwvision was inspired by the [original Python version][original].
@@ -26,7 +26,8 @@ that will incur billing charges on your GCP account.
 ## Prerequisites
 
 [google-broker]: /docs/operators/service-brokers/google-cloud/
-1. A Kf cluster and the `kf` CLI installed on your workstation
+[install-instructions]: /docs/getting-started/install
+1. **Kf**: Follow [these instructions][install-instructions] to create a new Kubernetes cluster with Kf installed.
 1. **Google Service Broker**: Follow [these instructions][google-broker] to
    install.
 1. **`git`**: Git is required to clone a repository.
@@ -40,7 +41,7 @@ git clone https://github.com/GoogleCloudPlatform/service-broker-samples.git
 cd service-broker-samples/awwvision
 ```
 
-1. Push the app, adding a parameter to ensure it doesn't start:
+1. Push the app, adding the `--no-start` flag to ensure it doesn't start:
 
 	```sh
 	kf push awwvision --no-start
@@ -64,7 +65,7 @@ cd service-broker-samples/awwvision
       -c '{"role":"ml.viewer"}'
     ```
 
-1. Retrieve and node the project ID and bucket name:
+1. Retrieve and note the project ID and bucket name:
 
     ```sh
     kf vcap-services awwvision \
@@ -72,9 +73,8 @@ cd service-broker-samples/awwvision
     ```
 
     {{% alert title="Save this output" color="warning" %}}
-    You will need the project ID and bucket name output from the previous
-    command to locate and delete the contents of the bucket you created at the
-    end of this tutorial.
+    You will need the project ID and bucket name from the previous command to
+    cleanup created resources once you finish the tutorial.
     {{% /alert %}}
 
 ## Deploy and test the app
