@@ -1,8 +1,8 @@
 ---
-date: 2019-08-14T21:52:09-06:00
-title: "kf app"
-slug: kf_app
-url: /docs/general-info/kf-cli/commands/kf_app/
+date: 2019-08-14T22:42:48-06:00
+title: "kf-app"
+slug: kf-app
+url: /docs/general-info/kf-cli/commands/kf-app/
 ---
 ## kf app
 

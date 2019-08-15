@@ -1,8 +1,8 @@
 ---
-date: 2019-08-14T21:52:09-06:00
-title: "kf create-quota"
-slug: kf_create-quota
-url: /docs/general-info/kf-cli/commands/kf_create-quota/
+date: 2019-08-14T22:42:48-06:00
+title: "kf-create-quota"
+slug: kf-create-quota
+url: /docs/general-info/kf-cli/commands/kf-create-quota/
 ---
 ## kf create-quota
 

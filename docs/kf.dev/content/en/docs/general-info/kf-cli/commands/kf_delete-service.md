@@ -1,8 +1,8 @@
 ---
-date: 2019-08-14T21:52:09-06:00
-title: "kf delete-service"
-slug: kf_delete-service
-url: /docs/general-info/kf-cli/commands/kf_delete-service/
+date: 2019-08-14T22:42:48-06:00
+title: "kf-delete-service"
+slug: kf-delete-service
+url: /docs/general-info/kf-cli/commands/kf-delete-service/
 ---
 ## kf delete-service
 

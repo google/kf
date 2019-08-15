@@ -1,8 +1,8 @@
 ---
-date: 2019-08-14T21:52:09-06:00
-title: "kf stop"
-slug: kf_stop
-url: /docs/general-info/kf-cli/commands/kf_stop/
+date: 2019-08-14T22:42:48-06:00
+title: "kf-stop"
+slug: kf-stop
+url: /docs/general-info/kf-cli/commands/kf-stop/
 ---
 ## kf stop
 

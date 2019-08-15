@@ -1,8 +1,8 @@
 ---
-date: 2019-08-14T21:52:09-06:00
-title: "kf unmap-route"
-slug: kf_unmap-route
-url: /docs/general-info/kf-cli/commands/kf_unmap-route/
+date: 2019-08-14T22:42:48-06:00
+title: "kf-unmap-route"
+slug: kf-unmap-route
+url: /docs/general-info/kf-cli/commands/kf-unmap-route/
 ---
 ## kf unmap-route
 

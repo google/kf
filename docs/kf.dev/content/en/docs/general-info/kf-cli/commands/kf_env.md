@@ -1,8 +1,8 @@
 ---
-date: 2019-08-14T21:52:09-06:00
-title: "kf env"
-slug: kf_env
-url: /docs/general-info/kf-cli/commands/kf_env/
+date: 2019-08-14T22:42:48-06:00
+title: "kf-env"
+slug: kf-env
+url: /docs/general-info/kf-cli/commands/kf-env/
 ---
 ## kf env
 

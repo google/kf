@@ -1,8 +1,8 @@
 ---
-date: 2019-08-14T21:52:09-06:00
-title: "kf create-service"
-slug: kf_create-service
-url: /docs/general-info/kf-cli/commands/kf_create-service/
+date: 2019-08-14T22:42:48-06:00
+title: "kf-create-service"
+slug: kf-create-service
+url: /docs/general-info/kf-cli/commands/kf-create-service/
 ---
 ## kf create-service
 

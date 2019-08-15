@@ -1,8 +1,8 @@
 ---
-date: 2019-08-14T21:52:09-06:00
-title: "kf debug"
-slug: kf_debug
-url: /docs/general-info/kf-cli/commands/kf_debug/
+date: 2019-08-14T22:42:48-06:00
+title: "kf-debug"
+slug: kf-debug
+url: /docs/general-info/kf-cli/commands/kf-debug/
 ---
 ## kf debug
 

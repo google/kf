@@ -1,8 +1,8 @@
 ---
-date: 2019-08-14T21:52:09-06:00
-title: "kf marketplace"
-slug: kf_marketplace
-url: /docs/general-info/kf-cli/commands/kf_marketplace/
+date: 2019-08-14T22:42:48-06:00
+title: "kf-marketplace"
+slug: kf-marketplace
+url: /docs/general-info/kf-cli/commands/kf-marketplace/
 ---
 ## kf marketplace
 

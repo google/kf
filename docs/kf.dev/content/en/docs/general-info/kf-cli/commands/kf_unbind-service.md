@@ -1,8 +1,8 @@
 ---
-date: 2019-08-14T21:52:09-06:00
-title: "kf unbind-service"
-slug: kf_unbind-service
-url: /docs/general-info/kf-cli/commands/kf_unbind-service/
+date: 2019-08-14T22:42:48-06:00
+title: "kf-unbind-service"
+slug: kf-unbind-service
+url: /docs/general-info/kf-cli/commands/kf-unbind-service/
 ---
 ## kf unbind-service
 

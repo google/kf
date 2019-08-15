@@ -1,8 +1,8 @@
 ---
-date: 2019-08-14T21:52:09-06:00
-title: "kf builds"
-slug: kf_builds
-url: /docs/general-info/kf-cli/commands/kf_builds/
+date: 2019-08-14T22:42:48-06:00
+title: "kf-builds"
+slug: kf-builds
+url: /docs/general-info/kf-cli/commands/kf-builds/
 ---
 ## kf builds
 

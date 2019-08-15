@@ -1,8 +1,8 @@
 ---
-date: 2019-08-14T21:52:09-06:00
-title: "kf delete"
-slug: kf_delete
-url: /docs/general-info/kf-cli/commands/kf_delete/
+date: 2019-08-14T22:42:48-06:00
+title: "kf-delete"
+slug: kf-delete
+url: /docs/general-info/kf-cli/commands/kf-delete/
 ---
 ## kf delete
 

@@ -1,8 +1,8 @@
 ---
-date: 2019-08-14T21:52:09-06:00
-title: "kf version"
-slug: kf_version
-url: /docs/general-info/kf-cli/commands/kf_version/
+date: 2019-08-14T22:42:48-06:00
+title: "kf-version"
+slug: kf-version
+url: /docs/general-info/kf-cli/commands/kf-version/
 ---
 ## kf version
 

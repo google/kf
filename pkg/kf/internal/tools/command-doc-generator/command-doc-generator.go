@@ -41,9 +41,10 @@ url: %s
 
 	indexTemplate = `
 ---
-title: "commands"
-linkTitle: "commands"
+title: "Commands"
+linkTitle: "Commands"
 weight: 20
+description: "Reference for the kf CLI"
 ---
 `
 
@@ -63,12 +64,12 @@ func main() {
 	filePrepender := func(filename string) string {
 		now := time.Now().Format(time.RFC3339)
 		name := filepath.Base(filename)
-		base := strings.TrimSuffix(name, path.Ext(name))
+		base := strings.ReplaceAll(strings.TrimSuffix(name, path.Ext(name)), "_", "-")
 		url := prefix + strings.ToLower(base) + "/"
-		return fmt.Sprintf(fmTemplate, now, strings.Replace(base, "_", " ", -1), base, url)
+		return fmt.Sprintf(fmTemplate, now, base, base, url)
 	}
 	linkHandler := func(name string) string {
-		base := strings.TrimSuffix(name, path.Ext(name))
+		base := strings.ReplaceAll(strings.TrimSuffix(name, path.Ext(name)), "_", "-")
 		return prefix + strings.ToLower(base) + "/"
 	}
 

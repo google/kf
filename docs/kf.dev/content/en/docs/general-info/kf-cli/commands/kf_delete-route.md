@@ -1,8 +1,8 @@
 ---
-date: 2019-08-14T21:52:09-06:00
-title: "kf delete-route"
-slug: kf_delete-route
-url: /docs/general-info/kf-cli/commands/kf_delete-route/
+date: 2019-08-14T22:42:48-06:00
+title: "kf-delete-route"
+slug: kf-delete-route
+url: /docs/general-info/kf-cli/commands/kf-delete-route/
 ---
 ## kf delete-route
 

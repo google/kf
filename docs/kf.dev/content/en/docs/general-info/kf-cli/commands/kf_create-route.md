@@ -1,8 +1,8 @@
 ---
-date: 2019-08-14T21:52:09-06:00
-title: "kf create-route"
-slug: kf_create-route
-url: /docs/general-info/kf-cli/commands/kf_create-route/
+date: 2019-08-14T22:42:48-06:00
+title: "kf-create-route"
+slug: kf-create-route
+url: /docs/general-info/kf-cli/commands/kf-create-route/
 ---
 ## kf create-route
 
