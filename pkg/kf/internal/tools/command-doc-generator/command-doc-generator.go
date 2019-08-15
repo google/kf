@@ -24,7 +24,6 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/google/kf/pkg/kf/commands"
 	"github.com/spf13/cobra/doc"
@@ -32,7 +31,6 @@ import (
 
 const (
 	fmTemplate = `---
-date: %s
 title: "%s"
 slug: %s
 url: %s
@@ -62,11 +60,10 @@ func main() {
 
 	kf := commands.NewKfCommand()
 	filePrepender := func(filename string) string {
-		now := time.Now().Format("2006-01-02")
 		name := filepath.Base(filename)
 		base := strings.ReplaceAll(strings.TrimSuffix(name, path.Ext(name)), "_", "-")
 		url := prefix + strings.ToLower(base) + "/"
-		return fmt.Sprintf(fmTemplate, now, base, base, url)
+		return fmt.Sprintf(fmTemplate, base, base, url)
 	}
 	linkHandler := func(name string) string {
 		base := strings.ReplaceAll(strings.TrimSuffix(name, path.Ext(name)), "_", "-")
