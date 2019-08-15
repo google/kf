@@ -1,5 +1,5 @@
 ---
-date: 2019-08-14T22:42:48-06:00
+date: 2019-08-14
 title: "kf-update-quota"
 slug: kf-update-quota
 url: /docs/general-info/kf-cli/commands/kf-update-quota/

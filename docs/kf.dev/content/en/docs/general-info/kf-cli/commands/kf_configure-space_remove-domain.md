@@ -1,5 +1,5 @@
 ---
-date: 2019-08-14T22:42:48-06:00
+date: 2019-08-14
 title: "kf-configure-space-remove-domain"
 slug: kf-configure-space-remove-domain
 url: /docs/general-info/kf-cli/commands/kf-configure-space-remove-domain/

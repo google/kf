@@ -1,5 +1,5 @@
 ---
-date: 2019-08-14T22:42:48-06:00
+date: 2019-08-14
 title: "kf-delete-quota"
 slug: kf-delete-quota
 url: /docs/general-info/kf-cli/commands/kf-delete-quota/

@@ -62,7 +62,7 @@ func main() {
 
 	kf := commands.NewKfCommand()
 	filePrepender := func(filename string) string {
-		now := time.Now().Format(time.RFC3339)
+		now := time.Now().Format("2006-01-02")
 		name := filepath.Base(filename)
 		base := strings.ReplaceAll(strings.TrimSuffix(name, path.Ext(name)), "_", "-")
 		url := prefix + strings.ToLower(base) + "/"

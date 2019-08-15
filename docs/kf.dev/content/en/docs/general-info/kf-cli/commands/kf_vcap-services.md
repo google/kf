@@ -1,5 +1,5 @@
 ---
-date: 2019-08-14T22:42:48-06:00
+date: 2019-08-14
 title: "kf-vcap-services"
 slug: kf-vcap-services
 url: /docs/general-info/kf-cli/commands/kf-vcap-services/

@@ -1,5 +1,5 @@
 ---
-date: 2019-08-14T22:42:48-06:00
+date: 2019-08-14
 title: "kf-configure-space-get-execution-env"
 slug: kf-configure-space-get-execution-env
 url: /docs/general-info/kf-cli/commands/kf-configure-space-get-execution-env/
