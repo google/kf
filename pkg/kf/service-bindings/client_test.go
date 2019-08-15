@@ -246,7 +246,7 @@ func TestClient_List(t *testing.T) {
 	}
 }
 
-func ExampleKfApp_BindService() {
+func ExampleBindService() {
 	myApp := &kfv1alpha1.App{}
 	servicebindings.BindService(myApp, &kfv1alpha1.AppSpecServiceBinding{
 		InstanceRef: apiv1beta1.LocalObjectReference{
