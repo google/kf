@@ -28,19 +28,9 @@ import (
 	"knative.dev/pkg/kmeta"
 )
 
-const (
-	// AppNameLabel is the label used on bindings to define which app the binding belongs to.
-	AppNameLabel = "bindings.kf.dev/app-name"
-	// BindingNameLabel is the label used on bindings to define what VCAP name the secret should be rooted under.
-	BindingNameLabel = "bindings.kf.dev/binding-name"
-)
-
 // MakeServiceBindingLabels creates labels that can be used to tie a source to a build.
 func MakeServiceBindingLabels(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBinding) map[string]string {
-	return resources.UnionMaps(app.ComponentLabels("servicebinding"), map[string]string{
-		AppNameLabel:     app.Name,
-		BindingNameLabel: binding.BindingName,
-	})
+	return app.ComponentLabels(binding.BindingName)
 }
 
 func MakeServiceBindingName(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBinding) string {
@@ -51,7 +41,7 @@ func MakeServiceBindingName(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceB
 // Service Bindings for the given App.
 func MakeServiceBindingAppSelector(appName string) labels.Selector {
 	return labels.NewSelector().Add(
-		mustRequirement(AppNameLabel, selection.Equals, appName),
+		mustRequirement(v1alpha1.NameLabel, selection.Equals, appName),
 	)
 }
 

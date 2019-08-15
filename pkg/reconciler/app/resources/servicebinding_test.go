@@ -38,11 +38,9 @@ func ExampleMakeServiceBindingLabels() {
 	labels := MakeServiceBindingLabels(app, binding)
 	describe.Labels(os.Stdout, labels)
 
-	// Output: app.kubernetes.io/component=servicebinding
+	// Output: app.kubernetes.io/component=cool-binding
 	// app.kubernetes.io/managed-by=kf
 	// app.kubernetes.io/name=my-app
-	// bindings.kf.dev/app-name=my-app
-	// bindings.kf.dev/binding-name=cool-binding
 }
 
 func ExampleMakeServiceBindingName() {
@@ -65,10 +63,10 @@ func TestMakeServiceBindingAppSelector(t *testing.T) {
 	s := MakeServiceBindingAppSelector("my-app")
 
 	good := labels.Set{
-		"bindings.kf.dev/app-name": "my-app",
+		v1alpha1.NameLabel: "my-app",
 	}
 	bad := labels.Set{
-		"bindings.kf.dev/app-name": "not-my-app",
+		v1alpha1.NameLabel: "not-my-app",
 	}
 
 	testutil.AssertEqual(t, "matches", true, s.Matches(good))
@@ -99,11 +97,9 @@ func TestMakeServiceBinding(t *testing.T) {
 	testutil.AssertEqual(t, "parameters", `{"username":"me"}`, string(binding.Spec.Parameters.Raw))
 
 	expectedLabels := map[string]string{
-		"app.kubernetes.io/component":  "servicebinding",
+		"app.kubernetes.io/component":  "a-cool-binding",
 		"app.kubernetes.io/managed-by": "kf",
 		"app.kubernetes.io/name":       "my-app",
-		"bindings.kf.dev/app-name":     "my-app",
-		"bindings.kf.dev/binding-name": "a-cool-binding",
 	}
 
 	testutil.AssertEqual(t, "labels", expectedLabels, binding.Labels)
