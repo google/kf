@@ -128,17 +128,21 @@ func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalo
 	status.ServiceBindingNames = bindingNames
 
 	for _, binding := range bindings {
-
 		for _, cond := range binding.Status.Conditions {
 			if cond.Type != servicecatalogv1beta1.ServiceBindingConditionReady {
 				continue
 			}
-			if cond.Status == "False" {
+			switch cond.Status{
+			case servicecatalogv1beta1.ConditionFalse:
 				status.manage().MarkFalse(AppConditionServiceBindingsReady, "service binding %s failed: %v", binding.Name, cond.Reason)
 				return
-			}
-			if cond.Status == "Unknown" {
+			case servicecatalogv1beta1.ConditionUnknown:
 				status.manage().MarkUnknown(AppConditionServiceBindingsReady, "service binding %s is not ready", binding.Name)
+				return
+			case servicecatalogv1beta1.ConditionTrue:
+				// continue the loop on True case
+			default:
+				status.manage().MarkFalse(AppConditionServiceBindingsReady, "service binding %s condition %s had unknown status", binding.Name, cond.Type, cond.Status)
 				return
 			}
 		}

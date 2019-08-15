@@ -20,16 +20,24 @@ import (
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
 	"github.com/google/kf/pkg/internal/envutil"
-	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
+// SystemEnvInjector is a utility used to update v1alpha1.Apps with
+// CF style system environment variables like VCAP_SERVICES.
 type SystemEnvInjector interface {
-	GetVcapService(appName string, binding *apiv1beta1.ServiceBinding) (VcapService, error)
-	GetVcapServices(appName string, bindings []apiv1beta1.ServiceBinding) ([]VcapService, error)
-	ComputeSystemEnv(app *v1alpha1.App, serviceBindings []apiv1beta1.ServiceBinding) (computed []corev1.EnvVar, err error)
+	// GetVcapServices gets a VCAP_SERVICES compatible environment variable.
+	GetVcapServices(appName string, bindings []servicecatalogv1beta1.ServiceBinding) ([]VcapService, error)
+
+	// GetVcapService gets a VCAP_SERVICES service entry.
+	GetVcapService(appName string, binding *servicecatalogv1beta1.ServiceBinding) (VcapService, error)
+
+	// ComputeSystemEnv computes the environment variables that should be injected
+	// on a given service.
+	ComputeSystemEnv(app *v1alpha1.App, serviceBindings []servicecatalogv1beta1.ServiceBinding) (computed []corev1.EnvVar, err error)
 }
 
 type systemEnvInjector struct {
@@ -37,6 +45,8 @@ type systemEnvInjector struct {
 	k8sclient kubernetes.Interface
 }
 
+// NewSystemEnvInjector creates a utility used to update v1alpha1.Apps with
+// CF style system environment variables like VCAP_SERVICES.
 func NewSystemEnvInjector(
 	client servicecatalogclient.Interface,
 	k8sclient kubernetes.Interface) SystemEnvInjector {
@@ -54,14 +64,20 @@ func GetVcapServicesMap(appName string, services []VcapService) (VcapServicesMap
 	return out, nil
 }
 
-func (s *systemEnvInjector) GetVcapService(appName string, binding *apiv1beta1.ServiceBinding) (VcapService, error) {
+func (s *systemEnvInjector) GetVcapService(appName string, binding *servicecatalogv1beta1.ServiceBinding) (VcapService, error) {
 
-	secret, err := s.k8sclient.CoreV1().Secrets(binding.Namespace).Get(binding.Spec.SecretName, metav1.GetOptions{})
+	secret, err := s.k8sclient.
+		CoreV1().
+		Secrets(binding.Namespace).
+		Get(binding.Spec.SecretName, metav1.GetOptions{})
 	if err != nil {
 		return VcapService{}, fmt.Errorf("couldn't create VCAP_SERVICES, the secret for binding %s couldn't be fetched: %v", binding.Name, err)
 	}
 
-	serviceInstance, err := s.client.ServicecatalogV1beta1().ServiceInstances(binding.Namespace).Get(binding.Spec.InstanceRef.Name, metav1.GetOptions{})
+	serviceInstance, err := s.client.
+		ServicecatalogV1beta1().
+		ServiceInstances(binding.Namespace).
+		Get(binding.Spec.InstanceRef.Name, metav1.GetOptions{})
 	if err != nil {
 		return VcapService{}, nil
 	}
@@ -69,8 +85,7 @@ func (s *systemEnvInjector) GetVcapService(appName string, binding *apiv1beta1.S
 	return NewVcapService(*serviceInstance, *binding, secret), nil
 }
 
-func (s *systemEnvInjector) GetVcapServices(appName string, bindings []apiv1beta1.ServiceBinding) ([]VcapService, error) {
-	var services []VcapService
+func (s *systemEnvInjector) GetVcapServices(appName string, bindings []servicecatalogv1beta1.ServiceBinding) (services []VcapService, err error) {
 	for _, binding := range bindings {
 		service, err := s.GetVcapService(appName, &binding)
 		if err != nil {
@@ -82,7 +97,7 @@ func (s *systemEnvInjector) GetVcapServices(appName string, bindings []apiv1beta
 	return services, nil
 }
 
-func (s *systemEnvInjector) ComputeSystemEnv(app *v1alpha1.App, serviceBindings []apiv1beta1.ServiceBinding) (computed []corev1.EnvVar, err error) {
+func (s *systemEnvInjector) ComputeSystemEnv(app *v1alpha1.App, serviceBindings []servicecatalogv1beta1.ServiceBinding) (computed []corev1.EnvVar, err error) {
 	va, err := CreateVcapApplication(app)
 	if err != nil {
 		return nil, err

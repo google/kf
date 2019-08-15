@@ -70,5 +70,5 @@ configs:
     description: app CPU request
   - name: ServiceBindings
     type: "[]v1alpha1.AppSpecServiceBinding"
-    description: Services to bind to the app
+    description: a list of Services to bind to the app
 - name: Deploy

@@ -85,7 +85,8 @@ type AppSpec struct {
 	// +patchStrategy=merge
 	Routes []RouteSpecFields `json:"routes,omitempty"`
 
-	// ServiceBindings defines the bindings to external services for the App.
+	// ServiceBindings defines desired bindings to external services for the
+	// App.
 	// +optional
 	// +patchStrategy=merge
 	ServiceBindings []AppSpecServiceBinding `json:"serviceBindings,omitempty"`

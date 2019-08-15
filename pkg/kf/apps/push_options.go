@@ -63,7 +63,7 @@ type pushConfig struct {
 	Routes []v1alpha1.RouteSpecFields
 	// ServiceAccount is the service account to authenticate with
 	ServiceAccount string
-	// ServiceBindings is Services to bind to the app
+	// ServiceBindings is a list of Services to bind to the app
 	ServiceBindings []v1alpha1.AppSpecServiceBinding
 	// SourceImage is the source code as a container image
 	SourceImage string
@@ -354,7 +354,7 @@ func WithPushServiceAccount(val string) PushOption {
 	}
 }
 
-// WithPushServiceBindings creates an Option that sets Services to bind to the app
+// WithPushServiceBindings creates an Option that sets a list of Services to bind to the app
 func WithPushServiceBindings(val []v1alpha1.AppSpecServiceBinding) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.ServiceBindings = val

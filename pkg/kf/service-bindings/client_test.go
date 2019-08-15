@@ -76,15 +76,11 @@ func TestClient_Create(t *testing.T) {
 					err := transformer(app)
 					testutil.AssertNil(t, "err", err)
 					testutil.AssertEqual(t, "Spec.InstanceRef.Name", "mydb", app.Spec.ServiceBindings[0].InstanceRef.Name)
-					// testutil.AssertEqual(t, "name", "kf-binding-myapp-mydb", binding.Name)
-					// testutil.AssertEqual(t, "namespace", "default", binding.Namespace)
-					// testutil.AssertEqual(t, "labels", map[string]string{"kf-binding-name": "mydb", "kf-app-name": "myapp"}, binding.Labels)
-					// testutil.AssertEqual(t, "Spec.InstanceRef.Name", "mydb", binding.Spec.InstanceRef.Name)
-					// testutil.AssertEqual(t, "Spec.SecretName", "kf-binding-myapp-mydb", binding.Spec.SecretName)
 					return nil
 				})
 
-				client.Create("mydb", "myapp")
+				_, err := client.Create("mydb", "myapp")
+				testutil.AssertNil(t, "err", err)
 			},
 		},
 		"custom values": {
@@ -94,20 +90,16 @@ func TestClient_Create(t *testing.T) {
 					err := transformer(app)
 					testutil.AssertNil(t, "err", err)
 					testutil.AssertEqual(t, "Spec.InstanceRef.Name", "mydb", app.Spec.ServiceBindings[0].InstanceRef.Name)
-
-					// testutil.AssertEqual(t, "name", "kf-binding-myapp-mydb", app.Spec.ServiceBindings[0].BindingName)
-					// testutil.AssertEqual(t, "namespace", "custom-ns", app.Namespace)
-					// testutil.AssertEqual(t, "labels", map[string]string{"kf-binding-name": "binding-name", "kf-app-name": "myapp"}, binding.Labels)
-					// testutil.AssertEqual(t, "Spec.InstanceRef.Name", "mydb", binding.Spec.InstanceRef.Name)
-					// testutil.AssertEqual(t, "Spec.SecretName", "kf-binding-myapp-mydb", binding.Spec.SecretName)
-
+					testutil.AssertEqual(t, "Spec.BindingName", "binding-name", app.Spec.ServiceBindings[0].BindingName)
+					testutil.AssertEqual(t, "Spec.InstanceRef.Parameters", `{"username":"my-user"}`, string(app.Spec.ServiceBindings[0].Parameters))
 					return nil
 				})
 
-				client.Create("mydb", "myapp",
+				_, err := client.Create("mydb", "myapp",
 					servicebindings.WithCreateBindingName("binding-name"),
 					servicebindings.WithCreateNamespace("custom-ns"),
 					servicebindings.WithCreateParams(map[string]interface{}{"username": "my-user"}))
+				testutil.AssertNil(t, "err", err)
 			},
 		},
 	}

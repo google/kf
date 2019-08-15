@@ -159,7 +159,7 @@ func (d SpaceDomains) Swap(i int, j int) {
 	d[i], d[j] = d[j], d[i]
 }
 
-// Routes implements the necessary interfaces for the algorithms package.
+// ServiceBindings implements the necessary interfaces for the algorithms package.
 type ServiceBindings []servicecatalogv1beta1.ServiceBinding
 
 // Set implements Interface.
