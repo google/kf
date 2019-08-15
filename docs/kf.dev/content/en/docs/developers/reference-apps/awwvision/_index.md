@@ -60,9 +60,22 @@ cd service-broker-samples/awwvision
 
     ```sh
     kf create-service google-ml-apis default ml
-    kf bind-service awwvision ml
+    kf bind-service awwvision ml \
       -c '{"role":"ml.viewer"}'
     ```
+
+1. Retrieve and node the project ID and bucket name:
+
+    ```sh
+    kf vcap-services awwvision \
+      | jq '. | to_entries[] | select(.key=="google-storage") | .value[0].credentials | {project: .ProjectId, bucket: .bucket_name}'
+    ```
+
+    {{% alert title="Save this output" color="warning" %}}
+    You will need the project ID and bucket name output from the previous
+    command to locate and delete the contents of the bucket you created at the
+    end of this tutorial.
+    {{% /alert %}}
 
 ## Deploy and test the app
 
@@ -83,3 +96,25 @@ cd service-broker-samples/awwvision
 
 1. The page will display "Scrape completed." once it is done. From there, visit
    http://localhost:8080 to view your images!
+
+## Destroy
+
+[cloud-console]: https://console.cloud.google.com/storage/browser
+1. Navigate to the [Cloud Storage Console][cloud-console], then select the
+   project ID and bucket name you noted when you previously bound the service.
+   Delete all objects in the bucket.
+
+1. Unbind and delete the storage and ML services
+
+    ```sh
+    kf unbind-service awwvision ml
+    kf unbind-service awwvision awwvision-storage
+    kf delete-service ml
+    kf delete-service awwvision-storage
+    ```
+
+1. Delete the app:
+
+    ```sh
+    kf delete awwvision
+    ```
