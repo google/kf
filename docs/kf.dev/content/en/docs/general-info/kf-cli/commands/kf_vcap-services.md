@@ -1,5 +1,5 @@
 ---
-title: "kf-vcap-services"
+title: "kf vcap-services"
 slug: kf-vcap-services
 url: /docs/general-info/kf-cli/commands/kf-vcap-services/
 ---

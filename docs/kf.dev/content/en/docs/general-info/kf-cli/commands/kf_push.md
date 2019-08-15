@@ -1,5 +1,5 @@
 ---
-title: "kf-push"
+title: "kf push"
 slug: kf-push
 url: /docs/general-info/kf-cli/commands/kf-push/
 ---
@@ -20,7 +20,6 @@ kf push APP_NAME [flags]
 ```
 
   kf push myapp
-  kf push myapp --container-registry gcr.io/myproject
   kf push myapp --buildpack my.special.buildpack # Discover via kf buildpacks
   kf push myapp --env FOO=bar --env BAZ=foo
   
@@ -30,7 +29,7 @@ kf push APP_NAME [flags]
 
 ```
   -b, --buildpack string            Skip the 'detect' buildpack step and use the given name.
-      --container-registry string   The container registry to push containers. Required if not targeting a Kf space.
+      --container-registry string   The container registry to push sources to. Required for buildpack builds not targeting a Kf space.
       --docker-image string         The docker image to deploy.
   -e, --env stringArray             Set environment variables. Multiple can be set by using the flag multiple times (e.g., NAME=VALUE).
       --grpc                        Setup the container to allow application to use gRPC.
@@ -46,7 +45,6 @@ kf push APP_NAME [flags]
   -p, --path string                 The path the source code lives. Defaults to current directory. (default ".")
       --random-route                Create a random route for this app if the app doesn't have a route.
       --route stringArray           Use the routes flag to provide multiple HTTP and TCP routes. Each route for this app is created if it does not already exist.
-      --service-account string      The service account to enable access to the container registry
   -t, --timeout int                 Time (in seconds) allowed to elapse between starting up an app and the first healthy response from the app.
 ```
 

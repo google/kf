@@ -1,5 +1,5 @@
 ---
-title: "kf-build-logs"
+title: "kf build-logs"
 slug: kf-build-logs
 url: /docs/general-info/kf-cli/commands/kf-build-logs/
 ---

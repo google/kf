@@ -1,5 +1,5 @@
 ---
-title: "kf-create-route"
+title: "kf create-route"
 slug: kf-create-route
 url: /docs/general-info/kf-cli/commands/kf-create-route/
 ---

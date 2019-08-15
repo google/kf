@@ -1,5 +1,5 @@
 ---
-title: "kf-delete-quota"
+title: "kf delete-quota"
 slug: kf-delete-quota
 url: /docs/general-info/kf-cli/commands/kf-delete-quota/
 ---

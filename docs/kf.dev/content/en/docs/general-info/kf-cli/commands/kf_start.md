@@ -1,5 +1,5 @@
 ---
-title: "kf-start"
+title: "kf start"
 slug: kf-start
 url: /docs/general-info/kf-cli/commands/kf-start/
 ---

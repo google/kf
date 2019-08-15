@@ -1,5 +1,5 @@
 ---
-title: "kf-restage"
+title: "kf restage"
 slug: kf-restage
 url: /docs/general-info/kf-cli/commands/kf-restage/
 ---

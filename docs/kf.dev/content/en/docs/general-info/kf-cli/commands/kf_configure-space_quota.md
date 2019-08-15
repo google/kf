@@ -1,5 +1,5 @@
 ---
-title: "kf-configure-space-quota"
+title: "kf configure-space quota"
 slug: kf-configure-space-quota
 url: /docs/general-info/kf-cli/commands/kf-configure-space-quota/
 ---

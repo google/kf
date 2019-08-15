@@ -1,5 +1,5 @@
 ---
-title: "kf-stacks"
+title: "kf stacks"
 slug: kf-stacks
 url: /docs/general-info/kf-cli/commands/kf-stacks/
 ---

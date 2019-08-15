@@ -1,5 +1,5 @@
 ---
-title: "kf-configure-space-append-domain"
+title: "kf configure-space append-domain"
 slug: kf-configure-space-append-domain
 url: /docs/general-info/kf-cli/commands/kf-configure-space-append-domain/
 ---

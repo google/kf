@@ -1,5 +1,5 @@
 ---
-title: "kf-scale"
+title: "kf scale"
 slug: kf-scale
 url: /docs/general-info/kf-cli/commands/kf-scale/
 ---

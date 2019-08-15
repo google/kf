@@ -1,5 +1,5 @@
 ---
-title: "kf-proxy"
+title: "kf proxy"
 slug: kf-proxy
 url: /docs/general-info/kf-cli/commands/kf-proxy/
 ---

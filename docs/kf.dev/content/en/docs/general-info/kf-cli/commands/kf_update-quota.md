@@ -1,5 +1,5 @@
 ---
-title: "kf-update-quota"
+title: "kf update-quota"
 slug: kf-update-quota
 url: /docs/general-info/kf-cli/commands/kf-update-quota/
 ---

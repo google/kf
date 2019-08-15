@@ -1,5 +1,5 @@
 ---
-title: "kf-env"
+title: "kf env"
 slug: kf-env
 url: /docs/general-info/kf-cli/commands/kf-env/
 ---

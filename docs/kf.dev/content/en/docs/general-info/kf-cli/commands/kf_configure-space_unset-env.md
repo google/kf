@@ -1,5 +1,5 @@
 ---
-title: "kf-configure-space-unset-env"
+title: "kf configure-space unset-env"
 slug: kf-configure-space-unset-env
 url: /docs/general-info/kf-cli/commands/kf-configure-space-unset-env/
 ---

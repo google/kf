@@ -1,5 +1,5 @@
 ---
-title: "kf-configure-space-get-container-registry"
+title: "kf configure-space get-container-registry"
 slug: kf-configure-space-get-container-registry
 url: /docs/general-info/kf-cli/commands/kf-configure-space-get-container-registry/
 ---

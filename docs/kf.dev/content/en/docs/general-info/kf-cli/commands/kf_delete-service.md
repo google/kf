@@ -1,5 +1,5 @@
 ---
-title: "kf-delete-service"
+title: "kf delete-service"
 slug: kf-delete-service
 url: /docs/general-info/kf-cli/commands/kf-delete-service/
 ---

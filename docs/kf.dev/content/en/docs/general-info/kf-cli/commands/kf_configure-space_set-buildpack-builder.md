@@ -1,5 +1,5 @@
 ---
-title: "kf-configure-space-set-buildpack-builder"
+title: "kf configure-space set-buildpack-builder"
 slug: kf-configure-space-set-buildpack-builder
 url: /docs/general-info/kf-cli/commands/kf-configure-space-set-buildpack-builder/
 ---

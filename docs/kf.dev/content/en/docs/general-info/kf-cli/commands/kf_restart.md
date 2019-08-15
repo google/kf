@@ -1,5 +1,5 @@
 ---
-title: "kf-restart"
+title: "kf restart"
 slug: kf-restart
 url: /docs/general-info/kf-cli/commands/kf-restart/
 ---

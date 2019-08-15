@@ -1,5 +1,5 @@
 ---
-title: "kf-debug"
+title: "kf debug"
 slug: kf-debug
 url: /docs/general-info/kf-cli/commands/kf-debug/
 ---

@@ -1,5 +1,5 @@
 ---
-title: "kf-routes"
+title: "kf routes"
 slug: kf-routes
 url: /docs/general-info/kf-cli/commands/kf-routes/
 ---

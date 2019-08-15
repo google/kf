@@ -1,5 +1,5 @@
 ---
-title: "kf-version"
+title: "kf version"
 slug: kf-version
 url: /docs/general-info/kf-cli/commands/kf-version/
 ---

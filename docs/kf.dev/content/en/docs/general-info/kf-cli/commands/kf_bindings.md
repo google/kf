@@ -1,5 +1,5 @@
 ---
-title: "kf-bindings"
+title: "kf bindings"
 slug: kf-bindings
 url: /docs/general-info/kf-cli/commands/kf-bindings/
 ---

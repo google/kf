@@ -1,5 +1,5 @@
 ---
-title: "kf-install-gke"
+title: "kf install gke"
 slug: kf-install-gke
 url: /docs/general-info/kf-cli/commands/kf-install-gke/
 ---

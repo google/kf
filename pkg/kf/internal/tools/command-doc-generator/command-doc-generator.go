@@ -61,9 +61,10 @@ func main() {
 	kf := commands.NewKfCommand()
 	filePrepender := func(filename string) string {
 		name := filepath.Base(filename)
+		title := strings.ReplaceAll(strings.TrimSuffix(name, path.Ext(name)), "_", " ")
 		base := strings.ReplaceAll(strings.TrimSuffix(name, path.Ext(name)), "_", "-")
 		url := prefix + strings.ToLower(base) + "/"
-		return fmt.Sprintf(fmTemplate, base, base, url)
+		return fmt.Sprintf(fmTemplate, title, base, url)
 	}
 	linkHandler := func(name string) string {
 		base := strings.ReplaceAll(strings.TrimSuffix(name, path.Ext(name)), "_", "-")

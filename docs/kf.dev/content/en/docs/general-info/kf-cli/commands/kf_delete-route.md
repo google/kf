@@ -1,5 +1,5 @@
 ---
-title: "kf-delete-route"
+title: "kf delete-route"
 slug: kf-delete-route
 url: /docs/general-info/kf-cli/commands/kf-delete-route/
 ---

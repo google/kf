@@ -1,5 +1,5 @@
 ---
-title: "kf-configure-space-delete-quota"
+title: "kf configure-space delete-quota"
 slug: kf-configure-space-delete-quota
 url: /docs/general-info/kf-cli/commands/kf-configure-space-delete-quota/
 ---

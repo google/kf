@@ -1,5 +1,5 @@
 ---
-title: "kf-configure-space-get-domains"
+title: "kf configure-space get-domains"
 slug: kf-configure-space-get-domains
 url: /docs/general-info/kf-cli/commands/kf-configure-space-get-domains/
 ---

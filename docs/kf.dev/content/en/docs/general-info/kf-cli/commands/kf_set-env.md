@@ -1,5 +1,5 @@
 ---
-title: "kf-set-env"
+title: "kf set-env"
 slug: kf-set-env
 url: /docs/general-info/kf-cli/commands/kf-set-env/
 ---

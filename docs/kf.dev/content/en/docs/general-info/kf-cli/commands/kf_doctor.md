@@ -1,5 +1,5 @@
 ---
-title: "kf-doctor"
+title: "kf doctor"
 slug: kf-doctor
 url: /docs/general-info/kf-cli/commands/kf-doctor/
 ---

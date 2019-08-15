@@ -1,5 +1,5 @@
 ---
-title: "kf-configure-space-set-default-domain"
+title: "kf configure-space set-default-domain"
 slug: kf-configure-space-set-default-domain
 url: /docs/general-info/kf-cli/commands/kf-configure-space-set-default-domain/
 ---

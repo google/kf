@@ -1,5 +1,5 @@
 ---
-title: "kf-delete-space"
+title: "kf delete-space"
 slug: kf-delete-space
 url: /docs/general-info/kf-cli/commands/kf-delete-space/
 ---

@@ -1,5 +1,5 @@
 ---
-title: "kf-configure-space-get-execution-env"
+title: "kf configure-space get-execution-env"
 slug: kf-configure-space-get-execution-env
 url: /docs/general-info/kf-cli/commands/kf-configure-space-get-execution-env/
 ---

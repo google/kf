@@ -1,5 +1,5 @@
 ---
-title: "kf-bind-service"
+title: "kf bind-service"
 slug: kf-bind-service
 url: /docs/general-info/kf-cli/commands/kf-bind-service/
 ---

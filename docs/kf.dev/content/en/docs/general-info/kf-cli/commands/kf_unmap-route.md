@@ -1,5 +1,5 @@
 ---
-title: "kf-unmap-route"
+title: "kf unmap-route"
 slug: kf-unmap-route
 url: /docs/general-info/kf-cli/commands/kf-unmap-route/
 ---

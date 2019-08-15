@@ -1,5 +1,5 @@
 ---
-title: "kf-configure-space-set-buildpack-env"
+title: "kf configure-space set-buildpack-env"
 slug: kf-configure-space-set-buildpack-env
 url: /docs/general-info/kf-cli/commands/kf-configure-space-set-buildpack-env/
 ---

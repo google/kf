@@ -1,5 +1,5 @@
 ---
-title: "kf-marketplace"
+title: "kf marketplace"
 slug: kf-marketplace
 url: /docs/general-info/kf-cli/commands/kf-marketplace/
 ---

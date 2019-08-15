@@ -1,5 +1,5 @@
 ---
-title: "kf-create-quota"
+title: "kf create-quota"
 slug: kf-create-quota
 url: /docs/general-info/kf-cli/commands/kf-create-quota/
 ---

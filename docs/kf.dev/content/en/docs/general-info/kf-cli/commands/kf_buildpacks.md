@@ -1,5 +1,5 @@
 ---
-title: "kf-buildpacks"
+title: "kf buildpacks"
 slug: kf-buildpacks
 url: /docs/general-info/kf-cli/commands/kf-buildpacks/
 ---

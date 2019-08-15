@@ -1,5 +1,5 @@
 ---
-title: "kf-install"
+title: "kf install"
 slug: kf-install
 url: /docs/general-info/kf-cli/commands/kf-install/
 ---

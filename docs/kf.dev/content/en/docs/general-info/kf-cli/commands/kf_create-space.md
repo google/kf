@@ -1,5 +1,5 @@
 ---
-title: "kf-create-space"
+title: "kf create-space"
 slug: kf-create-space
 url: /docs/general-info/kf-cli/commands/kf-create-space/
 ---

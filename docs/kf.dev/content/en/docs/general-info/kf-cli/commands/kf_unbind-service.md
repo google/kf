@@ -1,5 +1,5 @@
 ---
-title: "kf-unbind-service"
+title: "kf unbind-service"
 slug: kf-unbind-service
 url: /docs/general-info/kf-cli/commands/kf-unbind-service/
 ---

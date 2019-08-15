@@ -1,5 +1,5 @@
 ---
-title: "kf-app"
+title: "kf app"
 slug: kf-app
 url: /docs/general-info/kf-cli/commands/kf-app/
 ---

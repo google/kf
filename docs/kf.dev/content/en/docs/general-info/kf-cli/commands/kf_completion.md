@@ -1,5 +1,5 @@
 ---
-title: "kf-completion"
+title: "kf completion"
 slug: kf-completion
 url: /docs/general-info/kf-cli/commands/kf-completion/
 ---

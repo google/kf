@@ -1,5 +1,5 @@
 ---
-title: "kf-target"
+title: "kf target"
 slug: kf-target
 url: /docs/general-info/kf-cli/commands/kf-target/
 ---

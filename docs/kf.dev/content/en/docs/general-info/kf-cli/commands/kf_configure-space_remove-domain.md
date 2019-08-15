@@ -1,5 +1,5 @@
 ---
-title: "kf-configure-space-remove-domain"
+title: "kf configure-space remove-domain"
 slug: kf-configure-space-remove-domain
 url: /docs/general-info/kf-cli/commands/kf-configure-space-remove-domain/
 ---

@@ -1,5 +1,5 @@
 ---
-title: "kf-services"
+title: "kf services"
 slug: kf-services
 url: /docs/general-info/kf-cli/commands/kf-services/
 ---

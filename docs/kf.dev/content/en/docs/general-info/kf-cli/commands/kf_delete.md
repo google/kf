@@ -1,5 +1,5 @@
 ---
-title: "kf-delete"
+title: "kf delete"
 slug: kf-delete
 url: /docs/general-info/kf-cli/commands/kf-delete/
 ---

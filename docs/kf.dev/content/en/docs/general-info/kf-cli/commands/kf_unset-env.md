@@ -1,5 +1,5 @@
 ---
-title: "kf-unset-env"
+title: "kf unset-env"
 slug: kf-unset-env
 url: /docs/general-info/kf-cli/commands/kf-unset-env/
 ---
