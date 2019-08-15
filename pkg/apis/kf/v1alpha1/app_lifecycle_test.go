@@ -150,7 +150,7 @@ func happySource() *Source {
 				Source:           "gcr.io/my-registry/src-mysource",
 				Stack:            "cflinuxfs3",
 				BuildpackBuilder: "gcr.io/my-registry/my-builder:latest",
-				Registry:         "gcr.io/my-registry",
+				Image:            "gcr.io/my-registry/output:123",
 			},
 		},
 		Status: SourceStatus{
@@ -181,7 +181,7 @@ func pendingSource() *Source {
 				Source:           "gcr.io/my-registry/src-mysource",
 				Stack:            "cflinuxfs3",
 				BuildpackBuilder: "gcr.io/my-registry/my-builder:latest",
-				Registry:         "gcr.io/my-registry",
+				Image:            "gcr.io/my-registry/output:123",
 			},
 		},
 		Status: SourceStatus{
