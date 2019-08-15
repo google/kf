@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	gomock "github.com/golang/mock/gomock"
+	"knative.dev/pkg/kmp"
 )
 
 // Failable is an interface for testing.T like things. We can't use
@@ -49,7 +50,13 @@ func AssertEqual(t Failable, fieldName string, expected, actual interface{}) {
 
 	fail := func() {
 		t.Helper()
-		t.Fatalf("%s: expected %s to be equal expected: %#v actual: %#v", t.Name(), fieldName, expected, actual)
+
+		diff, err := kmp.SafeDiff(expected, actual)
+		if err == nil {
+			t.Fatalf("%s: expected %s to be equal expected: %#v actual: %#v diff (-expected, +actual): %s", t.Name(), fieldName, expected, actual, diff)
+		} else {
+			t.Fatalf("%s: expected %s to be equal expected: %#v actual: %#v", t.Name(), fieldName, expected, actual)
+		}
 	}
 
 	v1, v2 := reflect.ValueOf(expected), reflect.ValueOf(actual)

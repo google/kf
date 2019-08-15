@@ -113,6 +113,8 @@ type KfTestOutput struct {
 func kf(ctx context.Context, t *testing.T, binaryPath string, cfg KfTestConfig) (KfTestOutput, <-chan error) {
 	t.Helper()
 
+	Logf(t, "kf %s\n", strings.Join(cfg.Args, " "))
+
 	cmd := exec.CommandContext(ctx, binaryPath, cfg.Args...)
 	for name, value := range cfg.Env {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", name, value))

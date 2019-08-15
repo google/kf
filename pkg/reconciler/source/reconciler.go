@@ -70,6 +70,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 		return nil
 	}
 
+	if r.IsNamespaceTerminating(namespace) {
+		logger.Errorf("skipping sync for source %q, namespace %q is terminating\n", name, namespace)
+		return nil
+	}
+
 	// Don't modify the informers copy
 	toReconcile := original.DeepCopy()
 
@@ -94,6 +99,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 // status of the source.
 func (r *Reconciler) ApplyChanges(ctx context.Context, source *v1alpha1.Source) error {
 	source.Status.InitializeConditions()
+
+	// Sources only get run once regardless of success or failure status.
+	if v1alpha1.IsStatusFinal(source.Status.Status) {
+		return nil
+	}
 
 	// Sync build
 	{

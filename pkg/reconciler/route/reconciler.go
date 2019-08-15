@@ -83,6 +83,11 @@ func (r *Reconciler) reconcileRoute(
 		return nil
 	}
 
+	if r.IsNamespaceTerminating(namespace) {
+		logger.Errorf("skipping sync for route %q, namespace %q is terminating\n", name, namespace)
+		return nil
+	}
+
 	// Don't modify the informers copy
 	toReconcile := original.DeepCopy()
 

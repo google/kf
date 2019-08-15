@@ -19,12 +19,6 @@ configs:
   - name: Buildpack
     type: string
     description: skip the detect buildpack step and use the given name
-  - name: ContainerRegistry
-    type: string
-    description: the container registry's URL
-  - name: ServiceAccount
-    type: string
-    description: the service account to authenticate with
   - name: Output
     type: "io.Writer"
     description: the io.Writer to write output such as build logs

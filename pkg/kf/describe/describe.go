@@ -200,7 +200,7 @@ func SourceSpec(w io.Writer, spec kfv1alpha1.SourceSpec) {
 				fmt.Fprintf(w, "Source:\t%s\n", buildpackBuild.Source)
 				fmt.Fprintf(w, "Stack:\t%s\n", buildpackBuild.Stack)
 				fmt.Fprintf(w, "Bulider:\t%s\n", buildpackBuild.BuildpackBuilder)
-				fmt.Fprintf(w, "Registry:\t%s\n", buildpackBuild.Registry)
+				fmt.Fprintf(w, "Destination:\t%s\n", buildpackBuild.Image)
 				EnvVars(w, buildpackBuild.Env)
 			})
 		}

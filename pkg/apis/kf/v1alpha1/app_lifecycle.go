@@ -20,6 +20,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"knative.dev/pkg/apis"
+	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
 
 // GetGroupVersionKind returns the GroupVersionKind.
@@ -54,6 +55,11 @@ func (status *AppStatus) manage() apis.ConditionManager {
 		AppConditionSpaceReady,
 		AppConditionEnvVarSecretReady,
 	).Manage(status)
+}
+
+// IsReady looks at the conditions to see if they are happy.
+func (status *AppStatus) IsReady() bool {
+	return status.manage().IsHappy()
 }
 
 // GetCondition returns the condition by name.
@@ -161,4 +167,8 @@ func (status *AppStatus) MarkSpaceHealthy() {
 // MarkSpaceUnhealthy notes that the space was could not be retrieved.
 func (status *AppStatus) MarkSpaceUnhealthy(reason, message string) {
 	status.manage().MarkFalse(AppConditionSpaceReady, reason, message)
+}
+
+func (status *AppStatus) duck() *duckv1beta1.Status {
+	return &status.Status
 }

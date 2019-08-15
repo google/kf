@@ -29,12 +29,12 @@ func TestSource_Validate(t *testing.T) {
 		Buildpack:        "some-buildpack",
 		Stack:            "some-stack",
 		BuildpackBuilder: "some-buildpack-builder",
-		Registry:         "some-container-registry",
+		Image:            "some-container-registry",
 	}
 	badBuildpackBuild := SourceSpecBuildpackBuild{
 		Source:           "missing-stack",
 		BuildpackBuilder: "no-stack",
-		Registry:         "still-no-stack",
+		Image:            "still-no-stack",
 	}
 	goodContainerImage := SourceSpecContainerImage{
 		Image: "some-container-image",
@@ -119,15 +119,15 @@ func TestSourceSpecBuildpackBuild_Validate(t *testing.T) {
 				Stack:            "some-stack",
 				Buildpack:        "some-buildpack",
 				BuildpackBuilder: "buildpackBuilder",
-				Registry:         "some-registry",
+				Image:            "some-registry",
 			},
 		},
-		"missing image": {
+		"missing source": {
 			spec: SourceSpecBuildpackBuild{
 				Stack:            "some-stack",
 				Buildpack:        "some-buildpack",
 				BuildpackBuilder: "buildpackBuilder",
-				Registry:         "some-registry",
+				Image:            "some-registry",
 			},
 			want: apis.ErrMissingField("source"),
 		},
@@ -136,7 +136,7 @@ func TestSourceSpecBuildpackBuild_Validate(t *testing.T) {
 				Source:           "some-image",
 				Buildpack:        "some-buildpack",
 				BuildpackBuilder: "buildpackBuilder",
-				Registry:         "some-registry",
+				Image:            "some-registry",
 			},
 			want: apis.ErrMissingField("stack"),
 		},
@@ -145,18 +145,18 @@ func TestSourceSpecBuildpackBuild_Validate(t *testing.T) {
 				Source:    "some-image",
 				Stack:     "some-stack",
 				Buildpack: "some-buildpack",
-				Registry:  "some-registry",
+				Image:     "some-registry",
 			},
 			want: apis.ErrMissingField("buildpackBuilder"),
 		},
-		"missing registry": {
+		"missing image": {
 			spec: SourceSpecBuildpackBuild{
 				Source:           "some-image",
 				Stack:            "some-stack",
 				Buildpack:        "some-buildpack",
 				BuildpackBuilder: "buildpackBuilder",
 			},
-			want: apis.ErrMissingField("registry"),
+			want: apis.ErrMissingField("image"),
 		},
 	}
 
