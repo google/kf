@@ -141,15 +141,15 @@ func (spec *AppSpec) ValidateServiceBindings(ctx context.Context) (errs *apis.Fi
 // Validate validates the fields of an AppSpecServiceBinding.
 func (binding AppSpecServiceBinding) Validate(ctx context.Context) (errs *apis.FieldError) {
 	if binding.BindingName == "" {
-		errs = errs.Also(&apis.ErrMissingField("bindingName")
+		errs = errs.Also(apis.ErrMissingField("bindingName"))
 	}
 
 	if binding.Instance == "" {
-		errs = errs.Also(&apis.ErrMissingField("instance")
+		errs = errs.Also(apis.ErrMissingField("instance"))
 	}
 
 	if !json.Valid(binding.Parameters) {
-		errs = errs.Also(&apis.ErrMissingField("parameters")
+		errs = errs.Also(apis.ErrMissingField("parameters"))
 	}
 
 	return errs
