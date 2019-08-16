@@ -15,7 +15,10 @@
 package v1alpha1
 
 import (
+	"fmt"
+
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"knative.dev/pkg/apis"
@@ -43,6 +46,8 @@ const (
 	AppConditionRouteReady apis.ConditionType = "RouteReady"
 	// AppConditionEnvVarSecretReady is set when env var secret is ready.
 	AppConditionEnvVarSecretReady apis.ConditionType = "EnvVarSecretReady"
+	// AppConditionServiceBindingsReady is set when all service bindings are ready.
+	AppConditionServiceBindingsReady apis.ConditionType = "ServiceBindingsReady"
 )
 
 func (status *AppStatus) manage() apis.ConditionManager {
@@ -89,6 +94,11 @@ func (status *AppStatus) EnvVarSecretCondition() SingleConditionManager {
 	return NewSingleConditionManager(status.manage(), AppConditionEnvVarSecretReady, "Env Var Secret")
 }
 
+// ServiceBindingCondition gets a manager for the state of the service bindings.
+func (status *AppStatus) ServiceBindingCondition() SingleConditionManager {
+	return NewSingleConditionManager(status.manage(), AppConditionServiceBindingsReady, "Service Bindings")
+}
+
 // PropagateSourceStatus copies the source status to the app's.
 func (status *AppStatus) PropagateSourceStatus(source *Source) {
 	status.LatestCreatedSourceName = source.Name
@@ -114,6 +124,52 @@ func (status *AppStatus) PropagateKnativeServiceStatus(service *serving.Service)
 // PropagateEnvVarSecretStatus updates the env var secret readiness status.
 func (status *AppStatus) PropagateEnvVarSecretStatus(secret *v1.Secret) {
 	status.manage().MarkTrue(AppConditionEnvVarSecretReady)
+}
+
+// PropagateServiceBindingsStatus updates the service binding readiness status.
+func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalogv1beta1.ServiceBinding) {
+
+	var bindingNames []string
+	for _, binding := range bindings {
+		bindingNames = append(bindingNames, binding.Name)
+	}
+	status.ServiceBindingNames = bindingNames
+
+	var conditions duckv1beta1.Conditions
+
+	markTrue := true
+	for _, binding := range bindings {
+		for _, cond := range binding.Status.Conditions {
+			if cond.Type != servicecatalogv1beta1.ServiceBindingConditionReady {
+				continue
+			}
+			condition := apis.Condition{}
+			condition.Status = v1.ConditionStatus(cond.Status)
+			condition.Type = apis.ConditionType(fmt.Sprintf("ServiceBindingReady-%s", binding.Labels[ComponentLabel]))
+			condition.Reason = cond.Reason
+
+			switch cond.Status {
+			case servicecatalogv1beta1.ConditionFalse:
+				markTrue = false
+				status.manage().MarkFalse(AppConditionServiceBindingsReady, "service binding %s failed: %v", binding.Name, cond.Reason)
+			case servicecatalogv1beta1.ConditionUnknown:
+				markTrue = false
+				status.manage().MarkUnknown(AppConditionServiceBindingsReady, "service binding %s is not ready", binding.Name)
+			case servicecatalogv1beta1.ConditionTrue:
+				// continue the loop on True case
+			default:
+				markTrue = false
+				status.manage().MarkFalse(AppConditionServiceBindingsReady, "service binding %s condition %s had unknown status", binding.Name, cond.Type, cond.Status)
+			}
+			conditions = append(conditions, condition)
+		}
+	}
+
+	status.ServiceBindingConditions = conditions
+
+	if markTrue {
+		status.manage().MarkTrue(AppConditionServiceBindingsReady)
+	}
 }
 
 // MarkSpaceHealthy notes that the space was able to be retrieved and

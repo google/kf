@@ -37,7 +37,6 @@ func NewUnbindServiceCommand(p *config.KfParams, client servicebindings.ClientIn
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err
 			}
-
 			err := client.Delete(
 				instanceName,
 				appName,

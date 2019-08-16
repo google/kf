@@ -12,13 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fake
+package cfutil_test
 
-import "github.com/google/kf/pkg/kf/systemenvinjector"
+import (
+	"fmt"
 
-//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_systemenvinjector.go --mock_names=SystemEnvInjector=FakeSystemEnvInjector github.com/google/kf/pkg/kf/systemenvinjector/fake SystemEnvInjector
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/cfutil"
+)
 
-// SystemEnvInjector is implemented by systemenvinjector.SystemEnvInjector
-type SystemEnvInjector interface {
-	systemenvinjector.SystemEnvInjectorInterface
+func ExampleCreateVcapApplication() {
+	app := &v1alpha1.App{}
+	app.Name = "my-app"
+	app.Namespace = "my-ns"
+
+	env, err := cfutil.CreateVcapApplication(app)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Name:", env.Name, "Value:", env.Value)
+
+	// Output: Name: VCAP_APPLICATION Value: {"application_name":"my-app","name":"my-app","space_name":"my-ns"}
 }

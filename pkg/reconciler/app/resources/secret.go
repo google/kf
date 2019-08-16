@@ -18,8 +18,9 @@ import (
 	"fmt"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/systemenvinjector"
+	"github.com/google/kf/pkg/kf/cfutil"
 	"github.com/knative/serving/pkg/resources"
+	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/kmeta"
@@ -31,8 +32,9 @@ func KfInjectedEnvSecretName(app *v1alpha1.App) string {
 }
 
 // MakeKfInjectedEnvSecret creates a Secret containing the env vars for the given application.
-func MakeKfInjectedEnvSecret(app *v1alpha1.App, space *v1alpha1.Space, systemEnvInjector systemenvinjector.SystemEnvInjectorInterface) (*v1.Secret, error) {
-	computedEnv, err := systemEnvInjector.ComputeSystemEnv(app)
+func MakeKfInjectedEnvSecret(app *v1alpha1.App, space *v1alpha1.Space, serviceBindings []servicecatalogv1beta1.ServiceBinding, systemEnvInjector cfutil.SystemEnvInjector) (*v1.Secret, error) {
+
+	computedEnv, err := systemEnvInjector.ComputeSystemEnv(app, serviceBindings)
 	if err != nil {
 		return nil, err
 	}

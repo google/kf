@@ -15,17 +15,23 @@
 package servicebindings
 
 import (
-	"encoding/json"
+	"encoding/base64"
+	"errors"
 	"fmt"
 
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 // NewVcapServicesCommand allows users to bind apps to service instances.
-func NewVcapServicesCommand(p *config.KfParams, client servicebindings.ClientInterface) *cobra.Command {
+func NewVcapServicesCommand(
+	p *config.KfParams,
+	client kubernetes.Interface,
+) *cobra.Command {
+
 	cmd := &cobra.Command{
 		Use:   "vcap-services APP_NAME",
 		Short: "Print the VCAP_SERVICES environment variable for an app",
@@ -39,19 +45,25 @@ func NewVcapServicesCommand(p *config.KfParams, client servicebindings.ClientInt
 				return err
 			}
 
-			output, err := client.GetVcapServices(appName,
-				servicebindings.WithGetVcapServicesNamespace(p.Namespace))
+			secret, err := client.
+				CoreV1().
+				Secrets(p.Namespace).
+				Get(fmt.Sprintf("kf-injected-envs-%s", appName), metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
 
-			out, err := json.Marshal(output)
+			vcapServices, ok := secret.Data["VCAP_SERVICES"]
+			if !ok {
+				return errors.New("VCAP_SERVICES does not exist")
+			}
+
+			decoded, err := base64.StdEncoding.DecodeString(string(vcapServices))
 			if err != nil {
 				return err
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), string(out))
-
+			fmt.Fprintln(cmd.OutOrStdout(), string(decoded))
 			return nil
 		},
 	}

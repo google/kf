@@ -62,4 +62,7 @@ configs:
   - name: CPU
     type: "*resource.Quantity"
     description: app CPU request
+  - name: ServiceBindings
+    type: "[]v1alpha1.AppSpecServiceBinding"
+    description: a list of Services to bind to the app
 - name: Deploy

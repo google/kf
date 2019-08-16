@@ -29,7 +29,6 @@ import (
 	appsfake "github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	svbFake "github.com/google/kf/pkg/kf/service-bindings/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -218,15 +217,13 @@ func TestPushCommand(t *testing.T) {
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushServiceBindings([]v1alpha1.AppSpecServiceBinding{
+					{
+						Instance:    "some-service-instance",
+						BindingName: "some-service-instance",
+					},
+				}),
 			),
-			setup: func(t *testing.T, f *svbFake.FakeClientInterface) {
-				f.EXPECT().GetOrCreate("some-service-instance", "app-name", gomock.Any()).Do(func(instance, app string, opts ...servicebindings.CreateOption) {
-					config := servicebindings.CreateOptions(opts)
-					testutil.AssertEqual(t, "params", map[string]interface{}{}, config.Params())
-					testutil.AssertEqual(t, "namespace", "some-namespace", config.Namespace())
-					testutil.AssertEqual(t, "binding-name", "some-service-instance", config.BindingName())
-				}).Return(dummyBindingInstance("app-name", "some-service-instance"), true, nil)
-			},
 		},
 		"service create error": {
 			namespace: "default",

@@ -25,7 +25,6 @@ import (
 	v1alpha1fake "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1/fake"
 	"github.com/google/kf/pkg/kf/apps"
 	sourcesfake "github.com/google/kf/pkg/kf/sources/fake"
-	systemenvinjectorfake "github.com/google/kf/pkg/kf/systemenvinjector/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -128,8 +127,7 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			}))
 
 			sourceClient := sourcesfake.NewFakeClient(ctrl)
-			seif := systemenvinjectorfake.NewFakeSystemEnvInjector(ctrl)
-			lt := apps.NewClient(fakeApps, seif, sourceClient)
+			lt := apps.NewClient(fakeApps, sourceClient)
 
 			var buffer bytes.Buffer
 			gotErr := lt.DeployLogs(

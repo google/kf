@@ -12,11 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package servicebindings
+package cfutil
 
 import (
 	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+)
+
+const (
+	// BindingNameLabel is the label used on bindings to define what VCAP name the secret should be rooted under.
+	BindingNameLabel = "kf-binding-name"
+	// AppNameLabel is the label used on bindings to define which app the binding belongs to.
+	AppNameLabel = "kf-app-name"
 )
 
 // VcapServicesMap mimics CF's VCAP_SERVICES environment variable.

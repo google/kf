@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	"context"
+	"encoding/json"
 
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -47,8 +48,8 @@ func (k *App) SetDefaults(ctx context.Context) {
 // SetDefaults implements apis.Defaultable
 func (k *AppSpec) SetDefaults(ctx context.Context) {
 	k.SetSourceDefaults(ctx)
-
 	k.Template.SetDefaults(ctx)
+	k.SetServiceBindingDefaults(ctx)
 }
 
 // SetSourceDefaults implements apis.Defaultable for the embedded SourceSpec.
@@ -68,6 +69,24 @@ func (k *AppSpec) SetSourceDefaults(ctx context.Context) {
 				k.Source.UpdateRequests++
 			}
 		}
+	}
+}
+
+// SetServiceBindingDefaults sets the defaults for an AppSpec's ServiceBindings.
+func (k *AppSpec) SetServiceBindingDefaults(ctx context.Context) {
+	for i := range k.ServiceBindings {
+		binding := &k.ServiceBindings[i]
+		binding.SetDefaults(ctx)
+	}
+}
+
+// SetDefaults sets the defaults for an AppSpecServiceBinding.
+func (k *AppSpecServiceBinding) SetDefaults(ctx context.Context) {
+	if k.BindingName == "" {
+		k.BindingName = k.Instance
+	}
+	if string(k.Parameters) == "" {
+		k.Parameters = json.RawMessage("null")
 	}
 }
 
