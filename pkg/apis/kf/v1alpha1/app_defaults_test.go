@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/google/kf/pkg/kf/testutil"
@@ -280,6 +281,7 @@ func TestAppSpec_SetServiceBindingsDefaults(t *testing.T) {
 				{
 					BindingName: "instance",
 					Instance:    "instance",
+					Parameters:  json.RawMessage("null"),
 				},
 			},
 		},
@@ -288,6 +290,7 @@ func TestAppSpec_SetServiceBindingsDefaults(t *testing.T) {
 				{
 					BindingName: "some-binding",
 					Instance:    "instance",
+					Parameters:  json.RawMessage("null"),
 				},
 			},
 			current: []AppSpecServiceBinding{
@@ -299,6 +302,7 @@ func TestAppSpec_SetServiceBindingsDefaults(t *testing.T) {
 				{
 					BindingName: "instance",
 					Instance:    "instance",
+					Parameters:  json.RawMessage("null"),
 				},
 			},
 		},
