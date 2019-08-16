@@ -26,15 +26,13 @@ func NewTargetCommand(p *config.KfParams) *cobra.Command {
 	var space string
 
 	command := &cobra.Command{
-		Use:     "target",
-		Short:   "Set or view the targeted space",
-		Example: `  kf target`,
-		Long: `
-1. a
-1. b
-1. c
-1. d
-
+		Use:   "target",
+		Short: "Set or view the targeted space",
+		Example: `
+		# See the current space
+		kf target
+		# Target a space
+		kf target -s my-space
 		`,
 		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {

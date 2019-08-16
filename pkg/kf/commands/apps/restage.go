@@ -29,12 +29,10 @@ func NewRestageCommand(
 	client apps.Client,
 ) *cobra.Command {
 	var restage = &cobra.Command{
-		Use:   "restage APP_NAME",
-		Short: "Rebuild and deploy using the last uploaded source code and current buildpacks",
-		Example: `
-  kf restage myapp
-  `,
-		Args: cobra.ExactArgs(1),
+		Use:     "restage APP_NAME",
+		Short:   "Rebuild and deploy using the last uploaded source code and current buildpacks",
+		Example: `kf restage myapp`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err

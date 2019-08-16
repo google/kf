@@ -16,9 +16,10 @@ package spaces
 
 import (
 	"fmt"
-	"text/tabwriter"
+	"io"
 
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/describe"
 	"github.com/google/kf/pkg/kf/spaces"
 	"k8s.io/apimachinery/pkg/api/meta/table"
 
@@ -49,27 +50,26 @@ func NewListSpacesCommand(p *config.KfParams, client spaces.Client) *cobra.Comma
 				return err
 			}
 
-			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 1, ' ', tabwriter.StripEscape)
-			defer w.Flush()
+			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
+				fmt.Fprintln(w, "Name\tAge\tReady\tReason")
+				for _, space := range list {
+					// Status is important here as spaces may be in a deleting status.
+					ready := ""
+					reason := ""
+					if cond := space.Status.GetCondition(v1alpha1.SpaceConditionReady); cond != nil {
+						ready = fmt.Sprintf("%v", cond.Status)
+						reason = cond.Reason
+					}
 
-			// Status is important here as spaces may be in a deleting status.
-			fmt.Fprintln(w, "Name\tAge\tReady\tReason")
-			for _, space := range list {
-				ready := ""
-				reason := ""
-				if cond := space.Status.GetCondition(v1alpha1.SpaceConditionReady); cond != nil {
-					ready = fmt.Sprintf("%v", cond.Status)
-					reason = cond.Reason
+					fmt.Fprintf(w, "%s\t%s\t%s\t%s",
+						space.Name,
+						table.ConvertToHumanReadableDateType(space.CreationTimestamp),
+						ready,
+						reason,
+					)
+					fmt.Fprintln(w)
 				}
-
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s",
-					space.Name,
-					table.ConvertToHumanReadableDateType(space.CreationTimestamp),
-					ready,
-					reason,
-				)
-				fmt.Fprintln(w)
-			}
+			})
 
 			return nil
 		},

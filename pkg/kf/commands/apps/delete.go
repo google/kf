@@ -30,7 +30,8 @@ func NewDeleteCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 		Short:   "Delete an existing app",
 		Example: `kf delete myapp`,
 		Args:    cobra.ExactArgs(1),
-		Long: `This command deletes an application from kf.
+		Long: `
+		This command deletes an application from kf.
 
 		Things that won't be deleted:
 

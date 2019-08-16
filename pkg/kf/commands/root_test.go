@@ -46,6 +46,7 @@ func checkCommandStyle(t *testing.T, cmd *cobra.Command) {
 
 			testutil.AssertNotBlank(t, "use", cmd.Use)
 			testutil.AssertNotBlank(t, "short", cmd.Short)
+			AssertNotStartWithArticle(t, "short", cmd.Short)
 
 			if len(cmd.Short) > 80 {
 				t.Errorf("Short length is %d, expected <= 80 cols", len(cmd.Short))
@@ -81,12 +82,6 @@ func checkCommandStyle(t *testing.T, cmd *cobra.Command) {
 				})
 			})
 		})
-
-		// TODO test parsing examples
-		// for each example
-		// if leaf, ensure Find() finds this command
-		// if node, ensure Find() passes this node
-		// ParseFlags
 
 		for _, sub := range cmd.Commands() {
 			checkCommandStyle(t, sub)

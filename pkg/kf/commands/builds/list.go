@@ -16,11 +16,12 @@ package builds
 
 import (
 	"fmt"
-	"text/tabwriter"
+	"io"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
+	"github.com/google/kf/pkg/kf/describe"
 	"github.com/google/kf/pkg/kf/sources"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/api/meta/table"
@@ -45,28 +46,27 @@ func NewListBuildsCommand(p *config.KfParams, client sources.Client) *cobra.Comm
 				return err
 			}
 
-			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 1, ' ', tabwriter.StripEscape)
-			defer w.Flush()
+			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
+				fmt.Fprintln(w, "Name\tAge\tReady\tReason\tImage")
 
-			// Status is important here as spaces may be in a deleting status.
-			fmt.Fprintln(w, "Name\tAge\tReady\tReason\tImage")
-			for _, source := range list {
-				ready := ""
-				reason := ""
-				if cond := source.Status.GetCondition(v1alpha1.SourceConditionSucceeded); cond != nil {
-					ready = fmt.Sprintf("%v", cond.Status)
-					reason = cond.Reason
+				for _, source := range list {
+					ready := ""
+					reason := ""
+					if cond := source.Status.GetCondition(v1alpha1.SourceConditionSucceeded); cond != nil {
+						ready = fmt.Sprintf("%v", cond.Status)
+						reason = cond.Reason
+					}
+
+					fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s",
+						source.Name,
+						table.ConvertToHumanReadableDateType(source.CreationTimestamp),
+						ready,
+						reason,
+						source.Status.Image,
+					)
+					fmt.Fprintln(w)
 				}
-
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s",
-					source.Name,
-					table.ConvertToHumanReadableDateType(source.CreationTimestamp),
-					ready,
-					reason,
-					source.Status.Image,
-				)
-				fmt.Fprintln(w)
-			}
+			})
 
 			return nil
 		},

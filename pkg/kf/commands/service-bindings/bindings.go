@@ -16,10 +16,11 @@ package servicebindings
 
 import (
 	"fmt"
-	"text/tabwriter"
+	"io"
 
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
+	"github.com/google/kf/pkg/kf/describe"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/spf13/cobra"
 )
@@ -60,25 +61,24 @@ func NewListBindingsCommand(p *config.KfParams, client servicebindings.ClientInt
 				return err
 			}
 
-			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 1, ' ', tabwriter.StripEscape)
-			fmt.Fprintln(w, "NAME\tAPP\tBINDING NAME\tSERVICE\tSECRET\tREADY\tREASON")
-			for _, b := range bindings {
-				status := ""
-				reason := ""
-				for _, cond := range b.Status.Conditions {
-					if cond.Type == "Ready" {
-						status = fmt.Sprintf("%v", cond.Status)
-						reason = cond.Reason
+			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
+				fmt.Fprintln(w, "Name\tApp\tBinding Name\tService\tSecret\tReady\tReason")
+				for _, b := range bindings {
+					status := ""
+					reason := ""
+					for _, cond := range b.Status.Conditions {
+						if cond.Type == "Ready" {
+							status = fmt.Sprintf("%v", cond.Status)
+							reason = cond.Reason
+						}
 					}
+					app := b.Labels[servicebindings.AppNameLabel]
+					bindingName := b.Labels[servicebindings.BindingNameLabel]
+
+					fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s", b.Name, app, bindingName, b.Spec.InstanceRef.Name, b.Spec.SecretName, status, reason)
+					fmt.Fprintln(w)
 				}
-				app := b.Labels[servicebindings.AppNameLabel]
-				bindingName := b.Labels[servicebindings.BindingNameLabel]
-
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s", b.Name, app, bindingName, b.Spec.InstanceRef.Name, b.Spec.SecretName, status, reason)
-				fmt.Fprintln(w)
-			}
-
-			w.Flush()
+			})
 
 			return nil
 		},

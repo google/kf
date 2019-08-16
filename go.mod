@@ -29,6 +29,7 @@ require (
 	github.com/segmentio/textio v1.2.0
 	github.com/sirupsen/logrus v1.3.0 // indirect
 	github.com/spf13/cobra v0.0.5
+	github.com/spf13/pflag v1.0.3
 	go.opencensus.io v0.22.0 // indirect
 	go.uber.org/zap v1.9.1
 	google.golang.org/appengine v1.5.0 // indirect

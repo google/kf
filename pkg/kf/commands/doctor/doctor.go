@@ -49,10 +49,10 @@ func NewDoctorCommand(p *config.KfParams, tests []DoctorTest) *cobra.Command {
 		Example: `  kf doctor cluster`,
 		Long: `Doctor runs tests one or more components to validate them.
 
-If no arguments are supplied, then all tests are run.
-If one or more arguments are suplied then only those components are run.
+		If no arguments are supplied, then all tests are run.
+		If one or more arguments are suplied then only those components are run.
 
-Possible components are: ` + strings.Join(knownTestNames, ", "),
+		Possible components are: ` + strings.Join(knownTestNames, ", "),
 		ValidArgs: knownTestNames,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := cobra.OnlyValidArgs(cmd, args); err != nil {

@@ -101,7 +101,7 @@ func NewPushCommand(
 
 	var pushCmd = &cobra.Command{
 		Use:   "push APP_NAME",
-		Short: "Push a new app or sync changes to an existing app",
+		Short: "Create a new app or sync changes to an existing app",
 		Example: `
   kf push myapp
   kf push myapp --buildpack my.special.buildpack # Discover via kf buildpacks
