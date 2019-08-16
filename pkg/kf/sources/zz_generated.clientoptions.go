@@ -235,22 +235,22 @@ func (opts ListOptions) labelSelector() map[string]string {
 	return opts.toConfig().labelSelector
 }
 
-// WithListfieldSelector creates an Option that sets A selector on the resource's fields.
-func WithListfieldSelector(val map[string]string) ListOption {
+// WithListFieldSelector creates an Option that sets A selector on the resource's fields.
+func WithListFieldSelector(val map[string]string) ListOption {
 	return func(cfg *listConfig) {
 		cfg.fieldSelector = val
 	}
 }
 
-// WithListfilters creates an Option that sets Additional filters to apply.
-func WithListfilters(val []Predicate) ListOption {
+// WithListFilters creates an Option that sets Additional filters to apply.
+func WithListFilters(val []Predicate) ListOption {
 	return func(cfg *listConfig) {
 		cfg.filters = val
 	}
 }
 
-// WithListlabelSelector creates an Option that sets A label selector.
-func WithListlabelSelector(val map[string]string) ListOption {
+// WithListLabelSelector creates an Option that sets A label selector.
+func WithListLabelSelector(val map[string]string) ListOption {
 	return func(cfg *listConfig) {
 		cfg.labelSelector = val
 	}

@@ -164,8 +164,8 @@ func (opts {{ $typeoptarr }}) {{$opt.Name}}() {{ $opt.Type }} {
 {{ end }}
 {{ range $i, $opt := .Options}}
 
-// With{{$globalName}}{{$opt.Name}} creates an Option that sets {{$opt.Description}}
-func With{{$globalName}}{{$opt.Name}}(val {{ $opt.Type }}) {{ $typeopt }} {
+// With{{title $globalName}}{{title $opt.Name}} creates an Option that sets {{$opt.Description}}
+func With{{title $globalName}}{{title $opt.Name}}(val {{ $opt.Type }}) {{ $typeopt }} {
   return func(cfg *{{ $typecfg }}) {
     cfg.{{$opt.Name}} = val
   }
@@ -176,7 +176,7 @@ func With{{$globalName}}{{$opt.Name}}(val {{ $opt.Type }}) {{ $typeopt }} {
 // {{$globalName}}OptionDefaults gets the default values for {{$globalName}}.
 func {{$globalName}}OptionDefaults() {{ $typeoptarr }} {
 	return {{ $typeoptarr }}{
-		{{ range $i, $opt := .Options}}{{ if $opt.Default }}With{{$globalName}}{{$opt.Name}}({{ $opt.Default }}),
+		{{ range $i, $opt := .Options}}{{ if $opt.Default }}With{{title $globalName}}{{title $opt.Name}}({{ $opt.Default }}),
 		{{ end }}{{ end }}
 	}
 }
