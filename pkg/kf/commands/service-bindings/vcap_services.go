@@ -15,7 +15,6 @@
 package servicebindings
 
 import (
-	"encoding/base64"
 	"errors"
 	"fmt"
 
@@ -58,12 +57,7 @@ func NewVcapServicesCommand(
 				return errors.New("VCAP_SERVICES does not exist")
 			}
 
-			decoded, err := base64.StdEncoding.DecodeString(string(vcapServices))
-			if err != nil {
-				return err
-			}
-
-			fmt.Fprintln(cmd.OutOrStdout(), string(decoded))
+			fmt.Fprintln(cmd.OutOrStdout(), string(vcapServices))
 			return nil
 		},
 	}
