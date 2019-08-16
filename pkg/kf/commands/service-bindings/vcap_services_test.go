@@ -16,7 +16,6 @@ package servicebindings_test
 
 import (
 	"bytes"
-	"encoding/base64"
 	"errors"
 	"testing"
 
@@ -39,7 +38,6 @@ func TestNewVcapServicesCommand(t *testing.T) {
 	}
 
 	data := []byte(`{"some":"services"}`)
-	encodedData := base64.StdEncoding.EncodeToString(data)
 
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -47,7 +45,7 @@ func TestNewVcapServicesCommand(t *testing.T) {
 			Namespace: "custom-ns",
 		},
 		Data: map[string][]byte{
-			"VCAP_SERVICES": []byte(encodedData),
+			"VCAP_SERVICES": []byte(data),
 		},
 	}
 	k8sclient := k8sfake.NewSimpleClientset(secret)
