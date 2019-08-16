@@ -28,10 +28,17 @@ import (
 // NewStacksCommand creates a Stacks command.
 func NewStacksCommand(p *config.KfParams, l buildpacks.Client) *cobra.Command {
 	var buildpacksCmd = &cobra.Command{
-		Use:   "stacks",
-		Short: "List stacks in current builder",
-		Args:  cobra.ExactArgs(0),
-		Long:  ``,
+		Use:     "stacks",
+		Short:   "List stacks available in the space",
+		Example: `kf stacks`,
+		Args:    cobra.ExactArgs(0),
+		Long: `List the stacks available in the space to applications being built
+		with buildpacks.
+
+		Stack support is determined by the buildpack builder image so they can
+		change from one space to the next.
+		
+		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err

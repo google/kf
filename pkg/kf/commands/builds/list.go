@@ -29,9 +29,10 @@ import (
 // NewListBuildsCommand allows users to list spaces.
 func NewListBuildsCommand(p *config.KfParams, client sources.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "builds",
-		Short: "List the builds in the current space",
-		Args:  cobra.ExactArgs(0),
+		Use:     "builds",
+		Short:   "List the builds in the current space",
+		Example: `kf builds`,
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err

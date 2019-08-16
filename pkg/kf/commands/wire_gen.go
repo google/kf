@@ -24,7 +24,7 @@ import (
 	"github.com/google/kf/pkg/kf/logs"
 	"github.com/google/kf/pkg/kf/routeclaims"
 	"github.com/google/kf/pkg/kf/routes"
-	"github.com/google/kf/pkg/kf/service-bindings"
+	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/google/kf/pkg/kf/sources"
 	"github.com/google/kf/pkg/kf/spaces"
@@ -33,7 +33,7 @@ import (
 	logs2 "github.com/knative/build/pkg/logs"
 	"github.com/poy/kontext"
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/kubernetes/typed/core/v1"
+	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 import (
@@ -343,14 +343,6 @@ func InjectConfigSpace(p *config.KfParams) *cobra.Command {
 	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
 	client := spaces.NewClient(spacesGetter)
 	command := spaces2.NewConfigSpaceCommand(p, client)
-	return command
-}
-
-func InjectCreateQuota(p *config.KfParams) *cobra.Command {
-	kfV1alpha1Interface := config.GetKfClient(p)
-	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
-	client := spaces.NewClient(spacesGetter)
-	command := quotas.NewCreateQuotaCommand(p, client)
 	return command
 }
 

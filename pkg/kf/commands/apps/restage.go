@@ -30,7 +30,7 @@ func NewRestageCommand(
 ) *cobra.Command {
 	var restage = &cobra.Command{
 		Use:   "restage APP_NAME",
-		Short: "Restage creates a new container using the given source code and current buildpacks",
+		Short: "Rebuild and deploy using the last uploaded source code and current buildpacks",
 		Example: `
   kf restage myapp
   `,

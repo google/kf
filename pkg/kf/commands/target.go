@@ -29,7 +29,14 @@ func NewTargetCommand(p *config.KfParams) *cobra.Command {
 		Use:     "target",
 		Short:   "Set or view the targeted space",
 		Example: `  kf target`,
-		Args:    cobra.ExactArgs(0),
+		Long: `
+1. a
+1. b
+1. c
+1. d
+
+		`,
+		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if space != "" {
 				p.Namespace = space

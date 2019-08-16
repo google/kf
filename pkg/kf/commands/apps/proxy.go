@@ -110,21 +110,21 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister k
 		&gateway,
 		"gateway",
 		"",
-		"the HTTP gateway to route requests to, if unset it will be autodetected",
+		"HTTP gateway to route requests to (default: autodetected from cluster)",
 	)
 
 	proxy.Flags().IntVar(
 		&port,
 		"port",
 		8080,
-		"the local port to attach to",
+		"Local port to listen on",
 	)
 
 	proxy.Flags().BoolVar(
 		&noStart,
 		"no-start",
 		false,
-		"don't actually start the HTTP proxy",
+		"Exit before starting the proxy",
 	)
 	proxy.Flags().MarkHidden("no-start")
 

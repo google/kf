@@ -32,7 +32,7 @@ func NewAppsCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 	var apps = &cobra.Command{
 		Use:     "apps",
 		Short:   "List pushed apps",
-		Example: `  kf apps`,
+		Example: `kf apps`,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {

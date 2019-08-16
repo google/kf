@@ -33,7 +33,14 @@ func NewMarketplaceCommand(p *config.KfParams, client services.ClientInterface) 
 		Use:     "marketplace [-s SERVICE]",
 		Aliases: []string{"m"},
 		Short:   "List available offerings in the marketplace",
-		Args:    cobra.ExactArgs(0),
+		Example: `
+		# Show services available in the marketplace
+		kf marketplace
+
+		# Show the plans available to a particular service
+		kf marketplace -s google-storage
+		`,
+		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 

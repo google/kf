@@ -28,10 +28,11 @@ import (
 // NewBuildpacksCommand creates a Buildpacks command.
 func NewBuildpacksCommand(p *config.KfParams, l buildpacks.Client) *cobra.Command {
 	var buildpacksCmd = &cobra.Command{
-		Use:   "buildpacks",
-		Short: "List buildpacks in current builder",
-		Args:  cobra.ExactArgs(0),
-		Long:  ``,
+		Use:     "buildpacks",
+		Short:   "List buildpacks in current builder",
+		Args:    cobra.ExactArgs(0),
+		Example: "kf buildpacks",
+		Long:    ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err

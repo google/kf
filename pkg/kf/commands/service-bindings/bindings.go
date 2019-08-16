@@ -34,7 +34,17 @@ func NewListBindingsCommand(p *config.KfParams, client servicebindings.ClientInt
 	listCmd := &cobra.Command{
 		Use:   "bindings [--app APP_NAME] [--service SERVICE_NAME]",
 		Short: "List bindings",
-		Args:  cobra.ExactArgs(0),
+		Example: `
+		# Show all bindings
+		kf bindings
+
+		# Show bindings for "my-app"
+		kf bindings --app my-app
+
+		# Show bindings for a particular service
+		kf bindings --service users-db
+		`,
+		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 
@@ -79,14 +89,14 @@ func NewListBindingsCommand(p *config.KfParams, client servicebindings.ClientInt
 		"app",
 		"a",
 		"",
-		"app to display bindings for")
+		"App to display bindings for")
 
 	listCmd.Flags().StringVarP(
 		&serviceInstance,
 		"service",
 		"s",
 		"",
-		"service instance to display bindings for")
+		"Service instance to display bindings for")
 
 	return listCmd
 }

@@ -26,9 +26,10 @@ import (
 // NewBuildLogsCommand allows users to list spaces.
 func NewBuildLogsCommand(p *config.KfParams, client sources.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "build-logs BUILD_NAME",
-		Short: "Get the logs of the given build",
-		Args:  cobra.ExactArgs(1),
+		Use:     "build-logs BUILD_NAME",
+		Short:   "Get the logs of the given build",
+		Example: "kf build-logs build-12345",
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err

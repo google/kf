@@ -30,7 +30,15 @@ func NewGetSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Command
 	cmd := &cobra.Command{
 		Use:   "space SPACE",
 		Short: "Show space info",
-		Args:  cobra.ExactArgs(1),
+		Long: `Get detailed information about a specific space and its configuration.
+
+		The output of this command is similar to what you'd get by running:
+
+		    kubectl describe space.kf.dev SPACE
+
+		`,
+		Example: `kf space my-space`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 

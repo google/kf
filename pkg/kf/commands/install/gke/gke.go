@@ -46,6 +46,7 @@ func NewGKECommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gke [subcommand]",
 		Short: "Install kf on GKE with Cloud Run (Note: this will incur GCP costs)",
+		Example: "kf install gke",
 		Long: `
 This interactive installer will walk you through the process of installing kf
 on GKE with Cloud Run. You MUST have gcloud and kubectl installed and

@@ -32,7 +32,15 @@ func NewListSpacesCommand(p *config.KfParams, client spaces.Client) *cobra.Comma
 	cmd := &cobra.Command{
 		Use:   "spaces",
 		Short: "List all kf spaces",
-		Args:  cobra.ExactArgs(0),
+		Long: `List spaces and their statuses for the currently targeted cluster.
+
+		The output of this command is similar to what you'd get by running:
+
+		    kubectl get spaces.kf.dev
+
+		`,
+		Example: `kf spaces`,
+		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 

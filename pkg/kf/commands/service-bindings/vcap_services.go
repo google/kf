@@ -27,9 +27,10 @@ import (
 // NewVcapServicesCommand allows users to bind apps to service instances.
 func NewVcapServicesCommand(p *config.KfParams, client servicebindings.ClientInterface) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "vcap-services APP_NAME",
-		Short: "Print the VCAP_SERVICES environment variable for an app",
-		Args:  cobra.ExactArgs(1),
+		Use:     "vcap-services APP_NAME",
+		Short:   "Print the VCAP_SERVICES environment variable for an app",
+		Example: `kf vcap-services my-app`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appName := args[0]
 

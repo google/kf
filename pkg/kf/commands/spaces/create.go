@@ -35,9 +35,10 @@ func NewCreateSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 	)
 
 	cmd := &cobra.Command{
-		Use:   "create-space SPACE",
-		Short: "Create a space",
-		Args:  cobra.ExactArgs(1),
+		Use:     "create-space SPACE",
+		Short:   "Create a space",
+		Example: `kf create-space my-space --container-registry gcr.io/my-project --domain myspace.example.com`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 
@@ -75,7 +76,7 @@ func NewCreateSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		&containerRegistry,
 		"container-registry",
 		"",
-		"The container registry apps and sources will be stored in.",
+		"Container registry built apps and sources will be stored in.",
 	)
 
 	cmd.Flags().StringArrayVar(

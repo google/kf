@@ -67,8 +67,9 @@ func NewLogsCommand(p *config.KfParams, tailer logs.Tailer) *cobra.Command {
 		"number",
 		"n",
 		10,
-		"The number of lines from the end of the logs to show.",
+		"Show the last N lines of logs.",
 	)
+
 	c.Flags().BoolVarP(
 		&follow,
 		"follow",

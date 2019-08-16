@@ -379,7 +379,7 @@ func NewPushCommand(
 		&containerRegistry,
 		"container-registry",
 		"",
-		"The container registry to push sources to. Required for buildpack builds not targeting a Kf space.",
+		"Container registry to push sources to. Required for buildpack builds not targeting a Kf space.",
 	)
 
 	pushCmd.Flags().StringVarP(
@@ -387,7 +387,7 @@ func NewPushCommand(
 		"path",
 		"p",
 		".",
-		"The path the source code lives. Defaults to current directory.",
+		"Path to the source code (default: current directory)",
 	)
 
 	pushCmd.Flags().StringArrayVarP(
@@ -424,7 +424,7 @@ func NewPushCommand(
 		&sourceImage,
 		"source-image",
 		"",
-		"The kontext image that has the source code.",
+		"Kontext image containing the source code.",
 	)
 	pushCmd.Flags().MarkHidden("source-image")
 
@@ -432,7 +432,7 @@ func NewPushCommand(
 		&containerImage,
 		"docker-image",
 		"",
-		"The docker image to deploy.",
+		"Docker image to deploy.",
 	)
 
 	pushCmd.Flags().StringVarP(
@@ -448,21 +448,21 @@ func NewPushCommand(
 		"instances",
 		"i",
 		-1, // -1 represents non-user input
-		"the number of instances (default is 1)",
+		"Number of instances of the app to run (default: 1)",
 	)
 
 	pushCmd.Flags().IntVar(
 		&minScale,
 		"min-scale",
 		-1, // -1 represents non-user input
-		"the minium number of instances the autoscaler will scale to",
+		"Minium number of instances the autoscaler will scale to",
 	)
 
 	pushCmd.Flags().IntVar(
 		&maxScale,
 		"max-scale",
 		-1, // -1 represents non-user input
-		"the maximum number of instances the autoscaler will scale to",
+		"Maximum number of instances the autoscaler will scale to",
 	)
 
 	pushCmd.Flags().BoolVar(

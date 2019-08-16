@@ -21,12 +21,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewUnbindServiceCommand allows users to bind apps to service instances.
+// NewUnbindServiceCommand allows users to unbind apps from service instances.
 func NewUnbindServiceCommand(p *config.KfParams, client servicebindings.ClientInterface) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "unbind-service APP_NAME SERVICE_INSTANCE",
 		Aliases: []string{"us"},
 		Short:   "Unbind a service instance from an app",
+		Long: `Unbind removes an application's access to a service instance.
+
+		This will delete the credential from the service broker that created the
+		instance and update the VCAP_SERVICES environment variable for the
+		applicaiton to remove the reference to the instance.
+		`,
+		Example: `kf unbind-service myapp my-instance`,
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appName := args[0]

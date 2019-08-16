@@ -37,7 +37,7 @@ func NewKfCommand() *cobra.Command {
 
 	var rootCmd = &cobra.Command{
 		Use:   "kf",
-		Short: "kf is like cf for Knative",
+		Short: "Kf is like cf for Knative",
 		Long: templates.LongDesc(`
       kf is like cf for Knative
       `),
@@ -54,9 +54,9 @@ func NewKfCommand() *cobra.Command {
 		},
 	}
 
-	rootCmd.PersistentFlags().StringVar(&p.Config, "config", "", "config file (default is $HOME/.kf)")
-	rootCmd.PersistentFlags().StringVar(&p.KubeCfgFile, "kubeconfig", "", "kubectl config file (default is $HOME/.kube/config)")
-	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "", "kubernetes namespace")
+	rootCmd.PersistentFlags().StringVar(&p.Config, "config", "", "Config file (default is $HOME/.kf)")
+	rootCmd.PersistentFlags().StringVar(&p.KubeCfgFile, "kubeconfig", "", "Kubectl config file (default is $HOME/.kube/config)")
+	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "", "Kubernetes namespace to target")
 
 	groups := templates.CommandGroups{
 		{
@@ -104,7 +104,6 @@ func NewKfCommand() *cobra.Command {
 			Message: "Quotas",
 			Commands: []*cobra.Command{
 				InjectGetQuota(p),
-				InjectCreateQuota(p),
 				InjectUpdateQuota(p),
 				InjectDeleteQuota(p),
 			},
@@ -171,12 +170,15 @@ func NewKfCommand() *cobra.Command {
 	groups.Add(rootCmd)
 	templates.ActsAsRootCommand(rootCmd, nil, groups...)
 
+	templates.NormalizeAll(rootCmd)
+
 	return rootCmd
 }
 
 func completionCommand(rootCmd *cobra.Command) *cobra.Command {
 	return &cobra.Command{
-		Use: "completion bash|zsh",
+		Use:   "completion bash|zsh",
+		Short: "Generate auto-completion files for kf commands",
 		Example: `
   eval "$(kf completion bash)"
   eval "$(kf completion zsh)"

@@ -26,9 +26,10 @@ import (
 // NewGetQuotaCommand allows users to get quota info.
 func NewGetQuotaCommand(p *config.KfParams, client spaces.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "quota SPACE_NAME",
-		Short: "Show quota info for a space",
-		Args:  cobra.ExactArgs(1),
+		Use:     "quota SPACE_NAME",
+		Short:   "Show quota info for a space",
+		Example: `kf quota my-space`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			spaceName := args[0]
 			fmt.Fprintf(cmd.OutOrStdout(), "Getting info for quota in space: %s\n", spaceName)
