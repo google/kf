@@ -60,7 +60,9 @@ type Base struct {
 	// the expense of slightly greater verbosity.
 	Logger *zap.SugaredLogger
 
-	namespaceLister v1listers.NamespaceLister
+	// NamespaceLister allows us to list Namespaces. We use this to check for
+	// terminating namespaces.
+	NamespaceLister v1listers.NamespaceLister
 }
 
 // NewBase instantiates a new instance of Base implementing
@@ -81,7 +83,7 @@ func NewBase(ctx context.Context, controllerAgentName string, cmw configmap.Watc
 		ConfigMapWatcher: cmw,
 		Logger:           logger,
 
-		namespaceLister: nsInformer.Lister(),
+		NamespaceLister: nsInformer.Lister(),
 	}
 
 	return base
@@ -90,7 +92,7 @@ func NewBase(ctx context.Context, controllerAgentName string, cmw configmap.Watc
 // IsNamespaceTerminating returns true if the namespace is marked as terminating
 // and false if the state is unknown or not terminating.
 func (base *Base) IsNamespaceTerminating(namespace string) bool {
-	ns, err := base.namespaceLister.Get(namespace)
+	ns, err := base.NamespaceLister.Get(namespace)
 	if err != nil || ns == nil {
 		return false
 	}
