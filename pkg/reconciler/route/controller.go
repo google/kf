@@ -17,13 +17,14 @@ package route
 import (
 	"context"
 
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	routeinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/route"
 	"github.com/google/kf/pkg/reconciler"
-	virtualserviceinformer "knative.dev/pkg/client/injection/informers/istio/v1alpha3/virtualservice"
-
+	appresources "github.com/google/kf/pkg/reconciler/app/resources"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
-
+	networking "knative.dev/pkg/apis/istio/v1alpha3"
+	virtualserviceinformer "knative.dev/pkg/client/injection/informers/istio/v1alpha3/virtualservice"
 	"knative.dev/pkg/configmap"
 	"knative.dev/pkg/controller"
 	"knative.dev/pkg/logging"
@@ -51,10 +52,58 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	// Watch for changes in sub-resources so we can sync accordingly
 	routeInformer.Informer().AddEventHandler(controller.HandleAll(impl.Enqueue))
 
+	// Watch for any changes to VirtualServices in the kf namespace.
 	vsInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
-		FilterFunc: controller.Filter(v1alpha1.SchemeGroupVersion.WithKind("Route")),
-		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
+		FilterFunc: FilterVSWithNamespace(v1alpha1.KfNamespace),
+		Handler:    controller.HandleAll(EnqueueRoutesOfVirtualService(impl, c)),
 	})
 
 	return impl
+}
+
+// FilterVSWithNamespace makes it simple to create FilterFunc's for use with
+// cache.FilteringResourceEventHandler that filter based on a namespace and if
+// the type is a VirtualService.
+func FilterVSWithNamespace(namespace string) func(obj interface{}) bool {
+	return func(obj interface{}) bool {
+		if object, ok := obj.(metav1.Object); ok {
+			if namespace == object.GetNamespace() {
+				_, ok := obj.(*networking.VirtualService)
+				return ok
+			}
+		}
+		return false
+	}
+}
+
+// EnqueueRoutesOfVirtualService will find the corresponding routes for the
+// VirtualService.  It will Enqueue a key for each one. We aren't able to use
+// EnqueueControllerOf (as other components do), because a VirtualService is
+// NOT owned by a single Route. Therefore, when one changes, we need to grab
+// the collection of corresponding Routes.
+func EnqueueRoutesOfVirtualService(
+	c *controller.Impl,
+	r *Reconciler,
+) func(obj interface{}) {
+	return func(obj interface{}) {
+		vs, ok := obj.(*networking.VirtualService)
+		if !ok {
+			return
+		}
+
+		routes, err := r.routeLister.
+			Routes(vs.Annotations["space"]).
+			List(appresources.MakeRouteSelectorNoPath(v1alpha1.RouteSpecFields{
+				Domain:   vs.Annotations["domain"],
+				Hostname: vs.Annotations["hostname"],
+			}))
+		if err != nil {
+			r.Logger.Warnf("failed to list corresponding routes: %s", err)
+			return
+		}
+
+		for _, route := range routes {
+			c.Enqueue(route)
+		}
+	}
 }

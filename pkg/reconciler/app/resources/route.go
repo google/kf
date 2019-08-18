@@ -70,6 +70,15 @@ func mustRequirement(key string, op selection.Operator, val string) labels.Requi
 }
 
 // MakeRouteSelector creates a labels.Selector for listing all the
+// corresponding Routes excluding Path.
+func MakeRouteSelectorNoPath(spec v1alpha1.RouteSpecFields) labels.Selector {
+	return labels.NewSelector().Add(
+		mustRequirement(v1alpha1.RouteHostname, selection.Equals, spec.Hostname),
+		mustRequirement(v1alpha1.RouteDomain, selection.Equals, spec.Domain),
+	)
+}
+
+// MakeRouteSelector creates a labels.Selector for listing all the
 // corresponding Routes.
 func MakeRouteSelector(spec v1alpha1.RouteSpecFields) labels.Selector {
 	return labels.NewSelector().Add(
