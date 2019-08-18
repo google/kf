@@ -16,8 +16,9 @@ package servicebindings_test
 
 import (
 	"bytes"
-	"encoding/base64"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/google/kf/pkg/kf/commands/config"
@@ -25,7 +26,6 @@ import (
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
 )
 
@@ -38,18 +38,29 @@ func TestNewVcapServicesCommand(t *testing.T) {
 		ExpectedStrings []string
 	}
 
-	data := []byte(`{"some":"services"}`)
-	encodedData := base64.StdEncoding.EncodeToString(data)
+	secretSerialized := `{
+    "apiVersion": "v1",
+    "data": {
+        "VCAP_SERVICES": "eyJzb21lIjoic2VydmljZXMifQ=="
+    },
+    "kind": "Secret",
+    "metadata": {
+        "labels": {
+            "app.kubernetes.io/component": "secret",
+            "app.kubernetes.io/managed-by": "kf",
+            "app.kubernetes.io/name": "APP_NAME"
+        },
+        "name": "kf-injected-envs-APP_NAME",
+        "namespace": "custom-ns"
+    },
+    "type": "Opaque"
+}
+	`
 
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "kf-injected-envs-APP_NAME",
-			Namespace: "custom-ns",
-		},
-		Data: map[string][]byte{
-			"VCAP_SERVICES": []byte(encodedData),
-		},
-	}
+	var secret *corev1.Secret
+	err := json.Unmarshal([]byte(secretSerialized), &secret)
+	fmt.Println(secret.Name)
+	testutil.AssertNil(t, "err", err)
 	k8sclient := k8sfake.NewSimpleClientset(secret)
 
 	cases := map[string]serviceTest{
