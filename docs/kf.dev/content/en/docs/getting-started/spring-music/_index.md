@@ -111,22 +111,11 @@ minibroker  redis                  Active  Helm Chart for redis
     kf bind-service spring-music spring-music-db -c '{"postgresqlDatabase":"smdb", "postgresDatabase":"smdb"}'
     ```
 
-1. Inject the bindings into the app's env:
+1. Restart the app to make the service binding available via the `VCAP_SERVICES`
+   environment variable:
 
     ```sh
-    kf set-env spring-music VCAP_SERVICES "`kf vcap-services spring-music`"
-    ```
-
-1. Run `kf env spring-music` and verify that `VCAP_SERVICES` is set. It should
-   look similar to:
-
-    ```sh
-    NAME             VALUE
-    BP_JAVA_VERSION  8.*
-    VCAP_APPLICATION
-    {"application_name":"spring-music","name":"spring-music","space_name":"demo"}
-    VCAP_SERVICES
-    {"postgresql":[{"binding_name":"spring-music-db","instance_name":"spring-music-db","name":"kf-binding-spring-music-spring-music-db","label":"postgresql","tags":null,"plan":"11-4-0","credentials":{"Protocol":"postgresql","database":"smdb","host":"honorary-snail-postgresql.demo.svc.cluster.local","password":"***","port":"5432","postgresql-password":"***","uri":"postgresql://postgres:***@honorary-snail-postgresql.demo.svc.cluster.local:5432/smdb","username":"postgres"}}]}
+    kf restart spring-music
     ```
 
 1. (Optional) View the binding details:
@@ -154,4 +143,3 @@ minibroker  redis                  Active  Helm Chart for redis
     ```sh
     kf delete spring-music
     ```
-
