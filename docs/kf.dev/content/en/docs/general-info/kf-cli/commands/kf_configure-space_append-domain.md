@@ -15,6 +15,12 @@ Append a domain for a space
 kf configure-space append-domain SPACE_NAME DOMAIN [flags]
 ```
 
+### Examples
+
+```
+  kf configure-space append-domain my-space myspace.mycompany.com
+```
+
 ### Options
 
 ```
@@ -24,9 +30,9 @@ kf configure-space append-domain SPACE_NAME DOMAIN [flags]
 ### Options inherited from parent commands
 
 ```
-      --config string       config file (default is $HOME/.kf)
-      --kubeconfig string   kubectl config file (default is $HOME/.kube/config)
-      --namespace string    kubernetes namespace
+      --config string       Config file (default is $HOME/.kf)
+      --kubeconfig string   Kubectl config file (default is $HOME/.kube/config)
+      --namespace string    Kubernetes namespace to target
 ```
 
 ### SEE ALSO
