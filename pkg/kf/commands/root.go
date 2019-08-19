@@ -71,7 +71,7 @@ func NewKfCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&p.KubeCfgFile, "kubeconfig", "", "Kubectl config file (default is $HOME/.kube/config)")
 	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "", "Kubernetes namespace to target")
 
-	rootCmd = group.ActsAsRootCommand(rootCmd, group.CommandGroups{
+	rootCmd = group.AddCommandGroups(rootCmd, group.CommandGroups{
 		{
 			Message: "App Management",
 			Commands: []*cobra.Command{
@@ -183,6 +183,7 @@ func NewKfCommand() *cobra.Command {
 	// non-deterministic. We would rather allow the CI to ensure the docs were
 	// regenerated for each commit.
 	rootCmd.DisableAutoGenTag = true
+	rootCmd = templates.NormalizeAll(rootCmd)
 
 	return rootCmd
 }
