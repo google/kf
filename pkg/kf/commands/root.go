@@ -183,6 +183,7 @@ func NewKfCommand() *cobra.Command {
 	// non-deterministic. We would rather allow the CI to ensure the docs were
 	// regenerated for each commit.
 	rootCmd.DisableAutoGenTag = true
+
 	rootCmd = templates.NormalizeAll(rootCmd)
 
 	return rootCmd
