@@ -22,6 +22,7 @@ import (
 
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/doctor"
+	"github.com/google/kf/pkg/kf/commands/group"
 	"github.com/google/kf/pkg/kf/commands/install"
 	pkgdoctor "github.com/google/kf/pkg/kf/doctor"
 	"github.com/imdario/mergo"
@@ -59,7 +60,7 @@ func NewKfCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&p.KubeCfgFile, "kubeconfig", "", "kubectl config file (default is $HOME/.kube/config)")
 	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "", "kubernetes namespace")
 
-	groups := templates.CommandGroups{
+	rootCmd = group.ActsAsRootCommand(rootCmd, group.CommandGroups{
 		{
 			Message: "App Management",
 			Commands: []*cobra.Command{
@@ -166,12 +167,7 @@ func NewKfCommand() *cobra.Command {
 				NewDebugCommand(p),
 			},
 		},
-	}
-
-	// This will add the rest to a group under "Other Commands".
-	groups.Add(rootCmd)
-	templates.ActsAsRootCommand(rootCmd, nil, groups...)
-	// disableAllAutoGenTags(rootCmd)
+	})
 
 	// We don't want the AutoGenTag as it makes the doc generation
 	// non-deterministic. We would rather allow the CI to ensure the docs were
