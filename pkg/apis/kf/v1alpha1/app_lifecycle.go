@@ -113,6 +113,11 @@ func (status *AppStatus) PropagateSourceStatus(source *Source) {
 // PropagateKnativeServiceStatus updates the Knative service status to reflect
 // the underlying service.
 func (status *AppStatus) PropagateKnativeServiceStatus(service *serving.Service) {
+	// Stopped apps don't have a Knative service
+	if service == nil {
+		return
+	}
+
 	cond := service.Status.GetCondition(apis.ConditionReady)
 
 	if PropagateCondition(status.manage(), AppConditionKnativeServiceReady, cond) {

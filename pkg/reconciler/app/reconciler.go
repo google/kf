@@ -277,12 +277,19 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			return condition.MarkTemplateError(err)
 		}
 
-		actual, err := r.knativeServiceLister.Services(desired.GetNamespace()).Get(desired.Name)
-		if apierrs.IsNotFound(err) && !app.Spec.Instances.Stopped {
-			// Knative Service doesn't exist, make one.
-			actual, err = r.ServingClientSet.ServingV1alpha1().Services(desired.GetNamespace()).Create(desired)
-			if err != nil {
-				return condition.MarkReconciliationError("creating", err)
+		actual, err := r.knativeServiceLister.
+			Services(desired.GetNamespace()).
+			Get(desired.Name)
+		if apierrs.IsNotFound(err) {
+			if !app.Spec.Instances.Stopped {
+				// Knative Service doesn't exist, make one.
+				actual, err = r.ServingClientSet.
+					ServingV1alpha1().
+					Services(desired.GetNamespace()).
+					Create(desired)
+				if err != nil {
+					return condition.MarkReconciliationError("creating", err)
+				}
 			}
 		} else if err != nil {
 			return condition.MarkReconciliationError("getting latest", err)
@@ -298,7 +305,10 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 				ServingV1alpha1().
 				Services(desired.Namespace).
 				Delete(desired.Name, &metav1.DeleteOptions{}); err != nil {
-				return condition.MarkReconciliationError("stopping (via deleting service) existing", err)
+				return condition.MarkReconciliationError(
+					"stopping (via deleting service) existing",
+					err,
+				)
 			}
 		} else if actual, err = r.reconcileKnativeService(desired, actual); err != nil {
 			return condition.MarkReconciliationError("updating existing", err)
