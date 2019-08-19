@@ -19,6 +19,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"time"
 
 	. "github.com/google/kf/pkg/kf/commands/install/util"
 )
@@ -49,13 +50,25 @@ func Install(ctx context.Context, containerRegistry string) error {
 		{name: "kf", yaml: KfNightlyBuildYAML},
 	} {
 
-		Logf(ctx, "install "+yaml.name)
-		if _, err := Kubectl(
-			ctx,
-			"apply",
-			"--filename",
-			yaml.yaml,
-		); err != nil {
+		var err error
+		for i := 0; i < 10; i++ {
+			Logf(ctx, "install "+yaml.name)
+			if _, err = Kubectl(
+				ctx,
+				"apply",
+				"--filename",
+				yaml.yaml,
+			); err != nil {
+				Logf(ctx, "failed to install %s... Retrying %d/10", yaml.name, i+1)
+				time.Sleep(time.Second)
+				continue
+			}
+
+			break
+		}
+
+		if err != nil {
+			// Looks like the retrying didn't help, better just return the error
 			return err
 		}
 	}
