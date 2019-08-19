@@ -23,59 +23,19 @@ import (
 	"unicode"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
+// CommandGroup is a logical grouping of commands
 type CommandGroup struct {
-	Message  string
+	Name     string
 	Commands []*cobra.Command
 }
 
+// CommandGroups is a list of CommandGroups.
 type CommandGroups []CommandGroup
 
-func SubCommandFlagPrint(command *cobra.Command, out io.Writer) {
-	if command.HasLocalFlags() {
-		fmt.Fprintf(out, "Flags:\n")
-		command.LocalFlags().VisitAll(func(flag *pflag.Flag) {
-			if flag.Name != "help" && !flag.Hidden {
-				defaultValue := flag.DefValue
-				if defaultValue == "" {
-					defaultValue = "''"
-				}
-				fmt.Fprintf(out, "  --%s=%s: %s\n", flag.Name, defaultValue, flag.Usage)
-			}
-		})
-		fmt.Fprintln(out)
-	}
-}
-
-func SubCommandUsagePrint(command *cobra.Command, out io.Writer) {
-	fmt.Fprintln(out, "Usage:")
-	if command.HasParent() {
-		fullParentName := GetFullName(command.Parent())
-		fmt.Fprintf(out, "  %s %s [flags]\n\n", fullParentName, command.Use)
-		fmt.Fprintf(out, "Use \"%s --help\" for a list of global command-line flags.\n", fullParentName)
-	} else {
-		fmt.Fprintf(out, "  %s [flags]\n\n", command.Use)
-	}
-}
-
-func PrintSubCommandExamples(command *cobra.Command, out io.Writer) {
-	if command.HasExample() {
-		fmt.Fprintln(out, "Examples:")
-		fmt.Fprintln(out, command.Example)
-		fmt.Fprintln(out)
-	}
-}
-
-func printTemplate(out io.Writer, text string, data interface{}) error {
-	t := template.New("root")
-	t.Funcs(templateFuncs)
-	template.Must(t.Parse(text))
-	return t.Execute(out, data)
-}
-
-var templateFuncs = template.FuncMap{
+// defaultTemplateFuncs are the func cobra provides its users.
+var defaultTemplateFuncs = template.FuncMap{
 	"trim":                    strings.TrimSpace,
 	"trimRightSpace":          trimRightSpace,
 	"trimTrailingWhitespaces": trimRightSpace,
@@ -84,28 +44,31 @@ var templateFuncs = template.FuncMap{
 	"eq":                      cobra.Eq,
 }
 
+// PrintTemplate prints the provided template to the output writer.
+func PrintTemplate(out io.Writer, text string, data interface{}, templateFuncs *template.FuncMap) error {
+	t := template.New("")
+	if templateFuncs == nil {
+		t.Funcs(defaultTemplateFuncs)
+	} else {
+		t.Funcs(*templateFuncs)
+	}
+
+	template.Must(t.Parse(text))
+	return t.Execute(out, data)
+}
+
 // rpad adds padding to the right of a string.
 func rpad(s string, padding int) string {
 	template := fmt.Sprintf("%%-%ds", padding)
 	return fmt.Sprintf(template, s)
 }
 
+/// trimRightSpace trims tailing whitespace.
 func trimRightSpace(s string) string {
 	return strings.TrimRightFunc(s, unicode.IsSpace)
 }
 
-func CommandGroupUsageFunc(cmd *cobra.Command, groups CommandGroups) func(*cobra.Command) error {
-	return func(command *cobra.Command) error {
-		out := command.OutOrStdout()
-		fmt.Fprintln(out)
-		return printTemplate(out, command.UsageTemplate(), command)
-		// PrintSubCommandExamples(command, out)
-		// SubCommandFlagPrint(command, out)
-		// SubCommandUsagePrint(command, out)
-		// return nil
-	}
-}
-
+// CalculateMinWidth gets the minimum width required for all command names.
 func CalculateMinWidth(groups CommandGroups) int {
 	minWidth := 0
 	for _, group := range groups {
@@ -115,75 +78,73 @@ func CalculateMinWidth(groups CommandGroups) int {
 			}
 		}
 	}
-	// 2 for the prefix spaces, 1 for the padding
-	minWidth += 3
-
 	return minWidth
 }
 
-func CommandGroupHelpFunc(cmd *cobra.Command, groups CommandGroups) func(*cobra.Command, []string) {
-	return func(command *cobra.Command, args []string) {
+// PrintTrimmedMultilineString does just that.
+func PrintTrimmedMultilineString(str string, out io.Writer) {
+	for _, line := range strings.Split(str, "\n") {
+		fmt.Fprintln(out, strings.TrimSpace(line))
+	}
+}
 
+// CommandGroupUsageFunc returns a UsageFunc a root level command can use.
+func CommandGroupUsageFunc(groups CommandGroups) func(*cobra.Command) error {
+	return func(command *cobra.Command) error {
+		out := command.OutOrStdout()
+		fmt.Fprintln(out)
+		return PrintTemplate(out, command.UsageTemplate(), command, nil)
+	}
+}
+
+// CommandGroupHelpFunc returns a HelpFunc a root level command can use.
+func CommandGroupHelpFunc(rootCommand *cobra.Command, groups CommandGroups) func(*cobra.Command, []string) {
+	return func(command *cobra.Command, args []string) {
 		out := command.OutOrStdout()
 
 		// not the root level, use the default template
-		if cmd != command {
-			err := printTemplate(out, command.HelpTemplate(), command)
+		if rootCommand != command {
+			err := PrintTemplate(out, command.HelpTemplate(), command, nil)
 			if err != nil {
 				panic(fmt.Sprintf("Error printing help: %v", err))
 			}
 			return
 		}
 
-		PrintWhitespaceNormalizedString(command.Long, out)
+		PrintTrimmedMultilineString(command.Long, out)
 		fmt.Fprintln(out)
 
 		minWidth := CalculateMinWidth(groups)
+		// add 2 for the prefix spaces, 1 for the padding between cols
+		minWidth += 3
+
 		tabout := tabwriter.NewWriter(out, minWidth, 8, 1, ' ', 0)
 		defer tabout.Flush()
 		for _, group := range groups {
-			fmt.Fprintln(tabout, group.Message)
+			fmt.Fprintln(tabout, group.Name)
 			for _, c := range group.Commands {
 				fmt.Fprintf(tabout, "  %s\t%s\n", c.Name(), c.Short)
 			}
 			fmt.Fprintln(tabout)
 		}
 		fmt.Fprintln(tabout, "Usage:")
-		fmt.Fprintf(tabout, "  %s [flags] COMMAND\n\n", GetFullName(command))
-		fmt.Fprintf(tabout, "Use \"%s COMMAND --help\" for more information about a given command.\n", GetFullName(command))
+		fmt.Fprintf(tabout, "  %s [flags] COMMAND\n\n", command.CommandPath())
+		fmt.Fprintf(tabout, "Use \"%s COMMAND --help\" for more information about a given command.\n", command.CommandPath())
 	}
 }
 
-func PrintWhitespaceNormalizedString(str string, out io.Writer) {
-	for _, line := range strings.Split(str, "\n") {
-		fmt.Fprintln(out, strings.TrimSpace(line))
-	}
-}
-
-func GetFullName(command *cobra.Command) string {
-	if command == nil {
-		return ""
-	}
-
-	if command.HasParent() {
-		return fmt.Sprintf("%s %s", GetFullName(command.Parent()), command.Name())
-	}
-
-	return command.Name()
-}
-
-func AddCommandGroups(cmd *cobra.Command, groups CommandGroups) *cobra.Command {
-	if cmd == nil {
+func AddCommandGroups(rootCommand *cobra.Command, groups CommandGroups) *cobra.Command {
+	if rootCommand == nil {
 		panic("nil root command")
 	}
-	cmd.SetUsageFunc(CommandGroupUsageFunc(cmd, groups))
-	cmd.SetUsageTemplate("")
-	cmd.SetHelpFunc(CommandGroupHelpFunc(cmd, groups))
-	cmd.SetHelpTemplate("")
+
+	rootCommand.SetUsageFunc(CommandGroupUsageFunc(groups))
+	rootCommand.SetHelpFunc(CommandGroupHelpFunc(rootCommand, groups))
+
 	for _, group := range groups {
 		for _, command := range group.Commands {
-			cmd.AddCommand(command)
+			rootCommand.AddCommand(command)
 		}
 	}
-	return cmd
+	return rootCommand
 }
