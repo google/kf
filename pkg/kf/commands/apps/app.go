@@ -19,6 +19,7 @@ import (
 	"io"
 
 	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/describe"
@@ -79,6 +80,8 @@ func NewGetAppCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 			return nil
 		},
 	}
+
+	completion.MarkArgCompletionSupported(apps, "apps")
 
 	return apps
 }

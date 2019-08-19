@@ -16,6 +16,7 @@ import (
 	buildpacks2 "github.com/google/kf/pkg/kf/commands/buildpacks"
 	"github.com/google/kf/pkg/kf/commands/builds"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/quotas"
 	routes2 "github.com/google/kf/pkg/kf/commands/routes"
 	servicebindings2 "github.com/google/kf/pkg/kf/commands/service-bindings"
@@ -437,6 +438,12 @@ func InjectBuildLogs(p *config.KfParams) *cobra.Command {
 	buildTailer := provideSourcesBuildTailer()
 	client := sources.NewClient(sourcesGetter, buildTailer)
 	command := builds.NewBuildLogsCommand(p, client)
+	return command
+}
+
+func InjectNamesCommand(p *config.KfParams) *cobra.Command {
+	dynamicInterface := config.GetDynamicClient(p)
+	command := completion.NewNamesCommand(p, dynamicInterface)
 	return command
 }
 
