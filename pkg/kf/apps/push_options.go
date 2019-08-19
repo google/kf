@@ -59,6 +59,8 @@ type pushConfig struct {
 	RandomRouteDomain string
 	// Routes is routes for the app
 	Routes []v1alpha1.RouteSpecFields
+	// ServiceBindings is a list of Services to bind to the app
+	ServiceBindings []v1alpha1.AppSpecServiceBinding
 	// SourceImage is the source code as a container image
 	SourceImage string
 }
@@ -191,6 +193,12 @@ func (opts PushOptions) Routes() []v1alpha1.RouteSpecFields {
 	return opts.toConfig().Routes
 }
 
+// ServiceBindings returns the last set value for ServiceBindings or the empty value
+// if not set.
+func (opts PushOptions) ServiceBindings() []v1alpha1.AppSpecServiceBinding {
+	return opts.toConfig().ServiceBindings
+}
+
 // SourceImage returns the last set value for SourceImage or the empty value
 // if not set.
 func (opts PushOptions) SourceImage() string {
@@ -313,6 +321,13 @@ func WithPushRandomRouteDomain(val string) PushOption {
 func WithPushRoutes(val []v1alpha1.RouteSpecFields) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.Routes = val
+	}
+}
+
+// WithPushServiceBindings creates an Option that sets a list of Services to bind to the app
+func WithPushServiceBindings(val []v1alpha1.AppSpecServiceBinding) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.ServiceBindings = val
 	}
 }
 

@@ -52,6 +52,7 @@ func NewKfCommand() *cobra.Command {
 			all on Kubernetes using industry-standard OSS tools including Knative,
 			Istio, and Tekton.
 			`),
+		DisableAutoGenTag: false,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			loadedConfig, err := config.Load(p.Config, p)
 			if err != nil {
@@ -180,6 +181,11 @@ func NewKfCommand() *cobra.Command {
 	// This will add the rest to a group under "Other Commands".
 	groups.Add(rootCmd)
 	templates.ActsAsRootCommand(rootCmd, nil, groups...)
+
+	// We don't want the AutoGenTag as it makes the doc generation
+	// non-deterministic. We would rather allow the CI to ensure the docs were
+	// regenerated for each commit.
+	rootCmd.DisableAutoGenTag = true
 
 	templates.NormalizeAll(rootCmd)
 

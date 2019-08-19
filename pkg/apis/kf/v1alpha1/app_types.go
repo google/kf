@@ -15,6 +15,7 @@
 package v1alpha1
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/knative/serving/pkg/apis/autoscaling"
@@ -83,6 +84,12 @@ type AppSpec struct {
 	// +optional
 	// +patchStrategy=merge
 	Routes []RouteSpecFields `json:"routes,omitempty"`
+
+	// ServiceBindings defines desired bindings to external services for the
+	// App.
+	// +optional
+	// +patchStrategy=merge
+	ServiceBindings []AppSpecServiceBinding `json:"serviceBindings,omitempty"`
 }
 
 // AppSpecTemplate defines an app's runtime configuration.
@@ -115,6 +122,22 @@ type AppSpecInstances struct {
 
 	// Max defines a maximum auto-scaling limit.
 	Max *int `json:"max,omitempty"`
+}
+
+// AppSpecServiceBinding is a binding to an external service.
+type AppSpecServiceBinding struct {
+
+	// Instance is the service the app will bind to.
+	Instance string `json:"instance"`
+
+	// Parameters is an arbitrary JSON to be injected into VCAP_SERVICES.
+	// +optional
+	Parameters json.RawMessage `json:"parameters,omitempty"`
+
+	// BindingName is the name of the binding.
+	// If unspecified it will default to the service name
+	// +optional
+	BindingName string `json:"bindingName,omitempty"`
 }
 
 // MinAnnotationValue returns the value autoscaling.knative.dev/minScale should
@@ -185,6 +208,12 @@ type AppStatus struct {
 	// LatestCreatedSourceName contains the name of the source that was most
 	// recently created.
 	LatestCreatedSourceName string `json:"latestSource,omitempty"`
+
+	// ServiceBindings are the bindings currently attached to the App.
+	ServiceBindingNames []string `json:"serviceBindings,omitempty"`
+
+	// ServiceBindingConditions are the conditions of the service bindings.
+	ServiceBindingConditions duckv1beta1.Conditions `json:"serviceBindingConditions"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -19,8 +19,6 @@ import (
 	"github.com/google/kf/pkg/kf/commands/utils"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/google/kf/pkg/kf/services"
-	"github.com/poy/service-catalog/cmd/svcat/output"
-
 	"github.com/spf13/cobra"
 )
 
@@ -56,17 +54,15 @@ func NewBindServiceCommand(p *config.KfParams, client servicebindings.ClientInte
 				return err
 			}
 
-			binding, err := client.Create(
-				instanceName,
-				appName,
+			_, err = client.Create(instanceName, appName,
 				servicebindings.WithCreateBindingName(bindingName),
+				servicebindings.WithCreateParams(params),
 				servicebindings.WithCreateNamespace(p.Namespace),
-				servicebindings.WithCreateParams(params))
+			)
 			if err != nil {
 				return err
 			}
 
-			output.WriteBindingDetails(cmd.OutOrStdout(), binding)
 			return nil
 		},
 	}

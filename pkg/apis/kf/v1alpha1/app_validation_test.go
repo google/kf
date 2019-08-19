@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/google/kf/pkg/kf/testutil"
@@ -267,6 +268,49 @@ func TestValidatePodSpec(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 			got := ValidatePodSpec(tc.spec)
 
+			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())
+		})
+	}
+}
+
+func TestAppSpecServiceBinding_Validate(t *testing.T) {
+	cases := map[string]struct {
+		binding *AppSpecServiceBinding
+		want    *apis.FieldError
+	}{
+		"missing bindingName": {
+			binding: &AppSpecServiceBinding{
+				Instance:   "my-cool-instance",
+				Parameters: json.RawMessage(`{"cool":"params"}`),
+			},
+			want: apis.ErrMissingField("bindingName"),
+		},
+		"missing instance": {
+			binding: &AppSpecServiceBinding{
+				BindingName: "my-cool-binding",
+				Parameters:  json.RawMessage(`{"cool":"params"}`),
+			},
+			want: apis.ErrMissingField("instance"),
+		},
+		"missing parameters": {
+			binding: &AppSpecServiceBinding{
+				BindingName: "my-cool-binding",
+				Instance:    "my-cool-instance",
+			},
+			want: apis.ErrMissingField("parameters"),
+		},
+		"null parameters": {
+			binding: &AppSpecServiceBinding{
+				BindingName: "my-cool-binding",
+				Instance:    "my-cool-instance",
+				Parameters:  json.RawMessage("null"),
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			got := tc.binding.Validate(context.Background())
 			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())
 		})
 	}

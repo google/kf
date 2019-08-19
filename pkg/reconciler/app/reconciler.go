@@ -24,13 +24,16 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
+	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
+	servicecataloglisters "github.com/google/kf/pkg/client/servicecatalog/listers/servicecatalog/v1beta1"
 	"github.com/google/kf/pkg/kf/algorithms"
-	"github.com/google/kf/pkg/kf/systemenvinjector"
+	"github.com/google/kf/pkg/kf/cfutil"
 	"github.com/google/kf/pkg/reconciler"
 	"github.com/google/kf/pkg/reconciler/app/resources"
 	"github.com/knative/serving/pkg/apis/autoscaling"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	servinglisters "github.com/knative/serving/pkg/client/listers/serving/v1alpha1"
+	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -51,6 +54,7 @@ var (
 type Reconciler struct {
 	*reconciler.Base
 
+	serviceCatalogClient  servicecatalogclient.Interface
 	knativeServiceLister  servinglisters.ServiceLister
 	knativeRevisionLister servinglisters.RevisionLister
 	sourceLister          kflisters.SourceLister
@@ -59,7 +63,8 @@ type Reconciler struct {
 	routeLister           kflisters.RouteLister
 	secretLister          v1listers.SecretLister
 	routeClaimLister      kflisters.RouteClaimLister
-	systemEnvInjector     systemenvinjector.SystemEnvInjectorInterface
+	serviceBindingLister  servicecataloglisters.ServiceBindingLister
+	serviceInstanceLister servicecataloglisters.ServiceInstanceLister
 }
 
 // Check that our Reconciler implements controller.Reconciler
@@ -109,7 +114,7 @@ func (r *Reconciler) reconcileApp(ctx context.Context, namespace, name string, l
 		// to status with this stale state.
 
 	} else if _, uErr := r.updateStatus(toReconcile); uErr != nil {
-		logger.Warnw("Failed to update Route status", zap.Error(uErr))
+		logger.Warnw("Failed to update App status", zap.Error(uErr))
 		return uErr
 	}
 
@@ -170,11 +175,79 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		}
 	}
 
+	// reconcile service bindings
+	var actualServiceBindings []servicecatalogv1beta1.ServiceBinding
+	{
+		desiredServiceBindings, err := resources.MakeServiceBindings(app)
+		condition := app.Status.ServiceBindingCondition()
+		if err != nil {
+			return condition.MarkTemplateError(err)
+		}
+		r.Logger.Info("reconciling Service Bindings")
+
+		// Delete Stale Service Bindings
+		existing, err := r.serviceBindingLister.
+			ServiceBindings(app.GetNamespace()).
+			List(resources.MakeServiceBindingAppSelector(app.Name))
+		if err != nil {
+			return condition.MarkReconciliationError("scanning for stale service bindings", err)
+		}
+
+		// Search to see if any of the existing bindings are not in the desired
+		// list of and therefore stale. If they are, delete them.
+		for _, binding := range existing {
+			if algorithms.Search(
+				0,
+				v1alpha1.ServiceBindings{*binding},
+				v1alpha1.ServiceBindings(desiredServiceBindings),
+			) {
+				continue
+			}
+
+			// Not found in desired, must be stale.
+			if err := r.serviceCatalogClient.
+				ServicecatalogV1beta1().
+				ServiceBindings(binding.Namespace).
+				Delete(binding.Name, &metav1.DeleteOptions{}); err != nil {
+				return condition.MarkReconciliationError("deleting existing service binding", err)
+			}
+
+		}
+
+		for _, desired := range desiredServiceBindings {
+			actual, err := r.serviceBindingLister.
+				ServiceBindings(desired.GetNamespace()).
+				Get(desired.Name)
+			if apierrs.IsNotFound(err) {
+				// ServiceBindings doesn't exist, make one.
+				actual, err = r.serviceCatalogClient.
+					ServicecatalogV1beta1().
+					ServiceBindings(desired.GetNamespace()).
+					Create(&desired)
+				if err != nil {
+					return condition.MarkReconciliationError("creating", err)
+				}
+			} else if err != nil {
+				return condition.MarkReconciliationError("getting latest", err)
+			} else if actual, err = r.reconcileServiceBinding(&desired, actual); err != nil {
+				return condition.MarkReconciliationError("updating existing", err)
+			}
+			actualServiceBindings = append(actualServiceBindings, *actual)
+		}
+		app.Status.PropagateServiceBindingsStatus(actualServiceBindings)
+		if condition.IsPending() {
+			r.Logger.Info("Waiting for service bindings; exiting early")
+			return nil
+		}
+	}
+
 	// Reconcile VCAP env vars secret
 	{
 		r.Logger.Info("reconciling env vars secret")
 		condition := app.Status.EnvVarSecretCondition()
-		desired, err := resources.MakeKfInjectedEnvSecret(app, space, r.systemEnvInjector)
+		systemEnvInjector := cfutil.NewSystemEnvInjector(r.serviceCatalogClient, r.KubeClientSet)
+		desired, err := resources.MakeKfInjectedEnvSecret(app, space, actualServiceBindings, systemEnvInjector)
+
 		if err != nil {
 			return condition.MarkTemplateError(err)
 		}
@@ -199,7 +272,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 	{
 		r.Logger.Info("reconciling Knative Serving")
 		condition := app.Status.KnativeServiceCondition()
-		desired, err := resources.MakeKnativeService(app, space, r.systemEnvInjector)
+		desired, err := resources.MakeKnativeService(app, space)
 		if err != nil {
 			return condition.MarkTemplateError(err)
 		}
@@ -420,6 +493,31 @@ func (r *Reconciler) reconcileSecret(desired, actual *v1.Secret) (*v1.Secret, er
 	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
 	existing.Data = desired.Data
 	return r.KubeClientSet.CoreV1().Secrets(existing.Namespace).Update(existing)
+}
+
+func (r *Reconciler) reconcileServiceBinding(desired, actual *servicecatalogv1beta1.ServiceBinding) (*servicecatalogv1beta1.ServiceBinding, error) {
+	// Check for differences, if none we don't need to reconcile.
+	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
+	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
+
+	if semanticEqual {
+		return actual, nil
+	}
+
+	if _, err := kmp.SafeDiff(desired.Spec, actual.Spec); err != nil {
+		return nil, fmt.Errorf("failed to diff binding: %v", err)
+	}
+
+	// Don't modify the informers copy.
+	existing := actual.DeepCopy()
+
+	// Preserve the rest of the object (e.g. ObjectMeta except for labels).
+	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
+	existing.Spec = desired.Spec
+	return r.serviceCatalogClient.
+		ServicecatalogV1beta1().
+		ServiceBindings(existing.Namespace).
+		Update(existing)
 }
 
 func (r *Reconciler) updateStatus(desired *v1alpha1.App) (*v1alpha1.App, error) {

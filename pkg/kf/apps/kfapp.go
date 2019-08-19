@@ -239,6 +239,10 @@ func (k *KfApp) SetHealthCheck(probe *corev1.Probe) {
 	container.ReadinessProbe = probe
 }
 
+func (k *KfApp) GetServiceBindings() []v1alpha1.AppSpecServiceBinding {
+	return k.Spec.ServiceBindings
+}
+
 // ToApp casts this alias back into an App.
 func (k *KfApp) ToApp() *v1alpha1.App {
 	app := v1alpha1.App(*k)

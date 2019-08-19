@@ -112,6 +112,47 @@ func TestObjectMeta(t *testing.T) {
 	}
 }
 
+func TestLabels(t *testing.T) {
+	cases := map[string]struct {
+		labels          map[string]string
+		expectedStrings []string
+	}{
+		"Empty": {},
+		"Sorted": {
+			labels: map[string]string{
+				"abc": "123",
+				"def": "456",
+				"ghi": "789",
+			},
+			expectedStrings: []string{
+				"abc=123",
+				"def=456",
+				"ghi=789",
+			},
+		},
+		"Unsorted": {
+			labels: map[string]string{
+				"ghi": "789",
+				"def": "456",
+				"abc": "123",
+			},
+			expectedStrings: []string{
+				"abc=123",
+				"def=456",
+				"ghi=789",
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			b := &bytes.Buffer{}
+			describe.Labels(b, tc.labels)
+			testutil.AssertContainsAll(t, b.String(), tc.expectedStrings)
+		})
+	}
+}
+
 func TestDuckStatus(t *testing.T) {
 	cases := map[string]struct {
 		status          duckv1beta1.Status
