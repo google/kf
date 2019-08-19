@@ -16,6 +16,7 @@ package apps
 
 import (
 	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/describe"
@@ -24,7 +25,7 @@ import (
 
 // NewEnvCommand creates a Env command.
 func NewEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command {
-	var envCmd = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "env APP_NAME",
 		Short:   "List the names and values of the environment variables for an app",
 		Example: `kf env myapp`,
@@ -54,5 +55,7 @@ func NewEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command {
 		},
 	}
 
-	return envCmd
+	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
+
+	return cmd
 }

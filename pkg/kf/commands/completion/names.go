@@ -17,6 +17,7 @@ package completion
 import (
 	"bytes"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/google/kf/pkg/kf/commands/config"
@@ -27,16 +28,33 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
+const (
+	// AppCompletion is the type for completing apps
+	AppCompletion = "apps"
+
+	// SourceCompletion is the type for completing sources
+	SourceCompletion = "sources"
+
+	// SpaceCompletion is the type for completing spaces
+	SpaceCompletion = "spaces"
+)
+
 var namespacedTypes = map[string]schema.GroupVersionResource{
-	"apps": schema.GroupVersionResource{
+	AppCompletion: schema.GroupVersionResource{
 		Group:    "kf.dev",
 		Version:  "v1alpha1",
 		Resource: "apps",
 	},
+
+	SourceCompletion: schema.GroupVersionResource{
+		Group:    "kf.dev",
+		Version:  "v1alpha1",
+		Resource: "sources",
+	},
 }
 
 var globalTypes = map[string]schema.GroupVersionResource{
-	"spaces": schema.GroupVersionResource{
+	SpaceCompletion: schema.GroupVersionResource{
 		Group:    "kf.dev",
 		Version:  "v1alpha1",
 		Resource: "spaces",
@@ -51,6 +69,9 @@ func knownTypeKeys() (out []string) {
 	for k := range globalTypes {
 		out = append(out, k)
 	}
+
+	// make ordering deterministic
+	sort.Strings(out)
 
 	return
 }
@@ -67,15 +88,15 @@ func getResourceInterface(client dynamic.Interface, k8sType, ns string) (dynamic
 	return nil, fmt.Errorf("unknown type: %s", k8sType)
 }
 
-// BashCompletionFuncName gets the name of a bash completion func for the given
+// bashCompletionFuncName gets the name of a bash completion func for the given
 // type.
-func BashCompletionFuncName(k8sType string) string {
+func bashCompletionFuncName(k8sType string) string {
 	return fmt.Sprintf("__kf_name_%s", k8sType)
 }
 
-// BashCompletionFunc returns the bash completion function for a single type.
-func BashCompletionFunc(k8sType string) string {
-	return BashCompletionFuncName(k8sType) + `()
+// bashCompletionFunc returns the bash completion function for a single type.
+func bashCompletionFunc(k8sType string) string {
+	return bashCompletionFuncName(k8sType) + `()
 {
   local out
   if out=$(kf names ` + k8sType + ` 2>/dev/null); then
@@ -87,7 +108,7 @@ func BashCompletionFunc(k8sType string) string {
 
 // MarkFlagCompletionSupported adds a completion annotation to a flag.
 func MarkFlagCompletionSupported(flags *pflag.FlagSet, name, k8sType string) error {
-	return flags.SetAnnotation(name, cobra.BashCompCustom, []string{BashCompletionFuncName(k8sType)})
+	return flags.SetAnnotation(name, cobra.BashCompCustom, []string{bashCompletionFuncName(k8sType)})
 }
 
 // MarkArgCompletionSupported returns completion annotations for a CobraCommand
@@ -100,7 +121,7 @@ func MarkArgCompletionSupported(cmd *cobra.Command, k8sType string) {
 		cmd.Annotations = make(map[string]string)
 	}
 
-	cmd.Annotations[cobra.BashCompCustom] = BashCompletionFuncName(k8sType)
+	cmd.Annotations[cobra.BashCompCustom] = bashCompletionFuncName(k8sType)
 }
 
 func customCompletions(cmd *cobra.Command) map[string]string {
@@ -130,11 +151,10 @@ func AddBashCompletion(rootCommand *cobra.Command) {
 	out := &bytes.Buffer{}
 
 	for _, k8sType := range knownTypeKeys() {
-		fmt.Fprintln(out, BashCompletionFunc(k8sType))
+		fmt.Fprintln(out, bashCompletionFunc(k8sType))
 	}
 
 	fmt.Fprintln(out)
-
 	fmt.Fprintln(out, "__kf_custom_func() {")
 	fmt.Fprintln(out, "    case ${last_command} in")
 
@@ -160,10 +180,14 @@ func NewNamesCommand(p *config.KfParams, client dynamic.Interface) *cobra.Comman
 	return &cobra.Command{
 		Hidden: true,
 
-		Use:       "names TYPE",
-		Short:     "Generates names for autocomplete",
-		Example:   `kf names apps`,
-		Long:      `This command is used by shell autocompletion`,
+		Use:     "names TYPE",
+		Short:   "Get a list of names in the cluster for the given type",
+		Example: `kf names apps`,
+		Long: `The names command gets a list of the objects and prints the names in
+		alphabetical order.
+
+		If the type is namespaced, the objects in the targeted space are printed.
+		`,
 		ValidArgs: knownTypeKeys(),
 		Args:      cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -187,6 +211,8 @@ func NewNamesCommand(p *config.KfParams, client dynamic.Interface) *cobra.Comman
 			for _, li := range ul.Items {
 				names = append(names, li.GetName())
 			}
+
+			sort.Strings(names)
 
 			fmt.Fprintln(cmd.OutOrStdout(), strings.Join(names, " "))
 

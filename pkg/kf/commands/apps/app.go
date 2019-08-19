@@ -82,7 +82,7 @@ func NewGetAppCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 		},
 	}
 
-	completion.MarkArgCompletionSupported(cmd, "apps")
+	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 
 	return cmd
 }

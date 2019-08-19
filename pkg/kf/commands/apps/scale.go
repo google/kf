@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/describe"
@@ -37,7 +38,7 @@ func NewScaleCommand(
 		autoscaleMax int
 	)
 
-	var scale = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "scale APP_NAME",
 		Short: "Change or view the instance count for an app",
 		Example: `
@@ -111,7 +112,7 @@ func NewScaleCommand(
 		},
 	}
 
-	scale.Flags().IntVarP(
+	cmd.Flags().IntVarP(
 		&instances,
 		"instances",
 		"i",
@@ -119,19 +120,21 @@ func NewScaleCommand(
 		"Number of instances.",
 	)
 
-	scale.Flags().IntVar(
+	cmd.Flags().IntVar(
 		&autoscaleMin,
 		"min",
 		-1,
 		"Minimum number of instances to allow the autoscaler to scale to. 0 implies the app can be scaled to 0.",
 	)
 
-	scale.Flags().IntVar(
+	cmd.Flags().IntVar(
 		&autoscaleMax,
 		"max",
 		-1,
 		"Maximum number of instances to allow the autoscaler to scale to. 0 implies the app can be scaled to ∞.",
 	)
 
-	return scale
+	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
+
+	return cmd
 }

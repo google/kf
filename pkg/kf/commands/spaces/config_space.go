@@ -21,6 +21,7 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/internal/envutil"
 	"github.com/google/kf/pkg/kf/algorithms"
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/quotas"
 	"github.com/google/kf/pkg/kf/spaces"
@@ -96,7 +97,7 @@ type spaceMutator struct {
 }
 
 func (sm spaceMutator) ToCommand(client spaces.Client) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     fmt.Sprintf("%s SPACE_NAME %s", sm.Name, strings.Join(sm.Args, " ")),
 		Short:   sm.Short,
 		Long:    sm.Short,
@@ -116,6 +117,10 @@ func (sm spaceMutator) ToCommand(client spaces.Client) *cobra.Command {
 			return client.Transform(spaceName, diffPrintingMutator)
 		},
 	}
+
+	completion.MarkArgCompletionSupported(cmd, completion.SpaceCompletion)
+
+	return cmd
 }
 
 func newSetContainerRegistryMutator() spaceMutator {
@@ -309,7 +314,7 @@ type spaceAccessor struct {
 }
 
 func (sm spaceAccessor) ToCommand(client spaces.Client) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     fmt.Sprintf("%s SPACE_NAME", sm.Name),
 		Short:   sm.Short,
 		Long:    sm.Short,
@@ -340,6 +345,10 @@ func (sm spaceAccessor) ToCommand(client spaces.Client) *cobra.Command {
 			return nil
 		},
 	}
+
+	completion.MarkArgCompletionSupported(cmd, completion.SpaceCompletion)
+
+	return cmd
 }
 
 func newGetContainerRegistryAccessor() spaceAccessor {
