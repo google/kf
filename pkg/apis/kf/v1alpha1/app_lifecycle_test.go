@@ -336,6 +336,21 @@ func TestAppStatus_lifecycle(t *testing.T) {
 				AppConditionKnativeServiceReady,
 			},
 		},
+		"stopped app": {
+			Init: func(status *AppStatus) {
+				status.MarkSpaceHealthy()
+				status.PropagateSourceStatus(happySource())
+				status.PropagateEnvVarSecretStatus(envVarSecret())
+				// Nil Knative service because a stopped app doesn't have a
+				// Knative service.
+				status.PropagateKnativeServiceStatus(nil)
+			},
+			ExpectSucceeded: []apis.ConditionType{
+				AppConditionSpaceReady,
+				AppConditionSourceReady,
+				AppConditionEnvVarSecretReady,
+			},
+		},
 		"space unhealthy": {
 			Init: func(status *AppStatus) {
 				status.MarkSpaceUnhealthy("Terminating", "Namespace is terminating")

@@ -59,7 +59,7 @@ func NewCreateRouteCommand(
 				domain = args[1]
 				fmt.Fprintln(cmd.OutOrStderr(), `
 [WARN]: passing the SPACE as an argument is deprecated.
-Instead use the --namespace flag.`)
+Use the --namespace flag instead.`)
 			}
 
 			if p.Namespace != "" && p.Namespace != "default" && p.Namespace != space {

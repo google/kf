@@ -139,6 +139,16 @@ func AssertNotNil(t Failable, name string, value interface{}) {
 	}
 }
 
+// AssertNotBlank is used to validate that strings are not just made of
+// whitespace.
+func AssertNotBlank(t Failable, name string, value string) {
+	t.Helper()
+
+	if out := strings.TrimSpace(value); out == "" {
+		t.Fatalf("%s: expected %s not to be blank", t.Name(), name)
+	}
+}
+
 // AssertKeyWithValue ensures the key is present in the map and has the
 // given value.
 func AssertKeyWithValue(t Failable, m map[interface{}]interface{}, key, value interface{}) {

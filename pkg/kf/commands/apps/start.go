@@ -30,12 +30,10 @@ func NewStartCommand(
 	client apps.Client,
 ) *cobra.Command {
 	return &cobra.Command{
-		Use:   "start APP_NAME",
-		Short: "Start starts the app",
-		Example: `
-  kf start myapp
-  `,
-		Args: cobra.ExactArgs(1),
+		Use:     "start APP_NAME",
+		Short:   "Start a staged application",
+		Example: `kf start myapp`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err

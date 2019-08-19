@@ -16,6 +16,8 @@ package group
 
 import (
 	"fmt"
+	"io"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
@@ -29,6 +31,35 @@ type CommandGroup struct {
 
 type CommandGroups []CommandGroup
 
+func SubCommandFlagPrint(command *cobra.Command, out io.Writer) {
+	if command.HasLocalFlags() {
+		fmt.Fprintf(out, "Flags:\n")
+		command.LocalFlags().VisitAll(func(flag *pflag.Flag) {
+			if flag.Name != "help" {
+				defaultValue := flag.DefValue
+				if defaultValue == "" {
+					defaultValue = "''"
+				}
+				fmt.Fprintf(out, "  --%s=%s: %s\n", flag.Name, defaultValue, flag.Usage)
+			}
+		})
+		fmt.Fprintln(out)
+	}
+}
+
+func SubCommandUsagePrint(command *cobra.Command, out io.Writer) {
+
+	fmt.Fprintln(out, "Usage:")
+
+	if command.HasParent() {
+		fullParentName := GetFullName(command.Parent())
+		fmt.Fprintf(out, "  %s %s [flags]\n\n", fullParentName, command.Use)
+		fmt.Fprintf(out, "Use \"%s --help\" for a list of global command-line flags.\n", fullParentName)
+	} else {
+		fmt.Fprintf(out, "  %s [flags]\n\n", command.Use)
+	}
+}
+
 func CommandGroupUsageFunc(cmd *cobra.Command, groups CommandGroups) func(*cobra.Command) error {
 	return func(command *cobra.Command) error {
 		out := command.OutOrStdout()
@@ -38,21 +69,8 @@ func CommandGroupUsageFunc(cmd *cobra.Command, groups CommandGroups) func(*cobra
 			fmt.Fprintln(out, command.Example)
 			fmt.Fprintln(out)
 		}
-		if command.HasLocalFlags() {
-			fmt.Fprintf(out, "Options:\n")
-			command.LocalFlags().VisitAll(func(flag *pflag.Flag) {
-				if flag.Name != "help" {
-					fmt.Fprintf(out, "  --%s: %s\n", flag.Name, flag.Usage)
-				}
-			})
-			fmt.Fprintln(out)
-		}
-		fmt.Fprintln(out, "Usage:")
-		fmt.Fprintf(out, "  %s", GetFullName(command))
-		command.Args
-		if command.HasParent() {
-			fmt.Fprintf(out, "Use \"%s --help\" for a list of global command-line options (applies to all commands).\n", GetFullName(command.Parent()))
-		}
+		SubCommandFlagPrint(command, out)
+		SubCommandUsagePrint(command, out)
 		return nil
 	}
 }
@@ -71,23 +89,34 @@ func CommandGroupHelpFunc(cmd *cobra.Command, groups CommandGroups) func(*cobra.
 		// 2 for the prefix spaces, 1 for the padding
 		minWidth += 3
 
-		out := tabwriter.NewWriter(command.OutOrStdout(), minWidth, 8, 1, ' ', 0)
-		defer out.Flush()
-		fmt.Fprintf(out, "%s\n\n", command.Long)
+		out := command.OutOrStdout()
+		PrintWhitespaceNormalizedString(command.Long, out)
+		fmt.Fprintln(out)
 
-		for _, group := range groups {
-			fmt.Fprintln(out, group.Message)
-			for _, c := range group.Commands {
-				fmt.Fprintf(out, "  %s\t%s\n", c.Name(), c.Short)
+		if cmd == command {
+			tabout := tabwriter.NewWriter(command.OutOrStdout(), minWidth, 8, 1, ' ', 0)
+			defer tabout.Flush()
+			for _, group := range groups {
+				fmt.Fprintln(tabout, group.Message)
+				for _, c := range group.Commands {
+					fmt.Fprintf(tabout, "  %s\t%s\n", c.Name(), c.Short)
+				}
+				fmt.Fprintln(tabout)
 			}
-			fmt.Fprintln(out)
+			fmt.Fprintln(tabout, "Usage:")
+			fmt.Fprintf(tabout, "  %s [flags] COMMAND\n\n", GetFullName(command))
+			fmt.Fprintf(tabout, "Use \"%s COMMAND --help\" for more information about a given command.\n", GetFullName(command))
+		} else {
+			SubCommandFlagPrint(command, out)
+			SubCommandUsagePrint(command, out)
 		}
-
-		fmt.Fprintln(out, "Usage:")
-		fmt.Fprintf(out, "  %s [flags] COMMAND\n\n", GetFullName(command))
-		fmt.Fprintf(out, "Use \"%s command --help\" for more information about a given command.\n", GetFullName(command))
 	}
+}
 
+func PrintWhitespaceNormalizedString(str string, out io.Writer) {
+	for _, line := range strings.Split(str, "\n") {
+		fmt.Fprintln(out, strings.TrimSpace(line))
+	}
 }
 
 func GetFullName(command *cobra.Command) string {

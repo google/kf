@@ -15,7 +15,6 @@
 package servicebindings
 
 import (
-	"encoding/base64"
 	"errors"
 	"fmt"
 
@@ -33,9 +32,10 @@ func NewVcapServicesCommand(
 ) *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:   "vcap-services APP_NAME",
-		Short: "Print the VCAP_SERVICES environment variable for an app",
-		Args:  cobra.ExactArgs(1),
+		Use:     "vcap-services APP_NAME",
+		Short:   "Print the VCAP_SERVICES environment variable for an app",
+		Example: `kf vcap-services my-app`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appName := args[0]
 
@@ -58,12 +58,7 @@ func NewVcapServicesCommand(
 				return errors.New("VCAP_SERVICES does not exist")
 			}
 
-			decoded, err := base64.StdEncoding.DecodeString(string(vcapServices))
-			if err != nil {
-				return err
-			}
-
-			fmt.Fprintln(cmd.OutOrStdout(), string(decoded))
+			fmt.Fprintln(cmd.OutOrStdout(), string(vcapServices))
 			return nil
 		},
 	}

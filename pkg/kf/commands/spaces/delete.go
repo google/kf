@@ -23,9 +23,28 @@ import (
 // NewDeleteSpaceCommand allows users to delete spaces.
 func NewDeleteSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "delete-space SPACE",
-		Short: "Delete a space",
-		Args:  cobra.ExactArgs(1),
+		Use:     "delete-space SPACE",
+		Short:   "Delete a space",
+		Example: `kf delete-space my-space`,
+		Long: `Delete a space and all its contents.
+
+		This will delete a space's:
+
+		* Apps
+		* Service bindings
+		* Service instances
+		* RBAC roles
+		* Routes
+		* The backing Kubernetes namespace
+		* Anything else in that namespace
+
+		NOTE: Space deletion is asynchronous and may take a long time to complete
+		depending on the number of items in the space.
+
+		You will be unable to make changes to resources in the space once deletion
+		has begun.
+		`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 

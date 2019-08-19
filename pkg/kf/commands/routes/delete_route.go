@@ -63,7 +63,7 @@ func NewDeleteRouteCommand(
 			// routes with the proper labels first, then use their apps.
 			apps, err := a.List(
 				p.Namespace,
-				apps.WithListfilters([]apps.Predicate{
+				apps.WithListFilters([]apps.Predicate{
 					func(app *v1alpha1.App) bool {
 						return algorithms.Search(
 							0,

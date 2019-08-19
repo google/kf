@@ -41,13 +41,17 @@ func NewScaleCommand(
 		Use:   "scale APP_NAME",
 		Short: "Change or view the instance count for an app",
 		Example: `
-  kf scale myapp # Displays current scaling
-  kf scale myapp -i 3 # Scale to exactly 3 instances
-  kf scale myapp --instances 3 # Scale to exactly 3 instances
-  kf scale myapp --min 3 # Autoscaler won't scale below 3 instances
-  kf scale myapp --max 5 # Autoscaler won't scale above 5 instances
-  kf scale myapp --min 3 --max 5 # Autoscaler won't below 3 or above 5 instances
-  `,
+		# Display current scale settings
+		kf scale myapp
+		# Scale to exactly 3 instances
+		kf scale myapp --instances 3
+		# Scale to at least 3 instances
+		kf scale myapp --min 3
+		# Scale between 0 and 5 instances
+		kf scale myapp --max 5
+		# Scale between 3 and 5 instances depending on traffic
+		kf scale myapp --min 3 --max 5
+		`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {

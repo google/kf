@@ -38,10 +38,21 @@ func NewKfCommand() *cobra.Command {
 
 	var rootCmd = &cobra.Command{
 		Use:   "kf",
-		Short: "kf is like cf for Knative",
+		Short: "A MicroPaaS for Kubernetes with a Cloud Foundry style developer expeience",
 		Long: templates.LongDesc(`
-      kf is like cf for Knative
-      `),
+			Kf is a MicroPaaS for Kubernetes with a Cloud Foundry style developer
+			expeience.
+
+			Kf aims to be fully compatible with Cloud Foundry applications and
+			lifecycle. It supports logs, buildpacks, app manifests, routing, service
+			brokers, and injected services.
+
+			At the same time, it aims to improve the operational experience by
+			supporting git-ops, self-healing infrastructure, containers, a service
+			mesh, autoscaling, scale-to-zero, improved quota management and does it
+			all on Kubernetes using industry-standard OSS tools including Knative,
+			Istio, and Tekton.
+			`),
 		DisableAutoGenTag: false,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			loadedConfig, err := config.Load(p.Config, p)
@@ -56,9 +67,9 @@ func NewKfCommand() *cobra.Command {
 		},
 	}
 
-	rootCmd.PersistentFlags().StringVar(&p.Config, "config", "", "config file (default is $HOME/.kf)")
-	rootCmd.PersistentFlags().StringVar(&p.KubeCfgFile, "kubeconfig", "", "kubectl config file (default is $HOME/.kube/config)")
-	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "", "kubernetes namespace")
+	rootCmd.PersistentFlags().StringVar(&p.Config, "config", "", "Config file (default is $HOME/.kf)")
+	rootCmd.PersistentFlags().StringVar(&p.KubeCfgFile, "kubeconfig", "", "Kubectl config file (default is $HOME/.kube/config)")
+	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "", "Kubernetes namespace to target")
 
 	rootCmd = group.ActsAsRootCommand(rootCmd, group.CommandGroups{
 		{
@@ -106,7 +117,6 @@ func NewKfCommand() *cobra.Command {
 			Message: "Quotas",
 			Commands: []*cobra.Command{
 				InjectGetQuota(p),
-				InjectCreateQuota(p),
 				InjectUpdateQuota(p),
 				InjectDeleteQuota(p),
 			},
@@ -179,7 +189,8 @@ func NewKfCommand() *cobra.Command {
 
 func completionCommand(rootCmd *cobra.Command) *cobra.Command {
 	return &cobra.Command{
-		Use: "completion bash|zsh",
+		Use:   "completion bash|zsh",
+		Short: "Generate auto-completion files for kf commands",
 		Example: `
   eval "$(kf completion bash)"
   eval "$(kf completion zsh)"

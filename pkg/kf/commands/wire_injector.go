@@ -332,12 +332,6 @@ func InjectConfigSpace(p *config.KfParams) *cobra.Command {
 // Quotas Command //
 ////////////////////
 
-func InjectCreateQuota(p *config.KfParams) *cobra.Command {
-	wire.Build(cquotas.NewCreateQuotaCommand, SpacesSet)
-
-	return nil
-}
-
 func InjectUpdateQuota(p *config.KfParams) *cobra.Command {
 	wire.Build(cquotas.NewUpdateQuotaCommand, SpacesSet)
 
