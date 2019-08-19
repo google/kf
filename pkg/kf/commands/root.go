@@ -37,10 +37,21 @@ func NewKfCommand() *cobra.Command {
 
 	var rootCmd = &cobra.Command{
 		Use:   "kf",
-		Short: "Kf is like cf for Knative",
+		Short: "A MicroPaaS for Kubernetes with a Cloud Foundry style developer expeience",
 		Long: templates.LongDesc(`
-      kf is like cf for Knative
-      `),
+			Kf is a MicroPaaS for Kubernetes with a Cloud Foundry style developer
+			expeience.
+
+			Kf aims to be fully compatible with Cloud Foundry applications and
+			lifecycle. It supports logs, buildpacks, app manifests, routing, service
+			brokers, and injected services.
+
+			At the same time, it aims to improve the operational experience by
+			supporting git-ops, self-healing infrastructure, containers, a service
+			mesh, autoscaling, scale-to-zero, improved quota management and does it
+			all on Kubernetes using industry-standard OSS tools including Knative,
+			Istio, and Tekton.
+			`),
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			loadedConfig, err := config.Load(p.Config, p)
 			if err != nil {

@@ -46,9 +46,11 @@ func NewDeleteCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 		* bindings
 
 		The delete occurs asynchronously. Apps are often deleted shortly after the
-		delete command is called, but may live on for a while if there are still
-		connections waiting to be served, bindings won't deprovision or the cluster
-		is in an unhealthy state.
+		delete command is called, but may live on for a while if:
+
+		* there are still connections waiting to be served
+		* bindings fail to deprovision
+		* the cluster is in an unhealthy state
 		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true

@@ -38,7 +38,6 @@ func NewStacksCommand(p *config.KfParams, l buildpacks.Client) *cobra.Command {
 
 		Stack support is determined by the buildpack builder image so they can
 		change from one space to the next.
-
 		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {

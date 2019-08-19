@@ -46,14 +46,19 @@ func checkCommandStyle(t *testing.T, cmd *cobra.Command) {
 
 			testutil.AssertNotBlank(t, "use", cmd.Use)
 			testutil.AssertNotBlank(t, "short", cmd.Short)
-			AssertNotStartWithArticle(t, "short", cmd.Short)
 
 			if len(cmd.Short) > 80 {
 				t.Errorf("Short length is %d, expected <= 80 cols", len(cmd.Short))
 			}
 
-			if !startsWithUpper(cmd.Short) {
-				t.Errorf("Short must start with an upper-case character, got: %s", cmd.Short)
+			// The root command can behave slightly differently because it needs to
+			// describe the tool as opposed to a verb on the tool.
+			if cmd.Root() != cmd {
+				AssertNotStartWithArticle(t, "short", cmd.Short)
+
+				if !startsWithUpper(cmd.Short) {
+					t.Errorf("Short must start with an upper-case character, got: %s", cmd.Short)
+				}
 			}
 
 			if len(cmd.Commands()) == 0 {

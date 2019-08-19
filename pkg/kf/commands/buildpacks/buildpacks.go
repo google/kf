@@ -33,7 +33,12 @@ func NewBuildpacksCommand(p *config.KfParams, l buildpacks.Client) *cobra.Comman
 		Short:   "List buildpacks in current builder",
 		Args:    cobra.ExactArgs(0),
 		Example: "kf buildpacks",
-		Long:    ``,
+		Long: `List the buildpacks available in the space to applications being built
+		with buildpacks.
+
+		Buildpack support is determined by the buildpack builder image and can
+		change from one space to the next.
+		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err

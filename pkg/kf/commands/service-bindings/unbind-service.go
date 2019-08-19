@@ -31,7 +31,7 @@ func NewUnbindServiceCommand(p *config.KfParams, client servicebindings.ClientIn
 
 		This will delete the credential from the service broker that created the
 		instance and update the VCAP_SERVICES environment variable for the
-		applicaiton to remove the reference to the instance.
+		application to remove the reference to the instance.
 		`,
 		Example: `kf unbind-service myapp my-instance`,
 		Args:    cobra.ExactArgs(2),
