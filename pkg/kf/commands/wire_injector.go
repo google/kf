@@ -19,6 +19,7 @@ package commands
 import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	kfv1alpha1 "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
+	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/typed/servicecatalog/v1beta1"
 	"github.com/google/kf/pkg/kf"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/buildpacks"
@@ -30,12 +31,14 @@ import (
 	cquotas "github.com/google/kf/pkg/kf/commands/quotas"
 	croutes "github.com/google/kf/pkg/kf/commands/routes"
 	servicebindingscmd "github.com/google/kf/pkg/kf/commands/service-bindings"
+	servicebrokerscmd "github.com/google/kf/pkg/kf/commands/service-brokers"
 	servicescmd "github.com/google/kf/pkg/kf/commands/services"
 	cspaces "github.com/google/kf/pkg/kf/commands/spaces"
 	kflogs "github.com/google/kf/pkg/kf/logs"
 	"github.com/google/kf/pkg/kf/routeclaims"
 	"github.com/google/kf/pkg/kf/routes"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
+	servicebrokers "github.com/google/kf/pkg/kf/service-brokers"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/google/kf/pkg/kf/sources"
 	"github.com/google/kf/pkg/kf/spaces"
@@ -268,6 +271,31 @@ func InjectVcapServices(p *config.KfParams) *cobra.Command {
 		servicebindingscmd.NewVcapServicesCommand,
 		config.GetServiceCatalogClient,
 		config.GetSecretClient,
+	)
+	return nil
+}
+
+///////////////////////
+// Service Brokers  //
+/////////////////////
+func provideServiceBrokersGetter(sbi servicecatalogclient.ServicecatalogV1beta1Interface) servicecatalogclient.ServiceBrokersGetter {
+	return sbi
+}
+
+func InjectAddServiceBroker(p *config.KfParams) *cobra.Command {
+	wire.Build(
+		servicebrokers.NewClient,
+		servicebrokerscmd.NewAddServiceBrokerCommand,
+		config.GetServiceCatalogClient, // ?
+	)
+	return nil
+}
+
+func InjectDeleteServiceBroker(p *config.KfParams) *cobra.Command {
+	wire.Build(
+		servicebrokers.NewClient,
+		servicebrokerscmd.NewDeleteServiceBrokerCommand,
+		config.GetServiceCatalogClient,
 	)
 	return nil
 }
