@@ -73,6 +73,9 @@ func CalculateMinWidth(groups CommandGroups) int {
 	minWidth := 0
 	for _, group := range groups {
 		for _, c := range group.Commands {
+			if c == nil {
+				continue
+			}
 			if len(c.Name()) > minWidth {
 				minWidth = len(c.Name())
 			}
@@ -83,28 +86,32 @@ func CalculateMinWidth(groups CommandGroups) int {
 
 // PrintTrimmedMultilineString does just that.
 func PrintTrimmedMultilineString(str string, out io.Writer) {
+	if str == "" {
+		return
+	}
+
 	for _, line := range strings.Split(str, "\n") {
 		fmt.Fprintln(out, strings.TrimSpace(line))
 	}
 }
 
 // CommandGroupUsageFunc returns a UsageFunc a root level command can use.
-func CommandGroupUsageFunc(groups CommandGroups) func(*cobra.Command) error {
+func CommandGroupUsageFunc(groups CommandGroups, templateFuncs *template.FuncMap) func(*cobra.Command) error {
 	return func(command *cobra.Command) error {
 		out := command.OutOrStdout()
 		fmt.Fprintln(out)
-		return PrintTemplate(out, command.UsageTemplate(), command, nil)
+		return PrintTemplate(out, command.UsageTemplate(), command, templateFuncs)
 	}
 }
 
 // CommandGroupHelpFunc returns a HelpFunc a root level command can use.
-func CommandGroupHelpFunc(rootCommand *cobra.Command, groups CommandGroups) func(*cobra.Command, []string) {
+func CommandGroupHelpFunc(rootCommand *cobra.Command, groups CommandGroups, templateFuncs *template.FuncMap) func(*cobra.Command, []string) {
 	return func(command *cobra.Command, args []string) {
 		out := command.OutOrStdout()
 
 		// not the root level, use the default template
 		if rootCommand != command {
-			err := PrintTemplate(out, command.HelpTemplate(), command, nil)
+			err := PrintTemplate(out, command.HelpTemplate(), command, templateFuncs)
 			if err != nil {
 				panic(fmt.Sprintf("Error printing help: %v", err))
 			}
@@ -133,13 +140,16 @@ func CommandGroupHelpFunc(rootCommand *cobra.Command, groups CommandGroups) func
 	}
 }
 
+// AddCommandGroups adds CommandGroups to a given cobra Command.
+// A side effact of calling this function is that subcommands will no longer be
+// able to use their own usage or help funcs.
 func AddCommandGroups(rootCommand *cobra.Command, groups CommandGroups) *cobra.Command {
 	if rootCommand == nil {
 		panic("nil root command")
 	}
 
-	rootCommand.SetUsageFunc(CommandGroupUsageFunc(groups))
-	rootCommand.SetHelpFunc(CommandGroupHelpFunc(rootCommand, groups))
+	rootCommand.SetUsageFunc(CommandGroupUsageFunc(groups, nil))
+	rootCommand.SetHelpFunc(CommandGroupHelpFunc(rootCommand, groups, nil))
 
 	for _, group := range groups {
 		for _, command := range group.Commands {

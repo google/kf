@@ -16,9 +16,6 @@ package group_test
 
 import (
 	"bytes"
-	"fmt"
-	"os"
-	"strings"
 	"testing"
 
 	"github.com/google/kf/pkg/kf/commands/group"
@@ -26,41 +23,156 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func TestNewCommandGroup(t *testing.T) {
+func TestCalculateMinWidth(t *testing.T) {
 	cases := map[string]struct {
-		commands        []*cobra.Command
-		groupName       string
-		args            []string
-		expectedStrings []string
-		expectedErr     error
+		groups        group.CommandGroups
+		expectedWidth int
 	}{
-		"Use": {
-			groupName: "group",
-			commands: []*cobra.Command{
-				&cobra.Command{
-					Use: "use-a",
-				},
-				&cobra.Command{
-					Use: "use-b",
+		"zero-lenth array": {
+			groups:        group.CommandGroups{},
+			expectedWidth: 0,
+		},
+		"one empty group": {
+			groups: group.CommandGroups{
+				{
+					Name:     "group-1",
+					Commands: []*cobra.Command{},
 				},
 			},
+			expectedWidth: 0,
+		},
+		"group with nil": {
+			groups: group.CommandGroups{
+				{
+					Name: "group-1",
+					Commands: []*cobra.Command{
+						nil,
+					},
+				},
+			},
+			expectedWidth: 0,
+		},
+		"group with command": {
+			groups: group.CommandGroups{
+				{
+					Name: "group-1",
+					Commands: []*cobra.Command{
+						{
+							Use: "command",
+						},
+					},
+				},
+			},
+			expectedWidth: len("command"),
+		},
+		"group with a few commands": {
+			groups: group.CommandGroups{
+				{
+					Name: "group-1",
+					Commands: []*cobra.Command{
+						{
+							Use: "command",
+						},
+						{
+							Use: "foo",
+						},
+						{
+							Use: "foobarcommand",
+						},
+					},
+				},
+			},
+			expectedWidth: len("foobarcommand"),
+		},
+		"a few groups with a few commands": {
+			groups: group.CommandGroups{
+				{
+					Name: "group-1",
+					Commands: []*cobra.Command{
+						{
+							Use: "command",
+						},
+						{
+							Use: "foo",
+						},
+						{
+							Use: "foobarcommand",
+						},
+					},
+				},
+				{
+					Name: "group-2",
+					Commands: []*cobra.Command{
+						{
+							Use: "command2",
+						},
+						{
+							Use: "reallylongcommandnooneuses",
+						},
+						{
+							Use: "1234 spaces in here",
+						},
+					},
+				},
+				{
+					Name: "group-3",
+					Commands: []*cobra.Command{
+						{
+							Use: "some-command",
+						},
+						{
+							Use: "another-command",
+						},
+						{
+							Use: "get-new-command-for-use",
+						},
+					},
+				},
+			},
+			expectedWidth: len("reallylongcommandnooneuses"),
 		},
 	}
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			commandGroup, err := group.NewCommandGroup(tc.groupName, tc.commands...)
-			testutil.AssertEqual(t, "error", tc.expectedErr, err)
-
-			var b bytes.Buffer
-			commandGroup.SetArgs(tc.args)
-			commandGroup.SetOutput(&b)
-			commandGroup.Execute()
-			fmt.Fprintf(os.Stderr, b.String())
-			if tc.expectedStrings != nil {
-				actualStrings := strings.Split(b.String(), "\n")
-				testutil.AssertEqual(t, "strings", tc.expectedStrings, actualStrings)
+			w := group.CalculateMinWidth(tc.groups)
+			if w != tc.expectedWidth {
+				t.Errorf("Expected minWidth to be %d actual value %d", tc.expectedWidth, w)
 			}
+		})
+	}
+}
+
+func TestPrintTrimmedMultilineString(t *testing.T) {
+	cases := map[string]struct {
+		str      string
+		expected string
+	}{
+		"empty string": {
+			str:      "",
+			expected: "",
+		},
+		"one string": {
+			str:      "some-text",
+			expected: "some-text\n",
+		},
+		"two strings": {
+			str:      "some-text\nand more",
+			expected: "some-text\nand more\n",
+		},
+		"trim": {
+			str:      "   some-text \n      and more    ",
+			expected: "some-text\nand more\n",
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			var b bytes.Buffer
+			group.PrintTrimmedMultilineString(tc.str, &b)
+
+			actual := b.String()
+			testutil.AssertEqual(t, "output", tc.expected, actual)
 		})
 	}
 }
