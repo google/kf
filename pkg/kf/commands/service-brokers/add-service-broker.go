@@ -17,15 +17,15 @@ package servicebrokers
 import (
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	servicebrokers "github.com/google/kf/pkg/kf/service-brokers"
 	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/spf13/cobra"
 )
 
 // NewAddServiceBrokerCommand adds a namespaced service broker to the service catalog.
-func NewAddServiceBrokerCommand(p *config.KfParams, client servicebrokers.Client) *cobra.Command {
+func NewAddServiceBrokerCommand(p *config.KfParams, client servicecatalogclient.Interface) *cobra.Command {
 	var (
 		serviceBrokerName string
 		url               string
@@ -61,7 +61,7 @@ func NewAddServiceBrokerCommand(p *config.KfParams, client servicebrokers.Client
 				},
 			}
 
-			_, err := client.Create(p.Namespace, desiredBroker)
+			_, err := client.ServicecatalogV1beta1().ServiceBrokers(p.Namespace).Create(desiredBroker)
 
 			if err != nil {
 				return err

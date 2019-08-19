@@ -15,15 +15,15 @@
 package servicebrokers
 
 import (
+	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	servicebrokers "github.com/google/kf/pkg/kf/service-brokers"
-
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"github.com/spf13/cobra"
 )
 
 // NewDeleteServiceBrokerCommand adds a namespaced service broker to the service catalog.
-func NewDeleteServiceBrokerCommand(p *config.KfParams, client servicebrokers.Client) *cobra.Command {
+func NewDeleteServiceBrokerCommand(p *config.KfParams, client servicecatalogclient.Interface) *cobra.Command {
 	var (
 		serviceBrokerName string
 	)
@@ -43,7 +43,7 @@ func NewDeleteServiceBrokerCommand(p *config.KfParams, client servicebrokers.Cli
 				return err
 			}
 
-			err := client.Delete(p.Namespace, serviceBrokerName)
+			err := client.ServicecatalogV1beta1().ServiceBrokers(p.Namespace).Delete(serviceBrokerName, &metav1.DeleteOptions{})
 
 			if err != nil {
 				return err
