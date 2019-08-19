@@ -67,19 +67,24 @@ func (r *Reconciler) reconcileRoute(
 	name string,
 	logger *zap.SugaredLogger,
 ) (err error) {
-	var deleted bool
 	original, err := r.routeLister.
 		Routes(namespace).
 		Get(name)
 	switch {
 	case apierrs.IsNotFound(err):
 		logger.Errorf("Route %q no longer exists\n", name)
-		deleted = true
+		return nil
 
 	case err != nil:
 		return err
 
 	case original.GetDeletionTimestamp() != nil:
+		logger.Errorf("Route %q is being deleted\n", name)
+		return nil
+	}
+
+	if r.IsNamespaceTerminating(namespace) {
+		logger.Errorf("skipping sync for route %q, namespace %q is terminating\n", name, namespace)
 		return nil
 	}
 
@@ -87,7 +92,7 @@ func (r *Reconciler) reconcileRoute(
 	toReconcile := original.DeepCopy()
 
 	// Reconcile this copy of the route.
-	return r.ApplyChanges(ctx, toReconcile, deleted, logger)
+	return r.ApplyChanges(ctx, toReconcile, logger)
 }
 
 // ApplyChanges updates the linked resources in the cluster with the current
@@ -95,7 +100,6 @@ func (r *Reconciler) reconcileRoute(
 func (r *Reconciler) ApplyChanges(
 	ctx context.Context,
 	origRoute *v1alpha1.Route,
-	deleted bool,
 	logger *zap.SugaredLogger,
 ) error {
 	origRoute.SetDefaults(ctx)
@@ -129,10 +133,11 @@ func (r *Reconciler) ApplyChanges(
 			}
 		} else if err != nil {
 			return err
+		} else if actual.GetDeletionTimestamp() != nil {
+
 		} else if actual, err = r.reconcile(
 			desired,
 			actual,
-			deleted,
 			logger,
 		); err != nil {
 			return err
@@ -142,7 +147,11 @@ func (r *Reconciler) ApplyChanges(
 	return nil
 }
 
-func (r *Reconciler) reconcile(desired, actual *networking.VirtualService, deleted bool, logger *zap.SugaredLogger) (*networking.VirtualService, error) {
+func (r *Reconciler) reconcile(
+	desired *networking.VirtualService,
+	actual *networking.VirtualService,
+	logger *zap.SugaredLogger,
+) (*networking.VirtualService, error) {
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
 	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
@@ -162,30 +171,19 @@ func (r *Reconciler) reconcile(desired, actual *networking.VirtualService, delet
 	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
 	existing.ObjectMeta.Annotations = desired.ObjectMeta.Annotations
 
-	if deleted {
-		existing.OwnerReferences = algorithms.Delete(
-			v1alpha1.OwnerReferences(existing.OwnerReferences),
-			v1alpha1.OwnerReferences(desired.OwnerReferences),
-		).(v1alpha1.OwnerReferences)
+	// Merge new OwnerReferences and HTTPRoutes
+	existing.OwnerReferences = algorithms.Merge(
+		v1alpha1.OwnerReferences(existing.OwnerReferences),
+		v1alpha1.OwnerReferences(desired.OwnerReferences),
+	).(v1alpha1.OwnerReferences)
 
-		existing.Spec.HTTP = algorithms.Delete(
-			v1alpha1.HTTPRoutes(existing.Spec.HTTP),
-			v1alpha1.HTTPRoutes(desired.Spec.HTTP),
-		).(v1alpha1.HTTPRoutes)
-	} else {
-		existing.OwnerReferences = algorithms.Merge(
-			v1alpha1.OwnerReferences(existing.OwnerReferences),
-			v1alpha1.OwnerReferences(desired.OwnerReferences),
-		).(v1alpha1.OwnerReferences)
+	existing.Spec.HTTP = algorithms.Merge(
+		v1alpha1.HTTPRoutes(existing.Spec.HTTP),
+		v1alpha1.HTTPRoutes(desired.Spec.HTTP),
+	).(v1alpha1.HTTPRoutes)
 
-		existing.Spec.HTTP = algorithms.Merge(
-			v1alpha1.HTTPRoutes(existing.Spec.HTTP),
-			v1alpha1.HTTPRoutes(desired.Spec.HTTP),
-		).(v1alpha1.HTTPRoutes)
-
-		// Sort by reverse to defer to the longest matchers.
-		sort.Sort(sort.Reverse(v1alpha1.HTTPRoutes(existing.Spec.HTTP)))
-	}
+	// Sort by reverse to defer to the longest matchers.
+	sort.Sort(sort.Reverse(v1alpha1.HTTPRoutes(existing.Spec.HTTP)))
 
 	return r.SharedClientSet.
 		Networking().

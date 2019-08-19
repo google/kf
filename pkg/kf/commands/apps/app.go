@@ -27,10 +27,11 @@ import (
 
 // NewGetAppCommand creates a command to get details about a single application.
 func NewGetAppCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
-	var apps = &cobra.Command{
+	return &cobra.Command{
 		Use:     "app APP_NAME",
-		Short:   "Get a pushed app",
-		Example: `  kf app my-app`,
+		Short:   "Print information about a deployed app",
+		Long:    `Prints information about a deployed app.`,
+		Example: `kf app my-app`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
@@ -79,6 +80,4 @@ func NewGetAppCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 			return nil
 		},
 	}
-
-	return apps
 }

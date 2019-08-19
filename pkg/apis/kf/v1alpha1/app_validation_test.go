@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/google/kf/pkg/kf/testutil"
@@ -31,6 +32,12 @@ func TestApp_Validate(t *testing.T) {
 			Containers: []corev1.Container{{}},
 		},
 	}
+	goodSource := SourceSpec{
+		BuildpackBuild: SourceSpecBuildpackBuild{
+			Source: "gcr.io/kf-source",
+			Stack:  "cflinuxfs3",
+		},
+	}
 
 	cases := map[string]struct {
 		spec App
@@ -44,6 +51,7 @@ func TestApp_Validate(t *testing.T) {
 				Spec: AppSpec{
 					Template:  goodTemplate,
 					Instances: goodInstances,
+					Source:    goodSource,
 				},
 			},
 		},
@@ -55,6 +63,7 @@ func TestApp_Validate(t *testing.T) {
 				Spec: AppSpec{
 					Template:  goodTemplate,
 					Instances: AppSpecInstances{Exactly: intPtr(-1)},
+					Source:    goodSource,
 				},
 			},
 			want: apis.ErrInvalidValue(-1, "spec.instances.exactly"),
@@ -67,9 +76,25 @@ func TestApp_Validate(t *testing.T) {
 				Spec: AppSpec{
 					Template:  AppSpecTemplate{},
 					Instances: goodInstances,
+					Source:    goodSource,
 				},
 			},
 			want: apis.ErrMissingField("spec.template.spec.containers"),
+		},
+		"invalid source fields": {
+			spec: App{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "valid",
+				},
+				Spec: AppSpec{
+					Template:  goodTemplate,
+					Instances: goodInstances,
+					Source: SourceSpec{
+						ServiceAccount: "not-user-settable",
+					},
+				},
+			},
+			want: apis.ErrDisallowedFields("spec.source.serviceAccount"),
 		},
 	}
 
@@ -80,7 +105,67 @@ func TestApp_Validate(t *testing.T) {
 			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())
 		})
 	}
+}
 
+func TestAppSpec_ValidateSourceSpec(t *testing.T) {
+	cases := map[string]struct {
+		old     *SourceSpec
+		current SourceSpec
+		want    *apis.FieldError
+	}{
+		"invalid source fields": {
+			current: SourceSpec{
+				ServiceAccount: "not-user-settable",
+			},
+			want: apis.ErrDisallowedFields("serviceAccount"),
+		},
+		"source changed incorrectly": {
+			old: &SourceSpec{
+				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			},
+			current: SourceSpec{
+				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			},
+			want: &apis.FieldError{Message: "must increment UpdateRequests with change to source", Paths: []string{"UpdateRequests"}},
+		},
+		"source UpdateRequests less than last": {
+			old: &SourceSpec{
+				UpdateRequests: 42,
+				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			},
+			current: SourceSpec{
+				UpdateRequests: 5,
+				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			},
+			want: &apis.FieldError{Message: "UpdateRequests must be nondecreasing, previous value: 42 new value: 5", Paths: []string{"UpdateRequests"}},
+		},
+		"source changed with increment": {
+			old: &SourceSpec{
+				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			},
+			current: SourceSpec{
+				UpdateRequests: 2,
+				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			ctx := context.TODO()
+			if tc.old != nil {
+				ctx = apis.WithinUpdate(ctx, &App{
+					Spec: AppSpec{
+						Source: *tc.old,
+					},
+				})
+			}
+
+			got := (&AppSpec{Source: tc.current}).ValidateSourceSpec(ctx)
+
+			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())
+		})
+	}
 }
 
 func TestAppSpecInstances_Validate(t *testing.T) {
@@ -183,6 +268,49 @@ func TestValidatePodSpec(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 			got := ValidatePodSpec(tc.spec)
 
+			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())
+		})
+	}
+}
+
+func TestAppSpecServiceBinding_Validate(t *testing.T) {
+	cases := map[string]struct {
+		binding *AppSpecServiceBinding
+		want    *apis.FieldError
+	}{
+		"missing bindingName": {
+			binding: &AppSpecServiceBinding{
+				Instance:   "my-cool-instance",
+				Parameters: json.RawMessage(`{"cool":"params"}`),
+			},
+			want: apis.ErrMissingField("bindingName"),
+		},
+		"missing instance": {
+			binding: &AppSpecServiceBinding{
+				BindingName: "my-cool-binding",
+				Parameters:  json.RawMessage(`{"cool":"params"}`),
+			},
+			want: apis.ErrMissingField("instance"),
+		},
+		"missing parameters": {
+			binding: &AppSpecServiceBinding{
+				BindingName: "my-cool-binding",
+				Instance:    "my-cool-instance",
+			},
+			want: apis.ErrMissingField("parameters"),
+		},
+		"null parameters": {
+			binding: &AppSpecServiceBinding{
+				BindingName: "my-cool-binding",
+				Instance:    "my-cool-instance",
+				Parameters:  json.RawMessage("null"),
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			got := tc.binding.Validate(context.Background())
 			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())
 		})
 	}

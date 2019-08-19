@@ -30,12 +30,10 @@ func NewStopCommand(
 	client apps.Client,
 ) *cobra.Command {
 	return &cobra.Command{
-		Use:   "stop APP_NAME",
-		Short: "Stop stops the app",
-		Example: `
-  kf stop myapp
-  `,
-		Args: cobra.ExactArgs(1),
+		Use:     "stop APP_NAME",
+		Short:   "Stop a running application",
+		Example: `kf stop myapp`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err

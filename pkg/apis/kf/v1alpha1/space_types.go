@@ -66,6 +66,11 @@ type SpaceSpecSecurity struct {
 	// EnableDeveloperLogsAccess allows developers to access pod logging endpoints.
 	// +optional
 	EnableDeveloperLogsAccess bool `json:"enableDeveloperLogsAccess,omitempty"`
+
+	// BuildServiceAccount sets the service account that will be propagated to
+	// all builds.
+	// +optional
+	BuildServiceAccount string `json:"buildServiceAccount,omitempty"`
 }
 
 // SpaceSpecBuildpackBuild holds fields for managing building via buildpacks.

@@ -23,12 +23,15 @@ import (
 	knativeclientset "github.com/knative/serving/pkg/client/clientset/versioned"
 	knativeclient "github.com/knative/serving/pkg/client/injection/client"
 	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
+	v1listers "k8s.io/client-go/listers/core/v1"
 	sharedclientset "knative.dev/pkg/client/clientset/versioned"
 	sharedclient "knative.dev/pkg/client/injection/client"
 	"knative.dev/pkg/configmap"
 	"knative.dev/pkg/injection/clients/kubeclient"
+	namespaceinformer "knative.dev/pkg/injection/informers/kubeinformers/corev1/namespace"
 	"knative.dev/pkg/logging"
 	"knative.dev/pkg/logging/logkey"
 )
@@ -56,6 +59,10 @@ type Base struct {
 	// performance benefits, raw logger also preserves type-safety at
 	// the expense of slightly greater verbosity.
 	Logger *zap.SugaredLogger
+
+	// NamespaceLister allows us to list Namespaces. We use this to check for
+	// terminating namespaces.
+	NamespaceLister v1listers.NamespaceLister
 }
 
 // NewBase instantiates a new instance of Base implementing
@@ -66,6 +73,7 @@ func NewBase(ctx context.Context, controllerAgentName string, cmw configmap.Watc
 		With(zap.String(logkey.ControllerType, controllerAgentName))
 
 	kubeClient := kubeclient.Get(ctx)
+	nsInformer := namespaceinformer.Get(ctx)
 
 	base := &Base{
 		KubeClientSet:    kubeClient,
@@ -74,9 +82,22 @@ func NewBase(ctx context.Context, controllerAgentName string, cmw configmap.Watc
 		ServingClientSet: knativeclient.Get(ctx),
 		ConfigMapWatcher: cmw,
 		Logger:           logger,
+
+		NamespaceLister: nsInformer.Lister(),
 	}
 
 	return base
+}
+
+// IsNamespaceTerminating returns true if the namespace is marked as terminating
+// and false if the state is unknown or not terminating.
+func (base *Base) IsNamespaceTerminating(namespace string) bool {
+	ns, err := base.NamespaceLister.Get(namespace)
+	if err != nil || ns == nil {
+		return false
+	}
+
+	return ns.Status.Phase == corev1.NamespaceTerminating
 }
 
 func init() {

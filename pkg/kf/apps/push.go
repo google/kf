@@ -64,14 +64,12 @@ func newApp(appName string, opts ...PushOption) (*v1alpha1.App, error) {
 	src := sources.NewKfSource()
 	src.SetBuildpackBuildSource(cfg.SourceImage)
 	src.SetContainerImageSource(cfg.ContainerImage)
-	src.SetBuildpackBuildRegistry(cfg.ContainerRegistry)
 	src.SetBuildpackBuildEnv(envs)
 	src.SetBuildpackBuildBuildpack(cfg.Buildpack)
 
 	app := NewKfApp()
 	app.SetName(appName)
 	app.SetNamespace(cfg.Namespace)
-	app.SetServiceAccount(cfg.ServiceAccount)
 	app.SetSource(src)
 	app.SetMemory(cfg.Memory)
 	app.SetStorage(cfg.DiskQuota)
@@ -79,6 +77,7 @@ func newApp(appName string, opts ...PushOption) (*v1alpha1.App, error) {
 	app.Spec.Instances.Stopped = cfg.NoStart
 	app.SetHealthCheck(cfg.HealthCheck)
 	app.Spec.Routes = cfg.Routes
+	app.Spec.ServiceBindings = cfg.ServiceBindings
 
 	if cfg.Grpc {
 		app.SetContainerPorts([]corev1.ContainerPort{{Name: "h2c", ContainerPort: 8080}})

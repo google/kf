@@ -32,7 +32,6 @@ import (
 	kfi "github.com/google/kf/pkg/kf/internal/kf"
 	"github.com/google/kf/pkg/kf/manifest"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
-	"github.com/poy/service-catalog/cmd/svcat/output"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -81,7 +80,6 @@ func NewPushCommand(
 		instances          int
 		minScale           int
 		maxScale           int
-		serviceAccount     string
 		path               string
 		buildpack          string
 		envs               []string
@@ -102,10 +100,9 @@ func NewPushCommand(
 
 	var pushCmd = &cobra.Command{
 		Use:   "push APP_NAME",
-		Short: "Push a new app or sync changes to an existing app",
+		Short: "Create a new app or sync changes to an existing app",
 		Example: `
   kf push myapp
-  kf push myapp --container-registry gcr.io/myproject
   kf push myapp --buildpack my.special.buildpack # Discover via kf buildpacks
   kf push myapp --env FOO=bar --env BAZ=foo
   `,
@@ -285,7 +282,6 @@ func NewPushCommand(
 
 				pushOpts := []apps.PushOption{
 					apps.WithPushNamespace(p.Namespace),
-					apps.WithPushServiceAccount(serviceAccount),
 					apps.WithPushEnvironmentVariables(app.Env),
 					apps.WithPushGrpc(grpc),
 					apps.WithPushExactScale(exactScale),
@@ -307,10 +303,8 @@ func NewPushCommand(
 					switch {
 					case registry != "":
 						break
-					case space.Spec.BuildpackBuild.ContainerRegistry != "":
-						registry = space.Spec.BuildpackBuild.ContainerRegistry
 					default:
-						return errors.New("container-registry is required for buildpack apps")
+						registry = space.Spec.BuildpackBuild.ContainerRegistry
 					}
 
 					var imageName string
@@ -332,7 +326,6 @@ func NewPushCommand(
 					}
 					pushOpts = append(pushOpts,
 						apps.WithPushSourceImage(imageName),
-						apps.WithPushContainerRegistry(registry),
 						apps.WithPushBuildpack(app.Buildpack()),
 					)
 				} else {
@@ -350,20 +343,14 @@ func NewPushCommand(
 				}
 
 				// Bind service if set
+				var bindings []v1alpha1.AppSpecServiceBinding
 				for _, serviceInstance := range app.Services {
-					binding, created, err := serviceBindingClient.GetOrCreate(
-						serviceInstance,
-						app.Name,
-						servicebindings.WithCreateBindingName(serviceInstance),
-						servicebindings.WithCreateNamespace(p.Namespace))
-					if err != nil {
-						return err
+					binding := v1alpha1.AppSpecServiceBinding{
+						Instance: serviceInstance,
 					}
-					if created {
-						output.WriteBindingDetails(cmd.OutOrStdout(), binding)
-					}
-
+					bindings = append(bindings, binding)
 				}
+				pushOpts = append(pushOpts, apps.WithPushServiceBindings(bindings))
 
 				err = pusher.Push(app.Name, pushOpts...)
 
@@ -385,14 +372,7 @@ func NewPushCommand(
 		&containerRegistry,
 		"container-registry",
 		"",
-		"The container registry to push containers. Required if not targeting a Kf space.",
-	)
-
-	pushCmd.Flags().StringVar(
-		&serviceAccount,
-		"service-account",
-		"",
-		"The service account to enable access to the container registry",
+		"Container registry to push sources to. Required for buildpack builds not targeting a Kf space.",
 	)
 
 	pushCmd.Flags().StringVarP(
@@ -400,7 +380,7 @@ func NewPushCommand(
 		"path",
 		"p",
 		".",
-		"The path the source code lives. Defaults to current directory.",
+		"Path to the source code (default: current directory)",
 	)
 
 	pushCmd.Flags().StringArrayVarP(
@@ -437,7 +417,7 @@ func NewPushCommand(
 		&sourceImage,
 		"source-image",
 		"",
-		"The kontext image that has the source code.",
+		"Kontext image containing the source code.",
 	)
 	pushCmd.Flags().MarkHidden("source-image")
 
@@ -445,7 +425,7 @@ func NewPushCommand(
 		&containerImage,
 		"docker-image",
 		"",
-		"The docker image to deploy.",
+		"Docker image to deploy.",
 	)
 
 	pushCmd.Flags().StringVarP(
@@ -461,21 +441,21 @@ func NewPushCommand(
 		"instances",
 		"i",
 		-1, // -1 represents non-user input
-		"the number of instances (default is 1)",
+		"Number of instances of the app to run (default: 1)",
 	)
 
 	pushCmd.Flags().IntVar(
 		&minScale,
 		"min-scale",
 		-1, // -1 represents non-user input
-		"the minium number of instances the autoscaler will scale to",
+		"Minium number of instances the autoscaler will scale to",
 	)
 
 	pushCmd.Flags().IntVar(
 		&maxScale,
 		"max-scale",
 		-1, // -1 represents non-user input
-		"the maximum number of instances the autoscaler will scale to",
+		"Maximum number of instances the autoscaler will scale to",
 	)
 
 	pushCmd.Flags().BoolVar(

@@ -74,12 +74,32 @@ func ObjectMeta(w io.Writer, meta metav1.ObjectMeta) {
 			fmt.Fprintf(w, "Labels:\t\n")
 
 			IndentWriter(w, func(w io.Writer) {
-				for k, v := range meta.Labels {
-					fmt.Fprintf(w, "%s=%s\n", k, v)
-				}
+				Labels(w, meta.Labels)
 			})
 		}
 	})
+}
+
+// Labels prints a label map by the alphanumeric sorting of the keys.
+func Labels(w io.Writer, labels map[string]string) {
+
+	type pair struct {
+		key   string
+		value string
+	}
+	var list []pair
+
+	for k, v := range labels {
+		list = append(list, pair{k, v})
+	}
+	sort.Slice(list, func(i, j int) bool {
+		return list[i].key < list[j].key
+	})
+
+	for _, pair := range list {
+		fmt.Fprintf(w, "%s=%s\n", pair.key, pair.value)
+	}
+
 }
 
 // DuckStatus prints a table of status info based on the duck status.
@@ -180,7 +200,7 @@ func SourceSpec(w io.Writer, spec kfv1alpha1.SourceSpec) {
 				fmt.Fprintf(w, "Source:\t%s\n", buildpackBuild.Source)
 				fmt.Fprintf(w, "Stack:\t%s\n", buildpackBuild.Stack)
 				fmt.Fprintf(w, "Bulider:\t%s\n", buildpackBuild.BuildpackBuilder)
-				fmt.Fprintf(w, "Registry:\t%s\n", buildpackBuild.Registry)
+				fmt.Fprintf(w, "Destination:\t%s\n", buildpackBuild.Image)
 				EnvVars(w, buildpackBuild.Env)
 			})
 		}

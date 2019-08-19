@@ -42,7 +42,6 @@ import (
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/google/kf/pkg/kf/sources"
 	"github.com/google/kf/pkg/kf/spaces"
-	"github.com/google/kf/pkg/kf/systemenvinjector"
 	"github.com/google/wire"
 	"github.com/knative/build/pkg/logs"
 	"github.com/poy/kontext"
@@ -67,7 +66,6 @@ var AppsSet = wire.NewSet(
 	provideAppsGetter,
 	apps.NewClient,
 	apps.NewPusher,
-	provideSystemEnvInjector,
 )
 
 func provideAppsGetter(ki kfv1alpha1.KfV1alpha1Interface) kfv1alpha1.AppsGetter {
@@ -80,7 +78,6 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 		provideSrcImageBuilder,
 		servicebindings.NewClient,
 		config.GetServiceCatalogClient,
-		config.GetSecretClient,
 		AppsSet,
 	)
 	return nil
@@ -174,16 +171,6 @@ func InjectUnsetEnv(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
-func provideSystemEnvInjector(p *config.KfParams) systemenvinjector.SystemEnvInjectorInterface {
-	wire.Build(
-		systemenvinjector.NewSystemEnvInjector,
-		servicebindings.NewClient,
-		config.GetServiceCatalogClient,
-		config.GetSecretClient,
-	)
-	return nil
-}
-
 ////////////////
 // Services //
 /////////////
@@ -240,7 +227,7 @@ func InjectBindingService(p *config.KfParams) *cobra.Command {
 		servicebindings.NewClient,
 		servicebindingscmd.NewBindServiceCommand,
 		config.GetServiceCatalogClient,
-		config.GetSecretClient,
+		AppsSet,
 	)
 	return nil
 }
@@ -250,7 +237,7 @@ func InjectListBindings(p *config.KfParams) *cobra.Command {
 		servicebindings.NewClient,
 		servicebindingscmd.NewListBindingsCommand,
 		config.GetServiceCatalogClient,
-		config.GetSecretClient,
+		AppsSet,
 	)
 	return nil
 }
@@ -260,17 +247,15 @@ func InjectUnbindService(p *config.KfParams) *cobra.Command {
 		servicebindings.NewClient,
 		servicebindingscmd.NewUnbindServiceCommand,
 		config.GetServiceCatalogClient,
-		config.GetSecretClient,
+		AppsSet,
 	)
 	return nil
 }
 
 func InjectVcapServices(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		servicebindings.NewClient,
 		servicebindingscmd.NewVcapServicesCommand,
-		config.GetServiceCatalogClient,
-		config.GetSecretClient,
+		config.GetKubernetes,
 	)
 	return nil
 }
@@ -374,12 +359,6 @@ func InjectConfigSpace(p *config.KfParams) *cobra.Command {
 ////////////////////
 // Quotas Command //
 ////////////////////
-
-func InjectCreateQuota(p *config.KfParams) *cobra.Command {
-	wire.Build(cquotas.NewCreateQuotaCommand, SpacesSet)
-
-	return nil
-}
 
 func InjectUpdateQuota(p *config.KfParams) *cobra.Command {
 	wire.Build(cquotas.NewUpdateQuotaCommand, SpacesSet)

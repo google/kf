@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/google/kf/pkg/kf/service-bindings/fake"
@@ -35,6 +36,13 @@ func dummyBindingInstance(appName, instanceName string) *v1beta1.ServiceBinding 
 	instance.Name = fmt.Sprintf("kf-binding-%s-%s", appName, instanceName)
 
 	return &instance
+}
+
+func dummyBindingRequestInstance(appName, instanceName string) *kfv1alpha1.AppSpecServiceBinding {
+	return &kfv1alpha1.AppSpecServiceBinding{
+		BindingName: fmt.Sprintf("kf-binding-%s-%s", appName, instanceName),
+		Instance:    instanceName,
+	}
 }
 
 type serviceTest struct {

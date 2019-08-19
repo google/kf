@@ -21,7 +21,6 @@ import (
 	cv1alpha1 "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/algorithms"
 	"github.com/google/kf/pkg/kf/sources"
-	"github.com/google/kf/pkg/kf/systemenvinjector"
 )
 
 // ClientExtension holds additional functions that should be exposed by client.
@@ -43,7 +42,6 @@ type appsClient struct {
 // NewClient creates a new application client.
 func NewClient(
 	kclient cv1alpha1.AppsGetter,
-	envInjector systemenvinjector.SystemEnvInjectorInterface,
 	sourcesClient sources.Client) Client {
 	return &appsClient{
 		coreClient: coreClient{

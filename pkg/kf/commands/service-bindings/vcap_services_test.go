@@ -15,18 +15,54 @@
 package servicebindings_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	servicebindingscmd "github.com/google/kf/pkg/kf/commands/service-bindings"
+	"github.com/google/kf/pkg/kf/commands/config"
+	servicebindings "github.com/google/kf/pkg/kf/commands/service-bindings"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
-	"github.com/google/kf/pkg/kf/service-bindings/fake"
 	"github.com/google/kf/pkg/kf/testutil"
+	corev1 "k8s.io/api/core/v1"
+	k8sfake "k8s.io/client-go/kubernetes/fake"
 )
 
 func TestNewVcapServicesCommand(t *testing.T) {
+	type serviceTest struct {
+		Args      []string
+		Namespace string
+
+		ExpectedErr     error
+		ExpectedStrings []string
+	}
+
+	secretSerialized := `{
+    "apiVersion": "v1",
+    "data": {
+        "VCAP_SERVICES": "eyJzb21lIjoic2VydmljZXMifQ=="
+    },
+    "kind": "Secret",
+    "metadata": {
+        "labels": {
+            "app.kubernetes.io/component": "secret",
+            "app.kubernetes.io/managed-by": "kf",
+            "app.kubernetes.io/name": "APP_NAME"
+        },
+        "name": "kf-injected-envs-APP_NAME",
+        "namespace": "custom-ns"
+    },
+    "type": "Opaque"
+}
+	`
+
+	var secret *corev1.Secret
+	err := json.Unmarshal([]byte(secretSerialized), &secret)
+	fmt.Println(secret.Name)
+	testutil.AssertNil(t, "err", err)
+	k8sclient := k8sfake.NewSimpleClientset(secret)
+
 	cases := map[string]serviceTest{
 		"wrong number of args": {
 			Args:        []string{},
@@ -35,30 +71,33 @@ func TestNewVcapServicesCommand(t *testing.T) {
 		"command params get passed correctly": {
 			Args:      []string{"APP_NAME"},
 			Namespace: "custom-ns",
-			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-				f.EXPECT().GetVcapServices("APP_NAME", gomock.Any()).Do(func(app string, opts ...servicebindings.GetVcapServicesOption) {
-					config := servicebindings.GetVcapServicesOptions(opts)
-					testutil.AssertEqual(t, "namespace", "custom-ns", config.Namespace())
-				}).Return(nil, nil)
+			ExpectedStrings: []string{
+				`{"some":"services"}`,
 			},
 		},
 		"empty namespace": {
 			Args:        []string{"APP_NAME"},
 			ExpectedErr: errors.New(utils.EmptyNamespaceError),
 		},
-		"bad server call": {
-			Args:      []string{"APP_NAME"},
-			Namespace: "custom-ns",
-			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-				f.EXPECT().GetVcapServices(gomock.Any(), gomock.Any()).Return(nil, errors.New("api-error"))
-			},
-			ExpectedErr: errors.New("api-error"),
-		},
 	}
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			runTest(t, tc, servicebindingscmd.NewVcapServicesCommand)
+			buf := new(bytes.Buffer)
+			p := &config.KfParams{
+				Namespace: tc.Namespace,
+			}
+
+			cmd := servicebindings.NewVcapServicesCommand(p, k8sclient)
+			cmd.SetOutput(buf)
+			cmd.SetArgs(tc.Args)
+			_, actualErr := cmd.ExecuteC()
+			if tc.ExpectedErr != nil || actualErr != nil {
+				testutil.AssertErrorsEqual(t, tc.ExpectedErr, actualErr)
+				return
+			}
+
+			testutil.AssertContainsAll(t, buf.String(), tc.ExpectedStrings)
 		})
 	}
 }

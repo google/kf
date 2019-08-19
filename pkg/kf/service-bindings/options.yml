@@ -22,9 +22,3 @@ configs:
   - name: ServiceInstance
     type: 'string'
     description: filter the results to bindings for the given service instance.
-- name: GetVcapServices
-  options:
-  - name: FailOnBadSecret
-    type: bool
-    default: 'false'
-    description: fail if a binding refers to an invalid (or not yet created) secret.

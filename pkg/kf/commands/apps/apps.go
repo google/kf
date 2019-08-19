@@ -29,10 +29,11 @@ import (
 
 // NewAppsCommand creates a apps command.
 func NewAppsCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
-	var apps = &cobra.Command{
+	return &cobra.Command{
 		Use:     "apps",
 		Short:   "List pushed apps",
-		Example: `  kf apps`,
+		Long:    ``,
+		Example: `kf apps`,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
@@ -40,16 +41,15 @@ func NewAppsCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 			}
 			cmd.SilenceUsage = true
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Getting apps in space %s\n", p.Namespace)
+			fmt.Fprintf(cmd.OutOrStdout(), "Getting apps in space %s\n\n", p.Namespace)
 
 			apps, err := appsClient.List(p.Namespace)
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(cmd.OutOrStdout())
 
 			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 4, ' ', tabwriter.StripEscape)
-			fmt.Fprintln(w, "name\trequested state\tinstances\tmemory\tdisk\turls")
+			fmt.Fprintln(w, "Name\tRequested State\tInstances\tMemory\tDisk\tURLs")
 			for _, app := range apps {
 
 				// Requested State
@@ -125,6 +125,4 @@ func NewAppsCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 			return nil
 		},
 	}
-
-	return apps
 }

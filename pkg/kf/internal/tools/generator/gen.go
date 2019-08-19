@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"sort"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -85,5 +86,6 @@ func TemplateFuncs() template.FuncMap {
 		"genlicense": GenLicense,
 		"genimports": GenImports,
 		"gennotice":  GenNotice,
+		"title":      strings.Title,
 	}
 }
