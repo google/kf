@@ -230,7 +230,12 @@ func GetServiceCatalogClient(p *KfParams) servicecatalogclient.Interface {
 	return cs
 }
 
-// GetDynamicClient gets a dynamic Kubernetes client
+// GetDynamicClient gets a dynamic Kubernetes client. Dynamic clients can work
+// on any type of Kubernetes object, but only support the common fields.
+//
+// Dynamic clients can be used to get alternative representations of objects
+// like tables, or traverse multiple types of object in a single pass e.g. to
+// construct a tree based on OwnerReferences.
 func GetDynamicClient(p *KfParams) dynamic.Interface {
 	config := getRestConfig(p)
 
