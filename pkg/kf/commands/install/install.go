@@ -25,19 +25,21 @@ func NewInstallCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "install [subcommand]",
 		Short: "Install kf",
+		Long: `Installs kf into a new Kubernetes cluster, optionally creating the
+		cluster.
+
+		WARNING: No checks are done on a cluster before installing a new version
+		of kf. This means that if you target a cluster with a later version of kf
+		then you can downgrade the system.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Help()
 		},
 	}
 
-	installers := []*cobra.Command{
+	cmd.AddCommand(
 		// Add new installers below
 		gke.NewGKECommand(),
-	}
-
-	for _, kfi := range installers {
-		cmd.AddCommand(kfi)
-	}
+	)
 
 	return cmd
 }

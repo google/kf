@@ -72,14 +72,14 @@ func NewBindServiceCommand(p *config.KfParams, client servicebindings.ClientInte
 		"config",
 		"c",
 		"{}",
-		"valid JSON object containing service-specific configuration parameters, provided in-line or in a file")
+		"JSON object containing service-specific configuration parameters, provided in-line or in a file")
 
 	createCmd.Flags().StringVarP(
 		&bindingName,
 		"binding-name",
 		"b",
 		"",
-		"name to expose service instance to app process with (default: service instance name)")
+		"Name to expose service instance to app process with (default: service instance name)")
 
 	return createCmd
 }

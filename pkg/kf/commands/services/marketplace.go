@@ -16,10 +16,11 @@ package services
 
 import (
 	"fmt"
-	"text/tabwriter"
+	"io"
 
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
+	"github.com/google/kf/pkg/kf/describe"
 	"github.com/google/kf/pkg/kf/services"
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
@@ -33,7 +34,14 @@ func NewMarketplaceCommand(p *config.KfParams, client services.ClientInterface) 
 		Use:     "marketplace [-s SERVICE]",
 		Aliases: []string{"m"},
 		Short:   "List available offerings in the marketplace",
-		Args:    cobra.ExactArgs(0),
+		Example: `
+		# Show services available in the marketplace
+		kf marketplace
+
+		# Show the plans available to a particular service
+		kf marketplace -s google-storage
+		`,
+		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 
@@ -46,45 +54,41 @@ func NewMarketplaceCommand(p *config.KfParams, client services.ClientInterface) 
 				return err
 			}
 
-			// We use a custom tabwriter rather than svcat outputs because the
-			// headings on there don't make sense for our target audience.
-			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 2, ' ', 0)
+			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
+				if serviceName == "" {
+					fmt.Fprintf(w, "%d services can be used in namespace %q, use the --service flag to list the plans for a service\n", len(marketplace.Services), p.Namespace)
+					fmt.Fprintln(w)
 
-			if serviceName == "" {
-				fmt.Fprintf(w, "%d services can be used in namespace %q, use the --service flag to list the plans for a service\n", len(marketplace.Services), p.Namespace)
-				fmt.Fprintln(w)
+					fmt.Fprintln(w, "Broker\tName\tNamespace\tStatus\tDescription")
+					for _, s := range marketplace.Services {
+						fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%.100s\n", s.GetServiceBrokerName(), s.GetExternalName(), s.GetNamespace(), s.GetStatusText(), s.GetDescription())
+					}
+				} else {
+					// If the user wants to show service plans by a service name, then
+					// we MUST convert that into a "ClassID" which corresponds with
+					// service GUID in the OSB spec by translating it using the list of
+					// classes (services) first.
+					serviceGUID := serviceName
+					for _, service := range marketplace.Services {
+						if service.GetExternalName() == serviceName {
+							serviceGUID = service.GetName()
+							break
+						}
+					}
 
-				fmt.Fprintln(w, "BROKER\tNAME\tNAMESPACE\tSTATUS\tDESCRIPTION")
-				for _, s := range marketplace.Services {
-					fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%.100s\n", s.GetServiceBrokerName(), s.GetExternalName(), s.GetNamespace(), s.GetStatusText(), s.GetDescription())
-				}
-			} else {
-				// If the user wants to show service plans by a service name, then
-				// we MUST convert that into a "ClassID" which corresponds with
-				// service GUID in the OSB spec by translating it using the list of
-				// classes (services) first.
-				serviceGUID := serviceName
-				for _, service := range marketplace.Services {
-					if service.GetExternalName() == serviceName {
-						serviceGUID = service.GetName()
-						break
+					var filteredPlans []servicecatalog.Plan
+					for _, plan := range marketplace.Plans {
+						if plan.GetClassID() == serviceGUID {
+							filteredPlans = append(filteredPlans, plan)
+						}
+					}
+
+					fmt.Fprintln(w, "Name\tFree\tStatus\tDescription")
+					for _, p := range filteredPlans {
+						fmt.Fprintf(w, "%s\t%t\t%s\t%.100s\n", p.GetExternalName(), p.GetFree(), p.GetShortStatus(), p.GetDescription())
 					}
 				}
-
-				var filteredPlans []servicecatalog.Plan
-				for _, plan := range marketplace.Plans {
-					if plan.GetClassID() == serviceGUID {
-						filteredPlans = append(filteredPlans, plan)
-					}
-				}
-
-				fmt.Fprintln(w, "NAME\tFREE\tSTATUS\tDESCRIPTION")
-				for _, p := range filteredPlans {
-					fmt.Fprintf(w, "%s\t%t\t%s\t%.100s\n", p.GetExternalName(), p.GetFree(), p.GetShortStatus(), p.GetDescription())
-				}
-			}
-
-			w.Flush()
+			})
 
 			return nil
 		},

@@ -15,6 +15,12 @@ Set a space-wide environment variable.
 kf configure-space set-env SPACE_NAME ENV_VAR_NAME ENV_VAR_VALUE [flags]
 ```
 
+### Examples
+
+```
+  kf configure-space set-env my-space ENVIRONMENT production
+```
+
 ### Options
 
 ```
@@ -24,9 +30,9 @@ kf configure-space set-env SPACE_NAME ENV_VAR_NAME ENV_VAR_VALUE [flags]
 ### Options inherited from parent commands
 
 ```
-      --config string       config file (default is $HOME/.kf)
-      --kubeconfig string   kubectl config file (default is $HOME/.kube/config)
-      --namespace string    kubernetes namespace
+      --config string       Config file (default is $HOME/.kf)
+      --kubeconfig string   Kubectl config file (default is $HOME/.kube/config)
+      --namespace string    Kubernetes namespace to target
 ```
 
 ### SEE ALSO

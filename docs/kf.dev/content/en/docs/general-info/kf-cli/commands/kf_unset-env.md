@@ -30,12 +30,12 @@ kf unset-env APP_NAME ENV_VAR_NAME [flags]
 ### Options inherited from parent commands
 
 ```
-      --config string       config file (default is $HOME/.kf)
-      --kubeconfig string   kubectl config file (default is $HOME/.kube/config)
-      --namespace string    kubernetes namespace
+      --config string       Config file (default is $HOME/.kf)
+      --kubeconfig string   Kubectl config file (default is $HOME/.kube/config)
+      --namespace string    Kubernetes namespace to target
 ```
 
 ### SEE ALSO
 
-* [kf](/docs/general-info/kf-cli/commands/kf/)	 - kf is like cf for Knative
+* [kf](/docs/general-info/kf-cli/commands/kf/)	 - A MicroPaaS for Kubernetes with a Cloud Foundry style developer expeience
 

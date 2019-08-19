@@ -18,14 +18,16 @@ kf scale APP_NAME [flags]
 ### Examples
 
 ```
-
-  kf scale myapp # Displays current scaling
-  kf scale myapp -i 3 # Scale to exactly 3 instances
-  kf scale myapp --instances 3 # Scale to exactly 3 instances
-  kf scale myapp --min 3 # Autoscaler won't scale below 3 instances
-  kf scale myapp --max 5 # Autoscaler won't scale above 5 instances
-  kf scale myapp --min 3 --max 5 # Autoscaler won't below 3 or above 5 instances
-  
+  # Display current scale settings
+  kf scale myapp
+  # Scale to exactly 3 instances
+  kf scale myapp --instances 3
+  # Scale to at least 3 instances
+  kf scale myapp --min 3
+  # Scale between 0 and 5 instances
+  kf scale myapp --max 5
+  # Scale between 3 and 5 instances depending on traffic
+  kf scale myapp --min 3 --max 5
 ```
 
 ### Options
@@ -40,12 +42,12 @@ kf scale APP_NAME [flags]
 ### Options inherited from parent commands
 
 ```
-      --config string       config file (default is $HOME/.kf)
-      --kubeconfig string   kubectl config file (default is $HOME/.kube/config)
-      --namespace string    kubernetes namespace
+      --config string       Config file (default is $HOME/.kf)
+      --kubeconfig string   Kubectl config file (default is $HOME/.kube/config)
+      --namespace string    Kubernetes namespace to target
 ```
 
 ### SEE ALSO
 
-* [kf](/docs/general-info/kf-cli/commands/kf/)	 - kf is like cf for Knative
+* [kf](/docs/general-info/kf-cli/commands/kf/)	 - A MicroPaaS for Kubernetes with a Cloud Foundry style developer expeience
 

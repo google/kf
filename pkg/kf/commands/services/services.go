@@ -27,7 +27,9 @@ func NewListServicesCommand(p *config.KfParams, client services.ClientInterface)
 	servicesCommand := &cobra.Command{
 		Use:     "services",
 		Aliases: []string{"s"},
-		Short:   "List all service instances in the target namespace",
+		Short:   "List service instances",
+		Long:    `Lists all service instances in the target space.`,
+		Example: `kf services`,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true

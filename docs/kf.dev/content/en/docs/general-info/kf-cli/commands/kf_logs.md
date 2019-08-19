@@ -18,11 +18,13 @@ kf logs APP_NAME [flags]
 ### Examples
 
 ```
-
   kf logs myapp
-  kf logs myapp -n 20
-  kf logs myapp -f
   
+  # Get the last 20 log lines
+  kf logs myapp -n 20
+  
+  # Follow/tail the log stream
+  kf logs myapp -f
 ```
 
 ### Options
@@ -30,18 +32,18 @@ kf logs APP_NAME [flags]
 ```
   -f, --follow       Follow the log stream of the app.
   -h, --help         help for logs
-  -n, --number int   The number of lines from the end of the logs to show. (default 10)
+  -n, --number int   Show the last N lines of logs. (default 10)
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --config string       config file (default is $HOME/.kf)
-      --kubeconfig string   kubectl config file (default is $HOME/.kube/config)
-      --namespace string    kubernetes namespace
+      --config string       Config file (default is $HOME/.kf)
+      --kubeconfig string   Kubectl config file (default is $HOME/.kube/config)
+      --namespace string    Kubernetes namespace to target
 ```
 
 ### SEE ALSO
 
-* [kf](/docs/general-info/kf-cli/commands/kf/)	 - kf is like cf for Knative
+* [kf](/docs/general-info/kf-cli/commands/kf/)	 - A MicroPaaS for Kubernetes with a Cloud Foundry style developer expeience
 

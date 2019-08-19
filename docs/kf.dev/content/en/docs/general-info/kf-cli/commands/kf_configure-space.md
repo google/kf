@@ -9,7 +9,11 @@ Set configuration for a space
 
 ### Synopsis
 
-Set configuration for a space
+The configure-space sub-command allows operators to configure individual fields on a space.
+
+ In Kf, almost all configuration is at the space level as opposed to being globally set on the cluster.
+
+ NOTE: The space is queued for reconciliation every time changes are made via this command. If you want to configure spaces in automation it's better to use kubectl.
 
 ```
 kf configure-space [subcommand] [flags]
@@ -24,17 +28,16 @@ kf configure-space [subcommand] [flags]
 ### Options inherited from parent commands
 
 ```
-      --config string       config file (default is $HOME/.kf)
-      --kubeconfig string   kubectl config file (default is $HOME/.kube/config)
-      --namespace string    kubernetes namespace
+      --config string       Config file (default is $HOME/.kf)
+      --kubeconfig string   Kubectl config file (default is $HOME/.kube/config)
+      --namespace string    Kubernetes namespace to target
 ```
 
 ### SEE ALSO
 
-* [kf](/docs/general-info/kf-cli/commands/kf/)	 - kf is like cf for Knative
+* [kf](/docs/general-info/kf-cli/commands/kf/)	 - A MicroPaaS for Kubernetes with a Cloud Foundry style developer expeience
 * [kf configure-space append-domain](/docs/general-info/kf-cli/commands/kf-configure-space-append-domain/)	 - Append a domain for a space
-* [kf configure-space create-quota](/docs/general-info/kf-cli/commands/kf-configure-space-create-quota/)	 - Create a quota
-* [kf configure-space delete-quota](/docs/general-info/kf-cli/commands/kf-configure-space-delete-quota/)	 - Delete a quota
+* [kf configure-space delete-quota](/docs/general-info/kf-cli/commands/kf-configure-space-delete-quota/)	 - Remove all quotas for the space
 * [kf configure-space get-buildpack-builder](/docs/general-info/kf-cli/commands/kf-configure-space-get-buildpack-builder/)	 - Get the buildpack builder used for builds.
 * [kf configure-space get-buildpack-env](/docs/general-info/kf-cli/commands/kf-configure-space-get-buildpack-env/)	 - Get the environment variables for buildpack builds in a space.
 * [kf configure-space get-container-registry](/docs/general-info/kf-cli/commands/kf-configure-space-get-container-registry/)	 - Get the container registry used for builds.
@@ -49,5 +52,5 @@ kf configure-space [subcommand] [flags]
 * [kf configure-space set-env](/docs/general-info/kf-cli/commands/kf-configure-space-set-env/)	 - Set a space-wide environment variable.
 * [kf configure-space unset-buildpack-env](/docs/general-info/kf-cli/commands/kf-configure-space-unset-buildpack-env/)	 - Unset an environment variable for buildpack builds in a space.
 * [kf configure-space unset-env](/docs/general-info/kf-cli/commands/kf-configure-space-unset-env/)	 - Unset a space-wide environment variable.
-* [kf configure-space update-quota](/docs/general-info/kf-cli/commands/kf-configure-space-update-quota/)	 - Update a quota
+* [kf configure-space update-quota](/docs/general-info/kf-cli/commands/kf-configure-space-update-quota/)	 - Update the quota for a space
 

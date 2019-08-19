@@ -5,14 +5,20 @@ url: /docs/general-info/kf-cli/commands/kf-configure-space-delete-quota/
 ---
 ## kf configure-space delete-quota
 
-Delete a quota
+Remove all quotas for the space
 
 ### Synopsis
 
-Delete a quota
+Remove all quotas for the space
 
 ```
 kf configure-space delete-quota SPACE_NAME [flags]
+```
+
+### Examples
+
+```
+  kf delete-quota my-space
 ```
 
 ### Options
@@ -24,9 +30,9 @@ kf configure-space delete-quota SPACE_NAME [flags]
 ### Options inherited from parent commands
 
 ```
-      --config string       config file (default is $HOME/.kf)
-      --kubeconfig string   kubectl config file (default is $HOME/.kube/config)
-      --namespace string    kubernetes namespace
+      --config string       Config file (default is $HOME/.kf)
+      --kubeconfig string   Kubectl config file (default is $HOME/.kube/config)
+      --namespace string    Kubernetes namespace to target
 ```
 
 ### SEE ALSO

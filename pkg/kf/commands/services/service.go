@@ -27,9 +27,10 @@ import (
 // NewGetServiceCommand allows users to get a service instance.
 func NewGetServiceCommand(p *config.KfParams, client services.ClientInterface) *cobra.Command {
 	serviceCommand := &cobra.Command{
-		Use:   "service SERVICE_INSTANCE",
-		Short: "Show service instance info",
-		Args:  cobra.ExactArgs(1),
+		Use:     "service SERVICE_INSTANCE",
+		Short:   "Show service instance info",
+		Example: `kf service my-service`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err
