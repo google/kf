@@ -17,6 +17,7 @@ package apps
 import (
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/spf13/cobra"
@@ -24,7 +25,7 @@ import (
 
 // NewUnsetEnvCommand creates a SetEnv command.
 func NewUnsetEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command {
-	var envCmd = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "unset-env APP_NAME ENV_VAR_NAME",
 		Short:   "Unset an environment variable for an app",
 		Example: `kf unset-env myapp FOO`,
@@ -48,5 +49,7 @@ func NewUnsetEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Comman
 		},
 	}
 
-	return envCmd
+	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
+
+	return cmd
 }

@@ -26,6 +26,7 @@ import (
 	capps "github.com/google/kf/pkg/kf/commands/apps"
 	cbuildpacks "github.com/google/kf/pkg/kf/commands/buildpacks"
 	cbuilds "github.com/google/kf/pkg/kf/commands/builds"
+	ccompletion "github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	cquotas "github.com/google/kf/pkg/kf/commands/quotas"
 	croutes "github.com/google/kf/pkg/kf/commands/routes"
@@ -420,6 +421,16 @@ func InjectBuilds(p *config.KfParams) *cobra.Command {
 
 func InjectBuildLogs(p *config.KfParams) *cobra.Command {
 	wire.Build(cbuilds.NewBuildLogsCommand, SourcesSet)
+
+	return nil
+}
+
+///////////////////////
+// Completion commands
+///////////////////////
+
+func InjectNamesCommand(p *config.KfParams) *cobra.Command {
+	wire.Build(ccompletion.NewNamesCommand, config.GetDynamicClient)
 
 	return nil
 }

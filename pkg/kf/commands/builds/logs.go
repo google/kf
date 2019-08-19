@@ -17,6 +17,7 @@ package builds
 import (
 	"context"
 
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/sources"
@@ -42,6 +43,8 @@ func NewBuildLogsCommand(p *config.KfParams, client sources.Client) *cobra.Comma
 			return client.Tail(context.Background(), p.Namespace, buildName, cmd.OutOrStdout())
 		},
 	}
+
+	completion.MarkArgCompletionSupported(cmd, completion.SourceCompletion)
 
 	return cmd
 }

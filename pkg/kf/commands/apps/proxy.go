@@ -24,6 +24,7 @@ import (
 
 	"github.com/google/kf/pkg/kf"
 	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/spf13/cobra"
@@ -37,7 +38,7 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister k
 		noStart bool
 	)
 
-	var proxy = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "proxy APP_NAME",
 		Short:   "Create a proxy to an app on a local port",
 		Example: `kf proxy myapp`,
@@ -106,29 +107,31 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister k
 		},
 	}
 
-	proxy.Flags().StringVar(
+	cmd.Flags().StringVar(
 		&gateway,
 		"gateway",
 		"",
 		"HTTP gateway to route requests to (default: autodetected from cluster)",
 	)
 
-	proxy.Flags().IntVar(
+	cmd.Flags().IntVar(
 		&port,
 		"port",
 		8080,
 		"Local port to listen on",
 	)
 
-	proxy.Flags().BoolVar(
+	cmd.Flags().BoolVar(
 		&noStart,
 		"no-start",
 		false,
 		"Exit before starting the proxy",
 	)
-	proxy.Flags().MarkHidden("no-start")
+	cmd.Flags().MarkHidden("no-start")
 
-	return proxy
+	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
+
+	return cmd
 }
 
 func createProxy(w io.Writer, appHost, gateway string) *httputil.ReverseProxy {

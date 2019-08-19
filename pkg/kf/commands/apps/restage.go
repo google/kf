@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/spf13/cobra"
@@ -28,7 +29,7 @@ func NewRestageCommand(
 	p *config.KfParams,
 	client apps.Client,
 ) *cobra.Command {
-	var restage = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "restage APP_NAME",
 		Short:   "Rebuild and deploy using the last uploaded source code and current buildpacks",
 		Example: `kf restage myapp`,
@@ -49,5 +50,8 @@ func NewRestageCommand(
 			return nil
 		},
 	}
-	return restage
+
+	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
+
+	return cmd
 }

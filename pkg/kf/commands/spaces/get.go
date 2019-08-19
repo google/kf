@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/describe"
 	"github.com/google/kf/pkg/kf/spaces"
@@ -95,6 +96,8 @@ func NewGetSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Command
 			return nil
 		},
 	}
+
+	completion.MarkArgCompletionSupported(cmd, completion.SpaceCompletion)
 
 	return cmd
 }

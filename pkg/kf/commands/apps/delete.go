@@ -18,6 +18,7 @@ import (
 	"log"
 
 	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/spf13/cobra"
@@ -25,7 +26,7 @@ import (
 
 // NewDeleteCommand creates a delete command.
 func NewDeleteCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
-	var deleteCmd = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "delete APP_NAME",
 		Short:   "Delete an existing app",
 		Example: `kf delete myapp`,
@@ -71,5 +72,7 @@ func NewDeleteCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 		},
 	}
 
-	return deleteCmd
+	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
+
+	return cmd
 }
