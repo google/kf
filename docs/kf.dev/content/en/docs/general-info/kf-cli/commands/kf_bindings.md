@@ -15,23 +15,36 @@ List bindings
 kf bindings [--app APP_NAME] [--service SERVICE_NAME] [flags]
 ```
 
+### Examples
+
+```
+  # Show all bindings
+  kf bindings
+  
+  # Show bindings for "my-app"
+  kf bindings --app my-app
+  
+  # Show bindings for a particular service
+  kf bindings --service users-db
+```
+
 ### Options
 
 ```
-  -a, --app string       app to display bindings for
+  -a, --app string       App to display bindings for
   -h, --help             help for bindings
-  -s, --service string   service instance to display bindings for
+  -s, --service string   Service instance to display bindings for
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --config string       config file (default is $HOME/.kf)
-      --kubeconfig string   kubectl config file (default is $HOME/.kube/config)
-      --namespace string    kubernetes namespace
+      --config string       Config file (default is $HOME/.kf)
+      --kubeconfig string   Kubectl config file (default is $HOME/.kube/config)
+      --namespace string    Kubernetes namespace to target
 ```
 
 ### SEE ALSO
 
-* [kf](/docs/general-info/kf-cli/commands/kf/)	 - kf is like cf for Knative
+* [kf](/docs/general-info/kf-cli/commands/kf/)	 - A MicroPaaS for Kubernetes with a Cloud Foundry style developer expeience
 

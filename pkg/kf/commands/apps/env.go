@@ -27,9 +27,13 @@ func NewEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command {
 	var envCmd = &cobra.Command{
 		Use:     "env APP_NAME",
 		Short:   "List the names and values of the environment variables for an app",
-		Example: `  kf env myapp`,
+		Example: `kf env myapp`,
 		Args:    cobra.ExactArgs(1),
-		Long:    ``,
+		Long: `The env command gets the names and values of developer managed
+		environment variables for an application.
+
+		This command does not include environment variables that are set by kf
+		such as VCAP_SERVICES or set by operators for all apps on the space.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err

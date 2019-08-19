@@ -29,12 +29,10 @@ func NewRestartCommand(
 	client apps.Client,
 ) *cobra.Command {
 	var restart = &cobra.Command{
-		Use:   "restart APP_NAME",
-		Short: "Restart stops the current pods and create new ones",
-		Example: `
-  kf restart myapp
-  `,
-		Args: cobra.ExactArgs(1),
+		Use:     "restart APP_NAME",
+		Short:   "Restarts all running instances of the app",
+		Example: `kf restart myapp`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err

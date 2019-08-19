@@ -16,11 +16,12 @@ package buildpacks
 
 import (
 	"fmt"
-	"text/tabwriter"
+	"io"
 
 	"github.com/google/kf/pkg/kf/buildpacks"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
+	"github.com/google/kf/pkg/kf/describe"
 	"github.com/google/kf/pkg/kf/internal/kf"
 	"github.com/spf13/cobra"
 )
@@ -28,10 +29,16 @@ import (
 // NewBuildpacksCommand creates a Buildpacks command.
 func NewBuildpacksCommand(p *config.KfParams, l buildpacks.Client) *cobra.Command {
 	var buildpacksCmd = &cobra.Command{
-		Use:   "buildpacks",
-		Short: "List buildpacks in current builder",
-		Args:  cobra.ExactArgs(0),
-		Long:  ``,
+		Use:     "buildpacks",
+		Short:   "List buildpacks in current builder",
+		Args:    cobra.ExactArgs(0),
+		Example: "kf buildpacks",
+		Long: `List the buildpacks available in the space to applications being built
+		with buildpacks.
+
+		Buildpack support is determined by the buildpack builder image and can
+		change from one space to the next.
+		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err
@@ -50,12 +57,13 @@ func NewBuildpacksCommand(p *config.KfParams, l buildpacks.Client) *cobra.Comman
 				return err
 			}
 
-			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 1, ' ', tabwriter.StripEscape)
-			fmt.Fprintln(w, "NAME\tPOSITION\tVERSION\tLATEST")
-			for i, bp := range bps {
-				fmt.Fprintf(w, "%s\t%d\t%s\t%v\n", bp.ID, i, bp.Version, bp.Latest)
-			}
-			w.Flush()
+			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
+				fmt.Fprintln(w, "Name\tPosition\tVersion\tLatest")
+
+				for i, bp := range bps {
+					fmt.Fprintf(w, "%s\t%d\t%s\t%v\n", bp.ID, i, bp.Version, bp.Latest)
+				}
+			})
 
 			return nil
 		},

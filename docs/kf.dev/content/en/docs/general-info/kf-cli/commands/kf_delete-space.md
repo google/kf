@@ -9,10 +9,30 @@ Delete a space
 
 ### Synopsis
 
-Delete a space
+Delete a space and all its contents.
+
+ This will delete a space's:
+
+  *  Apps
+  *  Service bindings
+  *  Service instances
+  *  RBAC roles
+  *  Routes
+  *  The backing Kubernetes namespace
+  *  Anything else in that namespace
+
+ NOTE: Space deletion is asynchronous and may take a long time to complete depending on the number of items in the space.
+
+ You will be unable to make changes to resources in the space once deletion has begun.
 
 ```
 kf delete-space SPACE [flags]
+```
+
+### Examples
+
+```
+  kf delete-space my-space
 ```
 
 ### Options
@@ -24,12 +44,12 @@ kf delete-space SPACE [flags]
 ### Options inherited from parent commands
 
 ```
-      --config string       config file (default is $HOME/.kf)
-      --kubeconfig string   kubectl config file (default is $HOME/.kube/config)
-      --namespace string    kubernetes namespace
+      --config string       Config file (default is $HOME/.kf)
+      --kubeconfig string   Kubectl config file (default is $HOME/.kube/config)
+      --namespace string    Kubernetes namespace to target
 ```
 
 ### SEE ALSO
 
-* [kf](/docs/general-info/kf-cli/commands/kf/)	 - kf is like cf for Knative
+* [kf](/docs/general-info/kf-cli/commands/kf/)	 - A MicroPaaS for Kubernetes with a Cloud Foundry style developer expeience
 
