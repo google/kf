@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/spf13/cobra"
@@ -28,7 +29,7 @@ func NewRestartCommand(
 	p *config.KfParams,
 	client apps.Client,
 ) *cobra.Command {
-	var restart = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "restart APP_NAME",
 		Short:   "Restarts all running instances of the app",
 		Example: `kf restart myapp`,
@@ -49,5 +50,8 @@ func NewRestartCommand(
 			return nil
 		},
 	}
-	return restart
+
+	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
+
+	return cmd
 }

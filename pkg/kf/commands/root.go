@@ -20,6 +20,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/doctor"
 	"github.com/google/kf/pkg/kf/commands/group"
@@ -71,6 +72,7 @@ func NewKfCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&p.KubeCfgFile, "kubeconfig", "", "Kubectl config file (default is $HOME/.kube/config)")
 	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "", "Kubernetes namespace to target")
 
+	completion.MarkFlagCompletionSupported(rootCmd.PersistentFlags(), "namespace", "spaces")
 	rootCmd = group.AddCommandGroups(rootCmd, group.CommandGroups{
 		{
 			Name: "App Management",
@@ -175,9 +177,12 @@ func NewKfCommand() *cobra.Command {
 				NewTargetCommand(p),
 				NewVersionCommand(Version, runtime.GOOS),
 				NewDebugCommand(p),
+				InjectNamesCommand(p),
 			},
 		},
 	})
+
+	completion.AddBashCompletion(rootCmd)
 
 	// We don't want the AutoGenTag as it makes the doc generation
 	// non-deterministic. We would rather allow the CI to ensure the docs were

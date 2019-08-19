@@ -17,6 +17,7 @@ package commands
 import (
 	"fmt"
 
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/spf13/cobra"
 )
@@ -50,6 +51,7 @@ func NewTargetCommand(p *config.KfParams) *cobra.Command {
 	}
 
 	command.Flags().StringVarP(&space, "space", "s", "", "Target the given space.")
+	completion.MarkFlagCompletionSupported(command.Flags(), "space", completion.SpaceCompletion)
 
 	return command
 }
