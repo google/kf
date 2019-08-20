@@ -16,12 +16,17 @@ package kf
 
 import (
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 	"time"
 
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	. "github.com/google/kf/pkg/kf/commands/install/util"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -77,9 +82,59 @@ func Install(ctx context.Context, containerRegistry string) error {
 		}
 	}
 
+	// Wait for controller and webhook deployments to be ready
+	if err := waitForKfDeployments(ctx); err != nil {
+		return err
+	}
+
 	// Setup kf space
 	if err := SetupSpace(ctx, containerRegistry); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func waitForKfDeployments(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+
+	for _, deploymentName := range []string{"controller", "webhook"} {
+		Logf(ctx, "waiting for %s deployment to be available...", deploymentName)
+		err := wait.ExponentialBackoff(
+			wait.Backoff{
+				Duration: time.Second,
+				Steps:    10,
+				Factor:   1,
+			}, func() (bool, error) {
+				output, err := Kubectl(
+					ctx,
+					"get",
+					"deployments",
+					deploymentName,
+					"--namespace", v1alpha1.KfNamespace,
+					"--output=json",
+				)
+				if err != nil {
+					return false, err
+				}
+				deployment := appsv1.Deployment{}
+				if err := json.NewDecoder(strings.NewReader(strings.Join(output, "\n"))).Decode(&deployment); err != nil {
+					return false, err
+				}
+
+				for _, cond := range deployment.Status.Conditions {
+					if cond.Type == appsv1.DeploymentAvailable {
+						return cond.Status == corev1.ConditionTrue, nil
+					}
+				}
+				return false, nil
+			},
+		)
+
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
