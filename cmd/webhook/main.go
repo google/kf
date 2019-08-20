@@ -102,7 +102,7 @@ func main() {
 		Namespace:      system.Namespace(),
 		Port:           8443,
 		SecretName:     "webhook-certs",
-		WebhookName:    "webhook.serving.knative.dev",
+		WebhookName:    "webhook.kf.dev",
 	}
 	controller := webhook.AdmissionController{
 		Client:  kubeClient,
