@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package kf_test
+package istio_test
 
 import (
 	"errors"
 	"testing"
 
-	"github.com/google/kf/pkg/kf"
+	"github.com/google/kf/pkg/kf/istio"
 	"github.com/google/kf/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
 	kubernetes "k8s.io/client-go/kubernetes"
@@ -33,14 +33,14 @@ func TestIstioClient_ListIngresses(t *testing.T) {
 	t.Parallel()
 
 	cases := map[string]struct {
-		opts  []kf.ListIngressesOption
+		opts  []istio.ListIngressesOption
 		setup func(mockK8s kubernetes.Interface)
 
 		expectErr error
 	}{
 		"server-error": {
-			opts: []kf.ListIngressesOption{
-				kf.WithListIngressesService("bad-service"),
+			opts: []istio.ListIngressesOption{
+				istio.WithListIngressesService("bad-service"),
 			},
 			expectErr: errors.New(`services "bad-service" not found`),
 		},
@@ -52,9 +52,9 @@ func TestIstioClient_ListIngresses(t *testing.T) {
 			},
 		},
 		"custom values": {
-			opts: []kf.ListIngressesOption{
-				kf.WithListIngressesNamespace("custom-ns"),
-				kf.WithListIngressesService("custom-gateway"),
+			opts: []istio.ListIngressesOption{
+				istio.WithListIngressesNamespace("custom-ns"),
+				istio.WithListIngressesService("custom-gateway"),
 			},
 			setup: func(mockK8s kubernetes.Interface) {
 				svc := &corev1.Service{}
@@ -70,7 +70,7 @@ func TestIstioClient_ListIngresses(t *testing.T) {
 			if tc.setup != nil {
 				tc.setup(mockK8s)
 			}
-			client := kf.NewIstioClient(mockK8s)
+			client := istio.NewIstioClient(mockK8s)
 
 			ingresses, actualErr := client.ListIngresses(tc.opts...)
 			if actualErr != nil || tc.expectErr != nil {
@@ -112,7 +112,7 @@ func TestExtractIngressFromList(t *testing.T) {
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			in, actualErr := kf.ExtractIngressFromList(tc.ingresses, tc.err)
+			in, actualErr := istio.ExtractIngressFromList(tc.ingresses, tc.err)
 
 			if tc.expectErr != nil || actualErr != nil {
 				testutil.AssertErrorsEqual(t, tc.expectErr, actualErr)

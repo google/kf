@@ -8,7 +8,6 @@ package commands
 import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/buildpacks"
 	builds2 "github.com/google/kf/pkg/kf/builds"
@@ -22,6 +21,7 @@ import (
 	servicebindings2 "github.com/google/kf/pkg/kf/commands/service-bindings"
 	services2 "github.com/google/kf/pkg/kf/commands/services"
 	spaces2 "github.com/google/kf/pkg/kf/commands/spaces"
+	"github.com/google/kf/pkg/kf/istio"
 	"github.com/google/kf/pkg/kf/logs"
 	"github.com/google/kf/pkg/kf/routeclaims"
 	"github.com/google/kf/pkg/kf/routes"
@@ -154,7 +154,7 @@ func InjectProxy(p *config.KfParams) *cobra.Command {
 	client := sources.NewClient(sourcesGetter, buildTailer)
 	appsClient := apps.NewClient(appsGetter, client)
 	kubernetesInterface := config.GetKubernetes(p)
-	ingressLister := kf.NewIstioClient(kubernetesInterface)
+	ingressLister := istio.NewIstioClient(kubernetesInterface)
 	command := apps2.NewProxyCommand(p, appsClient, ingressLister)
 	return command
 }
