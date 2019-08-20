@@ -50,26 +50,31 @@ func Install(ctx context.Context, containerRegistry string) error {
 		{name: "Knative Build", yaml: KnativeBuildYAML},
 		{name: "kf", yaml: KfNightlyBuildYAML},
 	} {
-		wait.ExponentialBackoff(wait.Backoff{
-			Duration: time.Second,
-			Steps:    10,
-			Factor:   1,
-		}, func() (bool, error) {
-			Logf(ctx, "install "+yaml.name)
-			if _, err := Kubectl(
-				ctx,
-				"apply",
-				"--filename",
-				yaml.yaml,
-			); err != nil {
-				Logf(ctx, "failed to install %s... Retrying", yaml.name)
-				// Don't return the error. This will cause the
-				// ExponentialBackoff to stop.
-				return false, nil
-			}
+		err := wait.ExponentialBackoff(
+			wait.Backoff{
+				Duration: time.Second,
+				Steps:    10,
+				Factor:   1,
+			}, func() (bool, error) {
+				Logf(ctx, "install "+yaml.name)
+				if _, err := Kubectl(
+					ctx,
+					"apply",
+					"--filename",
+					yaml.yaml,
+				); err != nil {
+					Logf(ctx, "failed to install %s... Retrying", yaml.name)
+					// Don't return the error. This will cause the
+					// ExponentialBackoff to stop.
+					return false, nil
+				}
 
-			return true, nil
-		})
+				return true, nil
+			})
+
+		if err != nil {
+			return err
+		}
 	}
 
 	// Setup kf space
