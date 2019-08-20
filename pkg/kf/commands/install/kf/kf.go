@@ -22,6 +22,7 @@ import (
 	"time"
 
 	. "github.com/google/kf/pkg/kf/commands/install/util"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const (
@@ -49,28 +50,26 @@ func Install(ctx context.Context, containerRegistry string) error {
 		{name: "Knative Build", yaml: KnativeBuildYAML},
 		{name: "kf", yaml: KfNightlyBuildYAML},
 	} {
-
-		var err error
-		for i := 0; i < 10; i++ {
+		wait.ExponentialBackoff(wait.Backoff{
+			Duration: time.Second,
+			Steps:    10,
+			Factor:   1,
+		}, func() (bool, error) {
 			Logf(ctx, "install "+yaml.name)
-			if _, err = Kubectl(
+			if _, err := Kubectl(
 				ctx,
 				"apply",
 				"--filename",
 				yaml.yaml,
 			); err != nil {
-				Logf(ctx, "failed to install %s... Retrying %d/10", yaml.name, i+1)
-				time.Sleep(time.Second)
-				continue
+				Logf(ctx, "failed to install %s... Retrying", yaml.name)
+				// Don't return the error. This will cause the
+				// ExponentialBackoff to stop.
+				return false, nil
 			}
 
-			break
-		}
-
-		if err != nil {
-			// Looks like the retrying didn't help, better just return the error
-			return err
-		}
+			return true, nil
+		})
 	}
 
 	// Setup kf space
