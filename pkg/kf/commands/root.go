@@ -23,6 +23,7 @@ import (
 	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/doctor"
+	"github.com/google/kf/pkg/kf/commands/group"
 	"github.com/google/kf/pkg/kf/commands/install"
 	pkgdoctor "github.com/google/kf/pkg/kf/doctor"
 	"github.com/imdario/mergo"
@@ -72,10 +73,9 @@ func NewKfCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "", "Kubernetes namespace to target")
 
 	completion.MarkFlagCompletionSupported(rootCmd.PersistentFlags(), "namespace", "spaces")
-
-	groups := templates.CommandGroups{
+	rootCmd = group.AddCommandGroups(rootCmd, group.CommandGroups{
 		{
-			Message: "App Management",
+			Name: "App Management",
 			Commands: []*cobra.Command{
 				InjectPush(p),
 				InjectDelete(p),
@@ -91,7 +91,7 @@ func NewKfCommand() *cobra.Command {
 			},
 		},
 		{
-			Message: "Environment Variables",
+			Name: "Environment Variables",
 			Commands: []*cobra.Command{
 				InjectEnv(p),
 				InjectSetEnv(p),
@@ -99,14 +99,14 @@ func NewKfCommand() *cobra.Command {
 			},
 		},
 		{
-			Message: "Buildpacks",
+			Name: "Buildpacks",
 			Commands: []*cobra.Command{
 				InjectBuildpacks(p),
 				InjectStacks(p),
 			},
 		},
 		{
-			Message: "Routing",
+			Name: "Routing",
 			Commands: []*cobra.Command{
 				InjectRoutes(p),
 				InjectCreateRoute(p),
@@ -116,7 +116,7 @@ func NewKfCommand() *cobra.Command {
 			},
 		},
 		{
-			Message: "Quotas",
+			Name: "Quotas",
 			Commands: []*cobra.Command{
 				InjectGetQuota(p),
 				InjectUpdateQuota(p),
@@ -124,7 +124,7 @@ func NewKfCommand() *cobra.Command {
 			},
 		},
 		{
-			Message: "Services",
+			Name: "Services",
 			Commands: []*cobra.Command{
 				InjectCreateService(p),
 				InjectDeleteService(p),
@@ -134,7 +134,7 @@ func NewKfCommand() *cobra.Command {
 			},
 		},
 		{
-			Message: "Service Bindings",
+			Name: "Service Bindings",
 			Commands: []*cobra.Command{
 				InjectBindingService(p),
 				InjectListBindings(p),
@@ -143,7 +143,7 @@ func NewKfCommand() *cobra.Command {
 			},
 		},
 		{
-			Message: "Spaces",
+			Name: "Spaces",
 			Commands: []*cobra.Command{
 				InjectSpaces(p),
 				InjectSpace(p),
@@ -153,14 +153,14 @@ func NewKfCommand() *cobra.Command {
 			},
 		},
 		{
-			Message: "Builds",
+			Name: "Builds",
 			Commands: []*cobra.Command{
 				InjectBuilds(p),
 				InjectBuildLogs(p),
 			},
 		},
 		{
-			Message: "Other Commands",
+			Name: "Other Commands",
 			Commands: []*cobra.Command{
 				// DoctorTests are run in the order they're defined in this list.
 				// Tests will stop as soon as one of these top-level tests fails so they
@@ -180,11 +180,7 @@ func NewKfCommand() *cobra.Command {
 				InjectNamesCommand(p),
 			},
 		},
-	}
-
-	// This will add the rest to a group under "Other Commands".
-	groups.Add(rootCmd)
-	templates.ActsAsRootCommand(rootCmd, nil, groups...)
+	})
 
 	completion.AddBashCompletion(rootCmd)
 
@@ -193,7 +189,7 @@ func NewKfCommand() *cobra.Command {
 	// regenerated for each commit.
 	rootCmd.DisableAutoGenTag = true
 
-	templates.NormalizeAll(rootCmd)
+	rootCmd = templates.NormalizeAll(rootCmd)
 
 	return rootCmd
 }
