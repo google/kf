@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package kf
+package istio
 
 import (
 	"errors"
@@ -22,7 +22,7 @@ import (
 	kubernetes "k8s.io/client-go/kubernetes"
 )
 
-//go:generate go run internal/tools/option-builder/option-builder.go istio_client_options.yml istio_client_options.go
+//go:generate go run ../internal/tools/option-builder/option-builder.go istio_client_options.yml istio_client_options.go
 
 // IngressLister gets Istio ingresses points for clusters.
 type IngressLister interface {

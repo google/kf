@@ -16,7 +16,7 @@
 # It's exclusively for interacting with Istio so defaults like Namespace may be
 # different.
 ---
-package: kf
+package: istio
 configs:
 - name: ListIngresses
   options:
