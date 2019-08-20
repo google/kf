@@ -15,16 +15,16 @@
 package servicebrokers
 
 import (
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
-	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
+	"github.com/google/kf/pkg/kf/commands/config"
+	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/spf13/cobra"
 )
 
-// NewAddServiceBrokerCommand adds a namespaced service broker to the service catalog.
+// NewAddServiceBrokerCommand adds a cluster service broker to the service catalog.
+// TODO (juliaguo): Add flag to allow namespaced service broker
 func NewAddServiceBrokerCommand(p *config.KfParams, client servicecatalogclient.Interface) *cobra.Command {
 	var (
 		serviceBrokerName string
@@ -34,7 +34,7 @@ func NewAddServiceBrokerCommand(p *config.KfParams, client servicecatalogclient.
 	createCmd := &cobra.Command{
 		Use:     "add-service-broker BROKER_NAME URL",
 		Aliases: []string{"asb"},
-		Short:   "Add a namespaced service broker to service catalog",
+		Short:   "Add a cluster service broker to service catalog",
 		Example: `  kf add-service-broker mybroker http://mybroker.broker.svc.cluster.local`,
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -43,25 +43,20 @@ func NewAddServiceBrokerCommand(p *config.KfParams, client servicecatalogclient.
 
 			cmd.SilenceUsage = true
 
-			if err := utils.ValidateNamespace(p); err != nil {
-				return err
-			}
-
 			// TODO (juliaguo): validate URL
 
-			desiredBroker := &servicecatalogv1beta1.ServiceBroker{
+			desiredBroker := &servicecatalogv1beta1.ClusterServiceBroker{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      serviceBrokerName,
-					Namespace: p.Namespace,
+					Name: serviceBrokerName,
 				},
-				Spec: servicecatalogv1beta1.ServiceBrokerSpec{
+				Spec: servicecatalogv1beta1.ClusterServiceBrokerSpec{
 					CommonServiceBrokerSpec: servicecatalogv1beta1.CommonServiceBrokerSpec{
 						URL: url,
 					},
 				},
 			}
 
-			_, err := client.ServicecatalogV1beta1().ServiceBrokers(p.Namespace).Create(desiredBroker)
+			_, err := client.ServicecatalogV1beta1().ClusterServiceBrokers().Create(desiredBroker)
 
 			if err != nil {
 				return err

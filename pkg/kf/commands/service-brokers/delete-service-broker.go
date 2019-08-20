@@ -17,12 +17,12 @@ package servicebrokers
 import (
 	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// NewDeleteServiceBrokerCommand adds a namespaced service broker to the service catalog.
+// NewDeleteServiceBrokerCommand adds a cluster service broker to the service catalog.
+// TODO (juliaguo): Add flag to allow namespaced service broker
 func NewDeleteServiceBrokerCommand(p *config.KfParams, client servicecatalogclient.Interface) *cobra.Command {
 	var (
 		serviceBrokerName string
@@ -39,11 +39,7 @@ func NewDeleteServiceBrokerCommand(p *config.KfParams, client servicecatalogclie
 
 			cmd.SilenceUsage = true
 
-			if err := utils.ValidateNamespace(p); err != nil {
-				return err
-			}
-
-			err := client.ServicecatalogV1beta1().ServiceBrokers(p.Namespace).Delete(serviceBrokerName, &metav1.DeleteOptions{})
+			err := client.ServicecatalogV1beta1().ClusterServiceBrokers().Delete(serviceBrokerName, &metav1.DeleteOptions{})
 
 			if err != nil {
 				return err
