@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"text/tabwriter"
 	"text/template"
 	"unicode"
 
@@ -69,7 +68,7 @@ func trimRightSpace(s string) string {
 }
 
 // CalculateMinWidth gets the minimum width required for all command names.
-func CalculateMinWidth(groups CommandGroups) int {
+func (groups CommandGroups) CalculateMinWidth() int {
 	minWidth := 0
 	for _, group := range groups {
 		for _, c := range group.Commands {
@@ -121,22 +120,18 @@ func CommandGroupHelpFunc(rootCommand *cobra.Command, groups CommandGroups, temp
 		PrintTrimmedMultilineString(command.Long, out)
 		fmt.Fprintln(out)
 
-		minWidth := CalculateMinWidth(groups)
-		// add 2 for the prefix spaces, 1 for the padding between cols
-		minWidth += 3
-
-		tabout := tabwriter.NewWriter(out, minWidth, 8, 1, ' ', 0)
-		defer tabout.Flush()
+		minWidth := groups.CalculateMinWidth()
 		for _, group := range groups {
-			fmt.Fprintln(tabout, group.Name)
+			fmt.Fprintln(out, group.Name)
 			for _, c := range group.Commands {
-				fmt.Fprintf(tabout, "  %s\t%s\n", c.Name(), c.Short)
+				fmt.Fprintf(out, "  %s %s\n", rpad(c.Name(), minWidth), c.Short)
 			}
-			fmt.Fprintln(tabout)
+			fmt.Fprintln(out)
 		}
-		fmt.Fprintln(tabout, "Usage:")
-		fmt.Fprintf(tabout, "  %s [flags] COMMAND\n\n", command.CommandPath())
-		fmt.Fprintf(tabout, "Use \"%s COMMAND --help\" for more information about a given command.\n", command.CommandPath())
+
+		fmt.Fprintln(out, "Usage:")
+		fmt.Fprintf(out, "  %s [flags] COMMAND\n\n", command.CommandPath())
+		fmt.Fprintf(out, "Use \"%s COMMAND --help\" for more information about a given command.\n", command.CommandPath())
 	}
 }
 
@@ -152,9 +147,7 @@ func AddCommandGroups(rootCommand *cobra.Command, groups CommandGroups) *cobra.C
 	rootCommand.SetHelpFunc(CommandGroupHelpFunc(rootCommand, groups, nil))
 
 	for _, group := range groups {
-		for _, command := range group.Commands {
-			rootCommand.AddCommand(command)
-		}
+		rootCommand.AddCommand(group.Commands...)
 	}
 	return rootCommand
 }

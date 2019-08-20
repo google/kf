@@ -135,7 +135,7 @@ func TestCalculateMinWidth(t *testing.T) {
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			w := group.CalculateMinWidth(tc.groups)
+			w := tc.groups.CalculateMinWidth()
 			if w != tc.expectedWidth {
 				t.Errorf("Expected minWidth to be %d actual value %d", tc.expectedWidth, w)
 			}
