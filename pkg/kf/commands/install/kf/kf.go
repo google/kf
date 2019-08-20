@@ -103,9 +103,9 @@ func waitForKfDeployments(ctx context.Context) error {
 		Logf(ctx, "waiting for %s deployment to be available...", deploymentName)
 		err := wait.ExponentialBackoff(
 			wait.Backoff{
-				Duration: time.Second,
+				Duration: 5 * time.Second,
 				Steps:    10,
-				Factor:   1,
+				Factor:   1.5,
 			}, func() (bool, error) {
 				output, err := Kubectl(
 					ctx,
