@@ -17,8 +17,8 @@ package services
 import (
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
+	"github.com/google/kf/pkg/kf/describe"
 	"github.com/google/kf/pkg/kf/services"
-	"github.com/poy/service-catalog/cmd/svcat/output"
 	"github.com/spf13/cobra"
 )
 
@@ -60,7 +60,7 @@ func NewCreateServiceCommand(p *config.KfParams, client services.ClientInterface
 				return err
 			}
 
-			output.WriteInstanceDetails(cmd.OutOrStdout(), instance)
+			describe.ServiceInstance(cmd.OutOrStdout(), instance)
 			return nil
 		},
 	}

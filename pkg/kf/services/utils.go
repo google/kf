@@ -18,6 +18,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"sort"
+
+	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
 // ParseJSONOrFile parses the value as JSON if it's valid or else it tries to
@@ -47,4 +50,21 @@ func ParseJSONString(jsonString string) (map[string]interface{}, error) {
 		return nil, fmt.Errorf("invalid JSON provided: %q", jsonString)
 	}
 	return p, nil
+}
+
+// LastStatusCondition returns the last condition based on time.
+func LastStatusCondition(si v1beta1.ServiceInstance) v1beta1.ServiceInstanceCondition {
+	if len(si.Status.Conditions) == 0 {
+		return v1beta1.ServiceInstanceCondition{
+			Reason: "Unknown",
+		}
+	}
+
+	sort.SliceStable(si.Status.Conditions, func(i, j int) bool {
+		return si.Status.Conditions[j].LastTransitionTime.After(
+			si.Status.Conditions[i].LastTransitionTime.Time,
+		)
+	})
+
+	return si.Status.Conditions[len(si.Status.Conditions)-1]
 }

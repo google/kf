@@ -223,7 +223,13 @@ func InjectGetService(p *config.KfParams) *cobra.Command {
 func InjectListServices(p *config.KfParams) *cobra.Command {
 	sClientFactory := config.GetSvcatApp(p)
 	clientInterface := services.NewClient(sClientFactory)
-	command := services2.NewListServicesCommand(p, clientInterface)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	client := sources.NewClient(sourcesGetter, buildTailer)
+	appsClient := apps.NewClient(appsGetter, client)
+	command := services2.NewListServicesCommand(p, clientInterface, appsClient)
 	return command
 }
 

@@ -15,12 +15,10 @@
 package services
 
 import (
-	"fmt"
-
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
+	"github.com/google/kf/pkg/kf/describe"
 	"github.com/google/kf/pkg/kf/services"
-	"github.com/poy/service-catalog/cmd/svcat/output"
 	"github.com/spf13/cobra"
 )
 
@@ -45,11 +43,7 @@ func NewGetServiceCommand(p *config.KfParams, client services.ClientInterface) *
 				return err
 			}
 
-			if instance == nil {
-				fmt.Fprintf(cmd.OutOrStdout(), "service %s not found", instanceName)
-			} else {
-				output.WriteInstance(cmd.OutOrStdout(), "table", *instance)
-			}
+			describe.ServiceInstance(cmd.OutOrStdout(), instance)
 
 			return nil
 		},

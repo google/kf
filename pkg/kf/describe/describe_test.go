@@ -18,10 +18,12 @@ import (
 	"bytes"
 	"os"
 	"testing"
+	"time"
 
 	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/describe"
 	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -380,4 +382,34 @@ func ExampleAppSpecTemplate_resourceRequests() {
 	//   Memory:   2Gi
 	//   Storage:  2Gi
 	//   CPU:      2
+}
+
+func ExampleServiceInstance_nil() {
+	describe.ServiceInstance(os.Stdout, nil)
+
+	// Output: Service Instance: <empty>
+}
+
+func ExampleServiceInstance() {
+	describe.ServiceInstance(os.Stdout, &v1beta1.ServiceInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "myservice-instance",
+		},
+		Spec: v1beta1.ServiceInstanceSpec{
+			ClusterServiceClassRef: &v1beta1.ClusterObjectReference{Name: "myclass"},
+			ClusterServicePlanRef:  &v1beta1.ClusterObjectReference{Name: "myplan"},
+		},
+		Status: v1beta1.ServiceInstanceStatus{
+			Conditions: []v1beta1.ServiceInstanceCondition{
+				{Status: "Wrong"},
+				{LastTransitionTime: metav1.Time{Time: time.Now()}, Reason: "Ready"},
+			},
+		},
+	})
+
+	// Output: Service Instance:
+	//   Name:     myservice-instance
+	//   Service:  myclass
+	//   Plan:     myplan
+	//   Status:   Ready
 }

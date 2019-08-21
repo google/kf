@@ -21,7 +21,6 @@ require (
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/markbates/inflect v1.0.4 // indirect
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
-	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/poy/kontext v0.0.0-20190801225340-1f98414f4e12
 	github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c

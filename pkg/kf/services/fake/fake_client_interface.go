@@ -49,6 +49,26 @@ func (m *FakeClientInterface) EXPECT() *FakeClientInterfaceMockRecorder {
 	return m.recorder
 }
 
+// BrokerName mocks base method
+func (m *FakeClientInterface) BrokerName(arg0 v1beta1.ServiceInstance, arg1 ...services.BrokerNameOption) (string, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "BrokerName", varargs...)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BrokerName indicates an expected call of BrokerName
+func (mr *FakeClientInterfaceMockRecorder) BrokerName(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BrokerName", reflect.TypeOf((*FakeClientInterface)(nil).BrokerName), varargs...)
+}
+
 // CreateService mocks base method
 func (m *FakeClientInterface) CreateService(arg0, arg1, arg2 string, arg3 ...services.CreateServiceOption) (*v1beta1.ServiceInstance, error) {
 	m.ctrl.T.Helper()
