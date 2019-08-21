@@ -15,6 +15,8 @@
 package servicebindings
 
 import (
+	"fmt"
+
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
@@ -62,6 +64,8 @@ func NewBindServiceCommand(p *config.KfParams, client servicebindings.ClientInte
 			if err != nil {
 				return err
 			}
+
+			fmt.Fprintf(cmd.OutOrStderr(), "Use 'kf restart %s' to ensure your changes take effect\n", appName)
 
 			return nil
 		},
