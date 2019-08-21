@@ -44,7 +44,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/controller"
 	"knative.dev/pkg/kmp"
-	"knative.dev/pkg/logging"
 )
 
 var (
@@ -72,21 +71,19 @@ var _ controller.Reconciler = (*Reconciler)(nil)
 
 // Reconcile is called by Kubernetes.
 func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
-	logger := logging.FromContext(ctx)
-
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		return err
 	}
 
-	return r.reconcileApp(ctx, namespace, name, logger)
+	return r.reconcileApp(ctx, namespace, name)
 }
 
-func (r *Reconciler) reconcileApp(ctx context.Context, namespace, name string, logger *zap.SugaredLogger) (err error) {
+func (r *Reconciler) reconcileApp(ctx context.Context, namespace, name string) (err error) {
 	original, err := r.appLister.Apps(namespace).Get(name)
 	switch {
 	case apierrs.IsNotFound(err):
-		logger.Errorf("app %q no longer exists\n", name)
+		r.Logger.Errorf("app %q no longer exists\n", name)
 		return nil
 
 	case err != nil:
@@ -97,7 +94,7 @@ func (r *Reconciler) reconcileApp(ctx context.Context, namespace, name string, l
 	}
 
 	if r.IsNamespaceTerminating(namespace) {
-		logger.Errorf("skipping sync for app %q, namespace %q is terminating\n", name, namespace)
+		r.Logger.Errorf("skipping sync for app %q, namespace %q is terminating\n", name, namespace)
 		return nil
 	}
 
@@ -114,7 +111,7 @@ func (r *Reconciler) reconcileApp(ctx context.Context, namespace, name string, l
 		// to status with this stale state.
 
 	} else if _, uErr := r.updateStatus(toReconcile); uErr != nil {
-		logger.Warnw("Failed to update App status", zap.Error(uErr))
+		r.Logger.Warnw("Failed to update App status", zap.Error(uErr))
 		return uErr
 	}
 

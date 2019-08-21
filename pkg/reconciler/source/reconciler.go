@@ -31,7 +31,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/controller"
-	"knative.dev/pkg/logging"
 )
 
 // Reconciler reconciles an source object with the K8s cluster.
@@ -50,8 +49,6 @@ var _ controller.Reconciler = (*Reconciler)(nil)
 
 // Reconcile is called by Kubernetes.
 func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
-	logger := logging.FromContext(ctx)
-
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		return err
@@ -60,7 +57,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 	original, err := r.sourceLister.Sources(namespace).Get(name)
 	switch {
 	case errors.IsNotFound(err):
-		logger.Errorf("source %q no longer exists\n", name)
+		r.Logger.Errorf("source %q no longer exists\n", name)
 		return nil
 
 	case err != nil:
@@ -71,7 +68,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 	}
 
 	if r.IsNamespaceTerminating(namespace) {
-		logger.Errorf("skipping sync for source %q, namespace %q is terminating\n", name, namespace)
+		r.Logger.Errorf("skipping sync for source %q, namespace %q is terminating\n", name, namespace)
 		return nil
 	}
 
@@ -88,7 +85,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 		// to status with this stale state.
 
 	} else if _, uErr := r.updateStatus(namespace, toReconcile); uErr != nil {
-		logger.Warnw("Failed to update Source status", zap.Error(uErr))
+		r.Logger.Warnw("Failed to update Source status", zap.Error(uErr))
 		return uErr
 	}
 

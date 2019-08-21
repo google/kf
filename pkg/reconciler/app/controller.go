@@ -38,7 +38,7 @@ import (
 
 // NewController creates a new controller capable of reconciling Kf Routes.
 func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl {
-	logger := logging.FromContext(ctx)
+	logger := reconciler.NewKfLogger(logging.FromContext(ctx), "apps.kf.dev")
 
 	// Get informers off context
 	knativeServiceInformer := kserviceinformer.Get(ctx)
@@ -56,7 +56,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 
 	// Create reconciler
 	c := &Reconciler{
-		Base:                  reconciler.NewBase(ctx, "app-controller", cmw),
+		Base:                  reconciler.NewBase(ctx, "app-controller", cmw, logger),
 		serviceCatalogClient:  serviceCatalogClient,
 		knativeServiceLister:  knativeServiceInformer.Lister(),
 		knativeRevisionLister: knativeRevisionInformer.Lister(),

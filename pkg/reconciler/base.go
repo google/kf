@@ -32,7 +32,6 @@ import (
 	"knative.dev/pkg/configmap"
 	"knative.dev/pkg/injection/clients/kubeclient"
 	namespaceinformer "knative.dev/pkg/injection/informers/kubeinformers/corev1/namespace"
-	"knative.dev/pkg/logging"
 	"knative.dev/pkg/logging/logkey"
 )
 
@@ -67,11 +66,7 @@ type Base struct {
 
 // NewBase instantiates a new instance of Base implementing
 // the common & boilerplate code between our reconcilers.
-func NewBase(ctx context.Context, controllerAgentName string, cmw configmap.Watcher) *Base {
-	logger := logging.FromContext(ctx).
-		Named(controllerAgentName).
-		With(zap.String(logkey.ControllerType, controllerAgentName))
-
+func NewBase(ctx context.Context, controllerAgentName string, cmw configmap.Watcher, logger *zap.SugaredLogger) *Base {
 	kubeClient := kubeclient.Get(ctx)
 	nsInformer := namespaceinformer.Get(ctx)
 
@@ -87,6 +82,12 @@ func NewBase(ctx context.Context, controllerAgentName string, cmw configmap.Watc
 	}
 
 	return base
+}
+
+func NewKfLogger(logger *zap.SugaredLogger, resource string) *zap.SugaredLogger {
+	return logger.
+		Named(resource).
+		With(logkey.ControllerType, resource)
 }
 
 // IsNamespaceTerminating returns true if the namespace is marked as terminating

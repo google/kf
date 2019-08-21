@@ -25,7 +25,6 @@ import (
 	"github.com/google/kf/pkg/reconciler"
 	appresources "github.com/google/kf/pkg/reconciler/app/resources"
 	"github.com/google/kf/pkg/reconciler/route/resources"
-	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -34,7 +33,6 @@ import (
 	istiolisters "knative.dev/pkg/client/listers/istio/v1alpha3"
 	"knative.dev/pkg/controller"
 	"knative.dev/pkg/kmp"
-	"knative.dev/pkg/logging"
 )
 
 // Reconciler reconciles a Route object with the K8s cluster.
@@ -51,40 +49,39 @@ var _ controller.Reconciler = (*Reconciler)(nil)
 
 // Reconcile is called by Kubernetes.
 func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
-	logger := logging.FromContext(ctx)
-
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		return err
 	}
 
-	return r.reconcileRoute(ctx, namespace, name, logger)
+	return r.reconcileRoute(ctx, namespace, name)
 }
 
 func (r *Reconciler) reconcileRoute(
 	ctx context.Context,
 	namespace string,
 	name string,
-	logger *zap.SugaredLogger,
 ) (err error) {
 	original, err := r.routeLister.
 		Routes(namespace).
 		Get(name)
+
+	r.Logger.Info("Starting reconciler")
 	switch {
 	case apierrs.IsNotFound(err):
-		logger.Errorf("Route %q no longer exists\n", name)
+		r.Logger.Errorf("Route %q no longer exists\n", name)
 		return nil
 
 	case err != nil:
 		return err
 
 	case original.GetDeletionTimestamp() != nil:
-		logger.Errorf("Route %q is being deleted\n", name)
+		r.Logger.Errorf("Route %q is being deleted\n", name)
 		return nil
 	}
 
 	if r.IsNamespaceTerminating(namespace) {
-		logger.Errorf("skipping sync for route %q, namespace %q is terminating\n", name, namespace)
+		r.Logger.Errorf("skipping sync for route %q, namespace %q is terminating\n", name, namespace)
 		return nil
 	}
 
@@ -92,7 +89,7 @@ func (r *Reconciler) reconcileRoute(
 	toReconcile := original.DeepCopy()
 
 	// Reconcile this copy of the route.
-	return r.ApplyChanges(ctx, toReconcile, logger)
+	return r.ApplyChanges(ctx, toReconcile)
 }
 
 // ApplyChanges updates the linked resources in the cluster with the current
@@ -100,7 +97,6 @@ func (r *Reconciler) reconcileRoute(
 func (r *Reconciler) ApplyChanges(
 	ctx context.Context,
 	origRoute *v1alpha1.Route,
-	logger *zap.SugaredLogger,
 ) error {
 	origRoute.SetDefaults(ctx)
 
@@ -124,21 +120,22 @@ func (r *Reconciler) ApplyChanges(
 			Get(desired.Name)
 		if errors.IsNotFound(err) {
 			// VirtualService doesn't exist, make one.
+			r.Logger.Infof("Missing, creating a new one")
 			actual, err = r.SharedClientSet.
 				Networking().
 				VirtualServices(desired.GetNamespace()).
 				Create(desired)
+
 			if err != nil {
 				return err
 			}
 		} else if err != nil {
 			return err
 		} else if actual.GetDeletionTimestamp() != nil {
-
+			r.Logger.Info("Got an object which is being deleted")
 		} else if actual, err = r.reconcile(
 			desired,
 			actual,
-			logger,
 		); err != nil {
 			return err
 		}
@@ -150,13 +147,13 @@ func (r *Reconciler) ApplyChanges(
 func (r *Reconciler) reconcile(
 	desired *networking.VirtualService,
 	actual *networking.VirtualService,
-	logger *zap.SugaredLogger,
 ) (*networking.VirtualService, error) {
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
 	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
 
 	if semanticEqual {
+		r.Logger.Debug("virtual services are idential, skipping update")
 		return actual, nil
 	}
 
@@ -184,6 +181,7 @@ func (r *Reconciler) reconcile(
 
 	// Sort by reverse to defer to the longest matchers.
 	sort.Sort(sort.Reverse(v1alpha1.HTTPRoutes(existing.Spec.HTTP)))
+	r.Logger.Info("updated")
 
 	return r.SharedClientSet.
 		Networking().

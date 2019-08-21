@@ -35,7 +35,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/controller"
 	"knative.dev/pkg/kmp"
-	"knative.dev/pkg/logging"
 )
 
 // Reconciler reconciles a Space object with the K8s cluster.
@@ -55,8 +54,6 @@ var _ controller.Reconciler = (*Reconciler)(nil)
 
 // Reconcile is called by Kubernetes.
 func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
-	logger := logging.FromContext(ctx)
-
 	_, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		return err
@@ -65,7 +62,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 	original, err := r.spaceLister.Get(name)
 	switch {
 	case apierrs.IsNotFound(err):
-		logger.Errorf("space %q no longer exists\n", name)
+		r.Logger.Errorf("space %q no longer exists\n", name)
 		return nil
 
 	case err != nil:
@@ -88,7 +85,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 		// to status with this stale state.
 
 	} else if _, uErr := r.updateStatus(toReconcile); uErr != nil {
-		logger.Warnw("Failed to update Space status", zap.Error(uErr))
+		r.Logger.Warnw("Failed to update Space status", zap.Error(uErr))
 		return uErr
 	}
 
@@ -98,8 +95,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 // ApplyChanges updates the linked resources in the cluster with the current
 // status of the space.
 func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) error {
-	logger := logging.FromContext(ctx)
-
 	space.Status.InitializeConditions()
 	namespaceName := resources.NamespaceName(space)
 
@@ -132,7 +127,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 	// then this reconciliation process can't continue until we get notified it is.
 	if cond := space.Status.GetCondition(v1alpha1.SpaceConditionNamespaceReady); cond != nil {
 		if !cond.IsTrue() {
-			logger.Infof("can't continue reconciling until namespace %q is ready", namespaceName)
+			r.Logger.Infof("can't continue reconciling until namespace %q is ready", namespaceName)
 			return nil
 		}
 	}

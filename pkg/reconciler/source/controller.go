@@ -30,7 +30,7 @@ import (
 
 // NewController creates a new controller capable of reconciling Kf sources.
 func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl {
-	logger := logging.FromContext(ctx)
+	logger := reconciler.NewKfLogger(logging.FromContext(ctx), "sources.kf.dev")
 
 	// Get informers off context
 	sourceInformer := sourceinformer.Get(ctx)
@@ -39,7 +39,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 
 	// Create reconciler
 	c := &Reconciler{
-		Base:         reconciler.NewBase(ctx, "source-controller", cmw),
+		Base:         reconciler.NewBase(ctx, "source-controller", cmw, logger),
 		sourceLister: sourceInformer.Lister(),
 		buildLister:  buildInformer.Lister(),
 		buildClient:  buildClient.BuildV1alpha1(),

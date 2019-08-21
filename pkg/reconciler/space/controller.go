@@ -36,7 +36,7 @@ import (
 
 // NewController creates a new controller capable of reconciling Kf Spaces.
 func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl {
-	logger := logging.FromContext(ctx)
+	logger := reconciler.NewKfLogger(logging.FromContext(ctx), "spaces.kf.dev")
 
 	// Get informers off context
 	nsInformer := namespaceinformer.Get(ctx)
@@ -47,7 +47,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 
 	// Create reconciler
 	c := &Reconciler{
-		Base:                reconciler.NewBase(ctx, "space-controller", cmw),
+		Base:                reconciler.NewBase(ctx, "space-controller", cmw, logger),
 		spaceLister:         spaceInformer.Lister(),
 		namespaceLister:     nsInformer.Lister(),
 		roleLister:          roleInformer.Lister(),
