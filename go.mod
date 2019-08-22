@@ -7,10 +7,10 @@ require (
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/elazarl/goproxy v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f // indirect
+	github.com/fatih/color v1.7.0
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/golang/mock v1.3.1
 	github.com/google/go-containerregistry v0.0.0-20190306174256-678f6c51f585
-	github.com/google/kf/pkg/kf/commands/install v0.0.0
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/google/wire v0.2.2
 	github.com/gorilla/mux v1.7.0
@@ -19,6 +19,7 @@ require (
 	github.com/knative/pkg v0.0.0-20190621200921-9c5d970cbc9e
 	github.com/knative/serving v0.7.1-0.20190701162519-7ca25646a186
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
+	github.com/manifoldco/promptui v0.3.2
 	github.com/markbates/inflect v1.0.4 // indirect
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
@@ -54,7 +55,6 @@ replace github.com/knative/pkg => github.com/poy/knative-pkg v99.0.0+incompatibl
 replace (
 	contrib.go.opencensus.io/exporter/stackdriver => contrib.go.opencensus.io/exporter/stackdriver v0.9.2
 	github.com/google/go-cmp => github.com/google/go-cmp v0.3.0
-	github.com/google/kf/pkg/kf/commands/install => ./pkg/kf/commands/install
 	k8s.io/api => k8s.io/api v0.0.0-20190528110122-9ad12a4af326
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190528110544-fa58353d80f3
 	k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20190221084156-01f179d85dbc
