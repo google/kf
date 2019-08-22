@@ -21,13 +21,13 @@ import (
 	routeinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/route"
 	"github.com/google/kf/pkg/reconciler"
 	appresources "github.com/google/kf/pkg/reconciler/app/resources"
+	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 	networking "knative.dev/pkg/apis/istio/v1alpha3"
 	virtualserviceinformer "knative.dev/pkg/client/injection/informers/istio/v1alpha3/virtualservice"
 	"knative.dev/pkg/configmap"
 	"knative.dev/pkg/controller"
-	"knative.dev/pkg/logging"
 )
 
 // NewController creates a new controller capable of reconciling Kf Routes.
@@ -55,7 +55,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	// Watch for any changes to VirtualServices in the kf namespace.
 	vsInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: FilterVSWithNamespace(v1alpha1.KfNamespace),
-		Handler:    controller.HandleAll(EnqueueRoutesOfVirtualService(ctx, impl, c)),
+		Handler:    controller.HandleAll(EnqueueRoutesOfVirtualService(logger, impl, c)),
 	})
 
 	return impl
@@ -82,11 +82,10 @@ func FilterVSWithNamespace(namespace string) func(obj interface{}) bool {
 // NOT owned by a single Route. Therefore, when one changes, we need to grab
 // the collection of corresponding Routes.
 func EnqueueRoutesOfVirtualService(
-	ctx context.Context,
+	logger *zap.SugaredLogger,
 	c *controller.Impl,
 	r *Reconciler,
 ) func(obj interface{}) {
-	logger := logging.FromContext(ctx)
 	return func(obj interface{}) {
 		vs, ok := obj.(*networking.VirtualService)
 		if !ok {
