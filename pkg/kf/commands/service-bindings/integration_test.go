@@ -26,7 +26,7 @@ import (
 	. "github.com/google/kf/pkg/kf/testutil"
 )
 
-func TestIntegration_withServiceBroker_Marketplace(t *testing.T) {
+func TestIntegration_Marketplace(t *testing.T) {
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		withServiceBroker(ctx, t, kf, func(ctx context.Context) {
@@ -36,7 +36,7 @@ func TestIntegration_withServiceBroker_Marketplace(t *testing.T) {
 	})
 }
 
-func TestIntegration_withServiceBroker_withServiceInstance_Services(t *testing.T) {
+func TestIntegration_Services(t *testing.T) {
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		withServiceBroker(ctx, t, kf, func(ctx context.Context) {
@@ -49,7 +49,7 @@ func TestIntegration_withServiceBroker_withServiceInstance_Services(t *testing.T
 	})
 }
 
-func TestIntegration_withServiceBroker_withServiceInstance_withServiceBinding_Bindings(t *testing.T) {
+func TestIntegration_Bindings(t *testing.T) {
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		withServiceBroker(ctx, t, kf, func(ctx context.Context) {
@@ -64,7 +64,7 @@ func TestIntegration_withServiceBroker_withServiceInstance_withServiceBinding_Bi
 	})
 }
 
-func TestIntegration_withServiceBroker_withServiceInstance_withServiceBinding_VcapServices(t *testing.T) {
+func TestIntegration_VcapServices(t *testing.T) {
 	checkClusterStatus(t)
 	creds := `\"credentials\":{\"password\":\"fake-pw\",\"username\":\"fake-user\"` // fake service binding credentials provided by the mock broker
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {

@@ -24,10 +24,6 @@ import (
 // NewDeleteServiceBrokerCommand adds a cluster service broker to the service catalog.
 // TODO (juliaguo): Add flag to allow namespaced service broker
 func NewDeleteServiceBrokerCommand(p *config.KfParams, client servicecatalogclient.Interface) *cobra.Command {
-	var (
-		serviceBrokerName string
-	)
-
 	deleteCmd := &cobra.Command{
 		Use:     "delete-service-broker BROKER_NAME",
 		Aliases: []string{"dsb"},
@@ -35,17 +31,13 @@ func NewDeleteServiceBrokerCommand(p *config.KfParams, client servicecatalogclie
 		Example: `  kf delete-service-broker mybroker`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			serviceBrokerName = args[0]
+			serviceBrokerName := args[0]
 
 			cmd.SilenceUsage = true
 
 			err := client.ServicecatalogV1beta1().ClusterServiceBrokers().Delete(serviceBrokerName, &metav1.DeleteOptions{})
 
-			if err != nil {
-				return err
-			}
-
-			return nil
+			return err
 		},
 	}
 

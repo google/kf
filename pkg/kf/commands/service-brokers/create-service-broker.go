@@ -15,6 +15,8 @@
 package servicebrokers
 
 import (
+	"fmt"
+
 	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
 	"github.com/google/kf/pkg/kf/commands/config"
 	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -24,7 +26,7 @@ import (
 )
 
 // NewCreateServiceBrokerCommand adds a cluster service broker to the service catalog.
-// TODO (juliaguo): Add flag to allow namespaced service broker
+// TODO (juliaguo): Add flag to allow namespaced service broker and add user/pw args to match cf
 func NewCreateServiceBrokerCommand(p *config.KfParams, client servicecatalogclient.Interface) *cobra.Command {
 	var (
 		serviceBrokerName string
@@ -58,11 +60,9 @@ func NewCreateServiceBrokerCommand(p *config.KfParams, client servicecatalogclie
 
 			_, err := client.ServicecatalogV1beta1().ClusterServiceBrokers().Create(desiredBroker)
 
-			if err != nil {
-				return err
-			}
+			fmt.Fprintln(cmd.OutOrStdout(), "Service broker entry created, run `kf marketplace` to check the status.")
 
-			return nil
+			return err
 		},
 	}
 
