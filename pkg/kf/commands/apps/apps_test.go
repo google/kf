@@ -28,6 +28,7 @@ import (
 	"github.com/google/kf/pkg/kf/testutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
+	duckv1alpha1 "knative.dev/pkg/apis/duck/v1alpha1"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
 
@@ -212,6 +213,30 @@ func TestAppsCommand(t *testing.T) {
 				testutil.AssertContainsAll(t, buffer.String(), []string{header1, "example.com/, somehost.example.com/, somehost.example.com/somepath"})
 			},
 		},
+		"shows cluster URL": {
+			namespace: "some-namespace",
+			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
+				app := v1alpha1.App{}
+				app.Name = "app-a"
+				app.Status.Address = &duckv1alpha1.Addressable{
+					Addressable: duckv1beta1.Addressable{
+						URL: &apis.URL{
+							Host:   "app-a.some-namespace.svc.cluster.local",
+							Scheme: "http",
+						},
+					},
+				}
+
+				fakeLister.
+					EXPECT().
+					List(gomock.Any()).
+					Return([]v1alpha1.App{app}, nil)
+			},
+			assert: func(t *testing.T, buffer *bytes.Buffer) {
+				testutil.AssertContainsAll(t, buffer.String(), []string{"http://app-a.some-namespace.svc.cluster.local"})
+			},
+		},
+
 		"listing apps fails": {
 			namespace: "some-namespace",
 			wantErr:   errors.New("some-error"),

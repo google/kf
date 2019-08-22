@@ -68,13 +68,13 @@ func NewGetAppCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 				status := app.Status
 
 				fmt.Fprintf(w, "Image:\t%s\n", status.Image)
-				if url := status.URL; url != nil {
-					fmt.Fprintf(w, "Host:\t%s\n", url.Host)
-				}
 
 				kfApp := apps.NewFromApp(app)
+				fmt.Fprintf(w, "Cluster URL\t%s\n", kfApp.GetClusterURL())
+
 				describe.HealthCheck(w, kfApp.GetHealthCheck())
 				describe.EnvVars(w, kfApp.GetEnvVars())
+				describe.RouteSpecFieldsList(w, app.Spec.Routes)
 			})
 			fmt.Fprintln(w)
 
