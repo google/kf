@@ -110,7 +110,7 @@ func withServiceBroker(ctx context.Context, t *testing.T, kf *Kf, callback func(
 	defer kf.Delete(ctx, brokerAppName)
 
 	// Register the mock service broker to service catalog, and then clean it up.
-	kf.AddServiceBroker(ctx, brokerName, internalBrokerUrl(brokerAppName, SpaceFromContext(ctx)))
+	kf.CreateServiceBroker(ctx, brokerName, internalBrokerUrl(brokerAppName, SpaceFromContext(ctx)))
 
 	// Temporary solution to allow service broker registration to complete.
 	// TODO: Add flag to run the command synchronously.

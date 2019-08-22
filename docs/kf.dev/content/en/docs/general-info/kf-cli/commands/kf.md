@@ -30,7 +30,6 @@ kf [flags]
 
 ### SEE ALSO
 
-* [kf add-service-broker](/docs/general-info/kf-cli/commands/kf-add-service-broker/)	 - Add a cluster service broker to service catalog
 * [kf app](/docs/general-info/kf-cli/commands/kf-app/)	 - Print information about a deployed app
 * [kf apps](/docs/general-info/kf-cli/commands/kf-apps/)	 - List pushed apps
 * [kf bind-service](/docs/general-info/kf-cli/commands/kf-bind-service/)	 - Bind a service instance to an app
@@ -42,6 +41,7 @@ kf [flags]
 * [kf configure-space](/docs/general-info/kf-cli/commands/kf-configure-space/)	 - Set configuration for a space
 * [kf create-route](/docs/general-info/kf-cli/commands/kf-create-route/)	 - Create a route
 * [kf create-service](/docs/general-info/kf-cli/commands/kf-create-service/)	 - Create a service instance
+* [kf create-service-broker](/docs/general-info/kf-cli/commands/kf-create-service-broker/)	 - Add a cluster service broker to service catalog
 * [kf create-space](/docs/general-info/kf-cli/commands/kf-create-space/)	 - Create a space
 * [kf debug](/docs/general-info/kf-cli/commands/kf-debug/)	 - Show debugging information useful for filing a bug report
 * [kf delete](/docs/general-info/kf-cli/commands/kf-delete/)	 - Delete an existing app

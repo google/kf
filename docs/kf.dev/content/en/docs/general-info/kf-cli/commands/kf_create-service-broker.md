@@ -1,9 +1,9 @@
 ---
-title: "kf add-service-broker"
-slug: kf-add-service-broker
-url: /docs/general-info/kf-cli/commands/kf-add-service-broker/
+title: "kf create-service-broker"
+slug: kf-create-service-broker
+url: /docs/general-info/kf-cli/commands/kf-create-service-broker/
 ---
-## kf add-service-broker
+## kf create-service-broker
 
 Add a cluster service broker to service catalog
 
@@ -12,19 +12,19 @@ Add a cluster service broker to service catalog
 Add a cluster service broker to service catalog
 
 ```
-kf add-service-broker BROKER_NAME URL [flags]
+kf create-service-broker BROKER_NAME URL [flags]
 ```
 
 ### Examples
 
 ```
-  kf add-service-broker mybroker http://mybroker.broker.svc.cluster.local
+  kf create-service-broker mybroker http://mybroker.broker.svc.cluster.local
 ```
 
 ### Options
 
 ```
-  -h, --help   help for add-service-broker
+  -h, --help   help for create-service-broker
 ```
 
 ### Options inherited from parent commands

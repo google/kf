@@ -23,19 +23,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewAddServiceBrokerCommand adds a cluster service broker to the service catalog.
+// NewCreateServiceBrokerCommand adds a cluster service broker to the service catalog.
 // TODO (juliaguo): Add flag to allow namespaced service broker
-func NewAddServiceBrokerCommand(p *config.KfParams, client servicecatalogclient.Interface) *cobra.Command {
+func NewCreateServiceBrokerCommand(p *config.KfParams, client servicecatalogclient.Interface) *cobra.Command {
 	var (
 		serviceBrokerName string
 		url               string
 	)
 
 	createCmd := &cobra.Command{
-		Use:     "add-service-broker BROKER_NAME URL",
-		Aliases: []string{"asb"},
+		Use:     "create-service-broker BROKER_NAME URL",
+		Aliases: []string{"csb"},
 		Short:   "Add a cluster service broker to service catalog",
-		Example: `  kf add-service-broker mybroker http://mybroker.broker.svc.cluster.local`,
+		Example: `  kf create-service-broker mybroker http://mybroker.broker.svc.cluster.local`,
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			serviceBrokerName = args[0]

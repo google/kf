@@ -983,14 +983,14 @@ func (k *Kf) Marketplace(ctx context.Context, extraArgs ...string) []string {
 	return CombineOutputStr(ctx, k.t, output)
 }
 
-// AddServiceBroker runs the add-service-broker command.
-func (k *Kf) AddServiceBroker(ctx context.Context, brokerName string, url string, extraArgs ...string) {
+// CreateServiceBroker runs the create-service-broker command.
+func (k *Kf) CreateServiceBroker(ctx context.Context, brokerName string, url string, extraArgs ...string) {
 	k.t.Helper()
-	Logf(k.t, "running add-service-broker...")
-	defer Logf(k.t, "done running add-service-broker.")
+	Logf(k.t, "running create-service-broker...")
+	defer Logf(k.t, "done running create-service-broker.")
 
 	args := []string{
-		"add-service-broker",
+		"create-service-broker",
 		"--namespace", SpaceFromContext(ctx),
 		brokerName,
 		url,
@@ -999,11 +999,11 @@ func (k *Kf) AddServiceBroker(ctx context.Context, brokerName string, url string
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
 		Args: append(args, extraArgs...),
 	})
-	PanicOnError(ctx, k.t, "add-service-broker", errs)
+	PanicOnError(ctx, k.t, "create-service-broker", errs)
 	StreamOutput(ctx, k.t, output)
 }
 
-// DeleteServiceBroker runs the add-service-broker command.
+// DeleteServiceBroker runs the delete-service-broker command.
 func (k *Kf) DeleteServiceBroker(ctx context.Context, brokerName string, extraArgs ...string) {
 	k.t.Helper()
 	Logf(k.t, "running delete-service-broker...")

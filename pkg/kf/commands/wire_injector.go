@@ -263,9 +263,9 @@ func InjectVcapServices(p *config.KfParams) *cobra.Command {
 ///////////////////////
 // Service Brokers  //
 /////////////////////
-func InjectAddServiceBroker(p *config.KfParams) *cobra.Command {
+func InjectCreateServiceBroker(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		servicebrokerscmd.NewAddServiceBrokerCommand,
+		servicebrokerscmd.NewCreateServiceBrokerCommand,
 		config.GetServiceCatalogClient,
 	)
 	return nil

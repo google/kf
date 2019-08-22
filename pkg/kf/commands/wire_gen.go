@@ -286,9 +286,9 @@ func InjectVcapServices(p *config.KfParams) *cobra.Command {
 	return command
 }
 
-func InjectAddServiceBroker(p *config.KfParams) *cobra.Command {
+func InjectCreateServiceBroker(p *config.KfParams) *cobra.Command {
 	versionedInterface := config.GetServiceCatalogClient(p)
-	command := servicebrokers.NewAddServiceBrokerCommand(p, versionedInterface)
+	command := servicebrokers.NewCreateServiceBrokerCommand(p, versionedInterface)
 	return command
 }
 
