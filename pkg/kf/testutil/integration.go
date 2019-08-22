@@ -704,6 +704,22 @@ func (k *Kf) Start(ctx context.Context, appName string) {
 	StreamOutput(ctx, k.t, output)
 }
 
+// Restart restarts an application.
+func (k *Kf) Restart(ctx context.Context, appName string) {
+	k.t.Helper()
+	Logf(k.t, "restarting %q...", appName)
+	defer Logf(k.t, "done restarting %q.", appName)
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: []string{
+			"restart",
+			"--namespace", SpaceFromContext(ctx),
+			appName,
+		},
+	})
+	PanicOnError(ctx, k.t, fmt.Sprintf("restart %q", appName), errs)
+	StreamOutput(ctx, k.t, output)
+}
+
 // Proxy starts a proxy for an application.
 func (k *Kf) Proxy(ctx context.Context, appName string, port int) {
 	k.t.Helper()
@@ -949,6 +965,197 @@ func (k *Kf) Target(ctx context.Context, namespace string) []string {
 	return CombineOutputStr(ctx, k.t, output)
 }
 
+// Marketplace runs the marketplace command and returns the output.
+func (k *Kf) Marketplace(ctx context.Context, extraArgs ...string) []string {
+	k.t.Helper()
+	Logf(k.t, "running marketplace...")
+	defer Logf(k.t, "done running marketplace.")
+
+	args := []string{
+		"marketplace",
+		"--namespace", SpaceFromContext(ctx),
+	}
+
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: append(args, extraArgs...),
+	})
+	PanicOnError(ctx, k.t, "marketplace", errs)
+	return CombineOutputStr(ctx, k.t, output)
+}
+
+// AddServiceBroker runs the add-service-broker command.
+func (k *Kf) AddServiceBroker(ctx context.Context, brokerName string, url string, extraArgs ...string) {
+	k.t.Helper()
+	Logf(k.t, "running add-service-broker...")
+	defer Logf(k.t, "done running add-service-broker.")
+
+	args := []string{
+		"add-service-broker",
+		"--namespace", SpaceFromContext(ctx),
+		brokerName,
+		url,
+	}
+
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: append(args, extraArgs...),
+	})
+	PanicOnError(ctx, k.t, "add-service-broker", errs)
+	StreamOutput(ctx, k.t, output)
+}
+
+// DeleteServiceBroker runs the add-service-broker command.
+func (k *Kf) DeleteServiceBroker(ctx context.Context, brokerName string, extraArgs ...string) {
+	k.t.Helper()
+	Logf(k.t, "running delete-service-broker...")
+	defer Logf(k.t, "done running delete-service-broker.")
+
+	args := []string{
+		"delete-service-broker",
+		"--namespace", SpaceFromContext(ctx),
+		brokerName,
+	}
+
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: append(args, extraArgs...),
+	})
+	PanicOnError(ctx, k.t, "delete-service-broker", errs)
+	StreamOutput(ctx, k.t, output)
+}
+
+// CreateService runs the create-service command.
+func (k *Kf) CreateService(ctx context.Context, serviceClass string, servicePlan string, serviceInstanceName string, extraArgs ...string) {
+	k.t.Helper()
+	Logf(k.t, "running create-service...")
+	defer Logf(k.t, "done running create-service.")
+
+	args := []string{
+		"create-service",
+		"--namespace", SpaceFromContext(ctx),
+		serviceClass,
+		servicePlan,
+		serviceInstanceName,
+	}
+
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: append(args, extraArgs...),
+	})
+	PanicOnError(ctx, k.t, "create-service", errs)
+	StreamOutput(ctx, k.t, output)
+}
+
+// Services runs the services command.
+func (k *Kf) Services(ctx context.Context, extraArgs ...string) []string {
+	k.t.Helper()
+	Logf(k.t, "running services...")
+	defer Logf(k.t, "done running services.")
+
+	args := []string{
+		"services",
+		"--namespace", SpaceFromContext(ctx),
+	}
+
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: append(args, extraArgs...),
+	})
+	PanicOnError(ctx, k.t, "services", errs)
+	return CombineOutputStr(ctx, k.t, output)
+}
+
+// DeleteService runs the delete-service command.
+func (k *Kf) DeleteService(ctx context.Context, serviceInstanceName string, extraArgs ...string) {
+	k.t.Helper()
+	Logf(k.t, "running delete-service...")
+	defer Logf(k.t, "done running delete-service.")
+
+	args := []string{
+		"delete-service",
+		"--namespace", SpaceFromContext(ctx),
+		serviceInstanceName,
+	}
+
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: append(args, extraArgs...),
+	})
+	PanicOnError(ctx, k.t, "delete-service", errs)
+	StreamOutput(ctx, k.t, output)
+}
+
+// BindService runs the bind-service command.
+func (k *Kf) BindService(ctx context.Context, appName string, serviceInstanceName string, extraArgs ...string) {
+	k.t.Helper()
+	Logf(k.t, "running bind-service...")
+	defer Logf(k.t, "done running bind-service.")
+
+	args := []string{
+		"bind-service",
+		"--namespace", SpaceFromContext(ctx),
+		appName,
+		serviceInstanceName,
+	}
+
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: append(args, extraArgs...),
+	})
+	PanicOnError(ctx, k.t, "bind-service", errs)
+	StreamOutput(ctx, k.t, output)
+}
+
+// Bindings runs the services command.
+func (k *Kf) Bindings(ctx context.Context, extraArgs ...string) []string {
+	k.t.Helper()
+	Logf(k.t, "running bindings...")
+	defer Logf(k.t, "done running bindings.")
+
+	args := []string{
+		"bindings",
+		"--namespace", SpaceFromContext(ctx),
+	}
+
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: append(args, extraArgs...),
+	})
+	PanicOnError(ctx, k.t, "bindings", errs)
+	return CombineOutputStr(ctx, k.t, output)
+}
+
+// UnbindService runs the unbind-service command.
+func (k *Kf) UnbindService(ctx context.Context, appName string, serviceInstanceName string, extraArgs ...string) {
+	k.t.Helper()
+	Logf(k.t, "running unbind-service...")
+	defer Logf(k.t, "done running unbind-service.")
+
+	args := []string{
+		"unbind-service",
+		"--namespace", SpaceFromContext(ctx),
+		appName,
+		serviceInstanceName,
+	}
+
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: append(args, extraArgs...),
+	})
+	PanicOnError(ctx, k.t, "unbind-service", errs)
+	StreamOutput(ctx, k.t, output)
+}
+
+// VcapServices runs the vcap-services command.
+func (k *Kf) VcapServices(ctx context.Context, extraArgs ...string) []string {
+	k.t.Helper()
+	Logf(k.t, "running vcap-services...")
+	defer Logf(k.t, "done running vcap-services.")
+
+	args := []string{
+		"vcap-services",
+		"--namespace", SpaceFromContext(ctx),
+	}
+
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: append(args, extraArgs...),
+	})
+	PanicOnError(ctx, k.t, "vcap-services", errs)
+	return CombineOutputStr(ctx, k.t, output)
+}
+
 type spaceKey struct{}
 
 // ContextWithSpace returns a context that has the space information. The
@@ -961,6 +1168,76 @@ func ContextWithSpace(ctx context.Context, space string) context.Context {
 // via ContextWithSpace.
 func SpaceFromContext(ctx context.Context) string {
 	return ctx.Value(spaceKey{}).(string)
+}
+
+type brokerKey struct{}
+
+// ContextWithBroker returns a context that has the service broker information. The
+// broker name can be fetched via BrokerFromContext.
+func ContextWithBroker(ctx context.Context, brokerName string) context.Context {
+	return context.WithValue(ctx, brokerKey{}, brokerName)
+}
+
+// BrokerFromContext returns the broker name given a context that has been setup
+// via ContextWithBroker.
+func BrokerFromContext(ctx context.Context) string {
+	return ctx.Value(brokerKey{}).(string)
+}
+
+type serviceInstanceKey struct{}
+
+// ContextWithServiceInstance returns a context that has the service instance information. The
+// service instance name can be fetched via ServiceInstanceFromContext.
+func ContextWithServiceInstance(ctx context.Context, serviceInstanceName string) context.Context {
+	return context.WithValue(ctx, serviceInstanceKey{}, serviceInstanceName)
+}
+
+// ServiceInstanceFromContext returns the service instance name given a context that has been setup
+// via ContextWithServiceInstance.
+func ServiceInstanceFromContext(ctx context.Context) string {
+	return ctx.Value(serviceInstanceKey{}).(string)
+}
+
+type serviceClassKey struct{}
+
+// ContextWithServiceClass returns a context that has the service class information. The
+// service class name can be fetched via ServiceClassFromContext.
+func ContextWithServiceClass(ctx context.Context, serviceClassName string) context.Context {
+	return context.WithValue(ctx, serviceClassKey{}, serviceClassName)
+}
+
+// ServiceClassFromContext returns the service class name given a context that has been setup
+// via ContextWithServiceClass.
+func ServiceClassFromContext(ctx context.Context) string {
+	return ctx.Value(serviceClassKey{}).(string)
+}
+
+type servicePlanKey struct{}
+
+// ContextWithServicePlan returns a context that has the service plan information. The
+// service plan name can be fetched via ServiceInstanceFromContext.
+func ContextWithServicePlan(ctx context.Context, servicePlanName string) context.Context {
+	return context.WithValue(ctx, servicePlanKey{}, servicePlanName)
+}
+
+// ServicePlanFromContext returns the service plan name given a context that has been setup
+// via ContextWithServicePlan.
+func ServicePlanFromContext(ctx context.Context) string {
+	return ctx.Value(servicePlanKey{}).(string)
+}
+
+type appKey struct{}
+
+// ContextWithApp returns a context that has the app information. The
+// app name can be fetched via AppFromContext.
+func ContextWithApp(ctx context.Context, appName string) context.Context {
+	return context.WithValue(ctx, appKey{}, appName)
+}
+
+// AppFromContext returns the service plan name given a context that has been setup
+// via ContextWithApp.
+func AppFromContext(ctx context.Context) string {
+	return ctx.Value(appKey{}).(string)
 }
 
 // ExpectedAddr returns the expected address for integration tests given a
