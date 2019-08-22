@@ -14,7 +14,7 @@
 
 // This file was generated with option-builder.go, DO NOT EDIT IT.
 
-package kf
+package istio
 
 type listIngressesConfig struct {
 	// Namespace is the Kubernetes namespace to search for Ingresses

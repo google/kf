@@ -15,6 +15,12 @@ Set the buildpack builder image.
 kf configure-space set-buildpack-builder SPACE_NAME BUILDER_IMAGE [flags]
 ```
 
+### Examples
+
+```
+  kf configure-space set-buildpack-builder my-space gcr.io/my-project/builder:latest
+```
+
 ### Options
 
 ```
@@ -24,9 +30,9 @@ kf configure-space set-buildpack-builder SPACE_NAME BUILDER_IMAGE [flags]
 ### Options inherited from parent commands
 
 ```
-      --config string       config file (default is $HOME/.kf)
-      --kubeconfig string   kubectl config file (default is $HOME/.kube/config)
-      --namespace string    kubernetes namespace
+      --config string       Config file (default is $HOME/.kf)
+      --kubeconfig string   Kubectl config file (default is $HOME/.kube/config)
+      --namespace string    Kubernetes namespace to target
 ```
 
 ### SEE ALSO

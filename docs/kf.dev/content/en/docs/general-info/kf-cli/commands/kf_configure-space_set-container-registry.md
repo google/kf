@@ -15,6 +15,12 @@ Set the container registry used for builds.
 kf configure-space set-container-registry SPACE_NAME REGISTRY [flags]
 ```
 
+### Examples
+
+```
+  kf configure-space set-container-registry my-space gcr.io/my-project
+```
+
 ### Options
 
 ```
@@ -24,9 +30,9 @@ kf configure-space set-container-registry SPACE_NAME REGISTRY [flags]
 ### Options inherited from parent commands
 
 ```
-      --config string       config file (default is $HOME/.kf)
-      --kubeconfig string   kubectl config file (default is $HOME/.kube/config)
-      --namespace string    kubernetes namespace
+      --config string       Config file (default is $HOME/.kf)
+      --kubeconfig string   Kubectl config file (default is $HOME/.kube/config)
+      --namespace string    Kubernetes namespace to target
 ```
 
 ### SEE ALSO

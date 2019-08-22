@@ -17,6 +17,7 @@ package builds
 import (
 	"context"
 
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/sources"
@@ -26,9 +27,10 @@ import (
 // NewBuildLogsCommand allows users to list spaces.
 func NewBuildLogsCommand(p *config.KfParams, client sources.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "build-logs BUILD_NAME",
-		Short: "Get the logs of the given build",
-		Args:  cobra.ExactArgs(1),
+		Use:     "build-logs BUILD_NAME",
+		Short:   "Get the logs of the given build",
+		Example: "kf build-logs build-12345",
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err
@@ -41,6 +43,8 @@ func NewBuildLogsCommand(p *config.KfParams, client sources.Client) *cobra.Comma
 			return client.Tail(context.Background(), p.Namespace, buildName, cmd.OutOrStdout())
 		},
 	}
+
+	completion.MarkArgCompletionSupported(cmd, completion.SourceCompletion)
 
 	return cmd
 }

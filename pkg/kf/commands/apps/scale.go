@@ -20,6 +20,7 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/describe"
@@ -37,17 +38,21 @@ func NewScaleCommand(
 		autoscaleMax int
 	)
 
-	var scale = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "scale APP_NAME",
 		Short: "Change or view the instance count for an app",
 		Example: `
-  kf scale myapp # Displays current scaling
-  kf scale myapp -i 3 # Scale to exactly 3 instances
-  kf scale myapp --instances 3 # Scale to exactly 3 instances
-  kf scale myapp --min 3 # Autoscaler won't scale below 3 instances
-  kf scale myapp --max 5 # Autoscaler won't scale above 5 instances
-  kf scale myapp --min 3 --max 5 # Autoscaler won't below 3 or above 5 instances
-  `,
+		# Display current scale settings
+		kf scale myapp
+		# Scale to exactly 3 instances
+		kf scale myapp --instances 3
+		# Scale to at least 3 instances
+		kf scale myapp --min 3
+		# Scale between 0 and 5 instances
+		kf scale myapp --max 5
+		# Scale between 3 and 5 instances depending on traffic
+		kf scale myapp --min 3 --max 5
+		`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
@@ -107,7 +112,7 @@ func NewScaleCommand(
 		},
 	}
 
-	scale.Flags().IntVarP(
+	cmd.Flags().IntVarP(
 		&instances,
 		"instances",
 		"i",
@@ -115,19 +120,21 @@ func NewScaleCommand(
 		"Number of instances.",
 	)
 
-	scale.Flags().IntVar(
+	cmd.Flags().IntVar(
 		&autoscaleMin,
 		"min",
 		-1,
 		"Minimum number of instances to allow the autoscaler to scale to. 0 implies the app can be scaled to 0.",
 	)
 
-	scale.Flags().IntVar(
+	cmd.Flags().IntVar(
 		&autoscaleMax,
 		"max",
 		-1,
 		"Maximum number of instances to allow the autoscaler to scale to. 0 implies the app can be scaled to ∞.",
 	)
 
-	return scale
+	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
+
+	return cmd
 }

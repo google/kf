@@ -23,7 +23,6 @@ require (
 	github.com/manifoldco/promptui v0.3.2
 	github.com/markbates/inflect v1.0.4 // indirect
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
-	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/mitchellh/go-wordwrap v1.0.0 // indirect
 	github.com/poy/kontext v0.0.0-20190801225340-1f98414f4e12
 	github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c
@@ -31,6 +30,7 @@ require (
 	github.com/segmentio/textio v1.2.0
 	github.com/sirupsen/logrus v1.3.0 // indirect
 	github.com/spf13/cobra v0.0.5
+	github.com/spf13/pflag v1.0.3
 	go.opencensus.io v0.22.0 // indirect
 	go.uber.org/zap v1.9.1
 	google.golang.org/appengine v1.5.0 // indirect

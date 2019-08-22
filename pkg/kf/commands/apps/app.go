@@ -19,6 +19,7 @@ import (
 	"io"
 
 	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/describe"
@@ -27,10 +28,11 @@ import (
 
 // NewGetAppCommand creates a command to get details about a single application.
 func NewGetAppCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
-	var apps = &cobra.Command{
+	var cmd = &cobra.Command{
 		Use:     "app APP_NAME",
-		Short:   "Get a pushed app",
-		Example: `  kf app my-app`,
+		Short:   "Print information about a deployed app",
+		Long:    `Prints information about a deployed app.`,
+		Example: `kf app my-app`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
@@ -80,5 +82,7 @@ func NewGetAppCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 		},
 	}
 
-	return apps
+	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
+
+	return cmd
 }

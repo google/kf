@@ -20,8 +20,10 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/doctor"
+	"github.com/google/kf/pkg/kf/commands/group"
 	"github.com/google/kf/pkg/kf/commands/install"
 	pkgdoctor "github.com/google/kf/pkg/kf/doctor"
 	"github.com/imdario/mergo"
@@ -37,10 +39,21 @@ func NewKfCommand() *cobra.Command {
 
 	var rootCmd = &cobra.Command{
 		Use:   "kf",
-		Short: "kf is like cf for Knative",
+		Short: "A MicroPaaS for Kubernetes with a Cloud Foundry style developer expeience",
 		Long: templates.LongDesc(`
-      kf is like cf for Knative
-      `),
+			Kf is a MicroPaaS for Kubernetes with a Cloud Foundry style developer
+			expeience.
+
+			Kf aims to be fully compatible with Cloud Foundry applications and
+			lifecycle. It supports logs, buildpacks, app manifests, routing, service
+			brokers, and injected services.
+
+			At the same time, it aims to improve the operational experience by
+			supporting git-ops, self-healing infrastructure, containers, a service
+			mesh, autoscaling, scale-to-zero, improved quota management and does it
+			all on Kubernetes using industry-standard OSS tools including Knative,
+			Istio, and Tekton.
+			`),
 		DisableAutoGenTag: false,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			loadedConfig, err := config.Load(p.Config, p)
@@ -55,13 +68,14 @@ func NewKfCommand() *cobra.Command {
 		},
 	}
 
-	rootCmd.PersistentFlags().StringVar(&p.Config, "config", "", "config file (default is $HOME/.kf)")
-	rootCmd.PersistentFlags().StringVar(&p.KubeCfgFile, "kubeconfig", "", "kubectl config file (default is $HOME/.kube/config)")
-	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "", "kubernetes namespace")
+	rootCmd.PersistentFlags().StringVar(&p.Config, "config", "", "Config file (default is $HOME/.kf)")
+	rootCmd.PersistentFlags().StringVar(&p.KubeCfgFile, "kubeconfig", "", "Kubectl config file (default is $HOME/.kube/config)")
+	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "", "Kubernetes namespace to target")
 
-	groups := templates.CommandGroups{
+	completion.MarkFlagCompletionSupported(rootCmd.PersistentFlags(), "namespace", "spaces")
+	rootCmd = group.AddCommandGroups(rootCmd, group.CommandGroups{
 		{
-			Message: "App Management",
+			Name: "App Management",
 			Commands: []*cobra.Command{
 				InjectPush(p),
 				InjectDelete(p),
@@ -77,7 +91,7 @@ func NewKfCommand() *cobra.Command {
 			},
 		},
 		{
-			Message: "Environment Variables",
+			Name: "Environment Variables",
 			Commands: []*cobra.Command{
 				InjectEnv(p),
 				InjectSetEnv(p),
@@ -85,14 +99,14 @@ func NewKfCommand() *cobra.Command {
 			},
 		},
 		{
-			Message: "Buildpacks",
+			Name: "Buildpacks",
 			Commands: []*cobra.Command{
 				InjectBuildpacks(p),
 				InjectStacks(p),
 			},
 		},
 		{
-			Message: "Routing",
+			Name: "Routing",
 			Commands: []*cobra.Command{
 				InjectRoutes(p),
 				InjectCreateRoute(p),
@@ -102,16 +116,15 @@ func NewKfCommand() *cobra.Command {
 			},
 		},
 		{
-			Message: "Quotas",
+			Name: "Quotas",
 			Commands: []*cobra.Command{
 				InjectGetQuota(p),
-				InjectCreateQuota(p),
 				InjectUpdateQuota(p),
 				InjectDeleteQuota(p),
 			},
 		},
 		{
-			Message: "Services",
+			Name: "Services",
 			Commands: []*cobra.Command{
 				InjectCreateService(p),
 				InjectDeleteService(p),
@@ -121,7 +134,7 @@ func NewKfCommand() *cobra.Command {
 			},
 		},
 		{
-			Message: "Service Bindings",
+			Name: "Service Bindings",
 			Commands: []*cobra.Command{
 				InjectBindingService(p),
 				InjectListBindings(p),
@@ -130,7 +143,7 @@ func NewKfCommand() *cobra.Command {
 			},
 		},
 		{
-			Message: "Spaces",
+			Name: "Spaces",
 			Commands: []*cobra.Command{
 				InjectSpaces(p),
 				InjectSpace(p),
@@ -140,14 +153,14 @@ func NewKfCommand() *cobra.Command {
 			},
 		},
 		{
-			Message: "Builds",
+			Name: "Builds",
 			Commands: []*cobra.Command{
 				InjectBuilds(p),
 				InjectBuildLogs(p),
 			},
 		},
 		{
-			Message: "Other Commands",
+			Name: "Other Commands",
 			Commands: []*cobra.Command{
 				// DoctorTests are run in the order they're defined in this list.
 				// Tests will stop as soon as one of these top-level tests fails so they
@@ -164,26 +177,27 @@ func NewKfCommand() *cobra.Command {
 				NewTargetCommand(p),
 				NewVersionCommand(Version, runtime.GOOS),
 				NewDebugCommand(p),
+				InjectNamesCommand(p),
 			},
 		},
-	}
+	})
 
-	// This will add the rest to a group under "Other Commands".
-	groups.Add(rootCmd)
-	templates.ActsAsRootCommand(rootCmd, nil, groups...)
-	// disableAllAutoGenTags(rootCmd)
+	completion.AddBashCompletion(rootCmd)
 
 	// We don't want the AutoGenTag as it makes the doc generation
 	// non-deterministic. We would rather allow the CI to ensure the docs were
 	// regenerated for each commit.
 	rootCmd.DisableAutoGenTag = true
 
+	rootCmd = templates.NormalizeAll(rootCmd)
+
 	return rootCmd
 }
 
 func completionCommand(rootCmd *cobra.Command) *cobra.Command {
 	return &cobra.Command{
-		Use: "completion bash|zsh",
+		Use:   "completion bash|zsh",
+		Short: "Generate auto-completion files for kf commands",
 		Example: `
   eval "$(kf completion bash)"
   eval "$(kf completion zsh)"

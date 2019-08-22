@@ -19,6 +19,7 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/spf13/cobra"
@@ -29,13 +30,11 @@ func NewStopCommand(
 	p *config.KfParams,
 	client apps.Client,
 ) *cobra.Command {
-	return &cobra.Command{
-		Use:   "stop APP_NAME",
-		Short: "Stop stops the app",
-		Example: `
-  kf stop myapp
-  `,
-		Args: cobra.ExactArgs(1),
+	cmd := &cobra.Command{
+		Use:     "stop APP_NAME",
+		Short:   "Stop a running application",
+		Example: `kf stop myapp`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err
@@ -57,4 +56,8 @@ func NewStopCommand(
 			return nil
 		},
 	}
+
+	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
+
+	return cmd
 }

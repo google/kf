@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fake
+package completion
 
-//go:generate mockgen --package=fake --copyright_file ../internal/tools/option-builder/LICENSE_HEADER --destination=fake_istio_client.go --mock_names=IstioClient=FakeIstioClient github.com/google/kf/pkg/kf/fake IstioClient
+import "fmt"
 
-import (
-	"github.com/google/kf/pkg/kf"
-)
+func ExampleKnownGenericTypes() {
+	for _, v := range KnownGenericTypes() {
+		fmt.Println(v)
+	}
 
-// IstioClient is implemented by kf.IstioClient.
-type IstioClient interface {
-	kf.IngressLister
+	// Output: apps
+	// sources
+	// spaces
 }

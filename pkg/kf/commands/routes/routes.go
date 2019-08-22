@@ -16,15 +16,16 @@ package routes
 
 import (
 	"fmt"
+	"io"
 	"sort"
 	"strings"
-	"text/tabwriter"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/algorithms"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
+	"github.com/google/kf/pkg/kf/describe"
 	"github.com/google/kf/pkg/kf/routeclaims"
 	"github.com/google/kf/pkg/kf/routes"
 	"github.com/spf13/cobra"
@@ -69,21 +70,22 @@ func NewRoutesCommand(
 				return fmt.Errorf("failed to fetch Apps: %s", err)
 			}
 
-			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 2, ' ', tabwriter.StripEscape)
-			fmt.Fprintln(w, "host\tdomain\tpath\tapps")
-			for _, route := range groupRoutes(routes, routeClaims) {
-				names := strings.Join(appNames(apps, route), ", ")
-				fmt.Fprintf(
-					w,
-					"%s\t%s\t%s\t%s\n",
-					route.Hostname,
-					route.Domain,
-					route.Path,
-					names,
-				)
-			}
+			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
+				fmt.Fprintln(w, "Host\tDomain\tPath\tApps")
+				for _, route := range groupRoutes(routes, routeClaims) {
+					names := strings.Join(appNames(apps, route), ", ")
+					fmt.Fprintf(
+						w,
+						"%s\t%s\t%s\t%s\n",
+						route.Hostname,
+						route.Domain,
+						route.Path,
+						names,
+					)
+				}
+			})
 
-			return w.Flush()
+			return nil
 		},
 	}
 }

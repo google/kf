@@ -21,6 +21,7 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/internal/envutil"
 	"github.com/google/kf/pkg/kf/algorithms"
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/quotas"
 	"github.com/google/kf/pkg/kf/spaces"
@@ -35,6 +36,16 @@ func NewConfigSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		Use:     "configure-space [subcommand]",
 		Aliases: []string{"config-space"},
 		Short:   "Set configuration for a space",
+		Long: `The configure-space sub-command allows operators to configure
+		individual fields on a space.
+
+		In Kf, almost all configuration is at the space level as opposed to being
+		globally set on the cluster.
+
+		NOTE: The space is queued for reconciliation every time changes are made
+		via this command. If you want to configure spaces in automation it's better
+		to use kubectl.
+		`,
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Help()
 		},
@@ -69,7 +80,6 @@ func NewConfigSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 	}
 
 	cmd.AddCommand(
-		quotas.NewCreateQuotaCommand(p, client),
 		quotas.NewGetQuotaCommand(p, client),
 		quotas.NewUpdateQuotaCommand(p, client),
 		quotas.NewDeleteQuotaCommand(p, client),
@@ -79,18 +89,20 @@ func NewConfigSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 }
 
 type spaceMutator struct {
-	Name  string
-	Short string
-	Args  []string
-	Init  func(args []string) (spaces.Mutator, error)
+	Name        string
+	Short       string
+	Args        []string
+	ExampleArgs []string
+	Init        func(args []string) (spaces.Mutator, error)
 }
 
 func (sm spaceMutator) ToCommand(client spaces.Client) *cobra.Command {
-	return &cobra.Command{
-		Use:   fmt.Sprintf("%s SPACE_NAME %s", sm.Name, strings.Join(sm.Args, " ")),
-		Short: sm.Short,
-		Long:  sm.Short,
-		Args:  cobra.ExactArgs(1 + len(sm.Args)),
+	cmd := &cobra.Command{
+		Use:     fmt.Sprintf("%s SPACE_NAME %s", sm.Name, strings.Join(sm.Args, " ")),
+		Short:   sm.Short,
+		Long:    sm.Short,
+		Args:    cobra.ExactArgs(1 + len(sm.Args)),
+		Example: fmt.Sprintf("kf configure-space %s my-space %s", sm.Name, strings.Join(sm.ExampleArgs, " ")),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			spaceName := args[0]
 
@@ -105,13 +117,18 @@ func (sm spaceMutator) ToCommand(client spaces.Client) *cobra.Command {
 			return client.Transform(spaceName, diffPrintingMutator)
 		},
 	}
+
+	completion.MarkArgCompletionSupported(cmd, completion.SpaceCompletion)
+
+	return cmd
 }
 
 func newSetContainerRegistryMutator() spaceMutator {
 	return spaceMutator{
-		Name:  "set-container-registry",
-		Short: "Set the container registry used for builds.",
-		Args:  []string{"REGISTRY"},
+		Name:        "set-container-registry",
+		Short:       "Set the container registry used for builds.",
+		Args:        []string{"REGISTRY"},
+		ExampleArgs: []string{"gcr.io/my-project"},
 		Init: func(args []string) (spaces.Mutator, error) {
 			registry := args[0]
 
@@ -126,9 +143,10 @@ func newSetContainerRegistryMutator() spaceMutator {
 
 func newSetBuildpackBuilderMutator() spaceMutator {
 	return spaceMutator{
-		Name:  "set-buildpack-builder",
-		Short: "Set the buildpack builder image.",
-		Args:  []string{"BUILDER_IMAGE"},
+		Name:        "set-buildpack-builder",
+		Short:       "Set the buildpack builder image.",
+		Args:        []string{"BUILDER_IMAGE"},
+		ExampleArgs: []string{"gcr.io/my-project/builder:latest"},
 		Init: func(args []string) (spaces.Mutator, error) {
 			image := args[0]
 
@@ -143,9 +161,10 @@ func newSetBuildpackBuilderMutator() spaceMutator {
 
 func newSetEnvMutator() spaceMutator {
 	return spaceMutator{
-		Name:  "set-env",
-		Short: "Set a space-wide environment variable.",
-		Args:  []string{"ENV_VAR_NAME", "ENV_VAR_VALUE"},
+		Name:        "set-env",
+		Short:       "Set a space-wide environment variable.",
+		Args:        []string{"ENV_VAR_NAME", "ENV_VAR_VALUE"},
+		ExampleArgs: []string{"ENVIRONMENT", "production"},
 		Init: func(args []string) (spaces.Mutator, error) {
 			name := args[0]
 			value := args[1]
@@ -162,9 +181,10 @@ func newSetEnvMutator() spaceMutator {
 
 func newUnsetEnvMutator() spaceMutator {
 	return spaceMutator{
-		Name:  "unset-env",
-		Short: "Unset a space-wide environment variable.",
-		Args:  []string{"ENV_VAR_NAME"},
+		Name:        "unset-env",
+		Short:       "Unset a space-wide environment variable.",
+		Args:        []string{"ENV_VAR_NAME"},
+		ExampleArgs: []string{"ENVIRONMENT"},
 		Init: func(args []string) (spaces.Mutator, error) {
 			name := args[0]
 
@@ -179,9 +199,10 @@ func newUnsetEnvMutator() spaceMutator {
 
 func newSetBuildpackEnvMutator() spaceMutator {
 	return spaceMutator{
-		Name:  "set-buildpack-env",
-		Short: "Set an environment variable for buildpack builds in a space.",
-		Args:  []string{"ENV_VAR_NAME", "ENV_VAR_VALUE"},
+		Name:        "set-buildpack-env",
+		Short:       "Set an environment variable for buildpack builds in a space.",
+		Args:        []string{"ENV_VAR_NAME", "ENV_VAR_VALUE"},
+		ExampleArgs: []string{"JDK_VERSION", "11"},
 		Init: func(args []string) (spaces.Mutator, error) {
 			name := args[0]
 			value := args[1]
@@ -198,9 +219,10 @@ func newSetBuildpackEnvMutator() spaceMutator {
 
 func newUnsetBuildpackEnvMutator() spaceMutator {
 	return spaceMutator{
-		Name:  "unset-buildpack-env",
-		Short: "Unset an environment variable for buildpack builds in a space.",
-		Args:  []string{"ENV_VAR_NAME"},
+		Name:        "unset-buildpack-env",
+		Short:       "Unset an environment variable for buildpack builds in a space.",
+		Args:        []string{"ENV_VAR_NAME"},
+		ExampleArgs: []string{"JDK_VERSION"},
 		Init: func(args []string) (spaces.Mutator, error) {
 			name := args[0]
 
@@ -215,9 +237,10 @@ func newUnsetBuildpackEnvMutator() spaceMutator {
 
 func newAppendDomainMutator() spaceMutator {
 	return spaceMutator{
-		Name:  "append-domain",
-		Short: "Append a domain for a space",
-		Args:  []string{"DOMAIN"},
+		Name:        "append-domain",
+		Short:       "Append a domain for a space",
+		Args:        []string{"DOMAIN"},
+		ExampleArgs: []string{"myspace.mycompany.com"},
 		Init: func(args []string) (spaces.Mutator, error) {
 			domain := args[0]
 
@@ -235,9 +258,10 @@ func newAppendDomainMutator() spaceMutator {
 
 func newSetDefaultDomainMutator() spaceMutator {
 	return spaceMutator{
-		Name:  "set-default-domain",
-		Short: "Set a default domain for a space",
-		Args:  []string{"DOMAIN"},
+		Name:        "set-default-domain",
+		Short:       "Set a default domain for a space",
+		Args:        []string{"DOMAIN"},
+		ExampleArgs: []string{"myspace.mycompany.com"},
 		Init: func(args []string) (spaces.Mutator, error) {
 			domain := args[0]
 
@@ -264,9 +288,10 @@ func newSetDefaultDomainMutator() spaceMutator {
 
 func newRemoveDomainMutator() spaceMutator {
 	return spaceMutator{
-		Name:  "remove-domain",
-		Short: "Remove a domain from a space",
-		Args:  []string{"DOMAIN"},
+		Name:        "remove-domain",
+		Short:       "Remove a domain from a space",
+		Args:        []string{"DOMAIN"},
+		ExampleArgs: []string{"myspace.mycompany.com"},
 		Init: func(args []string) (spaces.Mutator, error) {
 			domain := args[0]
 
@@ -289,11 +314,12 @@ type spaceAccessor struct {
 }
 
 func (sm spaceAccessor) ToCommand(client spaces.Client) *cobra.Command {
-	return &cobra.Command{
-		Use:   fmt.Sprintf("%s SPACE_NAME", sm.Name),
-		Short: sm.Short,
-		Long:  sm.Short,
-		Args:  cobra.ExactArgs(1),
+	cmd := &cobra.Command{
+		Use:     fmt.Sprintf("%s SPACE_NAME", sm.Name),
+		Short:   sm.Short,
+		Long:    sm.Short,
+		Example: fmt.Sprintf("kf configure-space %s my-space", sm.Name),
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			spaceName := args[0]
 
@@ -319,6 +345,10 @@ func (sm spaceAccessor) ToCommand(client spaces.Client) *cobra.Command {
 			return nil
 		},
 	}
+
+	completion.MarkArgCompletionSupported(cmd, completion.SpaceCompletion)
+
+	return cmd
 }
 
 func newGetContainerRegistryAccessor() spaceAccessor {

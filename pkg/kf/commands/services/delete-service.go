@@ -27,6 +27,7 @@ func NewDeleteServiceCommand(p *config.KfParams, client services.ClientInterface
 		Use:     "delete-service SERVICE_INSTANCE",
 		Aliases: []string{"ds"},
 		Short:   "Delete a service instance",
+		Example: "kf delete-service my-service",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			instanceName := args[0]

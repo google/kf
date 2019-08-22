@@ -18,6 +18,7 @@ import (
 	"log"
 
 	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/spf13/cobra"
@@ -25,12 +26,33 @@ import (
 
 // NewDeleteCommand creates a delete command.
 func NewDeleteCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
-	var deleteCmd = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "delete APP_NAME",
 		Short:   "Delete an existing app",
-		Example: `  kf delete myapp`,
+		Example: `kf delete myapp`,
 		Args:    cobra.ExactArgs(1),
-		Long:    ``,
+		Long: `
+		This command deletes an application from kf.
+
+		Things that won't be deleted:
+
+		* source code
+		* application images
+		* routes
+		* service instances
+
+		Things that will be deleted:
+
+		* builds
+		* bindings
+
+		The delete occurs asynchronously. Apps are often deleted shortly after the
+		delete command is called, but may live on for a while if:
+
+		* there are still connections waiting to be served
+		* bindings fail to deprovision
+		* the cluster is in an unhealthy state
+		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 
@@ -50,5 +72,7 @@ func NewDeleteCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 		},
 	}
 
-	return deleteCmd
+	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
+
+	return cmd
 }

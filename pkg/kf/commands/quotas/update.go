@@ -16,9 +16,16 @@ package quotas
 
 import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/spaces"
 	"github.com/spf13/cobra"
+)
+
+const (
+	// Default value when the user does not pass in a quota for a particular resource.
+	// This value is never set in the actual ResourceQuota definition.
+	defaultQuota = "undefined"
 )
 
 // NewUpdateQuotaCommand allows users to create a quota for a space.
@@ -30,18 +37,21 @@ func NewUpdateQuotaCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 	)
 
 	cmd := &cobra.Command{
-		Use:   "update-quota SPACE_NAME",
-		Short: "Update a quota",
-		Args:  cobra.ExactArgs(1),
+		Use:        "update-quota SPACE_NAME [-m MEMORY] [-r ROUTES] [-c CPU]",
+		Short:      "Update the quota for a space",
+		Example:    "kf update-quota my-space --memory 100Gi --routes 50",
+		Args:       cobra.ExactArgs(1),
+		Aliases:    []string{"create-quota"},
+		SuggestFor: []string{"create-space-quota", "update-space-quota"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 
 			spaceName := args[0]
 
-			return client.Transform(spaceName, func(space *v1alpha1.Space) error {
+			return client.Transform(spaceName, spaces.DiffWrapper(cmd.OutOrStdout(), func(space *v1alpha1.Space) error {
 				kfspace := spaces.NewFromSpace(space)
 				return setQuotaValues(memory, cpu, routes, kfspace)
-			})
+			}))
 		},
 	}
 
@@ -50,7 +60,7 @@ func NewUpdateQuotaCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		"memory",
 		"m",
 		defaultQuota,
-		"The total available memory across all builds and applications in a space (e.g. 10Gi, 500Mi). Default: unlimited",
+		"Total amount of memory the space can have (e.g. 10Gi, 500Mi) (default: unlimited)",
 	)
 
 	cmd.Flags().StringVarP(
@@ -58,7 +68,7 @@ func NewUpdateQuotaCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		"cpu",
 		"c",
 		defaultQuota,
-		"The total available CPU across all builds and applications in a space (e.g. 400m). Default: unlimited",
+		"Total amount of CPU the space can have (e.g. 400m) (default: unlimited)",
 	)
 
 	cmd.Flags().StringVarP(
@@ -66,8 +76,10 @@ func NewUpdateQuotaCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		"routes",
 		"r",
 		defaultQuota,
-		"The total number of routes that can exist in a space. Default: unlimited",
+		"Maximum number of routes the space can have (default: unlimited)",
 	)
+
+	completion.MarkArgCompletionSupported(cmd, completion.SpaceCompletion)
 
 	return cmd
 }

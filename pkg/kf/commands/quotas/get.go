@@ -16,9 +16,11 @@ package quotas
 
 import (
 	"fmt"
-	"text/tabwriter"
+	"io"
 
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/describe"
 	"github.com/google/kf/pkg/kf/spaces"
 	"github.com/spf13/cobra"
 )
@@ -26,35 +28,36 @@ import (
 // NewGetQuotaCommand allows users to get quota info.
 func NewGetQuotaCommand(p *config.KfParams, client spaces.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "quota SPACE_NAME",
-		Short: "Show quota info for a space",
-		Args:  cobra.ExactArgs(1),
+		Use:     "quota SPACE_NAME",
+		Short:   "Show quota info for a space",
+		Example: `kf quota my-space`,
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			spaceName := args[0]
-			fmt.Fprintf(cmd.OutOrStdout(), "Getting info for quota in space: %s\n", spaceName)
+			fmt.Fprintf(cmd.OutOrStdout(), "Getting info for quota in space: %s\n\n", spaceName)
 
 			space, err := client.Get(spaceName)
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(cmd.OutOrStdout())
 
-			w := tabwriter.NewWriter(cmd.OutOrStdout(), 8, 4, 1, ' ', tabwriter.StripEscape)
-			defer w.Flush()
+			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
+				fmt.Fprintln(w, "Memory\tCPU\tRoutes")
 
-			fmt.Fprintln(w, "MEMORY\tCPU\tROUTES")
-			kfspace := spaces.NewFromSpace(space)
-			mem, _ := kfspace.GetMemory()
-			cpu, _ := kfspace.GetCPU()
-			routes, _ := kfspace.GetServices()
-			fmt.Fprintf(w, "%v\t%v\t%v\n",
-				mem.String(),
-				cpu.String(),
-				routes.String())
-
+				kfspace := spaces.NewFromSpace(space)
+				mem, _ := kfspace.GetMemory()
+				cpu, _ := kfspace.GetCPU()
+				routes, _ := kfspace.GetServices()
+				fmt.Fprintf(w, "%v\t%v\t%v\n",
+					mem.String(),
+					cpu.String(),
+					routes.String())
+			})
 			return nil
 		},
 	}
+
+	completion.MarkArgCompletionSupported(cmd, completion.SpaceCompletion)
 
 	return cmd
 }

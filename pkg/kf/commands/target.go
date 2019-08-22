@@ -17,6 +17,7 @@ package commands
 import (
 	"fmt"
 
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/spf13/cobra"
 )
@@ -26,10 +27,15 @@ func NewTargetCommand(p *config.KfParams) *cobra.Command {
 	var space string
 
 	command := &cobra.Command{
-		Use:     "target",
-		Short:   "Set or view the targeted space",
-		Example: `  kf target`,
-		Args:    cobra.ExactArgs(0),
+		Use:   "target",
+		Short: "Set or view the targeted space",
+		Example: `
+		# See the current space
+		kf target
+		# Target a space
+		kf target -s my-space
+		`,
+		Args: cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if space != "" {
 				p.Namespace = space
@@ -45,6 +51,7 @@ func NewTargetCommand(p *config.KfParams) *cobra.Command {
 	}
 
 	command.Flags().StringVarP(&space, "space", "s", "", "Target the given space.")
+	completion.MarkFlagCompletionSupported(command.Flags(), "space", completion.SpaceCompletion)
 
 	return command
 }

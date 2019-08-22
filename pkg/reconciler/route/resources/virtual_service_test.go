@@ -18,11 +18,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"sort"
 	"testing"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/algorithms"
 	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/google/kf/pkg/reconciler/route/resources"
 	"github.com/knative/serving/pkg/network"
@@ -242,7 +240,15 @@ func TestMakeVirtualService(t *testing.T) {
 }
 
 func ExampleMakeVirtualService() {
-	vs1, err := resources.MakeVirtualService([]*v1alpha1.Route{
+	vs, err := resources.MakeVirtualService([]*v1alpha1.Route{
+		{
+			Spec: v1alpha1.RouteSpec{
+				RouteSpecFields: v1alpha1.RouteSpecFields{
+					Hostname: "some-host",
+					Domain:   "example.com/",
+				},
+			},
+		},
 		{
 			Spec: v1alpha1.RouteSpec{
 				RouteSpecFields: v1alpha1.RouteSpecFields{
@@ -252,12 +258,6 @@ func ExampleMakeVirtualService() {
 				},
 			},
 		},
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	vs2, err := resources.MakeVirtualService([]*v1alpha1.Route{
 		{
 			Spec: v1alpha1.RouteSpec{
 				RouteSpecFields: v1alpha1.RouteSpecFields{
@@ -272,18 +272,11 @@ func ExampleMakeVirtualService() {
 		panic(err)
 	}
 
-	r := algorithms.Merge(
-		v1alpha1.HTTPRoutes(vs1.Spec.HTTP),
-		v1alpha1.HTTPRoutes(vs2.Spec.HTTP),
-	).(v1alpha1.HTTPRoutes)
-
-	// Sort for display purposes
-	sort.Sort(r)
-
-	for i, h := range r {
+	for i, h := range vs.Spec.HTTP {
 		fmt.Printf("Regex %d: %s\n", i, h.Match[0].URI.Regex)
 	}
 
-	// Output: Regex 0: ^/some-path-1(/.*)?
-	// Regex 1: ^/some-path-2(/.*)?
+	// Output: Regex 0: ^(/.*)?
+	// Regex 1: ^/some-path-1(/.*)?
+	// Regex 2: ^/some-path-2(/.*)?
 }

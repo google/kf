@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	kfi "github.com/google/kf/pkg/kf/internal/kf"
@@ -31,13 +32,17 @@ func NewLogsCommand(p *config.KfParams, tailer logs.Tailer) *cobra.Command {
 		numberLines int
 		follow      bool
 	)
-	c := &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "logs APP_NAME",
 		Short: "View or follow logs for an app",
 		Example: `
-  kf logs myapp
-  kf logs myapp -n 20
-  kf logs myapp -f
+		kf logs myapp
+
+		# Get the last 20 log lines
+		kf logs myapp -n 20
+
+		# Follow/tail the log stream
+		kf logs myapp -f
   `,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -62,14 +67,15 @@ func NewLogsCommand(p *config.KfParams, tailer logs.Tailer) *cobra.Command {
 		},
 	}
 
-	c.Flags().IntVarP(
+	cmd.Flags().IntVarP(
 		&numberLines,
 		"number",
 		"n",
 		10,
-		"The number of lines from the end of the logs to show.",
+		"Show the last N lines of logs.",
 	)
-	c.Flags().BoolVarP(
+
+	cmd.Flags().BoolVarP(
 		&follow,
 		"follow",
 		"f",
@@ -77,5 +83,7 @@ func NewLogsCommand(p *config.KfParams, tailer logs.Tailer) *cobra.Command {
 		"Follow the log stream of the app.",
 	)
 
-	return c
+	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
+
+	return cmd
 }

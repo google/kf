@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	v1alpha1fake "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1/fake"
 	"github.com/google/kf/pkg/kf/apps"
 	sourcesfake "github.com/google/kf/pkg/kf/sources/fake"

@@ -22,25 +22,26 @@ import (
 	"net/http"
 	"net/http/httputil"
 
-	"github.com/google/kf/pkg/kf"
 	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
+	"github.com/google/kf/pkg/kf/istio"
 	"github.com/spf13/cobra"
 )
 
 // NewProxyCommand creates a command capable of proxying a remote server locally.
-func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister kf.IngressLister) *cobra.Command {
+func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister istio.IngressLister) *cobra.Command {
 	var (
 		gateway string
 		port    int
 		noStart bool
 	)
 
-	var proxy = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "proxy APP_NAME",
-		Short:   "Creates a proxy to an app on a local port",
-		Example: `  kf proxy myapp`,
+		Short:   "Create a proxy to an app on a local port",
+		Example: `kf proxy myapp`,
 		Long: `
 	This command creates a local proxy to a remote gateway modifying the request
 	headers to make requests route to your app.
@@ -70,7 +71,7 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister k
 			if gateway == "" {
 				fmt.Fprintln(cmd.OutOrStdout(), "Autodetecting app gateway. Specify a custom gateway using the --gateway flag.")
 
-				ingress, err := kf.ExtractIngressFromList(ingressLister.ListIngresses())
+				ingress, err := istio.ExtractIngressFromList(ingressLister.ListIngresses())
 				if err != nil {
 					return err
 				}
@@ -106,29 +107,31 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister k
 		},
 	}
 
-	proxy.Flags().StringVar(
+	cmd.Flags().StringVar(
 		&gateway,
 		"gateway",
 		"",
-		"the HTTP gateway to route requests to, if unset it will be autodetected",
+		"HTTP gateway to route requests to (default: autodetected from cluster)",
 	)
 
-	proxy.Flags().IntVar(
+	cmd.Flags().IntVar(
 		&port,
 		"port",
 		8080,
-		"the local port to attach to",
+		"Local port to listen on",
 	)
 
-	proxy.Flags().BoolVar(
+	cmd.Flags().BoolVar(
 		&noStart,
 		"no-start",
 		false,
-		"don't actually start the HTTP proxy",
+		"Exit before starting the proxy",
 	)
-	proxy.Flags().MarkHidden("no-start")
+	cmd.Flags().MarkHidden("no-start")
 
-	return proxy
+	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
+
+	return cmd
 }
 
 func createProxy(w io.Writer, appHost, gateway string) *httputil.ReverseProxy {

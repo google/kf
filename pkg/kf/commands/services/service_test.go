@@ -59,7 +59,7 @@ func TestNewGetServiceCommand(t *testing.T) {
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
 				f.EXPECT().GetService("some-missing-service", gomock.Any()).Return(nil, nil)
 			},
-			ExpectedStrings: []string{"service some-missing-service not found"},
+			ExpectedStrings: []string{"<empty>"},
 		},
 		"bad server call": {
 			Args:      []string{"mydb"},

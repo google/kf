@@ -15,6 +15,8 @@
 package servicebindings
 
 import (
+	"fmt"
+
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
@@ -63,6 +65,8 @@ func NewBindServiceCommand(p *config.KfParams, client servicebindings.ClientInte
 				return err
 			}
 
+			fmt.Fprintf(cmd.OutOrStderr(), "Use 'kf restart %s' to ensure your changes take effect\n", appName)
+
 			return nil
 		},
 	}
@@ -72,14 +76,14 @@ func NewBindServiceCommand(p *config.KfParams, client servicebindings.ClientInte
 		"config",
 		"c",
 		"{}",
-		"valid JSON object containing service-specific configuration parameters, provided in-line or in a file")
+		"JSON object containing service-specific configuration parameters, provided in-line or in a file")
 
 	createCmd.Flags().StringVarP(
 		&bindingName,
 		"binding-name",
 		"b",
 		"",
-		"name to expose service instance to app process with (default: service instance name)")
+		"Name to expose service instance to app process with (default: service instance name)")
 
 	return createCmd
 }

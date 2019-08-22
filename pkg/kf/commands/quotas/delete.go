@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/spaces"
 
@@ -27,16 +28,18 @@ import (
 // NewDeleteQuotaCommand allows users to delete quotas.
 func NewDeleteQuotaCommand(p *config.KfParams, client spaces.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "delete-quota SPACE_NAME",
-		Short: "Delete a quota",
-		Args:  cobra.ExactArgs(1),
+		Use:        "delete-quota SPACE_NAME",
+		Short:      "Remove all quotas for the space",
+		SuggestFor: []string{"delete-space-quota"},
+		Example:    `kf delete-quota my-space`,
+		Args:       cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			spaceName := args[0]
 
-			err := client.Transform(spaceName, func(space *v1alpha1.Space) error {
+			err := client.Transform(spaceName, spaces.DiffWrapper(cmd.OutOrStdout(), func(space *v1alpha1.Space) error {
 				kfspace := spaces.NewFromSpace(space)
 				return kfspace.DeleteQuota()
-			})
+			}))
 
 			if err != nil {
 				return err
@@ -48,6 +51,8 @@ func NewDeleteQuotaCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 
 		},
 	}
+
+	completion.MarkArgCompletionSupported(cmd, completion.SpaceCompletion)
 
 	return cmd
 }

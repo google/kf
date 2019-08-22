@@ -17,6 +17,7 @@ package apps
 import (
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/spf13/cobra"
@@ -25,10 +26,10 @@ import (
 
 // NewSetEnvCommand creates a SetEnv command.
 func NewSetEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command {
-	var envCmd = &cobra.Command{
+	cmd := &cobra.Command{
 		Use:     "set-env APP_NAME ENV_VAR_NAME ENV_VAR_VALUE",
 		Short:   "Set an environment variable for an app",
-		Example: `  kf set-env myapp FOO bar`,
+		Example: `kf set-env myapp ENV production`,
 		Args:    cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
@@ -54,5 +55,7 @@ func NewSetEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command 
 		},
 	}
 
-	return envCmd
+	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
+
+	return cmd
 }

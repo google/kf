@@ -19,19 +19,20 @@ package commands
 import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	kfv1alpha1 "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/buildpacks"
 	"github.com/google/kf/pkg/kf/builds"
 	capps "github.com/google/kf/pkg/kf/commands/apps"
 	cbuildpacks "github.com/google/kf/pkg/kf/commands/buildpacks"
 	cbuilds "github.com/google/kf/pkg/kf/commands/builds"
+	ccompletion "github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	cquotas "github.com/google/kf/pkg/kf/commands/quotas"
 	croutes "github.com/google/kf/pkg/kf/commands/routes"
 	servicebindingscmd "github.com/google/kf/pkg/kf/commands/service-bindings"
 	servicescmd "github.com/google/kf/pkg/kf/commands/services"
 	cspaces "github.com/google/kf/pkg/kf/commands/spaces"
+	"github.com/google/kf/pkg/kf/istio"
 	kflogs "github.com/google/kf/pkg/kf/logs"
 	"github.com/google/kf/pkg/kf/routeclaims"
 	"github.com/google/kf/pkg/kf/routes"
@@ -127,7 +128,7 @@ func InjectProxy(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		capps.NewProxyCommand,
 		AppsSet,
-		kf.NewIstioClient,
+		istio.NewIstioClient,
 		config.GetKubernetes,
 	)
 	return nil
@@ -203,6 +204,7 @@ func InjectListServices(p *config.KfParams) *cobra.Command {
 		services.NewClient,
 		servicescmd.NewListServicesCommand,
 		config.GetSvcatApp,
+		AppsSet,
 	)
 	return nil
 }
@@ -332,12 +334,6 @@ func InjectConfigSpace(p *config.KfParams) *cobra.Command {
 // Quotas Command //
 ////////////////////
 
-func InjectCreateQuota(p *config.KfParams) *cobra.Command {
-	wire.Build(cquotas.NewCreateQuotaCommand, SpacesSet)
-
-	return nil
-}
-
 func InjectUpdateQuota(p *config.KfParams) *cobra.Command {
 	wire.Build(cquotas.NewUpdateQuotaCommand, SpacesSet)
 
@@ -426,6 +422,16 @@ func InjectBuilds(p *config.KfParams) *cobra.Command {
 
 func InjectBuildLogs(p *config.KfParams) *cobra.Command {
 	wire.Build(cbuilds.NewBuildLogsCommand, SourcesSet)
+
+	return nil
+}
+
+///////////////////////
+// Completion commands
+///////////////////////
+
+func InjectNamesCommand(p *config.KfParams) *cobra.Command {
+	wire.Build(ccompletion.NewNamesCommand, config.GetDynamicClient)
 
 	return nil
 }
