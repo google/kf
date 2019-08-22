@@ -55,6 +55,10 @@ func Command(ctx context.Context, name string, args ...string) ([]string, error)
 		}()
 	}
 
+	if IsCapturingFlags(ctx) {
+		return nil, nil
+	}
+
 	output, err := exec.CommandContext(ctx, name, args...).CombinedOutput()
 	if err != nil {
 		Logf(ctx, string(output))
@@ -75,8 +79,8 @@ func Kubectl(ctx context.Context, args ...string) ([]string, error) {
 	return Command(ctx, "kubectl", args...)
 }
 
-// kf will run the command and block until its done.
-func kf(ctx context.Context, args ...string) ([]string, error) {
+// Kf will run the command and block until its done.
+func Kf(ctx context.Context, args ...string) ([]string, error) {
 	return Command(ctx, "kf", args...)
 }
 
@@ -111,6 +115,16 @@ var (
 
 // NamePrompt asks the user to enter a name. It validates it using NameRegexp.
 func NamePrompt(ctx context.Context, label, def string) (string, error) {
+	captureFlagString(ctx, label)
+	if IsCapturingFlags(ctx) {
+		return "", nil
+	}
+
+	// See if we got the value from a flag
+	if value, ok := getFlagString(ctx, label); ok {
+		return value, nil
+	}
+
 	prompt := promptui.Prompt{
 		Label: LabelColor.Sprint(label),
 		Validate: func(input string) error {
@@ -133,6 +147,16 @@ func NamePrompt(ctx context.Context, label, def string) (string, error) {
 // HostnamePrompt asks the user to enter a hostname. It validates it using
 // HostnameRegexp.
 func HostnamePrompt(ctx context.Context, label, def string) (string, error) {
+	captureFlagString(ctx, label)
+	if IsCapturingFlags(ctx) {
+		return "", nil
+	}
+
+	// See if we got the value from a flag
+	if value, ok := getFlagString(ctx, label); ok {
+		return value, nil
+	}
+
 	prompt := promptui.Prompt{
 		Label: LabelColor.Sprint(label),
 		Validate: func(input string) error {
@@ -152,6 +176,35 @@ func HostnamePrompt(ctx context.Context, label, def string) (string, error) {
 	return name, nil
 }
 
+// SelectOrCreatePrompt prompts the user to select from the given items or
+// create a new entry. It uses Searcher and properly colors the label.
+func SelectOrCreatePrompt(
+	ctx context.Context,
+	label string,
+	items ...string,
+) (bool, string, error) {
+	captureFlagBool(ctx, "create-"+label)
+
+	// See if the user chose to create
+	if created, ok := getFlagBool(ctx, "create-"+label); ok && created {
+		return created, "", nil
+	}
+
+	// See if we got the value from a flag
+	if value, ok := getFlagString(ctx, label); ok {
+		return false, value, nil
+	}
+
+	items = append([]string{"Create New " + label}, items...)
+
+	idx, value, err := SelectPrompt(ctx, label, items...)
+	if err != nil {
+		return false, "", err
+	}
+
+	return idx == 0, value, nil
+}
+
 // SelectPrompt prompts the user to select from the given items. It uses
 // Searcher and properly colors the label.
 func SelectPrompt(
@@ -159,6 +212,16 @@ func SelectPrompt(
 	label string,
 	items ...string,
 ) (int, string, error) {
+	captureFlagString(ctx, label)
+	if IsCapturingFlags(ctx) {
+		return 0, "", nil
+	}
+
+	// See if we got the value from a flag
+	if value, ok := getFlagString(ctx, label); ok {
+		return 99, value, nil
+	}
+
 	p := promptui.Select{
 		Label:             LabelColor.Sprint(label),
 		StartInSearchMode: true,
@@ -171,49 +234,21 @@ func SelectPrompt(
 // SelectYesNo promts the user to select between yes and no. It will return
 // true if the user selects "yes", and false otherwise.
 func SelectYesNo(ctx context.Context, label string) (bool, error) {
+	if isQuiet(ctx) || IsCapturingFlags(ctx) {
+		return true, nil
+	}
+
+	defer func() {
+		// YesNo doesn't get a flag
+		hideFlag(ctx, label)
+	}()
+
 	_, value, err := SelectPrompt(ctx, label, "yes", "no")
 	if err != nil {
 		return false, err
 	}
 
 	return value == "yes", nil
-}
-
-// SetupSpace asks the user if they would like to create a space.
-func SetupSpace(ctx context.Context, containerRegistry string) error {
-	ctx = SetLogPrefix(ctx, "kf setup")
-	ok, err := SelectYesNo(ctx, "Setup kf space?")
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return nil
-	}
-
-	Logf(ctx, "Setting up kf space")
-	spaceName, err := NamePrompt(ctx, "Space Name: ", RandName("space-"))
-	if err != nil {
-		return err
-	}
-	domain, err := HostnamePrompt(ctx, "Domain: ", "example.com")
-	if err != nil {
-		return err
-	}
-
-	if _, err := kf(
-		ctx,
-		"create-space", spaceName,
-		"--domain", domain,
-		"--container-registry", containerRegistry,
-	); err != nil {
-		return err
-	}
-
-	if _, err := kf(ctx, "target", "-s", spaceName); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 type loggerType struct{}
@@ -232,15 +267,29 @@ func SetLogPrefix(ctx context.Context, prefix string) context.Context {
 
 type verboseType struct{}
 
-// SetVerbosity returns a context with the desired verbose setting used with
+// setVerbosity returns a context with the desired verbose setting used with
 // Command.
-func SetVerbosity(ctx context.Context, verbose bool) context.Context {
+func setVerbosity(ctx context.Context, verbose bool) context.Context {
 	return context.WithValue(ctx, verboseType{}, verbose)
+}
+
+type quietType struct{}
+
+func setQuiet(ctx context.Context, quiet bool) context.Context {
+	return context.WithValue(ctx, quietType{}, quiet)
+}
+
+func isQuiet(ctx context.Context) bool {
+	quiet, ok := ctx.Value(quietType{}).(bool)
+	return quiet && ok
 }
 
 // Logf reads the settings from the given context and logs the given message.
 func Logf(ctx context.Context, v string, args ...interface{}) {
-	out := ctx.Value(loggerType{}).(io.Writer)
+	out, ok := ctx.Value(loggerType{}).(io.Writer)
+	if !ok {
+		return
+	}
 
 	if !strings.HasSuffix(v, "\n") {
 		v += "\n"

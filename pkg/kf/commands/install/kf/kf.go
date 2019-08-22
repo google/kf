@@ -78,7 +78,7 @@ func Install(ctx context.Context, containerRegistry string) error {
 	}
 
 	// Setup kf space
-	if err := SetupSpace(ctx, containerRegistry); err != nil {
+	if err := setupSpace(ctx, containerRegistry); err != nil {
 		return err
 	}
 
@@ -116,6 +116,43 @@ func installServiceCatalog(ctx context.Context) error {
 		"-R",
 		"--filename", path.Join(tmpKfPath, "third_party/service-catalog/manifests/catalog/templates"),
 	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// setupSpace asks the user if they would like to create a space.
+func setupSpace(ctx context.Context, containerRegistry string) error {
+	ctx = SetLogPrefix(ctx, "kf setup")
+	ok, err := SelectYesNo(ctx, "Setup kf space?")
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil
+	}
+
+	Logf(ctx, "Setting up kf space")
+	spaceName, err := NamePrompt(ctx, "New Space Name", RandName("space-"))
+	if err != nil {
+		return err
+	}
+	domain, err := HostnamePrompt(ctx, "Space Domain", "example.com")
+	if err != nil {
+		return err
+	}
+
+	if _, err := Kf(
+		ctx,
+		"create-space", spaceName,
+		"--domain", domain,
+		"--container-registry", containerRegistry,
+	); err != nil {
+		return err
+	}
+
+	if _, err := Kf(ctx, "target", "-s", spaceName); err != nil {
 		return err
 	}
 
