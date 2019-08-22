@@ -33,6 +33,7 @@ kf [flags]
 
 ### SEE ALSO
 
+* [kf add-service-broker](/docs/general-info/kf-cli/commands/kf-add-service-broker/)	 - Add a cluster service broker to service catalog
 * [kf app](/docs/general-info/kf-cli/commands/kf-app/)	 - Print information about a deployed app
 * [kf apps](/docs/general-info/kf-cli/commands/kf-apps/)	 - List pushed apps
 * [kf bind-service](/docs/general-info/kf-cli/commands/kf-bind-service/)	 - Bind a service instance to an app
@@ -50,6 +51,7 @@ kf [flags]
 * [kf delete-quota](/docs/general-info/kf-cli/commands/kf-delete-quota/)	 - Remove all quotas for the space
 * [kf delete-route](/docs/general-info/kf-cli/commands/kf-delete-route/)	 - Delete a route
 * [kf delete-service](/docs/general-info/kf-cli/commands/kf-delete-service/)	 - Delete a service instance
+* [kf delete-service-broker](/docs/general-info/kf-cli/commands/kf-delete-service-broker/)	 - Remove a namespaced service broker from service catalog
 * [kf delete-space](/docs/general-info/kf-cli/commands/kf-delete-space/)	 - Delete a space
 * [kf doctor](/docs/general-info/kf-cli/commands/kf-doctor/)	 - Doctor runs validation tests against one or more components
 * [kf env](/docs/general-info/kf-cli/commands/kf-env/)	 - List the names and values of the environment variables for an app
