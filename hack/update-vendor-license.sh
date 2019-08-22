@@ -18,6 +18,11 @@ set -e
 
 cd $(dirname $(go env GOMOD))
 
+echo "Vendoring code"
 go mod vendor
 
+echo "Tidying gomod"
+go mod tidy
+
+echo "Generating third party licenses"
 go run cmd/gomod-collector/*.go . > third_party/VENDOR-LICENSE
