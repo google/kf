@@ -25,12 +25,11 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/configmap"
 	controller "knative.dev/pkg/controller"
-	logging "knative.dev/pkg/logging"
 )
 
 // NewController creates a new controller capable of reconciling Kf sources.
 func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl {
-	logger := logging.FromContext(ctx)
+	logger := reconciler.NewControllerLogger(ctx, "sources.kf.dev")
 
 	// Get informers off context
 	sourceInformer := sourceinformer.Get(ctx)
@@ -39,7 +38,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 
 	// Create reconciler
 	c := &Reconciler{
-		Base:         reconciler.NewBase(ctx, "source-controller", cmw),
+		Base:         reconciler.NewBase(ctx, cmw),
 		sourceLister: sourceInformer.Lister(),
 		buildLister:  buildInformer.Lister(),
 		buildClient:  buildClient.BuildV1alpha1(),
@@ -47,7 +46,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 
 	impl := controller.NewImpl(c, logger, "sources")
 
-	c.Logger.Info("Setting up event handlers")
+	logger.Info("Setting up event handlers")
 
 	// Watch for changes in sub-resources so we can sync accordingly
 	sourceInformer.Informer().AddEventHandler(controller.HandleAll(impl.Enqueue))

@@ -50,12 +50,25 @@ var _ controller.Reconciler = (*Reconciler)(nil)
 
 // Reconcile is called by Kubernetes.
 func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
-	logger := logging.FromContext(ctx)
-
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		return err
 	}
+
+	return r.reconcileSource(
+		logging.WithLogger(ctx,
+			logging.FromContext(ctx).With("namespace", namespace)),
+		namespace,
+		name,
+	)
+}
+
+func (r *Reconciler) reconcileSource(
+	ctx context.Context,
+	namespace string,
+	name string,
+) (err error) {
+	logger := logging.FromContext(ctx)
 
 	original, err := r.sourceLister.Sources(namespace).Get(name)
 	switch {
@@ -98,6 +111,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 // ApplyChanges updates the linked resources in the cluster with the current
 // status of the source.
 func (r *Reconciler) ApplyChanges(ctx context.Context, source *v1alpha1.Source) error {
+	logger := logging.FromContext(ctx)
 	source.Status.InitializeConditions()
 
 	// Sources only get run once regardless of success or failure status.
@@ -107,6 +121,8 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, source *v1alpha1.Source) 
 
 	// Sync build
 	{
+		logger.Debug("reconciling Build")
+
 		desired, err := resources.MakeBuild(source)
 		if err != nil {
 			return err

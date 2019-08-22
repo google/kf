@@ -25,7 +25,6 @@ import (
 	"github.com/google/kf/pkg/reconciler"
 	appresources "github.com/google/kf/pkg/reconciler/app/resources"
 	"github.com/google/kf/pkg/reconciler/route/resources"
-	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -51,25 +50,29 @@ var _ controller.Reconciler = (*Reconciler)(nil)
 
 // Reconcile is called by Kubernetes.
 func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
-	logger := logging.FromContext(ctx)
-
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		return err
 	}
 
-	return r.reconcileRoute(ctx, namespace, name, logger)
+	return r.reconcileRoute(
+		logging.WithLogger(ctx,
+			logging.FromContext(ctx).With("namespace", namespace)),
+		namespace,
+		name,
+	)
 }
 
 func (r *Reconciler) reconcileRoute(
 	ctx context.Context,
 	namespace string,
 	name string,
-	logger *zap.SugaredLogger,
 ) (err error) {
+	logger := logging.FromContext(ctx)
 	original, err := r.routeLister.
 		Routes(namespace).
 		Get(name)
+
 	switch {
 	case apierrs.IsNotFound(err):
 		logger.Errorf("Route %q no longer exists\n", name)
@@ -92,7 +95,7 @@ func (r *Reconciler) reconcileRoute(
 	toReconcile := original.DeepCopy()
 
 	// Reconcile this copy of the route.
-	return r.ApplyChanges(ctx, toReconcile, logger)
+	return r.ApplyChanges(ctx, toReconcile)
 }
 
 // ApplyChanges updates the linked resources in the cluster with the current
@@ -100,12 +103,13 @@ func (r *Reconciler) reconcileRoute(
 func (r *Reconciler) ApplyChanges(
 	ctx context.Context,
 	origRoute *v1alpha1.Route,
-	logger *zap.SugaredLogger,
 ) error {
+	logger := logging.FromContext(ctx)
 	origRoute.SetDefaults(ctx)
 
 	// Sync VirtualService
 	{
+		logger.Debug("reconciling VirtualService")
 		// Fetch routes with the same Hostname+Domain+Path.
 		routes, err := r.routeLister.
 			Routes(origRoute.GetNamespace()).
@@ -128,17 +132,17 @@ func (r *Reconciler) ApplyChanges(
 				Networking().
 				VirtualServices(desired.GetNamespace()).
 				Create(desired)
+
 			if err != nil {
 				return err
 			}
 		} else if err != nil {
 			return err
 		} else if actual.GetDeletionTimestamp() != nil {
-
+			return nil
 		} else if actual, err = r.reconcile(
 			desired,
 			actual,
-			logger,
 		); err != nil {
 			return err
 		}
@@ -150,7 +154,6 @@ func (r *Reconciler) ApplyChanges(
 func (r *Reconciler) reconcile(
 	desired *networking.VirtualService,
 	actual *networking.VirtualService,
-	logger *zap.SugaredLogger,
 ) (*networking.VirtualService, error) {
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)

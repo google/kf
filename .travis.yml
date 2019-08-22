@@ -10,4 +10,5 @@ script:
   - ./hack/check-go-sum.sh
   - ./hack/check-linters.sh
   - ./hack/check-go-generate.sh
+  - ./hack/check-vendor-license.sh
   - ./hack/test.sh
