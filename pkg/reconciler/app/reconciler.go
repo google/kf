@@ -77,7 +77,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 		return err
 	}
 
-	return r.reconcileApp(ctx, namespace, name)
+	return r.reconcileApp(
+		logging.WithLogger(ctx,
+			logging.FromContext(ctx).With("namespace", namespace)),
+		namespace,
+		name,
+	)
 }
 
 func (r *Reconciler) reconcileApp(ctx context.Context, namespace, name string) (err error) {

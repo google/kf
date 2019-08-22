@@ -55,7 +55,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 		return err
 	}
 
-	return r.reconcileRoute(ctx, namespace, name)
+	return r.reconcileRoute(
+		logging.WithLogger(ctx,
+			logging.FromContext(ctx).With("namespace", namespace)),
+		namespace,
+		name,
+	)
 }
 
 func (r *Reconciler) reconcileRoute(

@@ -31,7 +31,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/controller"
-	logging "knative.dev/pkg/logging"
+	"knative.dev/pkg/logging"
 )
 
 // Reconciler reconciles an source object with the K8s cluster.
@@ -50,11 +50,25 @@ var _ controller.Reconciler = (*Reconciler)(nil)
 
 // Reconcile is called by Kubernetes.
 func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
-	logger := logging.FromContext(ctx)
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		return err
 	}
+
+	return r.reconcileSource(
+		logging.WithLogger(ctx,
+			logging.FromContext(ctx).With("namespace", namespace)),
+		namespace,
+		name,
+	)
+}
+
+func (r *Reconciler) reconcileSource(
+	ctx context.Context,
+	namespace string,
+	name string,
+) (err error) {
+	logger := logging.FromContext(ctx)
 
 	original, err := r.sourceLister.Sources(namespace).Get(name)
 	switch {
