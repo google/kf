@@ -15,6 +15,7 @@
 package spaces
 
 import (
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/spaces"
 	"github.com/spf13/cobra"
@@ -53,6 +54,8 @@ func NewDeleteSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 			return client.Delete(name)
 		},
 	}
+
+	completion.MarkArgCompletionSupported(cmd, completion.SpaceCompletion)
 
 	return cmd
 }

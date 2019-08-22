@@ -38,6 +38,7 @@ import (
 	"gopkg.in/yaml.v2"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/dynamic"
 	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -136,11 +137,9 @@ func NewKfParamsFromFile(cfgPath string) (*KfParams, error) {
 
 // NewDefaultKfParams creates a KfParams with default values.
 func NewDefaultKfParams() *KfParams {
-	defaultParams := &KfParams{}
+	defaultParams := initKubeConfig()
 
-	initKubeConfig(defaultParams)
-
-	return defaultParams
+	return &defaultParams
 }
 
 // Write writes the current configuration to the path specified by the
@@ -229,6 +228,23 @@ func GetServiceCatalogClient(p *KfParams) servicecatalogclient.Interface {
 	return cs
 }
 
+// GetDynamicClient gets a dynamic Kubernetes client. Dynamic clients can work
+// on any type of Kubernetes object, but only support the common fields.
+//
+// Dynamic clients can be used to get alternative representations of objects
+// like tables, or traverse multiple types of object in a single pass e.g. to
+// construct a tree based on OwnerReferences.
+func GetDynamicClient(p *KfParams) dynamic.Interface {
+	config := getRestConfig(p)
+
+	dyn, err := dynamic.NewForConfig(config)
+	if err != nil {
+		log.Fatalf("failed to create a dynamic client: %s", err)
+	}
+
+	return dyn
+}
+
 // GetSvcatApp returns a SvcatClient.
 func GetSvcatApp(p *KfParams) services.SClientFactory {
 	return func(namespace string) servicecatalog.SvcatClient {
@@ -260,7 +276,12 @@ func getRestConfig(p *KfParams) *rest.Config {
 
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
 	if p.KubeCfgFile != "" {
-		loadingRules.ExplicitPath = p.KubeCfgFile
+		fileList := filepath.SplitList(p.KubeCfgFile)
+		if len(fileList) > 1 {
+			loadingRules.Precedence = fileList
+		} else {
+			loadingRules.ExplicitPath = p.KubeCfgFile
+		}
 	}
 
 	clientCfg := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, &clientcmd.ConfigOverrides{})
@@ -276,8 +297,15 @@ func getRestConfig(p *KfParams) *rest.Config {
 	return restCfg
 }
 
-func initKubeConfig(p *KfParams) {
-	if p.KubeCfgFile == "" {
-		p.KubeCfgFile = filepath.Join(homedir.HomeDir(), ".kube", "config")
+func initKubeConfig() KfParams {
+	p := KfParams{}
+
+	p.KubeCfgFile = clientcmd.RecommendedHomeFile
+
+	// Override path to Kube config if env var is set
+	if configPathEnv, ok := os.LookupEnv(clientcmd.RecommendedConfigPathEnvVar); ok {
+		p.KubeCfgFile = configPathEnv
 	}
+
+	return p
 }

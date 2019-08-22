@@ -8,13 +8,13 @@ package commands
 import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/buildpacks"
 	builds2 "github.com/google/kf/pkg/kf/builds"
 	apps2 "github.com/google/kf/pkg/kf/commands/apps"
 	buildpacks2 "github.com/google/kf/pkg/kf/commands/buildpacks"
 	"github.com/google/kf/pkg/kf/commands/builds"
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/quotas"
 	routes2 "github.com/google/kf/pkg/kf/commands/routes"
@@ -22,6 +22,7 @@ import (
 	servicebrokers "github.com/google/kf/pkg/kf/commands/service-brokers"
 	services2 "github.com/google/kf/pkg/kf/commands/services"
 	spaces2 "github.com/google/kf/pkg/kf/commands/spaces"
+	"github.com/google/kf/pkg/kf/istio"
 	"github.com/google/kf/pkg/kf/logs"
 	"github.com/google/kf/pkg/kf/routeclaims"
 	"github.com/google/kf/pkg/kf/routes"
@@ -154,7 +155,7 @@ func InjectProxy(p *config.KfParams) *cobra.Command {
 	client := sources.NewClient(sourcesGetter, buildTailer)
 	appsClient := apps.NewClient(appsGetter, client)
 	kubernetesInterface := config.GetKubernetes(p)
-	ingressLister := kf.NewIstioClient(kubernetesInterface)
+	ingressLister := istio.NewIstioClient(kubernetesInterface)
 	command := apps2.NewProxyCommand(p, appsClient, ingressLister)
 	return command
 }
@@ -223,7 +224,13 @@ func InjectGetService(p *config.KfParams) *cobra.Command {
 func InjectListServices(p *config.KfParams) *cobra.Command {
 	sClientFactory := config.GetSvcatApp(p)
 	clientInterface := services.NewClient(sClientFactory)
-	command := services2.NewListServicesCommand(p, clientInterface)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	client := sources.NewClient(sourcesGetter, buildTailer)
+	appsClient := apps.NewClient(appsGetter, client)
+	command := services2.NewListServicesCommand(p, clientInterface, appsClient)
 	return command
 }
 
@@ -442,6 +449,12 @@ func InjectBuildLogs(p *config.KfParams) *cobra.Command {
 	buildTailer := provideSourcesBuildTailer()
 	client := sources.NewClient(sourcesGetter, buildTailer)
 	command := builds.NewBuildLogsCommand(p, client)
+	return command
+}
+
+func InjectNamesCommand(p *config.KfParams) *cobra.Command {
+	dynamicInterface := config.GetDynamicClient(p)
+	command := completion.NewNamesCommand(p, dynamicInterface)
 	return command
 }
 

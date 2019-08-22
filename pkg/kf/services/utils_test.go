@@ -22,6 +22,10 @@ import (
 	"path"
 	"reflect"
 	"testing"
+	"time"
+
+	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestParseJSONString(t *testing.T) {
@@ -124,14 +128,20 @@ func TestParseJSONOrFile(t *testing.T) {
 			}
 		})
 	}
-
 }
 
-//
-// func ParseJSONString(jsonString string) (map[string]interface{}, error) {
-// 	p := make(map[string]interface{})
-// 	if err := json.Unmarshal([]byte(jsonString), &p); err != nil {
-// 		return nil, fmt.Errorf("invalid JSON provided: %q", jsonString)
-// 	}
-// 	return p, nil
-// }
+func ExampleLastStatusCondition() {
+	si := v1beta1.ServiceInstance{
+		Status: v1beta1.ServiceInstanceStatus{
+			Conditions: []v1beta1.ServiceInstanceCondition{
+				{Status: "Wrong"},
+				{LastTransitionTime: metav1.Time{Time: time.Now()}, Status: "Ready"},
+			},
+		},
+	}
+
+	c := LastStatusCondition(si)
+	fmt.Println(c.Status)
+
+	// Output: Ready
+}

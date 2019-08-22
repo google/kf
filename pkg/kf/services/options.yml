@@ -14,3 +14,4 @@ configs:
 - name: GetService
 - name: ListServices
 - name: Marketplace
+- name: BrokerName
