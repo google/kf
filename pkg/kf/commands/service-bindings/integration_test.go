@@ -54,13 +54,17 @@ func TestIntegration_Services(t *testing.T) {
 func TestIntegration_Bindings(t *testing.T) {
 	t.Skip()
 	checkClusterStatus(t)
+	appName := fmt.Sprintf("integration-binding-app-%d", time.Now().UnixNano())
+	appPath := "./samples/apps/envs"
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		withServiceBroker(ctx, t, kf, func(ctx context.Context) {
 			withServiceInstance(ctx, kf, func(ctx context.Context) {
-				withServiceBinding(ctx, t, kf, func(ctx context.Context) {
-					bindingsOutput := kf.Bindings(ctx)
-					AssertContainsAll(t, strings.Join(bindingsOutput, "\n"), []string{AppFromContext(ctx),
-						ServiceInstanceFromContext(ctx), "True", "InjectedBindResult"})
+				withApp(ctx, t, kf, appName, appPath, false, func(ctx context.Context) {
+					withServiceBinding(ctx, t, kf, func(ctx context.Context) {
+						bindingsOutput := kf.Bindings(ctx)
+						AssertContainsAll(t, strings.Join(bindingsOutput, "\n"), []string{AppFromContext(ctx),
+							ServiceInstanceFromContext(ctx), "True", "InjectedBindResult"})
+					})
 				})
 			})
 		})
@@ -69,16 +73,20 @@ func TestIntegration_Bindings(t *testing.T) {
 
 func TestIntegration_VcapServices(t *testing.T) {
 	checkClusterStatus(t)
+	appName := fmt.Sprintf("integration-binding-app-%d", time.Now().UnixNano())
+	appPath := "./samples/apps/envs"
 	creds := `"credentials":{"password":"fake-pw","username":"fake-user"}` // fake service binding credentials provided by the mock broker
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		withServiceBroker(ctx, t, kf, func(ctx context.Context) {
 			withServiceInstance(ctx, kf, func(ctx context.Context) {
-				withServiceBinding(ctx, t, kf, func(ctx context.Context) {
-					// Restart so that env vars are injected from the secret into app
-					kf.Restart(ctx, AppFromContext(ctx))
-					vcapServicesOutput := kf.VcapServices(ctx, AppFromContext(ctx))
-					AssertContainsAll(t, strings.Join(vcapServicesOutput, "\n"), []string{AppFromContext(ctx),
-						ServiceInstanceFromContext(ctx), creds})
+				withApp(ctx, t, kf, appName, appPath, false, func(ctx context.Context) {
+					withServiceBinding(ctx, t, kf, func(ctx context.Context) {
+						// Restart so that env vars are injected from the secret into app
+						kf.Restart(ctx, AppFromContext(ctx))
+						vcapServicesOutput := kf.VcapServices(ctx, AppFromContext(ctx))
+						AssertContainsAll(t, strings.Join(vcapServicesOutput, "\n"), []string{AppFromContext(ctx),
+							ServiceInstanceFromContext(ctx), creds})
+					})
 				})
 			})
 		})
@@ -141,25 +149,16 @@ func withServiceInstance(ctx context.Context, kf *Kf, callback func(newCtx conte
 }
 
 func withServiceBinding(ctx context.Context, t *testing.T, kf *Kf, callback func(newCtx context.Context)) {
-	appName := fmt.Sprintf("integration-binding-app-%d", time.Now().UnixNano())
-	appPath := "./samples/apps/envs"
-	// Push the envs app, which will have a binding to a service instance, and then clean it up.
-	kf.Push(ctx, appName,
-		"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/envs"),
-	)
-	defer kf.Delete(ctx, appName)
-	withApp(ctx, t, kf, appName, appPath, false, func(ctx context.Context) {
-		serviceInstanceName := ServiceInstanceFromContext(ctx)
-		kf.BindService(ctx, appName, serviceInstanceName)
+	serviceInstanceName := ServiceInstanceFromContext(ctx)
+	appName := AppFromContext(ctx)
+	kf.BindService(ctx, appName, serviceInstanceName)
 
-		// Temporary solution to allow service binding to complete.
-		// TODO: Add flag to run the command synchronously.
-		time.Sleep(2 * time.Second)
-		defer kf.UnbindService(ctx, appName, serviceInstanceName)
+	// Temporary solution to allow service binding to complete.
+	// TODO: Add flag to run the command synchronously.
+	time.Sleep(2 * time.Second)
+	defer kf.UnbindService(ctx, appName, serviceInstanceName)
 
-		callback(ctx)
-	})
-
+	callback(ctx)
 }
 
 func withApp(ctx context.Context, t *testing.T, kf *Kf, appName string, path string, isBroker bool, callback func(newCtx context.Context)) {
