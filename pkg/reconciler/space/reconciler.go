@@ -56,7 +56,6 @@ var _ controller.Reconciler = (*Reconciler)(nil)
 // Reconcile is called by Kubernetes.
 func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 	logger := logging.FromContext(ctx)
-
 	_, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		return err
@@ -99,12 +98,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 // status of the space.
 func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) error {
 	logger := logging.FromContext(ctx)
-
 	space.Status.InitializeConditions()
 	namespaceName := resources.NamespaceName(space)
 
 	// Sync Namespace
 	{
+		logger.Debug("reconciling Namespace")
 		desired, err := resources.MakeNamespace(space)
 		if err != nil {
 			return err
@@ -139,6 +138,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 
 	// Sync developer role
 	{
+		logger.Debug("reconciling develop Role")
 		desired, err := resources.MakeDeveloperRole(space)
 		if err != nil {
 			return err
@@ -164,6 +164,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 
 	// Sync auditor role
 	{
+		logger.Debug("reconciling auditor Role")
 		desired, err := resources.MakeAuditorRole(space)
 		if err != nil {
 			return err
@@ -189,6 +190,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 
 	// Sync resource quota
 	{
+		logger.Debug("reconciling ResourceQuota")
 		desired, err := resources.MakeResourceQuota(space)
 		if err != nil {
 			return err
@@ -214,6 +216,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 
 	// Sync limit range
 	{
+		logger.Debug("reconciling LimitRange")
 		desired, err := resources.MakeLimitRange(space)
 		if err != nil {
 			return err
