@@ -66,7 +66,7 @@ func TestIntegration_withServiceBroker_withServiceInstance_withServiceBinding_Bi
 
 func TestIntegration_withServiceBroker_withServiceInstance_withServiceBinding_VcapServices(t *testing.T) {
 	checkClusterStatus(t)
-	creds := `"credentials\":{\"password\":\"fake-pw\",\"username\":\"fake-user\"` // fake service binding credentials provided by the mock broker
+	creds := `\"credentials\":{\"password\":\"fake-pw\",\"username\":\"fake-user\"` // fake service binding credentials provided by the mock broker
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		withServiceBroker(ctx, t, kf, func(ctx context.Context) {
 			withServiceInstance(ctx, kf, func(ctx context.Context) {
