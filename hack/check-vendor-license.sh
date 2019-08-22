@@ -20,10 +20,10 @@ cd $(dirname $(go env GOMOD))
 
 ./hack/update-vendor-license.sh
 
-if [ ! -z "$(git status --porcelain)" ]; then
-    git status
+if [ ! -z "$(git status --porcelain vendor)" ]; then
+    git status vendor
     echo
     echo "vendor license isn't correct."
-    git --no-pager diff
+    git --no-pager diff vendor
     exit 1
 fi
