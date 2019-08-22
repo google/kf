@@ -45,6 +45,9 @@ type ClientInterface interface {
 
 	// Marketplace lists available services and plans in the marketplace.
 	Marketplace(opts ...MarketplaceOption) (*KfMarketplace, error)
+
+	// BrokerName fetches the service broker name for a service.
+	BrokerName(service v1beta1.ServiceInstance, opts ...BrokerNameOption) (string, error)
 }
 
 // SClientFactory creates a Service Catalog client.
@@ -128,4 +131,20 @@ func (c *Client) Marketplace(opts ...MarketplaceOption) (*KfMarketplace, error) 
 		Services: classes,
 		Plans:    plans,
 	}, nil
+}
+
+// BrokerName fetches the service broker name for a service.
+func (c *Client) BrokerName(service v1beta1.ServiceInstance, opts ...BrokerNameOption) (string, error) {
+	cfg := BrokerNameOptionDefaults().Extend(opts).toConfig()
+	svcat := c.createSvcatClient(cfg.Namespace)
+
+	class, err := svcat.RetrieveClassByName(service.Spec.ClusterServiceClassExternalName, servicecatalog.ScopeOptions{
+		Scope: servicecatalog.ClusterScope,
+	})
+
+	if err != nil {
+		return "", err
+	}
+
+	return class.GetServiceBrokerName(), nil
 }

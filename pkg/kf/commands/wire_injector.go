@@ -204,6 +204,7 @@ func InjectListServices(p *config.KfParams) *cobra.Command {
 		services.NewClient,
 		servicescmd.NewListServicesCommand,
 		config.GetSvcatApp,
+		AppsSet,
 	)
 	return nil
 }

@@ -348,3 +348,59 @@ func TestClient_Marketplace(t *testing.T) {
 		})
 	}
 }
+
+func TestClient_BrokerName(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		ExpectedName string
+		Options      []BrokerNameOption
+
+		ExpectErr                      error
+		ExpectedRetrieveClassByNameErr error
+	}{
+		"returns broker name": {
+			ExpectedName: "some-broker-name",
+		},
+		"fetching class fails": {
+			ExpectedRetrieveClassByNameErr: errors.New("some-error"),
+			ExpectErr:                      errors.New("some-error"),
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			expectedCfg := BrokerNameOptionDefaults().Extend(tc.Options).toConfig()
+			fakeClient := &servicecatalogfakes.FakeSvcatClient{}
+			fakeClass := &fakeClass{brokerName: tc.ExpectedName}
+			expectedSvc := v1beta1.ServiceInstance{}
+
+			fakeClient.RetrieveClassByNameStub = func(name string, opts servicecatalog.ScopeOptions) (servicecatalog.Class, error) {
+				return fakeClass, tc.ExpectedRetrieveClassByNameErr
+			}
+
+			client := NewClient(func(ns string) servicecatalog.SvcatClient {
+				testutil.AssertEqual(t, "namespace", expectedCfg.Namespace, ns)
+				return fakeClient
+			})
+
+			name, actualErr := client.BrokerName(expectedSvc, tc.Options...)
+			if tc.ExpectErr != nil || actualErr != nil {
+				testutil.AssertErrorsEqual(t, tc.ExpectErr, actualErr)
+				return
+			}
+
+			testutil.AssertEqual(t, "broker name", tc.ExpectedName, name)
+		})
+	}
+}
+
+// fakeClass implements servicecatalog.Class. There isn't a fake provided.
+type fakeClass struct {
+	servicecatalog.Class
+	brokerName string
+}
+
+func (f *fakeClass) GetServiceBrokerName() string {
+	return f.brokerName
+}
