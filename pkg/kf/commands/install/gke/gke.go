@@ -41,68 +41,69 @@ const (
 // really replace gcloud with google.golang.org/api and kubectl with
 // k8s.io/client-go
 func NewGKECommand() *cobra.Command {
-	var verbose bool
-
-	cmd := &cobra.Command{
-		Use:     "gke [subcommand]",
-		Short:   "Install kf on GKE with Cloud Run (Note: this will incur GCP costs)",
-		Example: "kf install gke",
-		Long: `
+	cmd := InstallCommand{
+		Command: &cobra.Command{
+			Use:     "gke [subcommand]",
+			Short:   "Install kf on GKE with Cloud Run (Note: this will incur GCP costs)",
+			Example: "kf install gke",
+			Long: `
 			This interactive installer will walk you through the process of installing kf
 			on GKE with Cloud Run. You MUST have gcloud and kubectl installed and
-			available on the path. Note: running this will incur costs to run GKE. See
+			available on the path.
+
+			Note: running this will incur costs to run GKE. See
 			https://cloud.google.com/products/calculator/ to get an estimate.`,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			// Print kubectl version
-			ctx := SetContextOutput(context.Background(), cmd.ErrOrStderr())
-			version, err := Kubectl(ctx, "version", "--short", "--client")
-			if err != nil {
-				return err
-			}
-			fmt.Fprintf(
-				cmd.ErrOrStderr(),
-				"%s\n%s\n",
-				LabelColor.Sprint("kubectl version:"),
-				strings.Join(version, "\n"),
-			)
-
-			// Print gcloud version
-			version, err = gcloud(ctx, "version")
-			if err != nil {
-				return err
-			}
-			fmt.Fprintf(
-				cmd.ErrOrStderr(),
-				"%s\n%s\n",
-				LabelColor.Sprint("gcloud version:"),
-				strings.Join(version, "\n"),
-			)
-
-			// Ensure gcloud alpha is available
-			// This is necessary because the user my have NEVER ran a `gcloud
-			// alpha` (or `beta`) command before and therefore their first one
-			// will ask if they really want to.
-			for _, v := range []string{"alpha", "beta"} {
-				// We don't care about the output if it succeeds.
-				_, err := gcloud(ctx, v, "help")
+			PreRunE: func(cmd *cobra.Command, args []string) error {
+				// Print kubectl version
+				ctx := SetContextOutput(context.Background(), cmd.ErrOrStderr())
+				version, err := Kubectl(ctx, "version", "--short", "--client")
 				if err != nil {
 					return err
 				}
-			}
+				fmt.Fprintf(
+					cmd.ErrOrStderr(),
+					"%s\n%s\n",
+					LabelColor.Sprint("kubectl version:"),
+					strings.Join(version, "\n"),
+				)
 
-			return nil
+				// Print gcloud version
+				version, err = gcloud(ctx, "version")
+				if err != nil {
+					return err
+				}
+				fmt.Fprintf(
+					cmd.ErrOrStderr(),
+					"%s\n%s\n",
+					LabelColor.Sprint("gcloud version:"),
+					strings.Join(version, "\n"),
+				)
+
+				// Ensure gcloud alpha is available
+				// This is necessary because the user my have NEVER ran a `gcloud
+				// alpha` (or `beta`) command before and therefore their first one
+				// will ask if they really want to.
+				for _, v := range []string{"alpha", "beta"} {
+					// We don't care about the output if it succeeds.
+					_, err := gcloud(ctx, v, "help")
+					if err != nil {
+						return err
+					}
+				}
+
+				return nil
+			},
 		},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(ctx context.Context, cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
-			ctx := SetContextOutput(context.Background(), cmd.ErrOrStderr())
 			ctx = SetLogPrefix(ctx, "Install GKE+CR+Kf")
-			ctx = SetVerbosity(ctx, verbose)
 
 			// Select the desired project
 			projID, err := selectProject(ctx)
 			if err != nil {
 				return err
 			}
+			Logf(ctx, "using project %q", projID)
 
 			// Select the desired GKE cluster
 			clusterName, zone, err := selectCluster(ctx, projID)
@@ -125,15 +126,7 @@ func NewGKECommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVarP(
-		&verbose,
-		"verbose",
-		"v",
-		false,
-		"Display the gcloud and kubectl commands",
-	)
-
-	return cmd
+	return SetupFlags(cmd)
 }
 
 func selectProject(ctx context.Context) (string, error) {
@@ -143,12 +136,10 @@ func selectProject(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	projectList = append([]string{"Create New Project"}, projectList...)
-
 	// Fetch the desired project
-	idx, result, err := SelectPrompt(
+	create, result, err := SelectOrCreatePrompt(
 		ctx,
-		"Select Project",
+		"Project",
 		projectList...,
 	)
 	if err != nil {
@@ -156,7 +147,7 @@ func selectProject(ctx context.Context) (string, error) {
 	}
 
 	// Create project
-	if idx == 0 {
+	if create {
 		result, err = createProject(ctx)
 		if err != nil {
 			return "", err
@@ -173,19 +164,17 @@ func selectCluster(ctx context.Context, projID string) (string, string, error) {
 		return "", "", err
 	}
 
-	clusterList = append([]string{"Create New GKE Cluster"}, clusterList...)
-
 	// Fetch the desired cluster
-	idx, clusterName, err := SelectPrompt(
+	create, clusterName, err := SelectOrCreatePrompt(
 		ctx,
-		"Select GKE Cluster",
+		"GKE Cluster",
 		clusterList...,
 	)
 	if err != nil {
 		return "", "", err
 	}
 
-	if idx == 0 {
+	if create {
 		// Create new cluster
 		return createNewCluster(ctx, projID)
 	}
@@ -202,7 +191,7 @@ func createProject(ctx context.Context) (string, error) {
 	for {
 		name, err := NamePrompt(
 			ctx,
-			LabelColor.Sprint("Project Name (not ID): "),
+			"New Project Name",
 			RandName("kf-"),
 		)
 		if err != nil {
@@ -226,6 +215,10 @@ func createProject(ctx context.Context) (string, error) {
 
 		if err != nil {
 			return "", err
+		}
+
+		if IsCapturingFlags(ctx) {
+			return "", nil
 		}
 
 		if len(projects) != 1 {
@@ -276,7 +269,12 @@ func clusterZone(ctx context.Context, projID, clusterName string) (string, error
 	if err != nil {
 		return "", err
 	}
-	return strings.Join(output, ""), nil
+	zone := strings.TrimSpace(strings.Join(output, ""))
+	if zone == "" {
+		return "", fmt.Errorf("GKE Cluster %q not found in project %q", clusterName, projID)
+	}
+
+	return zone, nil
 }
 
 // zones uses gcloud to list all the available zones for a project ID.
@@ -358,7 +356,7 @@ func gkeClusterConfig(
 	{
 		cfg.clusterName, err = NamePrompt(
 			ctx,
-			"Cluster Name: ",
+			"New GKE Cluster Name",
 			RandName("kf-"),
 		)
 		if err != nil {
@@ -381,7 +379,7 @@ func gkeClusterConfig(
 		if err != nil {
 			return gkeConfig{}, err
 		}
-		if !ok {
+		if !ok && !IsCapturingFlags(ctx) {
 			return gkeConfig{}, errors.New("chose to not create service account")
 		}
 		if err = createServiceAccount(
@@ -400,7 +398,7 @@ func gkeClusterConfig(
 		switch {
 		case err != nil:
 			return gkeConfig{}, err
-		case len(availableZones) == 0:
+		case len(availableZones) == 0 && !IsCapturingFlags(ctx):
 			return gkeConfig{}, errors.New("there was a listing your zones")
 		case len(availableZones) == 1:
 			cfg.zone = availableZones[0]
@@ -418,7 +416,7 @@ func gkeClusterConfig(
 		switch {
 		case err != nil:
 			return gkeConfig{}, err
-		case len(availableNetworks) == 0:
+		case len(availableNetworks) == 0 && !IsCapturingFlags(ctx):
 			// We won't use a network
 		case len(availableNetworks) == 1:
 			cfg.network = availableNetworks[0]
@@ -517,7 +515,7 @@ func enableServiceAPI(ctx context.Context, projID, serviceName string) error {
 	if err != nil {
 		return err
 	}
-	if !ok {
+	if !ok && !IsCapturingFlags(ctx) {
 		return fmt.Errorf("%s service API not enabled", serviceName)
 	}
 
@@ -587,7 +585,7 @@ func ensureBilling(ctx context.Context, projID string) error {
 	if err != nil {
 		return err
 	}
-	if !ok {
+	if !ok && !IsCapturingFlags(ctx) {
 		return fmt.Errorf("no billing setup for %s", projID)
 	}
 
@@ -643,7 +641,7 @@ func billingAccounts(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 
-	if len(accounts) == 0 {
+	if len(accounts) == 0 && !IsCapturingFlags(ctx) {
 		return nil, errors.New("there has to be at least one billing account setup")
 	}
 

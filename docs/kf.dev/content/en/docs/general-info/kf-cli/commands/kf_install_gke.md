@@ -9,7 +9,9 @@ Install kf on GKE with Cloud Run (Note: this will incur GCP costs)
 
 ### Synopsis
 
-This interactive installer will walk you through the process of installing kf on GKE with Cloud Run. You MUST have gcloud and kubectl installed and available on the path. Note: running this will incur costs to run GKE. See https://cloud.google.com/products/calculator/ to get an estimate.
+This interactive installer will walk you through the process of installing kf on GKE with Cloud Run. You MUST have gcloud and kubectl installed and available on the path.
+
+ Note: running this will incur costs to run GKE. See https://cloud.google.com/products/calculator/ to get an estimate.
 
 ```
 kf install gke [subcommand] [flags]
@@ -24,8 +26,20 @@ kf install gke [subcommand] [flags]
 ### Options
 
 ```
-  -h, --help      help for gke
-  -v, --verbose   Display the gcloud and kubectl commands
+      --billing-account string        Configure Billing Account
+      --create-gke-cluster            Configure Create-GKE Cluster
+      --create-project                Configure Create-Project
+      --gke-cluster string            Configure GKE Cluster
+  -h, --help                          help for gke
+      --network string                Configure Network
+      --new-gke-cluster-name string   Configure New GKE Cluster Name
+      --new-project-name string       Configure New Project Name
+      --new-space-name string         Configure New Space Name
+      --project string                Configure Project
+  -q, --quiet                         Non-interactive mode. This will assume yes to yes-no questions
+      --space-domain string           Configure Space Domain
+  -v, --verbose                       Display any commands ran in the shell
+      --zone string                   Configure Zone
 ```
 
 ### Options inherited from parent commands
