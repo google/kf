@@ -7,10 +7,11 @@ require (
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/elazarl/goproxy v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f // indirect
+	github.com/fatih/color v1.7.0
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/golang/mock v1.3.1
 	github.com/google/go-containerregistry v0.0.0-20190306174256-678f6c51f585
-	github.com/google/kf/pkg/kf/commands/install v0.0.0
+	github.com/google/licenseclassifier v0.0.0-20190711054124-c3068f13fcc3
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/google/wire v0.2.2
 	github.com/gorilla/mux v1.7.0
@@ -19,6 +20,7 @@ require (
 	github.com/knative/pkg v0.0.0-20190621200921-9c5d970cbc9e
 	github.com/knative/serving v0.7.1-0.20190701162519-7ca25646a186
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
+	github.com/manifoldco/promptui v0.3.2
 	github.com/markbates/inflect v1.0.4 // indirect
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect
