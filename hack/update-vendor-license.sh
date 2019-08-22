@@ -25,4 +25,4 @@ echo "Tidying gomod"
 go mod tidy
 
 echo "Generating third party licenses"
-go run cmd/gomod-collector/*.go . > third_party/VENDOR-LICENSE
+go run third_party/forked/gomod-collector/*.go . > third_party/VENDOR-LICENSE

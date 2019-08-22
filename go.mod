@@ -11,7 +11,7 @@ require (
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/golang/mock v1.3.1
 	github.com/google/go-containerregistry v0.0.0-20190306174256-678f6c51f585
-	github.com/google/licenseclassifier v0.0.0-20190711054124-c3068f13fcc3
+	github.com/google/licenseclassifier v0.0.0-20190711054124-c3068f13fcc3 // indirect
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/google/wire v0.2.2
 	github.com/gorilla/mux v1.7.0
