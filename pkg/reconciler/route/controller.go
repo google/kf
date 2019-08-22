@@ -32,7 +32,7 @@ import (
 
 // NewController creates a new controller capable of reconciling Kf Routes.
 func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl {
-	logger := reconciler.NewKfLogger(logging.FromContext(ctx), "routes.kf.dev")
+	logger := reconciler.NewControllerLogger(ctx, "routes.kf.dev")
 
 	// Get informers off context
 	vsInformer := virtualserviceinformer.Get(ctx)
@@ -40,14 +40,14 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 
 	// Create reconciler
 	c := &Reconciler{
-		Base:                 reconciler.NewBase(ctx, "route-controller", cmw, logger),
+		Base:                 reconciler.NewBase(ctx, cmw),
 		routeLister:          routeInformer.Lister(),
 		virtualServiceLister: vsInformer.Lister(),
 	}
 
 	impl := controller.NewImpl(c, logger, "Routes")
 
-	c.Logger.Info("Setting up event handlers")
+	logger.Info("Setting up event handlers")
 
 	// Watch for changes in sub-resources so we can sync accordingly
 	routeInformer.Informer().AddEventHandler(controller.HandleAll(impl.Enqueue))
@@ -55,7 +55,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	// Watch for any changes to VirtualServices in the kf namespace.
 	vsInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: FilterVSWithNamespace(v1alpha1.KfNamespace),
-		Handler:    controller.HandleAll(EnqueueRoutesOfVirtualService(impl, c)),
+		Handler:    controller.HandleAll(EnqueueRoutesOfVirtualService(ctx, impl, c)),
 	})
 
 	return impl
@@ -82,9 +82,11 @@ func FilterVSWithNamespace(namespace string) func(obj interface{}) bool {
 // NOT owned by a single Route. Therefore, when one changes, we need to grab
 // the collection of corresponding Routes.
 func EnqueueRoutesOfVirtualService(
+	ctx context.Context,
 	c *controller.Impl,
 	r *Reconciler,
 ) func(obj interface{}) {
+	logger := logging.FromContext(ctx)
 	return func(obj interface{}) {
 		vs, ok := obj.(*networking.VirtualService)
 		if !ok {
@@ -98,7 +100,7 @@ func EnqueueRoutesOfVirtualService(
 				Hostname: vs.Annotations["hostname"],
 			}))
 		if err != nil {
-			r.Logger.Warnf("failed to list corresponding routes: %s", err)
+			logger.Warnf("failed to list corresponding routes: %s", err)
 			return
 		}
 

@@ -33,6 +33,7 @@ import (
 	istiolisters "knative.dev/pkg/client/listers/istio/v1alpha3"
 	"knative.dev/pkg/controller"
 	"knative.dev/pkg/kmp"
+	"knative.dev/pkg/logging"
 )
 
 // Reconciler reconciles a Route object with the K8s cluster.
@@ -62,26 +63,26 @@ func (r *Reconciler) reconcileRoute(
 	namespace string,
 	name string,
 ) (err error) {
+	logger := logging.FromContext(ctx)
 	original, err := r.routeLister.
 		Routes(namespace).
 		Get(name)
 
-	r.Logger.Info("Starting reconciler")
 	switch {
 	case apierrs.IsNotFound(err):
-		r.Logger.Errorf("Route %q no longer exists\n", name)
+		logger.Errorf("Route %q no longer exists\n", name)
 		return nil
 
 	case err != nil:
 		return err
 
 	case original.GetDeletionTimestamp() != nil:
-		r.Logger.Errorf("Route %q is being deleted\n", name)
+		logger.Errorf("Route %q is being deleted\n", name)
 		return nil
 	}
 
 	if r.IsNamespaceTerminating(namespace) {
-		r.Logger.Errorf("skipping sync for route %q, namespace %q is terminating\n", name, namespace)
+		logger.Errorf("skipping sync for route %q, namespace %q is terminating\n", name, namespace)
 		return nil
 	}
 
@@ -98,10 +99,12 @@ func (r *Reconciler) ApplyChanges(
 	ctx context.Context,
 	origRoute *v1alpha1.Route,
 ) error {
+	logger := logging.FromContext(ctx)
 	origRoute.SetDefaults(ctx)
 
 	// Sync VirtualService
 	{
+		logger.Debug("reconciling VirtualService")
 		// Fetch routes with the same Hostname+Domain+Path.
 		routes, err := r.routeLister.
 			Routes(origRoute.GetNamespace()).
@@ -120,7 +123,6 @@ func (r *Reconciler) ApplyChanges(
 			Get(desired.Name)
 		if errors.IsNotFound(err) {
 			// VirtualService doesn't exist, make one.
-			r.Logger.Infof("Missing, creating a new one")
 			actual, err = r.SharedClientSet.
 				Networking().
 				VirtualServices(desired.GetNamespace()).
@@ -132,7 +134,7 @@ func (r *Reconciler) ApplyChanges(
 		} else if err != nil {
 			return err
 		} else if actual.GetDeletionTimestamp() != nil {
-			r.Logger.Info("Got an object which is being deleted")
+			return nil
 		} else if actual, err = r.reconcile(
 			desired,
 			actual,
@@ -153,7 +155,6 @@ func (r *Reconciler) reconcile(
 	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
 
 	if semanticEqual {
-		r.Logger.Debug("virtual services are idential, skipping update")
 		return actual, nil
 	}
 
@@ -181,7 +182,6 @@ func (r *Reconciler) reconcile(
 
 	// Sort by reverse to defer to the longest matchers.
 	sort.Sort(sort.Reverse(v1alpha1.HTTPRoutes(existing.Spec.HTTP)))
-	r.Logger.Info("updated")
 
 	return r.SharedClientSet.
 		Networking().

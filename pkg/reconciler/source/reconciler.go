@@ -31,6 +31,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/controller"
+	logging "knative.dev/pkg/logging"
 )
 
 // Reconciler reconciles an source object with the K8s cluster.
@@ -49,6 +50,7 @@ var _ controller.Reconciler = (*Reconciler)(nil)
 
 // Reconcile is called by Kubernetes.
 func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
+	logger := logging.FromContext(ctx)
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		return err
@@ -57,7 +59,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 	original, err := r.sourceLister.Sources(namespace).Get(name)
 	switch {
 	case errors.IsNotFound(err):
-		r.Logger.Errorf("source %q no longer exists\n", name)
+		logger.Errorf("source %q no longer exists\n", name)
 		return nil
 
 	case err != nil:
@@ -68,7 +70,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 	}
 
 	if r.IsNamespaceTerminating(namespace) {
-		r.Logger.Errorf("skipping sync for source %q, namespace %q is terminating\n", name, namespace)
+		logger.Errorf("skipping sync for source %q, namespace %q is terminating\n", name, namespace)
 		return nil
 	}
 
@@ -85,7 +87,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 		// to status with this stale state.
 
 	} else if _, uErr := r.updateStatus(namespace, toReconcile); uErr != nil {
-		r.Logger.Warnw("Failed to update Source status", zap.Error(uErr))
+		logger.Warnw("Failed to update Source status", zap.Error(uErr))
 		return uErr
 	}
 
@@ -95,6 +97,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 // ApplyChanges updates the linked resources in the cluster with the current
 // status of the source.
 func (r *Reconciler) ApplyChanges(ctx context.Context, source *v1alpha1.Source) error {
+	logger := logging.FromContext(ctx)
 	source.Status.InitializeConditions()
 
 	// Sources only get run once regardless of success or failure status.
@@ -104,6 +107,8 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, source *v1alpha1.Source) 
 
 	// Sync build
 	{
+		logger.Debug("reconciling Build")
+
 		desired, err := resources.MakeBuild(source)
 		if err != nil {
 			return err

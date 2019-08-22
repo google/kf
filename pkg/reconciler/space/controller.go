@@ -31,12 +31,11 @@ import (
 
 	"knative.dev/pkg/configmap"
 	"knative.dev/pkg/controller"
-	"knative.dev/pkg/logging"
 )
 
 // NewController creates a new controller capable of reconciling Kf Spaces.
 func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl {
-	logger := reconciler.NewKfLogger(logging.FromContext(ctx), "spaces.kf.dev")
+	logger := reconciler.NewControllerLogger(ctx, "spaces.kf.dev")
 
 	// Get informers off context
 	nsInformer := namespaceinformer.Get(ctx)
@@ -47,7 +46,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 
 	// Create reconciler
 	c := &Reconciler{
-		Base:                reconciler.NewBase(ctx, "space-controller", cmw, logger),
+		Base:                reconciler.NewBase(ctx, cmw),
 		spaceLister:         spaceInformer.Lister(),
 		namespaceLister:     nsInformer.Lister(),
 		roleLister:          roleInformer.Lister(),
@@ -57,7 +56,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 
 	impl := controller.NewImpl(c, logger, "Spaces")
 
-	c.Logger.Info("Setting up event handlers")
+	logger.Info("Setting up event handlers")
 	// Watch for changes in sub-resources so we can sync accordingly
 	spaceInformer.Informer().AddEventHandler(controller.HandleAll(impl.Enqueue))
 

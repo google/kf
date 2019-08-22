@@ -44,6 +44,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/controller"
 	"knative.dev/pkg/kmp"
+	"knative.dev/pkg/logging"
 )
 
 var (
@@ -80,10 +81,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 }
 
 func (r *Reconciler) reconcileApp(ctx context.Context, namespace, name string) (err error) {
+	logger := logging.FromContext(ctx)
 	original, err := r.appLister.Apps(namespace).Get(name)
 	switch {
 	case apierrs.IsNotFound(err):
-		r.Logger.Errorf("app %q no longer exists\n", name)
+		logger.Errorf("app %q no longer exists\n", name)
 		return nil
 
 	case err != nil:
@@ -94,7 +96,7 @@ func (r *Reconciler) reconcileApp(ctx context.Context, namespace, name string) (
 	}
 
 	if r.IsNamespaceTerminating(namespace) {
-		r.Logger.Errorf("skipping sync for app %q, namespace %q is terminating\n", name, namespace)
+		logger.Errorf("skipping sync for app %q, namespace %q is terminating\n", name, namespace)
 		return nil
 	}
 
@@ -110,8 +112,8 @@ func (r *Reconciler) reconcileApp(ctx context.Context, namespace, name string) (
 		// cache may be stale and we don't want to overwrite a prior update
 		// to status with this stale state.
 
-	} else if _, uErr := r.updateStatus(toReconcile); uErr != nil {
-		r.Logger.Warnw("Failed to update App status", zap.Error(uErr))
+	} else if _, uErr := r.updateStatus(ctx, toReconcile); uErr != nil {
+		logger.Warnw("Failed to update App status", zap.Error(uErr))
 		return uErr
 	}
 
@@ -119,6 +121,7 @@ func (r *Reconciler) reconcileApp(ctx context.Context, namespace, name string) (
 }
 
 func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error {
+	logger := logging.FromContext(ctx)
 
 	app.Status.InitializeConditions()
 
@@ -135,7 +138,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 
 	// reconcile source
 	{
-		r.Logger.Info("reconciling Source")
+		logger.Debug("reconciling Source")
 		condition := app.Status.SourceCondition()
 		desired, err := resources.MakeSource(app, space)
 		if err != nil {
@@ -167,7 +170,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		app.Status.PropagateSourceStatus(actual)
 
 		if condition.IsPending() {
-			r.Logger.Info("Waiting for source; exiting early")
+			logger.Info("Waiting for source; exiting early")
 			return nil
 		}
 	}
@@ -180,7 +183,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		if err != nil {
 			return condition.MarkTemplateError(err)
 		}
-		r.Logger.Info("reconciling Service Bindings")
+		logger.Debug("reconciling Service Bindings")
 
 		// Delete Stale Service Bindings
 		existing, err := r.serviceBindingLister.
@@ -233,14 +236,14 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		}
 		app.Status.PropagateServiceBindingsStatus(actualServiceBindings)
 		if condition.IsPending() {
-			r.Logger.Info("Waiting for service bindings; exiting early")
+			logger.Info("Waiting for service bindings; exiting early")
 			return nil
 		}
 	}
 
 	// Reconcile VCAP env vars secret
 	{
-		r.Logger.Info("reconciling env vars secret")
+		logger.Debug("reconciling env vars secret")
 		condition := app.Status.EnvVarSecretCondition()
 		systemEnvInjector := cfutil.NewSystemEnvInjector(r.serviceCatalogClient, r.KubeClientSet)
 		desired, err := resources.MakeKfInjectedEnvSecret(app, space, actualServiceBindings, systemEnvInjector)
@@ -267,7 +270,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 
 	// reconcile serving
 	{
-		r.Logger.Info("reconciling Knative Serving")
+		logger.Debug("reconciling Knative Serving")
 		condition := app.Status.KnativeServiceCondition()
 		desired, err := resources.MakeKnativeService(app, space)
 		if err != nil {
@@ -323,7 +326,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 
 	// Route Reconciler
 	{
-		r.Logger.Info("reconciling Routes")
+		logger.Debug("reconciling Routes")
 
 		// Delete Stale Routes
 		existingRoutes, err := r.routeLister.
@@ -372,7 +375,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 
 	// RouteClaim reconciler
 	{
-		r.Logger.Info("reconciling Route Claims")
+		logger.Debug("reconciling Route Claims")
 
 		for _, desired := range desiredRouteClaims {
 			actual, err := r.routeClaimLister.
@@ -527,8 +530,9 @@ func (r *Reconciler) reconcileServiceBinding(desired, actual *servicecatalogv1be
 		Update(existing)
 }
 
-func (r *Reconciler) updateStatus(desired *v1alpha1.App) (*v1alpha1.App, error) {
-	r.Logger.Info("updating status")
+func (r *Reconciler) updateStatus(ctx context.Context, desired *v1alpha1.App) (*v1alpha1.App, error) {
+	logger := logging.FromContext(ctx)
+	logger.Info("updating status")
 	actual, err := r.appLister.Apps(desired.GetNamespace()).Get(desired.Name)
 	if err != nil {
 		return nil, err
@@ -552,11 +556,12 @@ func (r *Reconciler) updateStatus(desired *v1alpha1.App) (*v1alpha1.App, error) 
 // TODO: Reevaluate once https://github.com/knative/serving/issues/4183 is
 // resolved.
 func (r *Reconciler) gcRevisions(ctx context.Context, app *v1alpha1.App) error {
-	r.Logger.Debugf("Checking for revisions that need to adjust %s...", autoscaling.MinScaleAnnotationKey)
-	defer r.Logger.Debugf("Done checking for revisions that need to adjust %s.", autoscaling.MinScaleAnnotationKey)
+	logger := logging.FromContext(ctx)
+	logger.Debugf("Checking for revisions that need to adjust %s...", autoscaling.MinScaleAnnotationKey)
+	defer logger.Debugf("Done checking for revisions that need to adjust %s.", autoscaling.MinScaleAnnotationKey)
 
 	if app.Status.LatestCreatedRevisionName != app.Status.LatestReadyRevisionName {
-		r.Logger.Debugf("Not willing to garbage collection Revisions while the latest is not ready...")
+		logger.Debugf("Not willing to garbage collection Revisions while the latest is not ready...")
 		return nil
 	}
 
@@ -575,13 +580,13 @@ func (r *Reconciler) gcRevisions(ctx context.Context, app *v1alpha1.App) error {
 	parseGeneration := func(rev *serving.Revision) int64 {
 		v, ok := rev.Labels["serving.knative.dev/configurationGeneration"]
 		if !ok {
-			r.Logger.Warnf("Revision did not contain ConfigurationGeneration")
+			logger.Warnf("Revision did not contain ConfigurationGeneration")
 			return -1
 		}
 
 		x, err := strconv.ParseInt(v, 10, 64)
 		if err != nil {
-			r.Logger.Warnf("Revision had an invalid ConfigurationGeneration: %s", err)
+			logger.Warnf("Revision had an invalid ConfigurationGeneration: %s", err)
 			return -1
 		}
 		return x
@@ -594,7 +599,7 @@ func (r *Reconciler) gcRevisions(ctx context.Context, app *v1alpha1.App) error {
 
 	// delete everything after the latest generation
 	for _, rev := range revs[1:] {
-		r.Logger.Infof("Garbage collecting Revision %s...", rev.Name)
+		logger.Infof("Garbage collecting Revision %s...", rev.Name)
 		if err := revisionClient.Delete(rev.Name, &metav1.DeleteOptions{}); err != nil {
 			return err
 		}

@@ -35,6 +35,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/controller"
 	"knative.dev/pkg/kmp"
+	"knative.dev/pkg/logging"
 )
 
 // Reconciler reconciles a Space object with the K8s cluster.
@@ -54,6 +55,7 @@ var _ controller.Reconciler = (*Reconciler)(nil)
 
 // Reconcile is called by Kubernetes.
 func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
+	logger := logging.FromContext(ctx)
 	_, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		return err
@@ -62,7 +64,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 	original, err := r.spaceLister.Get(name)
 	switch {
 	case apierrs.IsNotFound(err):
-		r.Logger.Errorf("space %q no longer exists\n", name)
+		logger.Errorf("space %q no longer exists\n", name)
 		return nil
 
 	case err != nil:
@@ -85,7 +87,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 		// to status with this stale state.
 
 	} else if _, uErr := r.updateStatus(toReconcile); uErr != nil {
-		r.Logger.Warnw("Failed to update Space status", zap.Error(uErr))
+		logger.Warnw("Failed to update Space status", zap.Error(uErr))
 		return uErr
 	}
 
@@ -95,11 +97,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 // ApplyChanges updates the linked resources in the cluster with the current
 // status of the space.
 func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) error {
+	logger := logging.FromContext(ctx)
 	space.Status.InitializeConditions()
 	namespaceName := resources.NamespaceName(space)
 
 	// Sync Namespace
 	{
+		logger.Debug("reconciling Namespace")
 		desired, err := resources.MakeNamespace(space)
 		if err != nil {
 			return err
@@ -127,13 +131,14 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 	// then this reconciliation process can't continue until we get notified it is.
 	if cond := space.Status.GetCondition(v1alpha1.SpaceConditionNamespaceReady); cond != nil {
 		if !cond.IsTrue() {
-			r.Logger.Infof("can't continue reconciling until namespace %q is ready", namespaceName)
+			logger.Infof("can't continue reconciling until namespace %q is ready", namespaceName)
 			return nil
 		}
 	}
 
 	// Sync developer role
 	{
+		logger.Debug("reconciling develop Role")
 		desired, err := resources.MakeDeveloperRole(space)
 		if err != nil {
 			return err
@@ -159,6 +164,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 
 	// Sync auditor role
 	{
+		logger.Debug("reconciling auditor Role")
 		desired, err := resources.MakeAuditorRole(space)
 		if err != nil {
 			return err
@@ -184,6 +190,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 
 	// Sync resource quota
 	{
+		logger.Debug("reconciling ResourceQuota")
 		desired, err := resources.MakeResourceQuota(space)
 		if err != nil {
 			return err
@@ -209,6 +216,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 
 	// Sync limit range
 	{
+		logger.Debug("reconciling LimitRange")
 		desired, err := resources.MakeLimitRange(space)
 		if err != nil {
 			return err

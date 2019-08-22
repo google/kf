@@ -32,6 +32,7 @@ import (
 	"knative.dev/pkg/configmap"
 	"knative.dev/pkg/injection/clients/kubeclient"
 	namespaceinformer "knative.dev/pkg/injection/informers/kubeinformers/corev1/namespace"
+	"knative.dev/pkg/logging"
 	"knative.dev/pkg/logging/logkey"
 )
 
@@ -52,13 +53,6 @@ type Base struct {
 	// ConfigMapWatcher allows us to watch for ConfigMap changes.
 	ConfigMapWatcher configmap.Watcher
 
-	// Sugared logger is easier to use but is not as performant as the
-	// raw logger. In performance critical paths, call logger.Desugar()
-	// and use the returned raw logger instead. In addition to the
-	// performance benefits, raw logger also preserves type-safety at
-	// the expense of slightly greater verbosity.
-	Logger *zap.SugaredLogger
-
 	// NamespaceLister allows us to list Namespaces. We use this to check for
 	// terminating namespaces.
 	NamespaceLister v1listers.NamespaceLister
@@ -66,7 +60,7 @@ type Base struct {
 
 // NewBase instantiates a new instance of Base implementing
 // the common & boilerplate code between our reconcilers.
-func NewBase(ctx context.Context, controllerAgentName string, cmw configmap.Watcher, logger *zap.SugaredLogger) *Base {
+func NewBase(ctx context.Context, cmw configmap.Watcher) *Base {
 	kubeClient := kubeclient.Get(ctx)
 	nsInformer := namespaceinformer.Get(ctx)
 
@@ -76,7 +70,6 @@ func NewBase(ctx context.Context, controllerAgentName string, cmw configmap.Watc
 		KfClientSet:      kfclient.Get(ctx),
 		ServingClientSet: knativeclient.Get(ctx),
 		ConfigMapWatcher: cmw,
-		Logger:           logger,
 
 		NamespaceLister: nsInformer.Lister(),
 	}
@@ -84,8 +77,8 @@ func NewBase(ctx context.Context, controllerAgentName string, cmw configmap.Watc
 	return base
 }
 
-func NewKfLogger(logger *zap.SugaredLogger, resource string) *zap.SugaredLogger {
-	return logger.
+func NewControllerLogger(ctx context.Context, resource string) *zap.SugaredLogger {
+	return logging.FromContext(ctx).
 		Named(resource).
 		With(logkey.ControllerType, resource)
 }

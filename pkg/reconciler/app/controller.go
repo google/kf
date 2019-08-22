@@ -33,12 +33,11 @@ import (
 	"knative.dev/pkg/configmap"
 	"knative.dev/pkg/controller"
 	secretinformer "knative.dev/pkg/injection/informers/kubeinformers/corev1/secret"
-	"knative.dev/pkg/logging"
 )
 
 // NewController creates a new controller capable of reconciling Kf Routes.
 func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl {
-	logger := reconciler.NewKfLogger(logging.FromContext(ctx), "apps.kf.dev")
+	logger := reconciler.NewControllerLogger(ctx, "apps.kf.dev")
 
 	// Get informers off context
 	knativeServiceInformer := kserviceinformer.Get(ctx)
@@ -56,7 +55,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 
 	// Create reconciler
 	c := &Reconciler{
-		Base:                  reconciler.NewBase(ctx, "app-controller", cmw, logger),
+		Base:                  reconciler.NewBase(ctx, cmw),
 		serviceCatalogClient:  serviceCatalogClient,
 		knativeServiceLister:  knativeServiceInformer.Lister(),
 		knativeRevisionLister: knativeRevisionInformer.Lister(),
@@ -72,7 +71,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 
 	impl := controller.NewImpl(c, logger, "Apps")
 
-	c.Logger.Info("Setting up event handlers")
+	logger.Info("Setting up event handlers")
 
 	// Watch for changes in sub-resources so we can sync accordingly
 	appInformer.Informer().AddEventHandler(controller.HandleAll(impl.Enqueue))
