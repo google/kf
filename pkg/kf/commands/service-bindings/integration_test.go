@@ -100,25 +100,22 @@ func testIntegration_Doctor(t *testing.T) {
 
 func withServiceBroker(ctx context.Context, t *testing.T, kf *Kf, callback func(newCtx context.Context)) {
 	brokerAppName := fmt.Sprintf("integration-broker-app-%d", time.Now().UnixNano())
+	brokerPath := "./samples/apps/service-broker"
 	brokerName := "fake-broker"
 
-	// Push a mock service broker app and then clean it up.
-	kf.Push(ctx, brokerAppName,
-		"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/service-broker"),
-	)
+	withApp(ctx, t, kf, brokerAppName, brokerPath, true, func(ctx context.Context) {
+		// Register the mock service broker to service catalog, and then clean it up.
+		kf.CreateServiceBroker(ctx, brokerName, internalBrokerUrl(brokerAppName, SpaceFromContext(ctx)))
 
-	defer kf.Delete(ctx, brokerAppName)
+		// Temporary solution to allow service broker registration to complete.
+		// TODO: Add flag to run the command synchronously.
+		time.Sleep(2 * time.Second)
+		defer kf.DeleteServiceBroker(ctx, brokerName)
 
-	// Register the mock service broker to service catalog, and then clean it up.
-	kf.CreateServiceBroker(ctx, brokerName, internalBrokerUrl(brokerAppName, SpaceFromContext(ctx)))
+		ctx = ContextWithBroker(ctx, brokerName)
+		callback(ctx)
+	})
 
-	// Temporary solution to allow service broker registration to complete.
-	// TODO: Add flag to run the command synchronously.
-	time.Sleep(2 * time.Second)
-	defer kf.DeleteServiceBroker(ctx, brokerName)
-
-	ctx = ContextWithBroker(ctx, brokerName)
-	callback(ctx)
 }
 
 func withServiceInstance(ctx context.Context, kf *Kf, callback func(newCtx context.Context)) {
@@ -142,22 +139,37 @@ func withServiceInstance(ctx context.Context, kf *Kf, callback func(newCtx conte
 
 func withServiceBinding(ctx context.Context, t *testing.T, kf *Kf, callback func(newCtx context.Context)) {
 	appName := fmt.Sprintf("integration-binding-app-%d", time.Now().UnixNano())
-
+	appPath := "./samples/apps/envs"
 	// Push the envs app, which will have a binding to a service instance, and then clean it up.
 	kf.Push(ctx, appName,
 		"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/envs"),
 	)
 	defer kf.Delete(ctx, appName)
+	withApp(ctx, t, kf, appName, appPath, false, func(ctx context.Context) {
+		serviceInstanceName := ServiceInstanceFromContext(ctx)
+		kf.BindService(ctx, appName, serviceInstanceName)
 
-	serviceInstanceName := ServiceInstanceFromContext(ctx)
-	kf.BindService(ctx, appName, serviceInstanceName)
+		// Temporary solution to allow service binding to complete.
+		// TODO: Add flag to run the command synchronously.
+		time.Sleep(2 * time.Second)
+		defer kf.UnbindService(ctx, appName, serviceInstanceName)
 
-	// Temporary solution to allow service binding to complete.
-	// TODO: Add flag to run the command synchronously.
-	time.Sleep(2 * time.Second)
-	defer kf.UnbindService(ctx, appName, serviceInstanceName)
+		callback(ctx)
+	})
 
-	ctx = ContextWithApp(ctx, appName)
+}
+
+func withApp(ctx context.Context, t *testing.T, kf *Kf, appName string, path string, isBroker bool, callback func(newCtx context.Context)) {
+	// Push the app then clean it up.
+	kf.Push(ctx, appName,
+		"--path", filepath.Join(RootDir(ctx, t), path),
+	)
+	defer kf.Delete(ctx, appName)
+
+	if !isBroker {
+		ctx = ContextWithApp(ctx, appName)
+	}
+
 	callback(ctx)
 }
 
