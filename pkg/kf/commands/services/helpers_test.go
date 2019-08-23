@@ -74,7 +74,6 @@ func runTest(t *testing.T, tc serviceTest, newCommand commandFactory) {
 	_, actualErr := cmd.ExecuteC()
 	if tc.ExpectedErr != nil || actualErr != nil {
 		testutil.AssertErrorsEqual(t, tc.ExpectedErr, actualErr)
-		return
 	}
 
 	testutil.AssertContainsAll(t, buf.String(), tc.ExpectedStrings)
