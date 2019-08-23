@@ -63,12 +63,10 @@ func NewListServicesCommand(
 				fmt.Fprintln(w, "Name\tService\tPlan\tBound Apps\tLast Operation\tBroker")
 				for _, instance := range instances.Items {
 					lastCond := services.LastStatusCondition(instance)
-					var brokerName string
-					brokerName, err = client.BrokerName(instance)
+					var brokerInfo string
+					brokerInfo, err = client.BrokerName(instance)
 					if err != nil {
-						// The error is captured via closure and returned
-						// outside the TabWriter func.
-						return
+						brokerInfo = fmt.Sprintf("error finding broker: %s", err)
 					}
 
 					fmt.Fprintf(
@@ -79,7 +77,7 @@ func NewListServicesCommand(
 						instance.Spec.ClusterServicePlanExternalName,  // Plan
 						strings.Join(ma[instance.Name], ", "),         // Bound Apps
 						lastCond.Reason,                               // Last Operation
-						brokerName,                                    // Broker
+						brokerInfo,                                    // Broker
 					)
 				}
 			})
