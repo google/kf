@@ -94,9 +94,13 @@ func TestNewServicesCommand(t *testing.T) {
 						*dummyServerInstance("service-2"),
 					}}
 					f.EXPECT().ListServices(gomock.Any()).Return(serviceList, nil)
-					f.EXPECT().BrokerName(gomock.Any()).Return("", errors.New("some-error"))
+					f.EXPECT().BrokerName(gomock.Any()).Return("", errors.New("some-error")).Times(2)
 				},
 				ExpectedErr: errors.New("some-error"),
+				ExpectedStrings: []string{
+					"service-1", "service-2", // service instances still displayed with error msg
+					"some-error",
+				},
 			},
 		},
 		"full result": {
