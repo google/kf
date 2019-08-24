@@ -15,10 +15,8 @@
 package resources
 
 import (
-	"hash/crc64"
 	"path"
 	"regexp"
-	"strconv"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/knative/serving/pkg/resources"
@@ -40,7 +38,7 @@ func MakeRouteLabels(spec v1alpha1.RouteSpecFields) map[string]string {
 		v1alpha1.ComponentLabel: "route",
 		v1alpha1.RouteHostname:  spec.Hostname,
 		v1alpha1.RouteDomain:    spec.Domain,
-		v1alpha1.RoutePath:      toBase36(path.Join("/", spec.Path)),
+		v1alpha1.RoutePath:      v1alpha1.ToBase36(path.Join("/", spec.Path)),
 	}
 }
 
@@ -50,15 +48,6 @@ func MakeRouteAppLabels(app *v1alpha1.App) map[string]string {
 	return map[string]string{
 		v1alpha1.RouteAppName: app.Name,
 	}
-}
-
-func toBase36(s string) string {
-	return strconv.FormatUint(
-		crc64.Checksum(
-			[]byte(s),
-			crc64.MakeTable(crc64.ECMA),
-		),
-		36)
 }
 
 func mustRequirement(key string, op selection.Operator, val string) labels.Requirement {
@@ -73,6 +62,7 @@ func mustRequirement(key string, op selection.Operator, val string) labels.Requi
 // corresponding Routes excluding Path.
 func MakeRouteSelectorNoPath(spec v1alpha1.RouteSpecFields) labels.Selector {
 	return labels.NewSelector().Add(
+		mustRequirement(v1alpha1.ManagedByLabel, selection.Equals, "kf"),
 		mustRequirement(v1alpha1.RouteHostname, selection.Equals, spec.Hostname),
 		mustRequirement(v1alpha1.RouteDomain, selection.Equals, spec.Domain),
 	)
@@ -84,7 +74,7 @@ func MakeRouteSelector(spec v1alpha1.RouteSpecFields) labels.Selector {
 	return labels.NewSelector().Add(
 		mustRequirement(v1alpha1.RouteHostname, selection.Equals, spec.Hostname),
 		mustRequirement(v1alpha1.RouteDomain, selection.Equals, spec.Domain),
-		mustRequirement(v1alpha1.RoutePath, selection.Equals, toBase36(path.Join("/", spec.Path))),
+		mustRequirement(v1alpha1.RoutePath, selection.Equals, v1alpha1.ToBase36(path.Join("/", spec.Path))),
 	)
 }
 
@@ -92,6 +82,7 @@ func MakeRouteSelector(spec v1alpha1.RouteSpecFields) labels.Selector {
 // for the given App.
 func MakeRouteAppSelector(app *v1alpha1.App) labels.Selector {
 	return labels.NewSelector().Add(
+		mustRequirement(v1alpha1.ManagedByLabel, selection.Equals, "kf"),
 		mustRequirement(v1alpha1.RouteAppName, selection.Equals, app.Name),
 	)
 }

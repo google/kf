@@ -32,6 +32,7 @@ import (
 )
 
 func TestRouteValidation(t *testing.T) {
+	t.Parallel()
 	goodObjMeta := metav1.ObjectMeta{
 		Name:      "valid",
 		Namespace: "valid",
@@ -94,7 +95,7 @@ func TestRouteValidation(t *testing.T) {
 					},
 				},
 			},
-			want: apis.ErrMissingField("spec.domain"),
+			want: apis.ErrMissingField("spec.routeSpecFields.domain"),
 		},
 		"invalid hostname": {
 			route: &Route{
@@ -109,7 +110,24 @@ func TestRouteValidation(t *testing.T) {
 			},
 			want: &apis.FieldError{
 				Message: "invalid value: hostname",
-				Paths:   []string{"spec.www"},
+				Paths:   []string{"spec.routeSpecFields.www"},
+			},
+		},
+		"invalid path": {
+			route: &Route{
+				ObjectMeta: goodObjMeta,
+				Spec: RouteSpec{
+					AppName: "some-app",
+					RouteSpecFields: RouteSpecFields{
+						Hostname: "some-hostname",
+						Domain:   "domain.com",
+						Path:     "}invalid{",
+					},
+				},
+			},
+			want: &apis.FieldError{
+				Message: "invalid value: path",
+				Paths:   []string{"spec.routeSpecFields.}invalid{"},
 			},
 		},
 		"fetching VirtualServices returns an error": {
@@ -154,6 +172,180 @@ func TestRouteValidation(t *testing.T) {
 				})
 			},
 			route: &Route{
+				ObjectMeta: goodObjMeta,
+				Spec:       goodRouteSpec,
+			},
+			want: &apis.FieldError{
+				Message: "Immutable field changed",
+				Paths:   []string{"namespace"},
+				Details: fmt.Sprintf("The route is invalid: Routes for this host and domain have been reserved for another space."),
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			f := &fake.FakeNetworkingV1alpha3{
+				Fake: &ktesting.Fake{},
+			}
+
+			if tc.setup == nil {
+				tc.setup = func(t *testing.T, fake *fake.FakeNetworkingV1alpha3) {
+					fake.AddReactor("get", "virtualservices", func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
+						testutil.AssertEqual(t, "namespace", KfNamespace, action.GetNamespace())
+						return true, &v1alpha3.VirtualService{
+							ObjectMeta: metav1.ObjectMeta{
+								Annotations: map[string]string{
+									"space": "valid",
+								},
+							},
+						}, nil
+					})
+				}
+			}
+
+			ctx := context.Background()
+			if tc.setupContext == nil {
+				tc.setupContext = func(ctx context.Context) context.Context {
+					return SetupIstioClient(ctx, f)
+				}
+			}
+
+			tc.setup(t, f)
+			ctx = tc.setupContext(ctx)
+
+			got := tc.route.Validate(ctx)
+
+			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())
+		})
+	}
+}
+
+func TestRouteClaimValidation(t *testing.T) {
+	t.Parallel()
+	goodObjMeta := metav1.ObjectMeta{
+		Name:      "valid",
+		Namespace: "valid",
+	}
+	goodRouteSpec := RouteClaimSpec{
+		RouteSpecFields: RouteSpecFields{
+			Domain: "example.com",
+		},
+	}
+
+	cases := map[string]struct {
+		route        *RouteClaim
+		want         *apis.FieldError
+		setup        func(t *testing.T, fake *fake.FakeNetworkingV1alpha3)
+		setupContext func(ctx context.Context) context.Context
+	}{
+		"good": {
+			route: &RouteClaim{
+				ObjectMeta: goodObjMeta,
+				Spec:       goodRouteSpec,
+			},
+		},
+		"don't check spec if update is status update": {
+			setupContext: func(ctx context.Context) context.Context {
+				return apis.WithinSubResourceUpdate(ctx, nil, "status")
+			},
+			route: &RouteClaim{
+				ObjectMeta: metav1.ObjectMeta{Name: "", Namespace: ""},
+				Spec:       goodRouteSpec,
+			},
+			want: nil,
+		},
+		"missing name": {
+			route: &RouteClaim{
+				ObjectMeta: metav1.ObjectMeta{Name: "", Namespace: "valid"},
+				Spec:       goodRouteSpec,
+			},
+			want: apis.ErrMissingField("name"),
+		},
+		"missing domain": {
+			route: &RouteClaim{
+				ObjectMeta: goodObjMeta,
+				Spec: RouteClaimSpec{
+					RouteSpecFields: RouteSpecFields{
+						Domain: "",
+					},
+				},
+			},
+			want: apis.ErrMissingField("spec.routeSpecFields.domain"),
+		},
+		"invalid hostname": {
+			route: &RouteClaim{
+				ObjectMeta: goodObjMeta,
+				Spec: RouteClaimSpec{
+					RouteSpecFields: RouteSpecFields{
+						Hostname: "www",
+						Domain:   "domain.com",
+					},
+				},
+			},
+			want: &apis.FieldError{
+				Message: "invalid value: hostname",
+				Paths:   []string{"spec.routeSpecFields.www"},
+			},
+		},
+		"invalid path": {
+			route: &RouteClaim{
+				ObjectMeta: goodObjMeta,
+				Spec: RouteClaimSpec{
+					RouteSpecFields: RouteSpecFields{
+						Hostname: "some-hostname",
+						Domain:   "domain.com",
+						Path:     "}invalid{",
+					},
+				},
+			},
+			want: &apis.FieldError{
+				Message: "invalid value: path",
+				Paths:   []string{"spec.routeSpecFields.}invalid{"},
+			},
+		},
+		"fetching VirtualServices returns an error": {
+			setup: func(t *testing.T, fake *fake.FakeNetworkingV1alpha3) {
+				fake.AddReactor("get", "virtualservices", func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
+					testutil.AssertEqual(t, "namespace", KfNamespace, action.GetNamespace())
+					return true, nil, errors.New("some-error")
+				})
+			},
+			route: &RouteClaim{
+				ObjectMeta: goodObjMeta,
+				Spec:       goodRouteSpec,
+			},
+			want: &apis.FieldError{
+				Message: "failed to validate hostname + domain collisions",
+				Details: "failed to fetch VirtualServices: some-error",
+			},
+		},
+		"fetching VirtualServices returns a not found error": {
+			setup: func(t *testing.T, fake *fake.FakeNetworkingV1alpha3) {
+				fake.AddReactor("get", "virtualservices", func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
+					testutil.AssertEqual(t, "namespace", KfNamespace, action.GetNamespace())
+					return true, nil, apierrs.NewNotFound(schema.GroupResource{}, "some-name")
+				})
+			},
+			route: &RouteClaim{
+				ObjectMeta: goodObjMeta,
+				Spec:       goodRouteSpec,
+			},
+		},
+		"existing VirtualService has different space annotation": {
+			setup: func(t *testing.T, fake *fake.FakeNetworkingV1alpha3) {
+				fake.AddReactor("get", "virtualservices", func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
+					testutil.AssertEqual(t, "namespace", KfNamespace, action.GetNamespace())
+					return true, &v1alpha3.VirtualService{
+						ObjectMeta: metav1.ObjectMeta{
+							Annotations: map[string]string{
+								"space": "some-other-space",
+							},
+						},
+					}, nil
+				})
+			},
+			route: &RouteClaim{
 				ObjectMeta: goodObjMeta,
 				Spec:       goodRouteSpec,
 			},

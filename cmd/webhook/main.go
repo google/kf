@@ -117,9 +117,10 @@ func main() {
 		Client:  kubeClient,
 		Options: options,
 		Handlers: map[schema.GroupVersionKind]webhook.GenericCRD{
-			v1alpha1.SchemeGroupVersion.WithKind("Space"): &v1alpha1.Space{},
-			v1alpha1.SchemeGroupVersion.WithKind("App"):   &v1alpha1.App{},
-			v1alpha1.SchemeGroupVersion.WithKind("Route"): &v1alpha1.Route{},
+			v1alpha1.SchemeGroupVersion.WithKind("Space"):      &v1alpha1.Space{},
+			v1alpha1.SchemeGroupVersion.WithKind("App"):        &v1alpha1.App{},
+			v1alpha1.SchemeGroupVersion.WithKind("Route"):      &v1alpha1.Route{},
+			v1alpha1.SchemeGroupVersion.WithKind("RouteClaim"): &v1alpha1.RouteClaim{},
 		},
 		Logger:                logger,
 		DisallowUnknownFields: true,
