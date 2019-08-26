@@ -5,11 +5,11 @@ url: /docs/general-info/kf-cli/commands/kf-delete-service-broker/
 ---
 ## kf delete-service-broker
 
-Remove a namespaced service broker from service catalog
+Remove a cluster service broker from service catalog
 
 ### Synopsis
 
-Remove a namespaced service broker from service catalog
+Remove a cluster service broker from service catalog
 
 ```
 kf delete-service-broker BROKER_NAME [flags]
