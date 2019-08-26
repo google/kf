@@ -134,58 +134,53 @@ func (status *AppStatus) PropagateEnvVarSecretStatus(secret *v1.Secret) {
 // PropagateServiceBindingsStatus updates the service binding readiness status.
 func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalogv1beta1.ServiceBinding) {
 
+	// Gather binding names
 	var bindingNames []string
 	for _, binding := range bindings {
 		bindingNames = append(bindingNames, binding.Name)
 	}
 	status.ServiceBindingNames = bindingNames
 
-	var conditions duckv1beta1.Conditions
-
-	markTrue := true
+	// Gather binding conditions
+	duckStatus := &duckv1beta1.Status{}
+	manager := apis.NewLivingConditionSet(apis.ConditionReady).Manage(duckStatus)
 	for _, binding := range bindings {
+		conditionType := apis.ConditionType(fmt.Sprintf("Ready-%s", binding.Labels[ComponentLabel]))
+
 		if binding.Generation != binding.Status.ReconciledGeneration {
-			condition := apis.Condition{}
-			condition.Status = v1.ConditionStatus(v1.ConditionUnknown)
-			condition.Type = apis.ConditionType(fmt.Sprintf("ServiceBindingReady-%s", binding.Labels[ComponentLabel]))
-			condition.Reason = "Generation mismatch"
-			conditions = append(conditions, condition)
+			manager.SetCondition(
+				apis.Condition{
+					Type:   conditionType,
+					Status: v1.ConditionUnknown,
+					Reason: "generation mismatch",
+				},
+			)
 
-			markTrue = false
-			status.manage().MarkUnknown(AppConditionServiceBindingsReady, "service binding %s is not ready", binding.Name)
-		} else {
+			// this binding's conditions are out of date.
+			continue
+		}
 
-			for _, cond := range binding.Status.Conditions {
-				if cond.Type != servicecatalogv1beta1.ServiceBindingConditionReady {
-					continue
-				}
-				condition := apis.Condition{}
-				condition.Status = v1.ConditionStatus(cond.Status)
-				condition.Type = apis.ConditionType(fmt.Sprintf("ServiceBindingReady-%s", binding.Labels[ComponentLabel]))
-				condition.Reason = cond.Reason
-
-				switch cond.Status {
-				case servicecatalogv1beta1.ConditionFalse:
-					markTrue = false
-					status.manage().MarkFalse(AppConditionServiceBindingsReady, "service binding %s failed: %v", binding.Name, cond.Reason)
-				case servicecatalogv1beta1.ConditionUnknown:
-					markTrue = false
-					status.manage().MarkUnknown(AppConditionServiceBindingsReady, "service binding %s is not ready", binding.Name)
-				case servicecatalogv1beta1.ConditionTrue:
-					// continue the loop on True case
-				default:
-					markTrue = false
-					status.manage().MarkFalse(AppConditionServiceBindingsReady, "service binding %s condition %s had unknown status", binding.Name, cond.Type, cond.Status)
-				}
-				conditions = append(conditions, condition)
-			}
+		for _, cond := range binding.Status.Conditions {
+			manager.SetCondition(
+				apis.Condition{
+					Status: v1.ConditionStatus(cond.Status),
+					Type:   conditionType,
+					Reason: cond.Reason,
+				},
+			)
 		}
 	}
 
-	status.ServiceBindingConditions = conditions
-
-	if markTrue {
+	// Copy Ready condition
+	status.ServiceBindingConditions = duckStatus.Conditions
+	readyCondition := manager.GetCondition(apis.ConditionReady)
+	switch readyCondition.Status {
+	case v1.ConditionTrue:
 		status.manage().MarkTrue(AppConditionServiceBindingsReady)
+	case v1.ConditionFalse:
+		status.manage().MarkFalse(AppConditionServiceBindingsReady, readyCondition.Reason, readyCondition.Message)
+	case v1.ConditionUnknown:
+		status.manage().MarkUnknown(AppConditionServiceBindingsReady, readyCondition.Reason, readyCondition.Message)
 	}
 }
 
