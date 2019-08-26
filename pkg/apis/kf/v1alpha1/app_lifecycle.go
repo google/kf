@@ -144,6 +144,7 @@ func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalo
 	// Gather binding conditions
 	duckStatus := &duckv1beta1.Status{}
 	manager := apis.NewLivingConditionSet(apis.ConditionReady).Manage(duckStatus)
+	manager.InitializeConditions()
 	for _, binding := range bindings {
 		conditionType := apis.ConditionType(fmt.Sprintf("Ready-%s", binding.Labels[ComponentLabel]))
 
