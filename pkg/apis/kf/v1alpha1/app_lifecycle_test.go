@@ -15,10 +15,12 @@
 package v1alpha1
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/google/kf/pkg/kf/testutil"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
@@ -379,6 +381,48 @@ func TestAppStatus_lifecycle(t *testing.T) {
 			for _, exp := range tc.ExpectSucceeded {
 				apitesting.CheckConditionSucceeded(status.duck(), exp, t)
 			}
+		})
+	}
+}
+
+func TestServiceBindingConditionType(t *testing.T) {
+	cases := map[string]struct {
+		binding     *servicecatalogv1beta1.ServiceBinding
+		expected    apis.ConditionType
+		expectedErr error
+	}{
+		"nil": {
+			expectedErr: errors.New("binding cannot be nil"),
+		},
+		"missing label": {
+			binding: &servicecatalogv1beta1.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-binding",
+					Labels: map[string]string{
+						"wow": "cool",
+					},
+				},
+			},
+			expectedErr: errors.New("binding my-binding is missing the label app.kubernetes.io/component"),
+		},
+		"correct": {
+			binding: &servicecatalogv1beta1.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-binding",
+					Labels: map[string]string{
+						"app.kubernetes.io/component": "my-service-instance",
+					},
+				},
+			},
+			expected: apis.ConditionType("Ready-my-service-instance"),
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			actual, err := ServiceBindingConditionType(tc.binding)
+			testutil.AssertEqual(t, "err", tc.expectedErr, err)
+			testutil.AssertEqual(t, "conditionType", tc.expected, actual)
 		})
 	}
 }

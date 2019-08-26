@@ -15,6 +15,7 @@
 package v1alpha1
 
 import (
+	"errors"
 	"fmt"
 
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
@@ -131,12 +132,21 @@ func (status *AppStatus) PropagateEnvVarSecretStatus(secret *v1.Secret) {
 	status.manage().MarkTrue(AppConditionEnvVarSecretReady)
 }
 
-func ServiceBindingConditionType(binding servicecatalogv1beta1.ServiceBinding) apis.ConditionType {
-	return apis.ConditionType(fmt.Sprintf("Ready-%s", binding.Labels[ComponentLabel]))
+func ServiceBindingConditionType(binding *servicecatalogv1beta1.ServiceBinding) (apis.ConditionType, error) {
+	if binding == nil {
+		return "", errors.New("binding cannot be nil")
+	}
+
+	serviceInstance, ok := binding.Labels[ComponentLabel]
+	if !ok {
+		return "", fmt.Errorf("binding %s is missing the label %s", binding.Name, ComponentLabel)
+	}
+
+	return apis.ConditionType(fmt.Sprintf("Ready-%s", serviceInstance)), nil
 }
 
 // PropagateServiceBindingsStatus updates the service binding readiness status.
-func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalogv1beta1.ServiceBinding) {
+func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalogv1beta1.ServiceBinding) error {
 
 	// Gather binding names
 	var bindingNames []string
@@ -148,7 +158,12 @@ func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalo
 	// Gather binding conditions
 	var conditionTypes []apis.ConditionType
 	for _, binding := range bindings {
-		conditionTypes = append(conditionTypes, ServiceBindingConditionType(binding))
+		conditionType, err := ServiceBindingConditionType(&binding)
+		if err != nil {
+			return err
+		}
+
+		conditionTypes = append(conditionTypes, conditionType)
 	}
 
 	duckStatus := &duckv1beta1.Status{}
@@ -167,7 +182,10 @@ func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalo
 				continue
 			}
 
-			conditionType := ServiceBindingConditionType(binding)
+			conditionType, err := ServiceBindingConditionType(&binding)
+			if err != nil {
+				return err
+			}
 			switch v1.ConditionStatus(cond.Status) {
 			case v1.ConditionTrue:
 				manager.MarkTrue(conditionType)
@@ -190,6 +208,8 @@ func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalo
 	case v1.ConditionUnknown:
 		status.manage().MarkUnknown(AppConditionServiceBindingsReady, readyCondition.Reason, readyCondition.Message)
 	}
+
+	return nil
 }
 
 // MarkSpaceHealthy notes that the space was able to be retrieved and
