@@ -240,9 +240,47 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			actualServiceBindings = append(actualServiceBindings, *actual)
 		}
 		app.Status.PropagateServiceBindingsStatus(actualServiceBindings)
+
 		if condition.IsPending() {
 			logger.Info("Waiting for service bindings; exiting early")
 			return nil
+		}
+
+		{
+			// Initial service bindings might not have the secretName set.
+			// This ensures the secrets are real before continuing.
+			var serviceBindings []servicecatalogv1beta1.ServiceBinding
+			for _, binding := range actualServiceBindings {
+
+				toAdd := &binding
+
+				secretName := binding.Spec.SecretName
+				if secretName == "" {
+					b, err := r.serviceCatalogClient.
+						ServicecatalogV1beta1().
+						ServiceBindings(app.Namespace).
+						Get(binding.Name, metav1.GetOptions{})
+					toAdd = b
+
+					if err != nil {
+						return condition.MarkReconciliationError("service binding missing", err)
+					} else if b.Spec.SecretName == "" {
+						logger.Infof("Waiting for service binding %s to create a secret", binding.Name)
+						return nil
+					}
+				}
+
+				_, err := r.KubeClientSet.CoreV1().Secrets(app.Namespace).Get(secretName, metav1.GetOptions{})
+				if apierrs.IsNotFound(err) {
+					logger.Infof("Waiting for secret %s to exist", secretName)
+					return nil
+				} else if err != nil {
+					return condition.MarkReconciliationError(fmt.Sprintf("getting secret %s", secretName), err)
+				}
+
+				serviceBindings = append(serviceBindings, *toAdd)
+			}
+			actualServiceBindings = serviceBindings
 		}
 	}
 
