@@ -144,29 +144,41 @@ func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalo
 
 	markTrue := true
 	for _, binding := range bindings {
-		for _, cond := range binding.Status.Conditions {
-			if cond.Type != servicecatalogv1beta1.ServiceBindingConditionReady {
-				continue
-			}
+		if binding.Generation != binding.Status.ReconciledGeneration {
 			condition := apis.Condition{}
-			condition.Status = v1.ConditionStatus(cond.Status)
+			condition.Status = v1.ConditionStatus(v1.ConditionUnknown)
 			condition.Type = apis.ConditionType(fmt.Sprintf("ServiceBindingReady-%s", binding.Labels[ComponentLabel]))
-			condition.Reason = cond.Reason
-
-			switch cond.Status {
-			case servicecatalogv1beta1.ConditionFalse:
-				markTrue = false
-				status.manage().MarkFalse(AppConditionServiceBindingsReady, "service binding %s failed: %v", binding.Name, cond.Reason)
-			case servicecatalogv1beta1.ConditionUnknown:
-				markTrue = false
-				status.manage().MarkUnknown(AppConditionServiceBindingsReady, "service binding %s is not ready", binding.Name)
-			case servicecatalogv1beta1.ConditionTrue:
-				// continue the loop on True case
-			default:
-				markTrue = false
-				status.manage().MarkFalse(AppConditionServiceBindingsReady, "service binding %s condition %s had unknown status", binding.Name, cond.Type, cond.Status)
-			}
+			condition.Reason = "Generation mismatch"
 			conditions = append(conditions, condition)
+
+			markTrue = false
+			status.manage().MarkUnknown(AppConditionServiceBindingsReady, "service binding %s is not ready", binding.Name)
+		} else {
+
+			for _, cond := range binding.Status.Conditions {
+				if cond.Type != servicecatalogv1beta1.ServiceBindingConditionReady {
+					continue
+				}
+				condition := apis.Condition{}
+				condition.Status = v1.ConditionStatus(cond.Status)
+				condition.Type = apis.ConditionType(fmt.Sprintf("ServiceBindingReady-%s", binding.Labels[ComponentLabel]))
+				condition.Reason = cond.Reason
+
+				switch cond.Status {
+				case servicecatalogv1beta1.ConditionFalse:
+					markTrue = false
+					status.manage().MarkFalse(AppConditionServiceBindingsReady, "service binding %s failed: %v", binding.Name, cond.Reason)
+				case servicecatalogv1beta1.ConditionUnknown:
+					markTrue = false
+					status.manage().MarkUnknown(AppConditionServiceBindingsReady, "service binding %s is not ready", binding.Name)
+				case servicecatalogv1beta1.ConditionTrue:
+					// continue the loop on True case
+				default:
+					markTrue = false
+					status.manage().MarkFalse(AppConditionServiceBindingsReady, "service binding %s condition %s had unknown status", binding.Name, cond.Type, cond.Status)
+				}
+				conditions = append(conditions, condition)
+			}
 		}
 	}
 
