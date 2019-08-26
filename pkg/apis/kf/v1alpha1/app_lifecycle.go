@@ -159,7 +159,7 @@ func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalo
 		}
 
 		for _, cond := range binding.Status.Conditions {
-			if cond.Type != "Ready" {
+			if cond.Type != servicecatalogv1beta1.ServiceBindingConditionReady {
 				continue
 			}
 
