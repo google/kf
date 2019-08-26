@@ -90,7 +90,7 @@ func (r *Reconciler) reconcileApp(ctx context.Context, namespace, name string) (
 	original, err := r.appLister.Apps(namespace).Get(name)
 	switch {
 	case apierrs.IsNotFound(err):
-		logger.Debugf("app %q no longer exists\n", name)
+		logger.Errorf("app %q no longer exists\n", name)
 		return nil
 
 	case err != nil:
