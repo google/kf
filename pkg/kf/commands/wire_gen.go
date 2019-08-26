@@ -19,6 +19,7 @@ import (
 	"github.com/google/kf/pkg/kf/commands/quotas"
 	routes2 "github.com/google/kf/pkg/kf/commands/routes"
 	servicebindings2 "github.com/google/kf/pkg/kf/commands/service-bindings"
+	"github.com/google/kf/pkg/kf/commands/service-brokers"
 	services2 "github.com/google/kf/pkg/kf/commands/services"
 	spaces2 "github.com/google/kf/pkg/kf/commands/spaces"
 	"github.com/google/kf/pkg/kf/istio"
@@ -282,6 +283,18 @@ func InjectUnbindService(p *config.KfParams) *cobra.Command {
 func InjectVcapServices(p *config.KfParams) *cobra.Command {
 	kubernetesInterface := config.GetKubernetes(p)
 	command := servicebindings2.NewVcapServicesCommand(p, kubernetesInterface)
+	return command
+}
+
+func InjectCreateServiceBroker(p *config.KfParams) *cobra.Command {
+	versionedInterface := config.GetServiceCatalogClient(p)
+	command := servicebrokers.NewCreateServiceBrokerCommand(p, versionedInterface)
+	return command
+}
+
+func InjectDeleteServiceBroker(p *config.KfParams) *cobra.Command {
+	versionedInterface := config.GetServiceCatalogClient(p)
+	command := servicebrokers.NewDeleteServiceBrokerCommand(p, versionedInterface)
 	return command
 }
 

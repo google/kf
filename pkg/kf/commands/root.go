@@ -143,6 +143,13 @@ func NewKfCommand() *cobra.Command {
 			},
 		},
 		{
+			Name: "Service Brokers",
+			Commands: []*cobra.Command{
+				InjectCreateServiceBroker(p),
+				InjectDeleteServiceBroker(p),
+			},
+		},
+		{
 			Name: "Spaces",
 			Commands: []*cobra.Command{
 				InjectSpaces(p),

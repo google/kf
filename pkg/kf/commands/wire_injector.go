@@ -30,6 +30,7 @@ import (
 	cquotas "github.com/google/kf/pkg/kf/commands/quotas"
 	croutes "github.com/google/kf/pkg/kf/commands/routes"
 	servicebindingscmd "github.com/google/kf/pkg/kf/commands/service-bindings"
+	servicebrokerscmd "github.com/google/kf/pkg/kf/commands/service-brokers"
 	servicescmd "github.com/google/kf/pkg/kf/commands/services"
 	cspaces "github.com/google/kf/pkg/kf/commands/spaces"
 	"github.com/google/kf/pkg/kf/istio"
@@ -255,6 +256,25 @@ func InjectVcapServices(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		servicebindingscmd.NewVcapServicesCommand,
 		config.GetKubernetes,
+	)
+	return nil
+}
+
+///////////////////////
+// Service Brokers  //
+/////////////////////
+func InjectCreateServiceBroker(p *config.KfParams) *cobra.Command {
+	wire.Build(
+		servicebrokerscmd.NewCreateServiceBrokerCommand,
+		config.GetServiceCatalogClient,
+	)
+	return nil
+}
+
+func InjectDeleteServiceBroker(p *config.KfParams) *cobra.Command {
+	wire.Build(
+		servicebrokerscmd.NewDeleteServiceBrokerCommand,
+		config.GetServiceCatalogClient,
 	)
 	return nil
 }
