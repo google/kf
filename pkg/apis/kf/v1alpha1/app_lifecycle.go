@@ -142,33 +142,36 @@ func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalo
 	status.ServiceBindingNames = bindingNames
 
 	// Gather binding conditions
-	duckStatus := &duckv1beta1.Status{}
-	manager := apis.NewLivingConditionSet(apis.ConditionReady).Manage(duckStatus)
-	manager.InitializeConditions()
+	var conditionTypes []apis.ConditionType
 	for _, binding := range bindings {
-		conditionType := apis.ConditionType(fmt.Sprintf("Ready-%s", binding.Labels[ComponentLabel]))
+		conditionTypes = append(conditionTypes, apis.ConditionType(fmt.Sprintf("Ready-%s", binding.Labels[ComponentLabel])))
+	}
 
+	duckStatus := &duckv1beta1.Status{}
+	manager := apis.NewLivingConditionSet(conditionTypes...).Manage(duckStatus)
+	manager.InitializeConditions()
+
+	for _, binding := range bindings {
 		if binding.Generation != binding.Status.ReconciledGeneration {
-			manager.SetCondition(
-				apis.Condition{
-					Type:   conditionType,
-					Status: v1.ConditionUnknown,
-					Reason: "generation mismatch",
-				},
-			)
 
 			// this binding's conditions are out of date.
 			continue
 		}
 
 		for _, cond := range binding.Status.Conditions {
-			manager.SetCondition(
-				apis.Condition{
-					Status: v1.ConditionStatus(cond.Status),
-					Type:   conditionType,
-					Reason: cond.Reason,
-				},
-			)
+			if cond.Type != "Ready" {
+				continue
+			}
+
+			conditionType := apis.ConditionType(fmt.Sprintf("Ready-%s", binding.Labels[ComponentLabel]))
+			switch v1.ConditionStatus(cond.Status) {
+			case v1.ConditionTrue:
+				manager.MarkTrue(conditionType)
+			case v1.ConditionFalse:
+				manager.MarkFalse(conditionType, cond.Reason, cond.Message)
+			case v1.ConditionUnknown:
+				manager.MarkUnknown(conditionType, cond.Reason, cond.Message)
+			}
 		}
 	}
 
