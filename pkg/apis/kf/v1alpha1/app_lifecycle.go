@@ -131,6 +131,10 @@ func (status *AppStatus) PropagateEnvVarSecretStatus(secret *v1.Secret) {
 	status.manage().MarkTrue(AppConditionEnvVarSecretReady)
 }
 
+func ServiceBindingConditionType(binding servicecatalogv1beta1.ServiceBinding) apis.ConditionType {
+	return apis.ConditionType(fmt.Sprintf("Ready-%s", binding.Labels[ComponentLabel]))
+}
+
 // PropagateServiceBindingsStatus updates the service binding readiness status.
 func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalogv1beta1.ServiceBinding) {
 
@@ -144,7 +148,7 @@ func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalo
 	// Gather binding conditions
 	var conditionTypes []apis.ConditionType
 	for _, binding := range bindings {
-		conditionTypes = append(conditionTypes, apis.ConditionType(fmt.Sprintf("Ready-%s", binding.Labels[ComponentLabel])))
+		conditionTypes = append(conditionTypes, ServiceBindingConditionType(binding))
 	}
 
 	duckStatus := &duckv1beta1.Status{}
@@ -163,7 +167,7 @@ func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalo
 				continue
 			}
 
-			conditionType := apis.ConditionType(fmt.Sprintf("Ready-%s", binding.Labels[ComponentLabel]))
+			conditionType := ServiceBindingConditionType(binding)
 			switch v1.ConditionStatus(cond.Status) {
 			case v1.ConditionTrue:
 				manager.MarkTrue(conditionType)
