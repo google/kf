@@ -62,12 +62,14 @@ type LoggingRoundTripper struct {
 var _ http.RoundTripper = (*LoggingRoundTripper)(nil)
 
 func isSensitiveHeader(header string) bool {
-	return (map[string]bool{
+	sensitiveHeaderSet := map[string]bool{
 		"Authorization":       true,
 		"WWW-Authenticate":    true,
 		"Cookie":              true,
 		"Proxy-Authorization": true,
-	})[header]
+	}
+
+	return sensitiveHeaderSet[header]
 }
 
 // RoundTrip implements http.RoundTripper.
@@ -78,18 +80,14 @@ func (t *LoggingRoundTripper) RoundTrip(r *http.Request) (*http.Response, error)
 
 	w := t.out
 
-	// Sanitize the request
-	reqCopy := *r
-	reqCopy.Header = http.Header{}
-	for k, v := range r.Header {
-		if isSensitiveHeader(k) {
-			v = []string{"[REDACTED]"}
-		}
-
-		reqCopy.Header[k] = v
-	}
-	reqBytes, _ := httputil.DumpRequestOut(&reqCopy, true)
+	reqCopy := sanitizeRequest(r)
+	reqBytes, _ := httputil.DumpRequestOut(reqCopy, true)
 	fmt.Fprintln(textio.NewPrefixWriter(w, "Request  > "), string(reqBytes))
+
+	// Copy the body from the copy back over to the main request. The body is
+	// consumed as part of httputil.DumpRequestOut but is replaced with an
+	// identical stream from memory.
+	r.Body = reqCopy.Body
 
 	// Make request & report output
 	resp, err := t.inner.RoundTrip(r)
@@ -101,4 +99,18 @@ func (t *LoggingRoundTripper) RoundTrip(r *http.Request) (*http.Response, error)
 	}
 
 	return resp, err
+}
+
+func sanitizeRequest(r *http.Request) (out *http.Request) {
+	reqCopy := *r
+	reqCopy.Header = http.Header{}
+	for k, v := range r.Header {
+		if isSensitiveHeader(k) {
+			v = []string{"[REDACTED]"}
+		}
+
+		reqCopy.Header[k] = v
+	}
+
+	return &reqCopy
 }
