@@ -24,19 +24,39 @@ import (
 	"github.com/segmentio/textio"
 )
 
+// WrapperFunc wraps an http.RoundTripper when a new transport is created for a
+// client, allowing per connection behavior to be injected.
+type WrapperFunc func(http.RoundTripper) http.RoundTripper
+
+// LoggingRoundTripperWrapper returns a WrapperFunc that logs values to stderr
+// if params.LogHTTP is true.
+func LoggingRoundTripperWrapper(params *KfParams) WrapperFunc {
+	return func(in http.RoundTripper) http.RoundTripper {
+		return NewLoggingRoundTripper(params, in)
+	}
+}
+
 // NewLoggingRoundTripper creates a new logger that logs to stderr that wraps
 // an inner RoundTripper.
-func NewLoggingRoundTripper(wrapped http.RoundTripper) http.RoundTripper {
+func NewLoggingRoundTripper(params *KfParams, wrapped http.RoundTripper) http.RoundTripper {
+	return NewLoggingRoundTripperWithStream(params, wrapped, os.Stderr)
+}
+
+// NewLoggingRoundTripperWithStream creates a new logger that logs to the given stream that wraps
+// an inner RoundTripper.
+func NewLoggingRoundTripperWithStream(params *KfParams, wrapped http.RoundTripper, out io.Writer) http.RoundTripper {
 	return &LoggingRoundTripper{
-		inner: wrapped,
-		out:   os.Stderr,
+		params: params,
+		inner:  wrapped,
+		out:    out,
 	}
 }
 
 // LoggingRoundTripper logs HTTP requests.
 type LoggingRoundTripper struct {
-	inner http.RoundTripper
-	out   io.Writer
+	params *KfParams
+	inner  http.RoundTripper
+	out    io.Writer
 }
 
 var _ http.RoundTripper = (*LoggingRoundTripper)(nil)
@@ -52,16 +72,22 @@ func isSensitiveHeader(header string) bool {
 
 // RoundTrip implements http.RoundTripper.
 func (t *LoggingRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	if !t.params.LogHTTP {
+		return t.inner.RoundTrip(r)
+	}
+
 	w := t.out
 
 	// Sanitize the request
 	reqCopy := *r
-	for k := range r.Header {
+	reqCopy.Header = http.Header{}
+	for k, v := range r.Header {
 		if isSensitiveHeader(k) {
-			reqCopy.Header.Set(k, "[REDACTED]")
+			v = []string{"[REDACTED]"}
 		}
-	}
 
+		reqCopy.Header[k] = v
+	}
 	reqBytes, _ := httputil.DumpRequestOut(&reqCopy, true)
 	fmt.Fprintln(textio.NewPrefixWriter(w, "Request  > "), string(reqBytes))
 

@@ -297,9 +297,7 @@ func getRestConfig(p *KfParams) *rest.Config {
 		}
 	}
 
-	if p.LogHTTP {
-		restCfg.WrapTransport = NewLoggingRoundTripper
-	}
+	restCfg.WrapTransport = LoggingRoundTripperWrapper(p)
 
 	return restCfg
 }
