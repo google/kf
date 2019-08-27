@@ -77,7 +77,6 @@ func TestIntegration_VcapServices(t *testing.T) {
 	checkClusterStatus(t)
 	appName := fmt.Sprintf("integration-binding-app-%d", time.Now().UnixNano())
 	appPath := "./samples/apps/envs"
-	//creds := `"credentials":{"password":"fake-pw","username":"fake-user"}` // fake service binding credentials provided by the mock broker
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		withServiceBroker(ctx, t, kf, func(ctx context.Context) {
 			withServiceInstance(ctx, kf, func(ctx context.Context) {
