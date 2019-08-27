@@ -144,6 +144,11 @@ func serviceBindingConditionType(binding *servicecatalogv1beta1.ServiceBinding) 
 // PropagateServiceBindingsStatus updates the service binding readiness status.
 func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalogv1beta1.ServiceBinding) {
 
+	if len(bindings) == 0 {
+		status.manage().MarkTrue(AppConditionServiceBindingsReady)
+		return
+	}
+
 	// Gather binding names
 	var bindingNames []string
 	for _, binding := range bindings {
