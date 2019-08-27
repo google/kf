@@ -18,12 +18,26 @@ import (
 	"context"
 	"fmt"
 	"strings"
+
+	routecfg "knative.dev/serving/pkg/reconciler/route/config"
 )
+
+func dummyConfig() context.Context {
+	cfg := &routecfg.Config{
+		Domain: &routecfg.Domain{
+			Domains: map[string]*routecfg.LabelSelector{
+				"custom.example.com": {},
+			},
+		},
+	}
+
+	return routecfg.ToContext(context.TODO(), cfg)
+}
 
 func ExampleSpace_SetDefaults() {
 	space := Space{}
 	space.Name = "mynamespace"
-	space.SetDefaults(context.Background())
+	space.SetDefaults(dummyConfig())
 
 	var domainNames []string
 	for _, domain := range space.Spec.Execution.Domains {
@@ -38,7 +52,7 @@ func ExampleSpace_SetDefaults() {
 	fmt.Println("Domains:", strings.Join(domainNames, ", "))
 
 	// Output: Builder: gcr.io/kf-releases/buildpack-builder:latest
-	// Domains: *mynamespace.kf.cluster.local
+	// Domains: *mynamespace.custom.example.com
 }
 
 func ExampleSpaceSpecExecution_SetDefaults_dedupe() {
@@ -67,14 +81,40 @@ func ExampleSpaceSpecExecution_SetDefaults_dedupe() {
 	// Output: *example.com, other-example.com
 
 }
+
 func ExampleSpaceSpecSecurity_SetDefaults_dedupe() {
 	space := Space{}
 	space.Spec.Security = SpaceSpecSecurity{
 		EnableDeveloperLogsAccess: false,
 	}
-	space.SetDefaults(context.Background())
+	space.SetDefaults(dummyConfig())
 
 	fmt.Println("EnableDeveloperLogsAccess:", space.Spec.Security.EnableDeveloperLogsAccess)
 
 	// Output: EnableDeveloperLogsAccess: true
+}
+
+func ExampleSpaceSpecSecurity_SetDefaults_badContextPanic() {
+	space := Space{}
+	space.Name = "mynamespace"
+	space.SetDefaults(context.Background())
+
+	var domainNames []string
+	for _, domain := range space.Spec.Execution.Domains {
+		if domain.Default {
+			domainNames = append(domainNames, "*"+domain.Domain)
+			continue
+		}
+		domainNames = append(domainNames, domain.Domain)
+	}
+
+	fmt.Println("Domains:", strings.Join(domainNames, ", "))
+
+	// Output: Domains: *mynamespace.example.com
+}
+
+func ExampleDefaultDomain() {
+	fmt.Println(DefaultDomain(context.Background()))
+
+	// Output: example.com
 }

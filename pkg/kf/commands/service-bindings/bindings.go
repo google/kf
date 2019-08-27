@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io"
 
+	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/describe"
@@ -72,8 +73,8 @@ func NewListBindingsCommand(p *config.KfParams, client servicebindings.ClientInt
 							reason = cond.Reason
 						}
 					}
-					app := b.Labels[servicebindings.AppNameLabel]
-					bindingName := b.Labels[servicebindings.BindingNameLabel]
+					app := b.Labels[kfv1alpha1.NameLabel]
+					bindingName := b.Labels[kfv1alpha1.ComponentLabel]
 
 					fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s", b.Name, app, bindingName, b.Spec.InstanceRef.Name, b.Spec.SecretName, status, reason)
 					fmt.Fprintln(w)

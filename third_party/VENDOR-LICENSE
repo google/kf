@@ -437,6 +437,7 @@ Module: k8s.io/client-go v0.0.0-20190226174127-78295b709ec6 (imported as k8s.io/
 Module: k8s.io/code-generator v0.0.0-20181128191024-b1289fc74931 (imported as k8s.io/code-generator v0.0.0)
 Module: k8s.io/kube-openapi v0.0.0-20190228160746-b3a7cee44a30
 Module: k8s.io/kubernetes v1.15.0
+Module: knative.dev/serving v0.8.0
 
 
 
@@ -2737,7 +2738,7 @@ Blackfriday is distributed under the Simplified BSD License:
 
 
 ===========================================================
-Module: github.com/alecthomas/gometalinter v2.0.11+incompatible
+Module: github.com/alecthomas/gometalinter v2.0.12+incompatible
 
 
 Copyright (C) 2012 Alec Thomas
@@ -2785,32 +2786,6 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
 LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-
-===========================================================
-Module: github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf
-Module: gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c
-
-
-Copyright (C) 2014 Alec Thomas
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-of the Software, and to permit persons to whom the Software is furnished to do
-so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
 
 
 ===========================================================

@@ -195,11 +195,11 @@ func TestClient_List(t *testing.T) {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
 				mybinding := servicecatalogv1beta1.ServiceBinding{}
 				mybinding.Name = "bound-to-my-app"
-				mybinding.Labels = map[string]string{servicebindings.AppNameLabel: "my-app"}
+				mybinding.Labels = map[string]string{kfv1alpha1.NameLabel: "my-app"}
 
 				otherbinding := servicecatalogv1beta1.ServiceBinding{}
 				otherbinding.Name = "bound-to-other-app"
-				otherbinding.Labels = map[string]string{servicebindings.AppNameLabel: "other-app"}
+				otherbinding.Labels = map[string]string{kfv1alpha1.NameLabel: "other-app"}
 
 				deps.apiserver.EXPECT().
 					List(gomock.Any(), "default", gomock.Any(), gomock.Any()).
