@@ -391,9 +391,6 @@ func TestServiceBindingConditionType(t *testing.T) {
 		expected    apis.ConditionType
 		expectedErr error
 	}{
-		"nil": {
-			expectedErr: errors.New("binding cannot be nil"),
-		},
 		"missing label": {
 			binding: &servicecatalogv1beta1.ServiceBinding{
 				ObjectMeta: metav1.ObjectMeta{
@@ -414,13 +411,13 @@ func TestServiceBindingConditionType(t *testing.T) {
 					},
 				},
 			},
-			expected: apis.ConditionType("Ready-my-service-instance"),
+			expected: apis.ConditionType("my-service-instanceReady"),
 		},
 	}
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			actual, err := ServiceBindingConditionType(tc.binding)
+			actual, err := serviceBindingConditionType(tc.binding)
 			testutil.AssertEqual(t, "err", tc.expectedErr, err)
 			testutil.AssertEqual(t, "conditionType", tc.expected, actual)
 		})

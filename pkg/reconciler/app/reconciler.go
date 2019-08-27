@@ -239,9 +239,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			}
 			actualServiceBindings = append(actualServiceBindings, *actual)
 		}
-		if err := app.Status.PropagateServiceBindingsStatus(actualServiceBindings); err != nil {
-			return err
-		}
+		app.Status.PropagateServiceBindingsStatus(actualServiceBindings)
 		if condition.IsPending() {
 			logger.Info("Waiting for service bindings; exiting early")
 			return nil
