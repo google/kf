@@ -26,7 +26,7 @@ func dummyConfig() context.Context {
 	cfg := &routecfg.Config{
 		Domain: &routecfg.Domain{
 			Domains: map[string]*routecfg.LabelSelector{
-				"custom.example.com": &routecfg.LabelSelector{},
+				"custom.example.com": {},
 			},
 		},
 	}
