@@ -28,13 +28,6 @@ import (
 
 //go:generate go run ../internal/tools/option-builder/option-builder.go options.yml options.go
 
-const (
-	// BindingNameLabel is the label used on bindings to define what VCAP name the secret should be rooted under.
-	BindingNameLabel = "kf-binding-name"
-	// AppNameLabel is the label used on bindings to define which app the binding belongs to.
-	AppNameLabel = "kf-app-name"
-)
-
 // ClientInterface is a client capable of interacting with service catalog services
 // and mapping the CF to Kubernetes concepts.
 type ClientInterface interface {
@@ -130,7 +123,7 @@ func (c *Client) List(opts ...ListOption) ([]servicecatalogv1beta1.ServiceBindin
 
 		// NOTE: this _could_ be done with a label selector, but we'll do it here
 		// to reduce the cognitive overhead of filtering in multiple locations.
-		if filterByAppName && binding.Labels[AppNameLabel] != cfg.AppName {
+		if filterByAppName && binding.Labels[v1alpha1.NameLabel] != cfg.AppName {
 			continue
 		}
 
