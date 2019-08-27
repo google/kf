@@ -11,6 +11,7 @@ require (
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/golang/mock v1.3.1
 	github.com/google/go-containerregistry v0.0.0-20190306174256-678f6c51f585
+	github.com/google/licenseclassifier v0.0.0-20190711054124-c3068f13fcc3 // indirect
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/google/wire v0.2.2
 	github.com/gorilla/mux v1.7.0
@@ -30,7 +31,6 @@ require (
 	github.com/sirupsen/logrus v1.3.0 // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
-	github.com/stretchr/testify v1.3.0 // indirect
 	go.opencensus.io v0.22.0 // indirect
 	go.uber.org/zap v1.9.1
 	google.golang.org/appengine v1.5.0 // indirect
@@ -42,6 +42,7 @@ require (
 	k8s.io/code-generator v0.0.0
 	k8s.io/kubernetes v1.15.0
 	knative.dev/pkg v0.0.0-20190626215608-1104d6c75533
+	knative.dev/serving v0.8.0
 	sigs.k8s.io/yaml v1.1.0
 )
 

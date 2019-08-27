@@ -59,6 +59,8 @@ spec:
           value: config-observability
         - name: METRICS_DOMAIN
           value: kf.dev
+        - name: KNATIVE_SERVING_NAMESPACE
+          value: knative-serving
       volumes:
         - name: config-logging
           configMap:

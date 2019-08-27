@@ -58,6 +58,8 @@ spec:
               fieldPath: metadata.namespace
         - name: CONFIG_LOGGING_NAME
           value: config-logging
+        - name: KNATIVE_SERVING_NAMESPACE
+          value: knative-serving
         securityContext:
           allowPrivilegeEscalation: false
       volumes:
