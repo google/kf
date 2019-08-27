@@ -25,6 +25,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"knative.dev/pkg/apis"
+	duckv1alpha1 "knative.dev/pkg/apis/duck/v1alpha1"
+	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
 
 func ExampleKfApp() {
@@ -226,4 +229,20 @@ func ExampleKfApp_GetCPU() {
 	fmt.Println((*getCPU).String())
 
 	// Output: 100m
+}
+
+func ExampleKfApp_GetClusterURL() {
+	app := NewKfApp()
+	app.Status.Address = &duckv1alpha1.Addressable{
+		Addressable: duckv1beta1.Addressable{
+			URL: &apis.URL{
+				Host:   "app-a.some-namespace.svc.cluster.local",
+				Scheme: "http",
+			},
+		},
+	}
+
+	fmt.Println(app.GetClusterURL())
+
+	// Output: http://app-a.some-namespace.svc.cluster.local
 }
