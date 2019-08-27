@@ -16,12 +16,18 @@ package kf
 
 import (
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 	"time"
 
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	. "github.com/google/kf/pkg/kf/commands/install/util"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const (
@@ -49,33 +55,86 @@ func Install(ctx context.Context, containerRegistry string) error {
 		{name: "Knative Build", yaml: KnativeBuildYAML},
 		{name: "kf", yaml: KfNightlyBuildYAML},
 	} {
+		err := wait.ExponentialBackoff(
+			wait.Backoff{
+				Duration: time.Second,
+				Steps:    10,
+				Factor:   1,
+			}, func() (bool, error) {
+				Logf(ctx, "install "+yaml.name)
+				if _, err := Kubectl(
+					ctx,
+					"apply",
+					"--filename",
+					yaml.yaml,
+				); err != nil {
+					Logf(ctx, "failed to install %s... Retrying", yaml.name)
+					// Don't return the error. This will cause the
+					// ExponentialBackoff to stop.
+					return false, nil
+				}
 
-		var err error
-		for i := 0; i < 10; i++ {
-			Logf(ctx, "install "+yaml.name)
-			if _, err = Kubectl(
-				ctx,
-				"apply",
-				"--filename",
-				yaml.yaml,
-			); err != nil {
-				Logf(ctx, "failed to install %s... Retrying %d/10", yaml.name, i+1)
-				time.Sleep(time.Second)
-				continue
-			}
-
-			break
-		}
+				return true, nil
+			})
 
 		if err != nil {
-			// Looks like the retrying didn't help, better just return the error
 			return err
 		}
+	}
+
+	// Wait for controller and webhook deployments to be ready
+	if err := waitForKfDeployments(ctx); err != nil {
+		return err
 	}
 
 	// Setup kf space
 	if err := SetupSpace(ctx, containerRegistry); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func waitForKfDeployments(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+
+	for _, deploymentName := range []string{"controller", "webhook"} {
+		Logf(ctx, "waiting for %s deployment to be available...", deploymentName)
+		err := wait.ExponentialBackoff(
+			wait.Backoff{
+				Duration: 5 * time.Second,
+				Steps:    10,
+				Factor:   1.5,
+			}, func() (bool, error) {
+				output, err := Kubectl(
+					ctx,
+					"get",
+					"deployments",
+					deploymentName,
+					"--namespace", v1alpha1.KfNamespace,
+					"--output=json",
+				)
+				if err != nil {
+					return false, err
+				}
+				deployment := appsv1.Deployment{}
+				if err := json.NewDecoder(strings.NewReader(strings.Join(output, "\n"))).Decode(&deployment); err != nil {
+					return false, err
+				}
+
+				for _, cond := range deployment.Status.Conditions {
+					if cond.Type == appsv1.DeploymentAvailable {
+						return cond.Status == corev1.ConditionTrue, nil
+					}
+				}
+				return false, nil
+			},
+		)
+
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

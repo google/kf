@@ -15,15 +15,25 @@
 package services
 
 import (
+	"fmt"
+	"io"
+	"strings"
+
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
+	"github.com/google/kf/pkg/kf/describe"
 	"github.com/google/kf/pkg/kf/services"
-	"github.com/poy/service-catalog/cmd/svcat/output"
 	"github.com/spf13/cobra"
 )
 
 // NewListServicesCommand allows users to list service instances.
-func NewListServicesCommand(p *config.KfParams, client services.ClientInterface) *cobra.Command {
+func NewListServicesCommand(
+	p *config.KfParams,
+	client services.ClientInterface,
+	appsClient apps.Client,
+) *cobra.Command {
 	servicesCommand := &cobra.Command{
 		Use:     "services",
 		Aliases: []string{"s"},
@@ -43,11 +53,48 @@ func NewListServicesCommand(p *config.KfParams, client services.ClientInterface)
 				return err
 			}
 
-			output.WriteInstanceList(cmd.OutOrStdout(), "table", instances)
+			apps, err := appsClient.List(p.Namespace)
+			if err != nil {
+				return err
+			}
+			ma := mapAppToServices(apps)
 
-			return nil
+			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
+				fmt.Fprintln(w, "Name\tService\tPlan\tBound Apps\tLast Operation\tBroker")
+				for _, instance := range instances.Items {
+					lastCond := services.LastStatusCondition(instance)
+					var brokerInfo string
+					brokerInfo, err = client.BrokerName(instance)
+					if err != nil {
+						brokerInfo = fmt.Sprintf("error finding broker: %s", err)
+					}
+
+					fmt.Fprintf(
+						w,
+						"%s\t%s\t%s\t%s\t%s\t%s\n",
+						instance.Name, // Name
+						instance.Spec.ClusterServiceClassExternalName, // Service
+						instance.Spec.ClusterServicePlanExternalName,  // Plan
+						strings.Join(ma[instance.Name], ", "),         // Bound Apps
+						lastCond.Reason,                               // Last Operation
+						brokerInfo,                                    // Broker
+					)
+				}
+			})
+
+			return err
 		},
 	}
 
 	return servicesCommand
+}
+
+func mapAppToServices(apps []v1alpha1.App) map[string][]string {
+	m := map[string][]string{}
+	for _, app := range apps {
+		for _, binding := range app.Spec.ServiceBindings {
+			m[binding.BindingName] = append(m[binding.BindingName], app.Name)
+		}
+	}
+	return m
 }

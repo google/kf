@@ -41,12 +41,14 @@ kf [flags]
 * [kf configure-space](/docs/general-info/kf-cli/commands/kf-configure-space/)	 - Set configuration for a space
 * [kf create-route](/docs/general-info/kf-cli/commands/kf-create-route/)	 - Create a route
 * [kf create-service](/docs/general-info/kf-cli/commands/kf-create-service/)	 - Create a service instance
+* [kf create-service-broker](/docs/general-info/kf-cli/commands/kf-create-service-broker/)	 - Add a cluster service broker to service catalog
 * [kf create-space](/docs/general-info/kf-cli/commands/kf-create-space/)	 - Create a space
 * [kf debug](/docs/general-info/kf-cli/commands/kf-debug/)	 - Show debugging information useful for filing a bug report
 * [kf delete](/docs/general-info/kf-cli/commands/kf-delete/)	 - Delete an existing app
 * [kf delete-quota](/docs/general-info/kf-cli/commands/kf-delete-quota/)	 - Remove all quotas for the space
 * [kf delete-route](/docs/general-info/kf-cli/commands/kf-delete-route/)	 - Delete a route
 * [kf delete-service](/docs/general-info/kf-cli/commands/kf-delete-service/)	 - Delete a service instance
+* [kf delete-service-broker](/docs/general-info/kf-cli/commands/kf-delete-service-broker/)	 - Remove a cluster service broker from service catalog
 * [kf delete-space](/docs/general-info/kf-cli/commands/kf-delete-space/)	 - Delete a space
 * [kf doctor](/docs/general-info/kf-cli/commands/kf-doctor/)	 - Doctor runs validation tests against one or more components
 * [kf env](/docs/general-info/kf-cli/commands/kf-env/)	 - List the names and values of the environment variables for an app

@@ -285,3 +285,54 @@ func MarketplaceOptionDefaults() MarketplaceOptions {
 		WithMarketplaceNamespace("default"),
 	}
 }
+
+type brokerNameConfig struct {
+	// Namespace is the Kubernetes namespace to use.
+	Namespace string
+}
+
+// BrokerNameOption is a single option for configuring a brokerNameConfig
+type BrokerNameOption func(*brokerNameConfig)
+
+// BrokerNameOptions is a configuration set defining a brokerNameConfig
+type BrokerNameOptions []BrokerNameOption
+
+// toConfig applies all the options to a new brokerNameConfig and returns it.
+func (opts BrokerNameOptions) toConfig() brokerNameConfig {
+	cfg := brokerNameConfig{}
+
+	for _, v := range opts {
+		v(&cfg)
+	}
+
+	return cfg
+}
+
+// Extend creates a new BrokerNameOptions with the contents of other overriding
+// the values set in this BrokerNameOptions.
+func (opts BrokerNameOptions) Extend(other BrokerNameOptions) BrokerNameOptions {
+	var out BrokerNameOptions
+	out = append(out, opts...)
+	out = append(out, other...)
+	return out
+}
+
+// Namespace returns the last set value for Namespace or the empty value
+// if not set.
+func (opts BrokerNameOptions) Namespace() string {
+	return opts.toConfig().Namespace
+}
+
+// WithBrokerNameNamespace creates an Option that sets the Kubernetes namespace to use.
+func WithBrokerNameNamespace(val string) BrokerNameOption {
+	return func(cfg *brokerNameConfig) {
+		cfg.Namespace = val
+	}
+}
+
+// BrokerNameOptionDefaults gets the default values for BrokerName.
+func BrokerNameOptionDefaults() BrokerNameOptions {
+	return BrokerNameOptions{
+		WithBrokerNameNamespace("default"),
+	}
+}

@@ -20,6 +20,8 @@ import (
 	"sort"
 
 	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/services"
+	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
@@ -278,5 +280,27 @@ func HealthCheck(w io.Writer, healthCheck *corev1.Probe) {
 			fmt.Fprintln(w, "Type:\thttp")
 			fmt.Fprintf(w, "Endpoint:\t%s\n", healthCheck.HTTPGet.Path)
 		}
+	})
+}
+
+// ServiceInstance
+func ServiceInstance(w io.Writer, service *v1beta1.ServiceInstance) {
+	SectionWriter(w, "Service Instance", func(w io.Writer) {
+		if service == nil {
+			return
+		}
+
+		fmt.Fprintf(w, "Name:\t%s\n", service.Name)
+
+		if service.Spec.ClusterServiceClassRef != nil {
+			fmt.Fprintf(w, "Service:\t%s\n", service.Spec.ClusterServiceClassRef.Name)
+		}
+
+		if service.Spec.ClusterServicePlanRef != nil {
+			fmt.Fprintf(w, "Plan:\t%s\n", service.Spec.ClusterServicePlanRef.Name)
+		}
+
+		cond := services.LastStatusCondition(*service)
+		fmt.Fprintf(w, "Status:\t%s\n", cond.Reason)
 	})
 }

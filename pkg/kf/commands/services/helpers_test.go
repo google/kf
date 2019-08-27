@@ -17,6 +17,7 @@ package services_test
 import (
 	"bytes"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/kf/commands/config"
@@ -25,6 +26,7 @@ import (
 	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type commandFactory func(p *config.KfParams, client services.ClientInterface) *cobra.Command
@@ -33,6 +35,12 @@ func dummyServerInstance(instanceName string) *v1beta1.ServiceInstance {
 	instance := v1beta1.ServiceInstance{}
 	instance.Name = instanceName
 	instance.Spec = v1beta1.ServiceInstanceSpec{}
+	instance.Status = v1beta1.ServiceInstanceStatus{
+		Conditions: []v1beta1.ServiceInstanceCondition{
+			{LastTransitionTime: metav1.Time{Time: time.Now()}, Reason: "WrongStatus"},
+			{LastTransitionTime: metav1.Time{Time: time.Now().Add(time.Second)}, Reason: "CorrectStatus"},
+		},
+	}
 
 	return &instance
 }
@@ -66,7 +74,6 @@ func runTest(t *testing.T, tc serviceTest, newCommand commandFactory) {
 	_, actualErr := cmd.ExecuteC()
 	if tc.ExpectedErr != nil || actualErr != nil {
 		testutil.AssertErrorsEqual(t, tc.ExpectedErr, actualErr)
-		return
 	}
 
 	testutil.AssertContainsAll(t, buf.String(), tc.ExpectedStrings)

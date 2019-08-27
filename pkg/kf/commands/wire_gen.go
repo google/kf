@@ -19,6 +19,7 @@ import (
 	"github.com/google/kf/pkg/kf/commands/quotas"
 	routes2 "github.com/google/kf/pkg/kf/commands/routes"
 	servicebindings2 "github.com/google/kf/pkg/kf/commands/service-bindings"
+	"github.com/google/kf/pkg/kf/commands/service-brokers"
 	services2 "github.com/google/kf/pkg/kf/commands/services"
 	spaces2 "github.com/google/kf/pkg/kf/commands/spaces"
 	"github.com/google/kf/pkg/kf/istio"
@@ -223,7 +224,13 @@ func InjectGetService(p *config.KfParams) *cobra.Command {
 func InjectListServices(p *config.KfParams) *cobra.Command {
 	sClientFactory := config.GetSvcatApp(p)
 	clientInterface := services.NewClient(sClientFactory)
-	command := services2.NewListServicesCommand(p, clientInterface)
+	kfV1alpha1Interface := config.GetKfClient(p)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
+	sourcesGetter := provideKfSources(kfV1alpha1Interface)
+	buildTailer := provideSourcesBuildTailer()
+	client := sources.NewClient(sourcesGetter, buildTailer)
+	appsClient := apps.NewClient(appsGetter, client)
+	command := services2.NewListServicesCommand(p, clientInterface, appsClient)
 	return command
 }
 
@@ -276,6 +283,18 @@ func InjectUnbindService(p *config.KfParams) *cobra.Command {
 func InjectVcapServices(p *config.KfParams) *cobra.Command {
 	kubernetesInterface := config.GetKubernetes(p)
 	command := servicebindings2.NewVcapServicesCommand(p, kubernetesInterface)
+	return command
+}
+
+func InjectCreateServiceBroker(p *config.KfParams) *cobra.Command {
+	versionedInterface := config.GetServiceCatalogClient(p)
+	command := servicebrokers.NewCreateServiceBrokerCommand(p, versionedInterface)
+	return command
+}
+
+func InjectDeleteServiceBroker(p *config.KfParams) *cobra.Command {
+	versionedInterface := config.GetServiceCatalogClient(p)
+	command := servicebrokers.NewDeleteServiceBrokerCommand(p, versionedInterface)
 	return command
 }
 
