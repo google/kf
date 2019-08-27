@@ -46,6 +46,7 @@ kf delete-space SPACE [flags]
 ```
       --config string       Config file (default is $HOME/.kf)
       --kubeconfig string   Kubectl config file (default is $HOME/.kube/config)
+      --log-http            Log HTTP requests to stderr
       --namespace string    Kubernetes namespace to target
 ```
 
