@@ -16,6 +16,7 @@ package servicebindings
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -23,6 +24,7 @@ import (
 	"testing"
 	"time"
 
+	cfutil "github.com/google/kf/pkg/kf/cfutil"
 	. "github.com/google/kf/pkg/kf/testutil"
 )
 
@@ -75,17 +77,39 @@ func TestIntegration_VcapServices(t *testing.T) {
 	checkClusterStatus(t)
 	appName := fmt.Sprintf("integration-binding-app-%d", time.Now().UnixNano())
 	appPath := "./samples/apps/envs"
-	creds := `"credentials":{"password":"fake-pw","username":"fake-user"}` // fake service binding credentials provided by the mock broker
+	//creds := `"credentials":{"password":"fake-pw","username":"fake-user"}` // fake service binding credentials provided by the mock broker
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		withServiceBroker(ctx, t, kf, func(ctx context.Context) {
 			withServiceInstance(ctx, kf, func(ctx context.Context) {
 				withApp(ctx, t, kf, appName, appPath, false, func(ctx context.Context) {
+					// Assert VCAP_SERVICES is blank
+					vcs := extractVcapServices(ctx, t, kf)
+					AssertEqual(t, "bound service count", 0, len(vcs))
+
 					withServiceBinding(ctx, t, kf, func(ctx context.Context) {
 						// Restart so that env vars are injected from the secret into app
 						kf.Restart(ctx, AppFromContext(ctx))
-						vcapServicesOutput := kf.VcapServices(ctx, AppFromContext(ctx))
-						AssertContainsAll(t, strings.Join(vcapServicesOutput, "\n"), []string{AppFromContext(ctx),
-							ServiceInstanceFromContext(ctx), creds})
+						time.Sleep(5 * time.Second)
+						vcs := extractVcapServices(ctx, t, kf)
+
+						expected := cfutil.VcapServicesMap{
+							ServiceClassFromContext(ctx): []cfutil.VcapService{
+								{
+									BindingName:  ServiceInstanceFromContext(ctx),
+									InstanceName: ServiceInstanceFromContext(ctx),
+									Name:         ServiceInstanceFromContext(ctx),
+									Label:        ServiceClassFromContext(ctx),
+									Tags:         []string(nil),
+									Plan:         ServicePlanFromContext(ctx),
+									Credentials: map[string]string{
+										"password": "fake-pw",
+										"username": "fake-user",
+									},
+								},
+							},
+						}
+
+						AssertEqual(t, "vcap services", expected, vcs)
 					})
 				})
 			})
@@ -99,6 +123,16 @@ func checkClusterStatus(t *testing.T) {
 	checkOnce.Do(func() {
 		testIntegration_Doctor(t)
 	})
+}
+
+func extractVcapServices(ctx context.Context, t *testing.T, kf *Kf) cfutil.VcapServicesMap {
+	vcapServicesOutput := kf.VcapServices(ctx, AppFromContext(ctx))
+	vcapServices := cfutil.VcapServicesMap{}
+	if err := json.Unmarshal([]byte(strings.Join(vcapServicesOutput, "\n")), &vcapServices); err != nil {
+		t.Fatalf("couldn't unmarahsl VCAP Services: %s", err)
+	}
+
+	return vcapServices
 }
 
 // testIntegration_Doctor runs the doctor command. It ensures the cluster the

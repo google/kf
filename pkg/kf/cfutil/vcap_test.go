@@ -17,6 +17,7 @@ package cfutil_test
 import (
 	"fmt"
 
+	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/cfutil"
 	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -47,7 +48,7 @@ func ExampleNewVcapService() {
 	binding.Spec.InstanceRef.Name = "my-instance"
 	binding.Name = "my-binding"
 	binding.Labels = map[string]string{
-		cfutil.BindingNameLabel: "custom-binding-name",
+		kfv1alpha1.ComponentLabel: "custom-binding-name",
 	}
 
 	secret := corev1.Secret{}
@@ -65,7 +66,7 @@ func ExampleNewVcapService() {
 	fmt.Printf("Service: %v\n", vs.Label)
 	fmt.Printf("Plan: %v\n", vs.Plan)
 
-	// Output: Name: my-binding
+	// Output: Name: custom-binding-name
 	// InstanceName: my-instance
 	// BindingName: custom-binding-name
 	// Credentials: map[key1:value1 key2:value2]
