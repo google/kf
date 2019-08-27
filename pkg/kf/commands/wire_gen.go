@@ -20,14 +20,14 @@ import (
 	routes2 "github.com/google/kf/pkg/kf/commands/routes"
 	servicebindings2 "github.com/google/kf/pkg/kf/commands/service-bindings"
 	"github.com/google/kf/pkg/kf/commands/service-brokers"
-	services2 "github.com/google/kf/pkg/kf/commands/services"
+	"github.com/google/kf/pkg/kf/commands/services"
 	spaces2 "github.com/google/kf/pkg/kf/commands/spaces"
 	"github.com/google/kf/pkg/kf/istio"
 	"github.com/google/kf/pkg/kf/logs"
 	"github.com/google/kf/pkg/kf/routeclaims"
 	"github.com/google/kf/pkg/kf/routes"
 	"github.com/google/kf/pkg/kf/service-bindings"
-	"github.com/google/kf/pkg/kf/services"
+	services2 "github.com/google/kf/pkg/kf/services"
 	"github.com/google/kf/pkg/kf/sources"
 	"github.com/google/kf/pkg/kf/spaces"
 	"github.com/google/wire"
@@ -201,43 +201,42 @@ func InjectUnsetEnv(p *config.KfParams) *cobra.Command {
 }
 
 func InjectCreateService(p *config.KfParams) *cobra.Command {
-	sClientFactory := config.GetSvcatApp(p)
-	clientInterface := services.NewClient(sClientFactory)
-	command := services2.NewCreateServiceCommand(p, clientInterface)
+	versionedInterface := config.GetServiceCatalogClient(p)
+	command := services.NewCreateServiceCommand(p, versionedInterface)
 	return command
 }
 
 func InjectDeleteService(p *config.KfParams) *cobra.Command {
 	sClientFactory := config.GetSvcatApp(p)
-	clientInterface := services.NewClient(sClientFactory)
-	command := services2.NewDeleteServiceCommand(p, clientInterface)
+	clientInterface := services2.NewClient(sClientFactory)
+	command := services.NewDeleteServiceCommand(p, clientInterface)
 	return command
 }
 
 func InjectGetService(p *config.KfParams) *cobra.Command {
 	sClientFactory := config.GetSvcatApp(p)
-	clientInterface := services.NewClient(sClientFactory)
-	command := services2.NewGetServiceCommand(p, clientInterface)
+	clientInterface := services2.NewClient(sClientFactory)
+	command := services.NewGetServiceCommand(p, clientInterface)
 	return command
 }
 
 func InjectListServices(p *config.KfParams) *cobra.Command {
 	sClientFactory := config.GetSvcatApp(p)
-	clientInterface := services.NewClient(sClientFactory)
+	clientInterface := services2.NewClient(sClientFactory)
 	kfV1alpha1Interface := config.GetKfClient(p)
 	appsGetter := provideAppsGetter(kfV1alpha1Interface)
 	sourcesGetter := provideKfSources(kfV1alpha1Interface)
 	buildTailer := provideSourcesBuildTailer()
 	client := sources.NewClient(sourcesGetter, buildTailer)
 	appsClient := apps.NewClient(appsGetter, client)
-	command := services2.NewListServicesCommand(p, clientInterface, appsClient)
+	command := services.NewListServicesCommand(p, clientInterface, appsClient)
 	return command
 }
 
 func InjectMarketplace(p *config.KfParams) *cobra.Command {
 	sClientFactory := config.GetSvcatApp(p)
-	clientInterface := services.NewClient(sClientFactory)
-	command := services2.NewMarketplaceCommand(p, clientInterface)
+	clientInterface := services2.NewClient(sClientFactory)
+	command := services.NewMarketplaceCommand(p, clientInterface)
 	return command
 }
 

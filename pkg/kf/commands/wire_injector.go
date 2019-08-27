@@ -175,9 +175,8 @@ func InjectUnsetEnv(p *config.KfParams) *cobra.Command {
 /////////////
 func InjectCreateService(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		services.NewClient,
+		config.GetServiceCatalogClient,
 		servicescmd.NewCreateServiceCommand,
-		config.GetSvcatApp,
 	)
 	return nil
 }

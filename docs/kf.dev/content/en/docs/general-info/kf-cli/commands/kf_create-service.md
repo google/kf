@@ -12,20 +12,21 @@ Create a service instance
 Create a service instance
 
 ```
-kf create-service SERVICE PLAN SERVICE_INSTANCE [-c PARAMETERS_AS_JSON] [flags]
+kf create-service SERVICE PLAN SERVICE_INSTANCE [-c PARAMETERS_AS_JSON] [-b service-broker] [flags]
 ```
 
 ### Examples
 
 ```
   kf create-service db-service silver mydb -c '{"ram_gb":4}'
-  kf create-service db-service silver mydb -c ~/workspace/tmp/instance_config.json
+  kf create-service db-service silver mydb -c ~/workspace/tmp/instance_config.json -b db-broker-2
 ```
 
 ### Options
 
 ```
-  -h, --help   help for create-service
+  -b, --broker string   Service broker to use. (default "{}")
+  -h, --help            help for create-service
 ```
 
 ### Options inherited from parent commands
