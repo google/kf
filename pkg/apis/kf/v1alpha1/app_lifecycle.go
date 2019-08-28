@@ -145,6 +145,8 @@ func serviceBindingConditionType(binding *servicecatalogv1beta1.ServiceBinding) 
 func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalogv1beta1.ServiceBinding) {
 
 	if len(bindings) == 0 {
+		status.ServiceBindingConditions = duckv1beta1.Conditions{}
+		status.ServiceBindingNames = []string{}
 		status.manage().MarkTrue(AppConditionServiceBindingsReady)
 		return
 	}
@@ -202,6 +204,7 @@ func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalo
 
 	// Copy Ready condition
 	PropagateCondition(status.manage(), AppConditionServiceBindingsReady, manager.GetCondition(apis.ConditionReady))
+	status.ServiceBindingConditions = duckStatus.Conditions
 }
 
 // MarkSpaceHealthy notes that the space was able to be retrieved and
