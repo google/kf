@@ -25,7 +25,7 @@ vars:
 
 # ci config vars
 - &ci_git_uri ((ci_git_uri))
-- &ci_git_branch {{git_branch}}
+- &ci_git_branch ((ci_git_branch))
 - &ci_image_uri ((ci_image_uri))
 - &github_access_token ((github_access_token))
 - &service_account_json ((service_account_json))
