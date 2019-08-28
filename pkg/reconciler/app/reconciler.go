@@ -561,7 +561,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, desired *v1alpha1.App) (*
 // TODO: Reevaluate once https://github.com/knative/serving/issues/4183 is
 // resolved.
 func (r *Reconciler) gcRevisions(ctx context.Context, app *v1alpha1.App) error {
-	logger := logging.FromContext(ctx).With("gcRevisions")
+	logger := logging.FromContext(ctx)
 	logger.Debugf("Checking for revisions that need to adjust %s...", autoscaling.MinScaleAnnotationKey)
 	defer logger.Debugf("Done checking for revisions that need to adjust %s.", autoscaling.MinScaleAnnotationKey)
 
