@@ -561,7 +561,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, desired *v1alpha1.App) (*
 // TODO: Reevaluate once https://github.com/knative/serving/issues/4183 is
 // resolved.
 func (r *Reconciler) gcRevisions(ctx context.Context, app *v1alpha1.App) error {
-	logger := logging.FromContext(ctx)
+	logger := logging.FromContext(ctx).With("gcRevisions")
 	logger.Debugf("Checking for revisions that need to adjust %s...", autoscaling.MinScaleAnnotationKey)
 	defer logger.Debugf("Done checking for revisions that need to adjust %s.", autoscaling.MinScaleAnnotationKey)
 
@@ -602,8 +602,23 @@ func (r *Reconciler) gcRevisions(ctx context.Context, app *v1alpha1.App) error {
 		return parseGeneration(revs[j]) < parseGeneration(revs[i])
 	})
 
-	// delete everything after the latest generation
-	for _, rev := range revs[1:] {
+	// Find the latest generation that is ready
+	firstReadyIdx := -1
+	for i, rev := range revs {
+		if !rev.Status.IsReady() {
+			continue
+		}
+		firstReadyIdx = i
+		break
+	}
+
+	if firstReadyIdx < 0 {
+		// Didn't find any ready revisions. Move on
+		return nil
+	}
+
+	// delete everything after the latest ready generation
+	for _, rev := range revs[firstReadyIdx+1:] {
 		logger.Infof("Garbage collecting Revision %s...", rev.Name)
 		if err := revisionClient.Delete(rev.Name, &metav1.DeleteOptions{}); err != nil {
 			return err
