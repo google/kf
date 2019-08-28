@@ -131,7 +131,7 @@ func TestMakeRoutes(t *testing.T) {
 					v1alpha1.ComponentLabel: "route",
 					v1alpha1.RouteHostname:  "some-hostname",
 					v1alpha1.RouteDomain:    "some-domain",
-					v1alpha1.RoutePath:      toBase36("/some-path"),
+					v1alpha1.RoutePath:      v1alpha1.ToBase36("/some-path"),
 					v1alpha1.RouteAppName:   "some-app-name",
 				}, routes[0].ObjectMeta.Labels)
 				testutil.AssertEqual(
@@ -187,14 +187,14 @@ func TestMakeRouteSelector(t *testing.T) {
 		v1alpha1.ComponentLabel: "route",
 		v1alpha1.RouteHostname:  "some-host",
 		v1alpha1.RouteDomain:    "some-domain",
-		v1alpha1.RoutePath:      toBase36("/some-path"),
+		v1alpha1.RoutePath:      v1alpha1.ToBase36("/some-path"),
 	}
 	bad := labels.Set{
 		v1alpha1.ManagedByLabel: "other-kf",
 		v1alpha1.ComponentLabel: "other-route",
 		v1alpha1.RouteHostname:  "some-other-host",
 		v1alpha1.RouteDomain:    "some-other-host",
-		v1alpha1.RoutePath:      toBase36("some-other-path"),
+		v1alpha1.RoutePath:      v1alpha1.ToBase36("some-other-path"),
 	}
 
 	testutil.AssertEqual(t, "matches", true, s.Matches(good))

@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gorilla/mux"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
@@ -46,12 +47,16 @@ func (r *Route) Validate(ctx context.Context) (errs *apis.FieldError) {
 		return errs
 	}
 
+	return checkVirtualServiceCollision(ctx, r.Spec.Hostname, r.Spec.Domain, r.GetNamespace(), errs)
+}
+
+func checkVirtualServiceCollision(ctx context.Context, hostname, domain, namespace string, errs *apis.FieldError) *apis.FieldError {
 	// XXX: We probably shouldn't be fetching VirtualServices in a webhook,
 	// however we need to ensure the resulting VirtualService doesn't
 	// conflict.
 	vs, err := IstioClientFromContext(ctx).
 		VirtualServices(KfNamespace).
-		Get(GenerateName(r.Spec.Hostname, r.Spec.Domain), metav1.GetOptions{})
+		Get(GenerateName(hostname, domain), metav1.GetOptions{})
 
 	if apierrs.IsNotFound(err) {
 		vs = nil
@@ -62,7 +67,7 @@ func (r *Route) Validate(ctx context.Context) (errs *apis.FieldError) {
 		})
 	}
 
-	if vs != nil && vs.Annotations["space"] != r.GetNamespace() {
+	if vs != nil && vs.Annotations["space"] != namespace {
 		errs = errs.Also(&apis.FieldError{
 			Message: "Immutable field changed",
 			Paths:   []string{"namespace"},
@@ -79,6 +84,12 @@ func (r *RouteSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
 		errs = errs.Also(apis.ErrMissingField("appName"))
 	}
 
+	return errs.Also(r.RouteSpecFields.Validate(ctx).ViaField("routeSpecFields"))
+}
+
+// Validate makes sure that RouteSpecFields is properly configured.
+func (r *RouteSpecFields) Validate(ctx context.Context) (errs *apis.FieldError) {
+
 	if r.Domain == "" {
 		errs = errs.Also(apis.ErrMissingField("domain"))
 	}
@@ -87,5 +98,51 @@ func (r *RouteSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
 		errs = errs.Also(apis.ErrInvalidValue("hostname", r.Hostname))
 	}
 
+	if _, err := BuildPathRegexp(r.Path); err != nil {
+		errs = errs.Also(apis.ErrInvalidValue("path", r.Path))
+	}
+
 	return errs
+}
+
+// Validate validates a RouteClaim.
+func (r *RouteClaim) Validate(ctx context.Context) (errs *apis.FieldError) {
+	// If we're specifically updating status, don't reject the change because
+	// of a spec issue.
+	if apis.IsInStatusUpdate(ctx) {
+		return
+	}
+
+	if r.Name == "" {
+		errs = errs.Also(apis.ErrMissingField("name"))
+	}
+
+	errs = errs.Also(r.Spec.Validate(apis.WithinSpec(ctx)).ViaField("spec"))
+
+	// If we have errors, bail. No need to do the network call.
+	if errs.Error() != "" {
+		return errs
+	}
+
+	return checkVirtualServiceCollision(ctx, r.Spec.Hostname, r.Spec.Domain, r.GetNamespace(), errs)
+}
+
+// Validate validates a RouteClaimSpec.
+func (r *RouteClaimSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
+	return errs.Also(r.RouteSpecFields.Validate(ctx).ViaField("routeSpecFields"))
+}
+
+// BuildPathRegexp uses gorilla/mux to convert a path into regular expression
+// that can be used to determine if a requests' path matches.
+func BuildPathRegexp(path string) (string, error) {
+	// If its just the root path, we'll add that back as optional
+	if path == "/" {
+		path = ""
+	}
+
+	p, err := (&mux.Router{}).PathPrefix(path).GetPathRegexp()
+	if err != nil {
+		return "", err
+	}
+	return p + `(/.*)?`, nil
 }

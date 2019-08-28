@@ -17,7 +17,9 @@ package routes_test
 import (
 	"bytes"
 	"errors"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -86,6 +88,7 @@ func TestRoutes(t *testing.T) {
 				fakeRoute.EXPECT().List(gomock.Any()).Return([]v1alpha1.Route{
 					buildRoute("host-1", "example.com", "/path1"),
 					buildRoute("host-2", "example.com", "/path1"),
+					buildRoute("host-3", "example.com", "/path2"),
 				}, nil)
 				fakeApp.EXPECT().List(gomock.Any()).Return([]v1alpha1.App{
 					buildApp("app-1", "host-1", "example.com", "path1"),
@@ -93,11 +96,20 @@ func TestRoutes(t *testing.T) {
 
 					// Host doesn't match and should be in a different group
 					buildApp("app-3", "host-2", "example.com", "/path1"),
+
+					// Don't show deleted timestamp
+					buildDeletedApp("deleted-app", "host-3", "example.com", "/path2"),
 				}, nil)
 			},
 			BufferF: func(t *testing.T, buffer *bytes.Buffer) {
 				testutil.AssertContainsAll(t, buffer.String(), []string{"host-1", "example.com", "/path1", "app-1, app-2"})
 				testutil.AssertContainsAll(t, buffer.String(), []string{"host-2", "example.com", "/path1", "app-3"})
+				testutil.AssertContainsAll(t, buffer.String(), []string{"host-3", "example.com", "/path2"})
+
+				// Ensure it doesn't show deleted-app
+				if strings.Index(buffer.String(), "deleted-app") >= 0 {
+					t.Fatal("should not have 'deleted-app'")
+				}
 			},
 		},
 		"display claim": {
@@ -169,6 +181,12 @@ func buildApp(name, hostname, domain, path string) v1alpha1.App {
 			},
 		},
 	}
+}
+
+func buildDeletedApp(name, hostname, domain, path string) v1alpha1.App {
+	app := buildApp(name, hostname, domain, path)
+	app.DeletionTimestamp = &metav1.Time{Time: time.Now()}
+	return app
 }
 
 func buildRoute(hostname, domain, path string) v1alpha1.Route {

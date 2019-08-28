@@ -113,6 +113,10 @@ func groupRoutes(
 func appNames(apps []v1alpha1.App, route v1alpha1.RouteSpecFields) []string {
 	var names []string
 	for _, app := range apps {
+		if app.GetDeletionTimestamp() != nil {
+			continue
+		}
+
 		// Look to see if App already has Route
 		if !algorithms.Search(
 			0,

@@ -16,9 +16,13 @@ package route
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	routeinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/route"
+	routeclaiminformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/routeclaim"
+	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
 	"github.com/google/kf/pkg/reconciler"
 	appresources "github.com/google/kf/pkg/reconciler/app/resources"
 	"go.uber.org/zap"
@@ -37,11 +41,13 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	// Get informers off context
 	vsInformer := virtualserviceinformer.Get(ctx)
 	routeInformer := routeinformer.Get(ctx)
+	routeClaimInformer := routeclaiminformer.Get(ctx)
 
 	// Create reconciler
 	c := &Reconciler{
 		Base:                 reconciler.NewBase(ctx, cmw),
 		routeLister:          routeInformer.Lister(),
+		routeClaimLister:     routeClaimInformer.Lister(),
 		virtualServiceLister: vsInformer.Lister(),
 	}
 
@@ -49,16 +55,71 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 
 	logger.Info("Setting up event handlers")
 
-	// Watch for changes in sub-resources so we can sync accordingly
-	routeInformer.Informer().AddEventHandler(controller.HandleAll(impl.Enqueue))
+	enqueue := logError(logger.With("enqueue"), BuildEnqueuer(impl.Enqueue))
 
-	// Watch for any changes to VirtualServices in the kf namespace.
+	routeInformer.Informer().AddEventHandler(
+		controller.HandleAll(enqueue),
+	)
+
+	routeClaimInformer.Informer().AddEventHandler(
+		controller.HandleAll(enqueue),
+	)
+
 	vsInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: FilterVSWithNamespace(v1alpha1.KfNamespace),
-		Handler:    controller.HandleAll(EnqueueRoutesOfVirtualService(logger, impl, c)),
+		Handler:    controller.HandleAll(logError(logger, EnqueueRoutesOfVirtualService(enqueue, c.routeLister))),
 	})
 
 	return impl
+}
+
+// namespacedRouteSpecFields is used as a key for the route reconciler.
+type namespacedRouteSpecFields struct {
+	v1alpha1.RouteSpecFields
+	Namespace string
+}
+
+// logError allows functions that assist with enqueing to return an error.
+// Normal workflows work better when errors can be returned (instead of just
+// logged). Therefore logError allows these functions to return an error and
+// it will take care of swallowing and logging it.
+func logError(logger *zap.SugaredLogger, f func(interface{}) error) func(interface{}) {
+	return func(obj interface{}) {
+		if err := f(obj); err != nil {
+			logger.Warn(err)
+		}
+	}
+}
+
+// BuildEnqueuer returns a function that will enqueue a JSON marshalled
+// namespacedRouteSpecFields from a Route or RouteClaim.
+func BuildEnqueuer(enqueue func(interface{})) func(interface{}) error {
+	return func(obj interface{}) error {
+		nrf := namespacedRouteSpecFields{}
+		switch r := obj.(type) {
+		case *v1alpha1.Route:
+			nrf = namespacedRouteSpecFields{
+				Namespace:       r.GetNamespace(),
+				RouteSpecFields: r.Spec.RouteSpecFields,
+			}
+		case *v1alpha1.RouteClaim:
+			nrf = namespacedRouteSpecFields{
+				Namespace:       r.GetNamespace(),
+				RouteSpecFields: r.Spec.RouteSpecFields,
+			}
+		default:
+			return fmt.Errorf("unexpected type: %T", obj)
+		}
+
+		data, err := json.Marshal(nrf)
+		if err != nil {
+			// This should never happen
+			return err
+		}
+
+		enqueue(cache.ExplicitKey(data))
+		return nil
+	}
 }
 
 // FilterVSWithNamespace makes it simple to create FilterFunc's for use with
@@ -82,29 +143,29 @@ func FilterVSWithNamespace(namespace string) func(obj interface{}) bool {
 // NOT owned by a single Route. Therefore, when one changes, we need to grab
 // the collection of corresponding Routes.
 func EnqueueRoutesOfVirtualService(
-	logger *zap.SugaredLogger,
-	c *controller.Impl,
-	r *Reconciler,
-) func(obj interface{}) {
-	return func(obj interface{}) {
+	enqueue func(interface{}),
+	routeLister kflisters.RouteLister,
+) func(obj interface{}) error {
+	return func(obj interface{}) error {
 		vs, ok := obj.(*networking.VirtualService)
 		if !ok {
-			return
+			return nil
 		}
 
-		routes, err := r.routeLister.
+		routes, err := routeLister.
 			Routes(vs.Annotations["space"]).
 			List(appresources.MakeRouteSelectorNoPath(v1alpha1.RouteSpecFields{
 				Domain:   vs.Annotations["domain"],
 				Hostname: vs.Annotations["hostname"],
 			}))
 		if err != nil {
-			logger.Warnf("failed to list corresponding routes: %s", err)
-			return
+			return fmt.Errorf("failed to list corresponding routes: %s", err)
 		}
 
 		for _, route := range routes {
-			c.Enqueue(route)
+			enqueue(route)
 		}
+
+		return nil
 	}
 }
