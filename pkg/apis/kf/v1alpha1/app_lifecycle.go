@@ -144,13 +144,6 @@ func serviceBindingConditionType(binding *servicecatalogv1beta1.ServiceBinding) 
 // PropagateServiceBindingsStatus updates the service binding readiness status.
 func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalogv1beta1.ServiceBinding) {
 
-	if len(bindings) == 0 {
-		status.ServiceBindingConditions = duckv1beta1.Conditions{}
-		status.ServiceBindingNames = []string{}
-		status.manage().MarkTrue(AppConditionServiceBindingsReady)
-		return
-	}
-
 	// Gather binding names
 	var bindingNames []string
 	for _, binding := range bindings {
@@ -200,6 +193,11 @@ func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalo
 				manager.MarkUnknown(conditionType, cond.Reason, cond.Message)
 			}
 		}
+	}
+
+	// if there are no bindings, set the happy condition to true
+	if len(bindings) == 0 {
+		manager.MarkTrue(apis.ConditionReady)
 	}
 
 	// Copy Ready condition
