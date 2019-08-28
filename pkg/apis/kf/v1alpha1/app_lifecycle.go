@@ -195,8 +195,14 @@ func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalo
 		}
 	}
 
+	// if there are no bindings, set the happy condition to true
+	if len(bindings) == 0 {
+		manager.MarkTrue(apis.ConditionReady)
+	}
+
 	// Copy Ready condition
 	PropagateCondition(status.manage(), AppConditionServiceBindingsReady, manager.GetCondition(apis.ConditionReady))
+	status.ServiceBindingConditions = duckStatus.Conditions
 }
 
 // MarkSpaceHealthy notes that the space was able to be retrieved and
