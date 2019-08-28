@@ -54,7 +54,7 @@ func NewVcapService(instance apiv1beta1.ServiceInstance, binding apiv1beta1.Serv
 	// https://github.com/cloudfoundry/cloud_controller_ng/blob/65a75e6c97f49756df96e437e253f033415b2db1/app/presenters/system_environment/service_binding_presenter.rb#L32
 	vs := VcapService{
 		BindingName:  binding.Labels[kfv1alpha1.ComponentLabel],
-		Name:         coalesce(binding.Labels[kfv1alpha1.ComponentLabel], binding.Name),
+		Name:         coalesce(binding.Labels[kfv1alpha1.ComponentLabel], binding.Spec.InstanceRef.Name),
 		InstanceName: binding.Spec.InstanceRef.Name,
 		Label:        coalesce(instance.Spec.ServiceClassExternalName, instance.Spec.ClusterServiceClassExternalName),
 		Plan:         coalesce(instance.Spec.ServicePlanExternalName, instance.Spec.ClusterServicePlanExternalName),
