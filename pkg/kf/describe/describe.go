@@ -300,6 +300,13 @@ func ServiceInstance(w io.Writer, service *v1beta1.ServiceInstance) {
 			fmt.Fprintf(w, "Plan:\t%s\n", service.Spec.ClusterServicePlanRef.Name)
 		}
 
+		if service.Spec.Parameters != nil {
+			json.Unmarhal(service.Spec.Parameters.Raw)
+			SectionWriter(w, "Parameters", func(w io.Writer) {
+
+			}
+		}
+
 		cond := services.LastStatusCondition(*service)
 		fmt.Fprintf(w, "Status:\t%s\n", cond.Reason)
 	})

@@ -75,6 +75,7 @@ func TestNewCreateServiceCommand(t *testing.T) {
 			},
 			ExpectedStrings: []string{
 				"Name:    mydb",
+				"ram_gb",
 			},
 		},
 		"empty namespace": {
