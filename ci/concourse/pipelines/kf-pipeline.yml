@@ -50,7 +50,7 @@ resource_types:
 - name: pull-request
   type: docker-image
   source:
-    repository: teliaoss/github-pr-resource
+    repository: m0pt0pmatt/github-pr-resource
 
 resources:
 - name: kf-master
@@ -165,6 +165,7 @@ jobs:
             jq -r ".[] | select(.name == \"$1\") | .value"
           }
           pr_number=$(cat "$metadata" | jq_for pr)
+          git_uri=$(cat "$metadata" | jq_for head_repository_url)
           git_branch=$(cat "$metadata" | jq_for head_name)
 
           # Create the pipeline
@@ -172,6 +173,7 @@ jobs:
             -n \
             -p "$pr_number" \
             -c ci/concourse/pipelines/pr-pipeline.yml \
+            -v git_uri="$git_uri" \
             -v git_branch="$git_branch" \
             -v pr_number="$pr_number"
     on_failure:
