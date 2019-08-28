@@ -41,6 +41,8 @@ func TestNewBindServiceCommand(t *testing.T) {
 					testutil.AssertEqual(t, "params", map[string]interface{}{"ram_gb": 4.0}, config.Params())
 					testutil.AssertEqual(t, "namespace", "custom-ns", config.Namespace())
 				}).Return(dummyBindingRequestInstance("APP_NAME", "SERVICE_INSTANCE"), nil)
+
+				f.EXPECT().WaitForBindings(gomock.Any(), "custom-ns", "APP_NAME").Return(nil)
 			},
 		},
 		"empty namespace": {
@@ -56,6 +58,8 @@ func TestNewBindServiceCommand(t *testing.T) {
 					testutil.AssertEqual(t, "params", map[string]interface{}{}, config.Params())
 					testutil.AssertEqual(t, "namespace", "custom-ns", config.Namespace())
 				}).Return(dummyBindingRequestInstance("APP_NAME", "SERVICE_INSTANCE"), nil)
+
+				f.EXPECT().WaitForBindings(gomock.Any(), "custom-ns", "APP_NAME").Return(nil)
 			},
 		},
 		"bad config path": {
@@ -70,6 +74,22 @@ func TestNewBindServiceCommand(t *testing.T) {
 				f.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api-error"))
 			},
 			ExpectedErr: errors.New("api-error"),
+		},
+		"async": {
+			Args:      []string{"--async", "APP_NAME", "SERVICE_INSTANCE"},
+			Namespace: "default",
+			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
+				f.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(dummyBindingRequestInstance("APP_NAME", "SERVICE_INSTANCE"), nil)
+			},
+		},
+		"failed binding": {
+			Args:      []string{"APP_NAME", "SERVICE_INSTANCE"},
+			Namespace: "custom-ns",
+			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
+				f.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(dummyBindingRequestInstance("APP_NAME", "SERVICE_INSTANCE"), nil)
+				f.EXPECT().WaitForBindings(gomock.Any(), "custom-ns", "APP_NAME").Return(errors.New("binding already exists"))
+			},
+			ExpectedErr: errors.New("bind failed: binding already exists"),
 		},
 	}
 

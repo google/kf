@@ -74,6 +74,7 @@ func TestIntegration_Bindings(t *testing.T) {
 }
 
 func TestIntegration_VcapServices(t *testing.T) {
+	t.Skip("re-enable me when namespaced brokers are added")
 	checkClusterStatus(t)
 	appName := fmt.Sprintf("integration-binding-app-%d", time.Now().UnixNano())
 	appPath := "./samples/apps/envs"
@@ -86,9 +87,6 @@ func TestIntegration_VcapServices(t *testing.T) {
 					AssertEqual(t, "bound service count", 0, len(vcs))
 
 					withServiceBinding(ctx, t, kf, func(ctx context.Context) {
-						// Restart so that env vars are injected from the secret into app
-						kf.Restart(ctx, AppFromContext(ctx))
-						time.Sleep(5 * time.Second)
 						vcs := extractVcapServices(ctx, t, kf)
 
 						expected := cfutil.VcapServicesMap{
@@ -116,6 +114,47 @@ func TestIntegration_VcapServices(t *testing.T) {
 	})
 }
 
+func TestIntegration_VcapServices_customBindingName(t *testing.T) {
+	checkClusterStatus(t)
+	appName := fmt.Sprintf("integration-binding-app-%d", time.Now().UnixNano())
+	appPath := "./samples/apps/envs"
+	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+		withServiceBroker(ctx, t, kf, func(ctx context.Context) {
+			withServiceInstance(ctx, kf, func(ctx context.Context) {
+				withApp(ctx, t, kf, appName, appPath, false, func(ctx context.Context) {
+					serviceInstanceName := ServiceInstanceFromContext(ctx)
+					appName := AppFromContext(ctx)
+					kf.BindService(ctx, appName, serviceInstanceName, "--binding-name", "my-binding")
+					defer kf.UnbindService(ctx, appName, serviceInstanceName) // cleanup
+
+					// Restart so that env vars are injected from the secret into app
+					// kf.Restart(ctx, AppFromContext(ctx))
+					vcs := extractVcapServices(ctx, t, kf)
+
+					expected := cfutil.VcapServicesMap{
+						ServiceClassFromContext(ctx): []cfutil.VcapService{
+							{
+								BindingName:  "my-binding",
+								InstanceName: ServiceInstanceFromContext(ctx),
+								Name:         "my-binding",
+								Label:        ServiceClassFromContext(ctx),
+								Tags:         []string(nil),
+								Plan:         ServicePlanFromContext(ctx),
+								Credentials: map[string]string{
+									"password": "fake-pw",
+									"username": "fake-user",
+								},
+							},
+						},
+					}
+
+					AssertEqual(t, "vcap services", expected, vcs)
+				})
+			})
+		})
+	})
+}
+
 var checkOnce sync.Once
 
 func checkClusterStatus(t *testing.T) {
@@ -128,7 +167,7 @@ func extractVcapServices(ctx context.Context, t *testing.T, kf *Kf) cfutil.VcapS
 	vcapServicesOutput := kf.VcapServices(ctx, AppFromContext(ctx))
 	vcapServices := cfutil.VcapServicesMap{}
 	if err := json.Unmarshal([]byte(strings.Join(vcapServicesOutput, "\n")), &vcapServices); err != nil {
-		t.Fatalf("couldn't unmarahsl VCAP Services: %s", err)
+		t.Fatalf("couldn't unmarshal VCAP Services: %s", err)
 	}
 
 	return vcapServices
@@ -145,7 +184,7 @@ func testIntegration_Doctor(t *testing.T) {
 func withServiceBroker(ctx context.Context, t *testing.T, kf *Kf, callback func(newCtx context.Context)) {
 	brokerAppName := fmt.Sprintf("integration-broker-app-%d", time.Now().UnixNano())
 	brokerPath := "./samples/apps/service-broker"
-	brokerName := "fake-broker"
+	brokerName := fmt.Sprintf("fake-broker-%d", time.Now().UnixNano())
 
 	withApp(ctx, t, kf, brokerAppName, brokerPath, true, func(ctx context.Context) {
 		// Register the mock service broker to service catalog, and then clean it up.
@@ -159,7 +198,6 @@ func withServiceBroker(ctx context.Context, t *testing.T, kf *Kf, callback func(
 		ctx = ContextWithBroker(ctx, brokerName)
 		callback(ctx)
 	})
-
 }
 
 func withServiceInstance(ctx context.Context, kf *Kf, callback func(newCtx context.Context)) {
@@ -168,11 +206,6 @@ func withServiceInstance(ctx context.Context, kf *Kf, callback func(newCtx conte
 	serviceInstanceName := "int-service-instance"
 
 	kf.CreateService(ctx, serviceClass, servicePlan, serviceInstanceName)
-
-	// Temporary solution to allow service instance creation to complete.
-	// TODO: Add flag to run the command synchronously.
-	time.Sleep(2 * time.Second)
-
 	defer kf.DeleteService(ctx, serviceInstanceName)
 
 	ctx = ContextWithServiceClass(ctx, serviceClass)
@@ -185,10 +218,6 @@ func withServiceBinding(ctx context.Context, t *testing.T, kf *Kf, callback func
 	serviceInstanceName := ServiceInstanceFromContext(ctx)
 	appName := AppFromContext(ctx)
 	kf.BindService(ctx, appName, serviceInstanceName)
-
-	// Temporary solution to allow service binding to complete.
-	// TODO: Add flag to run the command synchronously.
-	time.Sleep(2 * time.Second)
 	defer kf.UnbindService(ctx, appName, serviceInstanceName)
 
 	callback(ctx)

@@ -20,6 +20,7 @@
 package fake
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	service_bindings "github.com/google/kf/pkg/kf/service-bindings"
@@ -106,4 +107,18 @@ func (m *FakeClientInterface) List(arg0 ...service_bindings.ListOption) ([]v1bet
 func (mr *FakeClientInterfaceMockRecorder) List(arg0 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*FakeClientInterface)(nil).List), arg0...)
+}
+
+// WaitForBindings mocks base method
+func (m *FakeClientInterface) WaitForBindings(arg0 context.Context, arg1, arg2 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WaitForBindings", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WaitForBindings indicates an expected call of WaitForBindings
+func (mr *FakeClientInterfaceMockRecorder) WaitForBindings(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitForBindings", reflect.TypeOf((*FakeClientInterface)(nil).WaitForBindings), arg0, arg1, arg2)
 }
