@@ -22,7 +22,6 @@ import (
 	"log"
 	"time"
 
-	"k8s.io/api/core/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -60,7 +59,7 @@ func (t *tailer) Tail(ctx context.Context, appName string, out io.Writer, opts .
 	}
 
 	namespace := cfg.Namespace
-	logOpts := v1.PodLogOptions{
+	logOpts := corev1.PodLogOptions{
 		// We need to specify which container we want to use. 'user-container'
 		// is the container where the user's application is ran (as opposed to
 		// a side-car such as istio-proxy).
@@ -83,7 +82,7 @@ func (t *tailer) Tail(ctx context.Context, appName string, out io.Writer, opts .
 	return nil
 }
 
-func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, writer *MutexWriter, opts v1.PodLogOptions) error {
+func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, writer *MutexWriter, opts corev1.PodLogOptions) error {
 	w, err := t.client.Pods(namespace).Watch(metav1.ListOptions{
 		LabelSelector: "serving.knative.dev/service=" + appName,
 	})
@@ -110,10 +109,14 @@ func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, wr
 		case <-initTimer.C:
 			// Time out waiting for a log.
 			return nil
-		case e := <-w.ResultChan():
-			pod, ok := e.Object.(*v1.Pod)
+		case e, ok := <-w.ResultChan():
 			if !ok {
-				log.Printf("[WARN] watched object is not pod %s", err)
+				return nil
+			}
+
+			pod, ok := e.Object.(*corev1.Pod)
+			if !ok {
+				log.Print("[WARN] watched object is not pod")
 			}
 
 			switch e.Type {
@@ -131,7 +134,7 @@ func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, wr
 	}
 }
 
-func (t *tailer) readLogs(ctx context.Context, name, namespace string, out *MutexWriter, opts v1.PodLogOptions) {
+func (t *tailer) readLogs(ctx context.Context, name, namespace string, out *MutexWriter, opts corev1.PodLogOptions) {
 	var err error
 	var stop bool
 
@@ -148,7 +151,7 @@ func (t *tailer) readLogs(ctx context.Context, name, namespace string, out *Mute
 	}
 }
 
-func (t *tailer) readStream(ctx context.Context, name, namespace string, mw *MutexWriter, opts v1.PodLogOptions) (bool, error) {
+func (t *tailer) readStream(ctx context.Context, name, namespace string, mw *MutexWriter, opts corev1.PodLogOptions) (bool, error) {
 	pod, err := t.client.Pods(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return true, fmt.Errorf("failed to get Pod '%s': %s", name, err)
