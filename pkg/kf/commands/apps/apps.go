@@ -54,13 +54,16 @@ func NewAppsCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 				for _, app := range applist {
 
 					// Requested State
-					requestedState := "started"
-					if app.Spec.Instances.Stopped {
-						requestedState = "stopped"
-					} else if cond := app.Status.GetCondition("Ready"); cond != nil && cond.Status == "Pending" {
-						requestedState = "starting"
-					} else if !app.DeletionTimestamp.IsZero() {
+					var requestedState string
+					switch {
+					case !app.DeletionTimestamp.IsZero():
 						requestedState = "deleting"
+					case app.Spec.Instances.Stopped:
+						requestedState = "stopped"
+					case !app.Status.IsReady():
+						requestedState = "not ready"
+					default:
+						requestedState = "ready"
 					}
 
 					// Instances
