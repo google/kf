@@ -95,7 +95,7 @@ func (ac *appsClient) Restage(namespace, name string) error {
 
 // ConditionServiceBindingsReady returns true if service bindings are ready and
 // errors if the bindings failed.
-func ConditionServiceBindingsReady(app *v1alpha1.App, apiErr error) (bool, error) {
+func ConditionServiceBindingsReady(app *v1alpha1.App, apiErr error) (isFinal bool, err error) {
 	if apiErr != nil {
 		return true, apiErr
 	}
@@ -113,7 +113,9 @@ func ConditionServiceBindingsReady(app *v1alpha1.App, apiErr error) (bool, error
 		case cond.IsUnknown():
 			return false, nil
 
-		default: // false and any other status gets a failure
+		default:
+			// return true and a failrue assuming IsFalse and other statuses can't be
+			// recovered from because they violate the K8s spec
 			return true, fmt.Errorf("checking %s failed, status: %s message: %s reason: %s", cond.Type, cond.Status, cond.Message, cond.Reason)
 		}
 	}

@@ -127,8 +127,6 @@ func TestIntegration_VcapServices_customBindingName(t *testing.T) {
 					kf.BindService(ctx, appName, serviceInstanceName, "--binding-name", "my-binding")
 					defer kf.UnbindService(ctx, appName, serviceInstanceName) // cleanup
 
-					// Restart so that env vars are injected from the secret into app
-					// kf.Restart(ctx, AppFromContext(ctx))
 					vcs := extractVcapServices(ctx, t, kf)
 
 					expected := cfutil.VcapServicesMap{
