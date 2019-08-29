@@ -24,6 +24,7 @@ kf bind-service APP_NAME SERVICE_INSTANCE [-c PARAMETERS_AS_JSON] [--binding-nam
 ### Options
 
 ```
+      --async                 Don't wait for the binding to be ready before returning
   -b, --binding-name string   Name to expose service instance to app process with (default: service instance name)
   -h, --help                  help for bind-service
 ```
