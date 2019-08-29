@@ -298,8 +298,16 @@ func ServiceInstance(w io.Writer, service *v1beta1.ServiceInstance) {
 			fmt.Fprintf(w, "Service:\t%s\n", service.Spec.ClusterServiceClassRef.Name)
 		}
 
+		if service.Spec.ServiceClassRef != nil {
+			fmt.Fprintf(w, "Service:\t%s\n", service.Spec.ServiceClassRef.Name)
+		}
+
 		if service.Spec.ClusterServicePlanRef != nil {
 			fmt.Fprintf(w, "Plan:\t%s\n", service.Spec.ClusterServicePlanRef.Name)
+		}
+
+		if service.Spec.ServicePlanRef != nil {
+			fmt.Fprintf(w, "Plan:\t%s\n", service.Spec.ServicePlanRef.Name)
 		}
 
 		if service.Spec.Parameters != nil {

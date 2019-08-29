@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	servicecatalogclientfake "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/fake"
+	servicecatalogv1beta1fake "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/typed/servicecatalog/v1beta1/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
 	servicescmd "github.com/google/kf/pkg/kf/commands/services"
 	"github.com/google/kf/pkg/kf/commands/utils"
@@ -55,6 +56,27 @@ func TestNewCreateServiceCommand(t *testing.T) {
 		},
 	}
 
+	clusterPlan := servicecatalogv1beta1.ClusterServicePlan{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "db-service-free",
+			Namespace: "custom-ns",
+		},
+		Spec: servicecatalogv1beta1.ClusterServicePlanSpec{
+			CommonServicePlanSpec: servicecatalogv1beta1.CommonServicePlanSpec{
+				ExternalName: "free",
+			},
+			ClusterServiceClassRef: servicecatalogv1beta1.ClusterObjectReference{
+				Name: "db-service",
+			},
+		},
+	}
+
+	clusterPlanList := &servicecatalogv1beta1.ClusterServicePlanList{
+		Items: []servicecatalogv1beta1.ClusterServicePlan{
+			clusterPlan,
+		},
+	}
+
 	cases := map[string]struct {
 		Args      []string
 		Setup     func(t *testing.T) *servicecatalogclientfake.Clientset
@@ -74,7 +96,22 @@ func TestNewCreateServiceCommand(t *testing.T) {
 				return servicecatalogclientfake.NewSimpleClientset(planList)
 			},
 			ExpectedStrings: []string{
-				"Name:    mydb",
+				"db-service",
+				"mydb",
+				"free",
+				"ram_gb",
+			},
+		},
+		"service from cluster broker": {
+			Args:      []string{"db-service", "free", "mydb", `--config={"ram_gb":4}`},
+			Namespace: "custom-ns",
+			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
+				return servicecatalogclientfake.NewSimpleClientset(clusterPlanList)
+			},
+			ExpectedStrings: []string{
+				"db-service",
+				"mydb",
+				"free",
 				"ram_gb",
 			},
 		},
@@ -86,7 +123,7 @@ func TestNewCreateServiceCommand(t *testing.T) {
 			Args:      []string{"db-service", "free", "mydb"},
 			Namespace: "custom-ns",
 			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				return servicecatalogclientfake.NewSimpleClientset(dummyServerInstance("mydb"))
+				return servicecatalogclientfake.NewSimpleClientset(planList)
 			},
 		},
 		"bad path": {
@@ -98,8 +135,8 @@ func TestNewCreateServiceCommand(t *testing.T) {
 			Args:      []string{"db-service", "free", "mydb"},
 			Namespace: "custom-ns",
 			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				client := servicecatalogclientfake.NewSimpleClientset(dummyServerInstance("mydb"))
-				client.AddReactor("*", "*", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
+				client := servicecatalogclientfake.NewSimpleClientset()
+				client.ServicecatalogV1beta1().(*servicecatalogv1beta1fake.FakeServicecatalogV1beta1).PrependReactor("*", "*", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
 					return true, nil, errors.New("server-call-error")
 				})
 				return client
