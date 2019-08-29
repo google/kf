@@ -182,6 +182,42 @@ func TestNewCreateServiceCommand(t *testing.T) {
 			},
 			ExpectedErr: errors.New("server-call-error"),
 		},
+		"bad server call listing cluster plans": {
+			Args:      []string{"db-service", "free", "mydb"},
+			Namespace: "custom-ns",
+			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
+				client := servicecatalogclientfake.NewSimpleClientset()
+				client.ServicecatalogV1beta1().(*servicecatalogv1beta1fake.FakeServicecatalogV1beta1).PrependReactor("list", "clusterserviceplans.servicecatalog.k8s.io", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, nil, errors.New("server-call-error")
+				})
+				return client
+			},
+			ExpectedErr: errors.New("server-call-error"),
+		},
+		"bad server call listing plans": {
+			Args:      []string{"db-service", "free", "mydb"},
+			Namespace: "custom-ns",
+			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
+				client := servicecatalogclientfake.NewSimpleClientset(clusterPlanList, planList)
+				client.ServicecatalogV1beta1().(*servicecatalogv1beta1fake.FakeServicecatalogV1beta1).PrependReactor("list", "serviceplans.servicecatalog.k8s.io", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, nil, errors.New("server-call-error")
+				})
+				return client
+			},
+			ExpectedErr: errors.New("server-call-error"),
+		},
+		"bad server call creating": {
+			Args:      []string{"db-service", "free", "mydb"},
+			Namespace: "custom-ns",
+			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
+				client := servicecatalogclientfake.NewSimpleClientset(clusterPlanList, planList)
+				client.ServicecatalogV1beta1().(*servicecatalogv1beta1fake.FakeServicecatalogV1beta1).PrependReactor("create", "serviceinstances.servicecatalog.k8s.io", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, nil, errors.New("server-call-error")
+				})
+				return client
+			},
+			ExpectedErr: errors.New("server-call-error"),
+		},
 	}
 
 	for tn, tc := range cases {
@@ -212,75 +248,3 @@ func TestNewCreateServiceCommand(t *testing.T) {
 		})
 	}
 }
-
-/*
-func TestClient_CreateService(t *testing.T) {
-	t.Parallel()
-
-	cases := map[string]struct {
-		InstanceName string
-		ServiceName  string
-		PlanName     string
-		Options      []CreateServiceOption
-		ProvisionErr error
-
-		ExpectErr error
-	}{
-		"default values": {
-			InstanceName: "instance-name",
-			ServiceName:  "service-name",
-			PlanName:     "plan-name",
-			Options:      []CreateServiceOption{},
-			ExpectErr:    nil,
-		},
-		"custom values": {
-			InstanceName: "instance-name",
-			ServiceName:  "service-name",
-			PlanName:     "plan-name",
-			Options: []CreateServiceOption{
-				WithCreateServiceNamespace("custom-namespace"),
-				WithCreateServiceParams(map[string]interface{}{"foo": 33}),
-			},
-			ExpectErr: nil,
-		},
-		"error in provision": {
-			InstanceName: "instance-name",
-			ServiceName:  "service-name",
-			PlanName:     "plan-name",
-			ProvisionErr: errors.New("provision-err"),
-			ExpectErr:    errors.New("provision-err"),
-		},
-	}
-
-	for tn, tc := range cases {
-		t.Run(tn, func(t *testing.T) {
-			fakeClient := &servicecatalogfakes.FakeSvcatClient{}
-
-			fakeClient.ProvisionStub = func(instanceName, className, planName string, opts *servicecatalog.ProvisionOptions) (*v1beta1.ServiceInstance, error) {
-				expectedCfg := CreateServiceOptionDefaults().Extend(tc.Options).toConfig()
-
-				testutil.AssertEqual(t, "instanceName", tc.InstanceName, instanceName)
-				testutil.AssertEqual(t, "className", tc.ServiceName, className)
-				testutil.AssertEqual(t, "planName", tc.PlanName, planName)
-				testutil.AssertEqual(t, "opts.namespace", expectedCfg.Namespace, opts.Namespace)
-				testutil.AssertEqual(t, "opts.params", expectedCfg.Params, opts.Params)
-
-				return nil, tc.ProvisionErr
-			}
-
-			client := NewClient(func(ns string) servicecatalog.SvcatClient {
-				return fakeClient
-			})
-
-			_, actualErr := client.CreateService(tc.InstanceName, tc.ServiceName, tc.PlanName, tc.Options...)
-			if tc.ExpectErr != nil || actualErr != nil {
-				testutil.AssertErrorsEqual(t, tc.ExpectErr, actualErr)
-
-				return
-			}
-
-			testutil.AssertEqual(t, "calls to provision", 1, fakeClient.ProvisionCallCount())
-		})
-	}
-}
-*/
