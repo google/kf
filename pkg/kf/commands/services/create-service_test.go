@@ -22,7 +22,6 @@ import (
 	"testing"
 
 	servicecatalogclientfake "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/fake"
-	servicecatalogv1beta1fake "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/typed/servicecatalog/v1beta1/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
 	servicescmd "github.com/google/kf/pkg/kf/commands/services"
 	"github.com/google/kf/pkg/kf/commands/utils"
@@ -142,7 +141,7 @@ func TestNewCreateServiceCommand(t *testing.T) {
 			Namespace: "custom-ns",
 			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
 				client := servicecatalogclientfake.NewSimpleClientset(planList, clusterPlanList)
-				client.ServicecatalogV1beta1().(*servicecatalogv1beta1fake.FakeServicecatalogV1beta1).PrependReactor("*", "serviceplans.servicecatalog.k8s.io", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
+				client.PrependReactor("*", "serviceplans", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
 					return true, nil, errors.New("dont ask for namespaced plans")
 				})
 				return client
@@ -175,7 +174,7 @@ func TestNewCreateServiceCommand(t *testing.T) {
 			Namespace: "custom-ns",
 			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
 				client := servicecatalogclientfake.NewSimpleClientset()
-				client.ServicecatalogV1beta1().(*servicecatalogv1beta1fake.FakeServicecatalogV1beta1).PrependReactor("*", "*", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
+				client.PrependReactor("*", "*", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
 					return true, nil, errors.New("server-call-error")
 				})
 				return client
@@ -186,8 +185,8 @@ func TestNewCreateServiceCommand(t *testing.T) {
 			Args:      []string{"db-service", "free", "mydb"},
 			Namespace: "custom-ns",
 			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				client := servicecatalogclientfake.NewSimpleClientset()
-				client.ServicecatalogV1beta1().(*servicecatalogv1beta1fake.FakeServicecatalogV1beta1).PrependReactor("list", "clusterserviceplans.servicecatalog.k8s.io", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
+				client := servicecatalogclientfake.NewSimpleClientset(clusterPlanList, planList)
+				client.PrependReactor("*", "clusterserviceplans", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
 					return true, nil, errors.New("server-call-error")
 				})
 				return client
@@ -198,8 +197,20 @@ func TestNewCreateServiceCommand(t *testing.T) {
 			Args:      []string{"db-service", "free", "mydb"},
 			Namespace: "custom-ns",
 			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				client := servicecatalogclientfake.NewSimpleClientset(clusterPlanList, planList)
-				client.ServicecatalogV1beta1().(*servicecatalogv1beta1fake.FakeServicecatalogV1beta1).PrependReactor("list", "serviceplans.servicecatalog.k8s.io", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
+				client := servicecatalogclientfake.NewSimpleClientset(planList)
+				client.PrependReactor("list", "serviceplans", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, nil, errors.New("server-call-error")
+				})
+				return client
+			},
+			ExpectedErr: errors.New("server-call-error"),
+		},
+		"bad server call creating from cluster": {
+			Args:      []string{"db-service", "free", "mydb"},
+			Namespace: "custom-ns",
+			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
+				client := servicecatalogclientfake.NewSimpleClientset(clusterPlanList)
+				client.PrependReactor("create", "serviceinstances", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
 					return true, nil, errors.New("server-call-error")
 				})
 				return client
@@ -210,8 +221,8 @@ func TestNewCreateServiceCommand(t *testing.T) {
 			Args:      []string{"db-service", "free", "mydb"},
 			Namespace: "custom-ns",
 			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				client := servicecatalogclientfake.NewSimpleClientset(clusterPlanList, planList)
-				client.ServicecatalogV1beta1().(*servicecatalogv1beta1fake.FakeServicecatalogV1beta1).PrependReactor("create", "serviceinstances.servicecatalog.k8s.io", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
+				client := servicecatalogclientfake.NewSimpleClientset(planList)
+				client.PrependReactor("create", "serviceinstances", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
 					return true, nil, errors.New("server-call-error")
 				})
 				return client

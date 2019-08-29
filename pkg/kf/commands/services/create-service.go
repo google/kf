@@ -114,6 +114,10 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 			namespacePlans, err := client.ServicecatalogV1beta1().
 				ServicePlans(p.Namespace).
 				List(metav1.ListOptions{})
+			if err != nil {
+				return err
+			}
+
 			for _, plan := range namespacePlans.Items {
 				if planName != plan.Spec.ExternalName {
 					continue
