@@ -25,7 +25,7 @@ kf create-service SERVICE PLAN SERVICE_INSTANCE [-c PARAMETERS_AS_JSON] [-b serv
 ### Options
 
 ```
-  -b, --broker string   Service broker to use. (default "{}")
+  -b, --broker string   Service broker to use.
   -h, --help            help for create-service
 ```
 
