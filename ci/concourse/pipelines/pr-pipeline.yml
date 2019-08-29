@@ -255,7 +255,7 @@ jobs:
           /bin/echo 'y' | gcloud auth configure-docker
 
           # Run integration tests
-          RACE=false hack/integration-test.sh
+          hack/integration-test.sh
     on_failure: *on_failure
 - name: success
   plan:
