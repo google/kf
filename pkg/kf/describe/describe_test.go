@@ -28,6 +28,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
@@ -398,6 +399,9 @@ func ExampleServiceInstance() {
 		Spec: v1beta1.ServiceInstanceSpec{
 			ClusterServiceClassRef: &v1beta1.ClusterObjectReference{Name: "myclass"},
 			ClusterServicePlanRef:  &v1beta1.ClusterObjectReference{Name: "myplan"},
+			Parameters: &runtime.RawExtension{
+				Raw: []byte(`{"some":"params"}`),
+			},
 		},
 		Status: v1beta1.ServiceInstanceStatus{
 			Conditions: []v1beta1.ServiceInstanceCondition{
@@ -411,5 +415,7 @@ func ExampleServiceInstance() {
 	//   Name:     myservice-instance
 	//   Service:  myclass
 	//   Plan:     myplan
-	//   Status:   Ready
+	//   Parameters:
+	//     some: params
+	//   Status:  Ready
 }

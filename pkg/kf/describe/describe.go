@@ -15,6 +15,7 @@
 package describe
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"sort"
@@ -22,6 +23,7 @@ import (
 	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
@@ -301,10 +303,18 @@ func ServiceInstance(w io.Writer, service *v1beta1.ServiceInstance) {
 		}
 
 		if service.Spec.Parameters != nil {
-			json.Unmarhal(service.Spec.Parameters.Raw)
-			SectionWriter(w, "Parameters", func(w io.Writer) {
-
+			var params map[string]interface{}
+			err := json.Unmarshal(service.Spec.Parameters.Raw, &params)
+			if err != nil {
+				panic(err)
 			}
+			prettyParams, err := yaml.Marshal(params)
+			if err != nil {
+				panic(err)
+			}
+			SectionWriter(w, "Parameters", func(w io.Writer) {
+				fmt.Fprintf(w, string(prettyParams))
+			})
 		}
 
 		cond := services.LastStatusCondition(*service)
