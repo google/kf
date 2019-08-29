@@ -100,6 +100,7 @@ func TestIntegration_Push_docker(t *testing.T) {
 // stops it and ensures it can no longer reach the app. It then starts it and
 // tries posting to it again. It finally deletes the app.
 func TestIntegration_StopStart(t *testing.T) {
+	t.Skip("This test is slow and flaky")
 	t.Parallel()
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {

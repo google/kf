@@ -198,7 +198,28 @@ jobs:
     trigger: true
   - get: ci-image
   - get: ci-src
-  - task: test
+  - task: unit-tests
+    timeout: 10m
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: *ci-image-source
+      inputs:
+      - name: src
+      - name: ci-src
+      params:
+        GOPROXY: *go_proxy
+        GOSUMDB: *go_sum_db
+      run:
+        dir: src
+        path: sh
+        args:
+        - -exc
+        - |
+          # Run unit tests
+          hack/unit-test.sh
+  - task: integration-tests
     timeout: 1h30m
     config:
       platform: linux
@@ -233,8 +254,8 @@ jobs:
             --project "$GCP_PROJECT_ID"
           /bin/echo 'y' | gcloud auth configure-docker
 
-          # Run all tests
-          RACE=false hack/test.sh
+          # Run integration tests
+          RACE=false hack/integration-test.sh
     on_failure: *on_failure
 - name: success
   plan:
