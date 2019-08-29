@@ -15,6 +15,7 @@
 package servicebindings
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/google/kf/pkg/kf/commands/config"
@@ -29,6 +30,7 @@ func NewBindServiceCommand(p *config.KfParams, client servicebindings.ClientInte
 	var (
 		bindingName  string
 		configAsJSON string
+		async        bool
 	)
 
 	createCmd := &cobra.Command{
@@ -65,6 +67,13 @@ func NewBindServiceCommand(p *config.KfParams, client servicebindings.ClientInte
 				return err
 			}
 
+			if !async {
+				fmt.Fprintf(cmd.OutOrStderr(), "Waiting for bindings to become ready on %s...\n", appName)
+				if err := client.WaitForBindings(context.Background(), p.Namespace, appName); err != nil {
+					return fmt.Errorf("bind failed: %s", err)
+				}
+			}
+
 			fmt.Fprintf(cmd.OutOrStderr(), "Use 'kf restart %s' to ensure your changes take effect\n", appName)
 
 			return nil
@@ -84,6 +93,14 @@ func NewBindServiceCommand(p *config.KfParams, client servicebindings.ClientInte
 		"b",
 		"",
 		"Name to expose service instance to app process with (default: service instance name)")
+
+	createCmd.Flags().BoolVarP(
+		&async,
+		"async",
+		"",
+		false,
+		"Don't wait for the binding to be ready before returning",
+	)
 
 	return createCmd
 }

@@ -16,7 +16,11 @@ package v1alpha1
 
 import (
 	"context"
+	"hash/crc64"
 	"path"
+	"strconv"
+
+	"github.com/knative/serving/pkg/resources"
 )
 
 const (
@@ -48,6 +52,7 @@ func GenerateRouteNameFromSpec(spec RouteSpecFields, appName string) string {
 // SetDefaults implements apis.Defaultable
 func (k *Route) SetDefaults(ctx context.Context) {
 	k.Spec.SetDefaults(ctx)
+	k.Labels = resources.UnionMaps(k.Labels, k.Spec.RouteSpecFields.labels())
 }
 
 // SetDefaults implements apis.Defaultable
@@ -58,6 +63,14 @@ func (k *RouteSpec) SetDefaults(ctx context.Context) {
 // SetDefaults implements apis.Defaultable
 func (k *RouteSpecFields) SetDefaults(ctx context.Context) {
 	k.Path = path.Join("/", k.Path)
+}
+
+func (k *RouteSpecFields) labels() map[string]string {
+	return map[string]string{
+		RouteHostname: k.Hostname,
+		RouteDomain:   k.Domain,
+		RoutePath:     ToBase36(k.Path),
+	}
 }
 
 // SetSpaceDefaults sets the default values for the Route based on the space's
@@ -85,4 +98,26 @@ func (k *RouteSpecFields) SetSpaceDefaults(space *Space) {
 			break
 		}
 	}
+}
+
+// SetDefaults sets the defaults for a RouteClaim.
+func (k *RouteClaim) SetDefaults(ctx context.Context) {
+	k.Spec.SetDefaults(ctx)
+	k.Labels = resources.UnionMaps(k.Labels, k.Spec.RouteSpecFields.labels())
+}
+
+// SetDefaults implements apis.Defaultable
+func (k *RouteClaimSpec) SetDefaults(ctx context.Context) {
+	k.RouteSpecFields.SetDefaults(ctx)
+}
+
+// ToBase36 is a helpful function that converts a string into something that
+// is encoded and safe for URLs, names etc... Base 36 uses 0-9a-z
+func ToBase36(s string) string {
+	return strconv.FormatUint(
+		crc64.Checksum(
+			[]byte(s),
+			crc64.MakeTable(crc64.ECMA),
+		),
+		36)
 }

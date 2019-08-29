@@ -14,17 +14,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -eu
+set -e
 
-readonly target=${1:?Error: Please supply a target}
-shift
-readonly pipeline=${1:?Error: Please supply a pr number}
-shift
-readonly branch=${1:?Error: Please supply a git branch}
-shift
+usage="Usage: $0 -t fly-target -p pull-request -u git-uri -b git-branch"
+
+while getopts t:p:u:b: o
+do case "$o" in
+  t)  target="$OPTARG";;
+  p)  pipeline="$OPTARG";;
+  u)  uri="$OPTARG";;
+  b)  branch="$OPTARG";;
+  [?])  echo $usage >&2 && exit 1;;
+  esac
+done
+
+[ "$target" != "" ] || (echo "Error: Please supply a target. $usage" >&2 && exit 1)
+[ "$pipeline" != "" ] || (echo "Error: Please supply a pipeline. $usage" >&2 && exit 1)
+[ "$uri" != "" ] || (echo "Error: Please supply a uri. $usage" >&2 && exit 1)
+[ "$branch" != "" ] || (echo "Error: Please supply a branch. $usage" >&2 && exit 1)
 
 set -x
 
 config=ci/concourse/pipelines/pr-pipeline.yml
 
-fly -t $target set-pipeline -p $pipeline -c $config -v pr_number=$pipeline -v git_branch=$branch
+fly -t $target set-pipeline -p $pipeline -c $config -v pr_number=$pipeline -v git_uri=$uri -v git_branch=$branch

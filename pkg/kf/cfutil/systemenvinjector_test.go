@@ -48,10 +48,8 @@ var (
 
 	serviceBinding = &servicecatalogv1beta1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "my-binding",
-			Labels: map[string]string{
-				"kf-binding-name": "my-binding-name",
-			},
+			Name:   "my-binding",
+			Labels: app.ComponentLabels("my-binding-name"),
 		},
 		Spec: servicecatalogv1beta1.ServiceBindingSpec{
 			InstanceRef: servicecatalogv1beta1.LocalObjectReference{
@@ -82,7 +80,7 @@ func Test_GetVcapServices(t *testing.T) {
 
 				vcapService, err := systemEnvInjector.GetVcapService(app.Name, serviceBinding)
 				testutil.AssertNil(t, "error", err)
-				testutil.AssertEqual(t, "name", "my-binding", vcapService.Name)
+				testutil.AssertEqual(t, "name", "my-binding-name", vcapService.Name)
 				testutil.AssertEqual(t, "instance name", "my-instance", vcapService.InstanceName)
 				testutil.AssertEqual(t, "label", "my-class", vcapService.Label)
 				testutil.AssertEqual(t, "tags", []string{}, vcapService.Tags)

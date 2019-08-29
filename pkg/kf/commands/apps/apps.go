@@ -44,14 +44,14 @@ func NewAppsCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 
 			fmt.Fprintf(cmd.OutOrStdout(), "Getting apps in space %s\n\n", p.Namespace)
 
-			apps, err := appsClient.List(p.Namespace)
+			applist, err := appsClient.List(p.Namespace)
 			if err != nil {
 				return err
 			}
 
 			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
-				fmt.Fprintln(w, "Name\tRequested State\tInstances\tMemory\tDisk\tURLs")
-				for _, app := range apps {
+				fmt.Fprintln(w, "Name\tRequested State\tInstances\tMemory\tDisk\tURLs\tCluster URL")
+				for _, app := range applist {
 
 					// Requested State
 					requestedState := "started"
@@ -111,13 +111,16 @@ func NewAppsCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 						continue
 					}
 
-					fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
+					kfApp := apps.NewFromApp(&app)
+
+					fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 						app.Name,
 						requestedState,
 						instances,
 						memory,
 						disk,
 						strings.Join(urls, ", "),
+						kfApp.GetClusterURL(),
 					)
 				}
 			})

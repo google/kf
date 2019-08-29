@@ -19,13 +19,13 @@ vars:
 # pull request vars
 # git src vars
 - &github_repo ((github_repo))
-- &git_uri ((git_uri))
+- &git_uri {{git_uri}}
 - &git_branch {{git_branch}}
 - &pr_number {{pr_number}}
 
 # ci config vars
 - &ci_git_uri ((ci_git_uri))
-- &ci_git_branch {{git_branch}}
+- &ci_git_branch ((ci_git_branch))
 - &ci_image_uri ((ci_image_uri))
 - &github_access_token ((github_access_token))
 - &service_account_json ((service_account_json))

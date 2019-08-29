@@ -71,8 +71,10 @@ func NewKfCommand() *cobra.Command {
 	rootCmd.PersistentFlags().StringVar(&p.Config, "config", "", "Config file (default is $HOME/.kf)")
 	rootCmd.PersistentFlags().StringVar(&p.KubeCfgFile, "kubeconfig", "", "Kubectl config file (default is $HOME/.kube/config)")
 	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "", "Kubernetes namespace to target")
-
 	completion.MarkFlagCompletionSupported(rootCmd.PersistentFlags(), "namespace", "spaces")
+
+	rootCmd.PersistentFlags().BoolVar(&p.LogHTTP, "log-http", false, "Log HTTP requests to stderr")
+
 	rootCmd = group.AddCommandGroups(rootCmd, group.CommandGroups{
 		{
 			Name: "App Management",

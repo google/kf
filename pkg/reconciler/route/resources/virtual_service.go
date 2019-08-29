@@ -22,12 +22,10 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/algorithms"
-	"github.com/gorilla/mux"
 	"github.com/knative/serving/pkg/network"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	istio "knative.dev/pkg/apis/istio/common/v1alpha1"
 	networking "knative.dev/pkg/apis/istio/v1alpha3"
-	"knative.dev/pkg/kmeta"
 )
 
 const (
@@ -48,15 +46,15 @@ func MakeVirtualServiceLabels(spec v1alpha1.RouteSpecFields) map[string]string {
 }
 
 // MakeVirtualService creates a VirtualService from a Route object.
-func MakeVirtualService(routes []*v1alpha1.Route) (*networking.VirtualService, error) {
-	if len(routes) == 0 {
-		return nil, errors.New("routes must not be empty")
+func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route) (*networking.VirtualService, error) {
+	if len(claims) == 0 {
+		return nil, errors.New("claims must not be empty")
 	}
 
-	namespace := routes[0].Namespace
-	hostname := routes[0].Spec.RouteSpecFields.Hostname
-	domain := routes[0].Spec.RouteSpecFields.Domain
-	labels := MakeVirtualServiceLabels(routes[0].Spec.RouteSpecFields)
+	namespace := claims[0].Namespace
+	hostname := claims[0].Spec.RouteSpecFields.Hostname
+	domain := claims[0].Spec.RouteSpecFields.Domain
+	labels := MakeVirtualServiceLabels(claims[0].Spec.RouteSpecFields)
 
 	hostDomain := domain
 	if hostname != "" {
@@ -64,17 +62,29 @@ func MakeVirtualService(routes []*v1alpha1.Route) (*networking.VirtualService, e
 	}
 
 	var (
-		ownerRefs  []metav1.OwnerReference
-		appNames   []string
 		httpRoutes []networking.HTTPRoute
 	)
+
+	// Build up HTTP Routes
+	// We'll do claims first so when we merge the Routes in (which have apps
+	// associated), they will replace the claims.
+
+	for _, route := range claims {
+		urlPath := route.Spec.RouteSpecFields.Path
+
+		httpRoute, err := buildHTTPRoute(namespace, urlPath, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		httpRoutes = algorithms.Merge(
+			v1alpha1.HTTPRoutes(httpRoutes),
+			v1alpha1.HTTPRoutes(httpRoute),
+		).(v1alpha1.HTTPRoutes)
+	}
+
 	for _, route := range routes {
-		// Each route will own the VirtualService. Therefore none of them can
-		// be a controller.
-		ownerRef := *kmeta.NewControllerRef(route)
-		ownerRef.Controller = nil
-		ownerRef.BlockOwnerDeletion = nil
-		ownerRefs = append(ownerRefs, ownerRef)
+		var appNames []string
 		urlPath := route.Spec.RouteSpecFields.Path
 
 		// AppNames
@@ -103,9 +113,8 @@ func MakeVirtualService(routes []*v1alpha1.Route) (*networking.VirtualService, e
 				hostname,
 				domain,
 			),
-			Namespace:       v1alpha1.KfNamespace,
-			OwnerReferences: ownerRefs,
-			Labels:          labels,
+			Namespace: v1alpha1.KfNamespace,
+			Labels:    labels,
 			Annotations: map[string]string{
 				"domain":   domain,
 				"hostname": hostname,
@@ -124,7 +133,7 @@ func buildHTTPRoute(namespace, urlPath string, appNames []string) ([]networking.
 	var pathMatchers []networking.HTTPMatchRequest
 
 	urlPath = path.Join("/", urlPath, "/")
-	regexpPath, err := buildPathRegex(urlPath)
+	regexpPath, err := v1alpha1.BuildPathRegexp(urlPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert path to regexp: %s", err)
 	}
@@ -167,19 +176,6 @@ func buildHTTPRoute(namespace, urlPath string, appNames []string) ([]networking.
 	}
 
 	return httpRoutes, nil
-}
-
-func buildPathRegex(path string) (string, error) {
-	// If its just the root path, we'll add that back as optional
-	if path == "/" {
-		path = ""
-	}
-
-	p, err := (&mux.Router{}).PathPrefix(path).GetPathRegexp()
-	if err != nil {
-		return "", err
-	}
-	return p + `(/.*)?`, nil
 }
 
 func buildRouteDestination() []networking.HTTPRouteDestination {

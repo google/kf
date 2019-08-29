@@ -19,6 +19,7 @@ import (
 	"fmt"
 
 	"github.com/google/kf/pkg/kf/algorithms"
+	routecfg "knative.dev/serving/pkg/reconciler/route/config"
 )
 
 // TODO(#396): We should pull these from a ConfigMap
@@ -28,7 +29,7 @@ const (
 
 	// DefaultDomainTemplate contains the default domain template. It should
 	// be used with `fmt.Sprintf(DefaultDomainTemplate, namespace)`
-	DefaultDomainTemplate = "%s.kf.cluster.local"
+	DefaultDomainTemplate = "%s.%s"
 )
 
 // SetDefaults implements apis.Defaultable
@@ -63,7 +64,7 @@ func (k *SpaceSpecExecution) SetDefaults(ctx context.Context, name string) {
 		k.Domains = append(
 			k.Domains,
 			SpaceDomain{
-				Domain:  fmt.Sprintf(DefaultDomainTemplate, name),
+				Domain:  fmt.Sprintf(DefaultDomainTemplate, name, DefaultDomain(ctx)),
 				Default: true,
 			},
 		)
@@ -72,6 +73,32 @@ func (k *SpaceSpecExecution) SetDefaults(ctx context.Context, name string) {
 	k.Domains = []SpaceDomain(algorithms.Dedupe(
 		SpaceDomains(k.Domains),
 	).(SpaceDomains))
+}
+
+// DefaultDomain gets the default domain to use for spaces from the context.
+func DefaultDomain(ctx context.Context) (domain string) {
+	// routecfg.FromContext can panic if the resource isn't on the context rather
+	// than returning nil. In this case, we still just want the DefaultDomain.
+	defer func() {
+		if r := recover(); r != nil {
+			domain = routecfg.DefaultDomain
+		}
+	}()
+
+	if ctx == nil {
+		return routecfg.DefaultDomain
+	}
+
+	rc := routecfg.FromContext(ctx)
+	if rc == nil {
+		return routecfg.DefaultDomain
+	}
+
+	if domainCfg := rc.Domain; domainCfg != nil {
+		return domainCfg.LookupDomainForLabels(map[string]string{})
+	}
+
+	return routecfg.DefaultDomain
 }
 
 // SetDefaults implements apis.Defaultable

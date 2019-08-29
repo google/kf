@@ -15,15 +15,9 @@
 package cfutil
 
 import (
+	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-)
-
-const (
-	// BindingNameLabel is the label used on bindings to define what VCAP name the secret should be rooted under.
-	BindingNameLabel = "kf-binding-name"
-	// AppNameLabel is the label used on bindings to define which app the binding belongs to.
-	AppNameLabel = "kf-app-name"
 )
 
 // VcapServicesMap mimics CF's VCAP_SERVICES environment variable.
@@ -59,21 +53,12 @@ func NewVcapService(instance apiv1beta1.ServiceInstance, binding apiv1beta1.Serv
 	// being that it doesn't seem to be formally fully documented anywhere:
 	// https://github.com/cloudfoundry/cloud_controller_ng/blob/65a75e6c97f49756df96e437e253f033415b2db1/app/presenters/system_environment/service_binding_presenter.rb#L32
 	vs := VcapService{
-		BindingName:  binding.Labels[BindingNameLabel],
-		Name:         binding.Name,
+		BindingName:  binding.Labels[kfv1alpha1.ComponentLabel],
+		Name:         coalesce(binding.Labels[kfv1alpha1.ComponentLabel], binding.Spec.InstanceRef.Name),
 		InstanceName: binding.Spec.InstanceRef.Name,
-		Label:        instance.Spec.ClusterServiceClassExternalName,
-		Plan:         instance.Spec.ClusterServicePlanExternalName,
+		Label:        coalesce(instance.Spec.ServiceClassExternalName, instance.Spec.ClusterServiceClassExternalName),
+		Plan:         coalesce(instance.Spec.ServicePlanExternalName, instance.Spec.ClusterServicePlanExternalName),
 		Credentials:  make(map[string]string),
-	}
-
-	// Make sure we can work with both ServiceClass and ClusterServiceClass
-	if instance.Spec.ServiceClassExternalName != "" {
-		vs.Label = instance.Spec.ServiceClassExternalName
-	}
-
-	if instance.Spec.ServicePlanExternalName != "" {
-		vs.Plan = instance.Spec.ServicePlanExternalName
 	}
 
 	// TODO(josephlewis42) we need to get tags from the (Cluster)ServiceClass
@@ -87,4 +72,14 @@ func NewVcapService(instance apiv1beta1.ServiceInstance, binding apiv1beta1.Serv
 	}
 
 	return vs
+}
+
+func coalesce(vals ...string) string {
+	for _, v := range vals {
+		if v != "" {
+			return v
+		}
+	}
+
+	return ""
 }

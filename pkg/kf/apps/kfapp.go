@@ -243,6 +243,18 @@ func (k *KfApp) GetServiceBindings() []v1alpha1.AppSpecServiceBinding {
 	return k.Spec.ServiceBindings
 }
 
+// GetClusterURL gets the internal address of the app or the empty string if
+// unset.
+func (k *KfApp) GetClusterURL() string {
+	clusterURL := ""
+
+	if k.Status.Address != nil && k.Status.Address.URL != nil {
+		clusterURL = k.Status.Address.URL.String()
+	}
+
+	return clusterURL
+}
+
 // ToApp casts this alias back into an App.
 func (k *KfApp) ToApp() *v1alpha1.App {
 	app := v1alpha1.App(*k)

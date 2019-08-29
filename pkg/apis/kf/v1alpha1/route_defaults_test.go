@@ -28,3 +28,33 @@ func ExampleRoute_SetDefaults_prefixRoutes() {
 
 	// Output: Route: /some-path
 }
+
+func ExampleRoute_SetDefaults_labels() {
+	r := &Route{}
+	r.Spec.Hostname = "some-hostname"
+	r.Spec.Domain = "example.com"
+	r.SetDefaults(context.Background())
+
+	fmt.Println("Hostname:", r.Labels[RouteHostname])
+	fmt.Println("Domain:", r.Labels[RouteDomain])
+	fmt.Println("Path:", r.Labels[RoutePath])
+
+	// Output: Hostname: some-hostname
+	// Domain: example.com
+	// Path: pvdf1ls1w14a
+}
+
+func ExampleRouteClaim_SetDefaults_labels() {
+	r := &RouteClaim{}
+	r.Spec.Hostname = "some-hostname"
+	r.Spec.Domain = "example.com"
+	r.SetDefaults(context.Background())
+
+	fmt.Println("Hostname:", r.Labels[RouteHostname])
+	fmt.Println("Domain:", r.Labels[RouteDomain])
+	fmt.Println("Path:", r.Labels[RoutePath])
+
+	// Output: Hostname: some-hostname
+	// Domain: example.com
+	// Path: pvdf1ls1w14a
+}

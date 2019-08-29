@@ -15,9 +15,11 @@
 package servicebindings
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
@@ -39,6 +41,8 @@ type ClientInterface interface {
 
 	// List queries Kubernetes for service bindings.
 	List(opts ...ListOption) ([]servicecatalogv1beta1.ServiceBinding, error)
+
+	WaitForBindings(ctx context.Context, namespace, appName string) error
 }
 
 // NewClient creates a new client capable of interacting with service catalog
@@ -131,6 +135,12 @@ func (c *Client) List(opts ...ListOption) ([]servicecatalogv1beta1.ServiceBindin
 	}
 
 	return filtered, nil
+}
+
+// WaitForBindings waits for bindings to all be ready or fail on the given app.
+func (c *Client) WaitForBindings(ctx context.Context, namespace, appName string) error {
+	_, err := c.appsClient.WaitForE(ctx, namespace, appName, 2*time.Second, apps.ConditionServiceBindingsReady)
+	return err
 }
 
 // serviceBindingName is the primary key for service bindings consisting of the

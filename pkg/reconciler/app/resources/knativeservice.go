@@ -27,6 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/kmeta"
+	"knative.dev/pkg/ptr"
 )
 
 // KnativeServiceName gets the name of a Knative Service given the route.
@@ -98,9 +99,18 @@ func MakeKnativeService(
 					},
 					Spec: serving.RevisionSpec{
 						RevisionSpec: servingv1beta1.RevisionSpec{
-							PodSpec: *podSpec,
+							TimeoutSeconds: ptr.Int64(300),
+							PodSpec:        *podSpec,
 						},
 					},
+				},
+			},
+			RouteSpec: serving.RouteSpec{
+				Traffic: []serving.TrafficTarget{
+					{TrafficTarget: servingv1beta1.TrafficTarget{
+						LatestRevision: ptr.Bool(true),
+						Percent:        100,
+					}},
 				},
 			},
 		},

@@ -57,6 +57,9 @@ type KfParams struct {
 	// KubeCfgFile holds the path to the kubeconfig.
 	KubeCfgFile string `yaml:"kubeconfig"`
 
+	// LogHTTP enables HTTP tracing for all Kubernetes calls.
+	LogHTTP bool `yaml:"logHTTP"`
+
 	// TargetSpace caches the space specified by Namespace to prevent it from
 	// being computed multiple times.
 	// Prefer using GetSpaceOrDefault instead of accessing this value directly.
@@ -293,6 +296,8 @@ func getRestConfig(p *KfParams) *rest.Config {
 			},
 		}
 	}
+
+	restCfg.WrapTransport = LoggingRoundTripperWrapper(p)
 
 	return restCfg
 }

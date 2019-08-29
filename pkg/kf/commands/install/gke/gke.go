@@ -53,6 +53,8 @@ func NewGKECommand() *cobra.Command {
 			available on the path. Note: running this will incur costs to run GKE. See
 			https://cloud.google.com/products/calculator/ to get an estimate.`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
+			cmd.SilenceUsage = true
+
 			// Print kubectl version
 			ctx := SetContextOutput(context.Background(), cmd.ErrOrStderr())
 			version, err := Kubectl(ctx, "version", "--short", "--client")

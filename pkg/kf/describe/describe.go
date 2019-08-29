@@ -329,3 +329,24 @@ func ServiceInstance(w io.Writer, service *v1beta1.ServiceInstance) {
 		fmt.Fprintf(w, "Status:\t%s\n", cond.Reason)
 	})
 }
+
+// RouteSpecFieldsList prints a list of routes
+func RouteSpecFieldsList(w io.Writer, routes []kfv1alpha1.RouteSpecFields) {
+	SectionWriter(w, "Routes", func(w io.Writer) {
+		if routes == nil {
+			return
+		}
+
+		TabbedWriter(w, func(w io.Writer) {
+			fmt.Fprintln(w, "Hostname\tDomain\tPath\tURL")
+
+			for _, route := range routes {
+				fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+					route.Hostname,
+					route.Domain,
+					route.Path,
+					route.String())
+			}
+		})
+	})
+}

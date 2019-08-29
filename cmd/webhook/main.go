@@ -24,6 +24,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/system"
 	apiconfig "github.com/knative/serving/pkg/apis/config"
 	"github.com/knative/serving/pkg/apis/serving/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -33,9 +34,9 @@ import (
 	"knative.dev/pkg/logging"
 	"knative.dev/pkg/logging/logkey"
 	"knative.dev/pkg/signals"
-	"knative.dev/pkg/system"
 	"knative.dev/pkg/version"
 	"knative.dev/pkg/webhook"
+	routecfg "knative.dev/serving/pkg/reconciler/route/config"
 )
 
 const (
@@ -92,8 +93,16 @@ func main() {
 	store := apiconfig.NewStore(logger.Named("config-store"))
 	store.WatchConfigs(configMapWatcher)
 
-	if err = configMapWatcher.Start(stopCh); err != nil {
+	if err := configMapWatcher.Start(stopCh); err != nil {
 		logger.Fatalw("Failed to start the ConfigMap watcher", zap.Error(err))
+	}
+
+	knativeConfigMapWatcher := configmap.NewInformedWatcher(kubeClient, system.KnativeServingNamespace())
+	routeStore := routecfg.NewStore(logger.Named("domain-store"), 0)
+	routeStore.WatchConfigs(knativeConfigMapWatcher)
+
+	if err := knativeConfigMapWatcher.Start(stopCh); err != nil {
+		logger.Fatalw("Failed to start the Knative ConfigMap watcher", zap.Error(err))
 	}
 
 	options := webhook.ControllerOptions{
@@ -108,9 +117,10 @@ func main() {
 		Client:  kubeClient,
 		Options: options,
 		Handlers: map[schema.GroupVersionKind]webhook.GenericCRD{
-			v1alpha1.SchemeGroupVersion.WithKind("Space"): &v1alpha1.Space{},
-			v1alpha1.SchemeGroupVersion.WithKind("App"):   &v1alpha1.App{},
-			v1alpha1.SchemeGroupVersion.WithKind("Route"): &v1alpha1.Route{},
+			v1alpha1.SchemeGroupVersion.WithKind("Space"):      &v1alpha1.Space{},
+			v1alpha1.SchemeGroupVersion.WithKind("App"):        &v1alpha1.App{},
+			v1alpha1.SchemeGroupVersion.WithKind("Route"):      &v1alpha1.Route{},
+			v1alpha1.SchemeGroupVersion.WithKind("RouteClaim"): &v1alpha1.RouteClaim{},
 		},
 		Logger:                logger,
 		DisallowUnknownFields: true,
@@ -120,6 +130,8 @@ func main() {
 			// XXX: Route webhook needs to look at what VirtualServices are
 			// deployed.
 			ctx = v1alpha1.SetupIstioClient(ctx, istioClient)
+
+			ctx = routeStore.ToContext(ctx)
 
 			return v1beta1.WithUpgradeViaDefaulting(store.ToContext(ctx))
 		},
