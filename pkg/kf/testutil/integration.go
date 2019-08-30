@@ -53,6 +53,12 @@ func DockerRegistry() string {
 // RunIntegrationTest skips the tests if testing.Short() is true (via --short
 // flag) or if DOCKER_REGISTRY is not set. Otherwise it runs the given test.
 func RunIntegrationTest(t *testing.T, test func(ctx context.Context, t *testing.T)) {
+	if !strings.HasPrefix(t.Name(), "TestIntegration_") {
+		// We want to enforce a convention so scripts can single out
+		// integration tests.
+		t.Fatalf("Integration tests must have the name format of 'TestIntegration_XXX`")
+	}
+
 	t.Helper()
 	if testing.Short() {
 		t.Skip()
@@ -62,6 +68,15 @@ func RunIntegrationTest(t *testing.T, test func(ctx context.Context, t *testing.
 	if projID == "" {
 		t.Skipf("%s is required for integration tests... Skipping...", EnvDockerRegistry)
 	}
+
+	start := time.Now()
+	defer func() {
+		state := "PASSED"
+		if t.Failed() {
+			state = "FAILED"
+		}
+		t.Logf("Test %s took %v and %s", t.Name(), time.Since(start), state)
+	}()
 
 	// Setup context that will allow us to cleanup if the user wants to
 	// cancel the tests.

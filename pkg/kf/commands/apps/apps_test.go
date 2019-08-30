@@ -26,6 +26,7 @@ import (
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/testutil"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
 	duckv1alpha1 "knative.dev/pkg/apis/duck/v1alpha1"
@@ -77,19 +78,34 @@ func TestAppsCommand(t *testing.T) {
 				testutil.AssertContainsAll(t, buffer.String(), []string{header1, "app-a", "app-b"})
 			},
 		},
-		"shows app started": {
+		"shows app ready": {
 			namespace: "some-namespace",
 			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
 				fakeLister.
 					EXPECT().
 					List(gomock.Any()).
 					Return([]v1alpha1.App{
-						{ObjectMeta: metav1.ObjectMeta{Name: "app-a"}},
+						{ObjectMeta: metav1.ObjectMeta{Name: "app-a"}, Status: happyStatus()},
 					}, nil)
 			},
 			assert: func(t *testing.T, buffer *bytes.Buffer) {
 				header1 := "Getting apps in space "
-				testutil.AssertContainsAll(t, buffer.String(), []string{header1, "app-a", "started"})
+				testutil.AssertContainsAll(t, buffer.String(), []string{header1, "app-a", "ready"})
+			},
+		},
+		"shows app not ready": {
+			namespace: "some-namespace",
+			setup: func(t *testing.T, fakeLister *fake.FakeClient) {
+				fakeLister.
+					EXPECT().
+					List(gomock.Any()).
+					Return([]v1alpha1.App{
+						{ObjectMeta: metav1.ObjectMeta{Name: "app-a"}, Status: v1alpha1.AppStatus{}},
+					}, nil)
+			},
+			assert: func(t *testing.T, buffer *bytes.Buffer) {
+				header1 := "Getting apps in space "
+				testutil.AssertContainsAll(t, buffer.String(), []string{header1, "app-a", "not ready"})
 			},
 		},
 		"shows app stopped": {
@@ -295,4 +311,13 @@ func TestAppsCommand(t *testing.T) {
 			ctrl.Finish()
 		})
 	}
+}
+
+func happyStatus() v1alpha1.AppStatus {
+	s := v1alpha1.AppStatus{}
+	s.InitializeConditions()
+	for i := range s.Conditions {
+		s.Conditions[i].Status = corev1.ConditionTrue
+	}
+	return s
 }

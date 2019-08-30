@@ -115,6 +115,7 @@ func TestIntegration_VcapServices(t *testing.T) {
 }
 
 func TestIntegration_VcapServices_customBindingName(t *testing.T) {
+	t.Skip("flaky - #634")
 	checkClusterStatus(t)
 	appName := fmt.Sprintf("integration-binding-app-%d", time.Now().UnixNano())
 	appPath := "./samples/apps/envs"
