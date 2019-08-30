@@ -78,7 +78,15 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 				if planName != plan.Spec.ExternalName {
 					continue
 				}
-				if serviceName != plan.Spec.ClusterServiceClassRef.Name {
+
+				class, err := client.ServicecatalogV1beta1().
+					ClusterServiceClasses().
+					Get(plan.Spec.ClusterServiceClassRef.Name, metav1.GetOptions{})
+				if err != nil {
+					return err
+				}
+
+				if serviceName != class.Spec.ExternalName {
 					continue
 				}
 				if broker != "" && broker != plan.Spec.ClusterServiceBrokerName {
@@ -94,11 +102,9 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 							Namespace: p.Namespace,
 						},
 						Spec: servicecatalogv1beta1.ServiceInstanceSpec{
-							ClusterServicePlanRef: &servicecatalogv1beta1.ClusterObjectReference{
-								Name: planName,
-							},
-							ClusterServiceClassRef: &servicecatalogv1beta1.ClusterObjectReference{
-								Name: serviceName,
+							PlanReference: servicecatalogv1beta1.PlanReference{
+								ClusterServicePlanExternalName:  planName,
+								ClusterServiceClassExternalName: serviceName,
 							},
 							Parameters: rawParams,
 						},
@@ -122,9 +128,18 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 				if planName != plan.Spec.ExternalName {
 					continue
 				}
-				if serviceName != plan.Spec.ServiceClassRef.Name {
+
+				class, err := client.ServicecatalogV1beta1().
+					ServiceClasses(p.Namespace).
+					Get(plan.Spec.ServiceClassRef.Name, metav1.GetOptions{})
+				if err != nil {
+					return err
+				}
+
+				if serviceName != class.Spec.ExternalName {
 					continue
 				}
+
 				if broker != "" && broker != plan.Spec.ServiceBrokerName {
 					continue
 				}
@@ -138,11 +153,9 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 							Namespace: p.Namespace,
 						},
 						Spec: servicecatalogv1beta1.ServiceInstanceSpec{
-							ServicePlanRef: &servicecatalogv1beta1.LocalObjectReference{
-								Name: planName,
-							},
-							ServiceClassRef: &servicecatalogv1beta1.LocalObjectReference{
-								Name: serviceName,
+							PlanReference: servicecatalogv1beta1.PlanReference{
+								ServicePlanExternalName:  planName,
+								ServiceClassExternalName: serviceName,
 							},
 							Parameters: rawParams,
 						},

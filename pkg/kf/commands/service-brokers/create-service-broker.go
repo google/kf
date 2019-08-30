@@ -19,6 +19,7 @@ import (
 
 	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -31,6 +32,7 @@ func NewCreateServiceBrokerCommand(p *config.KfParams, client servicecatalogclie
 	var (
 		serviceBrokerName string
 		url               string
+		spaceScoped       bool
 	)
 
 	createCmd := &cobra.Command{
@@ -47,24 +49,50 @@ func NewCreateServiceBrokerCommand(p *config.KfParams, client servicecatalogclie
 
 			// TODO (juliaguo): validate URL
 
-			desiredBroker := &servicecatalogv1beta1.ClusterServiceBroker{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: serviceBrokerName,
-				},
-				Spec: servicecatalogv1beta1.ClusterServiceBrokerSpec{
-					CommonServiceBrokerSpec: servicecatalogv1beta1.CommonServiceBrokerSpec{
-						URL: url,
-					},
-				},
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
 			}
 
-			_, err := client.ServicecatalogV1beta1().ClusterServiceBrokers().Create(desiredBroker)
+			var err error
+			if spaceScoped {
+				desiredBroker := &servicecatalogv1beta1.ServiceBroker{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: serviceBrokerName,
+					},
+					Spec: servicecatalogv1beta1.ServiceBrokerSpec{
+						CommonServiceBrokerSpec: servicecatalogv1beta1.CommonServiceBrokerSpec{
+							URL: url,
+						},
+					},
+				}
+				_, err = client.ServicecatalogV1beta1().ServiceBrokers(p.Namespace).Create(desiredBroker)
+			} else {
+				desiredBroker := &servicecatalogv1beta1.ClusterServiceBroker{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: serviceBrokerName,
+					},
+					Spec: servicecatalogv1beta1.ClusterServiceBrokerSpec{
+						CommonServiceBrokerSpec: servicecatalogv1beta1.CommonServiceBrokerSpec{
+							URL: url,
+						},
+					},
+				}
+				_, err = client.ServicecatalogV1beta1().ClusterServiceBrokers().Create(desiredBroker)
+			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), "Service broker entry created, run `kf marketplace` to check the status.")
+			if err == nil {
+				fmt.Fprintln(cmd.OutOrStdout(), "Service broker entry created, run `kf marketplace` to check the status.")
+			}
 
 			return err
 		},
 	}
+
+	createCmd.Flags().BoolVar(
+		&spaceScoped,
+		"space-scoped",
+		false,
+		"Set to create a space scoped service broker.")
 
 	return createCmd
 }
