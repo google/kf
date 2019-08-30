@@ -32,6 +32,7 @@ const (
 				"id": "fake-service-id",
 				"description": "a fake service",
 				"bindable": true,
+				"tags": ["fake-tag"],
 				"plans": [
 					{
 						"id": "fake-plan-id",

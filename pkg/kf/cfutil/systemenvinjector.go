@@ -15,6 +15,7 @@
 package cfutil
 
 import (
+	"errors"
 	"fmt"
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -38,6 +39,9 @@ type SystemEnvInjector interface {
 	// ComputeSystemEnv computes the environment variables that should be injected
 	// on a given service.
 	ComputeSystemEnv(app *v1alpha1.App, serviceBindings []servicecatalogv1beta1.ServiceBinding) (computed []corev1.EnvVar, err error)
+
+	// GetClassFromInstance gets the service class for the given instance.
+	GetClassFromInstance(instance *servicecatalogv1beta1.ServiceInstance) (*servicecatalogv1beta1.CommonServiceClassSpec, error)
 }
 
 type systemEnvInjector struct {
@@ -79,10 +83,46 @@ func (s *systemEnvInjector) GetVcapService(appName string, binding *servicecatal
 		ServiceInstances(binding.Namespace).
 		Get(binding.Spec.InstanceRef.Name, metav1.GetOptions{})
 	if err != nil {
-		return VcapService{}, nil
+		return VcapService{}, fmt.Errorf("couldn't get instance: %v", err)
 	}
 
-	return NewVcapService(*serviceInstance, *binding, secret), nil
+	class, err := s.GetClassFromInstance(serviceInstance)
+	if err != nil {
+		return VcapService{}, fmt.Errorf("couldn't get instance: %v", err)
+	}
+
+	return NewVcapService(*class, *serviceInstance, *binding, secret), nil
+}
+
+// GetClassFromInstance gets the service class for the given instance.
+func (s *systemEnvInjector) GetClassFromInstance(instance *servicecatalogv1beta1.ServiceInstance) (*servicecatalogv1beta1.CommonServiceClassSpec, error) {
+	if ref := instance.Spec.ClusterServiceClassRef; ref != nil {
+		plan, err := s.client.
+			ServicecatalogV1beta1().
+			ClusterServiceClasses().
+			Get(ref.Name, metav1.GetOptions{})
+
+		if err != nil {
+			return nil, err
+		}
+
+		return &plan.Spec.CommonServiceClassSpec, nil
+	}
+
+	if ref := instance.Spec.ServiceClassRef; ref != nil {
+		plan, err := s.client.
+			ServicecatalogV1beta1().
+			ServiceClasses(instance.Namespace).
+			Get(ref.Name, metav1.GetOptions{})
+
+		if err != nil {
+			return nil, err
+		}
+
+		return &plan.Spec.CommonServiceClassSpec, nil
+	}
+
+	return nil, errors.New("neither ClusterServiceClassRef nor ServiceClassRef were provided")
 }
 
 func (s *systemEnvInjector) GetVcapServices(appName string, bindings []servicecatalogv1beta1.ServiceBinding) (services []VcapService, err error) {
