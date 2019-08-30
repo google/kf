@@ -54,7 +54,7 @@ kf [flags]
 * [kf doctor](/docs/general-info/kf-cli/commands/kf-doctor/)	 - Doctor runs validation tests against one or more components
 * [kf env](/docs/general-info/kf-cli/commands/kf-env/)	 - List the names and values of the environment variables for an app
 * [kf install](/docs/general-info/kf-cli/commands/kf-install/)	 - Install kf
-* [kf logs](/docs/general-info/kf-cli/commands/kf-logs/)	 - View or follow logs for an app
+* [kf logs](/docs/general-info/kf-cli/commands/kf-logs/)	 - Tail or show logs for an app
 * [kf map-route](/docs/general-info/kf-cli/commands/kf-map-route/)	 - Map a route to an app
 * [kf marketplace](/docs/general-info/kf-cli/commands/kf-marketplace/)	 - List available offerings in the marketplace
 * [kf proxy](/docs/general-info/kf-cli/commands/kf-proxy/)	 - Create a proxy to an app on a local port
