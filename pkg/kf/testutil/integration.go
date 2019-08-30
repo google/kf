@@ -1009,7 +1009,6 @@ func (k *Kf) CreateServiceBroker(ctx context.Context, brokerName string, url str
 		"--namespace", SpaceFromContext(ctx),
 		brokerName,
 		url,
-		"--space-scoped",
 	}
 
 	output, errs := k.kf(ctx, k.t, KfTestConfig{

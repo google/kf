@@ -50,25 +50,15 @@ func NewDeleteServiceBrokerCommand(p *config.KfParams, client servicecatalogclie
 
 			var toDelete func() error
 			if !spaceScoped {
-				_, err := client.ServicecatalogV1beta1().ClusterServiceBrokers().Get(serviceBrokerName, metav1.GetOptions{})
-				if err == nil {
-					toDelete = func() error {
-						err := client.ServicecatalogV1beta1().ClusterServiceBrokers().Delete(serviceBrokerName, &metav1.DeleteOptions{})
-						return err
-					}
+				toDelete = func() error {
+					err := client.ServicecatalogV1beta1().ClusterServiceBrokers().Delete(serviceBrokerName, &metav1.DeleteOptions{})
+					return err
 				}
-			}
-
-			_, err := client.ServicecatalogV1beta1().ServiceBrokers(p.Namespace).Get(serviceBrokerName, metav1.GetOptions{})
-			if err == nil {
+			} else {
 				toDelete = func() error {
 					err := client.ServicecatalogV1beta1().ServiceBrokers(p.Namespace).Delete(serviceBrokerName, &metav1.DeleteOptions{})
 					return err
 				}
-			}
-
-			if toDelete == nil {
-				return fmt.Errorf("service-broker %s not found", serviceBrokerName)
 			}
 
 			shouldDelete := true
