@@ -120,6 +120,11 @@ func (t *pushLogTailer) handleWatch() (bool, error) {
 			continue
 		}
 
+		// skip out of date apps
+		if app.Generation != app.Status.ObservedGeneration {
+			continue
+		}
+
 		done, err := t.handleUpdate(app)
 		if err != nil {
 			return true, err
