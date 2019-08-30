@@ -18,8 +18,11 @@ kf create-service SERVICE PLAN SERVICE_INSTANCE [-c PARAMETERS_AS_JSON] [-b serv
 ### Examples
 
 ```
+  # Creates a new instance of a db-service with the name mydb, plan silver, and provisioning configuration
   kf create-service db-service silver mydb -c '{"ram_gb":4}'
-  kf create-service db-service silver mydb -c ~/workspace/tmp/instance_config.json -b db-broker-2
+  
+  # Creates a new instance of a db-service from the broker named local-broker
+  kf create-service db-service silver mydb -c ~/workspace/tmp/instance_config.json -b local-broker
 ```
 
 ### Options

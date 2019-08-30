@@ -24,7 +24,8 @@ kf create-service-broker BROKER_NAME URL [flags]
 ### Options
 
 ```
-  -h, --help   help for create-service-broker
+  -h, --help           help for create-service-broker
+      --space-scoped   Set to create a space scoped service broker.
 ```
 
 ### Options inherited from parent commands
