@@ -315,7 +315,7 @@ func TestIntegration_Logs(t *testing.T) {
 		)
 		defer kf.Delete(ctx, appName)
 
-		logOutput := kf.Logs(ctx, appName, "-n=30", "-f")
+		logOutput := kf.Logs(ctx, appName, "-n=30")
 
 		// Hit the app via the proxy. This makes sure the app is handling
 		// traffic as expected and ensures the proxy works. We use the proxy
@@ -363,7 +363,7 @@ func TestIntegration_LogsNoContainer(t *testing.T) {
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		appName := fmt.Sprintf("integration-logs-noc-%d", time.Now().UnixNano())
 
-		output := kf.Logs(ctx, appName)
+		output := kf.Logs(ctx, appName, "--recent")
 
 		timer := time.NewTimer(5 * time.Second)
 		for {

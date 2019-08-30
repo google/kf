@@ -30,25 +30,31 @@ import (
 func NewLogsCommand(p *config.KfParams, tailer logs.Tailer) *cobra.Command {
 	var (
 		numberLines int
-		follow      bool
+		recent      bool
 	)
 	cmd := &cobra.Command{
 		Use:   "logs APP_NAME",
-		Short: "View or follow logs for an app",
+		Short: "Tail or show logs for an app",
 		Example: `
+		# Follow/tail the log stream
 		kf logs myapp
 
-		# Get the last 20 log lines
+		# Follow/tail the log stream with 20 lines of context
 		kf logs myapp -n 20
 
-		# Follow/tail the log stream
-		kf logs myapp -f
+		# Get recent logs from the app
+		kf logs myapp --recent
+
+		# Get the most recent 200 lines of logs from the app
+		kf logs myapp --recent -n 200
   `,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err
 			}
+
+			shouldFollow := !recent
 
 			appName := args[0]
 			if err := tailer.Tail(
@@ -57,7 +63,7 @@ func NewLogsCommand(p *config.KfParams, tailer logs.Tailer) *cobra.Command {
 				cmd.OutOrStdout(),
 				logs.WithTailNamespace(p.Namespace),
 				logs.WithTailNumberLines(numberLines),
-				logs.WithTailFollow(follow),
+				logs.WithTailFollow(shouldFollow),
 			); err != nil {
 				cmd.SilenceUsage = !kfi.ConfigError(err)
 				return fmt.Errorf("failed to tail logs: %s", err)
@@ -76,11 +82,11 @@ func NewLogsCommand(p *config.KfParams, tailer logs.Tailer) *cobra.Command {
 	)
 
 	cmd.Flags().BoolVarP(
-		&follow,
-		"follow",
-		"f",
+		&recent,
+		"recent",
+		"",
 		false,
-		"Follow the log stream of the app.",
+		"Dump recent logs instead of tailing.",
 	)
 
 	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)

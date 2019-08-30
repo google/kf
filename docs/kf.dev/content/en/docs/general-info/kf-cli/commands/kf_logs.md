@@ -5,11 +5,11 @@ url: /docs/general-info/kf-cli/commands/kf-logs/
 ---
 ## kf logs
 
-View or follow logs for an app
+Tail or show logs for an app
 
 ### Synopsis
 
-View or follow logs for an app
+Tail or show logs for an app
 
 ```
 kf logs APP_NAME [flags]
@@ -18,21 +18,25 @@ kf logs APP_NAME [flags]
 ### Examples
 
 ```
+  # Follow/tail the log stream
   kf logs myapp
   
-  # Get the last 20 log lines
+  # Follow/tail the log stream with 20 lines of context
   kf logs myapp -n 20
   
-  # Follow/tail the log stream
-  kf logs myapp -f
+  # Get recent logs from the app
+  kf logs myapp --recent
+  
+  # Get the most recent 200 lines of logs from the app
+  kf logs myapp --recent -n 200
 ```
 
 ### Options
 
 ```
-  -f, --follow       Follow the log stream of the app.
   -h, --help         help for logs
   -n, --number int   Show the last N lines of logs. (default 10)
+      --recent       Dump recent logs instead of tailing.
 ```
 
 ### Options inherited from parent commands
