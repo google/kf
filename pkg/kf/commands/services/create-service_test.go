@@ -46,7 +46,20 @@ func TestNewCreateServiceCommand(t *testing.T) {
 				Free:         false,
 			},
 			ServiceClassRef: servicecatalogv1beta1.LocalObjectReference{
-				Name: "db-service",
+				Name: "db-service-id",
+			},
+		},
+	}
+
+	class := &servicecatalogv1beta1.ServiceClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "db-service-id",
+			Namespace: "custom-ns",
+		},
+		Spec: servicecatalogv1beta1.ServiceClassSpec{
+			ServiceBrokerName: "broker-a",
+			CommonServiceClassSpec: servicecatalogv1beta1.CommonServiceClassSpec{
+				ExternalName: "db-service",
 			},
 		},
 	}
@@ -59,8 +72,7 @@ func TestNewCreateServiceCommand(t *testing.T) {
 
 	clusterPlan := servicecatalogv1beta1.ClusterServicePlan{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "db-service-free",
-			Namespace: "custom-ns",
+			Name: "db-service-free",
 		},
 		Spec: servicecatalogv1beta1.ClusterServicePlanSpec{
 			ClusterServiceBrokerName: "broker-a",
@@ -69,7 +81,19 @@ func TestNewCreateServiceCommand(t *testing.T) {
 				Free:         true,
 			},
 			ClusterServiceClassRef: servicecatalogv1beta1.ClusterObjectReference{
-				Name: "db-service",
+				Name: "db-service-id",
+			},
+		},
+	}
+
+	clusterClass := &servicecatalogv1beta1.ClusterServiceClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "db-service-id",
+		},
+		Spec: servicecatalogv1beta1.ClusterServiceClassSpec{
+			ClusterServiceBrokerName: "broker-a",
+			CommonServiceClassSpec: servicecatalogv1beta1.CommonServiceClassSpec{
+				ExternalName: "db-service",
 			},
 		},
 	}
@@ -96,7 +120,7 @@ func TestNewCreateServiceCommand(t *testing.T) {
 			Args:      []string{"db-service", "free", "mydb", `--config={"ram_gb":4}`},
 			Namespace: "custom-ns",
 			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				return servicecatalogclientfake.NewSimpleClientset(planList)
+				return servicecatalogclientfake.NewSimpleClientset(planList, class)
 			},
 			ExpectedStrings: []string{
 				"db-service",
@@ -109,7 +133,7 @@ func TestNewCreateServiceCommand(t *testing.T) {
 			Args:      []string{"db-service", "free", "mydb", `--config={"ram_gb":4}`},
 			Namespace: "custom-ns",
 			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				return servicecatalogclientfake.NewSimpleClientset(clusterPlanList)
+				return servicecatalogclientfake.NewSimpleClientset(clusterPlanList, clusterClass)
 			},
 			ExpectedStrings: []string{
 				"db-service",
@@ -122,25 +146,25 @@ func TestNewCreateServiceCommand(t *testing.T) {
 			Args:      []string{"db-service", "free", "mydb", "--broker=does-not-exist"},
 			Namespace: "custom-ns",
 			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				client := servicecatalogclientfake.NewSimpleClientset(planList)
+				client := servicecatalogclientfake.NewSimpleClientset(planList, class)
 				return client
 			},
-			ExpectedErr: errors.New("no plan found"),
+			ExpectedErr: errors.New("no plan free found for class db-service for the service-broker does-not-exist"),
 		},
 		"none for cluster broker": {
 			Args:      []string{"db-service", "free", "mydb", "--broker=does-not-exist"},
 			Namespace: "custom-ns",
 			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				client := servicecatalogclientfake.NewSimpleClientset(clusterPlanList)
+				client := servicecatalogclientfake.NewSimpleClientset(clusterPlanList, clusterClass)
 				return client
 			},
-			ExpectedErr: errors.New("no plan found"),
+			ExpectedErr: errors.New("no plan free found for class db-service for the service-broker does-not-exist"),
 		},
 		"cluster over namespaced": {
 			Args:      []string{"db-service", "free", "mydb", `--config={"ram_gb":4}`},
 			Namespace: "custom-ns",
 			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				client := servicecatalogclientfake.NewSimpleClientset(planList, clusterPlanList)
+				client := servicecatalogclientfake.NewSimpleClientset(planList, clusterPlanList, class, clusterClass)
 				client.PrependReactor("*", "serviceplans", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
 					return true, nil, errors.New("dont ask for namespaced plans")
 				})
@@ -161,7 +185,7 @@ func TestNewCreateServiceCommand(t *testing.T) {
 			Args:      []string{"db-service", "free", "mydb"},
 			Namespace: "custom-ns",
 			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				return servicecatalogclientfake.NewSimpleClientset(planList)
+				return servicecatalogclientfake.NewSimpleClientset(planList, class)
 			},
 		},
 		"bad path": {
@@ -185,7 +209,7 @@ func TestNewCreateServiceCommand(t *testing.T) {
 			Args:      []string{"db-service", "free", "mydb"},
 			Namespace: "custom-ns",
 			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				client := servicecatalogclientfake.NewSimpleClientset(clusterPlanList, planList)
+				client := servicecatalogclientfake.NewSimpleClientset(clusterPlanList, planList, clusterClass, class)
 				client.PrependReactor("*", "clusterserviceplans", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
 					return true, nil, errors.New("server-call-error")
 				})
@@ -197,7 +221,7 @@ func TestNewCreateServiceCommand(t *testing.T) {
 			Args:      []string{"db-service", "free", "mydb"},
 			Namespace: "custom-ns",
 			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				client := servicecatalogclientfake.NewSimpleClientset(planList)
+				client := servicecatalogclientfake.NewSimpleClientset(planList, class)
 				client.PrependReactor("list", "serviceplans", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
 					return true, nil, errors.New("server-call-error")
 				})
@@ -209,7 +233,7 @@ func TestNewCreateServiceCommand(t *testing.T) {
 			Args:      []string{"db-service", "free", "mydb"},
 			Namespace: "custom-ns",
 			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				client := servicecatalogclientfake.NewSimpleClientset(clusterPlanList)
+				client := servicecatalogclientfake.NewSimpleClientset(clusterPlanList, clusterClass)
 				client.PrependReactor("create", "serviceinstances", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
 					return true, nil, errors.New("server-call-error")
 				})
@@ -221,7 +245,7 @@ func TestNewCreateServiceCommand(t *testing.T) {
 			Args:      []string{"db-service", "free", "mydb"},
 			Namespace: "custom-ns",
 			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				client := servicecatalogclientfake.NewSimpleClientset(planList)
+				client := servicecatalogclientfake.NewSimpleClientset(planList, class)
 				client.PrependReactor("create", "serviceinstances", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
 					return true, nil, errors.New("server-call-error")
 				})

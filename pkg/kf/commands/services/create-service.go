@@ -16,7 +16,7 @@ package services
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 
 	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
 	"github.com/google/kf/pkg/kf/commands/config"
@@ -41,8 +41,11 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 		Aliases: []string{"cs"},
 		Short:   "Create a service instance",
 		Example: `
+  # Creates a new instance of a db-service with the name mydb, plan silver, and provisioning configuration
   kf create-service db-service silver mydb -c '{"ram_gb":4}'
-  kf create-service db-service silver mydb -c ~/workspace/tmp/instance_config.json -b db-broker-2`,
+
+  # Creates a new instance of a db-service from the broker named local-broker
+  kf create-service db-service silver mydb -c ~/workspace/tmp/instance_config.json -b local-broker`,
 		Args: cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			serviceName := args[0]
@@ -67,33 +70,15 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 				Raw: paramBytes,
 			}
 
-			clusterPlans, err := client.ServicecatalogV1beta1().
-				ClusterServicePlans().
-				List(metav1.ListOptions{})
+			matchingClusterPlans, err := findMatchingClusterPlans(client, planName, serviceName, broker)
 			if err != nil {
 				return err
 			}
 
-			for _, plan := range clusterPlans.Items {
-				if planName != plan.Spec.ExternalName {
-					continue
-				}
-
-				class, err := client.ServicecatalogV1beta1().
-					ClusterServiceClasses().
-					Get(plan.Spec.ClusterServiceClassRef.Name, metav1.GetOptions{})
-				if err != nil {
-					return err
-				}
-
-				if serviceName != class.Spec.ExternalName {
-					continue
-				}
-				if broker != "" && broker != plan.Spec.ClusterServiceBrokerName {
-					continue
-				}
+			if len(matchingClusterPlans) != 0 {
 
 				// plan found
+				plan := matchingClusterPlans[0]
 				created, err := client.ServicecatalogV1beta1().
 					ServiceInstances(p.Namespace).
 					Create(&servicecatalogv1beta1.ServiceInstance{
@@ -103,7 +88,9 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 						},
 						Spec: servicecatalogv1beta1.ServiceInstanceSpec{
 							PlanReference: servicecatalogv1beta1.PlanReference{
+								ClusterServicePlanName:          plan.Name,
 								ClusterServicePlanExternalName:  planName,
+								ClusterServiceClassName:         plan.Spec.ClusterServiceClassRef.Name,
 								ClusterServiceClassExternalName: serviceName,
 							},
 							Parameters: rawParams,
@@ -117,34 +104,14 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 				return nil
 			}
 
-			namespacePlans, err := client.ServicecatalogV1beta1().
-				ServicePlans(p.Namespace).
-				List(metav1.ListOptions{})
+			matchingNamespacedPlans, err := findMatchingNamespacedPlans(client, p.Namespace, planName, serviceName, broker)
 			if err != nil {
 				return err
 			}
 
-			for _, plan := range namespacePlans.Items {
-				if planName != plan.Spec.ExternalName {
-					continue
-				}
-
-				class, err := client.ServicecatalogV1beta1().
-					ServiceClasses(p.Namespace).
-					Get(plan.Spec.ServiceClassRef.Name, metav1.GetOptions{})
-				if err != nil {
-					return err
-				}
-
-				if serviceName != class.Spec.ExternalName {
-					continue
-				}
-
-				if broker != "" && broker != plan.Spec.ServiceBrokerName {
-					continue
-				}
-
+			if len(matchingNamespacedPlans) != 0 {
 				// plan found
+				plan := matchingNamespacedPlans[0]
 				created, err := client.ServicecatalogV1beta1().
 					ServiceInstances(p.Namespace).
 					Create(&servicecatalogv1beta1.ServiceInstance{
@@ -154,7 +121,9 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 						},
 						Spec: servicecatalogv1beta1.ServiceInstanceSpec{
 							PlanReference: servicecatalogv1beta1.PlanReference{
+								ServicePlanName:          plan.Name,
 								ServicePlanExternalName:  planName,
+								ServiceClassName:         plan.Spec.ServiceClassRef.Name,
 								ServiceClassExternalName: serviceName,
 							},
 							Parameters: rawParams,
@@ -168,7 +137,11 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 				return nil
 			}
 
-			return errors.New("no plan found")
+			if broker != "" {
+				return fmt.Errorf("no plan %s found for class %s for the service-broker %s", planName, serviceName, broker)
+			} else {
+				return fmt.Errorf("no plan %s found for class %s for all service-brokers", planName, serviceName)
+			}
 		},
 	}
 
@@ -187,4 +160,78 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 		"Service broker to use.")
 
 	return createCmd
+}
+
+func findMatchingClusterPlans(client servicecatalogclient.Interface, planName, serviceName, broker string) ([]servicecatalogv1beta1.ClusterServicePlan, error) {
+
+	var matchingPlans []servicecatalogv1beta1.ClusterServicePlan
+
+	plans, err := client.ServicecatalogV1beta1().
+		ClusterServicePlans().
+		List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, plan := range plans.Items {
+		if planName != plan.Spec.ExternalName {
+			continue
+		}
+
+		class, err := client.ServicecatalogV1beta1().
+			ClusterServiceClasses().
+			Get(plan.Spec.ClusterServiceClassRef.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+
+		if serviceName != class.Spec.ExternalName {
+			continue
+		}
+
+		if broker != "" && broker != plan.Spec.ClusterServiceBrokerName {
+			continue
+		}
+
+		matchingPlans = append(matchingPlans, plan)
+	}
+
+	return matchingPlans, nil
+}
+
+func findMatchingNamespacedPlans(client servicecatalogclient.Interface, namespace, planName, serviceName, broker string) ([]servicecatalogv1beta1.ServicePlan, error) {
+
+	var matchingPlans []servicecatalogv1beta1.ServicePlan
+
+	plans, err := client.ServicecatalogV1beta1().
+		ServicePlans(namespace).
+		List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, plan := range plans.Items {
+		if planName != plan.Spec.ExternalName {
+			continue
+		}
+
+		class, err := client.ServicecatalogV1beta1().
+			ServiceClasses(namespace).
+			Get(plan.Spec.ServiceClassRef.Name, metav1.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+
+		if serviceName != class.Spec.ExternalName {
+			continue
+		}
+
+		if broker != "" && broker != plan.Spec.ServiceBrokerName {
+			continue
+		}
+
+		matchingPlans = append(matchingPlans, plan)
+	}
+
+	return matchingPlans, nil
 }
