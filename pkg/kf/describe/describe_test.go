@@ -397,8 +397,10 @@ func ExampleServiceInstance() {
 			Name: "myservice-instance",
 		},
 		Spec: v1beta1.ServiceInstanceSpec{
-			ClusterServiceClassRef: &v1beta1.ClusterObjectReference{Name: "myclass"},
-			ClusterServicePlanRef:  &v1beta1.ClusterObjectReference{Name: "myplan"},
+			PlanReference: v1beta1.PlanReference{
+				ClusterServiceClassExternalName: "myclass",
+				ClusterServicePlanExternalName:  "myplan",
+			},
 			Parameters: &runtime.RawExtension{
 				Raw: []byte(`{"some":"params"}`),
 			},

@@ -80,6 +80,9 @@ func TestIntegration_VcapServices(t *testing.T) {
 	appPath := "./samples/apps/envs"
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		withServiceBroker(ctx, t, kf, func(ctx context.Context) {
+
+			// TODO: cut this out when create-service-broker is synchronous
+			time.Sleep(10 * time.Second)
 			withServiceInstance(ctx, kf, func(ctx context.Context) {
 				withApp(ctx, t, kf, appName, appPath, false, func(ctx context.Context) {
 					// Assert VCAP_SERVICES is blank
@@ -120,6 +123,9 @@ func TestIntegration_VcapServices_customBindingName(t *testing.T) {
 	appPath := "./samples/apps/envs"
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		withServiceBroker(ctx, t, kf, func(ctx context.Context) {
+
+			// TODO: cut this out when create-service-broker is synchronous
+			time.Sleep(10 * time.Second)
 			withServiceInstance(ctx, kf, func(ctx context.Context) {
 				withApp(ctx, t, kf, appName, appPath, false, func(ctx context.Context) {
 					serviceInstanceName := ServiceInstanceFromContext(ctx)

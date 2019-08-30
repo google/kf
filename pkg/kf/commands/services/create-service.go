@@ -78,7 +78,6 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 			if len(matchingClusterPlans) != 0 {
 
 				// plan found
-				plan := matchingClusterPlans[0]
 				created, err := client.ServicecatalogV1beta1().
 					ServiceInstances(p.Namespace).
 					Create(&servicecatalogv1beta1.ServiceInstance{
@@ -88,9 +87,7 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 						},
 						Spec: servicecatalogv1beta1.ServiceInstanceSpec{
 							PlanReference: servicecatalogv1beta1.PlanReference{
-								ClusterServicePlanName:          plan.Name,
 								ClusterServicePlanExternalName:  planName,
-								ClusterServiceClassName:         plan.Spec.ClusterServiceClassRef.Name,
 								ClusterServiceClassExternalName: serviceName,
 							},
 							Parameters: rawParams,
@@ -111,7 +108,6 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 
 			if len(matchingNamespacedPlans) != 0 {
 				// plan found
-				plan := matchingNamespacedPlans[0]
 				created, err := client.ServicecatalogV1beta1().
 					ServiceInstances(p.Namespace).
 					Create(&servicecatalogv1beta1.ServiceInstance{
@@ -121,9 +117,7 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 						},
 						Spec: servicecatalogv1beta1.ServiceInstanceSpec{
 							PlanReference: servicecatalogv1beta1.PlanReference{
-								ServicePlanName:          plan.Name,
 								ServicePlanExternalName:  planName,
-								ServiceClassName:         plan.Spec.ServiceClassRef.Name,
 								ServiceClassExternalName: serviceName,
 							},
 							Parameters: rawParams,
