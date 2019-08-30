@@ -92,8 +92,7 @@ func (ac *appsClient) Restage(namespace, name string) (app *v1alpha1.App, err er
 
 	app.Spec.Source.UpdateRequests++
 
-	app, err = ac.coreClient.Update(namespace, app)
-	return
+	return ac.coreClient.Update(namespace, app)
 }
 
 // ConditionServiceBindingsReady returns true if service bindings are ready and
