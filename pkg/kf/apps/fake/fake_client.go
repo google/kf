@@ -119,6 +119,20 @@ func (mr *FakeClientMockRecorder) DeployLogs(arg0, arg1, arg2, arg3, arg4 interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeployLogs", reflect.TypeOf((*FakeClient)(nil).DeployLogs), arg0, arg1, arg2, arg3, arg4)
 }
 
+// DeployLogsForApp mocks base method
+func (m *FakeClient) DeployLogsForApp(arg0 io.Writer, arg1 *v1alpha1.App) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeployLogsForApp", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeployLogsForApp indicates an expected call of DeployLogsForApp
+func (mr *FakeClientMockRecorder) DeployLogsForApp(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeployLogsForApp", reflect.TypeOf((*FakeClient)(nil).DeployLogsForApp), arg0, arg1)
+}
+
 // Get mocks base method
 func (m *FakeClient) Get(arg0, arg1 string, arg2 ...apps.GetOption) (*v1alpha1.App, error) {
 	m.ctrl.T.Helper()
@@ -160,11 +174,12 @@ func (mr *FakeClientMockRecorder) List(arg0 interface{}, arg1 ...interface{}) *g
 }
 
 // Restage mocks base method
-func (m *FakeClient) Restage(arg0, arg1 string) error {
+func (m *FakeClient) Restage(arg0, arg1 string) (*v1alpha1.App, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Restage", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*v1alpha1.App)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Restage indicates an expected call of Restage
