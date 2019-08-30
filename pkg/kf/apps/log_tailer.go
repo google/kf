@@ -70,6 +70,12 @@ func newPushLogTailer(
 	return t
 }
 
+// DeployLogsForApp gets the deployment logs for an application. It blocks until
+// the operation has completed.
+func (a *appsClient) DeployLogsForApp(out io.Writer, app *v1alpha1.App) error {
+	return a.DeployLogs(out, app.Name, app.ResourceVersion, app.Namespace, app.Spec.Instances.Stopped)
+}
+
 // DeployLogs writes the logs for the deploy step for the resourceVersion
 // to out. It blocks until the operation has completed.
 func (a *appsClient) DeployLogs(

@@ -29,11 +29,14 @@ func NewRestageCommand(
 	p *config.KfParams,
 	client apps.Client,
 ) *cobra.Command {
+	var async bool
+
 	cmd := &cobra.Command{
 		Use:     "restage APP_NAME",
 		Short:   "Rebuild and deploy using the last uploaded source code and current buildpacks",
 		Example: `kf restage myapp`,
 		Args:    cobra.ExactArgs(1),
+		Aliases: []string{"rg"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err
@@ -43,13 +46,30 @@ func NewRestageCommand(
 
 			cmd.SilenceUsage = true
 
-			if err := client.Restage(p.Namespace, appName); err != nil {
+			app, err := client.Restage(p.Namespace, appName)
+			if err != nil {
 				return fmt.Errorf("failed to restage app: %s", err)
+			}
+
+			if !async {
+				if err := client.DeployLogsForApp(cmd.OutOrStdout(), app); err != nil {
+					return fmt.Errorf("failed to restage app: %s", err)
+				}
+
+				fmt.Fprintf(cmd.OutOrStdout(), "%q successfully restaged\n", appName)
 			}
 
 			return nil
 		},
 	}
+
+	cmd.Flags().BoolVarP(
+		&async,
+		"async",
+		"",
+		false,
+		"Don't wait for the restage to finish before returning.",
+	)
 
 	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 

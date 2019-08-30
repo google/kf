@@ -40,6 +40,7 @@ func TestRestage(t *testing.T) {
 			Args:      []string{"my-app"},
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().Restage("default", "my-app")
+				fake.EXPECT().DeployLogsForApp(gomock.Any(), gomock.Any())
 			},
 		},
 		"no app name": {
@@ -54,7 +55,24 @@ func TestRestage(t *testing.T) {
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().
 					Restage(gomock.Any(), gomock.Any()).
-					Return(errors.New("some-error"))
+					Return(nil, errors.New("some-error"))
+			},
+		},
+		"restages app async": {
+			Namespace: "default",
+			Args:      []string{"my-app"},
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Restage("default", "my-app")
+				fake.EXPECT().DeployLogsForApp(gomock.Any(), gomock.Any())
+			},
+		},
+		"restages app deployment fail": {
+			Namespace:   "default",
+			Args:        []string{"my-app"},
+			ExpectedErr: errors.New("failed to restage app: some-log-error"),
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Restage("default", "my-app")
+				fake.EXPECT().DeployLogsForApp(gomock.Any(), gomock.Any()).Return(errors.New("some-log-error"))
 			},
 		},
 	}

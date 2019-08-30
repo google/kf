@@ -24,7 +24,8 @@ kf restage APP_NAME [flags]
 ### Options
 
 ```
-  -h, --help   help for restage
+      --async   Don't wait for the restage to finish before returning.
+  -h, --help    help for restage
 ```
 
 ### Options inherited from parent commands

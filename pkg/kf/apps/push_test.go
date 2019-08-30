@@ -16,6 +16,7 @@ package apps_test
 
 import (
 	"errors"
+	"io"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -65,18 +66,24 @@ func TestPush_Logs(t *testing.T) {
 				Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
 				Return(&v1alpha1.App{
 					ObjectMeta: metav1.ObjectMeta{
+						Name:            tc.appName,
+						Namespace:       expectedNamespace,
 						ResourceVersion: tc.appName + "-version",
 					},
+					Spec: v1alpha1.AppSpec{
+						Instances: v1alpha1.AppSpecInstances{
+							Stopped: tc.noStart,
+						},
+					},
 				}, nil)
+
 			fakeApps.EXPECT().
-				DeployLogs(
-					gomock.Not(gomock.Nil()), // out,
-					tc.appName,               // appName
-					tc.appName+"-version",    // resourceVersion
-					expectedNamespace,        // namespace
-					tc.noStart,               // NoStart
-				).
-				Return(tc.logErr)
+				DeployLogsForApp(gomock.Not(gomock.Nil()), gomock.Any()).Do(func(_ io.Writer, app *v1alpha1.App) {
+				testutil.AssertEqual(t, "Name", tc.appName, app.Name)
+				testutil.AssertEqual(t, "ResourceVersion", tc.appName+"-version", app.ResourceVersion)
+				testutil.AssertEqual(t, "Namespace", expectedNamespace, app.Namespace)
+				testutil.AssertEqual(t, "resourceVersion", tc.noStart, app.Spec.Instances.Stopped)
+			}).Return(tc.logErr)
 
 			p := apps.NewPusher(
 				fakeApps,
@@ -531,7 +538,7 @@ func TestPush(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			fakeApps := appsfake.NewFakeClient(ctrl)
 			fakeApps.EXPECT().
-				DeployLogs(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+				DeployLogsForApp(gomock.Any(), gomock.Any()).
 				AnyTimes()
 
 			tc.setup(t, fakeApps)

@@ -126,13 +126,7 @@ func (p *pusher) Push(appName string, opts ...PushOption) error {
 		return fmt.Errorf("failed to push app: %s", err)
 	}
 
-	if err := p.appsClient.DeployLogs(
-		cfg.Output,
-		appName,
-		resultingApp.ResourceVersion,
-		app.Namespace,
-		cfg.NoStart,
-	); err != nil {
+	if err := p.appsClient.DeployLogsForApp(cfg.Output, resultingApp); err != nil {
 		return err
 	}
 

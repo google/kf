@@ -27,12 +27,10 @@ import (
 // ClientExtension holds additional functions that should be exposed by client.
 type ClientExtension interface {
 	DeleteInForeground(namespace string, name string) error
-
-	// DeployLogs writes the logs for the build and deploy stage to the given
-	// out.  The method exits once the logs are done streaming.
+	DeployLogsForApp(out io.Writer, app *v1alpha1.App) error
 	DeployLogs(out io.Writer, appName, resourceVersion, namespace string, noStart bool) error
 	Restart(namespace, name string) error
-	Restage(namespace, name string) error
+	Restage(namespace, name string) (*v1alpha1.App, error)
 }
 
 type appsClient struct {
@@ -86,11 +84,16 @@ func (ac *appsClient) Restart(namespace, name string) error {
 
 // Restage causes the controller to create a new build and then deploy the
 // resulting container.
-func (ac *appsClient) Restage(namespace, name string) error {
-	return ac.coreClient.Transform(namespace, name, func(a *v1alpha1.App) error {
-		a.Spec.Source.UpdateRequests++
-		return nil
-	})
+func (ac *appsClient) Restage(namespace, name string) (app *v1alpha1.App, err error) {
+	app, err = ac.coreClient.Get(namespace, name)
+	if err != nil {
+		return
+	}
+
+	app.Spec.Source.UpdateRequests++
+
+	app, err = ac.coreClient.Update(namespace, app)
+	return
 }
 
 // ConditionServiceBindingsReady returns true if service bindings are ready and
