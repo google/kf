@@ -96,7 +96,7 @@ func TestIntegration_VcapServices(t *testing.T) {
 									InstanceName: ServiceInstanceFromContext(ctx),
 									Name:         ServiceInstanceFromContext(ctx),
 									Label:        ServiceClassFromContext(ctx),
-									Tags:         []string(nil),
+									Tags:         []string{"fake-tag"},
 									Plan:         ServicePlanFromContext(ctx),
 									Credentials: map[string]string{
 										"password": "fake-pw",
@@ -137,7 +137,7 @@ func TestIntegration_VcapServices_customBindingName(t *testing.T) {
 								InstanceName: ServiceInstanceFromContext(ctx),
 								Name:         "my-binding",
 								Label:        ServiceClassFromContext(ctx),
-								Tags:         []string(nil),
+								Tags:         []string{"fake-tag"},
 								Plan:         ServicePlanFromContext(ctx),
 								Credentials: map[string]string{
 									"password": "fake-pw",

@@ -17,6 +17,7 @@ package cfutil
 import (
 	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -48,7 +49,7 @@ type VcapService struct {
 
 // NewVcapService creates a new VcapService given a binding and associated
 // secret.
-func NewVcapService(instance apiv1beta1.ServiceInstance, binding apiv1beta1.ServiceBinding, secret *corev1.Secret) VcapService {
+func NewVcapService(class servicecatalogv1beta1.CommonServiceClassSpec, instance apiv1beta1.ServiceInstance, binding apiv1beta1.ServiceBinding, secret *corev1.Secret) VcapService {
 	// See the cloud-controller-ng source for how this is supposed to be built
 	// being that it doesn't seem to be formally fully documented anywhere:
 	// https://github.com/cloudfoundry/cloud_controller_ng/blob/65a75e6c97f49756df96e437e253f033415b2db1/app/presenters/system_environment/service_binding_presenter.rb#L32
@@ -58,12 +59,9 @@ func NewVcapService(instance apiv1beta1.ServiceInstance, binding apiv1beta1.Serv
 		InstanceName: binding.Spec.InstanceRef.Name,
 		Label:        coalesce(instance.Spec.ServiceClassExternalName, instance.Spec.ClusterServiceClassExternalName),
 		Plan:         coalesce(instance.Spec.ServicePlanExternalName, instance.Spec.ClusterServicePlanExternalName),
+		Tags:         class.Tags,
 		Credentials:  make(map[string]string),
 	}
-
-	// TODO(josephlewis42) we need to get tags from the (Cluster)ServiceClass
-	// this could be aided by the BindingParentHierarchy function in the
-	// service catalog SDK.
 
 	// Credentials are stored by the service catalog in a flat map, the data
 	// values are just strings.

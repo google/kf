@@ -66,6 +66,21 @@ func (mr *FakeSystemEnvInjectorMockRecorder) ComputeSystemEnv(arg0, arg1 interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ComputeSystemEnv", reflect.TypeOf((*FakeSystemEnvInjector)(nil).ComputeSystemEnv), arg0, arg1)
 }
 
+// GetClassFromInstance mocks base method
+func (m *FakeSystemEnvInjector) GetClassFromInstance(arg0 *v1beta1.ServiceInstance) (*v1beta1.CommonServiceClassSpec, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetClassFromInstance", arg0)
+	ret0, _ := ret[0].(*v1beta1.CommonServiceClassSpec)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetClassFromInstance indicates an expected call of GetClassFromInstance
+func (mr *FakeSystemEnvInjectorMockRecorder) GetClassFromInstance(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetClassFromInstance", reflect.TypeOf((*FakeSystemEnvInjector)(nil).GetClassFromInstance), arg0)
+}
+
 // GetVcapService mocks base method
 func (m *FakeSystemEnvInjector) GetVcapService(arg0 string, arg1 *v1beta1.ServiceBinding) (cfutil.VcapService, error) {
 	m.ctrl.T.Helper()

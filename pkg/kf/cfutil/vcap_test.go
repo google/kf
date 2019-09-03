@@ -57,7 +57,11 @@ func ExampleNewVcapService() {
 		"key2": []byte("value2"),
 	}
 
-	vs := cfutil.NewVcapService(instance, binding, &secret)
+	class := apiv1beta1.CommonServiceClassSpec{
+		Tags: []string{"mysql"},
+	}
+
+	vs := cfutil.NewVcapService(class, instance, binding, &secret)
 
 	fmt.Printf("Name: %s\n", vs.Name)
 	fmt.Printf("InstanceName: %s\n", vs.InstanceName)
@@ -65,6 +69,7 @@ func ExampleNewVcapService() {
 	fmt.Printf("Credentials: %v\n", vs.Credentials)
 	fmt.Printf("Service: %v\n", vs.Label)
 	fmt.Printf("Plan: %v\n", vs.Plan)
+	fmt.Printf("Tags: %v\n", vs.Tags)
 
 	// Output: Name: custom-binding-name
 	// InstanceName: my-instance
@@ -72,4 +77,5 @@ func ExampleNewVcapService() {
 	// Credentials: map[key1:value1 key2:value2]
 	// Service: my-service
 	// Plan: my-service-plan
+	// Tags: [mysql]
 }
