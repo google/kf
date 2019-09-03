@@ -18,24 +18,18 @@ to deploy and scale applications.
 Install Istio:
 
 ```.sh
-kubectl apply --filename
-https://raw.githubusercontent.com/knative/serving/v0.6.1/third_party/istio-1.1.3/istio-crds.yaml
-&& \
-kubectl apply --filename
-https://raw.githubusercontent.com/knative/serving/v0.6.1/third_party/istio-1.1.3/istio.yaml
-&& \
+kubectl apply --filename https://raw.githubusercontent.com/knative/serving/v0.6.1/third_party/istio-1.1.3/istio-crds.yaml && \
+kubectl apply --filename https://raw.githubusercontent.com/knative/serving/v0.6.1/third_party/istio-1.1.3/istio.yaml && \
 kubectl label namespace default istio-injection=enabled
 ```
 
 Install Knative Serve:
 
 ```.sh
-kubectl apply --filename
-https://github.com/knative/serving/releases/download/v0.6.1/serving.yaml \
---filename
-https://github.com/knative/serving/releases/download/v0.6.1/monitoring.yaml \
---filename
-https://raw.githubusercontent.com/knative/serving/v0.6.1/third_party/config/build/clusterrole.yaml
+kubectl apply --filename https://github.com/knative/serving/releases/download/v0.6.1/serving.yaml \
+--filename https://github.com/knative/serving/releases/download/v0.6.1/monitoring.yaml \
+--filename https://raw.githubusercontent.com/knative/serving/v0.6.1/third_party/config/build/clusterrole.yaml
+```
 
 ## Confirm kubeconfig
 The workstation you install `kf` on must have a valid `kubectl` configuration
