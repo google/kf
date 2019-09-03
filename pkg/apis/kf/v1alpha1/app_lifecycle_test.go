@@ -353,6 +353,28 @@ func TestAppStatus_lifecycle(t *testing.T) {
 				AppConditionEnvVarSecretReady,
 			},
 		},
+		"out of sync": {
+			Init: func(status *AppStatus) {
+				status.MarkSpaceHealthy()
+				status.PropagateSourceStatus(happySource())
+				status.PropagateEnvVarSecretStatus(envVarSecret())
+				// out of sync
+				status.PropagateKnativeServiceStatus(&serving.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:       "some-service-name",
+						Generation: 42,
+					},
+				})
+			},
+			ExpectSucceeded: []apis.ConditionType{
+				AppConditionSpaceReady,
+				AppConditionSourceReady,
+				AppConditionEnvVarSecretReady,
+			},
+			ExpectOngoing: []apis.ConditionType{
+				AppConditionReady,
+			},
+		},
 		"space unhealthy": {
 			Init: func(status *AppStatus) {
 				status.MarkSpaceUnhealthy("Terminating", "Namespace is terminating")

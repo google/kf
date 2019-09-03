@@ -108,6 +108,13 @@ func (r *Reconciler) reconcileApp(ctx context.Context, namespace, name string) (
 	// Don't modify the informers copy
 	toReconcile := original.DeepCopy()
 
+	// ALWAYS update the ObservedGenration: "If the primary resource your
+	// controller is reconciling supports ObservedGeneration in its status, make
+	// sure you correctly set it to metadata.Generation whenever the values
+	// between the two fields mismatches."
+	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/controllers.md
+	toReconcile.Status.ObservedGeneration = toReconcile.Generation
+
 	// Reconcile this copy of the service and then write back any status
 	// updates regardless of whether the reconciliation errored out.
 	reconcileErr := r.ApplyChanges(ctx, toReconcile)
@@ -216,7 +223,6 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 				Delete(binding.Name, &metav1.DeleteOptions{}); err != nil {
 				return condition.MarkReconciliationError("deleting existing service binding", err)
 			}
-
 		}
 
 		for _, desired := range desiredServiceBindings {
@@ -402,9 +408,6 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			}
 		}
 	}
-
-	// Making it to the bottom of the reconciler means we've synchronized.
-	app.Status.ObservedGeneration = app.Generation
 
 	return r.gcRevisions(ctx, app)
 }

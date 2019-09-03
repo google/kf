@@ -118,6 +118,11 @@ func (status *AppStatus) PropagateKnativeServiceStatus(service *serving.Service)
 		return
 	}
 
+	if service.Status.ObservedGeneration != service.Generation {
+		status.manage().MarkUnknown(AppConditionKnativeServiceReady, "GenerationMismatch", "the Knative service needs to be synchronized")
+		return
+	}
+
 	cond := service.Status.GetCondition(apis.ConditionReady)
 
 	if PropagateCondition(status.manage(), AppConditionKnativeServiceReady, cond) {
