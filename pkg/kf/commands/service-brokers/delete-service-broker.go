@@ -15,8 +15,13 @@
 package servicebrokers
 
 import (
+	"context"
+	"fmt"
+
 	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
 	"github.com/google/kf/pkg/kf/commands/config"
+	installutil "github.com/google/kf/pkg/kf/commands/install/util"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -24,6 +29,10 @@ import (
 // NewDeleteServiceBrokerCommand adds a cluster service broker to the service catalog.
 // TODO (juliaguo): Add flag to allow namespaced service broker
 func NewDeleteServiceBrokerCommand(p *config.KfParams, client servicecatalogclient.Interface) *cobra.Command {
+	var (
+		spaceScoped bool
+		force       bool
+	)
 	deleteCmd := &cobra.Command{
 		Use:     "delete-service-broker BROKER_NAME",
 		Aliases: []string{"dsb"},
@@ -35,11 +44,50 @@ func NewDeleteServiceBrokerCommand(p *config.KfParams, client servicecatalogclie
 
 			cmd.SilenceUsage = true
 
-			err := client.ServicecatalogV1beta1().ClusterServiceBrokers().Delete(serviceBrokerName, &metav1.DeleteOptions{})
+			if err := utils.ValidateNamespace(p); err != nil {
+				return err
+			}
 
-			return err
+			var toDelete func() error
+			if !spaceScoped {
+				toDelete = func() error {
+					err := client.ServicecatalogV1beta1().ClusterServiceBrokers().Delete(serviceBrokerName, &metav1.DeleteOptions{})
+					return err
+				}
+			} else {
+				toDelete = func() error {
+					err := client.ServicecatalogV1beta1().ServiceBrokers(p.Namespace).Delete(serviceBrokerName, &metav1.DeleteOptions{})
+					return err
+				}
+			}
+
+			shouldDelete := true
+			if !force {
+				var err error
+				shouldDelete, err = installutil.SelectYesNo(context.Background(), fmt.Sprintf("Really delete service-broker %s?", serviceBrokerName))
+				if err != nil {
+					return err
+				}
+			}
+			if shouldDelete {
+				return toDelete()
+			} else {
+				return nil
+			}
 		},
 	}
+
+	deleteCmd.Flags().BoolVar(
+		&spaceScoped,
+		"space-scoped",
+		false,
+		"Set to delete a space scoped service broker.")
+
+	deleteCmd.Flags().BoolVar(
+		&force,
+		"force",
+		false,
+		"Set to force deletion without a confirmation prompt.")
 
 	return deleteCmd
 }

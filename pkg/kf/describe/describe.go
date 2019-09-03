@@ -15,6 +15,7 @@
 package describe
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"sort"
@@ -22,6 +23,7 @@ import (
 	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
@@ -292,12 +294,35 @@ func ServiceInstance(w io.Writer, service *v1beta1.ServiceInstance) {
 
 		fmt.Fprintf(w, "Name:\t%s\n", service.Name)
 
-		if service.Spec.ClusterServiceClassRef != nil {
-			fmt.Fprintf(w, "Service:\t%s\n", service.Spec.ClusterServiceClassRef.Name)
+		if service.Spec.PlanReference.ClusterServiceClassExternalName != "" {
+			fmt.Fprintf(w, "Service:\t%s\n", service.Spec.PlanReference.ClusterServiceClassExternalName)
 		}
 
-		if service.Spec.ClusterServicePlanRef != nil {
-			fmt.Fprintf(w, "Plan:\t%s\n", service.Spec.ClusterServicePlanRef.Name)
+		if service.Spec.PlanReference.ServiceClassExternalName != "" {
+			fmt.Fprintf(w, "Service:\t%s\n", service.Spec.PlanReference.ServiceClassExternalName)
+		}
+
+		if service.Spec.PlanReference.ClusterServicePlanExternalName != "" {
+			fmt.Fprintf(w, "Plan:\t%s\n", service.Spec.PlanReference.ClusterServicePlanExternalName)
+		}
+
+		if service.Spec.PlanReference.ServicePlanExternalName != "" {
+			fmt.Fprintf(w, "Plan:\t%s\n", service.Spec.PlanReference.ServicePlanExternalName)
+		}
+
+		if service.Spec.Parameters != nil {
+			var params map[string]interface{}
+			err := json.Unmarshal(service.Spec.Parameters.Raw, &params)
+			if err != nil {
+				panic(err)
+			}
+			prettyParams, err := yaml.Marshal(params)
+			if err != nil {
+				panic(err)
+			}
+			SectionWriter(w, "Parameters", func(w io.Writer) {
+				fmt.Fprintf(w, string(prettyParams))
+			})
 		}
 
 		cond := services.LastStatusCondition(*service)

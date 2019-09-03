@@ -80,6 +80,9 @@ func TestIntegration_VcapServices(t *testing.T) {
 	appPath := "./samples/apps/envs"
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		withServiceBroker(ctx, t, kf, func(ctx context.Context) {
+
+			// TODO: cut this out when create-service-broker is synchronous
+			time.Sleep(10 * time.Second)
 			withServiceInstance(ctx, kf, func(ctx context.Context) {
 				withApp(ctx, t, kf, appName, appPath, false, func(ctx context.Context) {
 					// Assert VCAP_SERVICES is blank
@@ -115,12 +118,14 @@ func TestIntegration_VcapServices(t *testing.T) {
 }
 
 func TestIntegration_VcapServices_customBindingName(t *testing.T) {
-	t.Skip("flaky - #634")
 	checkClusterStatus(t)
 	appName := fmt.Sprintf("integration-binding-app-%d", time.Now().UnixNano())
 	appPath := "./samples/apps/envs"
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		withServiceBroker(ctx, t, kf, func(ctx context.Context) {
+
+			// TODO: cut this out when create-service-broker is synchronous
+			time.Sleep(10 * time.Second)
 			withServiceInstance(ctx, kf, func(ctx context.Context) {
 				withApp(ctx, t, kf, appName, appPath, false, func(ctx context.Context) {
 					serviceInstanceName := ServiceInstanceFromContext(ctx)
@@ -187,12 +192,12 @@ func withServiceBroker(ctx context.Context, t *testing.T, kf *Kf, callback func(
 
 	withApp(ctx, t, kf, brokerAppName, brokerPath, true, func(ctx context.Context) {
 		// Register the mock service broker to service catalog, and then clean it up.
-		kf.CreateServiceBroker(ctx, brokerName, internalBrokerUrl(brokerAppName, SpaceFromContext(ctx)))
+		kf.CreateServiceBroker(ctx, brokerName, internalBrokerUrl(brokerAppName, SpaceFromContext(ctx)), "--space-scoped")
 
 		// Temporary solution to allow service broker registration to complete.
 		// TODO: Add flag to run the command synchronously.
 		time.Sleep(2 * time.Second)
-		defer kf.DeleteServiceBroker(ctx, brokerName)
+		defer kf.DeleteServiceBroker(ctx, brokerName, "--space-scoped", "--force")
 
 		ctx = ContextWithBroker(ctx, brokerName)
 		callback(ctx)
@@ -203,8 +208,9 @@ func withServiceInstance(ctx context.Context, kf *Kf, callback func(newCtx conte
 	serviceClass := "fake-service" // service class provided by the mock broker
 	servicePlan := "fake-plan"     // service plan provided by the mock broker
 	serviceInstanceName := "int-service-instance"
+	brokerName := BrokerFromContext(ctx)
 
-	kf.CreateService(ctx, serviceClass, servicePlan, serviceInstanceName)
+	kf.CreateService(ctx, serviceClass, servicePlan, serviceInstanceName, "-b", brokerName)
 	defer kf.DeleteService(ctx, serviceInstanceName)
 
 	ctx = ContextWithServiceClass(ctx, serviceClass)

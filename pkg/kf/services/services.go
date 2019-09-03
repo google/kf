@@ -31,8 +31,6 @@ type KfMarketplace struct {
 // ClientInterface is a client capable of interacting with service catalog services
 // and mapping the CF to Kubernetes concepts.
 type ClientInterface interface {
-	// CreateService creates a new instance of a service on the cluster.
-	CreateService(instanceName, serviceName, planName string, opts ...CreateServiceOption) (*v1beta1.ServiceInstance, error)
 
 	// DeleteService removes an instance of a service on the cluster.
 	DeleteService(instanceName string, opts ...DeleteServiceOption) error
@@ -64,19 +62,6 @@ func NewClient(sclient SClientFactory) ClientInterface {
 // Client is an implementation of ClientInterface that works with the Service Catalog.
 type Client struct {
 	createSvcatClient SClientFactory
-}
-
-// CreateService creates a new instance of a service on the cluster.
-func (c *Client) CreateService(instanceName, serviceName, planName string, opts ...CreateServiceOption) (*v1beta1.ServiceInstance, error) {
-	cfg := CreateServiceOptionDefaults().Extend(opts).toConfig()
-
-	svcat := c.createSvcatClient(cfg.Namespace)
-
-	// Provision(instanceName, className, planName string, opts *ProvisionOptions) (*v1beta1.ServiceInstance, error)
-	return svcat.Provision(instanceName, serviceName, planName, &servicecatalog.ProvisionOptions{
-		Namespace: cfg.Namespace,
-		Params:    cfg.Params,
-	})
 }
 
 // DeleteService removes an instance of a service on the cluster.

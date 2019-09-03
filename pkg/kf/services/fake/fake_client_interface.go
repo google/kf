@@ -69,26 +69,6 @@ func (mr *FakeClientInterfaceMockRecorder) BrokerName(arg0 interface{}, arg1 ...
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BrokerName", reflect.TypeOf((*FakeClientInterface)(nil).BrokerName), varargs...)
 }
 
-// CreateService mocks base method
-func (m *FakeClientInterface) CreateService(arg0, arg1, arg2 string, arg3 ...services.CreateServiceOption) (*v1beta1.ServiceInstance, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1, arg2}
-	for _, a := range arg3 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "CreateService", varargs...)
-	ret0, _ := ret[0].(*v1beta1.ServiceInstance)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateService indicates an expected call of CreateService
-func (mr *FakeClientInterfaceMockRecorder) CreateService(arg0, arg1, arg2 interface{}, arg3 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1, arg2}, arg3...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateService", reflect.TypeOf((*FakeClientInterface)(nil).CreateService), varargs...)
-}
-
 // DeleteService mocks base method
 func (m *FakeClientInterface) DeleteService(arg0 string, arg1 ...services.DeleteServiceOption) error {
 	m.ctrl.T.Helper()
