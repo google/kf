@@ -27,7 +27,10 @@ import (
 var (
 	defaultMem     = resource.MustParse("1Gi")
 	defaultStorage = resource.MustParse("1Gi")
-	defaultCPU     = resource.MustParse("1")
+
+	// CPU isn't defaulted in Cloud Foundry so we assume apps are I/O bound
+	// and roughly 10 should run on a single core machine.
+	defaultCPU = resource.MustParse("100m")
 )
 
 const (
