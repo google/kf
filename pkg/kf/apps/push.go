@@ -23,7 +23,6 @@ import (
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/internal/envutil"
-	"github.com/google/kf/pkg/kf/internal/kf"
 	"github.com/google/kf/pkg/kf/sources"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -54,11 +53,7 @@ func newApp(appName string, opts ...PushOption) (*v1alpha1.App, error) {
 
 	var envs []corev1.EnvVar
 	if len(cfg.EnvironmentVariables) > 0 {
-		var err error
 		envs = envutil.MapToEnvVars(cfg.EnvironmentVariables)
-		if err != nil {
-			return nil, kf.ConfigErr{Reason: err.Error()}
-		}
 	}
 
 	src := sources.NewKfSource()
