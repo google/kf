@@ -5,7 +5,7 @@ type: "docs"
 ---
 
 By default, Kf apps are accessible on domains exposed by Knative Serving.
-Kf extends Knative Serving's domain system to allow path based routing, per-app domains, wildcard domains, and other routing services.
+Kf extends Knative Serving's domain system to allow path based routing, per-app domains, wildcard hosts, and other routing services.
 
 ## Set up a domain
 
@@ -13,8 +13,9 @@ Follow the [Knative Serving](https://knative.dev/docs/serving/using-a-custom-dom
 
 ## Assign domains to spaces
 
-After you've set up a custom domain for your cluster, you can assign domains and sub-domains to each space for developers to use.
-If you created spaces before setting up a domain, then those spaces will have a placeholder domain.
+You can assign domains and sub-domains to each space for developers to use.
+If you created spaces before setting up a domain, then those spaces will have Knative Serving's placeholder domain by default.
+If you create spaces after setting up a domain, they will have the Knative Serving default domain you specified.
 
 Use `kf space` to view the domains assigned to a space:
 
