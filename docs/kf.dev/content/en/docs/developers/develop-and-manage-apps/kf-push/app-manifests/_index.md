@@ -36,7 +36,7 @@ The following fields are valid for objects under `applications`:
 | **no-route** | boolean | If set to true, the application will not be routable. |
 | **random-route** | boolean | If set to true, the app will be given a random route. |
 | **timeout** | int | The number of seconds to wait for the app to become healthy. |
-| **health-check-type** | string | The type of health-check to use `port` or `http`. Default: `port` |
+| **health-check-type** | string | The type of health-check to use `port`, `none`, or `http`. Default: `port` |
 | **health-check-http-endpoint** | string | The endpoint to target as part of the health-check. Only valid if `health-check-type` is `http`. |
 
 
@@ -137,15 +137,15 @@ The following are known differences between `kf` manifests and `cf` manifests:
 
 * Kf does not support deprecated cf manifest fields. This includes all fields at the root-level of the manifest (other than applications) and routing fields.
 * Kf is missing support for the following v2 manifest fields:
-  * stack
-  * command
-  * buildpack (widely used despite being deprecated)
-  * docker.username
+  * stack [656](https://github.com/google/kf/issues/656)
+  * command [656](https://github.com/google/kf/issues/656)
+  * buildpack [656](https://github.com/google/kf/issues/656)
+  * docker.username (no support planned)
 * Kf is missing support for the following v2 manifest features:
-  * Buildpacks from URL
-  * YAML Anchors
-  * Manifest variables
+  * Buildpacks from URL [619](https://github.com/google/kf/issues/619)
+  * YAML Anchors (no support planned)
+  * Manifest variables (no support planned)
 * Kf does not yet support v3 manifests. We have planned support for:
-  * Metadata (annotations and labels)
-  * Service parameters
-* Kf does not support auto-detecting ports for Docker containers.
+  * Metadata [656](https://github.com/google/kf/issues/656)
+  * Service parameters [656](https://github.com/google/kf/issues/656)
+* Kf does not support auto-detecting ports for Docker containers. (no support planned)
