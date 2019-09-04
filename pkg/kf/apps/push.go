@@ -54,11 +54,7 @@ func newApp(appName string, opts ...PushOption) (*v1alpha1.App, error) {
 
 	var envs []corev1.EnvVar
 	if len(cfg.EnvironmentVariables) > 0 {
-		var err error
 		envs = envutil.MapToEnvVars(cfg.EnvironmentVariables)
-		if err != nil {
-			return nil, kf.ConfigErr{Reason: err.Error()}
-		}
 	}
 
 	src := sources.NewKfSource()
