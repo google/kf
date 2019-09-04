@@ -7,7 +7,7 @@ description: >
   applications.
 ---
 
-Buildpacks are pre-defined build steps cluster operators can expose to developers via a "Builder".
+[Buildpacks](https://buildpacks.io/) are pre-defined build steps that cluster operators can expose to developers via a "Builder".
 Each buildpack knows how to perform one or more operations on uploaded source code.
 Buildpacks are made up of two binaries each, `detect` and `build`.
 
@@ -16,7 +16,7 @@ Buildpacks are made up of two binaries each, `detect` and `build`.
 
 For example, a Maven buildpack could check for the existence of a `pom.xml` file
 
-If no buildpack is provided, Kf will run `detect` on all configured buildpacks to see which can be run against your code.
+If no buildpack is provided, Kf will run `detect` on all configured buildpacks to see which can be ran against your code.
 If you provide one or more buildpacks, Kf will run them in order.
 
 ## Chains of buildpacks
