@@ -46,8 +46,6 @@ func NewClient(
 		coreClient: coreClient{
 			kclient: kclient,
 			upsertMutate: MutatorList{
-				LabelSetMutator(map[string]string{"app.kubernetes.io/managed-by": "kf"}),
-
 				func(app *v1alpha1.App) error {
 					// Dedupe Routes
 					// TODO(https://github.com/knative/pkg/issues/542): Route
@@ -61,7 +59,6 @@ func NewClient(
 					return nil
 				},
 			},
-			membershipValidator: AllPredicate(), // all apps can be managed by Kf
 		},
 		sourcesClient: sourcesClient,
 	}
@@ -76,10 +73,12 @@ func (ac *appsClient) DeleteInForeground(namespace string, name string) error {
 // Restart causes the controller to create a new revision for the knative
 // service.
 func (ac *appsClient) Restart(namespace, name string) error {
-	return ac.coreClient.Transform(namespace, name, func(a *v1alpha1.App) error {
+	_, err := ac.coreClient.Transform(namespace, name, func(a *v1alpha1.App) error {
 		a.Spec.Template.UpdateRequests++
 		return nil
 	})
+
+	return err
 }
 
 // Restage causes the controller to create a new build and then deploy the

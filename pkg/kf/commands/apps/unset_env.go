@@ -40,12 +40,14 @@ func NewUnsetEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Comman
 
 			cmd.SilenceUsage = true
 
-			return appClient.Transform(p.Namespace, appName, func(app *v1alpha1.App) error {
+			_, err := appClient.Transform(p.Namespace, appName, func(app *v1alpha1.App) error {
 				kfapp := (*apps.KfApp)(app)
 				kfapp.DeleteEnvVars([]string{name})
 
 				return nil
 			})
+
+			return err
 		},
 	}
 

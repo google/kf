@@ -131,11 +131,12 @@ func (mr *FakeClientMockRecorder) List(arg0 interface{}, arg1 ...interface{}) *g
 }
 
 // Transform mocks base method
-func (m *FakeClient) Transform(arg0, arg1 string, arg2 routeclaims.Mutator) error {
+func (m *FakeClient) Transform(arg0, arg1 string, arg2 routeclaims.Mutator) (*v1alpha1.RouteClaim, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Transform", arg0, arg1, arg2)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*v1alpha1.RouteClaim)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Transform indicates an expected call of Transform

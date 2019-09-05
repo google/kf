@@ -40,7 +40,7 @@ var clientTemplate = template.Must(template.New("").Funcs(generator.TemplateFunc
 type Client interface {
 	Create({{ $nssig }} obj *{{.Type}}, opts ...CreateOption) (*{{.Type}}, error)
 	Update({{ $nssig }} obj *{{.Type}}, opts ...UpdateOption) (*{{.Type}}, error)
-	Transform({{ $nssig }} name string, transformer Mutator) error
+	Transform({{ $nssig }} name string, transformer Mutator) (*{{.Type}}, error)
 	Get({{ $nssig }} name string, opts ...GetOption) (*{{.Type}}, error)
 	Delete({{ $nssig }} name string, opts ...DeleteOption) error
 	List({{ $nssig }} opts ...ListOption) ([]{{.Type}}, error)
@@ -54,9 +54,7 @@ type Client interface {
 
 type coreClient struct {
 	kclient {{.ClientType}}
-
-	upsertMutate        MutatorList
-	membershipValidator Predicate
+	upsertMutate MutatorList
 }
 
 func (core *coreClient) preprocessUpsert(obj *{{.Type}}) error {
@@ -80,30 +78,23 @@ func (core *coreClient) Create({{ $nssig }} obj *{{.Type}}, opts ...CreateOption
 // Update replaces the existing object in the cluster with the new one.
 // The value to be inserted will be preprocessed and validated before being sent.
 func (core *coreClient) Update({{ $nssig }} obj *{{.Type}}, opts ...UpdateOption) (*{{.Type}}, error) {
-	if err := core.preprocessUpsert(obj); err != nil {
-		return nil, err
-	}
-
 	return core.kclient.{{ .Kubernetes.Plural }}({{ $ns }}).Update(obj)
 }
 
-// Transform performs a read/modify/write on the object with the given name.
-// Transform manages the options for the Get and Update calls.
-func (core *coreClient) Transform({{ $nssig }} name string, mutator Mutator) error {
+// Transform performs a read/modify/write on the object with the given name
+// and returns the updated object. Transform manages the options for the Get and
+// Update calls.
+func (core *coreClient) Transform({{ $nssig }} name string, mutator Mutator) (*{{.Type}}, error) {
 	obj, err := core.Get({{ $nsparam }} name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := mutator(obj); err != nil {
-		return err
+		return nil, err
 	}
 
-	if _, err := core.Update({{ $nsparam }} obj); err != nil {
-		return err
-	}
-
-	return nil
+	return core.Update({{ $nsparam }} obj)
 }
 
 // Get retrieves an existing object in the cluster with the given name.
@@ -115,11 +106,7 @@ func (core *coreClient) Get({{ $nssig }} name string, opts ...GetOption) (*{{.Ty
 		return nil, fmt.Errorf("couldn't get the {{.CF.Name}} with the name %q: %v", name, err)
 	}
 
-	if core.membershipValidator(res) {
-		return res, nil
-	}
-
-	return nil, fmt.Errorf("an object with the name %s exists, but it doesn't appear to be a {{.CF.Name}}", name)
+	return res, nil
 }
 
 // Delete removes an existing object in the cluster.
@@ -159,9 +146,7 @@ func (core *coreClient) List({{ $nssig }} opts ...ListOption) ([]{{.Type}}, erro
 		return nil, fmt.Errorf("couldn't list {{.CF.Name}}s: %v", err)
 	}
 
-	return List(res.Items).
-		Filter(core.membershipValidator).
-		Filter(AllPredicate(cfg.filters...)), nil
+	return List(res.Items).Filter(AllPredicate(cfg.filters...)), nil
 }
 
 func (cfg listConfig) ToListOptions() (resp metav1.ListOptions) {

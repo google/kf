@@ -100,7 +100,7 @@ func unmapApp(
 		return nil
 	})
 
-	if err := c.Transform(namespace, appName, mutator); err != nil {
+	if _, err := c.Transform(namespace, appName, mutator); err != nil {
 		return fmt.Errorf("failed to unmap Route: %s", err)
 	}
 	return nil

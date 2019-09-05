@@ -45,7 +45,7 @@ func TestDeleteQuotaCommand(t *testing.T) {
 				fakeDeleter.
 					EXPECT().
 					Transform(gomock.Any(), gomock.Any()).
-					Return(nil)
+					Return(nil, nil)
 			},
 			assert: func(t *testing.T, buffer *bytes.Buffer) {
 				testutil.AssertContainsAll(t, buffer.String(), []string{"successfully deleted", "quota", "some-space"})

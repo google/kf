@@ -46,12 +46,14 @@ func NewSetEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command 
 				{Name: name, Value: value},
 			}
 
-			return appClient.Transform(p.Namespace, appName, func(app *v1alpha1.App) error {
+			_, err := appClient.Transform(p.Namespace, appName, func(app *v1alpha1.App) error {
 				kfapp := (*apps.KfApp)(app)
 				kfapp.MergeEnvVars(toSet)
 
 				return nil
 			})
+
+			return err
 		},
 	}
 

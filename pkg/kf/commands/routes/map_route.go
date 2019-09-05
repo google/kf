@@ -61,7 +61,7 @@ func NewMapRouteCommand(
 				return nil
 			}
 
-			err := appsClient.Transform(p.Namespace, appName, mutator)
+			_, err := appsClient.Transform(p.Namespace, appName, mutator)
 			if err != nil {
 				return fmt.Errorf("failed to map Route: %s", err)
 			}

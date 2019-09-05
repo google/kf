@@ -202,8 +202,11 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 			fakeSpaces := fake.NewFakeClient(ctrl)
 
 			output := tc.space.DeepCopy()
-			fakeSpaces.EXPECT().Transform(space, gomock.Any()).DoAndReturn(func(spaceName string, transformer spaces.Mutator) error {
-				return transformer(output)
+			fakeSpaces.EXPECT().Transform(space, gomock.Any()).DoAndReturn(func(spaceName string, transformer spaces.Mutator) (*v1alpha1.Space, error) {
+				if err := transformer(output); err != nil {
+					return nil, err
+				}
+				return output, nil
 			})
 
 			buffer := &bytes.Buffer{}

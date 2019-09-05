@@ -48,7 +48,7 @@ func TestSetEnvCommand(t *testing.T) {
 			Namespace:   "some-namespace",
 			ExpectedErr: errors.New("some-error"),
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform(gomock.Any(), "app-name", gomock.Any()).Return(errors.New("some-error"))
+				fake.EXPECT().Transform(gomock.Any(), "app-name", gomock.Any()).Return(nil, errors.New("some-error"))
 			},
 		},
 		"namespace is not provided": {
