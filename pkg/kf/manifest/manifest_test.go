@@ -85,8 +85,8 @@ applications:
 			fileContent: `---
 applications:
 - name: MY-APP
-	dockerfile:
-		image: "foo/Dockerfile"
+  dockerfile:
+    path: "foo/Dockerfile"
 `,
 			expected: &manifest.Manifest{
 				Applications: []manifest.Application{
