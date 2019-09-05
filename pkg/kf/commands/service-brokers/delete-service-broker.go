@@ -48,32 +48,21 @@ func NewDeleteServiceBrokerCommand(p *config.KfParams, client servicecatalogclie
 				return err
 			}
 
-			var toDelete func() error
-			if !spaceScoped {
-				toDelete = func() error {
-					err := client.ServicecatalogV1beta1().ClusterServiceBrokers().Delete(serviceBrokerName, &metav1.DeleteOptions{})
-					return err
-				}
-			} else {
-				toDelete = func() error {
-					err := client.ServicecatalogV1beta1().ServiceBrokers(p.Namespace).Delete(serviceBrokerName, &metav1.DeleteOptions{})
+			if !force {
+				shouldDelete, err := installutil.SelectYesNo(context.Background(), fmt.Sprintf("Really delete service-broker %s?", serviceBrokerName))
+				if err != nil || shouldDelete == false {
+					fmt.Fprintln(cmd.OutOrStdout(), "Skipping deletion, use --force to delete without validation")
 					return err
 				}
 			}
 
-			shouldDelete := true
-			if !force {
-				var err error
-				shouldDelete, err = installutil.SelectYesNo(context.Background(), fmt.Sprintf("Really delete service-broker %s?", serviceBrokerName))
-				if err != nil {
-					return err
-				}
+			fmt.Fprintf(cmd.OutOrStdout(), "Deleting %s asynchronously...\n", serviceBrokerName)
+
+			if spaceScoped {
+				return client.ServicecatalogV1beta1().ServiceBrokers(p.Namespace).Delete(serviceBrokerName, &metav1.DeleteOptions{})
 			}
-			if shouldDelete {
-				return toDelete()
-			} else {
-				return nil
-			}
+
+			return client.ServicecatalogV1beta1().ClusterServiceBrokers().Delete(serviceBrokerName, &metav1.DeleteOptions{})
 		},
 	}
 
