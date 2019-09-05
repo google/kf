@@ -67,7 +67,7 @@ func NewDeleteCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleting app %q asynchronously... For progress on enabling this to run synchronously, see Kf Github issue #599.\n", appName)
+			fmt.Fprintf(cmd.OutOrStdout(), "Deleting app %q %s", appName, utils.AsyncLogSuffix)
 
 			return nil
 		},

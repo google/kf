@@ -81,7 +81,7 @@ func NewCreateServiceBrokerCommand(p *config.KfParams, client servicecatalogclie
 			}
 
 			if err == nil {
-				fmt.Fprintln(cmd.OutOrStdout(), "Service broker entry created asynchronously, run `kf marketplace` to check the status.\nFor progress on enabling this to run synchronously, see Kf Github issue #599.")
+				fmt.Fprintln(cmd.OutOrStdout(), "Creating service broker entry, run `kf marketplace` to check the status. %s", utils.AsyncLogSuffix)
 			}
 
 			return err

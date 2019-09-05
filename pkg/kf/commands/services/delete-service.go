@@ -39,7 +39,7 @@ func NewDeleteServiceCommand(p *config.KfParams, client services.ClientInterface
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleting service instance asynchronously... For progress on enabling this to run synchronously, see Kf Github issue #599.\n")
+			fmt.Fprintf(cmd.OutOrStdout(), "Deleting service instance %q %s", instanceName, utils.AsyncLogSuffix)
 			return client.DeleteService(instanceName, services.WithDeleteServiceNamespace(p.Namespace))
 		},
 	}

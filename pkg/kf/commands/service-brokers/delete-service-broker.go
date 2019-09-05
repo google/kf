@@ -55,7 +55,7 @@ func NewDeleteServiceBrokerCommand(p *config.KfParams, client servicecatalogclie
 				}
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleting %s asynchronously... For progress on enabling this to run synchronously, see Kf Github issue #599.\n", serviceBrokerName)
+			fmt.Fprintf(cmd.OutOrStdout(), "Deleting service broker %q %s", serviceBrokerName, utils.AsyncLogSuffix)
 
 			if spaceScoped {
 				return client.ServicecatalogV1beta1().ServiceBrokers(p.Namespace).Delete(serviceBrokerName, &metav1.DeleteOptions{})

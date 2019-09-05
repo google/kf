@@ -99,7 +99,7 @@ Use the --namespace flag instead.`)
 				return fmt.Errorf("failed to create Route: %s", err)
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Creating route asynchronously... For progress on enabling this to run synchronously, see Kf Github issue #599.\n")
+			fmt.Fprintf(cmd.OutOrStdout(), "Creating route... %s", utils.AsyncLogSuffix)
 			return nil
 		},
 	}
