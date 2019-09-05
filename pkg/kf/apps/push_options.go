@@ -35,6 +35,8 @@ type pushConfig struct {
 	DefaultRouteDomain string
 	// DiskQuota is app disk storage quota
 	DiskQuota *resource.Quantity
+	// DockerfilePath is the path to a Dockerfile to build
+	DockerfilePath string
 	// EnvironmentVariables is set environment variables
 	EnvironmentVariables map[string]string
 	// ExactScale is scale exactly to this number of instances
@@ -121,6 +123,12 @@ func (opts PushOptions) DefaultRouteDomain() string {
 // if not set.
 func (opts PushOptions) DiskQuota() *resource.Quantity {
 	return opts.toConfig().DiskQuota
+}
+
+// DockerfilePath returns the last set value for DockerfilePath or the empty value
+// if not set.
+func (opts PushOptions) DockerfilePath() string {
+	return opts.toConfig().DockerfilePath
 }
 
 // EnvironmentVariables returns the last set value for EnvironmentVariables or the empty value
@@ -245,6 +253,13 @@ func WithPushDefaultRouteDomain(val string) PushOption {
 func WithPushDiskQuota(val *resource.Quantity) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.DiskQuota = val
+	}
+}
+
+// WithPushDockerfilePath creates an Option that sets the path to a Dockerfile to build
+func WithPushDockerfilePath(val string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.DockerfilePath = val
 	}
 }
 

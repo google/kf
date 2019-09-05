@@ -74,7 +74,7 @@ func TestSource_Validate(t *testing.T) {
 					BuildpackBuild: goodBuildpackBuild,
 				},
 			},
-			want: apis.ErrMultipleOneOf("spec.buildpackBuild", "spec.containerImage"),
+			want: apis.ErrMultipleOneOf("spec.buildpackBuild", "spec.containerImage", "spec.dockerfile"),
 		},
 		"invalid neither": {
 			spec: Source{
@@ -83,7 +83,7 @@ func TestSource_Validate(t *testing.T) {
 				},
 				Spec: SourceSpec{},
 			},
-			want: apis.ErrMissingOneOf("spec.buildpackBuild", "spec.containerImage"),
+			want: apis.ErrMissingOneOf("spec.buildpackBuild", "spec.containerImage", "spec.dockerfile"),
 		},
 		"invalid buildpackBuild": {
 			spec: Source{
@@ -167,4 +167,8 @@ func TestSourceSpecBuildpackBuild_Validate(t *testing.T) {
 			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())
 		})
 	}
+}
+
+func TestSourceSpecDockerfile_Valdiate(t *testing.T) {
+	t.Errorf("TODO")
 }

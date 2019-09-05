@@ -319,6 +319,22 @@ func TestPush(t *testing.T) {
 					Return(&v1alpha1.App{}, nil)
 			},
 		},
+		"pushes a docker source": {
+			appName: "some-app",
+			opts: apps.PushOptions{
+				apps.WithPushSourceImage("some-image"),
+				apps.WithPushDockerfilePath("path/to/Dockerfile"),
+			},
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
+				appsClient.EXPECT().
+					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
+						testutil.AssertEqual(t, "Dockerfile.Source", "some-image", newApp.Spec.Source.Dockerfile.Source)
+						testutil.AssertEqual(t, "Dockerfile.Path", "path/to/Dockerfile", newApp.Spec.Source.Dockerfile.Path)
+					}).
+					Return(&v1alpha1.App{}, nil)
+			},
+		},
 		"pushes app with routes": {
 			appName: "some-app",
 			opts: apps.PushOptions{

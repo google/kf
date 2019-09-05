@@ -81,6 +81,24 @@ applications:
 				},
 			},
 		},
+		"dockerfile": {
+			fileContent: `---
+applications:
+- name: MY-APP
+	dockerfile:
+		image: "foo/Dockerfile"
+`,
+			expected: &manifest.Manifest{
+				Applications: []manifest.Application{
+					{
+						Name: "MY-APP",
+						Dockerfile: manifest.Dockerfile{
+							Path: "foo/Dockerfile",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for tn, tc := range cases {

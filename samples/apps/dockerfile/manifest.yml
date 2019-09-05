@@ -1,0 +1,5 @@
+---
+applications:
+- name: dockerfile-app
+  dockerfile:
+    path: Dockerfile

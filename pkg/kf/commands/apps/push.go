@@ -106,7 +106,7 @@ func NewPushCommand(
   kf push myapp
   kf push myapp --buildpack my.special.buildpack # Discover via kf buildpacks
   kf push myapp --env FOO=bar --env BAZ=foo
-	kf push myapp --stack cloudfoundry/cflinuxfs3 # Use a cflinuxfs3 runtime
+  kf push myapp --stack cloudfoundry/cflinuxfs3 # Use a cflinuxfs3 runtime
   `,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -331,6 +331,7 @@ func NewPushCommand(
 						apps.WithPushSourceImage(imageName),
 						apps.WithPushBuildpack(app.Buildpack()),
 						apps.WithPushStack(app.Stack),
+						apps.WithPushDockerfilePath(app.Dockerfile.Path),
 					)
 				} else {
 					if containerRegistry != "" {

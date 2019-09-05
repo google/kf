@@ -60,6 +60,10 @@ type SourceSpec struct {
 	// BuildpackBuild defines buildpack information for source.
 	// +optional
 	BuildpackBuild SourceSpecBuildpackBuild `json:"buildpackBuild,omitempty"`
+
+	// Dockerfile defines buildpack information for source.
+	// +optional
+	Dockerfile SourceSpecDockerfile `json:"dockerfile,omitempty"`
 }
 
 // NeedsUpdateRequestsIncrement returns true if UpdateRequests needs to be
@@ -110,6 +114,20 @@ type SourceSpecBuildpackBuild struct {
 	Env []corev1.EnvVar `json:"env,omitempty"`
 }
 
+// SourceSpecDockerfile defines building an App using a Dockerfile.
+type SourceSpecDockerfile struct {
+
+	// Source is the Container Image which contains the App's source code and
+	// Dockerfile
+	Source string `json:"source"`
+
+	// Path is the path to the dockerfile.
+	Path string `json:"path"`
+
+	// Image is the location to store the built image.
+	Image string `json:"image"`
+}
+
 // SourceStatus is the current configuration and running state for an App's Source.
 type SourceStatus struct {
 	// Pull in the fields from Knative's duckv1beta1 status field.
@@ -149,4 +167,9 @@ func (spec *SourceSpec) IsContainerBuild() bool {
 // IsBuildpackBuild returns true if the build is for a buildpack
 func (spec *SourceSpec) IsBuildpackBuild() bool {
 	return spec.BuildpackBuild.Source != ""
+}
+
+// IsDockerfileBuild returns true if the build is for a dockerfile
+func (spec *SourceSpec) IsDockerfileBuild() bool {
+	return spec.Dockerfile.Source != ""
 }

@@ -57,11 +57,20 @@ func newApp(appName string, opts ...PushOption) (*v1alpha1.App, error) {
 	}
 
 	src := sources.NewKfSource()
-	src.SetBuildpackBuildSource(cfg.SourceImage)
-	src.SetContainerImageSource(cfg.ContainerImage)
-	src.SetBuildpackBuildEnv(envs)
-	src.SetBuildpackBuildBuildpack(cfg.Buildpack)
-	src.SetBuildpackBuildStack(cfg.Stack)
+	switch {
+	case cfg.ContainerImage != "":
+		src.SetContainerImageSource(cfg.ContainerImage)
+
+	case cfg.DockerfilePath != "":
+		src.SetDockerfilePath(cfg.DockerfilePath)
+		src.SetDockerfileSource(cfg.SourceImage)
+
+	default: // default to buildpack build
+		src.SetBuildpackBuildEnv(envs)
+		src.SetBuildpackBuildBuildpack(cfg.Buildpack)
+		src.SetBuildpackBuildSource(cfg.SourceImage)
+		src.SetBuildpackBuildStack(cfg.Stack)
+	}
 
 	app := NewKfApp()
 	app.SetName(appName)
@@ -209,11 +218,6 @@ func mergeApps(cfg pushConfig, hasDefaultRoutes bool) func(newapp, oldapp *v1alp
 	}
 }
 
-// AppImageName gets the image name for an application.
-func AppImageName(namespace, appName string) string {
-	return fmt.Sprintf("app-%s-%s:%d", namespace, appName, time.Now().UnixNano())
-}
-
 // SourceImageName gets the image name for source code for an application.
 func SourceImageName(namespace, appName string) string {
 	return fmt.Sprintf("src-%s-%s:%d", namespace, appName, time.Now().UnixNano())
@@ -222,10 +226,4 @@ func SourceImageName(namespace, appName string) string {
 // JoinRepositoryImage joins a repository and image name.
 func JoinRepositoryImage(repository, imageName string) string {
 	return fmt.Sprintf("%s/%s", repository, imageName)
-}
-
-// BuildName gets a build name based on the current time.
-// Build names are limited by Knative to be 64 characters long.
-func BuildName() string {
-	return fmt.Sprintf("build-%d", time.Now().UnixNano())
 }

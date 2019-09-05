@@ -48,11 +48,15 @@ func MakeSource(app *v1alpha1.App, space *v1alpha1.Space) (*v1alpha1.Source, err
 
 	source.ServiceAccount = space.Spec.Security.BuildServiceAccount
 
-	if source.IsBuildpackBuild() {
+	switch {
+	case source.IsBuildpackBuild():
 		// user defined values in buildpackbuild.env take priority from buildpackbuild.env
 		source.BuildpackBuild.Env = append(space.Spec.BuildpackBuild.Env, source.BuildpackBuild.Env...)
 		source.BuildpackBuild.Image = BuildpackBuildImageDestination(app, space)
 		source.BuildpackBuild.BuildpackBuilder = space.Spec.BuildpackBuild.BuilderImage
+
+	case source.IsDockerfileBuild():
+		source.Dockerfile.Image = BuildpackBuildImageDestination(app, space)
 	}
 
 	return &v1alpha1.Source{
