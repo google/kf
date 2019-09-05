@@ -15,7 +15,7 @@
 package apps
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/completion"
@@ -67,7 +67,8 @@ func NewDeleteCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 				return err
 			}
 
-			log.Printf("app %q has been successfully deleted\n", appName)
+			fmt.Fprintf(cmd.OutOrStdout(), "Deleting app %q asynchronously. For progress on enabling this to run synchronously, see Kf Github issue #599.\n", appName)
+
 			return nil
 		},
 	}

@@ -26,7 +26,7 @@ func NewDeleteServiceCommand(p *config.KfParams, client services.ClientInterface
 	deleteCmd := &cobra.Command{
 		Use:     "delete-service SERVICE_INSTANCE",
 		Aliases: []string{"ds"},
-		Short:   "Delete a service instance",
+		Short:   "Delete a service instance. Runs asynchronously. For progress on enabling this to run synchronously, see Kf Github issue #599.",
 		Example: "kf delete-service my-service",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

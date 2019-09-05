@@ -66,6 +66,7 @@ func NewMapRouteCommand(
 				return fmt.Errorf("failed to map Route: %s", err)
 			}
 
+			fmt.Fprintf(cmd.OutOrStdout(), "Mapping route asynchronously. For progress on enabling this to run synchronously, see Kf Github issue #599.\n")
 			return nil
 		},
 	}

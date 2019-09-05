@@ -56,7 +56,7 @@ func NewUnmapRouteCommand(
 				Path:     path.Join("/", urlPath),
 			}
 
-			return unmapApp(p.Namespace, appName, route, c)
+			return unmapApp(p.Namespace, appName, route, c, cmd)
 		},
 	}
 
@@ -81,6 +81,7 @@ func unmapApp(
 	appName string,
 	route v1alpha1.RouteSpecFields,
 	c apps.Client,
+	cmd *cobra.Command,
 ) error {
 	mutator := apps.Mutator(func(app *v1alpha1.App) error {
 		// Ensure the App has the Route, if not return an error.
@@ -103,5 +104,7 @@ func unmapApp(
 	if err := c.Transform(namespace, appName, mutator); err != nil {
 		return fmt.Errorf("failed to unmap Route: %s", err)
 	}
+
+	fmt.Fprintf(cmd.OutOrStdout(), "Unmapping route asynchronously. For progress on enabling this to run synchronously, see Kf Github issue #599.\n")
 	return nil
 }

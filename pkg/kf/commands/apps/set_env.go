@@ -15,6 +15,8 @@
 package apps
 
 import (
+	"fmt"
+
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/completion"
@@ -46,12 +48,18 @@ func NewSetEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command 
 				{Name: name, Value: value},
 			}
 
-			return appClient.Transform(p.Namespace, appName, func(app *v1alpha1.App) error {
+			mutator := func(app *v1alpha1.App) error {
 				kfapp := (*apps.KfApp)(app)
 				kfapp.MergeEnvVars(toSet)
-
 				return nil
-			})
+			}
+
+			if err := appClient.Transform(p.Namespace, appName, mutator); err != nil {
+				return fmt.Errorf("failed to set env var on app: %s", err)
+			}
+
+			fmt.Fprintf(cmd.OutOrStdout(), "Setting env var on app %q asynchronously. For progress on enabling this to run synchronously, see Kf Github issue #599.\n", appName)
+			return nil
 		},
 	}
 

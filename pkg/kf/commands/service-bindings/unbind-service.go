@@ -15,6 +15,8 @@
 package servicebindings
 
 import (
+	"fmt"
+
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
@@ -52,6 +54,7 @@ func NewUnbindServiceCommand(p *config.KfParams, client servicebindings.ClientIn
 				return err
 			}
 
+			fmt.Fprintf(cmd.OutOrStdout(), "Unbinding service asynchronously. For progress on enabling this to run synchronously, see Kf Github issue #599.\n")
 			return nil
 		},
 	}
