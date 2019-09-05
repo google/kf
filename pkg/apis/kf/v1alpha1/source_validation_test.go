@@ -170,5 +170,45 @@ func TestSourceSpecBuildpackBuild_Validate(t *testing.T) {
 }
 
 func TestSourceSpecDockerfile_Valdiate(t *testing.T) {
-	t.Errorf("TODO")
+	cases := map[string]struct {
+		spec SourceSpecDockerfile
+		want *apis.FieldError
+	}{
+		"valid": {
+			spec: SourceSpecDockerfile{
+				Image:  "some-image",
+				Path:   "some-path",
+				Source: "some-source",
+			},
+		},
+		"missing source": {
+			spec: SourceSpecDockerfile{
+				Image: "some-image",
+				Path:  "some-path",
+			},
+			want: apis.ErrMissingField("source"),
+		},
+		"missing path": {
+			spec: SourceSpecDockerfile{
+				Image:  "some-image",
+				Source: "some-source",
+			},
+			want: apis.ErrMissingField("path"),
+		},
+		"missing image": {
+			spec: SourceSpecDockerfile{
+				Path:   "some-path",
+				Source: "some-source",
+			},
+			want: apis.ErrMissingField("image"),
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			got := tc.spec.Validate(context.Background())
+
+			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())
+		})
+	}
 }
