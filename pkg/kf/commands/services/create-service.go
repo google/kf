@@ -39,7 +39,7 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 	createCmd := &cobra.Command{
 		Use:     "create-service SERVICE PLAN SERVICE_INSTANCE [-c PARAMETERS_AS_JSON] [-b service-broker]",
 		Aliases: []string{"cs"},
-		Short:   "Create a service instance. Runs asynchronously. For progress on enabling this to run synchronously, see Kf Github issue #599.",
+		Short:   "Create a service instance",
 		Example: `
   # Creates a new instance of a db-service with the name mydb, plan silver, and provisioning configuration
   kf create-service db-service silver mydb -c '{"ram_gb":4}'
@@ -82,7 +82,7 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 				if err != nil {
 					return err
 				}
-
+				fmt.Fprintf(cmd.OutOrStdout(), "Unbinding service asynchronously. For progress on enabling this to run synchronously, see Kf Github issue #599.\n")
 				describe.ServiceInstance(cmd.OutOrStdout(), created)
 				return nil
 			}
@@ -100,6 +100,7 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 					return err
 				}
 
+				fmt.Fprintf(cmd.OutOrStdout(), "Creating service instance asynchronously. For progress on enabling this to run synchronously, see Kf Github issue #599.\n")
 				describe.ServiceInstance(cmd.OutOrStdout(), created)
 				return nil
 			}

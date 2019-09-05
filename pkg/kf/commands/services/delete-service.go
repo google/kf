@@ -15,6 +15,8 @@
 package services
 
 import (
+	"fmt"
+
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/services"
@@ -26,7 +28,7 @@ func NewDeleteServiceCommand(p *config.KfParams, client services.ClientInterface
 	deleteCmd := &cobra.Command{
 		Use:     "delete-service SERVICE_INSTANCE",
 		Aliases: []string{"ds"},
-		Short:   "Delete a service instance. Runs asynchronously. For progress on enabling this to run synchronously, see Kf Github issue #599.",
+		Short:   "Delete a service instance",
 		Example: "kf delete-service my-service",
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -37,7 +39,7 @@ func NewDeleteServiceCommand(p *config.KfParams, client services.ClientInterface
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err
 			}
-
+			fmt.Fprintf(cmd.OutOrStdout(), "Deleting service instance asynchronously. For progress on enabling this to run synchronously, see Kf Github issue #599.\n")
 			return client.DeleteService(instanceName, services.WithDeleteServiceNamespace(p.Namespace))
 		},
 	}
