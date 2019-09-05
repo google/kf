@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -72,6 +73,10 @@ func TestIntegration_Push_update(t *testing.T) {
 		)
 		defer kf.Delete(ctx, appName)
 		checkEchoApp(ctx, t, kf, appName, 8087, ExpectedAddr(appName, ""))
+
+		kf.Push(ctx, appName,
+			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/helloworld"),
+		)
 		checkHelloWorldApp(ctx, t, kf, appName, 8088, ExpectedAddr(appName, ""))
 	})
 }
@@ -92,6 +97,37 @@ func TestIntegration_Push_docker(t *testing.T) {
 		)
 		defer kf.Delete(ctx, appName)
 		checkEchoApp(ctx, t, kf, appName, 8086, ExpectedAddr(appName, ""))
+	})
+}
+
+// TestIntegration_Push pushes the echo app, lists it to ensure it can find a
+// domain, uses the proxy command and then posts to it. It finally deletes the
+// app.
+func TestIntegration_Push_dockerfile(t *testing.T) {
+	t.Parallel()
+	checkClusterStatus(t)
+	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+		currentTime := time.Now().UnixNano()
+		appName := fmt.Sprintf("integration-dockerfile-%d", currentTime)
+		appPath := filepath.Join(RootDir(ctx, t), "samples", "apps", "dockerfile")
+
+		// Create a custom manifest file for this test.
+		newManifestFile, manifestCleanup, err := copyManifest(appName, appPath, currentTime)
+		AssertNil(t, "app manifest copy error", err)
+		defer manifestCleanup()
+
+		kf.Push(ctx, appName, "--path", appPath, "--manifest", newManifestFile)
+		defer kf.Delete(ctx, appName)
+
+		checkApp(ctx, t, kf, appName, []string{ExpectedAddr(appName, "")}, 8089, func(ctx context.Context, t *testing.T, addr string) {
+			resp, respCancel := RetryPost(ctx, t, addr, appTimeout, http.StatusOK, "testing")
+			defer resp.Body.Close()
+			defer respCancel()
+
+			data, err := ioutil.ReadAll(resp.Body)
+			AssertNil(t, "body error", err)
+			AssertContainsAll(t, string(data), []string{"The current server time is"})
+		})
 	})
 }
 
@@ -510,7 +546,7 @@ func checkApp(
 	// for two reasons:
 	// 1. Test the proxy.
 	// 2. Tests work even if a domain isn't setup.
-	Logf(t, "hitting echo app to ensure its working...")
+	Logf(t, "hitting %s app to ensure its working...", appName)
 
 	// TODO(#46): Use port 0 so that we don't have to worry about port
 	// collisions.
@@ -552,6 +588,10 @@ func checkHelloWorldApp(
 		resp, respCancel := RetryPost(ctx, t, addr, appTimeout, http.StatusOK, "testing")
 		defer resp.Body.Close()
 		defer respCancel()
+
+		data, err := ioutil.ReadAll(resp.Body)
+		AssertNil(t, "body error", err)
+		AssertEqual(t, "body", "hello kf!", strings.TrimSpace(string(data)))
 		Logf(t, "done hitting helloworld app to ensure its working.")
 	})
 }
