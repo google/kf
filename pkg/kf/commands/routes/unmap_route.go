@@ -105,6 +105,6 @@ func unmapApp(
 		return fmt.Errorf("failed to unmap Route: %s", err)
 	}
 
-	fmt.Fprintf(cmd.OutOrStdout(), "Unmapping route asynchronously. For progress on enabling this to run synchronously, see Kf Github issue #599.\n")
+	fmt.Fprintf(cmd.OutOrStdout(), "Unmapping route asynchronously... For progress on enabling this to run synchronously, see Kf Github issue #599.\n")
 	return nil
 }

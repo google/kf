@@ -53,7 +53,7 @@ func NewStartCommand(
 				return fmt.Errorf("failed to start app: %s", err)
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Starting app %q asynchronously. For progress on enabling this to run synchronously, see Kf Github issue #599.\n", appName)
+			fmt.Fprintf(cmd.OutOrStdout(), "Starting app %q asynchronously... For progress on enabling this to run synchronously, see Kf Github issue #599.\n", appName)
 			return nil
 		},
 	}

@@ -76,7 +76,7 @@ func NewDeleteRouteCommand(
 			if err != nil {
 				return fmt.Errorf("failed to list apps: %s", err)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleting route asynchronously. For progress on enabling this to run synchronously, see Kf Github issue #599.\n")
+			fmt.Fprintf(cmd.OutOrStdout(), "Deleting route asynchronously... For progress on enabling this to run synchronously, see Kf Github issue #599.\n")
 
 			for _, app := range apps {
 				fmt.Fprintf(cmd.OutOrStderr(), "Unmapping route from %s...\n", app.Name)
