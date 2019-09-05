@@ -38,7 +38,7 @@ func NewCreateServiceBrokerCommand(p *config.KfParams, client servicecatalogclie
 	createCmd := &cobra.Command{
 		Use:     "create-service-broker BROKER_NAME URL",
 		Aliases: []string{"csb"},
-		Short:   "Add a service broker to service catalog. Runs asynchronously. For progress on enabling this to run synchronously, see Kf Github issue #599.",
+		Short:   "Add a service broker to service catalog",
 		Example: `  kf create-service-broker mybroker http://mybroker.broker.svc.cluster.local`,
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
