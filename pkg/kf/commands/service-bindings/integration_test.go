@@ -29,6 +29,7 @@ import (
 )
 
 func TestIntegration_Marketplace(t *testing.T) {
+	t.Skip("#599")
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		withServiceBroker(ctx, t, kf, func(ctx context.Context) {
@@ -39,6 +40,7 @@ func TestIntegration_Marketplace(t *testing.T) {
 }
 
 func TestIntegration_Services(t *testing.T) {
+	t.Skip("#599")
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		withServiceBroker(ctx, t, kf, func(ctx context.Context) {
@@ -52,6 +54,7 @@ func TestIntegration_Services(t *testing.T) {
 }
 
 func TestIntegration_Bindings(t *testing.T) {
+	t.Skip("#599")
 	checkClusterStatus(t)
 	appName := fmt.Sprintf("integration-binding-app-%d", time.Now().UnixNano())
 	appPath := "./samples/apps/envs"
@@ -71,6 +74,7 @@ func TestIntegration_Bindings(t *testing.T) {
 }
 
 func TestIntegration_VcapServices(t *testing.T) {
+	t.Skip("#654")
 	checkClusterStatus(t)
 	appName := fmt.Sprintf("integration-binding-app-%d", time.Now().UnixNano())
 	appPath := "./samples/apps/envs"
@@ -111,6 +115,7 @@ func TestIntegration_VcapServices(t *testing.T) {
 }
 
 func TestIntegration_VcapServices_customBindingName(t *testing.T) {
+	t.Skip("#654")
 	checkClusterStatus(t)
 	appName := fmt.Sprintf("integration-binding-app-%d", time.Now().UnixNano())
 	appPath := "./samples/apps/envs"
