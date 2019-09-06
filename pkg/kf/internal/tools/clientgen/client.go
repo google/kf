@@ -23,35 +23,35 @@ import (
 
 type ClientParams struct {
 	// Package is the package the client will be generated in.
-	Package string `yaml:"package"`
+	Package string `json:"package"`
 
 	// Imports is used for imports into the client.
-	Imports map[string]string `yaml:"imports"`
+	Imports map[string]string `json:"imports"`
 
 	// Kubernetes holds information about the backing API.
 	Kubernetes struct {
 		// Kind is the kind of the resource.
-		Kind string `yaml:"kind"`
+		Kind string `json:"kind"`
 		// Version is the version of the resource kf supports.
-		Version string `yaml:"version"`
+		Version string `json:"version"`
 		// Namespaced indicates whether this object is namespaced or global.
-		Namespaced bool `yaml:"namespaced"`
+		Namespaced bool `json:"namespaced"`
 		// Plural contains the pluralizataion of kind. If blank, default of Kind+"s"
 		// is assumed.
-		Plural string `yaml:"plural"`
-	} `yaml:"kubernetes"`
+		Plural string `json:"plural"`
+	} `json:"kubernetes"`
 
 	// CF contains information about this resource from a CF side.
 	CF struct {
 		// The name of the CF type.
-		Name string `yaml:"name"`
-	} `yaml:"cf"`
+		Name string `json:"name"`
+	} `json:"cf"`
 
 	// Type is the Go type of the resource. This MUST be imported using Imports.
-	Type string `yaml:"type"`
+	Type string `json:"type"`
 
 	// ClientType is the Go type of the Kubernetes client. This MUST be imported using Imports.
-	ClientType string `yaml:"clientType"`
+	ClientType string `json:"clientType"`
 }
 
 func (f *ClientParams) Render() ([]byte, error) {

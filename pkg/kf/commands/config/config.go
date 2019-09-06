@@ -35,7 +35,6 @@ import (
 	svcatclient "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/poy/service-catalog/pkg/svcat"
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
-	"gopkg.in/yaml.v2"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
@@ -43,27 +42,28 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+	"sigs.k8s.io/yaml"
 )
 
 // KfParams stores everything needed to interact with the user and Knative.
 type KfParams struct {
 	// Config holds the path to the configuration.
 	// This field isn't serialized when the config is saved.
-	Config string `yaml:"-"`
+	Config string `json:"-"`
 
 	// Namespace holds the namespace kf should connect to by default.
-	Namespace string `yaml:"space"`
+	Namespace string `json:"space"`
 
 	// KubeCfgFile holds the path to the kubeconfig.
-	KubeCfgFile string `yaml:"kubeconfig"`
+	KubeCfgFile string `json:"kubeconfig"`
 
 	// LogHTTP enables HTTP tracing for all Kubernetes calls.
-	LogHTTP bool `yaml:"logHTTP"`
+	LogHTTP bool `json:"logHTTP"`
 
 	// TargetSpace caches the space specified by Namespace to prevent it from
 	// being computed multiple times.
 	// Prefer using GetSpaceOrDefault instead of accessing this value directly.
-	TargetSpace *v1alpha1.Space `yaml:"-"`
+	TargetSpace *v1alpha1.Space `json:"-"`
 }
 
 // GetTargetSpaceOrDefault gets the space specified by Namespace or a default
