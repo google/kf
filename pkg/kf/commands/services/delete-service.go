@@ -15,6 +15,8 @@
 package services
 
 import (
+	"fmt"
+
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/services"
@@ -37,7 +39,7 @@ func NewDeleteServiceCommand(p *config.KfParams, client services.ClientInterface
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err
 			}
-
+			fmt.Fprintf(cmd.OutOrStdout(), "Deleting service instance %q %s", instanceName, utils.AsyncLogSuffix)
 			return client.DeleteService(instanceName, services.WithDeleteServiceNamespace(p.Namespace))
 		},
 	}

@@ -15,6 +15,8 @@
 package apps
 
 import (
+	"fmt"
+
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/completion"
@@ -40,12 +42,18 @@ func NewUnsetEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Comman
 
 			cmd.SilenceUsage = true
 
-			return appClient.Transform(p.Namespace, appName, func(app *v1alpha1.App) error {
+			mutator := func(app *v1alpha1.App) error {
 				kfapp := (*apps.KfApp)(app)
 				kfapp.DeleteEnvVars([]string{name})
 
 				return nil
-			})
+			}
+			if err := appClient.Transform(p.Namespace, appName, mutator); err != nil {
+				return fmt.Errorf("failed to unset env var on app: %s", err)
+			}
+
+			fmt.Fprintf(cmd.OutOrStdout(), "Unsetting environment variable on app %q %s", appName, utils.AsyncLogSuffix)
+			return nil
 		},
 	}
 

@@ -66,6 +66,7 @@ func NewMapRouteCommand(
 				return fmt.Errorf("failed to map Route: %s", err)
 			}
 
+			fmt.Fprintf(cmd.OutOrStdout(), "Mapping route... %s", utils.AsyncLogSuffix)
 			return nil
 		},
 	}

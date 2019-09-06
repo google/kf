@@ -15,8 +15,11 @@
 package spaces
 
 import (
+	"fmt"
+
 	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/spaces"
 	"github.com/spf13/cobra"
 )
@@ -50,7 +53,7 @@ func NewDeleteSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 			cmd.SilenceUsage = true
 
 			name := args[0]
-
+			fmt.Fprintf(cmd.OutOrStdout(), "Deleting space %q %s", name, utils.AsyncLogSuffix)
 			return client.Delete(name)
 		},
 	}

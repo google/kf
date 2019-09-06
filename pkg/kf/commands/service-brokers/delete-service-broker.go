@@ -26,8 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// NewDeleteServiceBrokerCommand adds a cluster service broker to the service catalog.
-// TODO (juliaguo): Add flag to allow namespaced service broker
+// NewDeleteServiceBrokerCommand deletes a service broker (either cluster or namespaced) from the service catalog.
 func NewDeleteServiceBrokerCommand(p *config.KfParams, client servicecatalogclient.Interface) *cobra.Command {
 	var (
 		spaceScoped bool
@@ -36,7 +35,7 @@ func NewDeleteServiceBrokerCommand(p *config.KfParams, client servicecatalogclie
 	deleteCmd := &cobra.Command{
 		Use:     "delete-service-broker BROKER_NAME",
 		Aliases: []string{"dsb"},
-		Short:   "Remove a cluster service broker from service catalog",
+		Short:   "Remove a service broker from service catalog",
 		Example: `  kf delete-service-broker mybroker`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -48,32 +47,21 @@ func NewDeleteServiceBrokerCommand(p *config.KfParams, client servicecatalogclie
 				return err
 			}
 
-			var toDelete func() error
-			if !spaceScoped {
-				toDelete = func() error {
-					err := client.ServicecatalogV1beta1().ClusterServiceBrokers().Delete(serviceBrokerName, &metav1.DeleteOptions{})
-					return err
-				}
-			} else {
-				toDelete = func() error {
-					err := client.ServicecatalogV1beta1().ServiceBrokers(p.Namespace).Delete(serviceBrokerName, &metav1.DeleteOptions{})
+			if !force {
+				shouldDelete, err := installutil.SelectYesNo(context.Background(), fmt.Sprintf("Really delete service-broker %s?", serviceBrokerName))
+				if err != nil || shouldDelete == false {
+					fmt.Fprintln(cmd.OutOrStdout(), "Skipping deletion, use --force to delete without validation")
 					return err
 				}
 			}
 
-			shouldDelete := true
-			if !force {
-				var err error
-				shouldDelete, err = installutil.SelectYesNo(context.Background(), fmt.Sprintf("Really delete service-broker %s?", serviceBrokerName))
-				if err != nil {
-					return err
-				}
+			fmt.Fprintf(cmd.OutOrStdout(), "Deleting service broker %q %s", serviceBrokerName, utils.AsyncLogSuffix)
+
+			if spaceScoped {
+				return client.ServicecatalogV1beta1().ServiceBrokers(p.Namespace).Delete(serviceBrokerName, &metav1.DeleteOptions{})
 			}
-			if shouldDelete {
-				return toDelete()
-			} else {
-				return nil
-			}
+
+			return client.ServicecatalogV1beta1().ClusterServiceBrokers().Delete(serviceBrokerName, &metav1.DeleteOptions{})
 		},
 	}
 
