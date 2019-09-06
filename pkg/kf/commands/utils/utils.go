@@ -34,6 +34,10 @@ const (
 	EmptyNamespaceError = "no space targeted, use 'kf target --space SPACE' to target a space"
 )
 
+const (
+	AsyncLogSuffix = "\n(This is an asynchronous operation. See https://github.com/google/kf/issues/599 for updates on work to support synchronous commands.)\n"
+)
+
 // KfParams stores everything needed to interact with the user and Knative.
 type KfParams struct {
 	Output    io.Writer

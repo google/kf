@@ -5,11 +5,11 @@ url: /docs/general-info/kf-cli/commands/kf-create-service-broker/
 ---
 ## kf create-service-broker
 
-Add a cluster service broker to service catalog
+Add a service broker to service catalog
 
 ### Synopsis
 
-Add a cluster service broker to service catalog
+Add a service broker to service catalog
 
 ```
 kf create-service-broker BROKER_NAME URL [flags]
