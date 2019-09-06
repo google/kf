@@ -69,15 +69,23 @@ func NewListServicesCommand(
 						brokerInfo = fmt.Sprintf("error finding broker: %s", err)
 					}
 
+					className := instance.Spec.ClusterServiceClassExternalName
+					planName := instance.Spec.ClusterServicePlanExternalName
+
+					if instance.Spec.ServiceClassRef != nil {
+						className = instance.Spec.ServiceClassExternalName
+						planName = instance.Spec.ServicePlanExternalName
+					}
+
 					fmt.Fprintf(
 						w,
 						"%s\t%s\t%s\t%s\t%s\t%s\n",
-						instance.Name, // Name
-						instance.Spec.ClusterServiceClassExternalName, // Service
-						instance.Spec.ClusterServicePlanExternalName,  // Plan
-						strings.Join(ma[instance.Name], ", "),         // Bound Apps
-						lastCond.Reason,                               // Last Operation
-						brokerInfo,                                    // Broker
+						instance.Name,                         // Name
+						className,                             // Service
+						planName,                              // Plan
+						strings.Join(ma[instance.Name], ", "), // Bound Apps
+						lastCond.Reason,                       // Last Operation
+						brokerInfo,                            // Broker
 					)
 				}
 			})
