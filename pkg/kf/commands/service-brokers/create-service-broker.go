@@ -26,8 +26,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewCreateServiceBrokerCommand adds a cluster service broker to the service catalog.
-// TODO (juliaguo): Add flag to allow namespaced service broker and add user/pw args to match cf
+// NewCreateServiceBrokerCommand adds a service broker (either cluster or namespaced) to the service catalog.
+// TODO (juliaguo): Add user/pw args to match cf
 func NewCreateServiceBrokerCommand(p *config.KfParams, client servicecatalogclient.Interface) *cobra.Command {
 	var (
 		serviceBrokerName string
@@ -38,7 +38,7 @@ func NewCreateServiceBrokerCommand(p *config.KfParams, client servicecatalogclie
 	createCmd := &cobra.Command{
 		Use:     "create-service-broker BROKER_NAME URL",
 		Aliases: []string{"csb"},
-		Short:   "Add a cluster service broker to service catalog",
+		Short:   "Add a service broker to service catalog",
 		Example: `  kf create-service-broker mybroker http://mybroker.broker.svc.cluster.local`,
 		Args:    cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -81,7 +81,7 @@ func NewCreateServiceBrokerCommand(p *config.KfParams, client servicecatalogclie
 			}
 
 			if err == nil {
-				fmt.Fprintln(cmd.OutOrStdout(), "Service broker entry created, run `kf marketplace` to check the status.")
+				fmt.Fprintf(cmd.OutOrStdout(), "Creating service broker entry, run `kf marketplace` to check the status. %s", utils.AsyncLogSuffix)
 			}
 
 			return err

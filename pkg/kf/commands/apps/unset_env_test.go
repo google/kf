@@ -46,7 +46,7 @@ func TestUnsetEnvCommand(t *testing.T) {
 		"unsetting variables fails": {
 			Args:        []string{"app-name", "NAME"},
 			Namespace:   "some-namespace",
-			ExpectedErr: errors.New("some-error"),
+			ExpectedErr: errors.New("failed to unset env var on app: some-error"),
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().Transform(gomock.Any(), "app-name", gomock.Any()).Return(errors.New("some-error"))
 			},
