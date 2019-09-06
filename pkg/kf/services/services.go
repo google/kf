@@ -123,9 +123,20 @@ func (c *Client) BrokerName(service v1beta1.ServiceInstance, opts ...BrokerNameO
 	cfg := BrokerNameOptionDefaults().Extend(opts).toConfig()
 	svcat := c.createSvcatClient(cfg.Namespace)
 
-	class, err := svcat.RetrieveClassByName(service.Spec.ClusterServiceClassExternalName, servicecatalog.ScopeOptions{
+	scope := servicecatalog.ScopeOptions{
 		Scope: servicecatalog.ClusterScope,
-	})
+	}
+	className := service.Spec.ClusterServiceClassExternalName
+
+	if service.Spec.ServiceClassRef != nil {
+		scope = servicecatalog.ScopeOptions{
+			Namespace: service.GetNamespace(),
+			Scope:     servicecatalog.NamespaceScope,
+		}
+		className = service.Spec.ServiceClassExternalName
+	}
+
+	class, err := svcat.RetrieveClassByName(className, scope)
 
 	if err != nil {
 		return "", err
