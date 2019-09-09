@@ -61,7 +61,7 @@ type SourceSpec struct {
 	// +optional
 	BuildpackBuild SourceSpecBuildpackBuild `json:"buildpackBuild,omitempty"`
 
-	// Dockerfile defines buildpack information for source.
+	// Dockerfile defines Dockerfile information for source.
 	// +optional
 	Dockerfile SourceSpecDockerfile `json:"dockerfile,omitempty"`
 }
