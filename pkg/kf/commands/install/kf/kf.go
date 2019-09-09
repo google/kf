@@ -23,6 +23,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/blang/semver"
+	"github.com/google/go-github/github"
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	. "github.com/google/kf/pkg/kf/commands/install/util"
 	appsv1 "k8s.io/api/apps/v1"
@@ -47,13 +49,29 @@ func Install(ctx context.Context, containerRegistry string) error {
 		return err
 	}
 
+	// Select Kf Version
+	kfNames, kfReleases, err := fetchReleases(ctx)
+	if err != nil {
+		return err
+	}
+	idx, _, err := SelectPrompt(
+		ctx,
+		"Select Kf Version",
+		kfNames...,
+	)
+	if err != nil {
+		return err
+	}
+
+	kfRelease := kfReleases[idx]
+
 	// kubectl apply various yaml files{
 	for _, yaml := range []struct {
 		name string
 		yaml string
 	}{
 		{name: "Knative Build", yaml: KnativeBuildYAML},
-		{name: "kf", yaml: KfNightlyBuildYAML},
+		{name: "kf", yaml: kfRelease},
 	} {
 		err := wait.ExponentialBackoff(
 			wait.Backoff{
@@ -175,4 +193,83 @@ func installServiceCatalog(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// fetchReleases returns a list of releases YAML files from github and the
+// nightly. The nightly will be the first entry. The two slices are related.
+func fetchReleases(ctx context.Context) (names, addrs []string, err error) {
+	Logf(ctx, "fetching Kf releases...")
+	versions := []semver.Version{}
+	client := github.NewClient(nil)
+	releases, _, err := client.Repositories.ListReleases(ctx, "google", "kf", nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	for _, r := range releases {
+		var name, tag, assetURL string
+		if r.Name != nil {
+			name = *r.Name
+		}
+
+		if r.TagName != nil {
+			tag = *r.TagName
+		}
+
+		for _, a := range r.Assets {
+			if a.Name != nil && a.BrowserDownloadURL != nil && *a.Name == "release.yaml" {
+				assetURL = *a.BrowserDownloadURL
+				break
+			}
+		}
+
+		if name == "" || assetURL == "" || tag == "" {
+			continue
+		}
+
+		if !strings.HasPrefix(tag, "v") {
+			Logf(ctx, "skipping tag %q, it doesn't have a 'v' prefix", tag)
+			continue
+		}
+
+		// Strip off 'v' prefix
+		version, err := semver.Parse(tag[1:])
+		if err != nil {
+			Logf(ctx, "invalid semver tag %q: %s", tag, err)
+		}
+
+		names = append(names, name)
+		addrs = append(addrs, assetURL)
+		versions = append(versions, version)
+	}
+
+	semver.Sort(versions)
+
+	// We only want the last 3 releases
+	trimmedNames := []string{"nightly"}
+	trimmedAddrs := []string{KfNightlyBuildYAML}
+
+	for _, idx := range TailSemver(versions, 3) {
+		trimmedNames = append(trimmedNames, names[idx])
+		trimmedAddrs = append(trimmedAddrs, addrs[idx])
+	}
+
+	return trimmedNames, trimmedAddrs, nil
+}
+
+// Tail returns the last 'n' values. If 'n' is greater than len(s), then it
+// returns the entire slice.
+func TailSemver(s []semver.Version, n int) []int {
+	var a, b int
+	if len(s) < n {
+		a, b = 0, len(s)
+	} else {
+		a, b = len(s)-n, len(s)
+	}
+
+	var result []int
+	for i := a; i < b; i++ {
+		result = append(result, i)
+	}
+	return result
 }
