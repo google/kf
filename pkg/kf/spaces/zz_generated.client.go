@@ -208,6 +208,10 @@ func (core *coreClient) Create(obj *v1alpha1.Space, opts ...CreateOption) (*v1al
 // Update replaces the existing object in the cluster with the new one.
 // The value to be inserted will be preprocessed and validated before being sent.
 func (core *coreClient) Update(obj *v1alpha1.Space, opts ...UpdateOption) (*v1alpha1.Space, error) {
+	if err := core.preprocessUpsert(obj); err != nil {
+		return nil, err
+	}
+
 	return core.kclient.Spaces().Update(obj)
 }
 

@@ -78,6 +78,10 @@ func (core *coreClient) Create({{ $nssig }} obj *{{.Type}}, opts ...CreateOption
 // Update replaces the existing object in the cluster with the new one.
 // The value to be inserted will be preprocessed and validated before being sent.
 func (core *coreClient) Update({{ $nssig }} obj *{{.Type}}, opts ...UpdateOption) (*{{.Type}}, error) {
+	if err := core.preprocessUpsert(obj); err != nil {
+		return nil, err
+	}
+
 	return core.kclient.{{ .Kubernetes.Plural }}({{ $ns }}).Update(obj)
 }
 

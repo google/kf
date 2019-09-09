@@ -208,6 +208,10 @@ func (core *coreClient) Create(namespace string, obj *v1alpha1.RouteClaim, opts 
 // Update replaces the existing object in the cluster with the new one.
 // The value to be inserted will be preprocessed and validated before being sent.
 func (core *coreClient) Update(namespace string, obj *v1alpha1.RouteClaim, opts ...UpdateOption) (*v1alpha1.RouteClaim, error) {
+	if err := core.preprocessUpsert(obj); err != nil {
+		return nil, err
+	}
+
 	return core.kclient.RouteClaims(namespace).Update(obj)
 }
 
