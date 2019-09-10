@@ -23,12 +23,36 @@ fi
 
 output=$1
 
-export GO111MODULE=on
-export GOPROXY=https://proxy.golang.org
-export GOSUMDB=sum.golang.org
-
 # Change to the project root directory
 cd "${0%/*}"/..
+
+# Login to gcloud
+set +x
+/bin/echo "$SERVICE_ACCOUNT_JSON" > key.json
+set -x
+/bin/echo Authenticating to kubernetes...
+gcloud auth activate-service-account --key-file key.json
+gcloud config set project "$GCP_PROJECT_ID"
+gcloud -q auth configure-docker
+
+# Environment Variables for go build
+export GOPATH=/go
+export GOPROXY=https://proxy.golang.org
+export GOSUMDB=sum.golang.org
+export GO111MODULE=on
+export CGO_ENABLED=0
+
+#########################
+# Generate Release YAML #
+#########################
+
+# ko requires a proper go path and deps to be vendored
+# TODO remove this once https://github.com/google/ko/issues/7 is
+# resolved.
+go mod vendor
+mkdir -p $GOPATH/src/github.com/google/
+ln -s $PWD $GOPATH/src/github.com/google/kf
+cd $GOPATH/src/github.com/google/kf
 
 # ko resolve
 # This publishes the images to KO_DOCKER_REPO and writes the yaml to

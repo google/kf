@@ -19,38 +19,11 @@ set -eux
 # Change to the project root directory
 cd "${0%/*}"/..
 
-# Login to gcloud
-set +x
-/bin/echo "$SERVICE_ACCOUNT_JSON" > key.json
-set -x
-/bin/echo Authenticating to kubernetes...
-gcloud auth activate-service-account --key-file key.json
-gcloud config set project "$GCP_PROJECT_ID"
-gcloud -q auth configure-docker
-
 # Used to suffix the artifacts
 current_time=$(date +%s)
 
-#########################
-# Generate Release YAML #
-#########################
-
-# Environment Variables for go build
-export GOPATH=/go
-export GOPROXY=https://proxy.golang.org
-export GOSUMDB=sum.golang.org
-export GO111MODULE=on
-export CGO_ENABLED=0
-
-# ko requires a proper go path and deps to be vendored
-# TODO remove this once https://github.com/google/ko/issues/7 is
-# resolved.
-go mod vendor
-mkdir -p $GOPATH/src/github.com/google/
-ln -s $PWD $GOPATH/src/github.com/google/kf
-cd $GOPATH/src/github.com/google/kf
-
 # Build artifacts
+# NOTE: This will login to gcloud for us.
 tmp_dir=$(mktemp -d)
 ./hack/build-release.sh ${tmp_dir}
 
@@ -60,10 +33,6 @@ gsutil cp ${tmp_dir}/release.yaml ${RELEASE_BUCKET}/${release_name}
 
 # Make this the latest
 gsutil cp ${RELEASE_BUCKET}/${release_name} ${RELEASE_BUCKET}/release-latest.yaml
-
-###################
-# Generate kf CLI #
-###################
 
 # Upload the binaries
 for cli in $(ls ${tmp_dir}/bin); do
