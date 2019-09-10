@@ -29,31 +29,31 @@ import (
 	"text/template"
 
 	"github.com/google/kf/pkg/kf/internal/tools/generator"
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 )
 
 type Option struct {
-	Name        string  `yaml:"name"`
-	Type        string  `yaml:"type"`
-	Description string  `yaml:"description"`
-	Default     *string `yaml:"default"`
+	Name        string  `json:"name"`
+	Type        string  `json:"type"`
+	Description string  `json:"description"`
+	Default     *string `json:"default"`
 }
 
 type OptionsConfig struct {
-	Name    string   `yaml:"name"`
-	Options []Option `yaml:"options"`
+	Name    string   `json:"name"`
+	Options []Option `json:"options"`
 
 	// ConfigName is set by Name. It is modified to ensure its not exported.
-	ConfigName string `yaml:"-"`
+	ConfigName string `json:"-"`
 }
 
 type OptionsFile struct {
-	License string            `yaml:"license"`
-	Package string            `yaml:"package"`
-	Imports map[string]string `yaml:"imports"`
+	License string            `json:"license"`
+	Package string            `json:"package"`
+	Imports map[string]string `json:"imports"`
 
-	CommonOptions []Option        `yaml:"common"`
-	Configs       []OptionsConfig `yaml:"configs"`
+	CommonOptions []Option        `json:"common"`
+	Configs       []OptionsConfig `json:"configs"`
 }
 
 func main() {
@@ -94,7 +94,7 @@ func main() {
 	var configs []OptionsConfig
 	for _, cfg := range of.Configs {
 		// Mix in the common options and sort by name.
-		cfg.Options = append(of.CommonOptions, cfg.Options...)
+		cfg.Options = append(cfg.Options, of.CommonOptions...)
 		sort.Slice(cfg.Options, func(i, j int) bool {
 			return cfg.Options[i].Name < cfg.Options[j].Name
 		})

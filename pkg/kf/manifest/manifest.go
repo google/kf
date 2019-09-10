@@ -25,57 +25,57 @@ import (
 
 	"github.com/google/kf/pkg/internal/envutil"
 	"github.com/imdario/mergo"
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 )
 
 // Application is a configuration for a single 12-factor-app.
 type Application struct {
-	Name       string            `yaml:"name,omitempty"`
-	Path       string            `yaml:"path,omitempty"`
-	Buildpacks []string          `yaml:"buildpacks,omitempty"`
-	Docker     AppDockerImage    `yaml:"docker,omitempty"`
-	Env        map[string]string `yaml:"env,omitempty"`
-	Services   []string          `yaml:"services,omitempty"`
-	DiskQuota  string            `yaml:"disk_quota,omitempty"`
-	Memory     string            `yaml:"memory,omitempty"`
-	CPU        string            `yaml:"cpu,omitempty"`
-	Instances  *int              `yaml:"instances,omitempty"`
+	Name       string            `json:"name,omitempty"`
+	Path       string            `json:"path,omitempty"`
+	Buildpacks []string          `json:"buildpacks,omitempty"`
+	Docker     AppDockerImage    `json:"docker,omitempty"`
+	Env        map[string]string `json:"env,omitempty"`
+	Services   []string          `json:"services,omitempty"`
+	DiskQuota  string            `json:"disk_quota,omitempty"`
+	Memory     string            `json:"memory,omitempty"`
+	CPU        string            `json:"cpu,omitempty"`
+	Instances  *int              `json:"instances,omitempty"`
 
 	// TODO(#95): These aren't CF proper. How do we expose these in the
 	// manifest?
-	MinScale *int `yaml:"min-scale,omitempty"`
-	MaxScale *int `yaml:"max-scale,omitempty"`
+	MinScale *int `json:"min-scale,omitempty"`
+	MaxScale *int `json:"max-scale,omitempty"`
 
-	Routes      []Route `yaml:"routes,omitempty"`
-	NoRoute     *bool   `yaml:"no-route,omitempty"`
-	RandomRoute *bool   `yaml:"random-route,omitempty"`
+	Routes      []Route `json:"routes,omitempty"`
+	NoRoute     *bool   `json:"no-route,omitempty"`
+	RandomRoute *bool   `json:"random-route,omitempty"`
 
 	// HealthCheckTimeout holds the health check timeout.
 	// Note the serialized field is just timeout.
-	HealthCheckTimeout int `yaml:"timeout,omitempty"`
+	HealthCheckTimeout int `json:"timeout,omitempty"`
 
 	// HealthCheckType holds the type of health check that will be performed to
 	// determine if the app is alive. Either port or http, blank means port.
-	HealthCheckType string `yaml:"health-check-type,omitempty"`
+	HealthCheckType string `json:"health-check-type,omitempty"`
 
 	// HealthCheckHTTPEndpoint holds the HTTP endpoint that will receive the
 	// get requests to determine liveness if HealthCheckType is http.
-	HealthCheckHTTPEndpoint string `yaml:"health-check-http-endpoint,omitempty"`
+	HealthCheckHTTPEndpoint string `json:"health-check-http-endpoint,omitempty"`
 }
 
 // AppDockerImage is the struct for docker configuration.
 type AppDockerImage struct {
-	Image string `yaml:"image,omitempty"`
+	Image string `json:"image,omitempty"`
 }
 
 // Route is a route name (including hostname, domain, and path) for an application.
 type Route struct {
-	Route string `yaml:"route,omitempty"`
+	Route string `json:"route,omitempty"`
 }
 
 // Manifest is an application's configuration.
 type Manifest struct {
-	Applications []Application `yaml:"applications"`
+	Applications []Application `json:"applications"`
 }
 
 // NewFromFile creates a Manifest from a manifest file.

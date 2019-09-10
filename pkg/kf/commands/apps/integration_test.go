@@ -27,7 +27,7 @@ import (
 	"testing"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 
 	"github.com/google/kf/pkg/kf/manifest"
 	. "github.com/google/kf/pkg/kf/testutil"
