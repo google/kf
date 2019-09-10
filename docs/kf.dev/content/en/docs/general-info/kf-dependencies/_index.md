@@ -5,13 +5,13 @@ weight: 10
 description: "Learn about the Kubernetes components that are required to use Kf."
 ---
 
-Kf requires Kubernetes and several other OSS projects to run. The default installation provided by `kf install` satisfies a number of these dependencies with Google managed services. For example, Google Kubernetes Engine (GKE) provides Kubernetes and Cloud Run on GKE provides Knative.
+Kf requires Kubernetes and several other OSS projects to run. The default installation provided by `kf install` satisfies a number of these dependencies with Google managed services. For example, Google Kubernetes Engine (GKE) provides Kubernetes.
 
 ## Dependencies
 [gke]: https://cloud.google.com/kubernetes-engine/docs/release-notes
 [crgke]: https://cloud.google.com/run/docs/gke/release-notes
 [istio]: https://cloud.google.com/istio/docs/istio-on-gke/versions
-[build]: https://github.com/knative/build/releases/download/v0.6.0/build.yaml
+[build]: https://knative.dev/v0.6-docs/build/
 [tekton]: https://github.com/tektoncd/pipeline
 [svcat]: https://github.com/kubernetes-sigs/service-catalog/releases
 
@@ -20,7 +20,7 @@ Kf requires Kubernetes and several other OSS projects to run. The default instal
 | [GKE][gke]                | 1.13.6-gke.13 | GA         |                                                               |
 | [Cloud Run on GKE][crgke] (Knative Serving) | 0.6.1-gke.1   | Beta       |                                                               |
 | [Istio][istio]            | 1.1.3-gke.0   | Beta       |                                                               |
-| [Knative Build][build]    | 0.6.0         | Deprecated | Will be replaced with [Tekton Pipelines] in a future release. |
+| [Knative Build][build]    | 0.6.0         | Deprecated | Will be replaced with [Tekton Pipelines][tekton] in a future release. |
 | [Service Catalog][svcat]  | 0.1.43        | Alpha      |                                                               |
 
 ![Diagram](diagram.svg)
