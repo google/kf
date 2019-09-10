@@ -3,6 +3,7 @@ module github.com/google/kf
 require (
 	contrib.go.opencensus.io/exporter/stackdriver v0.12.1 // indirect
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e // indirect
+	github.com/blang/semver v3.5.1+incompatible
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/elazarl/goproxy v0.0.0-20190421051319-9d40249d3c2f // indirect
@@ -11,6 +12,7 @@ require (
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/golang/mock v1.3.1
 	github.com/google/go-containerregistry v0.0.0-20190306174256-678f6c51f585
+	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/google/wire v0.2.2
 	github.com/gorilla/mux v1.7.0

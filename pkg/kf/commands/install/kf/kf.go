@@ -20,9 +20,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"sort"
 	"strings"
 	"time"
 
+	"github.com/blang/semver"
+	"github.com/google/go-github/github"
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	. "github.com/google/kf/pkg/kf/commands/install/util"
 	appsv1 "k8s.io/api/apps/v1"
@@ -47,13 +50,29 @@ func Install(ctx context.Context, containerRegistry string) error {
 		return err
 	}
 
+	// Select Kf Version
+	kfNames, kfReleases, err := fetchReleases(ctx)
+	if err != nil {
+		return err
+	}
+	idx, _, err := SelectPrompt(
+		ctx,
+		"Select Kf Version",
+		kfNames...,
+	)
+	if err != nil {
+		return err
+	}
+
+	kfRelease := kfReleases[idx]
+
 	// kubectl apply various yaml files{
 	for _, yaml := range []struct {
 		name string
 		yaml string
 	}{
 		{name: "Knative Build", yaml: KnativeBuildYAML},
-		{name: "kf", yaml: KfNightlyBuildYAML},
+		{name: "kf", yaml: kfRelease},
 	} {
 		err := wait.ExponentialBackoff(
 			wait.Backoff{
@@ -175,4 +194,85 @@ func installServiceCatalog(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// fetchReleases returns a list of releases YAML files from github and the
+// nightly. The nightly will be the first entry. The two slices are related.
+func fetchReleases(ctx context.Context) (names, addrs []string, err error) {
+	Logf(ctx, "fetching Kf releases...")
+	client := github.NewClient(nil)
+	releases, _, err := client.Repositories.ListReleases(ctx, "google", "kf", nil)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var vs versions
+
+	for _, r := range releases {
+		if r.Name == nil || r.TagName == nil {
+			continue
+		}
+
+		var assetURL string
+		for _, a := range r.Assets {
+			if a.Name != nil && a.BrowserDownloadURL != nil && *a.Name == "release.yaml" {
+				assetURL = *a.BrowserDownloadURL
+				break
+			}
+		}
+
+		if assetURL == "" {
+			continue
+		}
+
+		v, err := semver.ParseTolerant(*r.TagName)
+		if err != nil {
+			Logf(ctx, "invalid semver tag %q: %s", *r.TagName, err)
+			continue
+		}
+
+		vs = append(vs, version{
+			name:   *r.Name,
+			semver: v,
+			addr:   assetURL,
+		})
+	}
+
+	sort.Sort(vs)
+
+	names = []string{"nightly"}
+	addrs = []string{KfNightlyBuildYAML}
+
+	for _, v := range vs {
+		names = append(names, v.name)
+		addrs = append(addrs, v.addr)
+	}
+
+	return names, addrs, nil
+}
+
+type version struct {
+	semver semver.Version
+	name   string
+	addr   string
+}
+
+type versions []version
+
+// Len is the number of elements in the collection.
+func (v versions) Len() int {
+	return len(v)
+}
+
+// Less reports whether the element with
+// index i should sort before the element with index j.
+func (v versions) Less(i int, j int) bool {
+	return v[i].semver.LT(v[j].semver)
+}
+
+// Swap swaps the elements with indexes i and j.
+func (v versions) Swap(i int, j int) {
+	tmp := v[i]
+	v[i] = v[j]
+	v[j] = tmp
 }
