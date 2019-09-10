@@ -98,6 +98,8 @@ Use the --namespace flag instead.`)
 			if _, err := c.Create(space, r); err != nil {
 				return fmt.Errorf("failed to create Route: %s", err)
 			}
+
+			fmt.Fprintf(cmd.OutOrStdout(), "Creating route... %s", utils.AsyncLogSuffix)
 			return nil
 		},
 	}

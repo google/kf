@@ -53,6 +53,7 @@ func NewStopCommand(
 				return fmt.Errorf("failed to stop app: %s", err)
 			}
 
+			fmt.Fprintf(cmd.OutOrStdout(), "Stopping app %q %s", appName, utils.AsyncLogSuffix)
 			return nil
 		},
 	}

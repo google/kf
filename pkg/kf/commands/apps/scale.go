@@ -108,6 +108,7 @@ func NewScaleCommand(
 				return fmt.Errorf("failed to scale app: %s", err)
 			}
 
+			fmt.Fprintf(cmd.OutOrStdout(), "Scaling app %q %s", appName, utils.AsyncLogSuffix)
 			return nil
 		},
 	}

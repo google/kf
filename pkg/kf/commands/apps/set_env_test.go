@@ -46,7 +46,7 @@ func TestSetEnvCommand(t *testing.T) {
 		"setting variables fails": {
 			Args:        []string{"app-name", "NAME", "VALUE"},
 			Namespace:   "some-namespace",
-			ExpectedErr: errors.New("some-error"),
+			ExpectedErr: errors.New("failed to set env var on app: some-error"),
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().Transform(gomock.Any(), "app-name", gomock.Any()).Return(nil, errors.New("some-error"))
 			},

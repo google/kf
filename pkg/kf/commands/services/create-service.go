@@ -82,7 +82,7 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 				if err != nil {
 					return err
 				}
-
+				fmt.Fprintf(cmd.OutOrStdout(), "Creating service instance %q %s", instanceName, utils.AsyncLogSuffix)
 				describe.ServiceInstance(cmd.OutOrStdout(), created)
 				return nil
 			}
@@ -100,6 +100,7 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 					return err
 				}
 
+				fmt.Fprintf(cmd.OutOrStdout(), "Creating service instance %q %s", instanceName, utils.AsyncLogSuffix)
 				describe.ServiceInstance(cmd.OutOrStdout(), created)
 				return nil
 			}

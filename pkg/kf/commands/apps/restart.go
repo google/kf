@@ -47,6 +47,7 @@ func NewRestartCommand(
 				return fmt.Errorf("failed to restart app: %s", err)
 			}
 
+			fmt.Fprintf(cmd.OutOrStdout(), "Restarting app %q %s", appName, utils.AsyncLogSuffix)
 			return nil
 		},
 	}

@@ -53,6 +53,7 @@ func NewStartCommand(
 				return fmt.Errorf("failed to start app: %s", err)
 			}
 
+			fmt.Fprintf(cmd.OutOrStdout(), "Starting app %q %s", appName, utils.AsyncLogSuffix)
 			return nil
 		},
 	}
