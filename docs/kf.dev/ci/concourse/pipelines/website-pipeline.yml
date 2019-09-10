@@ -20,8 +20,8 @@ vars:
 - &ci_git_uri ((ci_git_uri))
 - &ci_git_branch ((ci_website_git_branch))
 - &ci_image_uri ((ci_website_image_uri))
-- &firebase_token ((website_firebase_token))
-- &firebase_project ((website_firebase_project))
+- &gae_sa ((website_appengine_service_account))
+- &gae_project ((website_appengine_project))
 - &service_account_json ((service_account_json))
 # ---- end vars ----
 
@@ -72,15 +72,34 @@ jobs:
       inputs:
       - name: kf-docs-master
       params:
-        FIREBASE_TOKEN: *firebase_token
-        FIREBASE_PROJECT: *firebase_project
+        GAE_SA: *gae_sa
+        GAE_PROJECT: *gae_project
       run:
         dir: kf-docs-master
-        path: sh
+        path: bash
         args:
         - -exc
         - |
-          # Build site with Hugo and deploy with Firebase
+          set -e
+
+          # Prepare gcloud
+          set +x
+          cat <<< "$GAE_SA" > "gae_key.json"
+          gcloud auth activate-service-account --key-file gae_key.json
+          gcloud config set project $GAE_PROJECT
+          set -x
+
+          # Build site with Hugo
           cd docs/kf.dev
           export NODE_PATH=$NODE_PATH:`npm root -g`
-          hugo && firebase deploy --project $FIREBASE_PROJECT --token $FIREBASE_TOKEN
+          hugo
+
+          # Move generated contents and app.yaml to tempdir
+          tmp_dir=$(mktemp -d -t ci-XXXXXXXXXX)
+          cp app.yaml $tmp_dir/app.yaml
+          ln -s `pwd`/public $tmp_dir/www
+
+          pushd $tmp_dir
+            ls -la
+            gcloud --quiet app deploy
+          popd
