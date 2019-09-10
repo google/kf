@@ -20,6 +20,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"sort"
 	"strings"
 	"time"
 
@@ -199,23 +200,20 @@ func installServiceCatalog(ctx context.Context) error {
 // nightly. The nightly will be the first entry. The two slices are related.
 func fetchReleases(ctx context.Context) (names, addrs []string, err error) {
 	Logf(ctx, "fetching Kf releases...")
-	versions := []semver.Version{}
 	client := github.NewClient(nil)
 	releases, _, err := client.Repositories.ListReleases(ctx, "google", "kf", nil)
 	if err != nil {
 		return nil, nil, err
 	}
 
+	var vs versions
+
 	for _, r := range releases {
-		var name, tag, assetURL string
-		if r.Name != nil {
-			name = *r.Name
+		if r.Name == nil || r.TagName == nil {
+			continue
 		}
 
-		if r.TagName != nil {
-			tag = *r.TagName
-		}
-
+		var assetURL string
 		for _, a := range r.Assets {
 			if a.Name != nil && a.BrowserDownloadURL != nil && *a.Name == "release.yaml" {
 				assetURL = *a.BrowserDownloadURL
@@ -223,53 +221,58 @@ func fetchReleases(ctx context.Context) (names, addrs []string, err error) {
 			}
 		}
 
-		if name == "" || assetURL == "" || tag == "" {
+		if assetURL == "" {
 			continue
 		}
 
-		if !strings.HasPrefix(tag, "v") {
-			Logf(ctx, "skipping tag %q, it doesn't have a 'v' prefix", tag)
-			continue
-		}
-
-		// Strip off 'v' prefix
-		version, err := semver.Parse(tag[1:])
+		v, err := semver.ParseTolerant(*r.TagName)
 		if err != nil {
-			Logf(ctx, "invalid semver tag %q: %s", tag, err)
+			Logf(ctx, "invalid semver tag %q: %s", *r.TagName, err)
+			continue
 		}
 
-		names = append(names, name)
-		addrs = append(addrs, assetURL)
-		versions = append(versions, version)
+		vs = append(vs, version{
+			name:   *r.Name,
+			semver: v,
+			addr:   assetURL,
+		})
 	}
 
-	semver.Sort(versions)
+	sort.Sort(vs)
 
-	// We only want the last 3 releases
-	trimmedNames := []string{"nightly"}
-	trimmedAddrs := []string{KfNightlyBuildYAML}
+	names = []string{"nightly"}
+	addrs = []string{KfNightlyBuildYAML}
 
-	for _, idx := range TailSemver(versions, 3) {
-		trimmedNames = append(trimmedNames, names[idx])
-		trimmedAddrs = append(trimmedAddrs, addrs[idx])
+	for _, v := range vs {
+		names = append(names, v.name)
+		addrs = append(addrs, v.addr)
 	}
 
-	return trimmedNames, trimmedAddrs, nil
+	return names, addrs, nil
 }
 
-// Tail returns the last 'n' values. If 'n' is greater than len(s), then it
-// returns the entire slice.
-func TailSemver(s []semver.Version, n int) []int {
-	var a, b int
-	if len(s) < n {
-		a, b = 0, len(s)
-	} else {
-		a, b = len(s)-n, len(s)
-	}
+type version struct {
+	semver semver.Version
+	name   string
+	addr   string
+}
 
-	var result []int
-	for i := a; i < b; i++ {
-		result = append(result, i)
-	}
-	return result
+type versions []version
+
+// Len is the number of elements in the collection.
+func (v versions) Len() int {
+	return len(v)
+}
+
+// Less reports whether the element with
+// index i should sort before the element with index j.
+func (v versions) Less(i int, j int) bool {
+	return v[i].semver.LT(v[j].semver)
+}
+
+// Swap swaps the elements with indexes i and j.
+func (v versions) Swap(i int, j int) {
+	tmp := v[i]
+	v[i] = v[j]
+	v[j] = tmp
 }
