@@ -151,10 +151,7 @@ func buildHTTPRoute(namespace, urlPath string, appNames []string) ([]networking.
 	for _, appName := range appNames {
 		httpRoutes = append(httpRoutes, networking.HTTPRoute{
 			Match: pathMatchers,
-			Route: buildRouteDestination(),
-			Rewrite: &networking.HTTPRewrite{
-				Authority: network.GetServiceHostname(appName, namespace),
-			},
+			Route: buildRouteDestination(appName, namespace),
 		})
 	}
 
@@ -164,7 +161,6 @@ func buildHTTPRoute(namespace, urlPath string, appNames []string) ([]networking.
 		return []networking.HTTPRoute{
 			{
 				Match: pathMatchers,
-				Route: buildRouteDestination(),
 				Fault: &networking.HTTPFaultInjection{
 					Abort: &networking.InjectAbort{
 						Percent:    100,
@@ -178,11 +174,11 @@ func buildHTTPRoute(namespace, urlPath string, appNames []string) ([]networking.
 	return httpRoutes, nil
 }
 
-func buildRouteDestination() []networking.HTTPRouteDestination {
+func buildRouteDestination(appName string, namespace string) []networking.HTTPRouteDestination {
 	return []networking.HTTPRouteDestination{
 		{
 			Destination: networking.Destination{
-				Host: GatewayHost,
+				Host: network.GetServiceHostname(appName, namespace),
 			},
 			Weight: 100,
 		},
