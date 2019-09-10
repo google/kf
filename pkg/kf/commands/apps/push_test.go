@@ -513,6 +513,36 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushCPU(&wantCPU),
 			),
 		},
+		"bad dockerfile": {
+			namespace: "some-namespace",
+			args: []string{
+				"bad-dockerfile-app",
+				"--manifest", "testdata/manifest.yml",
+			},
+			wantErr: errors.New("the Dockerfile does-not-exist couldn't be found under the app root"),
+		},
+		"good dockerfile": {
+			namespace: "some-namespace",
+			args: []string{
+				"dockerfile-app",
+				"--path", "testdata",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushDockerfilePath("Dockerfile"),
+			),
+		},
+		"provided dockerfile": {
+			namespace: "some-namespace",
+			args: []string{
+				"dockerfile-app",
+				"--dockerfile", "testdata/dockerfile-app/Dockerfile",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushDockerfilePath("testdata/dockerfile-app/Dockerfile"),
+			),
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			if tc.srcImageBuilder == nil {
@@ -547,6 +577,7 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "health check", expectOpts.HealthCheck(), actualOpts.HealthCheck())
 					testutil.AssertEqual(t, "default route", expectOpts.DefaultRouteDomain(), actualOpts.DefaultRouteDomain())
 					testutil.AssertEqual(t, "random route", expectOpts.RandomRouteDomain(), actualOpts.RandomRouteDomain())
+					testutil.AssertEqual(t, "Dockerfile path", expectOpts.DockerfilePath(), actualOpts.DockerfilePath())
 
 					if !strings.HasPrefix(actualOpts.SourceImage(), tc.wantImagePrefix) {
 						t.Errorf("Wanted srcImage to start with %s got: %s", tc.wantImagePrefix, actualOpts.SourceImage())
