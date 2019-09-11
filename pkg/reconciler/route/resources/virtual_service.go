@@ -31,7 +31,6 @@ import (
 const (
 	ManagedByLabel        = "app.kubernetes.io/managed-by"
 	KnativeIngressGateway = "knative-ingress-gateway.knative-serving.svc.cluster.local"
-	GatewayHost           = "istio-ingressgateway.istio-system.svc.cluster.local"
 )
 
 // MakeVirtualServiceLabels creates Labels that can be used to tie a
@@ -91,7 +90,6 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 		if route.Spec.AppName != "" {
 			appNames = append(appNames, route.Spec.AppName)
 		}
-
 		httpRoute, err := buildHTTPRoute(namespace, urlPath, appNames)
 		if err != nil {
 			return nil, err
@@ -131,7 +129,6 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 
 func buildHTTPRoute(namespace, urlPath string, appNames []string) ([]networking.HTTPRoute, error) {
 	var pathMatchers []networking.HTTPMatchRequest
-
 	urlPath = path.Join("/", urlPath, "/")
 	regexpPath, err := v1alpha1.BuildPathRegexp(urlPath)
 	if err != nil {
@@ -175,6 +172,7 @@ func buildHTTPRoute(namespace, urlPath string, appNames []string) ([]networking.
 }
 
 func buildRouteDestination(appName string, namespace string) []networking.HTTPRouteDestination {
+	// fmt.Println(appName, namespace)
 	return []networking.HTTPRouteDestination{
 		{
 			Destination: networking.Destination{
