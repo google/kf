@@ -18,7 +18,7 @@ vars:
 
 # ci config vars
 - &ci_git_uri ((ci_git_uri))
-- &ci_git_branch ((ci_website_git_branch))
+- &ci_git_branch develop
 - &ci_image_uri ((ci_website_image_uri))
 - &gae_sa ((website_appengine_service_account))
 - &gae_project ((website_appengine_project))
@@ -26,23 +26,33 @@ vars:
 # ---- end vars ----
 
 resources:
-- name: kf-docs-master
+- name: docs-develop
   type: git
   source:
     uri: https://github.com/google/kf
-    branch: master
+    branch: develop
     paths:
     - docs/kf.dev
+
+- name: ci
+  type: git
+  source:
+    branch: *ci_git_branch
+    uri: *ci_git_uri
+    submodules: none
+
 - name: ci-image-src
   type: git
   source:
     branch: *ci_git_branch
     uri: *ci_git_uri
+    submodules: none
     paths:
     - docs/kf.dev/ci/concourse/image
+
 - name: ci-image
   type: docker-image
-  source: &ci-image-source
+  source:
     repository: *ci_image_uri
     username: _json_key
     password: *service_account_json
@@ -56,10 +66,13 @@ jobs:
   - put: ci-image
     params:
       build: ci-image-src/docs/kf.dev/ci/concourse/image
-- name: website-publish
+
+- name: website-publish-develop
   plan:
-  - get: kf-docs-master
+  - get: docs-develop
     trigger: true
+  - get: ci
+    trigger: false
   - task: build-and-push
     config:
       platform: linux
@@ -70,36 +83,27 @@ jobs:
           username: _json_key
           password: *service_account_json
       inputs:
-      - name: kf-docs-master
+      - name: docs-develop
+      - name: ci
       params:
         GAE_SA: *gae_sa
-        GAE_PROJECT: *gae_project
+        GOOGLE_PROJECT: *gae_project
+        VERSION: develop
       run:
-        dir: kf-docs-master
         path: bash
         args:
         - -exc
         - |
           set -e
+          base=`pwd`
 
           # Prepare gcloud
           set +x
           cat <<< "$GAE_SA" > "gae_key.json"
           gcloud auth activate-service-account --key-file gae_key.json
-          gcloud config set project $GAE_PROJECT
+          gcloud config set project $GOOGLE_PROJECT
           set -x
 
-          # Build site with Hugo
-          cd docs/kf.dev
-          export NODE_PATH=$NODE_PATH:`npm root -g`
-          hugo
-
-          # Move generated contents and app.yaml to tempdir
-          tmp_dir=$(mktemp -d -t ci-XXXXXXXXXX)
-          cp app.yaml $tmp_dir/app.yaml
-          ln -s `pwd`/public $tmp_dir/www
-
-          pushd $tmp_dir
-            ls -la
-            gcloud --quiet app deploy
-          popd
+          # Build and publish
+          cd docs-develop/docs/kf.dev
+          $base/ci/docs/kf.dev/hack/build-and-deploy.sh
