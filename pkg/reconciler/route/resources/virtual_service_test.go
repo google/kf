@@ -142,7 +142,7 @@ func TestMakeVirtualService(t *testing.T) {
 				testutil.AssertNil(t, "err", err)
 				testutil.AssertEqual(t, "HTTP len", 2, len(v.Spec.HTTP))
 				for i := range v.Spec.HTTP {
-					testutil.AssertEqual(t, "HTTP Route len", 0, len(v.Spec.HTTP[i].Route))
+					testutil.AssertEqual(t, "HTTP Route len", 1, len(v.Spec.HTTP[i].Route))
 					testutil.AssertEqual(t, "HTTP Route fault", &networking.HTTPFaultInjection{
 						Abort: &networking.InjectAbort{
 							Percent:    100,
