@@ -30,6 +30,7 @@ kf push APP_NAME [flags]
   -b, --buildpack string            Skip the 'detect' buildpack step and use the given name.
       --container-registry string   Container registry to push sources to. Required for buildpack builds not targeting a Kf space.
       --docker-image string         Docker image to deploy.
+      --dockerfile string           Path to the Dockerfile to build. Relative to the source root.
   -e, --env stringArray             Set environment variables. Multiple can be set by using the flag multiple times (e.g., NAME=VALUE).
       --grpc                        Setup the container to allow application to use gRPC.
   -u, --health-check-type string    Application health check type (http or port, default: port)
