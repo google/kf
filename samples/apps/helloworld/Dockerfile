@@ -16,12 +16,12 @@ FROM golang:1.11-alpine AS build
 
 COPY . src
 WORKDIR src
-RUN GO111MODULE=on CGO_ENABLED=0 go build -o /bin/echoer
+RUN GO111MODULE=on CGO_ENABLED=0 go build -o /bin/hello
 
 FROM scratch
-COPY --from=build /bin/echoer /bin/echoer
+COPY --from=build /bin/hello /bin/hello
 
 ENV PORT 8080
 EXPOSE 8080/tcp
 
-ENTRYPOINT ["/bin/echoer"]
+ENTRYPOINT ["/bin/hello"]

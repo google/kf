@@ -109,25 +109,12 @@ func TestIntegration_Push_dockerfile(t *testing.T) {
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		currentTime := time.Now().UnixNano()
 		appName := fmt.Sprintf("integration-dockerfile-%d", currentTime)
-		appPath := filepath.Join(RootDir(ctx, t), "samples", "apps", "dockerfile")
+		appPath := filepath.Join(RootDir(ctx, t), "samples", "apps", "helloworld")
 
-		// Create a custom manifest file for this test.
-		newManifestFile, manifestCleanup, err := copyManifest(appName, appPath, currentTime)
-		AssertNil(t, "app manifest copy error", err)
-		defer manifestCleanup()
-
-		kf.Push(ctx, appName, "--path", appPath, "--manifest", newManifestFile)
+		kf.Push(ctx, appName, "--path", appPath, "--dockerfile", "Dockerfile")
 		defer kf.Delete(ctx, appName)
 
-		checkApp(ctx, t, kf, appName, []string{ExpectedAddr(appName, "")}, 8089, func(ctx context.Context, t *testing.T, addr string) {
-			resp, respCancel := RetryPost(ctx, t, addr, appTimeout, http.StatusOK, "testing")
-			defer resp.Body.Close()
-			defer respCancel()
-
-			data, err := ioutil.ReadAll(resp.Body)
-			AssertNil(t, "body error", err)
-			AssertContainsAll(t, string(data), []string{"The current server time is"})
-		})
+		checkHelloWorldApp(ctx, t, kf, appName, 8089, ExpectedAddr(appName, ""))
 	})
 }
 
@@ -591,7 +578,9 @@ func checkHelloWorldApp(
 
 		data, err := ioutil.ReadAll(resp.Body)
 		AssertNil(t, "body error", err)
-		AssertEqual(t, "body", "hello kf!", strings.TrimSpace(string(data)))
+
+		expectedBody := fmt.Sprintf("hello from %s!", appName)
+		AssertEqual(t, "body", expectedBody, strings.TrimSpace(string(data)))
 		Logf(t, "done hitting helloworld app to ensure its working.")
 	})
 }
