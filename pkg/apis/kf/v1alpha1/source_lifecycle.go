@@ -35,9 +35,10 @@ const (
 	SourceConditionSucceeded                         = apis.ConditionSucceeded
 	SourceConditionBuildSucceeded apis.ConditionType = "BuildSucceeded"
 
-	BuildArgImage            = "IMAGE"
-	BuildArgBuildpack        = "BUILDPACK"
-	BuildArgBuildpackBuilder = "BUILDER_IMAGE"
+	BuildArgImage             = "IMAGE"
+	BuildArgBuildpack         = "BUILDPACK"
+	BuildArgBuildpackBuilder  = "BUILDER_IMAGE"
+	BuildArgBuildpackRunImage = "RUN_IMAGE"
 )
 
 func (status *SourceStatus) manage() apis.ConditionManager {

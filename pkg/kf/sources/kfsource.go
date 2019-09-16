@@ -96,6 +96,16 @@ func (k *KfSource) GetBuildpackBuildBuildpack() string {
 	return k.Spec.BuildpackBuild.Buildpack
 }
 
+// SetBuildpackBuildStack sets the stack to use with a buildpack build.
+func (k *KfSource) SetBuildpackBuildStack(stack string) {
+	k.Spec.BuildpackBuild.Stack = stack
+}
+
+// GetBuildpackBuildStack gets the stack to use with a buildpack build.
+func (k *KfSource) GetBuildpackBuildStack() string {
+	return k.Spec.BuildpackBuild.Stack
+}
+
 // ToSource casts this alias back into a Namespace.
 func (k *KfSource) ToSource() *v1alpha1.Source {
 	return (*v1alpha1.Source)(k)

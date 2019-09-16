@@ -23,6 +23,7 @@ The following fields are valid for objects under `applications`:
 | **name** | string | The name of the application. The app name should be lower-case alphanumeric characters and dashes. It must not start with a dash. |
 | **path** | string | The path to the source of the app. Defaults to the manifest's directory. |
 | **buildpacks** | string[] | A list of buildpacks to apply to the app. |
+| **stack** | string | Base image to use for to use for apps created with a buildpack. |
 | **docker** | object | A docker object. See the Docker Fields section for more information. |
 | **env** | map | Key/value pairs to use as the environment variables for the app and build. |
 | **services** | string[] | A list of service instance names to automatically bind to the app. |
