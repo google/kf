@@ -33,6 +33,7 @@ type Application struct {
 	Name       string            `json:"name,omitempty"`
 	Path       string            `json:"path,omitempty"`
 	Buildpacks []string          `json:"buildpacks,omitempty"`
+	Stack      string            `json:"stack,omitempty"`
 	Docker     AppDockerImage    `json:"docker,omitempty"`
 	Env        map[string]string `json:"env,omitempty"`
 	Services   []string          `json:"services,omitempty"`

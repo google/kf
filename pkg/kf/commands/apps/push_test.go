@@ -92,6 +92,7 @@ func TestPushCommand(t *testing.T) {
 				"--no-start",
 				"-u", "http",
 				"-t", "28",
+				"-s", "cflinuxfs3",
 			},
 			wantImagePrefix: "some-reg.io/src-some-namespace-example-app",
 			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
@@ -103,6 +104,7 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushGrpc(true),
 				apps.WithPushBuildpack("some-buildpack"),
+				apps.WithPushStack("cflinuxfs3"),
 				apps.WithPushEnvironmentVariables(map[string]string{"env1": "val1", "env2": "val2"}),
 				apps.WithPushNoStart(true),
 				apps.WithPushExactScale(intPtr(1)),

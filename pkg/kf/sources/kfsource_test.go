@@ -29,12 +29,14 @@ func ExampleKfSource_buildpack() {
 	source.SetBuildpackBuildEnv([]corev1.EnvVar{{Name: "JAVA_VERSION", Value: "11"}})
 	source.SetBuildpackBuildBuildpack("java")
 	source.SetBuildpackBuildImage("gcr.io/some-registry/my-image:latest")
+	source.SetBuildpackBuildStack("cflinuxfs3")
 
 	fmt.Println("Name:", source.GetName())
 	fmt.Println("Namespace:", source.GetNamespace())
 	fmt.Println("Source:", source.GetBuildpackBuildSource())
 	fmt.Println("Buildpack:", source.GetBuildpackBuildBuildpack())
 	fmt.Println("Image:", source.GetBuildpackBuildImage())
+	fmt.Println("Stack:", source.GetBuildpackBuildStack())
 
 	for _, env := range source.GetBuildpackBuildEnv() {
 		fmt.Println("Env:", env.Name, "=", env.Value)
@@ -45,6 +47,7 @@ func ExampleKfSource_buildpack() {
 	// Source: gcr.io/my-source-code-image
 	// Buildpack: java
 	// Image: gcr.io/some-registry/my-image:latest
+	// Stack: cflinuxfs3
 	// Env: JAVA_VERSION = 11
 }
 

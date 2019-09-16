@@ -37,6 +37,7 @@ func ExampleMakeBuild() {
 	source.Spec.ServiceAccount = "some-account"
 	source.Spec.BuildpackBuild.Source = "some-source"
 	source.Spec.BuildpackBuild.Image = "gcr.io/image:123"
+	source.Spec.BuildpackBuild.Stack = "gcr.io/kf-releases/run:latest"
 	source.Spec.BuildpackBuild.BuildpackBuilder = "some-buildpack-builder"
 	source.Spec.BuildpackBuild.Env = []corev1.EnvVar{
 		{
@@ -55,14 +56,16 @@ func ExampleMakeBuild() {
 	fmt.Println("Managed By:", build.Labels[managedByLabel])
 	fmt.Println("Service Account:", build.Spec.ServiceAccountName)
 	fmt.Println("Arg Count:", len(build.Spec.Template.Arguments))
-	fmt.Println("Output Image:", build.Spec.Template.Arguments[0].Value)
+	fmt.Println("Output Image:", v1alpha1.GetBuildArg(build, v1alpha1.BuildArgImage))
 	fmt.Println("Env:", build.Spec.Template.Env[0].Name, "=", build.Spec.Template.Env[0].Value)
+	fmt.Println("Stack:", v1alpha1.GetBuildArg(build, v1alpha1.BuildArgBuildpackRunImage))
 
 	// Output: Name: my-source
 	// Label Count: 1
 	// Managed By: kf
 	// Service Account: some-account
-	// Arg Count: 3
+	// Arg Count: 4
 	// Output Image: gcr.io/image:123
 	// Env: some = variable
+	// Stack: gcr.io/kf-releases/run:latest
 }
