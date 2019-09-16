@@ -477,6 +477,55 @@ func RetryPost(
 	}
 }
 
+// RetryGetWithHost will send a get request with the host set in the request header
+// until successful, duration has been reached or context is
+// done. A close function is returned for closing the sub-context.
+func RetryGetWithHost(
+	ctx context.Context,
+	t *testing.T,
+	addr string,
+	duration time.Duration,
+	expectedStatusCode int,
+	host string,
+) (*http.Response, func()) {
+	ctx, cancel := context.WithTimeout(ctx, duration)
+
+	for {
+		select {
+		case <-ctx.Done():
+			cancel()
+			t.Fatalf("context cancelled")
+		default:
+		}
+
+		req, err := http.NewRequest(http.MethodGet, addr, nil)
+		if err != nil {
+			cancel()
+			t.Fatalf("failed to create request: %s", err)
+		}
+		req = req.WithContext(ctx)
+		req.Host = host
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			Logf(t, "failed to get (retrying...): %s", err)
+			time.Sleep(1000 * time.Millisecond)
+			continue
+		}
+
+		if resp.StatusCode != expectedStatusCode {
+			Logf(t, "got %d, wanted %d (retrying...)", resp.StatusCode, expectedStatusCode)
+			time.Sleep(1000 * time.Millisecond)
+			continue
+		}
+
+		return resp, func() {
+			cancel()
+			resp.Body.Close()
+		}
+	}
+}
+
 // Kf provides a DSL for running integration tests.
 type Kf struct {
 	t  *testing.T
@@ -749,6 +798,23 @@ func (k *Kf) Proxy(ctx context.Context, appName string, port int) {
 		},
 	})
 	PanicOnError(ctx, k.t, fmt.Sprintf("proxy %q", appName), errs)
+	StreamOutput(ctx, k.t, output)
+}
+
+// ProxyRoute starts a proxy for a route.
+func (k *Kf) ProxyRoute(ctx context.Context, routeHost string, port int) {
+	k.t.Helper()
+	Logf(k.t, "running proxy for %q...", routeHost)
+	defer Logf(k.t, "done running proxy for %q.", routeHost)
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: []string{
+			"proxy-route",
+			"--namespace", SpaceFromContext(ctx),
+			routeHost,
+			fmt.Sprintf("--port=%d", port),
+		},
+	})
+	PanicOnError(ctx, k.t, fmt.Sprintf("proxy %q", routeHost), errs)
 	StreamOutput(ctx, k.t, output)
 }
 
