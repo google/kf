@@ -34,6 +34,7 @@ func NewProxyRouteCommand(p *config.KfParams, ingressLister istio.IngressLister)
 	var (
 		gateway string
 		port    int
+		noStart bool
 	)
 
 	cmd := &cobra.Command{
@@ -73,14 +74,21 @@ func NewProxyRouteCommand(p *config.KfParams, ingressLister istio.IngressLister)
 			w := cmd.OutOrStdout()
 			fmt.Fprintf(w, "Forwarding requests from %s to %s with host %s\n", listener.Addr(), gateway, host)
 			fmt.Fprintln(w, "Example GET:")
-			fmt.Fprintf(w, "  curl -H \"Host: %s\" http://%s\n", host, gateway)
+			fmt.Fprintf(w, "  curl %s\n", listener.Addr())
+			fmt.Fprintf(w, "  (curl -H \"Host: %s\" http://%s)\n", host, gateway)
 			fmt.Fprintln(w, "Example POST:")
-			fmt.Fprintf(w, "  curl --request POST -H \"Host: %s\" http://%s --data \"POST data\"\n", host, gateway)
+			fmt.Fprintf(w, "  curl --request POST %s --data \"POST data\"\n", listener.Addr())
+			fmt.Fprintf(w, "  (curl --request POST -H \"Host: %s\" http://%s --data \"POST data\")\n", host, gateway)
 			fmt.Fprintln(w, "Browser link:")
 			fmt.Fprintf(w, "  http://%s\n", listener.Addr())
 
 			fmt.Fprintln(w)
 
+			if noStart {
+				fmt.Fprintln(cmd.OutOrStdout(), "exiting because no-start flag was provided")
+				return nil
+			}
+			
 			return http.Serve(listener, createProxy(cmd.OutOrStdout(), host, gateway))
 		},
 	}
@@ -98,6 +106,14 @@ func NewProxyRouteCommand(p *config.KfParams, ingressLister istio.IngressLister)
 		8080,
 		"Local port to listen on",
 	)
+
+	cmd.Flags().BoolVar(
+		&noStart,
+		"no-start",
+		false,
+		"Exit before starting the proxy",
+	)
+	cmd.Flags().MarkHidden("no-start")
 
 	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 
