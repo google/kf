@@ -39,6 +39,7 @@ require (
 	gotest.tools v2.2.0+incompatible // indirect
 	k8s.io/api v0.0.0
 	k8s.io/apimachinery v0.0.0
+	k8s.io/cli-runtime v0.0.0
 	k8s.io/client-go v2.0.0-alpha.0.0.20190226174127-78295b709ec6+incompatible
 	k8s.io/code-generator v0.0.0
 	k8s.io/kubernetes v1.15.0
@@ -83,3 +84,5 @@ exclude (
 	github.com/alecthomas/gometalinter v2.0.11+incompatible
 	gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20180810215634-df19058c872c
 )
+
+go 1.13

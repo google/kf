@@ -24,10 +24,13 @@ import (
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/describe"
 	"github.com/spf13/cobra"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 // NewGetAppCommand creates a command to get details about a single application.
 func NewGetAppCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
+	printFlags := genericclioptions.NewPrintFlags("")
+
 	var cmd = &cobra.Command{
 		Use:     "app APP_NAME",
 		Short:   "Print information about a deployed app",
@@ -40,13 +43,24 @@ func NewGetAppCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 			}
 
 			appName := args[0]
-
 			w := cmd.OutOrStdout()
-			fmt.Fprintf(w, "Getting app %s in namespace: %s\n", appName, p.Namespace)
+			fmt.Fprintf(cmd.ErrOrStderr(), "Getting app %s in namespace: %s\n", appName, p.Namespace)
 
 			app, err := appsClient.Get(p.Namespace, appName)
 			if err != nil {
 				return err
+			}
+
+			if printFlags.OutputFlagSpecified() {
+				printer, err := printFlags.ToPrinter()
+				if err != nil {
+					return err
+				}
+
+				// If the type didn't come back with a kind, update it with the
+				// type we deserialized it with so the printer will work.
+				app.GetObjectKind().SetGroupVersionKind(app.GetGroupVersionKind())
+				return printer.PrintObj(app, w)
 			}
 
 			describe.ObjectMeta(w, app.ObjectMeta)
@@ -81,6 +95,8 @@ func NewGetAppCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 			return nil
 		},
 	}
+
+	printFlags.AddFlags(cmd)
 
 	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 

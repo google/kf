@@ -29,6 +29,7 @@ import (
 
 	"sigs.k8s.io/yaml"
 
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/manifest"
 	. "github.com/google/kf/pkg/kf/testutil"
 )
@@ -499,10 +500,20 @@ func checkApp(
 ) {
 	// List the apps and make sure we have the correct route.
 	Logf(t, "ensuring app's route...")
-	apps := kf.Apps(ctx)
+	appJSON := kf.App(ctx, appName)
 
-	sort.Strings(apps[appName].URLs)
-	AssertEqual(t, "routes", expectedRoutes, apps[appName].URLs)
+	app := &v1alpha1.App{}
+	if err := json.Unmarshal([]byte(appJSON), app); err != nil {
+		t.Fatal("unmarshaling app:", err)
+	}
+
+	var urls []string
+	for _, route := range app.Spec.Routes {
+		urls = append(urls, route.String())
+	}
+
+	sort.Strings(urls)
+	AssertEqual(t, "routes", expectedRoutes, urls)
 	Logf(t, "done ensuring app's route.")
 
 	// Hit the app via the proxy. This makes sure the app is handling
