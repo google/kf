@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package routes
+package routes_test
 
 import (
 	"bytes"
@@ -44,10 +44,10 @@ func TestNewProxyRouteCommand(t *testing.T) {
 			ExpectedErr: errors.New("accepts 1 arg(s), received 0"),
 		},
 		"minimal configuration": {
-			Namespace:   "default",
-			Args:        []string{"myhost.example.com", "--no-start=true"},
+			Namespace:       "default",
+			Args:            []string{"myhost.example.com", "--no-start=true"},
 			ExpectedStrings: []string{"Forwarding requests", "myhost.example.com", "8.8.8.8"},
-			ExpectedErr: nil,
+			ExpectedErr:     nil,
 			Setup: func(t *testing.T, istio *fake.FakeIstioClient) {
 				istio.EXPECT().ListIngresses(gomock.Any()).Return([]corev1.LoadBalancerIngress{{IP: "8.8.8.8"}}, nil)
 			},

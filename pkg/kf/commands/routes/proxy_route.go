@@ -88,7 +88,7 @@ func NewProxyRouteCommand(p *config.KfParams, ingressLister istio.IngressLister)
 				fmt.Fprintln(cmd.OutOrStdout(), "exiting because no-start flag was provided")
 				return nil
 			}
-			
+
 			return http.Serve(listener, createProxy(cmd.OutOrStdout(), host, gateway))
 		},
 	}
