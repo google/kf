@@ -433,6 +433,7 @@ Module: google.golang.org/genproto v0.0.0-20190307195333-5fe7a883aa19
 Module: google.golang.org/grpc v1.19.0
 Module: k8s.io/api v0.0.0-20190528110122-9ad12a4af326 (imported as k8s.io/api v0.0.0)
 Module: k8s.io/apimachinery v0.0.0-20190221084156-01f179d85dbc (imported as k8s.io/apimachinery v0.0.0)
+Module: k8s.io/cli-runtime v0.0.0-20190528110732-ad79ea2fbc0f (imported as k8s.io/cli-runtime v0.0.0)
 Module: k8s.io/client-go v0.0.0-20190226174127-78295b709ec6 (imported as k8s.io/client-go v2.0.0-alpha.0.0.20190226174127-78295b709ec6+incompatible)
 Module: k8s.io/code-generator v0.0.0-20181128191024-b1289fc74931 (imported as k8s.io/code-generator v0.0.0)
 Module: k8s.io/kube-openapi v0.0.0-20190228160746-b3a7cee44a30

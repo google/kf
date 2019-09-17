@@ -133,8 +133,8 @@ type Kf struct {
 	binaryPath string
 }
 
-// KF returns a kf.
-func KF(t *testing.T, binaryPath string) *Kf {
+// NewKf creates a Kf for running tests with.
+func NewKf(t *testing.T, binaryPath string) *Kf {
 	return &Kf{
 		t:          t,
 		binaryPath: binaryPath,
@@ -182,7 +182,7 @@ func (k *Kf) kf(ctx context.Context, t *testing.T, cfg KfTestConfig) (KfTestOutp
 	}, errs
 }
 
-// RunSynchronous runs kf with the provided configuraiton and returns the
+// RunSynchronous runs kf with the provided configuration and returns the
 // results.
 func (k *Kf) RunSynchronous(ctx context.Context, cfg KfTestConfig) (stdout, stderr []byte, err error) {
 	k.t.Helper()
@@ -221,7 +221,7 @@ func RunKfTest(t *testing.T, test KfTest) {
 	RunIntegrationTest(t, func(ctx context.Context, t *testing.T) {
 		t.Helper()
 
-		kf := KF(t, kfPath)
+		kf := NewKf(t, kfPath)
 
 		// Create the space
 		spaceName := fmt.Sprintf("apps-integration-test-%d", time.Now().UnixNano())
