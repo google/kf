@@ -35,7 +35,7 @@ type Application struct {
 	Buildpacks []string          `json:"buildpacks,omitempty"`
 	Docker     AppDockerImage    `json:"docker,omitempty"`
 	Stack      string            `json:"stack,omitempty"`
-	Docker     AppDockerImage    `json:"docker,omitempty"`
+	Dockerfile Dockerfile        `json:"dockerfile,omitempty"`
 	Env        map[string]string `json:"env,omitempty"`
 	Services   []string          `json:"services,omitempty"`
 	DiskQuota  string            `json:"disk_quota,omitempty"`
