@@ -44,6 +44,9 @@ func NewGetAppCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 
 			appName := args[0]
 			w := cmd.OutOrStdout()
+
+			// Print status messages to stderr so stdout is syntatically valid output
+			// if the user wanted JSON, YAML, etc.
 			fmt.Fprintf(cmd.ErrOrStderr(), "Getting app %s in namespace: %s\n", appName, p.Namespace)
 
 			app, err := appsClient.Get(p.Namespace, appName)

@@ -498,7 +498,7 @@ func checkApp(
 	proxyPort int,
 	assert func(ctx context.Context, t *testing.T, addr string),
 ) {
-	// List the apps and make sure we have the correct route.
+	// Get the app and make sure we have the correct route(s).
 	Logf(t, "ensuring app's route...")
 	appJSON := kf.App(ctx, appName)
 
