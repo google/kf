@@ -58,6 +58,7 @@ kf [flags]
 * [kf map-route](/docs/general-info/kf-cli/commands/kf-map-route/)	 - Map a route to an app
 * [kf marketplace](/docs/general-info/kf-cli/commands/kf-marketplace/)	 - List available offerings in the marketplace
 * [kf proxy](/docs/general-info/kf-cli/commands/kf-proxy/)	 - Create a proxy to an app on a local port
+* [kf proxy-route](/docs/general-info/kf-cli/commands/kf-proxy-route/)	 - Create a proxy to a route on a local port
 * [kf push](/docs/general-info/kf-cli/commands/kf-push/)	 - Create a new app or sync changes to an existing app
 * [kf quota](/docs/general-info/kf-cli/commands/kf-quota/)	 - Show quota info for a space
 * [kf restage](/docs/general-info/kf-cli/commands/kf-restage/)	 - Rebuild and deploy using the last uploaded source code and current buildpacks
