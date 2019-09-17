@@ -477,16 +477,14 @@ func RetryPost(
 	}
 }
 
-// RetryGetWithHost will send a get request with the host set in the request header
-// until successful, duration has been reached or context is
+// RetryGet will send a get request until successful, duration has been reached or context is
 // done. A close function is returned for closing the sub-context.
-func RetryGetWithHost(
+func RetryGet(
 	ctx context.Context,
 	t *testing.T,
 	addr string,
 	duration time.Duration,
 	expectedStatusCode int,
-	host string,
 ) (*http.Response, func()) {
 	ctx, cancel := context.WithTimeout(ctx, duration)
 
@@ -504,7 +502,6 @@ func RetryGetWithHost(
 			t.Fatalf("failed to create request: %s", err)
 		}
 		req = req.WithContext(ctx)
-		req.Host = host
 
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {

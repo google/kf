@@ -30,77 +30,60 @@ import (
 func TestIntegration_Routes(t *testing.T) {
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		hostname := fmt.Sprintf("some-host-%d", time.Now().UnixNano())
-
-		findRoute := func(shouldFind bool) {
-			RetryOnPanic(ctx, t, func() {
-				var found bool
-				for _, line := range kf.Routes(ctx) {
-					expected := hostname + " example.com /some-path"
-					actual := strings.Join(strings.Fields(line), " ")
-					if expected == actual {
-						found = true
-						break
-					}
-				}
-
-				if shouldFind != found {
-					// We'll panic so we can use our retry logic
-					panic(fmt.Errorf("Wanted %v, got %v", shouldFind, found))
-				}
-			})
-		}
+		domain := "example.com"
+		path := "some-path"
 
 		// TODO: use the domain from the cluster.
-		kf.CreateRoute(ctx, "example.com", "--hostname="+hostname, "--path=some-path")
-		findRoute(true)
-		kf.DeleteRoute(ctx, "example.com", "--hostname="+hostname, "--path=some-path")
-		findRoute(false)
+		kf.CreateRoute(ctx, domain, "--hostname="+hostname, "--path="+path)
+		findRoute(ctx, t, kf, hostname, domain, path, true)
+		kf.DeleteRoute(ctx, domain, "--hostname="+hostname, "--path="+path)
+		findRoute(ctx, t, kf, hostname, domain, path, false)
 	})
 }
 
-// TestIntegration_UnmappedRoutes creates a route via `create-route` that is not mapped to an app.
+// TestIntegration_UnmappedRoute creates a route via `create-route` that is not mapped to an app.
 // The test verifies that the route exists with `routes`, and checks that hitting the route returns a 503
 // with `proxy-route`.
 func TestIntegration_UnmappedRoute(t *testing.T) {
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		hostname := fmt.Sprintf("some-host-%d", time.Now().UnixNano())
-
-		findRoute := func(shouldFind bool) {
-			RetryOnPanic(ctx, t, func() {
-
-				var found bool
-				for _, line := range kf.Routes(ctx) {
-					expected := hostname + " example.com /mypath"
-					actual := strings.Join(strings.Fields(line), " ")
-					if expected == actual {
-						found = true
-						break
-					}
-				}
-
-				if shouldFind != found {
-					// We'll panic so we can use our retry logic
-					panic(fmt.Errorf("Wanted %v, got %v", shouldFind, found))
-				}
-			})
-		}
+		domain := "example.com"
+		path := "mypath"
 
 		// TODO: use the domain from the cluster.
-		kf.CreateRoute(ctx, "example.com", "--hostname="+hostname, "--path=mypath")
-		url := hostname + ".example.com/mypath"
-		fmt.Println(url)
-		findRoute(true)
+		kf.CreateRoute(ctx, domain, "--hostname="+hostname, "--path="+path)
+		routeHost := fmt.Sprintf("%s.%s", hostname, domain)
+		findRoute(ctx, t, kf, hostname, domain, path, true)
 
-		go kf.ProxyRoute(ctx, hostname+".example.com", 8083)
+		go kf.ProxyRoute(ctx, routeHost, 8083)
 
 		{
-			resp, respCancel := RetryGetWithHost(ctx, t, "http://localhost:8083/mypath", 90*time.Second, http.StatusServiceUnavailable, url)
+			resp, respCancel := RetryGet(ctx, t, "http://localhost:8083/"+path, 90*time.Second, http.StatusServiceUnavailable)
 			defer resp.Body.Close()
 			defer respCancel()
 			Logf(t, "testing for 503")
 		}
 
-		kf.DeleteRoute(ctx, "example.com", "--hostname="+hostname, "--path=mypath")
-		findRoute(false)
+		kf.DeleteRoute(ctx, "example.com", "--hostname="+hostname, "--path="+path)
+		findRoute(ctx, t, kf, hostname, domain, path, false)
+	})
+}
+
+func findRoute(ctx context.Context, t *testing.T, kf *Kf, hostname, domain, path string, shouldFind bool) {
+	RetryOnPanic(ctx, t, func() {
+		var found bool
+		for _, line := range kf.Routes(ctx) {
+			expected := fmt.Sprintf("%s %s /%s", hostname, domain, path)
+			actual := strings.Join(strings.Fields(line), " ")
+			if expected == actual {
+				found = true
+				break
+			}
+		}
+
+		if shouldFind != found {
+			// We'll panic so we can use our retry logic
+			panic(fmt.Errorf("Wanted %v, got %v", shouldFind, found))
+		}
 	})
 }
