@@ -62,8 +62,6 @@ func ExampleCommand_blank() {
 	fmt.Printf("Entyrpoint: %v\n", cmd.Entrypoint())
 	fmt.Printf("Args: %v\n", cmd.Args())
 
-	//cmd := Command{"/bin/sh", "-e", "echo $HOME"}
-
 	// Output: Entyrpoint: []
 	// Args: []
 }
