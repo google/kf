@@ -128,6 +128,7 @@ func parseCommandLine() (args []string, flags map[string][]string) {
 
 // CreateProxy creates a proxy to the specified gateway with the specified host in the request header.
 func CreateProxy(w io.Writer, host, gateway string) *httputil.ReverseProxy {
+	// TODO (#698): use color package instead of color code
 	logger := log.New(w, fmt.Sprintf("\033[34m[%s via %s]\033[0m ", host, gateway), log.Ltime)
 
 	return &httputil.ReverseProxy{
@@ -143,9 +144,9 @@ func CreateProxy(w io.Writer, host, gateway string) *httputil.ReverseProxy {
 }
 
 // PrintCurlExamples lists example HTTP requests the user can send.
-func PrintCurlExamples(w io.Writer, listener net.Listener, routeHost, gateway string, withProxy bool) {
+func PrintCurlExamples(w io.Writer, listener net.Listener, host, gateway string, withProxy bool) {
 	if withProxy {
-		fmt.Fprintf(w, "Forwarding requests from %s to %s with host %s\n", listener.Addr(), gateway, routeHost)
+		fmt.Fprintf(w, "Forwarding requests from %s to %s with host %s\n", listener.Addr(), gateway, host)
 		fmt.Fprintln(w, "Example GET:")
 		fmt.Fprintf(w, "  curl %s\n", listener.Addr())
 		fmt.Fprintln(w, "Example POST:")
@@ -153,11 +154,11 @@ func PrintCurlExamples(w io.Writer, listener net.Listener, routeHost, gateway st
 		fmt.Fprintln(w, "Browser link:")
 		fmt.Fprintf(w, "  http://%s\n", listener.Addr())
 	} else {
-		fmt.Fprintf(w, "Requests can be sent to %s with host %s\n", gateway, routeHost)
+		fmt.Fprintf(w, "Requests can be sent to %s with host %s\n", gateway, host)
 		fmt.Fprintln(w, "Example GET:")
-		fmt.Fprintf(w, "  curl -H \"Host: %s\" http://%s\n", routeHost, gateway)
+		fmt.Fprintf(w, "  curl -H \"Host: %s\" http://%s\n", host, gateway)
 		fmt.Fprintln(w, "Example POST:")
-		fmt.Fprintf(w, "  curl --request POST -H \"Host: %s\" http://%s --data \"POST data\"\n", routeHost, gateway)
+		fmt.Fprintf(w, "  curl --request POST -H \"Host: %s\" http://%s --data \"POST data\"\n", host, gateway)
 	}
 	fmt.Fprintln(w)
 }

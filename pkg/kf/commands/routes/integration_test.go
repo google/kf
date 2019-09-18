@@ -33,7 +33,6 @@ func TestIntegration_Routes(t *testing.T) {
 		domain := "example.com"
 		path := "some-path"
 
-		// TODO: use the domain from the cluster.
 		kf.CreateRoute(ctx, domain, "--hostname="+hostname, "--path="+path)
 		findRoute(ctx, t, kf, hostname, domain, path, true)
 		kf.DeleteRoute(ctx, domain, "--hostname="+hostname, "--path="+path)
@@ -50,7 +49,6 @@ func TestIntegration_UnmappedRoute(t *testing.T) {
 		domain := "example.com"
 		path := "mypath"
 
-		// TODO: use the domain from the cluster.
 		kf.CreateRoute(ctx, domain, "--hostname="+hostname, "--path="+path)
 		routeHost := fmt.Sprintf("%s.%s", hostname, domain)
 		findRoute(ctx, t, kf, hostname, domain, path, true)
@@ -70,6 +68,7 @@ func TestIntegration_UnmappedRoute(t *testing.T) {
 }
 
 func findRoute(ctx context.Context, t *testing.T, kf *Kf, hostname, domain, path string, shouldFind bool) {
+	// TODO (#699): Stop using panics for flow control
 	RetryOnPanic(ctx, t, func() {
 		var found bool
 		for _, line := range kf.Routes(ctx) {
