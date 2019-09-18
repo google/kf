@@ -41,6 +41,7 @@ type Application struct {
 	Memory     string            `json:"memory,omitempty"`
 	CPU        string            `json:"cpu,omitempty"`
 	Instances  *int              `json:"instances,omitempty"`
+	Command    Command           `json:"command,omitempty"`
 
 	// TODO(#95): These aren't CF proper. How do we expose these in the
 	// manifest?

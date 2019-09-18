@@ -81,6 +81,36 @@ applications:
 				},
 			},
 		},
+		"cf style command": {
+			fileContent: `---
+applications:
+- name: CUSTOM_START
+  command: rake run $VAR
+`,
+			expected: &manifest.Manifest{
+				Applications: []manifest.Application{
+					{
+						Name:    "CUSTOM_START",
+						Command: manifest.Command{"/lifecycle/launcher", "rake run $VAR"},
+					},
+				},
+			},
+		},
+		"docker style command": {
+			fileContent: `---
+applications:
+- name: CUSTOM_START
+  command: ["python", "-m", "SimpleHTTPServer"]
+`,
+			expected: &manifest.Manifest{
+				Applications: []manifest.Application{
+					{
+						Name:    "CUSTOM_START",
+						Command: []string{"python", "-m", "SimpleHTTPServer"},
+					},
+				},
+			},
+		},
 	}
 
 	for tn, tc := range cases {
