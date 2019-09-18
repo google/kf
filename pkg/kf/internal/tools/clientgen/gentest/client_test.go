@@ -154,16 +154,9 @@ func ExampleLabelsContainsPredicate() {
 }
 
 func TestClient_invariant(t *testing.T) {
-	// This test validates that the filters and mutators are applied to read and
+	// This test validates that the mutators are applied to read and
 	// write operations.
 	mockK8s := testclient.NewSimpleClientset().CoreV1()
-
-	invalid := &v1.Secret{}
-	invalid.Name = "does-not-belong"
-
-	if _, err := mockK8s.Secrets("default").Create(invalid); err != nil {
-		t.Fatal(err)
-	}
 
 	secretsClient := NewExampleClient(mockK8s)
 
@@ -183,15 +176,9 @@ func TestClient_invariant(t *testing.T) {
 		testutil.AssertEqual(t, "secret count", 1, len(out))
 	})
 
-	t.Run("get", func(t *testing.T) {
-		_, err := secretsClient.Get("default", "does-not-belong")
-		testutil.AssertErrorsEqual(t, errors.New("an object with the name does-not-belong exists, but it doesn't appear to be a OperatorConfig"), err)
-	})
-
 	t.Run("transform", func(t *testing.T) {
-		err := secretsClient.Transform("default", "created-through-client", func(s *v1.Secret) error {
+		transformResult, err := secretsClient.Transform("default", "created-through-client", func(s *v1.Secret) error {
 			s.Labels["mutated"] = "true"
-			s.Labels["is-a"] = "try-to-overwrite"
 
 			return nil
 		})
@@ -201,7 +188,7 @@ func TestClient_invariant(t *testing.T) {
 		testutil.AssertNil(t, "get err", err)
 
 		testutil.AssertEqual(t, "mutated label", "true", modified.Labels["mutated"])
-		testutil.AssertEqual(t, "is-a label", "OperatorConfig", modified.Labels["is-a"])
+		testutil.AssertEqual(t, "transformResult", transformResult, modified)
 	})
 }
 

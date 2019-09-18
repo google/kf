@@ -31,6 +31,5 @@ func NewExampleClient(mockK8s v1.SecretsGetter) Client {
 		upsertMutate: MutatorList{
 			LabelSetMutator(map[string]string{"is-a": "OperatorConfig"}),
 		},
-		membershipValidator: LabelEqualsPredicate("is-a", "OperatorConfig"),
 	}
 }

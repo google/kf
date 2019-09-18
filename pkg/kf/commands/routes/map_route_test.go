@@ -50,7 +50,7 @@ func TestMapRoute(t *testing.T) {
 			Setup: func(t *testing.T, appsfake *appsfake.FakeClient) {
 				appsfake.EXPECT().
 					Transform(gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(errors.New("some-error"))
+					Return(nil, errors.New("some-error"))
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertErrorsEqual(t, errors.New("failed to map Route: some-error"), err)

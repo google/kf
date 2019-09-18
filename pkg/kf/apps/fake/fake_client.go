@@ -203,11 +203,12 @@ func (mr *FakeClientMockRecorder) Restart(arg0, arg1 interface{}) *gomock.Call {
 }
 
 // Transform mocks base method
-func (m *FakeClient) Transform(arg0, arg1 string, arg2 apps.Mutator) error {
+func (m *FakeClient) Transform(arg0, arg1 string, arg2 apps.Mutator) (*v1alpha1.App, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Transform", arg0, arg1, arg2)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*v1alpha1.App)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Transform indicates an expected call of Transform

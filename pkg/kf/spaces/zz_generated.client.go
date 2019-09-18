@@ -170,7 +170,7 @@ func LabelsContainsPredicate(key string) Predicate {
 type Client interface {
 	Create(obj *v1alpha1.Space, opts ...CreateOption) (*v1alpha1.Space, error)
 	Update(obj *v1alpha1.Space, opts ...UpdateOption) (*v1alpha1.Space, error)
-	Transform(name string, transformer Mutator) error
+	Transform(name string, transformer Mutator) (*v1alpha1.Space, error)
 	Get(name string, opts ...GetOption) (*v1alpha1.Space, error)
 	Delete(name string, opts ...DeleteOption) error
 	List(opts ...ListOption) ([]v1alpha1.Space, error)
@@ -183,10 +183,8 @@ type Client interface {
 }
 
 type coreClient struct {
-	kclient cv1alpha1.SpacesGetter
-
-	upsertMutate        MutatorList
-	membershipValidator Predicate
+	kclient      cv1alpha1.SpacesGetter
+	upsertMutate MutatorList
 }
 
 func (core *coreClient) preprocessUpsert(obj *v1alpha1.Space) error {
@@ -217,23 +215,20 @@ func (core *coreClient) Update(obj *v1alpha1.Space, opts ...UpdateOption) (*v1al
 	return core.kclient.Spaces().Update(obj)
 }
 
-// Transform performs a read/modify/write on the object with the given name.
-// Transform manages the options for the Get and Update calls.
-func (core *coreClient) Transform(name string, mutator Mutator) error {
+// Transform performs a read/modify/write on the object with the given name
+// and returns the updated object. Transform manages the options for the Get and
+// Update calls.
+func (core *coreClient) Transform(name string, mutator Mutator) (*v1alpha1.Space, error) {
 	obj, err := core.Get(name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := mutator(obj); err != nil {
-		return err
+		return nil, err
 	}
 
-	if _, err := core.Update(obj); err != nil {
-		return err
-	}
-
-	return nil
+	return core.Update(obj)
 }
 
 // Get retrieves an existing object in the cluster with the given name.
@@ -245,11 +240,7 @@ func (core *coreClient) Get(name string, opts ...GetOption) (*v1alpha1.Space, er
 		return nil, fmt.Errorf("couldn't get the Space with the name %q: %v", name, err)
 	}
 
-	if core.membershipValidator(res) {
-		return res, nil
-	}
-
-	return nil, fmt.Errorf("an object with the name %s exists, but it doesn't appear to be a Space", name)
+	return res, nil
 }
 
 // Delete removes an existing object in the cluster.
@@ -289,9 +280,7 @@ func (core *coreClient) List(opts ...ListOption) ([]v1alpha1.Space, error) {
 		return nil, fmt.Errorf("couldn't list Spaces: %v", err)
 	}
 
-	return List(res.Items).
-		Filter(core.membershipValidator).
-		Filter(AllPredicate(cfg.filters...)), nil
+	return List(res.Items).Filter(AllPredicate(cfg.filters...)), nil
 }
 
 func (cfg listConfig) ToListOptions() (resp metav1.ListOptions) {
