@@ -440,6 +440,7 @@ func RetryPost(
 	expectedStatusCode int,
 	body string,
 ) (*http.Response, func()) {
+	t.Helper()
 	ctx, cancel := context.WithTimeout(ctx, duration)
 
 	for {
@@ -486,6 +487,7 @@ func RetryGet(
 	duration time.Duration,
 	expectedStatusCode int,
 ) (*http.Response, func()) {
+	t.Helper()
 	ctx, cancel := context.WithTimeout(ctx, duration)
 
 	for {

@@ -16,11 +16,8 @@ package apps
 
 import (
 	"fmt"
-	"io"
-	"log"
 	"net"
 	"net/http"
-	"net/http/httputil"
 
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/completion"
@@ -84,26 +81,18 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister i
 			}
 
 			appHost := url.Host
-
 			w := cmd.OutOrStdout()
-			fmt.Fprintf(w, "Forwarding requests from %s to %s with host %s\n", listener.Addr(), gateway, appHost)
-			fmt.Fprintln(w, "Example GET:")
-			fmt.Fprintf(w, "  curl -H \"Host: %s\" http://%s\n", appHost, gateway)
-			fmt.Fprintln(w, "Example POST:")
-			fmt.Fprintf(w, "  curl --request POST -H \"Host: %s\" http://%s --data \"POST data\"\n", appHost, gateway)
-			fmt.Fprintln(w, "Browser link:")
-			fmt.Fprintf(w, "  http://%s\n", listener.Addr())
-
-			fmt.Fprintln(w)
-
-			fmt.Fprintln(w, "\033[33mNOTE: the first request may take some time if the app is scaled to zero\033[0m")
 
 			if noStart {
-				fmt.Fprintln(cmd.OutOrStdout(), "exiting because no-start flag was provided")
+				fmt.Fprintln(w, "exiting because no-start flag was provided")
+				utils.PrintCurlExamples(w, listener, appHost, gateway, false)
 				return nil
 			}
 
-			return http.Serve(listener, createProxy(cmd.OutOrStdout(), app.Status.URL.Host, gateway))
+			utils.PrintCurlExamples(w, listener, appHost, gateway, true)
+			fmt.Fprintln(w, "\033[33mNOTE: the first request may take some time if the app is scaled to zero\033[0m")
+
+			return http.Serve(listener, utils.CreateProxy(cmd.OutOrStdout(), app.Status.URL.Host, gateway))
 		},
 	}
 
@@ -132,19 +121,4 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister i
 	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 
 	return cmd
-}
-
-func createProxy(w io.Writer, appHost, gateway string) *httputil.ReverseProxy {
-	logger := log.New(w, fmt.Sprintf("\033[34m[%s via %s]\033[0m ", appHost, gateway), log.Ltime)
-
-	return &httputil.ReverseProxy{
-		Director: func(req *http.Request) {
-			req.Host = appHost
-			req.URL.Scheme = "http"
-			req.URL.Host = gateway
-
-			logger.Printf("%s %s\n", req.Method, req.URL.RequestURI())
-		},
-		ErrorLog: logger,
-	}
 }

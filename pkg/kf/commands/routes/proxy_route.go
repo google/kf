@@ -16,11 +16,8 @@ package routes
 
 import (
 	"fmt"
-	"io"
-	"log"
 	"net"
 	"net/http"
-	"net/http/httputil"
 
 	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
@@ -53,7 +50,7 @@ func NewProxyRouteCommand(p *config.KfParams, ingressLister istio.IngressLister)
 				return err
 			}
 
-			host := args[0]
+			routeHost := args[0]
 			cmd.SilenceUsage = true
 
 			if gateway == "" {
@@ -72,24 +69,15 @@ func NewProxyRouteCommand(p *config.KfParams, ingressLister istio.IngressLister)
 			}
 
 			w := cmd.OutOrStdout()
-			fmt.Fprintf(w, "Forwarding requests from %s to %s with host %s\n", listener.Addr(), gateway, host)
-			fmt.Fprintln(w, "Example GET:")
-			fmt.Fprintf(w, "  curl %s\n", listener.Addr())
-			fmt.Fprintf(w, "  (curl -H \"Host: %s\" http://%s)\n", host, gateway)
-			fmt.Fprintln(w, "Example POST:")
-			fmt.Fprintf(w, "  curl --request POST %s --data \"POST data\"\n", listener.Addr())
-			fmt.Fprintf(w, "  (curl --request POST -H \"Host: %s\" http://%s --data \"POST data\")\n", host, gateway)
-			fmt.Fprintln(w, "Browser link:")
-			fmt.Fprintf(w, "  http://%s\n", listener.Addr())
-
-			fmt.Fprintln(w)
 
 			if noStart {
-				fmt.Fprintln(cmd.OutOrStdout(), "exiting because no-start flag was provided")
+				fmt.Fprintln(w, "exiting proxy because no-start flag was provided")
+				utils.PrintCurlExamples(w, listener, routeHost, gateway, false)
 				return nil
 			}
 
-			return http.Serve(listener, createProxy(cmd.OutOrStdout(), host, gateway))
+			utils.PrintCurlExamples(w, listener, routeHost, gateway, true)
+			return http.Serve(listener, utils.CreateProxy(cmd.OutOrStdout(), routeHost, gateway))
 		},
 	}
 
@@ -118,19 +106,4 @@ func NewProxyRouteCommand(p *config.KfParams, ingressLister istio.IngressLister)
 	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 
 	return cmd
-}
-
-func createProxy(w io.Writer, routeHost, gateway string) *httputil.ReverseProxy {
-	logger := log.New(w, fmt.Sprintf("\033[34m[%s via %s]\033[0m ", routeHost, gateway), log.Ltime)
-
-	return &httputil.ReverseProxy{
-		Director: func(req *http.Request) {
-			req.Host = routeHost
-			req.URL.Scheme = "http"
-			req.URL.Host = gateway
-
-			logger.Printf("%s %s\n", req.Method, req.URL.RequestURI())
-		},
-		ErrorLog: logger,
-	}
 }
