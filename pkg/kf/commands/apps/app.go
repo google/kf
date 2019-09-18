@@ -17,6 +17,8 @@ package apps
 import (
 	"fmt"
 	"io"
+	"sort"
+	"strings"
 
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/completion"
@@ -100,6 +102,13 @@ func NewGetAppCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 	}
 
 	printFlags.AddFlags(cmd)
+
+	// Override output format to be sorted so our generated documents are deterministic
+	{
+		allowedFormats := printFlags.AllowedFormats()
+		sort.Strings(allowedFormats)
+		cmd.Flag("output").Usage = fmt.Sprintf("Output format. One of: %s.", strings.Join(allowedFormats, "|"))
+	}
 
 	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 
