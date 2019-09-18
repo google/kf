@@ -44,6 +44,25 @@ applications:
 				},
 			},
 		},
+		"buildpacks": {
+			fileContent: `---
+applications:
+- name: MY-APP
+  stack: cflinuxfs3
+  buildpacks:
+  - java
+  - node
+`,
+			expected: &manifest.Manifest{
+				Applications: []manifest.Application{
+					{
+						Name:       "MY-APP",
+						Stack:      "cflinuxfs3",
+						Buildpacks: []string{"java", "node"},
+					},
+				},
+			},
+		},
 		"docker": {
 			fileContent: `---
 applications:

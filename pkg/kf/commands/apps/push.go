@@ -82,6 +82,7 @@ func NewPushCommand(
 		maxScale           int
 		path               string
 		buildpack          string
+		stack              string
 		envs               []string
 		grpc               bool
 		noManifest         bool
@@ -105,6 +106,7 @@ func NewPushCommand(
   kf push myapp
   kf push myapp --buildpack my.special.buildpack # Discover via kf buildpacks
   kf push myapp --env FOO=bar --env BAZ=foo
+	kf push myapp --stack cloudfoundry/cflinuxfs3 # Use a cflinuxfs3 runtime
   `,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -160,6 +162,7 @@ func NewPushCommand(
 			overrides := &manifest.Application{}
 			{
 				overrides.Docker.Image = containerImage
+				overrides.Stack = stack
 
 				// Read environment variables from cli args
 				envVars, err := envutil.ParseCLIEnvVars(envs)
@@ -327,6 +330,7 @@ func NewPushCommand(
 					pushOpts = append(pushOpts,
 						apps.WithPushSourceImage(imageName),
 						apps.WithPushBuildpack(app.Buildpack()),
+						apps.WithPushStack(app.Stack),
 					)
 				} else {
 					if containerRegistry != "" {
@@ -411,6 +415,14 @@ func NewPushCommand(
 		"b",
 		"",
 		"Skip the 'detect' buildpack step and use the given name.",
+	)
+
+	pushCmd.Flags().StringVarP(
+		&stack,
+		"stack",
+		"s",
+		"",
+		"Base image to use for to use for apps created with a buildpack.",
 	)
 
 	pushCmd.Flags().StringVar(

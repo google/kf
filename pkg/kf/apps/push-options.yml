@@ -19,6 +19,9 @@ configs:
   - name: Buildpack
     type: string
     description: skip the detect buildpack step and use the given name
+  - name: Stack
+    type: string
+    description: the builder stack to use for buildpack based apps
   - name: Output
     type: "io.Writer"
     description: the io.Writer to write output such as build logs

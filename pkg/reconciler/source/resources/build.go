@@ -79,6 +79,10 @@ func makeBuildpackBuild(source *v1alpha1.Source) (*build.Build, error) {
 						Name:  v1alpha1.BuildArgBuildpack,
 						Value: source.Spec.BuildpackBuild.Buildpack,
 					},
+					{
+						Name:  v1alpha1.BuildArgBuildpackRunImage,
+						Value: source.Spec.BuildpackBuild.Stack,
+					},
 				},
 				Env: source.Spec.BuildpackBuild.Env,
 			},

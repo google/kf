@@ -48,10 +48,12 @@ func NewUpdateQuotaCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 
 			spaceName := args[0]
 
-			return client.Transform(spaceName, spaces.DiffWrapper(cmd.OutOrStdout(), func(space *v1alpha1.Space) error {
+			_, err := client.Transform(spaceName, spaces.DiffWrapper(cmd.OutOrStdout(), func(space *v1alpha1.Space) error {
 				kfspace := spaces.NewFromSpace(space)
 				return setQuotaValues(memory, cpu, routes, kfspace)
 			}))
+
+			return err
 		},
 	}
 

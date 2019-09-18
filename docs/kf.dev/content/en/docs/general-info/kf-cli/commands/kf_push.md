@@ -21,6 +21,7 @@ kf push APP_NAME [flags]
   kf push myapp
   kf push myapp --buildpack my.special.buildpack # Discover via kf buildpacks
   kf push myapp --env FOO=bar --env BAZ=foo
+  kf push myapp --stack cloudfoundry/cflinuxfs3 # Use a cflinuxfs3 runtime
 ```
 
 ### Options
@@ -43,6 +44,7 @@ kf push APP_NAME [flags]
   -p, --path string                 Path to the source code (default: current directory) (default ".")
       --random-route                Create a random route for this app if the app doesn't have a route.
       --route stringArray           Use the routes flag to provide multiple HTTP and TCP routes. Each route for this app is created if it does not already exist.
+  -s, --stack string                Base image to use for to use for apps created with a buildpack.
   -t, --timeout int                 Time (in seconds) allowed to elapse between starting up an app and the first healthy response from the app.
 ```
 

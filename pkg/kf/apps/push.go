@@ -61,6 +61,7 @@ func newApp(appName string, opts ...PushOption) (*v1alpha1.App, error) {
 	src.SetContainerImageSource(cfg.ContainerImage)
 	src.SetBuildpackBuildEnv(envs)
 	src.SetBuildpackBuildBuildpack(cfg.Buildpack)
+	src.SetBuildpackBuildStack(cfg.Stack)
 
 	app := NewKfApp()
 	app.SetName(appName)

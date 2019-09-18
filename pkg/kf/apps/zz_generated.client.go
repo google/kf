@@ -170,7 +170,7 @@ func LabelsContainsPredicate(key string) Predicate {
 type Client interface {
 	Create(namespace string, obj *v1alpha1.App, opts ...CreateOption) (*v1alpha1.App, error)
 	Update(namespace string, obj *v1alpha1.App, opts ...UpdateOption) (*v1alpha1.App, error)
-	Transform(namespace string, name string, transformer Mutator) error
+	Transform(namespace string, name string, transformer Mutator) (*v1alpha1.App, error)
 	Get(namespace string, name string, opts ...GetOption) (*v1alpha1.App, error)
 	Delete(namespace string, name string, opts ...DeleteOption) error
 	List(namespace string, opts ...ListOption) ([]v1alpha1.App, error)
@@ -183,10 +183,8 @@ type Client interface {
 }
 
 type coreClient struct {
-	kclient cv1alpha1.AppsGetter
-
-	upsertMutate        MutatorList
-	membershipValidator Predicate
+	kclient      cv1alpha1.AppsGetter
+	upsertMutate MutatorList
 }
 
 func (core *coreClient) preprocessUpsert(obj *v1alpha1.App) error {
@@ -217,23 +215,20 @@ func (core *coreClient) Update(namespace string, obj *v1alpha1.App, opts ...Upda
 	return core.kclient.Apps(namespace).Update(obj)
 }
 
-// Transform performs a read/modify/write on the object with the given name.
-// Transform manages the options for the Get and Update calls.
-func (core *coreClient) Transform(namespace string, name string, mutator Mutator) error {
+// Transform performs a read/modify/write on the object with the given name
+// and returns the updated object. Transform manages the options for the Get and
+// Update calls.
+func (core *coreClient) Transform(namespace string, name string, mutator Mutator) (*v1alpha1.App, error) {
 	obj, err := core.Get(namespace, name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := mutator(obj); err != nil {
-		return err
+		return nil, err
 	}
 
-	if _, err := core.Update(namespace, obj); err != nil {
-		return err
-	}
-
-	return nil
+	return core.Update(namespace, obj)
 }
 
 // Get retrieves an existing object in the cluster with the given name.
@@ -245,11 +240,7 @@ func (core *coreClient) Get(namespace string, name string, opts ...GetOption) (*
 		return nil, fmt.Errorf("couldn't get the App with the name %q: %v", name, err)
 	}
 
-	if core.membershipValidator(res) {
-		return res, nil
-	}
-
-	return nil, fmt.Errorf("an object with the name %s exists, but it doesn't appear to be a App", name)
+	return res, nil
 }
 
 // Delete removes an existing object in the cluster.
@@ -289,9 +280,7 @@ func (core *coreClient) List(namespace string, opts ...ListOption) ([]v1alpha1.A
 		return nil, fmt.Errorf("couldn't list Apps: %v", err)
 	}
 
-	return List(res.Items).
-		Filter(core.membershipValidator).
-		Filter(AllPredicate(cfg.filters...)), nil
+	return List(res.Items).Filter(AllPredicate(cfg.filters...)), nil
 }
 
 func (cfg listConfig) ToListOptions() (resp metav1.ListOptions) {

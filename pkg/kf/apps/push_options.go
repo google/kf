@@ -63,6 +63,8 @@ type pushConfig struct {
 	ServiceBindings []v1alpha1.AppSpecServiceBinding
 	// SourceImage is the source code as a container image
 	SourceImage string
+	// Stack is the builder stack to use for buildpack based apps
+	Stack string
 }
 
 // PushOption is a single option for configuring a pushConfig
@@ -205,6 +207,12 @@ func (opts PushOptions) SourceImage() string {
 	return opts.toConfig().SourceImage
 }
 
+// Stack returns the last set value for Stack or the empty value
+// if not set.
+func (opts PushOptions) Stack() string {
+	return opts.toConfig().Stack
+}
+
 // WithPushBuildpack creates an Option that sets skip the detect buildpack step and use the given name
 func WithPushBuildpack(val string) PushOption {
 	return func(cfg *pushConfig) {
@@ -335,6 +343,13 @@ func WithPushServiceBindings(val []v1alpha1.AppSpecServiceBinding) PushOption {
 func WithPushSourceImage(val string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.SourceImage = val
+	}
+}
+
+// WithPushStack creates an Option that sets the builder stack to use for buildpack based apps
+func WithPushStack(val string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.Stack = val
 	}
 }
 

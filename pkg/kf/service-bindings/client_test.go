@@ -57,26 +57,26 @@ func TestClient_Create(t *testing.T) {
 	cases := map[string]ServiceBindingApiTestCase{
 		"server error": {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.appsClient.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("api error"))
+				deps.appsClient.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api error"))
 				_, err := client.Create("mydb", "myapp")
 				testutil.AssertErrorsEqual(t, errors.New("api error"), err)
 			},
 		},
 		"custom namespace": {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.appsClient.EXPECT().Transform("custom-ns", gomock.Any(), gomock.Any()).Return(nil)
+				deps.appsClient.EXPECT().Transform("custom-ns", gomock.Any(), gomock.Any()).Return(nil, nil)
 				_, err := client.Create("mydb", "myapp", servicebindings.WithCreateNamespace("custom-ns"))
 				testutil.AssertNil(t, "create err", err)
 			},
 		},
 		"default values": {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.appsClient.EXPECT().Transform("default", gomock.Any(), gomock.Any()).DoAndReturn(func(ns, appName string, transformer apps.Mutator) error {
+				deps.appsClient.EXPECT().Transform("default", gomock.Any(), gomock.Any()).DoAndReturn(func(ns, appName string, transformer apps.Mutator) (*kfv1alpha1.App, error) {
 					app := &kfv1alpha1.App{}
 					err := transformer(app)
 					testutil.AssertNil(t, "err", err)
 					testutil.AssertEqual(t, "Spec.InstanceRef.Name", "mydb", app.Spec.ServiceBindings[0].Instance)
-					return nil
+					return app, nil
 				})
 
 				_, err := client.Create("mydb", "myapp")
@@ -85,14 +85,14 @@ func TestClient_Create(t *testing.T) {
 		},
 		"custom values": {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.appsClient.EXPECT().Transform("custom-ns", "myapp", gomock.Any()).DoAndReturn(func(ns, appName string, transformer apps.Mutator) error {
+				deps.appsClient.EXPECT().Transform("custom-ns", "myapp", gomock.Any()).DoAndReturn(func(ns, appName string, transformer apps.Mutator) (*kfv1alpha1.App, error) {
 					app := &kfv1alpha1.App{}
 					err := transformer(app)
 					testutil.AssertNil(t, "err", err)
 					testutil.AssertEqual(t, "Spec.InstanceRef.Name", "mydb", app.Spec.ServiceBindings[0].Instance)
 					testutil.AssertEqual(t, "Spec.BindingName", "binding-name", app.Spec.ServiceBindings[0].BindingName)
 					testutil.AssertEqual(t, "Spec.InstanceRef.Parameters", `{"username":"my-user"}`, string(app.Spec.ServiceBindings[0].Parameters))
-					return nil
+					return app, nil
 				})
 
 				_, err := client.Create("mydb", "myapp",
@@ -113,7 +113,7 @@ func TestClient_Delete(t *testing.T) {
 	cases := map[string]ServiceBindingApiTestCase{
 		"api-error": {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.appsClient.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("api-error"))
+				deps.appsClient.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api-error"))
 
 				err := client.Delete("mydb", "myapp")
 				testutil.AssertErrorsEqual(t, errors.New("api-error"), err)
@@ -121,7 +121,7 @@ func TestClient_Delete(t *testing.T) {
 		},
 		"default options": {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.appsClient.EXPECT().Transform("default", "myapp", gomock.Any()).Return(nil)
+				deps.appsClient.EXPECT().Transform("default", "myapp", gomock.Any()).Return(nil, nil)
 
 				err := client.Delete("mydb", "myapp")
 				testutil.AssertNil(t, "delete err", err)
@@ -129,7 +129,7 @@ func TestClient_Delete(t *testing.T) {
 		},
 		"full options": {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.appsClient.EXPECT().Transform("custom-ns", "myapp2", gomock.Any()).Return(nil)
+				deps.appsClient.EXPECT().Transform("custom-ns", "myapp2", gomock.Any()).Return(nil, nil)
 
 				err := client.Delete("mydb2", "myapp2", servicebindings.WithDeleteNamespace("custom-ns"))
 				testutil.AssertNil(t, "delete err", err)

@@ -48,13 +48,13 @@ func NewSetEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command 
 				{Name: name, Value: value},
 			}
 
-			mutator := func(app *v1alpha1.App) error {
+			_, err := appClient.Transform(p.Namespace, appName, func(app *v1alpha1.App) error {
 				kfapp := (*apps.KfApp)(app)
 				kfapp.MergeEnvVars(toSet)
 				return nil
-			}
+			})
 
-			if err := appClient.Transform(p.Namespace, appName, mutator); err != nil {
+			if err != nil {
 				return fmt.Errorf("failed to set env var on app: %s", err)
 			}
 

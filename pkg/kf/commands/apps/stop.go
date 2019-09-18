@@ -49,7 +49,7 @@ func NewStopCommand(
 				return nil
 			}
 
-			if err := client.Transform(p.Namespace, appName, mutator); err != nil {
+			if _, err := client.Transform(p.Namespace, appName, mutator); err != nil {
 				return fmt.Errorf("failed to stop app: %s", err)
 			}
 
