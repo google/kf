@@ -201,7 +201,7 @@ for more info.
 	return nil
 }
 
-// Buildpack joings toegether the buildpacks in order as a CSV to be compatible
+// Buildpack joins together the buildpacks in order as a CSV to be compatible
 // with buildpacks v3. If no buildpacks are specified, the legacy buildpack
 // field is checked.
 func (app *Application) Buildpack() string {
