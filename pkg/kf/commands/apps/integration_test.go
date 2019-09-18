@@ -78,6 +78,9 @@ func TestIntegration_Push_update(t *testing.T) {
 		kf.Push(ctx, appName,
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/helloworld"),
 		)
+		// XXX: it takes a moment after the app becomes ready to reconcile the
+		// routes
+		time.Sleep(3 * time.Second)
 		checkHelloWorldApp(ctx, t, kf, appName, 8088, ExpectedAddr(appName, ""))
 	})
 }
