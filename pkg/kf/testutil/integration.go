@@ -16,7 +16,9 @@ package testutil
 
 import (
 	"bufio"
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -125,12 +127,26 @@ type KfTestOutput struct {
 	Done   <-chan struct{}
 }
 
-func kf(ctx context.Context, t *testing.T, binaryPath string, cfg KfTestConfig) (KfTestOutput, <-chan error) {
+// Kf provides a DSL for running integration tests.
+type Kf struct {
+	t          *testing.T
+	binaryPath string
+}
+
+// NewKf creates a Kf for running tests with.
+func NewKf(t *testing.T, binaryPath string) *Kf {
+	return &Kf{
+		t:          t,
+		binaryPath: binaryPath,
+	}
+}
+
+func (k *Kf) kf(ctx context.Context, t *testing.T, cfg KfTestConfig) (KfTestOutput, <-chan error) {
 	t.Helper()
 
 	Logf(t, "kf %s\n", strings.Join(cfg.Args, " "))
 
-	cmd := exec.CommandContext(ctx, binaryPath, cfg.Args...)
+	cmd := exec.CommandContext(ctx, k.binaryPath, cfg.Args...)
 	for name, value := range cfg.Env {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", name, value))
 	}
@@ -166,8 +182,26 @@ func kf(ctx context.Context, t *testing.T, binaryPath string, cfg KfTestConfig) 
 	}, errs
 }
 
-// KfInvoker will synchronously invoke `kf` with the given configuration.
-type KfInvoker func(context.Context, *testing.T, KfTestConfig) (KfTestOutput, <-chan error)
+// RunSynchronous runs kf with the provided configuration and returns the
+// results.
+func (k *Kf) RunSynchronous(ctx context.Context, cfg KfTestConfig) (stdout, stderr []byte, err error) {
+	k.t.Helper()
+	Logf(k.t, "kf %s\n", strings.Join(cfg.Args, " "))
+
+	var stdoutBuf, stderrBuf bytes.Buffer
+
+	cmd := exec.CommandContext(ctx, k.binaryPath, cfg.Args...)
+	for name, value := range cfg.Env {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", name, value))
+	}
+	cmd.Stdout = &stdoutBuf
+	cmd.Stderr = &stderrBuf
+
+	err = cmd.Run()
+	stdout = stdoutBuf.Bytes()
+	stderr = stderrBuf.Bytes()
+	return
+}
 
 // KfTest is a test ran by RunKfTest.
 type KfTest func(ctx context.Context, t *testing.T, kf *Kf)
@@ -187,9 +221,7 @@ func RunKfTest(t *testing.T, test KfTest) {
 	RunIntegrationTest(t, func(ctx context.Context, t *testing.T) {
 		t.Helper()
 
-		kf := KF(t, func(ctx context.Context, t *testing.T, cfg KfTestConfig) (KfTestOutput, <-chan error) {
-			return kf(ctx, t, kfPath, cfg)
-		})
+		kf := NewKf(t, kfPath)
 
 		// Create the space
 		spaceName := fmt.Sprintf("apps-integration-test-%d", time.Now().UnixNano())
@@ -477,20 +509,6 @@ func RetryPost(
 	}
 }
 
-// Kf provides a DSL for running integration tests.
-type Kf struct {
-	t  *testing.T
-	kf KfInvoker
-}
-
-// KF returns a kf.
-func KF(t *testing.T, kf KfInvoker) *Kf {
-	return &Kf{
-		t:  t,
-		kf: kf,
-	}
-}
-
 // CreateQuota creates a resourcequota.
 func (k *Kf) CreateQuota(ctx context.Context, quotaName string, extraArgs ...string) ([]string, error) {
 	k.t.Helper()
@@ -669,6 +687,33 @@ func (k *Kf) Apps(ctx context.Context) map[string]AppInfo {
 	}
 
 	return results
+}
+
+// App gets a single app by name and returns its JSON representation.
+func (k *Kf) App(ctx context.Context, name string) json.RawMessage {
+	k.t.Helper()
+
+	Logf(k.t, "getting app %s", name)
+	defer Logf(k.t, "done getting app %s", name)
+
+	stdout, _, err := k.RunSynchronous(ctx, KfTestConfig{
+		Args: []string{
+			"app",
+			"--namespace", SpaceFromContext(ctx),
+			"-o", "json",
+			name,
+		},
+	})
+
+	if err != nil {
+		k.t.Fatal(err)
+	}
+
+	if !json.Valid(stdout) {
+		k.t.Fatal("App JSON was invalid:", string(stdout))
+	}
+
+	return stdout
 }
 
 // Delete deletes an application.
