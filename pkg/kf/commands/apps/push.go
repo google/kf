@@ -92,6 +92,7 @@ func NewPushCommand(
 		memoryRequest      *resource.Quantity
 		storageRequest     *resource.Quantity
 		cpuRequest         *resource.Quantity
+		startupCommand     string
 
 		// Route Flags
 		rawRoutes         []string
@@ -163,6 +164,10 @@ func NewPushCommand(
 			{
 				overrides.Docker.Image = containerImage
 				overrides.Stack = stack
+
+				if startupCommand != "" {
+					overrides.Command = manifest.NewLauncherCommand(startupCommand)
+				}
 
 				// Read environment variables from cli args
 				envVars, err := envutil.ParseCLIEnvVars(envs)
@@ -298,6 +303,8 @@ func NewPushCommand(
 					apps.WithPushHealthCheck(healthCheck),
 					apps.WithPushRandomRouteDomain(randomRouteDomain),
 					apps.WithPushDefaultRouteDomain(defaultRouteDomain),
+					apps.WithPushCommand(app.Command.Entrypoint()),
+					apps.WithPushArgs(app.Command.Args()),
 				}
 
 				if app.Docker.Image == "" {
@@ -512,6 +519,14 @@ func NewPushCommand(
 		"route",
 		nil,
 		"Use the routes flag to provide multiple HTTP and TCP routes. Each route for this app is created if it does not already exist.",
+	)
+
+	pushCmd.Flags().StringVarP(
+		&startupCommand,
+		"command",
+		"c",
+		"",
+		"Startup command for the app, this overrides the default command specified by the web process.",
 	)
 
 	return pushCmd

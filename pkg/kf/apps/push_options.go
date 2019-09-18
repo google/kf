@@ -25,10 +25,14 @@ import (
 )
 
 type pushConfig struct {
+	// Args is the app container arguments
+	Args []string
 	// Buildpack is skip the detect buildpack step and use the given name
 	Buildpack string
 	// CPU is app CPU request
 	CPU *resource.Quantity
+	// Command is the app container entrypoint
+	Command []string
 	// ContainerImage is the container to deploy
 	ContainerImage string
 	// DefaultRouteDomain is Domain for a defaultroute. Only used if a route doesn't already exist
@@ -93,6 +97,12 @@ func (opts PushOptions) Extend(other PushOptions) PushOptions {
 	return out
 }
 
+// Args returns the last set value for Args or the empty value
+// if not set.
+func (opts PushOptions) Args() []string {
+	return opts.toConfig().Args
+}
+
 // Buildpack returns the last set value for Buildpack or the empty value
 // if not set.
 func (opts PushOptions) Buildpack() string {
@@ -103,6 +113,12 @@ func (opts PushOptions) Buildpack() string {
 // if not set.
 func (opts PushOptions) CPU() *resource.Quantity {
 	return opts.toConfig().CPU
+}
+
+// Command returns the last set value for Command or the empty value
+// if not set.
+func (opts PushOptions) Command() []string {
+	return opts.toConfig().Command
 }
 
 // ContainerImage returns the last set value for ContainerImage or the empty value
@@ -213,6 +229,13 @@ func (opts PushOptions) Stack() string {
 	return opts.toConfig().Stack
 }
 
+// WithPushArgs creates an Option that sets the app container arguments
+func WithPushArgs(val []string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.Args = val
+	}
+}
+
 // WithPushBuildpack creates an Option that sets skip the detect buildpack step and use the given name
 func WithPushBuildpack(val string) PushOption {
 	return func(cfg *pushConfig) {
@@ -224,6 +247,13 @@ func WithPushBuildpack(val string) PushOption {
 func WithPushCPU(val *resource.Quantity) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.CPU = val
+	}
+}
+
+// WithPushCommand creates an Option that sets the app container entrypoint
+func WithPushCommand(val []string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.Command = val
 	}
 }
 

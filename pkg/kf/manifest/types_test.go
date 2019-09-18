@@ -16,6 +16,7 @@ package manifest
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/google/kf/pkg/kf/testutil"
@@ -54,4 +55,24 @@ func TestCommand_UnmarshalJSON(t *testing.T) {
 			testutil.AssertEqual(t, "commands", tc.expectedCommand, cmd)
 		})
 	}
+}
+
+func ExampleCommand_blank() {
+	cmd := Command(nil)
+	fmt.Printf("Entyrpoint: %v\n", cmd.Entrypoint())
+	fmt.Printf("Args: %v\n", cmd.Args())
+
+	//cmd := Command{"/bin/sh", "-e", "echo $HOME"}
+
+	// Output: Entyrpoint: []
+	// Args: []
+}
+
+func ExampleCommand_filled() {
+	cmd := Command{"/bin/sh", "-e", "echo $HOME"}
+	fmt.Printf("Entyrpoint: %v\n", cmd.Entrypoint())
+	fmt.Printf("Args: %v\n", cmd.Args())
+
+	// Output: Entyrpoint: [/bin/sh]
+	// Args: [-e echo $HOME]
 }

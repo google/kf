@@ -74,6 +74,8 @@ func newApp(appName string, opts ...PushOption) (*v1alpha1.App, error) {
 	app.SetHealthCheck(cfg.HealthCheck)
 	app.Spec.Routes = cfg.Routes
 	app.Spec.ServiceBindings = cfg.ServiceBindings
+	app.SetCommand(cfg.Command)
+	app.SetArgs(cfg.Args)
 
 	if cfg.Grpc {
 		app.SetContainerPorts([]corev1.ContainerPort{{Name: "h2c", ContainerPort: 8080}})

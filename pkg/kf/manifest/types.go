@@ -33,9 +33,16 @@ var (
 	ErrCommandUnmarshal = errors.New("couldn't unmarshal command")
 )
 
-// Command is a union type to represent the command to run in the contianer.
+// NewLauncherCommand creates a command that gets run by the container launcher
+// process. This command could either be a shell command, or a named process
+// e.g. "web".
+func NewLauncherCommand(launcherProcess string) Command {
+	return Command{LauncherPath, launcherProcess}
+}
+
+// Command is a union type to represent the command to run in the container.
 // If the manifest specifies a string then it is converted to a launched process
-// in the contianer. However, if the user enters a Docker style array then the
+// in the container. However, if the user enters a Docker style array then the
 // arguments are passed directly.
 type Command []string
 
@@ -49,9 +56,28 @@ func (c *Command) UnmarshalJSON(data []byte) error {
 
 	var commandString string
 	if err := json.Unmarshal(data, &commandString); err == nil {
-		*c = []string{LauncherPath, commandString}
+		*c = NewLauncherCommand(commandString)
 		return nil
 	}
 
 	return ErrCommandUnmarshal
+}
+
+// Entrypoint returns the container entrypoint if it's defined or nil.
+// This can be set on a Pod's command field.
+func (c *Command) Entrypoint() []string {
+	if len(*c) > 0 {
+		return (*c)[0:1]
+	}
+
+	return nil
+}
+
+// Args returns the container args if they're defined or nil.
+func (c *Command) Args() []string {
+	if len(*c) > 1 {
+		return (*c)[1:]
+	}
+
+	return nil
 }

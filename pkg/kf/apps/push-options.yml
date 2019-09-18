@@ -68,4 +68,10 @@ configs:
   - name: ServiceBindings
     type: "[]v1alpha1.AppSpecServiceBinding"
     description: a list of Services to bind to the app
+  - name: Command
+    type: "[]string"
+    description: the app container entrypoint
+  - name: Args
+    type: "[]string"
+    description: the app container arguments
 - name: Deploy

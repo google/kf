@@ -28,6 +28,7 @@ kf push APP_NAME [flags]
 
 ```
   -b, --buildpack string            Skip the 'detect' buildpack step and use the given name.
+  -c, --command string              Startup command for the app, this overrides the default command specified by the web process.
       --container-registry string   Container registry to push sources to. Required for buildpack builds not targeting a Kf space.
       --docker-image string         Docker image to deploy.
   -e, --env stringArray             Set environment variables. Multiple can be set by using the flag multiple times (e.g., NAME=VALUE).

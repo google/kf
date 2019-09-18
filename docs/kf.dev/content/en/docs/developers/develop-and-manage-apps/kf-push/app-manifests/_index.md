@@ -39,7 +39,7 @@ The following fields are valid for objects under `applications`:
 | **timeout** | int | The number of seconds to wait for the app to become healthy. |
 | **health-check-type** | string | The type of health-check to use `port`, `none`, or `http`. Default: `port` |
 | **health-check-http-endpoint** | string | The endpoint to target as part of the health-check. Only valid if `health-check-type` is `http`. |
-
+| **command** | string or string[] | The command that starts the app. See below for more information. |
 
 ## Docker Fields
 
@@ -56,6 +56,23 @@ The following fields are valid for `application.routes` objects:
 | Field | Type | Description |
 |:------|:-----|:------------|
 | **route** | string | A route to the app including hostname, domain, and path. |
+
+## Command
+
+The command field can be used to run a shell script, launch a process type
+defined by a `procfile` or run a specific command on a docker container.
+
+If the field is a string, the container's entrypoint will be set to
+`/lifecycle/launcher` and the value of command will be passed as the first
+argument. On buildpack based applications, this entrypoint does the following:
+
+1. If no argument is provided, start the default process.
+2. If an argument is provided and it matches a `procfile` entry, start that process.
+3. Else, run the argument in a shell.
+
+If the field is an array, the first element will be used as the entrypoint and
+subsequent elements will be used as arguments. This allows you to completely
+override the launch process for both buildpack and Docker based apps.
 
 ## Examples
 
