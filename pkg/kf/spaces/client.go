@@ -26,11 +26,8 @@ type ClientExtension interface {
 // NewClient creates a new space client.
 func NewClient(kclient cv1alpha1.SpacesGetter) Client {
 	return &coreClient{
-		kclient: kclient,
-		upsertMutate: MutatorList{
-			LabelSetMutator(map[string]string{"app.kubernetes.io/managed-by": "kf"}),
-		},
-		membershipValidator: AllPredicate(), // all spaces can be managed by Kf
+		kclient:      kclient,
+		upsertMutate: MutatorList{},
 	}
 }
 
