@@ -23,6 +23,7 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/google/kf/pkg/reconciler/route/resources"
+	"github.com/knative/serving/pkg/network"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	istio "knative.dev/pkg/apis/istio/common/v1alpha1"
 	networking "knative.dev/pkg/apis/istio/v1alpha3"
@@ -187,6 +188,9 @@ func TestMakeVirtualService(t *testing.T) {
 					},
 					Weight: 100,
 				}, v.Spec.HTTP[0].Route[0])
+				testutil.AssertEqual(t, "HTTP Rewrite", &networking.HTTPRewrite{
+					Authority: network.GetServiceHostname("some-app-name", "some-namespace"),
+				}, v.Spec.HTTP[0].Rewrite)
 			},
 		},
 		"when there aren't any bound services, setup fault to 503": {
@@ -251,6 +255,9 @@ func TestMakeVirtualService(t *testing.T) {
 					},
 					Weight: 100,
 				}, v.Spec.HTTP[0].Route[0])
+				testutil.AssertEqual(t, "HTTP Rewrite", &networking.HTTPRewrite{
+					Authority: network.GetServiceHostname("ksvc-1", "some-namespace"),
+				}, v.Spec.HTTP[0].Rewrite)
 				testutil.AssertEqual(t, "HTTP Match len", 1, len(v.Spec.HTTP[0].Match))
 				testutil.AssertEqual(t, "HTTP Match", "^/some-path(/.*)?", v.Spec.HTTP[0].Match[0].URI.Regex)
 			},
