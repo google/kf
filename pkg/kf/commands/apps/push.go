@@ -73,26 +73,28 @@ func NewPushCommand(
 	serviceBindingClient servicebindings.ClientInterface,
 ) *cobra.Command {
 	var (
-		containerRegistry  string
-		sourceImage        string
-		containerImage     string
-		manifestFile       string
-		instances          int
-		minScale           int
-		maxScale           int
-		path               string
-		buildpack          string
-		stack              string
-		envs               []string
-		grpc               bool
-		noManifest         bool
-		noStart            bool
-		healthCheckType    string
-		healthCheckTimeout int
-		memoryRequest      *resource.Quantity
-		storageRequest     *resource.Quantity
-		cpuRequest         *resource.Quantity
-		startupCommand     string
+		containerRegistry   string
+		sourceImage         string
+		containerImage      string
+		manifestFile        string
+		instances           int
+		minScale            int
+		maxScale            int
+		path                string
+		buildpack           string
+		stack               string
+		envs                []string
+		grpc                bool
+		noManifest          bool
+		noStart             bool
+		healthCheckType     string
+		healthCheckTimeout  int
+		memoryRequest       *resource.Quantity
+		storageRequest      *resource.Quantity
+		cpuRequest          *resource.Quantity
+		startupCommand      string
+		containerEntrypoint string
+		containerArgs       []string
 
 		// Route Flags
 		rawRoutes         []string
@@ -164,10 +166,9 @@ func NewPushCommand(
 			{
 				overrides.Docker.Image = containerImage
 				overrides.Stack = stack
-
-				if startupCommand != "" {
-					overrides.Command = manifest.NewLauncherCommand(startupCommand)
-				}
+				overrides.Command = startupCommand
+				overrides.Args = containerArgs
+				overrides.Entrypoint = containerEntrypoint
 
 				// Read environment variables from cli args
 				envVars, err := envutil.ParseCLIEnvVars(envs)
@@ -303,8 +304,8 @@ func NewPushCommand(
 					apps.WithPushHealthCheck(healthCheck),
 					apps.WithPushRandomRouteDomain(randomRouteDomain),
 					apps.WithPushDefaultRouteDomain(defaultRouteDomain),
-					apps.WithPushCommand(app.Command.Entrypoint()),
-					apps.WithPushArgs(app.Command.Args()),
+					apps.WithPushCommand(app.CommandEntrypoint()),
+					apps.WithPushArgs(app.CommandArgs()),
 				}
 
 				if app.Docker.Image == "" {
@@ -527,6 +528,20 @@ func NewPushCommand(
 		"c",
 		"",
 		"Startup command for the app, this overrides the default command specified by the web process.",
+	)
+
+	pushCmd.Flags().StringVar(
+		&containerEntrypoint,
+		"entrypoint",
+		"",
+		"Overwrite the default entrypoint of the image.",
+	)
+
+	pushCmd.Flags().StringArrayVar(
+		&containerArgs,
+		"args",
+		nil,
+		"Overwrite the args for the image.",
 	)
 
 	return pushCmd

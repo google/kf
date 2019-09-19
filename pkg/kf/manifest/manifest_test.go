@@ -108,7 +108,7 @@ applications:
 				Applications: []manifest.Application{
 					{
 						Name:    "CUSTOM_START",
-						Command: manifest.Command{"/lifecycle/launcher", "rake run $VAR"},
+						Command: "rake run $VAR",
 					},
 				},
 			},
@@ -117,13 +117,15 @@ applications:
 			fileContent: `---
 applications:
 - name: CUSTOM_START
-  command: ["python", "-m", "SimpleHTTPServer"]
+  entrypoint: python
+  args: ["-m", "SimpleHTTPServer"]
 `,
 			expected: &manifest.Manifest{
 				Applications: []manifest.Application{
 					{
-						Name:    "CUSTOM_START",
-						Command: []string{"python", "-m", "SimpleHTTPServer"},
+						Name:       "CUSTOM_START",
+						Entrypoint: "python",
+						Args:       []string{"-m", "SimpleHTTPServer"},
 					},
 				},
 			},
@@ -247,4 +249,36 @@ func ExampleApplication_Buildpack() {
 	// Output: Legacy: hidden-legacy-buildpack
 	// One: java
 	// Two: maven,java
+}
+
+func ExampleApplication_CommandArgs() {
+	app := manifest.Application{}
+	fmt.Printf("Blank: %v\n", app.CommandArgs())
+
+	app = manifest.Application{
+		Command: "start.sh && exit 1",
+	}
+	fmt.Printf("Command: %v\n", app.CommandArgs())
+
+	app = manifest.Application{
+		Args: []string{"-m", "SimpleHTTPServer"},
+	}
+	fmt.Printf("Args: %v\n", app.CommandArgs())
+
+	// Output: Blank: []
+	// Command: [start.sh && exit 1]
+	// Args: [-m SimpleHTTPServer]
+}
+
+func ExampleApplication_CommandEntrypoint() {
+	app := manifest.Application{}
+	fmt.Printf("Blank: %v\n", app.CommandEntrypoint())
+
+	app = manifest.Application{
+		Entrypoint: "python",
+	}
+	fmt.Printf("Entrypoint: %v\n", app.CommandEntrypoint())
+
+	// Output: Blank: []
+	// Entrypoint: [python]
 }

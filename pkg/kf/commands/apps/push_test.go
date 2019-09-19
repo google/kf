@@ -93,7 +93,9 @@ func TestPushCommand(t *testing.T) {
 				"-u", "http",
 				"-t", "28",
 				"-s", "cflinuxfs3",
-				"--command", "app",
+				"--entrypoint", "start-web.sh",
+				"--args", "a",
+				"--args", "b",
 			},
 			wantImagePrefix: "some-reg.io/src-some-namespace-example-app",
 			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
@@ -109,8 +111,8 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushEnvironmentVariables(map[string]string{"env1": "val1", "env2": "val2"}),
 				apps.WithPushNoStart(true),
 				apps.WithPushExactScale(intPtr(1)),
-				apps.WithPushArgs([]string{"app"}),
-				apps.WithPushCommand([]string{"/lifecycle/launcher"}),
+				apps.WithPushArgs([]string{"a", "b"}),
+				apps.WithPushCommand([]string{"start-web.sh"}),
 				apps.WithPushHealthCheck(&corev1.Probe{
 					TimeoutSeconds: 28,
 					Handler: corev1.Handler{
