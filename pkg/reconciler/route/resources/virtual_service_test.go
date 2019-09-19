@@ -23,7 +23,6 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/google/kf/pkg/reconciler/route/resources"
-	"github.com/knative/serving/pkg/network"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	istio "knative.dev/pkg/apis/istio/common/v1alpha1"
 	networking "knative.dev/pkg/apis/istio/v1alpha3"
@@ -184,7 +183,7 @@ func TestMakeVirtualService(t *testing.T) {
 				testutil.AssertEqual(t, "HTTP len", 1, len(v.Spec.HTTP))
 				testutil.AssertEqual(t, "HTTP route destination", networking.HTTPRouteDestination{
 					Destination: networking.Destination{
-						Host: network.GetServiceHostname("some-app-name", "some-namespace"),
+						Host: "istio-ingressgateway.istio-system.svc.cluster.local",
 					},
 					Weight: 100,
 				}, v.Spec.HTTP[0].Route[0])
@@ -248,7 +247,7 @@ func TestMakeVirtualService(t *testing.T) {
 				testutil.AssertEqual(t, "HTTP len", 1, len(v.Spec.HTTP))
 				testutil.AssertEqual(t, "HTTP route destination", networking.HTTPRouteDestination{
 					Destination: networking.Destination{
-						Host: network.GetServiceHostname("ksvc-1", "some-namespace"),
+						Host: "istio-ingressgateway.istio-system.svc.cluster.local",
 					},
 					Weight: 100,
 				}, v.Spec.HTTP[0].Route[0])

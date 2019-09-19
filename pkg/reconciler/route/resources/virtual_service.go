@@ -31,7 +31,7 @@ import (
 const (
 	ManagedByLabel        = "app.kubernetes.io/managed-by"
 	KnativeIngressGateway = "knative-ingress-gateway.knative-serving.svc.cluster.local"
-	DefaultGatewayHost    = "istio-ingressgateway.istio-system.svc.cluster.local"
+	GatewayHost           = "istio-ingressgateway.istio-system.svc.cluster.local"
 )
 
 // MakeVirtualServiceLabels creates Labels that can be used to tie a
@@ -149,7 +149,10 @@ func buildHTTPRoute(namespace, urlPath string, appNames []string) ([]networking.
 	for _, appName := range appNames {
 		httpRoutes = append(httpRoutes, networking.HTTPRoute{
 			Match: pathMatchers,
-			Route: buildRouteDestination(appName, namespace),
+			Route: buildRouteDestination(),
+			Rewrite: &networking.HTTPRewrite{
+				Authority: network.GetServiceHostname(appName, namespace),
+			},
 		})
 	}
 
@@ -165,7 +168,7 @@ func buildHTTPRoute(namespace, urlPath string, appNames []string) ([]networking.
 						HTTPStatus: http.StatusServiceUnavailable,
 					},
 				},
-				Route: buildDefaultRouteDestination(),
+				Route: buildRouteDestination(),
 			},
 		}, nil
 	}
@@ -173,22 +176,11 @@ func buildHTTPRoute(namespace, urlPath string, appNames []string) ([]networking.
 	return httpRoutes, nil
 }
 
-func buildRouteDestination(appName string, namespace string) []networking.HTTPRouteDestination {
+func buildRouteDestination() []networking.HTTPRouteDestination {
 	return []networking.HTTPRouteDestination{
 		{
 			Destination: networking.Destination{
-				Host: network.GetServiceHostname(appName, namespace),
-			},
-			Weight: 100,
-		},
-	}
-}
-
-func buildDefaultRouteDestination() []networking.HTTPRouteDestination {
-	return []networking.HTTPRouteDestination{
-		{
-			Destination: networking.Destination{
-				Host: DefaultGatewayHost,
+				Host: GatewayHost,
 			},
 			Weight: 100,
 		},
