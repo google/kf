@@ -83,7 +83,7 @@ func (c *Client) Create(serviceInstanceName, appName string, opts ...CreateOptio
 		Parameters:  parameters,
 		BindingName: bindingName,
 	}
-	err = c.appsClient.Transform(cfg.Namespace, appName, func(app *v1alpha1.App) error {
+	_, err = c.appsClient.Transform(cfg.Namespace, appName, func(app *v1alpha1.App) error {
 		BindService(app, binding)
 		return nil
 	})
@@ -97,10 +97,11 @@ func (c *Client) Create(serviceInstanceName, appName string, opts ...CreateOptio
 // Delete unbinds a service instance from an app.
 func (c *Client) Delete(serviceInstanceName, appName string, opts ...DeleteOption) error {
 	cfg := DeleteOptionDefaults().Extend(opts).toConfig()
-	return c.appsClient.Transform(cfg.Namespace, appName, func(app *v1alpha1.App) error {
+	_, err := c.appsClient.Transform(cfg.Namespace, appName, func(app *v1alpha1.App) error {
 		UnbindService(app, serviceInstanceName)
 		return nil
 	})
+	return err
 }
 
 // List queries Kubernetes for service bindings.

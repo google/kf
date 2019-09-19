@@ -63,6 +63,23 @@ applications:
 				},
 			},
 		},
+		"legacy-buildpack": {
+			fileContent: `---
+applications:
+- name: MY-APP
+  stack: cflinuxfs3
+  buildpack: java
+`,
+			expected: &manifest.Manifest{
+				Applications: []manifest.Application{
+					{
+						Name:            "MY-APP",
+						Stack:           "cflinuxfs3",
+						LegacyBuildpack: "java",
+					},
+				},
+			},
+		},
 		"docker": {
 			fileContent: `---
 applications:
@@ -218,12 +235,16 @@ func TestOverride(t *testing.T) {
 
 func ExampleApplication_Buildpack() {
 	app := manifest.Application{}
+	app.LegacyBuildpack = "hidden-legacy-buildpack"
+	fmt.Println("Legacy:", app.Buildpack())
+
 	app.Buildpacks = []string{"java"}
 	fmt.Println("One:", app.Buildpack())
 
 	app.Buildpacks = []string{"maven", "java"}
 	fmt.Println("Two:", app.Buildpack())
 
-	// Output: One: java
+	// Output: Legacy: hidden-legacy-buildpack
+	// One: java
 	// Two: maven,java
 }

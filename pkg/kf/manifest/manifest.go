@@ -30,18 +30,19 @@ import (
 
 // Application is a configuration for a single 12-factor-app.
 type Application struct {
-	Name       string            `json:"name,omitempty"`
-	Path       string            `json:"path,omitempty"`
-	Buildpacks []string          `json:"buildpacks,omitempty"`
-	Stack      string            `json:"stack,omitempty"`
-	Docker     AppDockerImage    `json:"docker,omitempty"`
-	Env        map[string]string `json:"env,omitempty"`
-	Services   []string          `json:"services,omitempty"`
-	DiskQuota  string            `json:"disk_quota,omitempty"`
-	Memory     string            `json:"memory,omitempty"`
-	CPU        string            `json:"cpu,omitempty"`
-	Instances  *int              `json:"instances,omitempty"`
-	Command    Command           `json:"command,omitempty"`
+	Name            string            `json:"name,omitempty"`
+	Path            string            `json:"path,omitempty"`
+	LegacyBuildpack string            `json:"buildpack,omitempty"`
+	Buildpacks      []string          `json:"buildpacks,omitempty"`
+	Stack           string            `json:"stack,omitempty"`
+	Docker          AppDockerImage    `json:"docker,omitempty"`
+	Env             map[string]string `json:"env,omitempty"`
+	Services        []string          `json:"services,omitempty"`
+	DiskQuota       string            `json:"disk_quota,omitempty"`
+	Memory          string            `json:"memory,omitempty"`
+	CPU             string            `json:"cpu,omitempty"`
+	Instances       *int              `json:"instances,omitempty"`
+	Command         Command           `json:"command,omitempty"`
 
 	// TODO(#95): These aren't CF proper. How do we expose these in the
 	// manifest?
@@ -201,8 +202,13 @@ for more info.
 	return nil
 }
 
-// Buildpack joings toegether the buildpacks in order as a CSV to be compatible
-// with buildpacks v3.
+// Buildpack joins together the buildpacks in order as a CSV to be compatible
+// with buildpacks v3. If no buildpacks are specified, the legacy buildpack
+// field is checked.
 func (app *Application) Buildpack() string {
-	return strings.Join(app.Buildpacks, ",")
+	if len(app.Buildpacks) > 0 {
+		return strings.Join(app.Buildpacks, ",")
+	}
+
+	return app.LegacyBuildpack
 }

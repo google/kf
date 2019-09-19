@@ -62,7 +62,7 @@ func TestStop(t *testing.T) {
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().
 					Transform(gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(errors.New("some-error"))
+					Return(nil, errors.New("some-error"))
 			},
 		},
 	}

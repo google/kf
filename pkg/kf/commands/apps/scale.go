@@ -104,7 +104,7 @@ func NewScaleCommand(
 				return nil
 			}
 
-			if err := client.Transform(p.Namespace, appName, mutator); err != nil {
+			if _, err := client.Transform(p.Namespace, appName, mutator); err != nil {
 				return fmt.Errorf("failed to scale app: %s", err)
 			}
 

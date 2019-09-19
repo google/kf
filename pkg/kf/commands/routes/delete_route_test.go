@@ -64,7 +64,7 @@ func TestDeleteRoute(t *testing.T) {
 					Return([]v1alpha1.App{{}}, nil)
 				fakeApps.EXPECT().
 					Transform(gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(errors.New("some-error"))
+					Return(nil, errors.New("some-error"))
 			},
 			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
 				testutil.AssertErrorsEqual(t, errors.New("failed to unmap Route: some-error"), err)
