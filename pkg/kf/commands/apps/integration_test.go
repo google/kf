@@ -287,6 +287,7 @@ func TestIntegration_Envs(t *testing.T) {
 
 		t.Run("overwrite envs", func(t *testing.T) {
 			t.Skip("this is flaky as knative isn't fast at updating the env values")
+			// TODO (#699): Stop using panics for flow control
 			// Unset the environment variables ENV1.
 			RetryOnPanic(ctx, t, func() { kf.UnsetEnv(ctx, appName, "ENV1") })
 

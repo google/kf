@@ -433,6 +433,13 @@ func InjectUnmapRoute(p *config.KfParams) *cobra.Command {
 	return command
 }
 
+func InjectProxyRoute(p *config.KfParams) *cobra.Command {
+	kubernetesInterface := config.GetKubernetes(p)
+	ingressLister := istio.NewIstioClient(kubernetesInterface)
+	command := routes2.NewProxyRouteCommand(p, ingressLister)
+	return command
+}
+
 func InjectBuilds(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	sourcesGetter := provideKfSources(kfV1alpha1Interface)
