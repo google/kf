@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package apps
+package routes
 
 import (
 	"fmt"
 	"net"
 	"net/http"
 
-	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
@@ -27,8 +26,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewProxyCommand creates a command capable of proxying a remote server locally.
-func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister istio.IngressLister) *cobra.Command {
+// NewProxyRouteCommand creates a command capable of proxying a remote server locally.
+func NewProxyRouteCommand(p *config.KfParams, ingressLister istio.IngressLister) *cobra.Command {
 	var (
 		gateway string
 		port    int
@@ -36,12 +35,12 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister i
 	)
 
 	cmd := &cobra.Command{
-		Use:     "proxy APP_NAME",
-		Short:   "Create a proxy to an app on a local port",
-		Example: `kf proxy myapp`,
+		Use:     "proxy-route ROUTE",
+		Short:   "Create a proxy to a route on a local port",
+		Example: `kf proxy-route myhost.example.com`,
 		Long: `
 	This command creates a local proxy to a remote gateway modifying the request
-	headers to make requests route to your app.
+	headers to make requests with the host set as the specified route.
 
 	You can manually specify the gateway or have it autodetected based on your
 	cluster.`,
@@ -51,19 +50,8 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister i
 				return err
 			}
 
-			appName := args[0]
-
+			routeHost := args[0]
 			cmd.SilenceUsage = true
-
-			app, err := appsClient.Get(p.Namespace, appName)
-			if err != nil {
-				return err
-			}
-
-			url := app.Status.URL
-			if url == nil {
-				return fmt.Errorf("No route for app %s", appName)
-			}
 
 			if gateway == "" {
 				fmt.Fprintln(cmd.OutOrStdout(), "Autodetecting app gateway. Specify a custom gateway using the --gateway flag.")
@@ -80,19 +68,16 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister i
 				return err
 			}
 
-			appHost := url.Host
 			w := cmd.OutOrStdout()
 
 			if noStart {
-				fmt.Fprintln(w, "exiting because no-start flag was provided")
-				utils.PrintCurlExamples(w, listener, appHost, gateway, false)
+				fmt.Fprintln(w, "exiting proxy because no-start flag was provided")
+				utils.PrintCurlExamples(w, listener, routeHost, gateway, false)
 				return nil
 			}
 
-			utils.PrintCurlExamples(w, listener, appHost, gateway, true)
-			fmt.Fprintln(w, "\033[33mNOTE: the first request may take some time if the app is scaled to zero\033[0m")
-
-			return http.Serve(listener, utils.CreateProxy(cmd.OutOrStdout(), app.Status.URL.Host, gateway))
+			utils.PrintCurlExamples(w, listener, routeHost, gateway, true)
+			return http.Serve(listener, utils.CreateProxy(cmd.OutOrStdout(), routeHost, gateway))
 		},
 	}
 

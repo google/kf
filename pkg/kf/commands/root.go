@@ -115,6 +115,7 @@ func NewKfCommand() *cobra.Command {
 				InjectDeleteRoute(p),
 				InjectMapRoute(p),
 				InjectUnmapRoute(p),
+				InjectProxyRoute(p),
 			},
 		},
 		{

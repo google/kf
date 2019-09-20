@@ -419,6 +419,15 @@ func InjectUnmapRoute(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
+func InjectProxyRoute(p *config.KfParams) *cobra.Command {
+	wire.Build(
+		croutes.NewProxyRouteCommand,
+		istio.NewIstioClient,
+		config.GetKubernetes,
+	)
+	return nil
+}
+
 ////////////////////
 // Builds Command //
 ////////////////////

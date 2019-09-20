@@ -91,7 +91,6 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 		if route.Spec.AppName != "" {
 			appNames = append(appNames, route.Spec.AppName)
 		}
-
 		httpRoute, err := buildHTTPRoute(namespace, urlPath, appNames)
 		if err != nil {
 			return nil, err
@@ -131,7 +130,6 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 
 func buildHTTPRoute(namespace, urlPath string, appNames []string) ([]networking.HTTPRoute, error) {
 	var pathMatchers []networking.HTTPMatchRequest
-
 	urlPath = path.Join("/", urlPath, "/")
 	regexpPath, err := v1alpha1.BuildPathRegexp(urlPath)
 	if err != nil {
@@ -164,13 +162,13 @@ func buildHTTPRoute(namespace, urlPath string, appNames []string) ([]networking.
 		return []networking.HTTPRoute{
 			{
 				Match: pathMatchers,
-				Route: buildRouteDestination(),
 				Fault: &networking.HTTPFaultInjection{
 					Abort: &networking.InjectAbort{
 						Percent:    100,
 						HTTPStatus: http.StatusServiceUnavailable,
 					},
 				},
+				Route: buildRouteDestination(),
 			},
 		}, nil
 	}
