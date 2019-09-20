@@ -54,15 +54,15 @@ type Client interface {
 
 type coreClient struct {
 	kclient {{.ClientType}}
-	upsertMutate MutatorList
+	upsertMutate Mutator
 }
 
 func (core *coreClient) preprocessUpsert(obj *{{.Type}}) error {
-	if err := core.upsertMutate.Apply(obj); err != nil {
-		return err
+	if core.upsertMutate == nil {
+		return nil
 	}
 
-	return nil
+	return core.upsertMutate(obj)
 }
 
 // Create inserts the given {{.Type}} into the cluster.
@@ -133,10 +133,6 @@ func (cfg deleteConfig) ToDeleteOptions() (*metav1.DeleteOptions) {
 		resp.PropagationPolicy = &propigationPolicy
 	}
 
-	if cfg.DeleteImmediately {
-		resp.GracePeriodSeconds = new(int64)
-	}
-
 	return &resp
 }
 
@@ -150,16 +146,16 @@ func (core *coreClient) List({{ $nssig }} opts ...ListOption) ([]{{.Type}}, erro
 		return nil, fmt.Errorf("couldn't list {{.CF.Name}}s: %v", err)
 	}
 
-	return List(res.Items).Filter(AllPredicate(cfg.filters...)), nil
+	if cfg.filter == nil {
+		return res.Items, nil
+	}
+
+	return List(res.Items).Filter(cfg.filter), nil
 }
 
 func (cfg listConfig) ToListOptions() (resp metav1.ListOptions) {
 	if cfg.fieldSelector != nil {
 		resp.FieldSelector = metav1.FormatLabelSelector(metav1.SetAsLabelSelector(cfg.fieldSelector))
-	}
-
-	if cfg.labelSelector != nil {
-		resp.LabelSelector = metav1.FormatLabelSelector(metav1.SetAsLabelSelector(cfg.labelSelector))
 	}
 
 	return

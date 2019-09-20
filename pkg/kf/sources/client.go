@@ -44,8 +44,7 @@ type sourcesClient struct {
 func NewClient(kclient cv1alpha1.SourcesGetter, buildTailer BuildTailer) Client {
 	return &sourcesClient{
 		coreClient: coreClient{
-			kclient:      kclient,
-			upsertMutate: MutatorList{},
+			kclient: kclient,
 		},
 		buildTailer: buildTailer,
 	}

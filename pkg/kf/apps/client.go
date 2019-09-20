@@ -45,19 +45,17 @@ func NewClient(
 	return &appsClient{
 		coreClient: coreClient{
 			kclient: kclient,
-			upsertMutate: MutatorList{
-				func(app *v1alpha1.App) error {
-					// Dedupe Routes
-					// TODO(https://github.com/knative/pkg/issues/542): Route
-					// already exists and the webhook can't dedupe for us.
-					app.Spec.Routes = []v1alpha1.RouteSpecFields(
-						algorithms.Dedupe(
-							v1alpha1.RouteSpecFieldsSlice(app.Spec.Routes),
-						).(v1alpha1.RouteSpecFieldsSlice),
-					)
+			upsertMutate: func(app *v1alpha1.App) error {
+				// Dedupe Routes
+				// TODO(https://github.com/knative/pkg/issues/542): Route
+				// already exists and the webhook can't dedupe for us.
+				app.Spec.Routes = []v1alpha1.RouteSpecFields(
+					algorithms.Dedupe(
+						v1alpha1.RouteSpecFieldsSlice(app.Spec.Routes),
+					).(v1alpha1.RouteSpecFieldsSlice),
+				)
 
-					return nil
-				},
+				return nil
 			},
 		},
 		sourcesClient: sourcesClient,

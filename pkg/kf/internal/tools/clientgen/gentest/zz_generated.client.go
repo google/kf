@@ -51,19 +51,6 @@ const (
 // Predicate is a boolean function for a v1.Secret.
 type Predicate func(*v1.Secret) bool
 
-// AllPredicate is a predicate that passes if all children pass.
-func AllPredicate(children ...Predicate) Predicate {
-	return func(obj *v1.Secret) bool {
-		for _, filter := range children {
-			if !filter(obj) {
-				return false
-			}
-		}
-
-		return true
-	}
-}
-
 // Mutator is a function that changes v1.Secret.
 type Mutator func(*v1.Secret) error
 
@@ -117,51 +104,6 @@ func (list List) Filter(filter Predicate) (out List) {
 	return
 }
 
-// MutatorList is a list of mutators.
-type MutatorList []Mutator
-
-// Apply passes the given value to each of the mutators in the list failing if
-// one of them returns an error.
-func (list MutatorList) Apply(svc *v1.Secret) error {
-	for _, mutator := range list {
-		if err := mutator(svc); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// LabelSetMutator creates a mutator that sets the given labels on the object.
-func LabelSetMutator(labels map[string]string) Mutator {
-	return func(obj *v1.Secret) error {
-		if obj.Labels == nil {
-			obj.Labels = make(map[string]string)
-		}
-
-		for key, value := range labels {
-			obj.Labels[key] = value
-		}
-
-		return nil
-	}
-}
-
-// LabelEqualsPredicate validates that the given label exists exactly on the object.
-func LabelEqualsPredicate(key, value string) Predicate {
-	return func(obj *v1.Secret) bool {
-		return obj.Labels[key] == value
-	}
-}
-
-// LabelsContainsPredicate validates that the given label exists on the object.
-func LabelsContainsPredicate(key string) Predicate {
-	return func(obj *v1.Secret) bool {
-		_, ok := obj.Labels[key]
-		return ok
-	}
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Client
 ////////////////////////////////////////////////////////////////////////////////
@@ -184,15 +126,15 @@ type Client interface {
 
 type coreClient struct {
 	kclient      cv1.SecretsGetter
-	upsertMutate MutatorList
+	upsertMutate Mutator
 }
 
 func (core *coreClient) preprocessUpsert(obj *v1.Secret) error {
-	if err := core.upsertMutate.Apply(obj); err != nil {
-		return err
+	if core.upsertMutate == nil {
+		return nil
 	}
 
-	return nil
+	return core.upsertMutate(obj)
 }
 
 // Create inserts the given v1.Secret into the cluster.
@@ -263,10 +205,6 @@ func (cfg deleteConfig) ToDeleteOptions() *metav1.DeleteOptions {
 		resp.PropagationPolicy = &propigationPolicy
 	}
 
-	if cfg.DeleteImmediately {
-		resp.GracePeriodSeconds = new(int64)
-	}
-
 	return &resp
 }
 
@@ -280,16 +218,16 @@ func (core *coreClient) List(namespace string, opts ...ListOption) ([]v1.Secret,
 		return nil, fmt.Errorf("couldn't list OperatorConfigs: %v", err)
 	}
 
-	return List(res.Items).Filter(AllPredicate(cfg.filters...)), nil
+	if cfg.filter == nil {
+		return res.Items, nil
+	}
+
+	return List(res.Items).Filter(cfg.filter), nil
 }
 
 func (cfg listConfig) ToListOptions() (resp metav1.ListOptions) {
 	if cfg.fieldSelector != nil {
 		resp.FieldSelector = metav1.FormatLabelSelector(metav1.SetAsLabelSelector(cfg.fieldSelector))
-	}
-
-	if cfg.labelSelector != nil {
-		resp.LabelSelector = metav1.FormatLabelSelector(metav1.SetAsLabelSelector(cfg.labelSelector))
 	}
 
 	return

@@ -33,46 +33,6 @@ import (
 	cv1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
-func TestAllPredicate(t *testing.T) {
-	pass := func(obj *v1.Secret) bool {
-		return true
-	}
-
-	fail := func(obj *v1.Secret) bool {
-		return false
-	}
-
-	cases := map[string]struct {
-		Children []Predicate
-		Expected bool
-	}{
-		"empty true": {
-			Children: []Predicate{},
-			Expected: true,
-		},
-		"pass": {
-			Children: []Predicate{pass},
-			Expected: true,
-		},
-		"fail": {
-			Children: []Predicate{fail},
-			Expected: false,
-		},
-		"mixed": {
-			Children: []Predicate{pass, fail, pass},
-			Expected: false,
-		},
-	}
-
-	for tn, tc := range cases {
-		t.Run(tn, func(t *testing.T) {
-			pred := AllPredicate(tc.Children...)
-			actual := pred(nil)
-			testutil.AssertEqual(t, "predicate result", tc.Expected, actual)
-		})
-	}
-}
-
 func ExampleList_Filter() {
 	first := v1.Secret{}
 	first.Name = "ok"
@@ -95,26 +55,6 @@ func ExampleList_Filter() {
 	// - ok
 }
 
-func ExampleMutatorList_Apply() {
-	mutators := MutatorList{
-		func(s *v1.Secret) error {
-			s.Name = "Name"
-			return nil
-		},
-		func(s *v1.Secret) error {
-			return errors.New("some-error")
-		},
-	}
-	res := v1.Secret{}
-	err := mutators.Apply(&res)
-
-	fmt.Println("Error:", err)
-	fmt.Println("Mutated name:", res.Name)
-
-	// Output: Error: some-error
-	// Mutated name: Name
-}
-
 func ExampleLabelSetMutator() {
 	out := &v1.Secret{}
 	managedAdder := LabelSetMutator(map[string]string{"managed-by": "kf"})
@@ -123,34 +63,6 @@ func ExampleLabelSetMutator() {
 	fmt.Printf("Labels: %v", out.Labels)
 
 	// Output: Labels: map[managed-by:kf]
-}
-
-func ExampleLabelEqualsPredicate() {
-	out := &v1.Secret{}
-	out.Labels = map[string]string{"managed-by": "not kf"}
-	pred := LabelEqualsPredicate("managed-by", "kf")
-
-	fmt.Printf("Not Equal: %v\n", pred(out))
-
-	out.Labels["managed-by"] = "kf"
-	fmt.Printf("Equal: %v\n", pred(out))
-
-	// Output: Not Equal: false
-	// Equal: true
-}
-
-func ExampleLabelsContainsPredicate() {
-	out := &v1.Secret{}
-	out.Labels = map[string]string{"my-label": ""}
-
-	mylabelpred := LabelsContainsPredicate("my-label")
-	missinglabelpred := LabelsContainsPredicate("missing")
-
-	fmt.Printf("Contained: %v\n", mylabelpred(out))
-	fmt.Printf("Not Contained: %v\n", missinglabelpred(out))
-
-	// Output: Contained: true
-	// Not Contained: false
 }
 
 func TestClient_invariant(t *testing.T) {
