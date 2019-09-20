@@ -157,7 +157,7 @@ func buildHTTPRoute(hostDomain, namespace, urlPath string, appNames []string) ([
 			},
 			Headers: &networking.Headers{
 				Request: &networking.HeaderOperations{
-					Set: map[string]string{
+					Add: map[string]string{
 						// Set forwarding headers so the app gets the real hostname it's serving
 						// at rather than the internal one:
 						// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded1
