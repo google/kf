@@ -26,11 +26,11 @@ import (
 	"github.com/google/kf/pkg/kf/commands/group"
 	"github.com/google/kf/pkg/kf/commands/install"
 	pkgdoctor "github.com/google/kf/pkg/kf/doctor"
+	templates "github.com/google/kf/third_party/kubectl-templates"
 	"github.com/imdario/mergo"
 	"github.com/spf13/cobra"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
-	"k8s.io/kubernetes/pkg/kubectl/util/templates"
 )
 
 // NewKfCommand creates the root kf command.
