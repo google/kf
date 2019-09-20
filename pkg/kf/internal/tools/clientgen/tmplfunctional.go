@@ -34,6 +34,13 @@ const (
 	APIVersion = "{{.Kubernetes.Version}}"
 )
 
+{{ if .SupportsConditions }}
+var (
+	{{ range .Kubernetes.Conditions }}
+	{{.ConditionName}} = apis.ConditionType({{.Definition}}){{ end }}
+)
+{{ end }}
+
 // Predicate is a boolean function for a {{.Type}}.
 type Predicate func(*{{.Type}}) bool
 
@@ -90,4 +97,31 @@ func (list List) Filter(filter Predicate) (out List) {
 	return
 }
 
+
+{{ if .SupportsObservedGeneration }}
+// ObservedGenerationMatchesGeneration is a predicate that returns true if the
+// object's ObservedGeneration matches the genration of the object.
+func ObservedGenerationMatchesGeneration(obj *{{.Type}}) bool {
+	return obj.Generation == obj.{{.Kubernetes.ObservedGenerationFieldPath}}
+}
+{{ end }}
+
+{{ if .SupportsConditions }}
+// ExtractConditions converts the native condition types into an apis.Condition
+// array with the Type, Status, Reason, and Message fields intact.
+func ExtractConditions(obj *{{.Type}}) (extracted []apis.Condition) {
+	for _, cond := range obj.{{.Kubernetes.ConditionsFieldPath}} {
+		// Only copy the following four fields to be compatible with
+		// recommended Kuberntes fields.
+		extracted = append(extracted, apis.Condition{
+			Type:    apis.ConditionType(cond.Type),
+			Status:  cond.Status,
+			Reason:  cond.Reason,
+			Message: cond.Message,
+		})
+	}
+
+	return
+}
+{{ end }}
 `))

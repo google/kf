@@ -25,9 +25,10 @@ import (
 	"strings"
 	"time"
 
+	"knative.dev/pkg/kmp"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"knative.dev/pkg/kmp"
 )
 
 // User defined imports
@@ -119,6 +120,9 @@ type Client interface {
 	Upsert(newObj *v1alpha1.Space, merge Merger) (*v1alpha1.Space, error)
 	WaitFor(ctx context.Context, name string, interval time.Duration, condition Predicate) (*v1alpha1.Space, error)
 	WaitForE(ctx context.Context, name string, interval time.Duration, condition ConditionFuncE) (*v1alpha1.Space, error)
+
+	// Utility functions
+	WaitForDeletion(ctx context.Context, name string, interval time.Duration) (*v1alpha1.Space, error)
 
 	// ClientExtension can be used by the developer to extend the client.
 	ClientExtension
@@ -317,4 +321,9 @@ func wrapPredicate(condition Predicate) ConditionFuncE {
 
 		return condition(obj), nil
 	}
+}
+
+// WaitForDeletion is a utility function that combines WaitForE with ConditionDeleted.
+func (core *coreClient) WaitForDeletion(ctx context.Context, name string, interval time.Duration) (instance *v1alpha1.Space, err error) {
+	return core.WaitForE(ctx, name, interval, ConditionDeleted)
 }

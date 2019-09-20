@@ -27,6 +27,7 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"knative.dev/pkg/apis"
 	"knative.dev/pkg/kmp"
 )
 
@@ -46,6 +47,11 @@ const (
 
 	// APIVersion contains the version for the backing Kubernetes API.
 	APIVersion = "v1alpha1"
+)
+
+var (
+	ConditionReady                = apis.ConditionType(v1alpha1.AppConditionReady)
+	ConditionServiceBindingsReady = apis.ConditionType(v1alpha1.AppConditionServiceBindingsReady)
 )
 
 // Predicate is a boolean function for a v1alpha1.App.
@@ -104,6 +110,29 @@ func (list List) Filter(filter Predicate) (out List) {
 	return
 }
 
+// ObservedGenerationMatchesGeneration is a predicate that returns true if the
+// object's ObservedGeneration matches the genration of the object.
+func ObservedGenerationMatchesGeneration(obj *v1alpha1.App) bool {
+	return obj.Generation == obj.Status.ObservedGeneration
+}
+
+// ExtractConditions converts the native condition types into an apis.Condition
+// array with the Type, Status, Reason, and Message fields intact.
+func ExtractConditions(obj *v1alpha1.App) (extracted []apis.Condition) {
+	for _, cond := range obj.Status.Conditions {
+		// Only copy the following four fields to be compatible with
+		// recommended Kuberntes fields.
+		extracted = append(extracted, apis.Condition{
+			Type:    apis.ConditionType(cond.Type),
+			Status:  cond.Status,
+			Reason:  cond.Reason,
+			Message: cond.Message,
+		})
+	}
+
+	return
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Client
 ////////////////////////////////////////////////////////////////////////////////
@@ -119,6 +148,11 @@ type Client interface {
 	Upsert(namespace string, newObj *v1alpha1.App, merge Merger) (*v1alpha1.App, error)
 	WaitFor(ctx context.Context, namespace string, name string, interval time.Duration, condition Predicate) (*v1alpha1.App, error)
 	WaitForE(ctx context.Context, namespace string, name string, interval time.Duration, condition ConditionFuncE) (*v1alpha1.App, error)
+
+	// Utility functions
+	WaitForDeletion(ctx context.Context, namespace string, name string, interval time.Duration) (*v1alpha1.App, error)
+	WaitForConditionReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (*v1alpha1.App, error)
+	WaitForConditionServiceBindingsReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (*v1alpha1.App, error)
 
 	// ClientExtension can be used by the developer to extend the client.
 	ClientExtension
@@ -317,4 +351,61 @@ func wrapPredicate(condition Predicate) ConditionFuncE {
 
 		return condition(obj), nil
 	}
+}
+
+// WaitForDeletion is a utility function that combines WaitForE with ConditionDeleted.
+func (core *coreClient) WaitForDeletion(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1alpha1.App, err error) {
+	return core.WaitForE(ctx, namespace, name, interval, ConditionDeleted)
+}
+
+func checkConditionTrue(obj *v1alpha1.App, err error, condition apis.ConditionType) (bool, error) {
+	if err != nil {
+		return true, err
+	}
+
+	// don't propagate old statuses
+	if !ObservedGenerationMatchesGeneration(obj) {
+		return false, nil
+	}
+
+	for _, cond := range ExtractConditions(obj) {
+		if cond.Type == condition {
+			switch {
+			case cond.IsTrue():
+				return true, nil
+
+			case cond.IsUnknown():
+				return false, nil
+
+			default:
+				// return true and a failure assuming IsFalse and other statuses can't be
+				// recovered from because they violate the K8s spec
+				return true, fmt.Errorf("checking %s failed, status: %s message: %s reason: %s", cond.Type, cond.Status, cond.Message, cond.Reason)
+			}
+		}
+	}
+
+	return false, nil
+}
+
+// ConditionReadyTrue is a ConditionFuncE that waits for Condition{Ready v1alpha1.AppConditionReady } to
+// become true and fails with an error if the condition becomes false.
+func ConditionReadyTrue(obj *v1alpha1.App, err error) (bool, error) {
+	return checkConditionTrue(obj, err, ConditionReady)
+}
+
+// WaitForConditionReadyTrue is a utility function that combines WaitForE with ConditionReadyTrue.
+func (core *coreClient) WaitForConditionReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1alpha1.App, err error) {
+	return core.WaitForE(ctx, namespace, name, interval, ConditionReadyTrue)
+}
+
+// ConditionServiceBindingsReadyTrue is a ConditionFuncE that waits for Condition{ServiceBindingsReady v1alpha1.AppConditionServiceBindingsReady } to
+// become true and fails with an error if the condition becomes false.
+func ConditionServiceBindingsReadyTrue(obj *v1alpha1.App, err error) (bool, error) {
+	return checkConditionTrue(obj, err, ConditionServiceBindingsReady)
+}
+
+// WaitForConditionServiceBindingsReadyTrue is a utility function that combines WaitForE with ConditionServiceBindingsReadyTrue.
+func (core *coreClient) WaitForConditionServiceBindingsReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1alpha1.App, err error) {
+	return core.WaitForE(ctx, namespace, name, interval, ConditionServiceBindingsReadyTrue)
 }

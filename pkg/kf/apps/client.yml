@@ -6,6 +6,13 @@ kubernetes:
   kind: "App"
   version: "v1alpha1"
   namespaced: true
+  observedGenerationFieldPath: Status.ObservedGeneration
+  conditionsFieldPath: Status.Conditions
+  conditions:
+  - name: Ready
+    ref: v1alpha1.AppConditionReady
+  - name: ServiceBindingsReady
+    ref: v1alpha1.AppConditionServiceBindingsReady
 type: "v1alpha1.App"
 clientType: "cv1alpha1.AppsGetter"
 cf:

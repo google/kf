@@ -3,10 +3,18 @@
 package: gentest
 imports: {"k8s.io/api/core/v1":"v1", "k8s.io/client-go/kubernetes/typed/core/v1": "cv1"}
 kubernetes:
-  kind: "Secret"
+  kind: "Pod"
   version: "v1"
   namespaced: true
-type: "v1.Secret"
-clientType: "cv1.SecretsGetter"
+  # pod doesn't have an observedgeneration, but we want to exercise the code
+  observedGenerationFieldPath: Generation
+  conditionsFieldPath: Status.Conditions
+  conditions:
+  - name: Ready
+    value: Ready
+  - name: Initialized
+    ref: v1.PodInitialized
+type: "v1.Pod"
+clientType: "cv1.PodsGetter"
 cf:
   name: "OperatorConfig"

@@ -140,7 +140,7 @@ func (c *Client) List(opts ...ListOption) ([]servicecatalogv1beta1.ServiceBindin
 
 // WaitForBindings waits for bindings to all be ready or fail on the given app.
 func (c *Client) WaitForBindings(ctx context.Context, namespace, appName string) error {
-	_, err := c.appsClient.WaitForE(ctx, namespace, appName, 2*time.Second, apps.ConditionServiceBindingsReady)
+	_, err := c.appsClient.WaitForConditionServiceBindingsReadyTrue(ctx, namespace, appName, 2*time.Second)
 	return err
 }
 

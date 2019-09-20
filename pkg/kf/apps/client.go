@@ -15,7 +15,6 @@
 package apps
 
 import (
-	"fmt"
 	"io"
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -90,34 +89,4 @@ func (ac *appsClient) Restage(namespace, name string) (app *v1alpha1.App, err er
 	app.Spec.Source.UpdateRequests++
 
 	return ac.coreClient.Update(namespace, app)
-}
-
-// ConditionServiceBindingsReady returns true if service bindings are ready and
-// errors if the bindings failed.
-func ConditionServiceBindingsReady(app *v1alpha1.App, apiErr error) (isFinal bool, err error) {
-	if apiErr != nil {
-		return true, apiErr
-	}
-
-	// don't propagate old statuses
-	if app.Generation != app.Status.ObservedGeneration {
-		return false, nil
-	}
-
-	if cond := app.Status.GetCondition(v1alpha1.AppConditionServiceBindingsReady); cond != nil {
-		switch {
-		case cond.IsTrue():
-			return true, nil
-
-		case cond.IsUnknown():
-			return false, nil
-
-		default:
-			// return true and a failrue assuming IsFalse and other statuses can't be
-			// recovered from because they violate the K8s spec
-			return true, fmt.Errorf("checking %s failed, status: %s message: %s reason: %s", cond.Type, cond.Status, cond.Message, cond.Reason)
-		}
-	}
-
-	return false, nil
 }
