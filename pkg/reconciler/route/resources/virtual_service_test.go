@@ -143,18 +143,21 @@ func TestMakeVirtualService(t *testing.T) {
 				testutil.AssertEqual(t, "HTTP len", 2, len(v.Spec.HTTP))
 				for i := range v.Spec.HTTP {
 					testutil.AssertEqual(t, "HTTP Route len", 1, len(v.Spec.HTTP[i].Route))
-					testutil.AssertEqual(t, "HTTP Route", networking.HTTPRouteDestination{
-						Destination: networking.Destination{
-							Host: resources.GatewayHost,
+					testutil.AssertEqual(t, "HTTP Route fault", &networking.HTTPFaultInjection{
+						Abort: &networking.InjectAbort{
+							Percent:    100,
+							HTTPStatus: http.StatusServiceUnavailable,
 						},
-						Weight: 100,
-					}, v.Spec.HTTP[i].Route[0])
+					}, v.Spec.HTTP[i].Fault)
 				}
 			},
 		},
 		"Prefers Routes over Claims": {
 			Claims: []*v1alpha1.RouteClaim{
 				{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "some-namespace",
+					},
 					Spec: v1alpha1.RouteClaimSpec{
 						RouteSpecFields: v1alpha1.RouteSpecFields{
 							Hostname: "some-host",
@@ -179,8 +182,14 @@ func TestMakeVirtualService(t *testing.T) {
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
 				testutil.AssertNil(t, "err", err)
 				testutil.AssertEqual(t, "HTTP len", 1, len(v.Spec.HTTP))
+				testutil.AssertEqual(t, "HTTP route destination", networking.HTTPRouteDestination{
+					Destination: networking.Destination{
+						Host: "istio-ingressgateway.istio-system.svc.cluster.local",
+					},
+					Weight: 100,
+				}, v.Spec.HTTP[0].Route[0])
 				testutil.AssertEqual(t, "HTTP Rewrite", &networking.HTTPRewrite{
-					Authority: network.GetServiceHostname("some-app-name", ""),
+					Authority: network.GetServiceHostname("some-app-name", "some-namespace"),
 				}, v.Spec.HTTP[0].Rewrite)
 			},
 		},
@@ -240,6 +249,12 @@ func TestMakeVirtualService(t *testing.T) {
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
 				testutil.AssertNil(t, "err", err)
 				testutil.AssertEqual(t, "HTTP len", 1, len(v.Spec.HTTP))
+				testutil.AssertEqual(t, "HTTP route destination", networking.HTTPRouteDestination{
+					Destination: networking.Destination{
+						Host: "istio-ingressgateway.istio-system.svc.cluster.local",
+					},
+					Weight: 100,
+				}, v.Spec.HTTP[0].Route[0])
 				testutil.AssertEqual(t, "HTTP Rewrite", &networking.HTTPRewrite{
 					Authority: network.GetServiceHostname("ksvc-1", "some-namespace"),
 				}, v.Spec.HTTP[0].Rewrite)
