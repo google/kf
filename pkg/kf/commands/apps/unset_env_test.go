@@ -19,7 +19,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/internal/envutil"

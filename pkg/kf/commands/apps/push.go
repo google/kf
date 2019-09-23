@@ -28,8 +28,7 @@ import (
 	"github.com/google/kf/pkg/internal/envutil"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
-	kfi "github.com/google/kf/pkg/kf/internal/kf"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/manifest"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/spf13/cobra"
@@ -366,7 +365,7 @@ func NewPushCommand(
 
 				err = pusher.Push(app.Name, pushOpts...)
 
-				cmd.SilenceUsage = !kfi.ConfigError(err)
+				cmd.SilenceUsage = !utils.ConfigError(err)
 
 				if err != nil {
 					return err
