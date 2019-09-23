@@ -216,7 +216,7 @@ func TestMakeVirtualService(t *testing.T) {
 			},
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
 				expectedHTTP := []networking.HTTPRoute{
-					networking.HTTPRoute{
+					{
 						Match: []networking.HTTPMatchRequest{
 							{URI: &istio.StringMatch{Regex: "^/some-path(/.*)?"}},
 						},
