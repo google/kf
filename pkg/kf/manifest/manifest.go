@@ -24,7 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/google/kf/pkg/kf/internal/utils/envutil"
+	"github.com/google/kf/pkg/internal/envutil"
 	"github.com/imdario/mergo"
 	"sigs.k8s.io/yaml"
 )

@@ -20,7 +20,7 @@ import (
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
-	"github.com/google/kf/pkg/kf/internal/utils/envutil"
+	"github.com/google/kf/pkg/internal/envutil"
 	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

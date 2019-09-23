@@ -20,8 +20,8 @@ import (
 
 	"github.com/google/kf/pkg/kf/buildpacks"
 	"github.com/google/kf/pkg/kf/commands/config"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/describe"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/spf13/cobra"
 )
 
