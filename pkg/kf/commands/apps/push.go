@@ -534,14 +534,14 @@ func NewPushCommand(
 		&containerEntrypoint,
 		"entrypoint",
 		"",
-		"Overwrite the default entrypoint of the image.",
+		"Overwrite the default entrypoint of the image. Can't be used with the command flag.",
 	)
 
 	pushCmd.Flags().StringArrayVar(
 		&containerArgs,
 		"args",
 		nil,
-		"Overwrite the args for the image.",
+		"Overwrite the args for the image. Can't be used with the command flag.",
 	)
 
 	return pushCmd
