@@ -16,7 +16,7 @@ package servicebindings_test
 
 import (
 	"errors"
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"testing"
 
 	"github.com/golang/mock/gomock"

@@ -19,7 +19,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/testutil"
 )
 

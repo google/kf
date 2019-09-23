@@ -22,7 +22,7 @@ import (
 
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/describe"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"

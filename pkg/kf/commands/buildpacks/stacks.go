@@ -20,9 +20,8 @@ import (
 
 	"github.com/google/kf/pkg/kf/buildpacks"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/describe"
-	"github.com/google/kf/pkg/kf/internal/kf"
 	"github.com/spf13/cobra"
 )
 
@@ -53,7 +52,7 @@ func NewStacksCommand(p *config.KfParams, l buildpacks.Client) *cobra.Command {
 
 			stacks, err := l.Stacks(space.Spec.BuildpackBuild.BuilderImage)
 			if err != nil {
-				cmd.SilenceUsage = !kf.ConfigError(err)
+				cmd.SilenceUsage = !utils.ConfigError(err)
 				return err
 			}
 

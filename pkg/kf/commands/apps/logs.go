@@ -20,8 +20,7 @@ import (
 
 	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
-	kfi "github.com/google/kf/pkg/kf/internal/kf"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/logs"
 	"github.com/spf13/cobra"
 )
@@ -65,7 +64,7 @@ func NewLogsCommand(p *config.KfParams, tailer logs.Tailer) *cobra.Command {
 				logs.WithTailNumberLines(numberLines),
 				logs.WithTailFollow(shouldFollow),
 			); err != nil {
-				cmd.SilenceUsage = !kfi.ConfigError(err)
+				cmd.SilenceUsage = !utils.ConfigError(err)
 				return fmt.Errorf("failed to tail logs: %s", err)
 			}
 

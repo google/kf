@@ -20,7 +20,7 @@ import (
 	"strconv"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/internal/envutil"
+	"github.com/google/kf/pkg/kf/internal/utils/envutil"
 	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
 	servingv1beta1 "github.com/knative/serving/pkg/apis/serving/v1beta1"
 	"github.com/knative/serving/pkg/resources"

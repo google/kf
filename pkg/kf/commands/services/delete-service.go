@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/spf13/cobra"
 )
