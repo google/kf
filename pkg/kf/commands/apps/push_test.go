@@ -93,6 +93,9 @@ func TestPushCommand(t *testing.T) {
 				"-u", "http",
 				"-t", "28",
 				"-s", "cflinuxfs3",
+				"--entrypoint", "start-web.sh",
+				"--args", "a",
+				"--args", "b",
 			},
 			wantImagePrefix: "some-reg.io/src-some-namespace-example-app",
 			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
@@ -108,6 +111,8 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushEnvironmentVariables(map[string]string{"env1": "val1", "env2": "val2"}),
 				apps.WithPushNoStart(true),
 				apps.WithPushExactScale(intPtr(1)),
+				apps.WithPushArgs([]string{"a", "b"}),
+				apps.WithPushCommand([]string{"start-web.sh"}),
 				apps.WithPushHealthCheck(&corev1.Probe{
 					TimeoutSeconds: 28,
 					Handler: corev1.Handler{
@@ -547,6 +552,8 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "health check", expectOpts.HealthCheck(), actualOpts.HealthCheck())
 					testutil.AssertEqual(t, "default route", expectOpts.DefaultRouteDomain(), actualOpts.DefaultRouteDomain())
 					testutil.AssertEqual(t, "random route", expectOpts.RandomRouteDomain(), actualOpts.RandomRouteDomain())
+					testutil.AssertEqual(t, "command", expectOpts.Command(), actualOpts.Command())
+					testutil.AssertEqual(t, "args", expectOpts.Args(), actualOpts.Args())
 
 					if !strings.HasPrefix(actualOpts.SourceImage(), tc.wantImagePrefix) {
 						t.Errorf("Wanted srcImage to start with %s got: %s", tc.wantImagePrefix, actualOpts.SourceImage())

@@ -98,6 +98,38 @@ applications:
 				},
 			},
 		},
+		"cf style command": {
+			fileContent: `---
+applications:
+- name: CUSTOM_START
+  command: rake run $VAR
+`,
+			expected: &manifest.Manifest{
+				Applications: []manifest.Application{
+					{
+						Name:    "CUSTOM_START",
+						Command: "rake run $VAR",
+					},
+				},
+			},
+		},
+		"docker style command": {
+			fileContent: `---
+applications:
+- name: CUSTOM_START
+  entrypoint: python
+  args: ["-m", "SimpleHTTPServer"]
+`,
+			expected: &manifest.Manifest{
+				Applications: []manifest.Application{
+					{
+						Name:       "CUSTOM_START",
+						Entrypoint: "python",
+						Args:       []string{"-m", "SimpleHTTPServer"},
+					},
+				},
+			},
+		},
 	}
 
 	for tn, tc := range cases {
@@ -217,4 +249,36 @@ func ExampleApplication_Buildpack() {
 	// Output: Legacy: hidden-legacy-buildpack
 	// One: java
 	// Two: maven,java
+}
+
+func ExampleApplication_CommandArgs() {
+	app := manifest.Application{}
+	fmt.Printf("Blank: %v\n", app.CommandArgs())
+
+	app = manifest.Application{
+		Command: "start.sh && exit 1",
+	}
+	fmt.Printf("Command: %v\n", app.CommandArgs())
+
+	app = manifest.Application{
+		Args: []string{"-m", "SimpleHTTPServer"},
+	}
+	fmt.Printf("Args: %v\n", app.CommandArgs())
+
+	// Output: Blank: []
+	// Command: [start.sh && exit 1]
+	// Args: [-m SimpleHTTPServer]
+}
+
+func ExampleApplication_CommandEntrypoint() {
+	app := manifest.Application{}
+	fmt.Printf("Blank: %v\n", app.CommandEntrypoint())
+
+	app = manifest.Application{
+		Entrypoint: "python",
+	}
+	fmt.Printf("Entrypoint: %v\n", app.CommandEntrypoint())
+
+	// Output: Blank: []
+	// Entrypoint: [python]
 }

@@ -29,16 +29,21 @@ The following fields are valid for objects under `applications`:
 | **services** | string[] | A list of service instance names to automatically bind to the app. |
 | **disk_quota** | quantity | The amount of disk the application should get. Defaults to 1GiB. |
 | **memory** | quantity | The amount of RAM to provide the app. Defaults to 1GiB. |
-| **cpu** | quantity | The amount of CPU to provide the application. Defaults to 0.1 (1/10th of a CPU). |
+| **cpu** † | quantity | The amount of CPU to provide the application. Defaults to 0.1 (1/10th of a CPU). |
 | **instances** | int | The number of instances of the app to run. Defaults to 1. |
-| **min-scale** | int | The minimum number of instances to scale to. Valid only if instances is unset. |
-| **max-scale** | int | The maximum number of instances to scale to. Valid only if instances is unset. Blank means unlimited scaling. |
+| **min-scale** † | int | The minimum number of instances to scale to. Valid only if instances is unset. |
+| **max-scale** † | int | The maximum number of instances to scale to. Valid only if instances is unset. Blank means unlimited scaling. |
 | **routes** | object | A list of routes the app should listen on. See the Route Fields section for more. |
 | **no-route** | boolean | If set to true, the application will not be routable. |
 | **random-route** | boolean | If set to true, the app will be given a random route. |
 | **timeout** | int | The number of seconds to wait for the app to become healthy. |
 | **health-check-type** | string | The type of health-check to use `port`, `none`, or `http`. Default: `port` |
 | **health-check-http-endpoint** | string | The endpoint to target as part of the health-check. Only valid if `health-check-type` is `http`. |
+| **command** | string | The command that starts the app. If supplied, this will be passed to the container entrypoint. |
+| **entrypoint** † | string | Overrides the app container's entrypoint. |
+| **args** † | string[] | Overrides the arguments the app container. |
+
+† Unique to Kf
 
 
 ## Docker Fields

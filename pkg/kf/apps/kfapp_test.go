@@ -246,3 +246,25 @@ func ExampleKfApp_GetClusterURL() {
 
 	// Output: http://app-a.some-namespace.svc.cluster.local
 }
+
+func ExampleKfApp_GetArgs() {
+	myApp := NewKfApp()
+	fmt.Printf("Default: %v\n", myApp.GetArgs())
+
+	myApp.SetArgs([]string{"arg1", "arg2"})
+	fmt.Printf("After set: %v\n", myApp.GetArgs())
+
+	// Output: Default: []
+	// After set: [arg1 arg2]
+}
+
+func ExampleKfApp_GetCommand() {
+	myApp := NewKfApp()
+	fmt.Printf("Default: %v\n", myApp.GetCommand())
+
+	myApp.SetCommand([]string{"/bin/bash", "-x"})
+	fmt.Printf("After set: %v\n", myApp.GetCommand())
+
+	// Output: Default: []
+	// After set: [/bin/bash -x]
+}

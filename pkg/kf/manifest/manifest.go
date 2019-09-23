@@ -15,6 +15,7 @@
 package manifest
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -42,6 +43,11 @@ type Application struct {
 	Memory          string            `json:"memory,omitempty"`
 	CPU             string            `json:"cpu,omitempty"`
 	Instances       *int              `json:"instances,omitempty"`
+
+	// Container command configuration
+	Entrypoint string   `json:"entrypoint,omitempty"`
+	Args       []string `json:"args,omitempty"`
+	Command    string   `json:"command,omitempty"`
 
 	// TODO(#95): These aren't CF proper. How do we expose these in the
 	// manifest?
@@ -198,6 +204,10 @@ for more info.
 		app.Env = envutil.EnvVarsToMap(envutil.DeduplicateEnvVars(combined))
 	}
 
+	if err := app.Validate(context.Background()); err.Error() != "" {
+		return err
+	}
+
 	return nil
 }
 
@@ -210,4 +220,26 @@ func (app *Application) Buildpack() string {
 	}
 
 	return app.LegacyBuildpack
+}
+
+// CommandEntrypoint gets an override for the entrypoint of the container.
+func (app *Application) CommandEntrypoint() []string {
+	if app.Entrypoint != "" {
+		return []string{app.Entrypoint}
+	}
+
+	return nil
+}
+
+// CommandArgs returns the container args if they're defined or nil.
+func (app *Application) CommandArgs() []string {
+	if len(app.Args) > 0 {
+		return app.Args
+	}
+
+	if app.Command != "" {
+		return []string{app.Command}
+	}
+
+	return nil
 }

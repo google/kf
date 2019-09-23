@@ -243,6 +243,34 @@ func (k *KfApp) GetServiceBindings() []v1alpha1.AppSpecServiceBinding {
 	return k.Spec.ServiceBindings
 }
 
+// SetCommand sets the entrypoint for the app.
+func (k *KfApp) SetCommand(entrypoint []string) {
+	k.getOrCreateContainer().Command = entrypoint
+}
+
+// GetCommand gets the entrypoint for the app.
+func (k *KfApp) GetCommand() []string {
+	if container := k.getContainerOrNil(); container != nil {
+		return container.Command
+	}
+
+	return nil
+}
+
+// SetArgs sets the arguments for the app.
+func (k *KfApp) SetArgs(args []string) {
+	k.getOrCreateContainer().Args = args
+}
+
+// GetArgs gets the arguments for the app.
+func (k *KfApp) GetArgs() []string {
+	if container := k.getContainerOrNil(); container != nil {
+		return container.Args
+	}
+
+	return nil
+}
+
 // GetClusterURL gets the internal address of the app or the empty string if
 // unset.
 func (k *KfApp) GetClusterURL() string {
