@@ -37,19 +37,6 @@ const (
 // Predicate is a boolean function for a {{.Type}}.
 type Predicate func(*{{.Type}}) bool
 
-// AllPredicate is a predicate that passes if all children pass.
-func AllPredicate(children ...Predicate) Predicate {
-	return func(obj *{{.Type}}) bool {
-		for _, filter := range children {
-			if !filter(obj) {
-				return false
-			}
-		}
-
-		return true
-	}
-}
-
 // Mutator is a function that changes {{.Type}}.
 type Mutator func(*{{.Type}}) error
 
@@ -103,48 +90,4 @@ func (list List) Filter(filter Predicate) (out List) {
 	return
 }
 
-// MutatorList is a list of mutators.
-type MutatorList []Mutator
-
-// Apply passes the given value to each of the mutators in the list failing if
-// one of them returns an error.
-func (list MutatorList) Apply(svc *{{.Type}}) error {
-	for _, mutator := range list {
-		if err := mutator(svc); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// LabelSetMutator creates a mutator that sets the given labels on the object.
-func LabelSetMutator(labels map[string]string) Mutator {
-	return func(obj *{{.Type}}) error {
-		if obj.Labels == nil {
-			obj.Labels = make(map[string]string)
-		}
-
-		for key, value := range labels {
-			obj.Labels[key] = value
-		}
-
-		return nil
-	}
-}
-
-// LabelEqualsPredicate validates that the given label exists exactly on the object.
-func LabelEqualsPredicate(key, value string) Predicate {
-	return func(obj *{{.Type}}) bool {
-		return obj.Labels[key] == value
-	}
-}
-
-// LabelsContainsPredicate validates that the given label exists on the object.
-func LabelsContainsPredicate(key string) Predicate {
-	return func(obj *{{.Type}}) bool {
-		_, ok := obj.Labels[key]
-		return ok
-	}
-}
 `))

@@ -16,6 +16,7 @@
 package gentest
 
 import v1 "k8s.io/client-go/kubernetes/typed/core/v1"
+import corev1 "k8s.io/api/core/v1"
 
 //go:generate go run ../../option-builder/option-builder.go --pkg gentest ../common-options.yml zz_generated.clientoptions.go
 //go:generate go run ../genclient.go client.yml
@@ -27,9 +28,21 @@ type ClientExtension interface {
 // validator that filter based on a label.
 func NewExampleClient(mockK8s v1.SecretsGetter) Client {
 	return &coreClient{
-		kclient: mockK8s,
-		upsertMutate: MutatorList{
-			LabelSetMutator(map[string]string{"is-a": "OperatorConfig"}),
-		},
+		kclient:      mockK8s,
+		upsertMutate: LabelSetMutator(map[string]string{"is-a": "OperatorConfig"}),
+	}
+}
+
+func LabelSetMutator(labels map[string]string) Mutator {
+	return func(obj *corev1.Secret) error {
+		if obj.Labels == nil {
+			obj.Labels = make(map[string]string)
+		}
+
+		for key, value := range labels {
+			obj.Labels[key] = value
+		}
+
+		return nil
 	}
 }
