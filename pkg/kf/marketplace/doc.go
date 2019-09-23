@@ -12,13 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fake
-
-import "github.com/google/kf/pkg/kf/services"
-
-//go:generate mockgen --package=fake --destination=fake_client.go --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --mock_names=Client=FakeClient github.com/google/kf/pkg/kf/services/fake Client
-
-// Client is implementd by services.Client.
-type Client interface {
-	services.Client
-}
+// Package marketplace provides access to the resources provided by service
+// brokers for consumption by developers.
+package marketplace

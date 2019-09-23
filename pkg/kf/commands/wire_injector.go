@@ -19,6 +19,8 @@ package commands
 import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	kfv1alpha1 "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
+	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
+	scv1beta1 "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/typed/servicecatalog/v1beta1"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/buildpacks"
 	"github.com/google/kf/pkg/kf/builds"
@@ -35,6 +37,7 @@ import (
 	cspaces "github.com/google/kf/pkg/kf/commands/spaces"
 	"github.com/google/kf/pkg/kf/istio"
 	kflogs "github.com/google/kf/pkg/kf/logs"
+	"github.com/google/kf/pkg/kf/marketplace"
 	"github.com/google/kf/pkg/kf/routeclaims"
 	"github.com/google/kf/pkg/kf/routes"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
@@ -173,37 +176,47 @@ func InjectUnsetEnv(p *config.KfParams) *cobra.Command {
 ////////////////
 // Services //
 /////////////
+
+func provideServiceInstancesGetter(sc servicecatalogclient.Interface) scv1beta1.ServiceInstancesGetter {
+	return sc.ServicecatalogV1beta1()
+}
+
+var ServicesSet = wire.NewSet(
+	provideServiceInstancesGetter,
+	config.GetServiceCatalogClient,
+	config.GetSvcatApp,
+	marketplace.NewClient,
+	services.NewClient,
+)
+
 func InjectCreateService(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		config.GetServiceCatalogClient,
 		servicescmd.NewCreateServiceCommand,
+		ServicesSet,
 	)
 	return nil
 }
 
 func InjectDeleteService(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		services.NewClient,
 		servicescmd.NewDeleteServiceCommand,
-		config.GetSvcatApp,
+		ServicesSet,
 	)
 	return nil
 }
 
 func InjectGetService(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		services.NewClient,
 		servicescmd.NewGetServiceCommand,
-		config.GetSvcatApp,
+		ServicesSet,
 	)
 	return nil
 }
 
 func InjectListServices(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		services.NewClient,
 		servicescmd.NewListServicesCommand,
-		config.GetSvcatApp,
+		ServicesSet,
 		AppsSet,
 	)
 	return nil
@@ -211,9 +224,8 @@ func InjectListServices(p *config.KfParams) *cobra.Command {
 
 func InjectMarketplace(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		services.NewClient,
 		servicescmd.NewMarketplaceCommand,
-		config.GetSvcatApp,
+		ServicesSet,
 	)
 	return nil
 }

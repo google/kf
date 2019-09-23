@@ -24,9 +24,9 @@ import (
 	"github.com/google/kf/pkg/kf/commands/config"
 	servicescmd "github.com/google/kf/pkg/kf/commands/services"
 	"github.com/google/kf/pkg/kf/commands/utils"
+	fakemarketplace "github.com/google/kf/pkg/kf/marketplace/fake"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/google/kf/pkg/kf/services/fake"
-	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,7 +35,8 @@ import (
 func TestNewServicesCommand(t *testing.T) {
 	cases := map[string]struct {
 		serviceTest
-		AppSetup func(t *testing.T, f *fakeapps.FakeClient)
+		AppSetup         func(t *testing.T, f *fakeapps.FakeClient)
+		MarketplaceSetup func(t *testing.T, f *fakemarketplace.FakeClientInterface)
 	}{
 		"too many params": {
 			serviceTest: serviceTest{
@@ -46,14 +47,8 @@ func TestNewServicesCommand(t *testing.T) {
 		"custom namespace": {
 			serviceTest: serviceTest{
 				Namespace: "test-ns",
-				Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-					f.EXPECT().ListServices(gomock.Any()).
-						DoAndReturn(func(opts ...services.ListServicesOption) (*v1beta1.ServiceInstanceList, error) {
-							options := services.ListServicesOptions(opts)
-							testutil.AssertEqual(t, "namespace", "test-ns", options.Namespace())
-
-							return &v1beta1.ServiceInstanceList{}, nil
-						})
+				Setup: func(t *testing.T, f *fake.FakeClient) {
+					f.EXPECT().List("test-ns").Return([]v1beta1.ServiceInstance{}, nil)
 				},
 			},
 		},
@@ -65,9 +60,8 @@ func TestNewServicesCommand(t *testing.T) {
 		"empty result": {
 			serviceTest: serviceTest{
 				Namespace: "test-ns",
-				Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-					emptyList := &v1beta1.ServiceInstanceList{Items: []v1beta1.ServiceInstance{}}
-					f.EXPECT().ListServices(gomock.Any()).Return(emptyList, nil)
+				Setup: func(t *testing.T, f *fake.FakeClient) {
+					f.EXPECT().List(gomock.Any()).Return([]v1beta1.ServiceInstance{}, nil)
 				},
 				ExpectedErr: nil, // explicitly expecting no failure with zero length list
 			},
@@ -78,28 +72,29 @@ func TestNewServicesCommand(t *testing.T) {
 			},
 			serviceTest: serviceTest{
 				Namespace: "test-ns",
-				Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-					serviceList := &v1beta1.ServiceInstanceList{Items: []v1beta1.ServiceInstance{}}
-					f.EXPECT().ListServices(gomock.Any()).Return(serviceList, nil)
+				Setup: func(t *testing.T, f *fake.FakeClient) {
+					f.EXPECT().List(gomock.Any()).Return([]v1beta1.ServiceInstance{}, nil)
 				},
 				ExpectedErr: errors.New("some-error"),
 			},
 		},
 		"fetching broker name fails": {
+			MarketplaceSetup: func(t *testing.T, f *fakemarketplace.FakeClientInterface) {
+				f.EXPECT().BrokerName(gomock.Any()).Return("", errors.New("fetch-broker-name-error")).Times(2)
+			},
 			serviceTest: serviceTest{
 				Namespace: "test-ns",
-				Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-					serviceList := &v1beta1.ServiceInstanceList{Items: []v1beta1.ServiceInstance{
+				Setup: func(t *testing.T, f *fake.FakeClient) {
+					serviceList := []v1beta1.ServiceInstance{
 						*dummyServerInstance("service-1"),
 						*dummyServerInstance("service-2"),
-					}}
-					f.EXPECT().ListServices(gomock.Any()).Return(serviceList, nil)
-					f.EXPECT().BrokerName(gomock.Any()).Return("", errors.New("some-error")).Times(2)
+					}
+					f.EXPECT().List(gomock.Any()).Return(serviceList, nil)
 				},
-				ExpectedErr: errors.New("some-error"),
+				ExpectedErr: errors.New("fetch-broker-name-error"),
 				ExpectedStrings: []string{
 					"service-1", "service-2", // service instances still displayed with error msg
-					"some-error",
+					"fetch-broker-name-error",
 				},
 			},
 		},
@@ -112,18 +107,17 @@ func TestNewServicesCommand(t *testing.T) {
 			},
 			serviceTest: serviceTest{
 				Namespace: "test-ns",
-				Setup: func(t *testing.T, f *fake.FakeClientInterface) {
+				Setup: func(t *testing.T, f *fake.FakeClient) {
 					// We'll take the conditions off this so it has to show an
 					// unknown state
 					service1 := *dummyServerInstance("service-1")
 					service1.Status.Conditions = nil
 
-					serviceList := &v1beta1.ServiceInstanceList{Items: []v1beta1.ServiceInstance{
+					serviceList := []v1beta1.ServiceInstance{
 						service1,
 						*dummyServerInstance("service-2"),
-					}}
-					f.EXPECT().ListServices(gomock.Any()).Return(serviceList, nil)
-					f.EXPECT().BrokerName(gomock.Any()).Return("some-broker", nil).Times(2)
+					}
+					f.EXPECT().List(gomock.Any()).Return(serviceList, nil)
 				},
 				ExpectedStrings: []string{
 					"service-1", "service-2", // Binding Names
@@ -137,8 +131,8 @@ func TestNewServicesCommand(t *testing.T) {
 			serviceTest: serviceTest{
 				Namespace:   "test-ns",
 				ExpectedErr: errors.New("server-call-error"),
-				Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-					f.EXPECT().ListServices(gomock.Any()).Return(nil, errors.New("server-call-error"))
+				Setup: func(t *testing.T, f *fake.FakeClient) {
+					f.EXPECT().List(gomock.Any()).Return(nil, errors.New("server-call-error"))
 				},
 			},
 		},
@@ -154,8 +148,16 @@ func TestNewServicesCommand(t *testing.T) {
 				appClient.EXPECT().List(gomock.Any())
 			}
 
-			runTest(t, tc.serviceTest, func(p *config.KfParams, client services.ClientInterface) *cobra.Command {
-				return servicescmd.NewListServicesCommand(p, client, appClient)
+			marketplaceClient := fakemarketplace.NewFakeClientInterface(gomock.NewController(t))
+			if tc.MarketplaceSetup != nil {
+				tc.MarketplaceSetup(t, marketplaceClient)
+			} else {
+				// Give default empty broker response
+				marketplaceClient.EXPECT().BrokerName(gomock.Any()).Return("some-broker", nil).AnyTimes()
+			}
+
+			runTest(t, tc.serviceTest, func(p *config.KfParams, client services.Client) *cobra.Command {
+				return servicescmd.NewListServicesCommand(p, client, appClient, marketplaceClient)
 			})
 		})
 	}

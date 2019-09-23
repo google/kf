@@ -24,6 +24,7 @@ import (
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/describe"
+	"github.com/google/kf/pkg/kf/marketplace"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/spf13/cobra"
 )
@@ -31,8 +32,9 @@ import (
 // NewListServicesCommand allows users to list service instances.
 func NewListServicesCommand(
 	p *config.KfParams,
-	client services.ClientInterface,
+	client services.Client,
 	appsClient apps.Client,
+	marketplaceClient marketplace.ClientInterface,
 ) *cobra.Command {
 	servicesCommand := &cobra.Command{
 		Use:     "services",
@@ -48,7 +50,7 @@ func NewListServicesCommand(
 				return err
 			}
 
-			instances, err := client.ListServices(services.WithListServicesNamespace(p.Namespace))
+			instances, err := client.List(p.Namespace)
 			if err != nil {
 				return err
 			}
@@ -61,10 +63,10 @@ func NewListServicesCommand(
 
 			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
 				fmt.Fprintln(w, "Name\tService\tPlan\tBound Apps\tLast Operation\tBroker")
-				for _, instance := range instances.Items {
+				for _, instance := range instances {
 					lastCond := services.LastStatusCondition(instance)
 					var brokerInfo string
-					brokerInfo, err = client.BrokerName(instance)
+					brokerInfo, err = marketplaceClient.BrokerName(instance)
 					if err != nil {
 						brokerInfo = fmt.Sprintf("error finding broker: %s", err)
 					}

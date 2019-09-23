@@ -18,12 +18,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	servicescmd "github.com/google/kf/pkg/kf/commands/services"
 	"github.com/google/kf/pkg/kf/commands/utils"
-	"github.com/google/kf/pkg/kf/services"
 	"github.com/google/kf/pkg/kf/services/fake"
-	"github.com/google/kf/pkg/kf/testutil"
 )
 
 func TestNewDeleteServiceCommand(t *testing.T) {
@@ -35,10 +32,8 @@ func TestNewDeleteServiceCommand(t *testing.T) {
 		"command params get passed correctly": {
 			Args:      []string{"mydb"},
 			Namespace: "custom-ns",
-			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-				f.EXPECT().DeleteService("mydb", gomock.Any()).Do(func(name string, opts ...services.DeleteServiceOption) {
-					testutil.AssertEqual(t, "namespace", "custom-ns", services.DeleteServiceOptions(opts).Namespace())
-				}).Return(nil)
+			Setup: func(t *testing.T, f *fake.FakeClient) {
+				f.EXPECT().Delete("custom-ns", "mydb").Return(nil)
 			},
 		},
 		"empty namespace": {
@@ -48,8 +43,8 @@ func TestNewDeleteServiceCommand(t *testing.T) {
 		"bad server call": {
 			Args:      []string{"mydb"},
 			Namespace: "custom-ns",
-			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-				f.EXPECT().DeleteService("mydb", gomock.Any()).Return(errors.New("server-call-error"))
+			Setup: func(t *testing.T, f *fake.FakeClient) {
+				f.EXPECT().Delete("custom-ns", "mydb").Return(errors.New("server-call-error"))
 			},
 			ExpectedErr: errors.New("server-call-error"),
 		},

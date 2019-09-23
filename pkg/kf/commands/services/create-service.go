@@ -131,42 +131,33 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 }
 
 func createServiceInstance(client servicecatalogclient.Interface, p *config.KfParams, rawParams *runtime.RawExtension, serviceName, planName, instanceName, broker string, spaceScoped bool) (*servicecatalogv1beta1.ServiceInstance, error) {
-	if spaceScoped {
-		return client.ServicecatalogV1beta1().
-			ServiceInstances(p.Namespace).
-			Create(&servicecatalogv1beta1.ServiceInstance{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      instanceName,
-					Namespace: p.Namespace,
-				},
-				Spec: servicecatalogv1beta1.ServiceInstanceSpec{
-					PlanReference: servicecatalogv1beta1.PlanReference{
-						ServicePlanExternalName:  planName,
-						ServiceClassExternalName: serviceName,
-					},
-					Parameters: rawParams,
-				},
-			})
-	} else {
-		return client.ServicecatalogV1beta1().
-			ServiceInstances(p.Namespace).
-			Create(&servicecatalogv1beta1.ServiceInstance{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      instanceName,
-					Namespace: p.Namespace,
-				},
-				Spec: servicecatalogv1beta1.ServiceInstanceSpec{
-					PlanReference: servicecatalogv1beta1.PlanReference{
-						ClusterServicePlanExternalName:  planName,
-						ClusterServiceClassExternalName: serviceName,
-					},
-					Parameters: rawParams,
-				},
-			})
+	planRef := servicecatalogv1beta1.PlanReference{
+		ClusterServicePlanExternalName:  planName,
+		ClusterServiceClassExternalName: serviceName,
 	}
-}
-func findMatchingClusterPlans(client servicecatalogclient.Interface, planName, serviceName, broker string) ([]servicecatalogv1beta1.ClusterServicePlan, error) {
 
+	if spaceScoped {
+		planRef = servicecatalogv1beta1.PlanReference{
+			ServicePlanExternalName:  planName,
+			ServiceClassExternalName: serviceName,
+		}
+	}
+
+	return client.ServicecatalogV1beta1().
+		ServiceInstances(p.Namespace).
+		Create(&servicecatalogv1beta1.ServiceInstance{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      instanceName,
+				Namespace: p.Namespace,
+			},
+			Spec: servicecatalogv1beta1.ServiceInstanceSpec{
+				PlanReference: planRef,
+				Parameters:    rawParams,
+			},
+		})
+}
+
+func findMatchingClusterPlans(client servicecatalogclient.Interface, planName, serviceName, broker string) ([]servicecatalogv1beta1.ClusterServicePlan, error) {
 	var matchingPlans []servicecatalogv1beta1.ClusterServicePlan
 
 	plans, err := client.ServicecatalogV1beta1().

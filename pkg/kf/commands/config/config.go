@@ -27,8 +27,8 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	kf "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
 	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
+	"github.com/google/kf/pkg/kf/marketplace"
 	"github.com/google/kf/pkg/kf/secrets"
-	"github.com/google/kf/pkg/kf/services"
 	"github.com/imdario/mergo"
 	build "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
@@ -249,7 +249,7 @@ func GetDynamicClient(p *KfParams) dynamic.Interface {
 }
 
 // GetSvcatApp returns a SvcatClient.
-func GetSvcatApp(p *KfParams) services.SClientFactory {
+func GetSvcatApp(p *KfParams) marketplace.SClientFactory {
 	return func(namespace string) servicecatalog.SvcatClient {
 		config := getRestConfig(p)
 
