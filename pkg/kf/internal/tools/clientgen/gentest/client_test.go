@@ -417,7 +417,7 @@ func TestCheckConditionTrue(t *testing.T) {
 		},
 		"condition unknown": {
 			conditions: []v1.PodCondition{
-				v1.PodCondition{
+				{
 					Type:   v1.PodConditionType(ConditionReady),
 					Status: v1.ConditionUnknown,
 				},
@@ -427,7 +427,7 @@ func TestCheckConditionTrue(t *testing.T) {
 		},
 		"condition true": {
 			conditions: []v1.PodCondition{
-				v1.PodCondition{
+				{
 					Type:   v1.PodConditionType(ConditionReady),
 					Status: v1.ConditionTrue,
 				},
@@ -437,7 +437,7 @@ func TestCheckConditionTrue(t *testing.T) {
 		},
 		"condition false": {
 			conditions: []v1.PodCondition{
-				v1.PodCondition{
+				{
 					Type:    v1.PodConditionType(ConditionReady),
 					Status:  v1.ConditionFalse,
 					Message: "SomeMessage",
