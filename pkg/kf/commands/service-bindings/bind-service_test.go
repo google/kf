@@ -20,7 +20,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	servicebindingscmd "github.com/google/kf/pkg/kf/commands/service-bindings"
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/google/kf/pkg/kf/service-bindings/fake"
 	"github.com/google/kf/pkg/kf/testutil"

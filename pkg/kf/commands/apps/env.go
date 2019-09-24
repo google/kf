@@ -18,8 +18,8 @@ import (
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/describe"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/spf13/cobra"
 )
 

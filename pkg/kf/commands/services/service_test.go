@@ -20,7 +20,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	servicescmd "github.com/google/kf/pkg/kf/commands/services"
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/services/fake"
 )
 

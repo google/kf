@@ -23,7 +23,7 @@ import (
 	"github.com/google/kf/pkg/kf/algorithms"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/spf13/cobra"
 )
 

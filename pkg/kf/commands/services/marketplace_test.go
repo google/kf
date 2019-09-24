@@ -23,7 +23,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/kf/commands/config"
 	servicescmd "github.com/google/kf/pkg/kf/commands/services"
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/marketplace"
 	"github.com/google/kf/pkg/kf/marketplace/fake"
 	"github.com/google/kf/pkg/kf/testutil"

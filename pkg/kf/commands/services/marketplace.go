@@ -19,8 +19,8 @@ import (
 	"io"
 
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/describe"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/marketplace"
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"

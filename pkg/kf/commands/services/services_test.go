@@ -23,7 +23,7 @@ import (
 	fakeapps "github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
 	servicescmd "github.com/google/kf/pkg/kf/commands/services"
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	fakemarketplace "github.com/google/kf/pkg/kf/marketplace/fake"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/google/kf/pkg/kf/services/fake"

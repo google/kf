@@ -20,8 +20,8 @@ import (
 
 	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/describe"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/services"
 	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"
