@@ -194,6 +194,21 @@ func (mr *FakeClientMockRecorder) WaitFor(arg0, arg1, arg2, arg3 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitFor", reflect.TypeOf((*FakeClient)(nil).WaitFor), arg0, arg1, arg2, arg3)
 }
 
+// WaitForDeletion mocks base method
+func (m *FakeClient) WaitForDeletion(arg0 context.Context, arg1 string, arg2 time.Duration) (*v1alpha1.Space, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WaitForDeletion", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*v1alpha1.Space)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// WaitForDeletion indicates an expected call of WaitForDeletion
+func (mr *FakeClientMockRecorder) WaitForDeletion(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitForDeletion", reflect.TypeOf((*FakeClient)(nil).WaitForDeletion), arg0, arg1, arg2)
+}
+
 // WaitForE mocks base method
 func (m *FakeClient) WaitForE(arg0 context.Context, arg1 string, arg2 time.Duration, arg3 spaces.ConditionFuncE) (*v1alpha1.Space, error) {
 	m.ctrl.T.Helper()

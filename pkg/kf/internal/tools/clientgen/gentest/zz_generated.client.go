@@ -27,6 +27,7 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"knative.dev/pkg/apis"
 	"knative.dev/pkg/kmp"
 )
 
@@ -42,22 +43,27 @@ import (
 
 const (
 	// Kind contains the kind for the backing Kubernetes API.
-	Kind = "Secret"
+	Kind = "Pod"
 
 	// APIVersion contains the version for the backing Kubernetes API.
 	APIVersion = "v1"
 )
 
-// Predicate is a boolean function for a v1.Secret.
-type Predicate func(*v1.Secret) bool
+var (
+	ConditionReady       = apis.ConditionType("Ready")
+	ConditionInitialized = apis.ConditionType(v1.PodInitialized)
+)
 
-// Mutator is a function that changes v1.Secret.
-type Mutator func(*v1.Secret) error
+// Predicate is a boolean function for a v1.Pod.
+type Predicate func(*v1.Pod) bool
+
+// Mutator is a function that changes v1.Pod.
+type Mutator func(*v1.Pod) error
 
 // DiffWrapper wraps a mutator and prints out the diff between the original object
 // and the one it returns if there's no error.
 func DiffWrapper(w io.Writer, mutator Mutator) Mutator {
-	return func(mutable *v1.Secret) error {
+	return func(mutable *v1.Pod) error {
 		before := mutable.DeepCopy()
 
 		if err := mutator(mutable); err != nil {
@@ -70,9 +76,9 @@ func DiffWrapper(w io.Writer, mutator Mutator) Mutator {
 	}
 }
 
-// FormatDiff creates a diff between two v1.Secrets and writes it to the given
+// FormatDiff creates a diff between two v1.Pods and writes it to the given
 // writer.
-func FormatDiff(w io.Writer, leftName, rightName string, left, right *v1.Secret) {
+func FormatDiff(w io.Writer, leftName, rightName string, left, right *v1.Pod) {
 	diff, err := kmp.SafeDiff(left, right)
 	switch {
 	case err != nil:
@@ -90,8 +96,8 @@ func FormatDiff(w io.Writer, leftName, rightName string, left, right *v1.Secret)
 	}
 }
 
-// List represents a collection of v1.Secret.
-type List []v1.Secret
+// List represents a collection of v1.Pod.
+type List []v1.Pod
 
 // Filter returns a new list items for which the predicates fails removed.
 func (list List) Filter(filter Predicate) (out List) {
@@ -104,32 +110,60 @@ func (list List) Filter(filter Predicate) (out List) {
 	return
 }
 
+// ObservedGenerationMatchesGeneration is a predicate that returns true if the
+// object's ObservedGeneration matches the genration of the object.
+func ObservedGenerationMatchesGeneration(obj *v1.Pod) bool {
+	return obj.Generation == obj.Generation
+}
+
+// ExtractConditions converts the native condition types into an apis.Condition
+// array with the Type, Status, Reason, and Message fields intact.
+func ExtractConditions(obj *v1.Pod) (extracted []apis.Condition) {
+	for _, cond := range obj.Status.Conditions {
+		// Only copy the following four fields to be compatible with
+		// recommended Kuberntes fields.
+		extracted = append(extracted, apis.Condition{
+			Type:    apis.ConditionType(cond.Type),
+			Status:  cond.Status,
+			Reason:  cond.Reason,
+			Message: cond.Message,
+		})
+	}
+
+	return
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Client
 ////////////////////////////////////////////////////////////////////////////////
 
-// Client is the interface for interacting with v1.Secret types as OperatorConfig CF style objects.
+// Client is the interface for interacting with v1.Pod types as OperatorConfig CF style objects.
 type Client interface {
-	Create(namespace string, obj *v1.Secret, opts ...CreateOption) (*v1.Secret, error)
-	Update(namespace string, obj *v1.Secret, opts ...UpdateOption) (*v1.Secret, error)
-	Transform(namespace string, name string, transformer Mutator) (*v1.Secret, error)
-	Get(namespace string, name string, opts ...GetOption) (*v1.Secret, error)
+	Create(namespace string, obj *v1.Pod, opts ...CreateOption) (*v1.Pod, error)
+	Update(namespace string, obj *v1.Pod, opts ...UpdateOption) (*v1.Pod, error)
+	Transform(namespace string, name string, transformer Mutator) (*v1.Pod, error)
+	Get(namespace string, name string, opts ...GetOption) (*v1.Pod, error)
 	Delete(namespace string, name string, opts ...DeleteOption) error
-	List(namespace string, opts ...ListOption) ([]v1.Secret, error)
-	Upsert(namespace string, newObj *v1.Secret, merge Merger) (*v1.Secret, error)
-	WaitFor(ctx context.Context, namespace string, name string, interval time.Duration, condition Predicate) (*v1.Secret, error)
-	WaitForE(ctx context.Context, namespace string, name string, interval time.Duration, condition ConditionFuncE) (*v1.Secret, error)
+	List(namespace string, opts ...ListOption) ([]v1.Pod, error)
+	Upsert(namespace string, newObj *v1.Pod, merge Merger) (*v1.Pod, error)
+	WaitFor(ctx context.Context, namespace string, name string, interval time.Duration, condition Predicate) (*v1.Pod, error)
+	WaitForE(ctx context.Context, namespace string, name string, interval time.Duration, condition ConditionFuncE) (*v1.Pod, error)
+
+	// Utility functions
+	WaitForDeletion(ctx context.Context, namespace string, name string, interval time.Duration) (*v1.Pod, error)
+	WaitForConditionReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (*v1.Pod, error)
+	WaitForConditionInitializedTrue(ctx context.Context, namespace string, name string, interval time.Duration) (*v1.Pod, error)
 
 	// ClientExtension can be used by the developer to extend the client.
 	ClientExtension
 }
 
 type coreClient struct {
-	kclient      cv1.SecretsGetter
+	kclient      cv1.PodsGetter
 	upsertMutate Mutator
 }
 
-func (core *coreClient) preprocessUpsert(obj *v1.Secret) error {
+func (core *coreClient) preprocessUpsert(obj *v1.Pod) error {
 	if core.upsertMutate == nil {
 		return nil
 	}
@@ -137,30 +171,30 @@ func (core *coreClient) preprocessUpsert(obj *v1.Secret) error {
 	return core.upsertMutate(obj)
 }
 
-// Create inserts the given v1.Secret into the cluster.
+// Create inserts the given v1.Pod into the cluster.
 // The value to be inserted will be preprocessed and validated before being sent.
-func (core *coreClient) Create(namespace string, obj *v1.Secret, opts ...CreateOption) (*v1.Secret, error) {
+func (core *coreClient) Create(namespace string, obj *v1.Pod, opts ...CreateOption) (*v1.Pod, error) {
 	if err := core.preprocessUpsert(obj); err != nil {
 		return nil, err
 	}
 
-	return core.kclient.Secrets(namespace).Create(obj)
+	return core.kclient.Pods(namespace).Create(obj)
 }
 
 // Update replaces the existing object in the cluster with the new one.
 // The value to be inserted will be preprocessed and validated before being sent.
-func (core *coreClient) Update(namespace string, obj *v1.Secret, opts ...UpdateOption) (*v1.Secret, error) {
+func (core *coreClient) Update(namespace string, obj *v1.Pod, opts ...UpdateOption) (*v1.Pod, error) {
 	if err := core.preprocessUpsert(obj); err != nil {
 		return nil, err
 	}
 
-	return core.kclient.Secrets(namespace).Update(obj)
+	return core.kclient.Pods(namespace).Update(obj)
 }
 
 // Transform performs a read/modify/write on the object with the given name
 // and returns the updated object. Transform manages the options for the Get and
 // Update calls.
-func (core *coreClient) Transform(namespace string, name string, mutator Mutator) (*v1.Secret, error) {
+func (core *coreClient) Transform(namespace string, name string, mutator Mutator) (*v1.Pod, error) {
 	obj, err := core.Get(namespace, name)
 	if err != nil {
 		return nil, err
@@ -176,8 +210,8 @@ func (core *coreClient) Transform(namespace string, name string, mutator Mutator
 // Get retrieves an existing object in the cluster with the given name.
 // The function will return an error if an object is retrieved from the cluster
 // but doesn't pass the membership test of this client.
-func (core *coreClient) Get(namespace string, name string, opts ...GetOption) (*v1.Secret, error) {
-	res, err := core.kclient.Secrets(namespace).Get(name, metav1.GetOptions{})
+func (core *coreClient) Get(namespace string, name string, opts ...GetOption) (*v1.Pod, error) {
+	res, err := core.kclient.Pods(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get the OperatorConfig with the name %q: %v", name, err)
 	}
@@ -190,7 +224,7 @@ func (core *coreClient) Get(namespace string, name string, opts ...GetOption) (*
 func (core *coreClient) Delete(namespace string, name string, opts ...DeleteOption) error {
 	cfg := DeleteOptionDefaults().Extend(opts).toConfig()
 
-	if err := core.kclient.Secrets(namespace).Delete(name, cfg.ToDeleteOptions()); err != nil {
+	if err := core.kclient.Pods(namespace).Delete(name, cfg.ToDeleteOptions()); err != nil {
 		return fmt.Errorf("couldn't delete the OperatorConfig with the name %q: %v", name, err)
 	}
 
@@ -210,10 +244,10 @@ func (cfg deleteConfig) ToDeleteOptions() *metav1.DeleteOptions {
 
 // List gets objects in the cluster and filters the results based on the
 // internal membership test.
-func (core *coreClient) List(namespace string, opts ...ListOption) ([]v1.Secret, error) {
+func (core *coreClient) List(namespace string, opts ...ListOption) ([]v1.Pod, error) {
 	cfg := ListOptionDefaults().Extend(opts).toConfig()
 
-	res, err := core.kclient.Secrets(namespace).List(cfg.ToListOptions())
+	res, err := core.kclient.Pods(namespace).List(cfg.ToListOptions())
 	if err != nil {
 		return nil, fmt.Errorf("couldn't list OperatorConfigs: %v", err)
 	}
@@ -234,11 +268,11 @@ func (cfg listConfig) ToListOptions() (resp metav1.ListOptions) {
 }
 
 // Merger is a type to merge an existing value with a new one.
-type Merger func(newObj, oldObj *v1.Secret) *v1.Secret
+type Merger func(newObj, oldObj *v1.Pod) *v1.Pod
 
 // Upsert inserts the object into the cluster if it doesn't already exist, or else
 // calls the merge function to merge the existing and new then performs an Update.
-func (core *coreClient) Upsert(namespace string, newObj *v1.Secret, merge Merger) (*v1.Secret, error) {
+func (core *coreClient) Upsert(namespace string, newObj *v1.Pod, merge Merger) (*v1.Pod, error) {
 	// NOTE: the field selector may be ignored by some Kubernetes resources
 	// so we double check down below.
 	existing, err := core.List(namespace, WithListFieldSelector(map[string]string{"metadata.name": newObj.Name}))
@@ -257,7 +291,7 @@ func (core *coreClient) Upsert(namespace string, newObj *v1.Secret, merge Merger
 
 // WaitFor is a convenience wrapper for WaitForE that fails if the error
 // passed is non-nil. It allows the use of Predicates instead of ConditionFuncE.
-func (core *coreClient) WaitFor(ctx context.Context, namespace string, name string, interval time.Duration, condition Predicate) (*v1.Secret, error) {
+func (core *coreClient) WaitFor(ctx context.Context, namespace string, name string, interval time.Duration, condition Predicate) (*v1.Pod, error) {
 	return core.WaitForE(ctx, namespace, name, interval, wrapPredicate(condition))
 }
 
@@ -267,19 +301,19 @@ func (core *coreClient) WaitFor(ctx context.Context, namespace string, name stri
 //
 // This function MAY retrieve a nil instance and an apiErr. It's up to the
 // function to decide how to handle the apiErr.
-type ConditionFuncE func(instance *v1.Secret, apiErr error) (done bool, err error)
+type ConditionFuncE func(instance *v1.Pod, apiErr error) (done bool, err error)
 
 // WaitForE polls for the given object every interval until the condition
 // function becomes done or the timeout expires. The first poll occurs
 // immediately after the function is invoked.
 //
 // The function polls infinitely if no timeout is supplied.
-func (core *coreClient) WaitForE(ctx context.Context, namespace string, name string, interval time.Duration, condition ConditionFuncE) (instance *v1.Secret, err error) {
+func (core *coreClient) WaitForE(ctx context.Context, namespace string, name string, interval time.Duration, condition ConditionFuncE) (instance *v1.Pod, err error) {
 	var done bool
 	tick := time.Tick(interval)
 
 	for {
-		instance, err = core.kclient.Secrets(namespace).Get(name, metav1.GetOptions{})
+		instance, err = core.kclient.Pods(namespace).Get(name, metav1.GetOptions{})
 		if done, err = condition(instance, err); done {
 			return
 		}
@@ -295,7 +329,7 @@ func (core *coreClient) WaitForE(ctx context.Context, namespace string, name str
 
 // ConditionDeleted is a ConditionFuncE that succeeds if the error returned by
 // the cluster was a not found error.
-func ConditionDeleted(_ *v1.Secret, apiErr error) (bool, error) {
+func ConditionDeleted(_ *v1.Pod, apiErr error) (bool, error) {
 	if apiErr != nil {
 		if apierrors.IsNotFound(apiErr) {
 			apiErr = nil
@@ -310,11 +344,68 @@ func ConditionDeleted(_ *v1.Secret, apiErr error) (bool, error) {
 // wrapPredicate converts a predicate to a ConditionFuncE that fails if the
 // error is not nil
 func wrapPredicate(condition Predicate) ConditionFuncE {
-	return func(obj *v1.Secret, err error) (bool, error) {
+	return func(obj *v1.Pod, err error) (bool, error) {
 		if err != nil {
 			return true, err
 		}
 
 		return condition(obj), nil
 	}
+}
+
+// WaitForDeletion is a utility function that combines WaitForE with ConditionDeleted.
+func (core *coreClient) WaitForDeletion(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1.Pod, err error) {
+	return core.WaitForE(ctx, namespace, name, interval, ConditionDeleted)
+}
+
+func checkConditionTrue(obj *v1.Pod, err error, condition apis.ConditionType) (bool, error) {
+	if err != nil {
+		return true, err
+	}
+
+	// don't propagate old statuses
+	if !ObservedGenerationMatchesGeneration(obj) {
+		return false, nil
+	}
+
+	for _, cond := range ExtractConditions(obj) {
+		if cond.Type == condition {
+			switch {
+			case cond.IsTrue():
+				return true, nil
+
+			case cond.IsUnknown():
+				return false, nil
+
+			default:
+				// return true and a failure assuming IsFalse and other statuses can't be
+				// recovered from because they violate the K8s spec
+				return true, fmt.Errorf("checking %s failed, status: %s message: %s reason: %s", cond.Type, cond.Status, cond.Message, cond.Reason)
+			}
+		}
+	}
+
+	return false, nil
+}
+
+// ConditionReadyTrue is a ConditionFuncE that waits for Condition{Ready  Ready} to
+// become true and fails with an error if the condition becomes false.
+func ConditionReadyTrue(obj *v1.Pod, err error) (bool, error) {
+	return checkConditionTrue(obj, err, ConditionReady)
+}
+
+// WaitForConditionReadyTrue is a utility function that combines WaitForE with ConditionReadyTrue.
+func (core *coreClient) WaitForConditionReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1.Pod, err error) {
+	return core.WaitForE(ctx, namespace, name, interval, ConditionReadyTrue)
+}
+
+// ConditionInitializedTrue is a ConditionFuncE that waits for Condition{Initialized v1.PodInitialized } to
+// become true and fails with an error if the condition becomes false.
+func ConditionInitializedTrue(obj *v1.Pod, err error) (bool, error) {
+	return checkConditionTrue(obj, err, ConditionInitialized)
+}
+
+// WaitForConditionInitializedTrue is a utility function that combines WaitForE with ConditionInitializedTrue.
+func (core *coreClient) WaitForConditionInitializedTrue(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1.Pod, err error) {
+	return core.WaitForE(ctx, namespace, name, interval, ConditionInitializedTrue)
 }
