@@ -15,7 +15,9 @@
 package apps
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/completion"
@@ -26,6 +28,8 @@ import (
 
 // NewDeleteCommand creates a delete command.
 func NewDeleteCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
+	var async utils.AsyncFlags
+
 	cmd := &cobra.Command{
 		Use:     "delete APP_NAME",
 		Short:   "Delete an existing app",
@@ -67,11 +71,24 @@ func NewDeleteCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleting app %q %s", appName, utils.AsyncLogSuffix)
+			w := cmd.OutOrStdout()
+
+			if async.IsSynchronous() {
+				fmt.Fprintf(w, "Deleting app %q...\n", appName)
+				if _, err := appsClient.WaitForDeletion(context.Background(), p.Namespace, appName, 1*time.Second); err != nil {
+					return fmt.Errorf("couldn't delete: %s", err)
+				}
+
+				fmt.Fprintln(w, "Deleted")
+			} else {
+				fmt.Fprintf(w, "Deleting app %q asynchronously", appName)
+			}
 
 			return nil
 		},
 	}
+
+	async.Add(cmd)
 
 	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 

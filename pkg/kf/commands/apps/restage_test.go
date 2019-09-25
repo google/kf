@@ -60,10 +60,9 @@ func TestRestage(t *testing.T) {
 		},
 		"restages app async": {
 			Namespace: "default",
-			Args:      []string{"my-app"},
+			Args:      []string{"--async", "my-app"},
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().Restage("default", "my-app")
-				fake.EXPECT().DeployLogsForApp(gomock.Any(), gomock.Any())
 			},
 		},
 		"restages app deployment fail": {
