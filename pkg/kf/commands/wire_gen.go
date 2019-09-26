@@ -12,7 +12,6 @@ import (
 	"github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/typed/servicecatalog/v1beta1"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/buildpacks"
-	builds2 "github.com/google/kf/pkg/kf/builds"
 	apps2 "github.com/google/kf/pkg/kf/commands/apps"
 	buildpacks2 "github.com/google/kf/pkg/kf/commands/buildpacks"
 	"github.com/google/kf/pkg/kf/commands/builds"
@@ -468,10 +467,6 @@ func provideSrcImageBuilder() apps2.SrcImageBuilder {
 	return apps2.SrcImageBuilderFunc(kontext.BuildImage)
 }
 
-func provideBuildTailer() builds2.BuildTailer {
-	return builds2.BuildTailerFunc(logs2.Tail)
-}
-
 var AppsSet = wire.NewSet(
 	SourcesSet,
 	provideAppsGetter, apps.NewClient, apps.NewPusher,
@@ -513,5 +508,5 @@ func provideKfSources(ki v1alpha1.KfV1alpha1Interface) v1alpha1.SourcesGetter {
 }
 
 func provideSourcesBuildTailer() sources.BuildTailer {
-	return builds2.BuildTailerFunc(logs2.Tail)
+	return sources.BuildTailerFunc(logs2.Tail)
 }

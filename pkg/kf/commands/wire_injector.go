@@ -23,7 +23,6 @@ import (
 	scv1beta1 "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/typed/servicecatalog/v1beta1"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/buildpacks"
-	"github.com/google/kf/pkg/kf/builds"
 	capps "github.com/google/kf/pkg/kf/commands/apps"
 	cbuildpacks "github.com/google/kf/pkg/kf/commands/buildpacks"
 	cbuilds "github.com/google/kf/pkg/kf/commands/builds"
@@ -53,10 +52,6 @@ import (
 
 func provideSrcImageBuilder() capps.SrcImageBuilder {
 	return capps.SrcImageBuilderFunc(kontext.BuildImage)
-}
-
-func provideBuildTailer() builds.BuildTailer {
-	return builds.BuildTailerFunc(logs.Tail)
 }
 
 ///////////////////
@@ -446,7 +441,7 @@ func provideKfSources(ki kfv1alpha1.KfV1alpha1Interface) kfv1alpha1.SourcesGette
 }
 
 func provideSourcesBuildTailer() sources.BuildTailer {
-	return builds.BuildTailerFunc(logs.Tail)
+	return sources.BuildTailerFunc(logs.Tail)
 }
 
 func InjectBuilds(p *config.KfParams) *cobra.Command {
