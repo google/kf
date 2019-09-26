@@ -15,7 +15,6 @@
 package services
 
 import (
-	"encoding/json"
 	"fmt"
 
 	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
@@ -58,11 +57,7 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 				return err
 			}
 
-			params, err := services.ParseJSONOrFile(configAsJSON)
-			if err != nil {
-				return err
-			}
-			paramBytes, err := json.Marshal(params)
+			paramBytes, err := services.ParseJSONOrFile(configAsJSON)
 			if err != nil {
 				return err
 			}

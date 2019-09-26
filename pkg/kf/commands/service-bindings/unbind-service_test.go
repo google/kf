@@ -16,18 +16,17 @@ package servicebindings_test
 
 import (
 	"errors"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"testing"
 
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
+
 	"github.com/golang/mock/gomock"
+	"github.com/google/kf/pkg/kf/apps/fake"
 	servicebindingscmd "github.com/google/kf/pkg/kf/commands/service-bindings"
-	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
-	"github.com/google/kf/pkg/kf/service-bindings/fake"
-	"github.com/google/kf/pkg/kf/testutil"
 )
 
 func TestNewUnbindServiceCommand(t *testing.T) {
-	cases := map[string]serviceTest{
+	cases := map[string]appsTest{
 		"wrong number of args": {
 			Args:        []string{},
 			ExpectedErr: errors.New("accepts 2 arg(s), received 0"),
@@ -35,32 +34,19 @@ func TestNewUnbindServiceCommand(t *testing.T) {
 		"command params get passed correctly": {
 			Args:      []string{"APP_NAME", "SERVICE_INSTANCE"},
 			Namespace: "custom-ns",
-			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-				f.EXPECT().Delete("SERVICE_INSTANCE", "APP_NAME", gomock.Any()).Do(func(instance, app string, opts ...servicebindings.DeleteOption) {
-					config := servicebindings.DeleteOptions(opts)
-					testutil.AssertEqual(t, "namespace", "custom-ns", config.Namespace())
-				}).Return(nil)
+			Setup: func(t *testing.T, f *fake.FakeClient) {
+				f.EXPECT().UnbindService("custom-ns", "APP_NAME", "SERVICE_INSTANCE")
 			},
 		},
 		"empty namespace": {
 			Args:        []string{"APP_NAME", "SERVICE_INSTANCE"},
 			ExpectedErr: errors.New(utils.EmptyNamespaceError),
 		},
-		"defaults config": {
-			Args:      []string{"APP_NAME", "SERVICE_INSTANCE"},
-			Namespace: "custom-ns",
-			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-				f.EXPECT().Delete("SERVICE_INSTANCE", "APP_NAME", gomock.Any()).Do(func(instance, app string, opts ...servicebindings.DeleteOption) {
-					config := servicebindings.DeleteOptions(opts)
-					testutil.AssertEqual(t, "namespace", "custom-ns", config.Namespace())
-				}).Return(nil)
-			},
-		},
 		"bad server call": {
 			Args:      []string{"APP_NAME", "SERVICE_INSTANCE"},
 			Namespace: "custom-ns",
-			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-				f.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("api-error"))
+			Setup: func(t *testing.T, f *fake.FakeClient) {
+				f.EXPECT().UnbindService(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api-error"))
 			},
 			ExpectedErr: errors.New("api-error"),
 		},
@@ -68,7 +54,7 @@ func TestNewUnbindServiceCommand(t *testing.T) {
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			runTest(t, tc, servicebindingscmd.NewUnbindServiceCommand)
+			runAppsTest(t, tc, servicebindingscmd.NewUnbindServiceCommand)
 		})
 	}
 }

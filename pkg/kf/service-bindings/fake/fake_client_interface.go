@@ -20,9 +20,7 @@
 package fake
 
 import (
-	context "context"
 	gomock "github.com/golang/mock/gomock"
-	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	service_bindings "github.com/google/kf/pkg/kf/service-bindings"
 	v1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	reflect "reflect"
@@ -51,45 +49,6 @@ func (m *FakeClientInterface) EXPECT() *FakeClientInterfaceMockRecorder {
 	return m.recorder
 }
 
-// Create mocks base method
-func (m *FakeClientInterface) Create(arg0, arg1 string, arg2 ...service_bindings.CreateOption) (*v1alpha1.AppSpecServiceBinding, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Create", varargs...)
-	ret0, _ := ret[0].(*v1alpha1.AppSpecServiceBinding)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Create indicates an expected call of Create
-func (mr *FakeClientInterfaceMockRecorder) Create(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*FakeClientInterface)(nil).Create), varargs...)
-}
-
-// Delete mocks base method
-func (m *FakeClientInterface) Delete(arg0, arg1 string, arg2 ...service_bindings.DeleteOption) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0, arg1}
-	for _, a := range arg2 {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Delete", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Delete indicates an expected call of Delete
-func (mr *FakeClientInterfaceMockRecorder) Delete(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0, arg1}, arg2...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*FakeClientInterface)(nil).Delete), varargs...)
-}
-
 // List mocks base method
 func (m *FakeClientInterface) List(arg0 ...service_bindings.ListOption) ([]v1beta1.ServiceBinding, error) {
 	m.ctrl.T.Helper()
@@ -107,18 +66,4 @@ func (m *FakeClientInterface) List(arg0 ...service_bindings.ListOption) ([]v1bet
 func (mr *FakeClientInterfaceMockRecorder) List(arg0 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*FakeClientInterface)(nil).List), arg0...)
-}
-
-// WaitForBindings mocks base method
-func (m *FakeClientInterface) WaitForBindings(arg0 context.Context, arg1, arg2 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "WaitForBindings", arg0, arg1, arg2)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// WaitForBindings indicates an expected call of WaitForBindings
-func (mr *FakeClientInterfaceMockRecorder) WaitForBindings(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitForBindings", reflect.TypeOf((*FakeClientInterface)(nil).WaitForBindings), arg0, arg1, arg2)
 }

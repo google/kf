@@ -235,9 +235,7 @@ func InjectMarketplace(p *config.KfParams) *cobra.Command {
 /////////////////////
 func InjectBindingService(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		servicebindings.NewClient,
 		servicebindingscmd.NewBindServiceCommand,
-		config.GetServiceCatalogClient,
 		AppsSet,
 	)
 	return nil
@@ -248,16 +246,13 @@ func InjectListBindings(p *config.KfParams) *cobra.Command {
 		servicebindings.NewClient,
 		servicebindingscmd.NewListBindingsCommand,
 		config.GetServiceCatalogClient,
-		AppsSet,
 	)
 	return nil
 }
 
 func InjectUnbindService(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		servicebindings.NewClient,
 		servicebindingscmd.NewUnbindServiceCommand,
-		config.GetServiceCatalogClient,
 		AppsSet,
 	)
 	return nil

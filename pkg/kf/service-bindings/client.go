@@ -15,15 +15,8 @@
 package servicebindings
 
 import (
-	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"time"
-
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
-	"github.com/google/kf/pkg/kf/apps"
 	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -33,75 +26,20 @@ import (
 // ClientInterface is a client capable of interacting with service catalog services
 // and mapping the CF to Kubernetes concepts.
 type ClientInterface interface {
-	// Create binds a service instance to an app.
-	Create(serviceInstanceName, appName string, opts ...CreateOption) (*v1alpha1.AppSpecServiceBinding, error)
-
-	// Delete removes a service binding from an app.
-	Delete(serviceInstanceName, appName string, opts ...DeleteOption) error
-
 	// List queries Kubernetes for service bindings.
 	List(opts ...ListOption) ([]servicecatalogv1beta1.ServiceBinding, error)
-
-	WaitForBindings(ctx context.Context, namespace, appName string) error
 }
 
 // NewClient creates a new client capable of interacting with service catalog
 // services.
-func NewClient(appsClient apps.Client, svcatClient servicecatalogclient.Interface) ClientInterface {
+func NewClient(svcatClient servicecatalogclient.Interface) ClientInterface {
 	return &Client{
-		appsClient:  appsClient,
 		svcatClient: svcatClient,
 	}
 }
 
 type Client struct {
-	appsClient  apps.Client
 	svcatClient servicecatalogclient.Interface
-}
-
-// Create binds a service instance to an app.
-func (c *Client) Create(serviceInstanceName, appName string, opts ...CreateOption) (*v1alpha1.AppSpecServiceBinding, error) {
-	cfg := CreateOptionDefaults().Extend(opts).toConfig()
-
-	if serviceInstanceName == "" {
-		return nil, errors.New("can't create service binding, no service instance given")
-	}
-
-	if appName == "" {
-		return nil, errors.New("can't create service binding, no app name given")
-	}
-
-	bindingName := cfg.BindingName
-
-	parameters, err := json.Marshal(cfg.Params)
-	if err != nil {
-		return nil, err
-	}
-
-	binding := &v1alpha1.AppSpecServiceBinding{
-		Instance:    serviceInstanceName,
-		Parameters:  parameters,
-		BindingName: bindingName,
-	}
-	_, err = c.appsClient.Transform(cfg.Namespace, appName, func(app *v1alpha1.App) error {
-		BindService(app, binding)
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return binding, nil
-}
-
-// Delete unbinds a service instance from an app.
-func (c *Client) Delete(serviceInstanceName, appName string, opts ...DeleteOption) error {
-	cfg := DeleteOptionDefaults().Extend(opts).toConfig()
-	_, err := c.appsClient.Transform(cfg.Namespace, appName, func(app *v1alpha1.App) error {
-		UnbindService(app, serviceInstanceName)
-		return nil
-	})
-	return err
 }
 
 // List queries Kubernetes for service bindings.
@@ -136,37 +74,4 @@ func (c *Client) List(opts ...ListOption) ([]servicecatalogv1beta1.ServiceBindin
 	}
 
 	return filtered, nil
-}
-
-// WaitForBindings waits for bindings to all be ready or fail on the given app.
-func (c *Client) WaitForBindings(ctx context.Context, namespace, appName string) error {
-	_, err := c.appsClient.WaitForConditionServiceBindingsReadyTrue(ctx, namespace, appName, 2*time.Second)
-	return err
-}
-
-// serviceBindingName is the primary key for service bindings consisting of the
-// app name paired with the instance name to duplicate CF's 1:1 binding limit.
-func serviceBindingName(appName, instanceName string) string {
-	return fmt.Sprintf("kf-binding-%s-%s", appName, instanceName)
-}
-
-// BindService binds a service to an App.
-func BindService(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBinding) {
-	for i, b := range app.Spec.ServiceBindings {
-		if b.BindingName == binding.BindingName {
-			app.Spec.ServiceBindings[i] = *binding
-			return
-		}
-	}
-	app.Spec.ServiceBindings = append(app.Spec.ServiceBindings, *binding)
-}
-
-// UnbindService unbinds a service from an App.
-func UnbindService(app *v1alpha1.App, bindingName string) {
-	for i, binding := range app.Spec.ServiceBindings {
-		if binding.BindingName == bindingName {
-			app.Spec.ServiceBindings = append(app.Spec.ServiceBindings[:i], app.Spec.ServiceBindings[i+1:]...)
-			break
-		}
-	}
 }

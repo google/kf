@@ -29,6 +29,7 @@ import (
 	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
 	"github.com/google/kf/pkg/kf/marketplace"
 	"github.com/google/kf/pkg/kf/secrets"
+	"github.com/google/kf/pkg/kf/services"
 	"github.com/imdario/mergo"
 	build "github.com/knative/build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	serving "github.com/knative/serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"

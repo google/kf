@@ -57,7 +57,7 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 	pusher := apps.NewPusher(appsClient)
 	srcImageBuilder := provideSrcImageBuilder()
 	versionedInterface := config.GetServiceCatalogClient(p)
-	clientInterface := servicebindings.NewClient(appsClient, versionedInterface)
+	clientInterface := servicebindings.NewClient(versionedInterface)
 	command := apps2.NewPushCommand(p, appsClient, pusher, srcImageBuilder, clientInterface)
 	return command
 }
@@ -255,21 +255,13 @@ func InjectBindingService(p *config.KfParams) *cobra.Command {
 	buildTailer := provideSourcesBuildTailer()
 	client := sources.NewClient(sourcesGetter, buildTailer)
 	appsClient := apps.NewClient(appsGetter, client)
-	versionedInterface := config.GetServiceCatalogClient(p)
-	clientInterface := servicebindings.NewClient(appsClient, versionedInterface)
-	command := servicebindings2.NewBindServiceCommand(p, clientInterface)
+	command := servicebindings2.NewBindServiceCommand(p, appsClient)
 	return command
 }
 
 func InjectListBindings(p *config.KfParams) *cobra.Command {
-	kfV1alpha1Interface := config.GetKfClient(p)
-	appsGetter := provideAppsGetter(kfV1alpha1Interface)
-	sourcesGetter := provideKfSources(kfV1alpha1Interface)
-	buildTailer := provideSourcesBuildTailer()
-	client := sources.NewClient(sourcesGetter, buildTailer)
-	appsClient := apps.NewClient(appsGetter, client)
 	versionedInterface := config.GetServiceCatalogClient(p)
-	clientInterface := servicebindings.NewClient(appsClient, versionedInterface)
+	clientInterface := servicebindings.NewClient(versionedInterface)
 	command := servicebindings2.NewListBindingsCommand(p, clientInterface)
 	return command
 }
@@ -281,9 +273,7 @@ func InjectUnbindService(p *config.KfParams) *cobra.Command {
 	buildTailer := provideSourcesBuildTailer()
 	client := sources.NewClient(sourcesGetter, buildTailer)
 	appsClient := apps.NewClient(appsGetter, client)
-	versionedInterface := config.GetServiceCatalogClient(p)
-	clientInterface := servicebindings.NewClient(appsClient, versionedInterface)
-	command := servicebindings2.NewUnbindServiceCommand(p, clientInterface)
+	command := servicebindings2.NewUnbindServiceCommand(p, appsClient)
 	return command
 }
 

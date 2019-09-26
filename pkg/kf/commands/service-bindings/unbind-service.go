@@ -17,14 +17,14 @@ package servicebindings
 import (
 	"fmt"
 
+	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/spf13/cobra"
 )
 
 // NewUnbindServiceCommand allows users to unbind apps from service instances.
-func NewUnbindServiceCommand(p *config.KfParams, client servicebindings.ClientInterface) *cobra.Command {
+func NewUnbindServiceCommand(p *config.KfParams, client apps.Client) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "unbind-service APP_NAME SERVICE_INSTANCE",
 		Aliases: []string{"us"},
@@ -46,11 +46,8 @@ func NewUnbindServiceCommand(p *config.KfParams, client servicebindings.ClientIn
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err
 			}
-			err := client.Delete(
-				instanceName,
-				appName,
-				servicebindings.WithDeleteNamespace(p.Namespace))
-			if err != nil {
+
+			if _, err := client.UnbindService(p.Namespace, appName, instanceName); err != nil {
 				return err
 			}
 
