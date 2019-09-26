@@ -12,13 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fake
+package services
 
-import "github.com/google/kf/pkg/kf/services"
+import (
+	cv1beta1 "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/typed/servicecatalog/v1beta1"
+)
 
-//go:generate mockgen --package=fake --destination=fake_client.go --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --mock_names=Client=FakeClient github.com/google/kf/pkg/kf/services/fake Client
+// ClientExtension holds additional functions that should be exposed by client.
+type ClientExtension interface {
+}
 
-// Client is implementd by services.Client.
-type Client interface {
-	services.Client
+// NewClient creates a new service client.
+func NewClient(kclient cv1beta1.ServiceInstancesGetter) Client {
+	return &coreClient{
+		kclient: kclient,
+	}
 }

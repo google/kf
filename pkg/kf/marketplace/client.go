@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package services
+package marketplace
 
 import (
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
 )
-
-//go:generate go run ../internal/tools/option-builder/option-builder.go options.yml options.go
 
 // KfMarketplace contains information to describe the
 // services and plans available in the catalog.
@@ -31,21 +29,11 @@ type KfMarketplace struct {
 // ClientInterface is a client capable of interacting with service catalog services
 // and mapping the CF to Kubernetes concepts.
 type ClientInterface interface {
-
-	// DeleteService removes an instance of a service on the cluster.
-	DeleteService(instanceName string, opts ...DeleteServiceOption) error
-
-	// GetService gets an instance of a service on the cluster.
-	GetService(instanceName string, opts ...GetServiceOption) (*v1beta1.ServiceInstance, error)
-
-	// ListServices lists instances of services on the cluster.
-	ListServices(opts ...ListServicesOption) (*v1beta1.ServiceInstanceList, error)
-
 	// Marketplace lists available services and plans in the marketplace.
-	Marketplace(opts ...MarketplaceOption) (*KfMarketplace, error)
+	Marketplace(namespace string) (*KfMarketplace, error)
 
 	// BrokerName fetches the service broker name for a service.
-	BrokerName(service v1beta1.ServiceInstance, opts ...BrokerNameOption) (string, error)
+	BrokerName(service v1beta1.ServiceInstance) (string, error)
 }
 
 // SClientFactory creates a Service Catalog client.
@@ -64,40 +52,12 @@ type Client struct {
 	createSvcatClient SClientFactory
 }
 
-// DeleteService removes an instance of a service on the cluster.
-func (c *Client) DeleteService(instanceName string, opts ...DeleteServiceOption) error {
-	cfg := DeleteServiceOptionDefaults().Extend(opts).toConfig()
-
-	svcat := c.createSvcatClient(cfg.Namespace)
-	return svcat.Deprovision(cfg.Namespace, instanceName)
-}
-
-// GetService gets an instance of a service on the cluster.
-func (c *Client) GetService(instanceName string, opts ...GetServiceOption) (*v1beta1.ServiceInstance, error) {
-	cfg := GetServiceOptionDefaults().Extend(opts).toConfig()
-
-	svcat := c.createSvcatClient(cfg.Namespace)
-	return svcat.RetrieveInstance(cfg.Namespace, instanceName)
-}
-
-// ListServices lists instances of services on the cluster.
-func (c *Client) ListServices(opts ...ListServicesOption) (*v1beta1.ServiceInstanceList, error) {
-	cfg := ListServicesOptionDefaults().Extend(opts).toConfig()
-
-	svcat := c.createSvcatClient(cfg.Namespace)
-
-	// RetrieveInstances(ns, classFilter, planFilter string)
-	return svcat.RetrieveInstances(cfg.Namespace, "", "")
-}
-
 // Marketplace lists available services and plans in the marketplace.
-func (c *Client) Marketplace(opts ...MarketplaceOption) (*KfMarketplace, error) {
-	cfg := MarketplaceOptionDefaults().Extend(opts).toConfig()
-
-	svcat := c.createSvcatClient(cfg.Namespace)
+func (c *Client) Marketplace(namespace string) (*KfMarketplace, error) {
+	svcat := c.createSvcatClient(namespace)
 
 	scope := servicecatalog.ScopeOptions{
-		Namespace: cfg.Namespace,
+		Namespace: namespace,
 		Scope:     servicecatalog.AllScope,
 	}
 
@@ -119,9 +79,8 @@ func (c *Client) Marketplace(opts ...MarketplaceOption) (*KfMarketplace, error) 
 }
 
 // BrokerName fetches the service broker name for a service.
-func (c *Client) BrokerName(service v1beta1.ServiceInstance, opts ...BrokerNameOption) (string, error) {
-	cfg := BrokerNameOptionDefaults().Extend(opts).toConfig()
-	svcat := c.createSvcatClient(cfg.Namespace)
+func (c *Client) BrokerName(service v1beta1.ServiceInstance) (string, error) {
+	svcat := c.createSvcatClient(service.GetNamespace())
 
 	scope := servicecatalog.ScopeOptions{
 		Scope: servicecatalog.ClusterScope,

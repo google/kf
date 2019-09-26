@@ -12,13 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package fake
+// Package services contains the client for working with service catalog
+// service instances.
+package services
 
-import "github.com/google/kf/pkg/kf/services"
-
-//go:generate mockgen --package=fake --destination=fake_client.go --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --mock_names=Client=FakeClient github.com/google/kf/pkg/kf/services/fake Client
-
-// Client is implementd by services.Client.
-type Client interface {
-	services.Client
-}
+//go:generate go run ../internal/tools/option-builder/option-builder.go --pkg services ../internal/tools/clientgen/common-options.yml zz_generated.clientoptions.go
+//go:generate go run ../internal/tools/clientgen/genclient.go client.yml
