@@ -132,7 +132,7 @@ func (r *Reconciler) ApplyChanges(
 		return err
 	}
 
-	desired, err := resources.MakeVirtualService(claims, routes)
+	desired, err := resources.MakeVirtualService(fields, routes)
 	if err != nil {
 		return err
 	}
