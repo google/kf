@@ -225,8 +225,8 @@ func (app *Application) WarnUnofficialFields(w io.Writer) error {
 		sort.Strings(unofficialFields)
 
 		fmt.Fprintln(w)
-		fmt.Fprintf(w, `WARNING! The field(s) %v are Kf extensions to the manifest and are subject to change.
-See https://github.com/google/kf/issues/95 for more info.`, unofficialFields)
+		fmt.Fprintf(w, "WARNING! The field(s) %v are Kf-specific manifest extensions and may change.\n", unofficialFields)
+		fmt.Fprintln(w, "See https://github.com/google/kf/issues/95 for more info.")
 		fmt.Fprintln(w)
 	}
 
