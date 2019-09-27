@@ -83,7 +83,7 @@ func TestPushCommand(t *testing.T) {
 			args: []string{
 				"example-app",
 				"--buildpack", "some-buildpack",
-				"--grpc",
+				"--enable-http2",
 				"--env", "env1=val1",
 				"-e", "env2=val2",
 				"--container-registry", "some-reg.io",

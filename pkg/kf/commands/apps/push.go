@@ -33,6 +33,7 @@ import (
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"knative.dev/pkg/ptr"
 )
 
 // SrcImageBuilder creates and uploads a container image that contains the
@@ -83,7 +84,7 @@ func NewPushCommand(
 		buildpack           string
 		stack               string
 		envs                []string
-		grpc                bool
+		enableHTTP2         bool
 		noManifest          bool
 		noStart             bool
 		healthCheckType     string
@@ -219,9 +220,23 @@ func NewPushCommand(
 				if cmd.Flags().Lookup("max-scale").Changed {
 					overrides.MaxScale = &maxScale
 				}
+
+				if cmd.Flags().Lookup("enable-http2").Changed {
+					overrides.EnableHTTP2 = ptr.Bool(enableHTTP2)
+				}
+
+				if cmd.Flags().Lookup("no-start").Changed {
+					overrides.NoStart = ptr.Bool(noStart)
+				}
 			}
 
 			for _, app := range appsToDeploy {
+				// Warn the user about unofficial fields they might be using before
+				// overriding the manifest.
+				if err := app.WarnUnofficialFields(cmd.OutOrStderr()); err != nil {
+					return err
+				}
+
 				if err := app.Override(overrides); err != nil {
 					return err
 				}
@@ -291,11 +306,9 @@ func NewPushCommand(
 				pushOpts := []apps.PushOption{
 					apps.WithPushNamespace(p.Namespace),
 					apps.WithPushEnvironmentVariables(app.Env),
-					apps.WithPushGrpc(grpc),
 					apps.WithPushExactScale(exactScale),
 					apps.WithPushMinScale(minScale),
 					apps.WithPushMaxScale(maxScale),
-					apps.WithPushNoStart(noStart),
 					apps.WithPushRoutes(routes),
 					apps.WithPushMemory(memoryRequest),
 					apps.WithPushDiskQuota(storageRequest),
@@ -305,6 +318,14 @@ func NewPushCommand(
 					apps.WithPushDefaultRouteDomain(defaultRouteDomain),
 					apps.WithPushCommand(app.CommandEntrypoint()),
 					apps.WithPushArgs(app.CommandArgs()),
+				}
+
+				if app.EnableHTTP2 != nil {
+					pushOpts = append(pushOpts, apps.WithPushGrpc(*app.EnableHTTP2))
+				}
+
+				if app.NoStart != nil {
+					pushOpts = append(pushOpts, apps.WithPushNoStart(*app.NoStart))
 				}
 
 				if app.Docker.Image == "" {
@@ -403,10 +424,10 @@ func NewPushCommand(
 	)
 
 	pushCmd.Flags().BoolVar(
-		&grpc,
-		"grpc",
+		&enableHTTP2,
+		"enable-http2",
 		false,
-		"Setup the container to allow application to use gRPC.",
+		"Setup the container to allow application to use HTTP2 and gRPC.",
 	)
 
 	pushCmd.Flags().BoolVar(

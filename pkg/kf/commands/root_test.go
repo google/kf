@@ -77,7 +77,7 @@ func checkCommandStyle(t *testing.T, cmd *cobra.Command) {
 
 			cmd.LocalFlags().VisitAll(func(f *flag.Flag) {
 				t.Run("flag:"+f.Name, func(t *testing.T) {
-					testutil.AssertRegexp(t, "name", "^[a-z][a-z-]+$", f.Name)
+					testutil.AssertRegexp(t, "name", "^[a-z][a-z0-9-]+$", f.Name)
 
 					if !startsWithUpper(f.Usage) {
 						t.Errorf("usage must start with an upper-case character, got: %s", f.Usage)
