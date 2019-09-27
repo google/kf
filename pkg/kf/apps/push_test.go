@@ -94,7 +94,7 @@ func TestPush_Logs(t *testing.T) {
 				apps.WithPushSourceImage(tc.srcImage),
 				apps.WithPushContainerImage(tc.containerImage),
 				apps.WithPushNamespace(expectedNamespace),
-				apps.WithPushNoStart(tc.noStart),
+				apps.WithPushAppSpecInstances(v1alpha1.AppSpecInstances{Stopped: tc.noStart}),
 			)
 
 			testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
@@ -108,7 +108,7 @@ func TestPush(t *testing.T) {
 
 	mem := resource.MustParse("2Gi")
 	storage := resource.MustParse("2Gi")
-	cpu := resource.MustParse("2")
+	cpu := resource.MustParse("2m")
 
 	for tn, tc := range map[string]struct {
 		appName   string
@@ -152,7 +152,7 @@ func TestPush(t *testing.T) {
 			buildpack: "some-buildpack",
 			opts: apps.PushOptions{
 				apps.WithPushSourceImage("some-image"),
-				apps.WithPushExactScale(intPtr(9)),
+				apps.WithPushAppSpecInstances(v1alpha1.AppSpecInstances{Exactly: intPtr(9)}),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
@@ -190,8 +190,7 @@ func TestPush(t *testing.T) {
 			buildpack: "some-buildpack",
 			opts: apps.PushOptions{
 				apps.WithPushSourceImage("some-image"),
-				apps.WithPushMinScale(intPtr(9)),
-				apps.WithPushMaxScale(intPtr(11)),
+				apps.WithPushAppSpecInstances(v1alpha1.AppSpecInstances{Min: intPtr(9), Max: intPtr(11)}),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
@@ -434,9 +433,11 @@ func TestPush(t *testing.T) {
 		"pushes with resource requests": {
 			appName: "some-app",
 			opts: apps.PushOptions{
-				apps.WithPushMemory(&mem),
-				apps.WithPushDiskQuota(&storage),
-				apps.WithPushCPU(&cpu),
+				apps.WithPushResourceRequests(corev1.ResourceList{
+					corev1.ResourceMemory:           mem,
+					corev1.ResourceEphemeralStorage: storage,
+					corev1.ResourceCPU:              cpu,
+				}),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
@@ -450,10 +451,12 @@ func TestPush(t *testing.T) {
 					Return(&v1alpha1.App{}, nil)
 			},
 		},
-		"pushes with not all resource requests": {
+		"pushes with partial resource requests": {
 			appName: "some-app",
 			opts: apps.PushOptions{
-				apps.WithPushMemory(&mem),
+				apps.WithPushResourceRequests(corev1.ResourceList{
+					corev1.ResourceMemory: mem,
+				}),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
@@ -511,7 +514,7 @@ func TestPush(t *testing.T) {
 			buildpack: "some-buildpack",
 			opts: apps.PushOptions{
 				apps.WithPushNamespace("default"),
-				apps.WithPushNoStart(true),
+				apps.WithPushAppSpecInstances(v1alpha1.AppSpecInstances{Stopped: true}),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
 				appsClient.EXPECT().
