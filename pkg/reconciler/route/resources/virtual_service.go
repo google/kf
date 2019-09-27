@@ -15,13 +15,11 @@
 package resources
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"path"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/algorithms"
 	"github.com/knative/serving/pkg/network"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	istio "knative.dev/pkg/apis/istio/common/v1alpha1"
@@ -46,61 +44,20 @@ func MakeVirtualServiceLabels(spec v1alpha1.RouteSpecFields) map[string]string {
 }
 
 // MakeVirtualService creates a VirtualService from a Route object.
-func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route) (*networking.VirtualService, error) {
-	if len(claims) == 0 {
-		return nil, errors.New("claims must not be empty")
-	}
-
-	namespace := claims[0].Namespace
-	hostname := claims[0].Spec.RouteSpecFields.Hostname
-	domain := claims[0].Spec.RouteSpecFields.Domain
-	labels := MakeVirtualServiceLabels(claims[0].Spec.RouteSpecFields)
+func MakeVirtualService(fields v1alpha1.RouteSpecFields, routes []*v1alpha1.Route) (*networking.VirtualService, error) {
+	hostname := fields.Hostname
+	domain := fields.Domain
+	urlPath := fields.Path
+	labels := MakeVirtualServiceLabels(fields)
 
 	hostDomain := domain
 	if hostname != "" {
 		hostDomain = hostname + "." + domain
 	}
 
-	var (
-		httpRoutes []networking.HTTPRoute
-	)
-
-	// Build up HTTP Routes
-	// We'll do claims first so when we merge the Routes in (which have apps
-	// associated), they will replace the claims.
-
-	for _, route := range claims {
-		urlPath := route.Spec.RouteSpecFields.Path
-
-		httpRoute, err := buildHTTPRoute(hostDomain, namespace, urlPath, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		httpRoutes = algorithms.Merge(
-			v1alpha1.HTTPRoutes(httpRoutes),
-			v1alpha1.HTTPRoutes(httpRoute),
-		).(v1alpha1.HTTPRoutes)
-	}
-
-	for _, route := range routes {
-		var appNames []string
-		urlPath := route.Spec.RouteSpecFields.Path
-
-		// AppNames
-		if route.Spec.AppName != "" {
-			appNames = append(appNames, route.Spec.AppName)
-		}
-
-		httpRoute, err := buildHTTPRoute(hostDomain, namespace, urlPath, appNames)
-		if err != nil {
-			return nil, err
-		}
-
-		httpRoutes = algorithms.Merge(
-			v1alpha1.HTTPRoutes(httpRoutes),
-			v1alpha1.HTTPRoutes(httpRoute),
-		).(v1alpha1.HTTPRoutes)
+	httpRoutes, err := buildHTTPRoute(hostDomain, urlPath, routes)
+	if err != nil {
+		return nil, err
 	}
 
 	return &networking.VirtualService{
@@ -118,7 +75,6 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 			Annotations: map[string]string{
 				"domain":   domain,
 				"hostname": hostname,
-				"space":    namespace,
 			},
 		},
 		Spec: networking.VirtualServiceSpec{
@@ -129,7 +85,7 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 	}, nil
 }
 
-func buildHTTPRoute(hostDomain, namespace, urlPath string, appNames []string) ([]networking.HTTPRoute, error) {
+func buildHTTPRoute(hostDomain, urlPath string, routes []*v1alpha1.Route) ([]networking.HTTPRoute, error) {
 	var pathMatchers []networking.HTTPMatchRequest
 	urlPath = path.Join("/", urlPath, "/")
 	regexpPath, err := v1alpha1.BuildPathRegexp(urlPath)
@@ -145,50 +101,68 @@ func buildHTTPRoute(hostDomain, namespace, urlPath string, appNames []string) ([
 		})
 	}
 
-	var httpRoutes []networking.HTTPRoute
-
-	for _, appName := range appNames {
-		httpRoutes = append(httpRoutes, networking.HTTPRoute{
-			Match: pathMatchers,
-			Route: buildRouteDestination(),
-			Rewrite: &networking.HTTPRewrite{
-				Authority: network.GetServiceHostname(appName, namespace),
-			},
-			Headers: &networking.Headers{
-				Request: &networking.HeaderOperations{
-					Add: map[string]string{
-						// Set forwarding headers so the app gets the real hostname it's serving
-						// at rather than the internal one:
-						// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded1
-						"X-Forwarded-Host": hostDomain,
-						"Forwarded":        fmt.Sprintf("host=%s", hostDomain),
-					},
-				},
-			},
-		})
-	}
-
-	// If there aren't any services bound to the route, we just want to
-	// serve a 503.
-	if len(httpRoutes) == 0 {
+	if len(routes) != 0 {
 		return []networking.HTTPRoute{
 			{
 				Match: pathMatchers,
-				Fault: &networking.HTTPFaultInjection{
-					Abort: &networking.InjectAbort{
-						Percent:    100,
-						HTTPStatus: http.StatusServiceUnavailable,
+				Route: buildRouteDestinations(routes),
+				Headers: &networking.Headers{
+					Request: &networking.HeaderOperations{
+						Add: map[string]string{
+							// Set forwarding headers so the app gets the real hostname it's serving
+							// at rather than the internal one:
+							// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded1
+							"X-Forwarded-Host": hostDomain,
+							"Forwarded":        fmt.Sprintf("host=%s", hostDomain),
+						},
 					},
 				},
-				Route: buildRouteDestination(),
 			},
 		}, nil
 	}
 
-	return httpRoutes, nil
+	// If there are no apps mapped to this hostdomain+path combo, return HTTP route with fault
+	return []networking.HTTPRoute{
+		{
+			Match: pathMatchers,
+			Fault: &networking.HTTPFaultInjection{
+				Abort: &networking.InjectAbort{
+					Percent:    100,
+					HTTPStatus: http.StatusServiceUnavailable,
+				},
+			},
+			Route: buildDefaultRouteDestination(),
+		},
+	}, nil
 }
 
-func buildRouteDestination() []networking.HTTPRouteDestination {
+func buildRouteDestinations(routes []*v1alpha1.Route) []networking.HTTPRouteDestination {
+
+	routeWeights := getRouteWeights(len(routes))
+	routeDestinations := []networking.HTTPRouteDestination{}
+	for i, route := range routes {
+		namespace := route.GetNamespace()
+		appName := route.Spec.AppName
+		routeDestination := networking.HTTPRouteDestination{
+			Destination: networking.Destination{
+				Host: GatewayHost,
+			},
+			Headers: &networking.Headers{
+				Request: &networking.HeaderOperations{
+					Set: map[string]string{
+						"Host": network.GetServiceHostname(appName, namespace),
+					},
+				},
+			},
+			Weight: routeWeights[i],
+		}
+		routeDestinations = append(routeDestinations, routeDestination)
+	}
+
+	return routeDestinations
+}
+
+func buildDefaultRouteDestination() []networking.HTTPRouteDestination {
 	return []networking.HTTPRouteDestination{
 		{
 			Destination: networking.Destination{
@@ -197,4 +171,28 @@ func buildRouteDestination() []networking.HTTPRouteDestination {
 			Weight: 100,
 		},
 	}
+}
+
+// getRouteWeights generates a list of integer percentages for route weights that sum to 100.
+// If the number of routes does not evenly divide 100, the weights are calculated as follows:
+// Round all the weights down, find the difference between that sum and 100, then distribute
+// the difference among the weights.
+func getRouteWeights(numRoutes int) []int {
+	var weights []int
+	uniformRouteWeight := 100 / numRoutes // round down
+
+	for i := 0; i < numRoutes; i++ {
+		weights[i] = uniformRouteWeight
+	}
+
+	remainder := 100 - (uniformRouteWeight * numRoutes)
+
+	routeIndex := 0
+	for remainder > 0 {
+		weights[routeIndex]++
+		remainder--
+		routeIndex++
+	}
+
+	return weights
 }
