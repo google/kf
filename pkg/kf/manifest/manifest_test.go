@@ -311,6 +311,6 @@ func ExampleApplication_WarnUnofficialFields() {
 	app.WarnUnofficialFields(os.Stdout)
 
 	// Output:
-	// WARNING! The field(s) [enable-http2 no-start] are Kf extensions to the manifest and are subject to change.
+	// WARNING! The field(s) [enable-http2 no-start] are Kf-specific manifest extensions and may change.
 	// See https://github.com/google/kf/issues/95 for more info.
 }
