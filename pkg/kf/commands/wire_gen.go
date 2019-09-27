@@ -12,7 +12,6 @@ import (
 	"github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/typed/servicecatalog/v1beta1"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/buildpacks"
-	builds2 "github.com/google/kf/pkg/kf/builds"
 	apps2 "github.com/google/kf/pkg/kf/commands/apps"
 	buildpacks2 "github.com/google/kf/pkg/kf/commands/buildpacks"
 	"github.com/google/kf/pkg/kf/commands/builds"
@@ -57,7 +56,7 @@ func InjectPush(p *config.KfParams) *cobra.Command {
 	pusher := apps.NewPusher(appsClient)
 	srcImageBuilder := provideSrcImageBuilder()
 	versionedInterface := config.GetServiceCatalogClient(p)
-	clientInterface := servicebindings.NewClient(appsClient, versionedInterface)
+	clientInterface := servicebindings.NewClient(versionedInterface)
 	command := apps2.NewPushCommand(p, appsClient, pusher, srcImageBuilder, clientInterface)
 	return command
 }
@@ -255,21 +254,13 @@ func InjectBindingService(p *config.KfParams) *cobra.Command {
 	buildTailer := provideSourcesBuildTailer()
 	client := sources.NewClient(sourcesGetter, buildTailer)
 	appsClient := apps.NewClient(appsGetter, client)
-	versionedInterface := config.GetServiceCatalogClient(p)
-	clientInterface := servicebindings.NewClient(appsClient, versionedInterface)
-	command := servicebindings2.NewBindServiceCommand(p, clientInterface)
+	command := servicebindings2.NewBindServiceCommand(p, appsClient)
 	return command
 }
 
 func InjectListBindings(p *config.KfParams) *cobra.Command {
-	kfV1alpha1Interface := config.GetKfClient(p)
-	appsGetter := provideAppsGetter(kfV1alpha1Interface)
-	sourcesGetter := provideKfSources(kfV1alpha1Interface)
-	buildTailer := provideSourcesBuildTailer()
-	client := sources.NewClient(sourcesGetter, buildTailer)
-	appsClient := apps.NewClient(appsGetter, client)
 	versionedInterface := config.GetServiceCatalogClient(p)
-	clientInterface := servicebindings.NewClient(appsClient, versionedInterface)
+	clientInterface := servicebindings.NewClient(versionedInterface)
 	command := servicebindings2.NewListBindingsCommand(p, clientInterface)
 	return command
 }
@@ -281,9 +272,7 @@ func InjectUnbindService(p *config.KfParams) *cobra.Command {
 	buildTailer := provideSourcesBuildTailer()
 	client := sources.NewClient(sourcesGetter, buildTailer)
 	appsClient := apps.NewClient(appsGetter, client)
-	versionedInterface := config.GetServiceCatalogClient(p)
-	clientInterface := servicebindings.NewClient(appsClient, versionedInterface)
-	command := servicebindings2.NewUnbindServiceCommand(p, clientInterface)
+	command := servicebindings2.NewUnbindServiceCommand(p, appsClient)
 	return command
 }
 
@@ -478,10 +467,6 @@ func provideSrcImageBuilder() apps2.SrcImageBuilder {
 	return apps2.SrcImageBuilderFunc(kontext.BuildImage)
 }
 
-func provideBuildTailer() builds2.BuildTailer {
-	return builds2.BuildTailerFunc(logs2.Tail)
-}
-
 var AppsSet = wire.NewSet(
 	SourcesSet,
 	provideAppsGetter, apps.NewClient, apps.NewPusher,
@@ -523,5 +508,5 @@ func provideKfSources(ki v1alpha1.KfV1alpha1Interface) v1alpha1.SourcesGetter {
 }
 
 func provideSourcesBuildTailer() sources.BuildTailer {
-	return builds2.BuildTailerFunc(logs2.Tail)
+	return sources.BuildTailerFunc(logs2.Tail)
 }
