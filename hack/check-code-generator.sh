@@ -18,6 +18,24 @@
 
 set -eux
 
+# Make sure the script is invoked from the project root
+[[ "$0" =~ (./)?hack/.*.sh$ ]] || ( echo Script must be run from project root; exit 1 )
+
+# https://github.com/kubernetes-sigs/kubebuilder/issues/359
+# K8s code generation is broken when used in projects that use Go modules.
+# Until that is fixed, this script will symlink the project into your GOPATH
+# and remove the symlink when it is done. A GOPATH is required.
+[[ ! -z "$GOPATH" ]] || ( echo GOPATH must be set; exit 1 )
+
+# Symlink the project into the GOPATH.
+# Required until https://github.com/kubernetes-sigs/kubebuilder/issues/359 is fixed
+function finish {
+  unlink $GOPATH/src/github.com/google/kf
+}
+trap finish EXIT
+mkdir -p $GOPATH/src/github.com/google
+ln -s `pwd` $GOPATH/src/github.com/google/kf
+
 hack/update-codegen.sh
 
 if [ ! -z "$(git status --porcelain)" ]; then
