@@ -32,7 +32,7 @@ func NewBindServiceCommand(p *config.KfParams, client apps.Client) *cobra.Comman
 	var (
 		bindingName  string
 		configAsJSON string
-		async        bool
+		async        utils.AsyncFlags
 	)
 
 	createCmd := &cobra.Command{
@@ -66,7 +66,7 @@ func NewBindServiceCommand(p *config.KfParams, client apps.Client) *cobra.Comman
 				return err
 			}
 
-			if !async {
+			if async.IsSynchronous() {
 				fmt.Fprintf(cmd.OutOrStderr(), "Waiting for bindings to become ready on %s...\n", appName)
 				if _, err := client.WaitForConditionServiceBindingsReadyTrue(context.Background(), p.Namespace, appName, 2*time.Second); err != nil {
 					return fmt.Errorf("bind failed: %s", err)
@@ -93,13 +93,7 @@ func NewBindServiceCommand(p *config.KfParams, client apps.Client) *cobra.Comman
 		"",
 		"Name to expose service instance to app process with (default: service instance name)")
 
-	createCmd.Flags().BoolVarP(
-		&async,
-		"async",
-		"",
-		false,
-		"Don't wait for the binding to be ready before returning",
-	)
+	async.Add(createCmd)
 
 	return createCmd
 }
