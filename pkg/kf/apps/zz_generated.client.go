@@ -25,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
@@ -124,7 +125,7 @@ func ExtractConditions(obj *v1alpha1.App) (extracted []apis.Condition) {
 		// recommended Kuberntes fields.
 		extracted = append(extracted, apis.Condition{
 			Type:    apis.ConditionType(cond.Type),
-			Status:  cond.Status,
+			Status:  corev1.ConditionStatus(cond.Status),
 			Reason:  cond.Reason,
 			Message: cond.Message,
 		})

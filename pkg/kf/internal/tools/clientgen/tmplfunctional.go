@@ -115,7 +115,7 @@ func ExtractConditions(obj *{{.Type}}) (extracted []apis.Condition) {
 		// recommended Kuberntes fields.
 		extracted = append(extracted, apis.Condition{
 			Type:    apis.ConditionType(cond.Type),
-			Status:  cond.Status,
+			Status:  corev1.ConditionStatus(cond.Status),
 			Reason:  cond.Reason,
 			Message: cond.Message,
 		})

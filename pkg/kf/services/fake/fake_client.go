@@ -195,6 +195,21 @@ func (mr *FakeClientMockRecorder) WaitFor(arg0, arg1, arg2, arg3, arg4 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitFor", reflect.TypeOf((*FakeClient)(nil).WaitFor), arg0, arg1, arg2, arg3, arg4)
 }
 
+// WaitForConditionReadyTrue mocks base method
+func (m *FakeClient) WaitForConditionReadyTrue(arg0 context.Context, arg1, arg2 string, arg3 time.Duration) (*v1beta1.ServiceInstance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WaitForConditionReadyTrue", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(*v1beta1.ServiceInstance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// WaitForConditionReadyTrue indicates an expected call of WaitForConditionReadyTrue
+func (mr *FakeClientMockRecorder) WaitForConditionReadyTrue(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitForConditionReadyTrue", reflect.TypeOf((*FakeClient)(nil).WaitForConditionReadyTrue), arg0, arg1, arg2, arg3)
+}
+
 // WaitForDeletion mocks base method
 func (m *FakeClient) WaitForDeletion(arg0 context.Context, arg1, arg2 string, arg3 time.Duration) (*v1beta1.ServiceInstance, error) {
 	m.ctrl.T.Helper()
