@@ -18,11 +18,8 @@
 
 set -eux
 
-# Make sure the script is invoked from the project root
-if [[ ! -f "hack/check-code-generator.sh" ]]; then
-  echo "Script must be run from project root"
-  exit 1
-fi
+# Change to the project root directory
+cd "${0%/*}"/..
 
 # https://github.com/kubernetes-sigs/kubebuilder/issues/359
 # K8s code generation is broken when used in projects that use Go modules.
