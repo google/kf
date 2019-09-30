@@ -71,20 +71,13 @@ func NewDeleteCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 				return err
 			}
 
-			w := cmd.OutOrStdout()
-
-			if async.IsSynchronous() {
-				fmt.Fprintf(w, "Deleting app %q...\n", appName)
+			return async.AwaitAndLog(cmd.OutOrStdout(), fmt.Sprintf("Deleting app %s", appName), func() error {
 				if _, err := appsClient.WaitForDeletion(context.Background(), p.Namespace, appName, 1*time.Second); err != nil {
 					return fmt.Errorf("couldn't delete: %s", err)
 				}
 
-				fmt.Fprintln(w, "Deleted")
-			} else {
-				fmt.Fprintf(w, "Deleting app %q asynchronously", appName)
-			}
-
-			return nil
+				return nil
+			})
 		},
 	}
 

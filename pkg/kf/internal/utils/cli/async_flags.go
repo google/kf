@@ -15,6 +15,9 @@
 package utils
 
 import (
+	"fmt"
+	"io"
+
 	"github.com/spf13/cobra"
 )
 
@@ -44,4 +47,24 @@ func (flags *AsyncFlags) IsAsync() bool {
 // synchronously.
 func (flags *AsyncFlags) IsSynchronous() bool {
 	return !flags.async
+}
+
+// AwaitAndLog waits for the action to be completed if the flag specifies the
+// command should run synchronously. In either case, it will notify the user
+// of the decision by logging to the writer whether it waited or not.
+// If an error is returned by the callback the result will be an error,
+// otherwise the error will be nil.
+func (flags *AsyncFlags) AwaitAndLog(w io.Writer, action string, callback func() error) error {
+	if flags.IsSynchronous() {
+		fmt.Fprintf(w, "%s...\n", action)
+		if err := callback(); err != nil {
+			return err
+		}
+
+		fmt.Fprintln(w, "Success")
+	} else {
+		fmt.Fprintf(w, "%s asynchronously\n", action)
+	}
+
+	return nil
 }
