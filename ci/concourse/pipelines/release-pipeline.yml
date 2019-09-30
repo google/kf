@@ -31,7 +31,11 @@ vars:
 - &ko_docker_release_repo ((ko_docker_release_repo))
 - &release_bucket ((release_bucket))
 - &cli_release_bucket ((cli_release_bucket))
+
+# k8s config
 - &gcp_project_id ((gcp_project_id))
+- &k8s_cluster_name ((k8s_cluster_name))
+- &k8s_cluster_zone ((k8s_cluster_zone))
 
 # go config
 - &go_proxy https://proxy.golang.org
@@ -79,7 +83,7 @@ jobs:
   - get: ci-pipelines-src
     trigger: false
     params: {submodules: none}
-  - task: unit-tests
+  - task: unit
     timeout: 10m
     config:
       platform: linux
@@ -100,6 +104,51 @@ jobs:
       params:
         GOPROXY: *go_proxy
         GOSUMDB: *go_sum_db
+
+- name: integration-test
+  plan:
+  - get: release-pr
+    trigger: true
+  - get: ci-pipelines-src
+    trigger: false
+    params: {submodules: none}
+  - task: integration
+    timeout: 10m
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: *ci-image-source
+      inputs:
+      - name: release-pr
+      - name: ci-pipelines-src
+      run:
+        dir: release-pr
+        path: bash
+        args:
+        - -exc
+        - |
+          # Login to Kubernetes
+          set +x
+          /bin/echo "$SERVICE_ACCOUNT_JSON" > key.json
+          set -x
+          /bin/echo Authenticating to kubernetes...
+          gcloud auth activate-service-account --key-file key.json
+          gcloud config set project "$GCP_PROJECT_ID"
+          gcloud container clusters get-credentials "$K8S_CLUSTER_NAME" \
+            --zone "$K8S_CLUSTER_ZONE" \
+            --project "$GCP_PROJECT_ID"
+          /bin/echo 'y' | gcloud auth configure-docker
+
+          # Run unit tests
+          hack/integration-test.sh
+      params:
+        GOPROXY: *go_proxy
+        GOSUMDB: *go_sum_db
+        SERVICE_ACCOUNT_JSON: *service_account_json
+        GCP_PROJECT_ID: *gcp_project_id
+        K8S_CLUSTER_NAME: *k8s_cluster_name
+        K8S_CLUSTER_ZONE: *k8s_cluster_zone
 - name: check
   plan:
   - aggregate:
@@ -107,6 +156,7 @@ jobs:
       trigger: true
     - get: ci-pipelines-src
       trigger: false
+      params: {submodules: none}
   - put: release-pr
     params:
       path: release-pr
@@ -137,9 +187,10 @@ jobs:
   - aggregate:
     - get: release-pr
       trigger: true
-      passed: [unit-test, check]
+      passed: [unit-test, integration-test]
     - get: ci-pipelines-src
       trigger: false
+      params: {submodules: none}
   - task: build
     config:
       platform: linux
