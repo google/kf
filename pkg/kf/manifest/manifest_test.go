@@ -24,6 +24,7 @@ import (
 
 	"github.com/google/kf/pkg/kf/manifest"
 	"github.com/google/kf/pkg/kf/testutil"
+	"knative.dev/pkg/ptr"
 )
 
 func TestNewFromReader(t *testing.T) {
@@ -123,9 +124,11 @@ applications:
 			expected: &manifest.Manifest{
 				Applications: []manifest.Application{
 					{
-						Name:       "CUSTOM_START",
-						Entrypoint: "python",
-						Args:       []string{"-m", "SimpleHTTPServer"},
+						Name: "CUSTOM_START",
+						KfApplicationExtension: manifest.KfApplicationExtension{
+							Entrypoint: "python",
+							Args:       []string{"-m", "SimpleHTTPServer"},
+						},
 					},
 				},
 			},
@@ -223,6 +226,16 @@ func TestOverride(t *testing.T) {
 			override: manifest.Application{Buildpacks: []string{"node", "npm"}},
 			expected: manifest.Application{Buildpacks: []string{"node", "npm"}},
 		},
+		"no start, no override": {
+			base:     manifest.Application{KfApplicationExtension: manifest.KfApplicationExtension{NoStart: ptr.Bool(true)}},
+			override: manifest.Application{},
+			expected: manifest.Application{KfApplicationExtension: manifest.KfApplicationExtension{NoStart: ptr.Bool(true)}},
+		},
+		"no start, override": {
+			base:     manifest.Application{KfApplicationExtension: manifest.KfApplicationExtension{NoStart: ptr.Bool(false)}},
+			override: manifest.Application{KfApplicationExtension: manifest.KfApplicationExtension{NoStart: ptr.Bool(true)}},
+			expected: manifest.Application{KfApplicationExtension: manifest.KfApplicationExtension{NoStart: ptr.Bool(true)}},
+		},
 	}
 
 	for tn, tc := range cases {
@@ -261,7 +274,9 @@ func ExampleApplication_CommandArgs() {
 	fmt.Printf("Command: %v\n", app.CommandArgs())
 
 	app = manifest.Application{
-		Args: []string{"-m", "SimpleHTTPServer"},
+		KfApplicationExtension: manifest.KfApplicationExtension{
+			Args: []string{"-m", "SimpleHTTPServer"},
+		},
 	}
 	fmt.Printf("Args: %v\n", app.CommandArgs())
 
@@ -275,10 +290,27 @@ func ExampleApplication_CommandEntrypoint() {
 	fmt.Printf("Blank: %v\n", app.CommandEntrypoint())
 
 	app = manifest.Application{
-		Entrypoint: "python",
+		KfApplicationExtension: manifest.KfApplicationExtension{
+			Entrypoint: "python",
+		},
 	}
 	fmt.Printf("Entrypoint: %v\n", app.CommandEntrypoint())
 
 	// Output: Blank: []
 	// Entrypoint: [python]
+}
+
+func ExampleApplication_WarnUnofficialFields() {
+	app := manifest.Application{
+		KfApplicationExtension: manifest.KfApplicationExtension{
+			EnableHTTP2: ptr.Bool(true),
+			NoStart:     ptr.Bool(false),
+		},
+	}
+
+	app.WarnUnofficialFields(os.Stdout)
+
+	// Output:
+	// WARNING! The field(s) [enable-http2 no-start] are Kf-specific manifest extensions and may change.
+	// See https://github.com/google/kf/issues/95 for more info.
 }

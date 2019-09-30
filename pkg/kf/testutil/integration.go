@@ -765,16 +765,18 @@ func (k *Kf) App(ctx context.Context, name string) json.RawMessage {
 }
 
 // Delete deletes an application.
-func (k *Kf) Delete(ctx context.Context, appName string) {
+func (k *Kf) Delete(ctx context.Context, appName string, extraArgs ...string) {
 	k.t.Helper()
 	Logf(k.t, "deleting %q...", appName)
 	defer Logf(k.t, "done deleting %q.", appName)
+	args := []string{
+		"delete",
+		"--namespace", SpaceFromContext(ctx),
+		appName,
+	}
+
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
-		Args: []string{
-			"delete",
-			"--namespace", SpaceFromContext(ctx),
-			appName,
-		},
+		Args: append(args, extraArgs...),
 	})
 	PanicOnError(ctx, k.t, fmt.Sprintf("delete %q", appName), errs)
 	StreamOutput(ctx, k.t, output)
