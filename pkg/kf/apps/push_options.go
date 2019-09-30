@@ -17,11 +17,10 @@
 package apps
 
 import (
-	"io"
-	"os"
-
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"io"
 	corev1 "k8s.io/api/core/v1"
+	"os"
 )
 
 type pushConfig struct {
