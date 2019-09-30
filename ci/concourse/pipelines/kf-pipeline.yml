@@ -140,7 +140,7 @@ jobs:
         FLY_TEAM: *fly_team
       run:
         dir: ci-pipelines-src
-        path: sh
+        path: bash
         args:
         - -exc
         - |
@@ -203,7 +203,7 @@ jobs:
         GITHUB_TOKEN: *github_access_token
       run:
         dir: ci-pipelines-src
-        path: sh
+        path: bash
         args:
         - -exc
         - |
@@ -308,7 +308,7 @@ jobs:
       - name: github-release
       run:
         dir: kf-master
-        path: sh
+        path: bash
         args:
         - -exc
         - |

@@ -106,7 +106,7 @@ jobs:
         SERVICE_ACCOUNT_JSON: *service_account_json
       run:
         dir: src
-        path: sh
+        path: bash
         args:
         - -exc
         - |
@@ -135,7 +135,7 @@ jobs:
         SERVICE_ACCOUNT_JSON: *service_account_json
       run:
         dir: src
-        path: sh
+        path: bash
         args:
         - -exc
         - |
@@ -166,7 +166,7 @@ jobs:
         K8S_CLUSTER_ZONE: *k8s_cluster_zone
       run:
         dir: src
-        path: sh
+        path: bash
         args:
         - -exc
         - |
@@ -218,7 +218,7 @@ jobs:
         K8S_CLUSTER_ZONE: *k8s_cluster_zone
       run:
         dir: src
-        path: sh
+        path: bash
         args:
         - -exc
         - |

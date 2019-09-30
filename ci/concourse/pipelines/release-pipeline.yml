@@ -157,12 +157,57 @@ jobs:
       outputs:
       - name: artifacts
       run:
-        path: sh
+        path: bash
         args:
         - -exc
         - |
           artifacts=`pwd`/artifacts
-          release-pr/hack/build-release.sh $artifacts
+          pushd release-pr
+            ./hack/build-release.sh $artifacts
+          popd
+  - task: prepare-cluster
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: *ci-image-source
+      params:
+        SERVICE_ACCOUNT_JSON: *release_service_account_json
+        GCP_PROJECT_ID: *gcp_project_id
+        RELEASE_BUCKET: *release_bucket
+        CLI_RELEASE_BUCKET: *cli_release_bucket
+      inputs:
+      - name: release-pr
+      - name: artifacts
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          ls -la artifacts/
+    on_failure: *on_failure
+- name: manual-approval
+  plan:
+  - aggregate:
+    - get: release-pr
+      trigger: false
+      passed: [build, check]
+    - get: ci-pipelines-src
+      trigger: false
+  - task: build
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: *ci-image-source
+      inputs:
+      - name: release-pr
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          exit 0
     on_failure: *on_failure
     on_success:
       put: release-pr
@@ -171,4 +216,3 @@ jobs:
         status: SUCCESS
         comment: OK to merge release PR!
         description: OK to merge release PR!
-
