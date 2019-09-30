@@ -248,7 +248,7 @@ func TestIntegration_Delete(t *testing.T) {
 		Logf(t, "done ensuring app is there.")
 
 		// Delete the app.
-		kf.Delete(ctx, appName)
+		kf.Delete(ctx, appName, "--async")
 
 		// Make sure the app is "deleting"
 		// List the apps and make sure we can find the app.
