@@ -15,6 +15,7 @@
 package resources
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"path"
@@ -44,18 +45,38 @@ func MakeVirtualServiceLabels(spec v1alpha1.RouteSpecFields) map[string]string {
 }
 
 // MakeVirtualService creates a VirtualService from a Route object.
-func MakeVirtualService(fields v1alpha1.RouteSpecFields, routes []*v1alpha1.Route) (*networking.VirtualService, error) {
-	hostname := fields.Hostname
-	domain := fields.Domain
-	urlPath := fields.Path
-	labels := MakeVirtualServiceLabels(fields)
+func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route) (*networking.VirtualService, error) {
+	if len(claims) == 0 {
+		return nil, errors.New("claims must not be empty")
+	}
+	namespace := claims[0].GetNamespace()
+	hostname := claims[0].Spec.RouteSpecFields.Hostname
+	domain := claims[0].Spec.RouteSpecFields.Domain
+	labels := MakeVirtualServiceLabels(claims[0].Spec.RouteSpecFields)
 
 	hostDomain := domain
 	if hostname != "" {
 		hostDomain = hostname + "." + domain
 	}
 
-	httpRoutes, err := buildHTTPRoute(hostDomain, urlPath, routes)
+	// Get route claim paths that don't have a corresponding mapped route path
+	// TODO: optimize this
+	var unmappedPaths []string
+	for _, claim := range claims {
+		path := claim.Spec.RouteSpecFields.Path
+		matchingPath := false
+		for _, route := range routes {
+			routePath := route.Spec.RouteSpecFields.Path
+			if path == routePath {
+				matchingPath = true
+			}
+		}
+		if matchingPath == false {
+			unmappedPaths = append(unmappedPaths, path)
+		}
+	}
+
+	httpRoutes, err := buildHTTPRoutes(hostDomain, unmappedPaths, routes)
 	if err != nil {
 		return nil, err
 	}
@@ -75,6 +96,7 @@ func MakeVirtualService(fields v1alpha1.RouteSpecFields, routes []*v1alpha1.Rout
 			Annotations: map[string]string{
 				"domain":   domain,
 				"hostname": hostname,
+				"space":    namespace,
 			},
 		},
 		Spec: networking.VirtualServiceSpec{
@@ -85,46 +107,32 @@ func MakeVirtualService(fields v1alpha1.RouteSpecFields, routes []*v1alpha1.Rout
 	}, nil
 }
 
-func buildHTTPRoute(hostDomain, urlPath string, routes []*v1alpha1.Route) ([]networking.HTTPRoute, error) {
-	var pathMatchers []networking.HTTPMatchRequest
-	urlPath = path.Join("/", urlPath, "/")
-	regexpPath, err := v1alpha1.BuildPathRegexp(urlPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert path to regexp: %s", err)
+func buildHTTPRoutes(hostDomain string, unmappedPaths []string, routes []*v1alpha1.Route) ([]networking.HTTPRoute, error) {
+	var httpRoutes []networking.HTTPRoute
+
+	for _, route := range routes {
+		routePath := route.Spec.RouteSpecFields.Path
+		routePathMatchers, err := buildPathMatchers(routePath)
+		if err != nil {
+			return nil, err
+		}
+		newHttpRoute := networking.HTTPRoute{
+			Match:   routePathMatchers,
+			Route:   buildRouteDestinations(routes),
+			Headers: buildForwardingHeaders(hostDomain),
+		}
+		httpRoutes = append(httpRoutes, newHttpRoute)
 	}
 
-	if urlPath != "" {
-		pathMatchers = append(pathMatchers, networking.HTTPMatchRequest{
-			URI: &istio.StringMatch{
-				Regex: regexpPath,
-			},
-		})
-	}
+	// If there are routeclaims with a path not mapped to an app, return HTTP route with fault for that path
+	for _, path := range unmappedPaths {
+		unmappedPathMatchers, err := buildPathMatchers(path)
+		if err != nil {
+			return nil, err
+		}
 
-	if len(routes) != 0 {
-		return []networking.HTTPRoute{
-			{
-				Match: pathMatchers,
-				Route: buildRouteDestinations(routes),
-				Headers: &networking.Headers{
-					Request: &networking.HeaderOperations{
-						Add: map[string]string{
-							// Set forwarding headers so the app gets the real hostname it's serving
-							// at rather than the internal one:
-							// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded1
-							"X-Forwarded-Host": hostDomain,
-							"Forwarded":        fmt.Sprintf("host=%s", hostDomain),
-						},
-					},
-				},
-			},
-		}, nil
-	}
-
-	// If there are no apps mapped to this hostdomain+path combo, return HTTP route with fault
-	return []networking.HTTPRoute{
-		{
-			Match: pathMatchers,
+		faultHttpRoute := networking.HTTPRoute{
+			Match: unmappedPathMatchers,
 			Fault: &networking.HTTPFaultInjection{
 				Abort: &networking.InjectAbort{
 					Percent:    100,
@@ -132,29 +140,25 @@ func buildHTTPRoute(hostDomain, urlPath string, routes []*v1alpha1.Route) ([]net
 				},
 			},
 			Route: buildDefaultRouteDestination(),
-		},
-	}, nil
+		}
+		httpRoutes = append(httpRoutes, faultHttpRoute)
+	}
+
+	return httpRoutes, nil
 }
 
 func buildRouteDestinations(routes []*v1alpha1.Route) []networking.HTTPRouteDestination {
 
 	routeWeights := getRouteWeights(len(routes))
 	routeDestinations := []networking.HTTPRouteDestination{}
+
 	for i, route := range routes {
-		namespace := route.GetNamespace()
-		appName := route.Spec.AppName
 		routeDestination := networking.HTTPRouteDestination{
 			Destination: networking.Destination{
 				Host: GatewayHost,
 			},
-			Headers: &networking.Headers{
-				Request: &networking.HeaderOperations{
-					Set: map[string]string{
-						"Host": network.GetServiceHostname(appName, namespace),
-					},
-				},
-			},
-			Weight: routeWeights[i],
+			Headers: buildHostHeader(route.Spec.AppName, route.GetNamespace()),
+			Weight:  routeWeights[i],
 		}
 		routeDestinations = append(routeDestinations, routeDestination)
 	}
@@ -178,7 +182,7 @@ func buildDefaultRouteDestination() []networking.HTTPRouteDestination {
 // Round all the weights down, find the difference between that sum and 100, then distribute
 // the difference among the weights.
 func getRouteWeights(numRoutes int) []int {
-	var weights []int
+	weights := make([]int, numRoutes)
 	uniformRouteWeight := 100 / numRoutes // round down
 
 	for i := 0; i < numRoutes; i++ {
@@ -195,4 +199,45 @@ func getRouteWeights(numRoutes int) []int {
 	}
 
 	return weights
+}
+
+func buildPathMatchers(urlPath string) ([]networking.HTTPMatchRequest, error) {
+	var pathMatchers []networking.HTTPMatchRequest
+	urlPath = path.Join("/", urlPath, "/")
+	regexpPath, err := v1alpha1.BuildPathRegexp(urlPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert path to regexp: %s", err)
+	}
+
+	pathMatchers = append(pathMatchers, networking.HTTPMatchRequest{
+		URI: &istio.StringMatch{
+			Regex: regexpPath,
+		},
+	})
+
+	return pathMatchers, nil
+}
+
+func buildForwardingHeaders(hostDomain string) *networking.Headers {
+	return &networking.Headers{
+		Request: &networking.HeaderOperations{
+			Add: map[string]string{
+				// Set forwarding headers so the app gets the real hostname it's serving
+				// at rather than the internal one:
+				// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded1
+				"X-Forwarded-Host": hostDomain,
+				"Forwarded":        fmt.Sprintf("host=%s", hostDomain),
+			},
+		},
+	}
+}
+
+func buildHostHeader(appName, namespace string) *networking.Headers {
+	return &networking.Headers{
+		Request: &networking.HeaderOperations{
+			Set: map[string]string{
+				"Host": network.GetServiceHostname(appName, namespace),
+			},
+		},
+	}
 }
