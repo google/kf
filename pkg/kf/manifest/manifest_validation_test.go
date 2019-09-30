@@ -32,21 +32,27 @@ func TestApplication_Validation(t *testing.T) {
 		},
 		"entrypoint and args": {
 			spec: Application{
-				Entrypoint: "python",
-				Args:       []string{"-m", "SimpleHTTPServer"},
+				KfApplicationExtension: KfApplicationExtension{
+					Args:       []string{"-m", "SimpleHTTPServer"},
+					Entrypoint: "python",
+				},
 			},
 		},
 		"command and args": {
 			spec: Application{
 				Command: "python",
-				Args:    []string{"-m", "SimpleHTTPServer"},
+				KfApplicationExtension: KfApplicationExtension{
+					Args: []string{"-m", "SimpleHTTPServer"},
+				},
 			},
 			want: apis.ErrMultipleOneOf("args", "command"),
 		},
 		"entrypoint and command": {
 			spec: Application{
-				Entrypoint: "/lifecycle/launcher",
-				Command:    "python",
+				KfApplicationExtension: KfApplicationExtension{
+					Entrypoint: "/lifecycle/launcher",
+				},
+				Command: "python",
 			},
 			want: apis.ErrMultipleOneOf("entrypoint", "command"),
 		},
