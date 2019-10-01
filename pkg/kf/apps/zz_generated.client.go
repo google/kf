@@ -50,10 +50,8 @@ const (
 	APIVersion = "v1alpha1"
 )
 
-var (
-	ConditionReady                = apis.ConditionType(v1alpha1.AppConditionReady)
-	ConditionServiceBindingsReady = apis.ConditionType(v1alpha1.AppConditionServiceBindingsReady)
-)
+var ConditionReady = apis.ConditionType(v1alpha1.AppConditionReady)
+var ConditionServiceBindingsReady = apis.ConditionType(v1alpha1.AppConditionServiceBindingsReady)
 
 // Predicate is a boolean function for a v1alpha1.App.
 type Predicate func(*v1alpha1.App) bool

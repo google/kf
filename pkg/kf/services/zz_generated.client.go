@@ -50,8 +50,6 @@ const (
 	APIVersion = "v1beta1"
 )
 
-var ()
-
 // Predicate is a boolean function for a v1beta1.ServiceInstance.
 type Predicate func(*v1beta1.ServiceInstance) bool
 

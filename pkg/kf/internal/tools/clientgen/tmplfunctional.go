@@ -35,10 +35,8 @@ const (
 )
 
 {{ if .SupportsConditions }}
-var (
-	{{ range .Kubernetes.Conditions }}
-	{{.ConditionName}} = apis.ConditionType({{.Definition}}){{ end }}
-)
+{{ range .Kubernetes.Conditions }}
+var {{.ConditionName}} = apis.ConditionType({{.Definition}}){{ end }}
 {{ end }}
 
 // Predicate is a boolean function for a {{.Type}}.

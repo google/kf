@@ -50,10 +50,8 @@ const (
 	APIVersion = "v1"
 )
 
-var (
-	ConditionReady       = apis.ConditionType("Ready")
-	ConditionInitialized = apis.ConditionType(v1.PodInitialized)
-)
+var ConditionReady = apis.ConditionType("Ready")
+var ConditionInitialized = apis.ConditionType(v1.PodInitialized)
 
 // Predicate is a boolean function for a v1.Pod.
 type Predicate func(*v1.Pod) bool
