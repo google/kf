@@ -25,9 +25,10 @@ import (
 	"strings"
 	"time"
 
+	"knative.dev/pkg/kmp"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"knative.dev/pkg/kmp"
 )
 
 // User defined imports
@@ -50,19 +51,6 @@ const (
 
 // Predicate is a boolean function for a v1alpha1.Source.
 type Predicate func(*v1alpha1.Source) bool
-
-// AllPredicate is a predicate that passes if all children pass.
-func AllPredicate(children ...Predicate) Predicate {
-	return func(obj *v1alpha1.Source) bool {
-		for _, filter := range children {
-			if !filter(obj) {
-				return false
-			}
-		}
-
-		return true
-	}
-}
 
 // Mutator is a function that changes v1alpha1.Source.
 type Mutator func(*v1alpha1.Source) error
@@ -117,51 +105,6 @@ func (list List) Filter(filter Predicate) (out List) {
 	return
 }
 
-// MutatorList is a list of mutators.
-type MutatorList []Mutator
-
-// Apply passes the given value to each of the mutators in the list failing if
-// one of them returns an error.
-func (list MutatorList) Apply(svc *v1alpha1.Source) error {
-	for _, mutator := range list {
-		if err := mutator(svc); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// LabelSetMutator creates a mutator that sets the given labels on the object.
-func LabelSetMutator(labels map[string]string) Mutator {
-	return func(obj *v1alpha1.Source) error {
-		if obj.Labels == nil {
-			obj.Labels = make(map[string]string)
-		}
-
-		for key, value := range labels {
-			obj.Labels[key] = value
-		}
-
-		return nil
-	}
-}
-
-// LabelEqualsPredicate validates that the given label exists exactly on the object.
-func LabelEqualsPredicate(key, value string) Predicate {
-	return func(obj *v1alpha1.Source) bool {
-		return obj.Labels[key] == value
-	}
-}
-
-// LabelsContainsPredicate validates that the given label exists on the object.
-func LabelsContainsPredicate(key string) Predicate {
-	return func(obj *v1alpha1.Source) bool {
-		_, ok := obj.Labels[key]
-		return ok
-	}
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Client
 ////////////////////////////////////////////////////////////////////////////////
@@ -178,21 +121,24 @@ type Client interface {
 	WaitFor(ctx context.Context, namespace string, name string, interval time.Duration, condition Predicate) (*v1alpha1.Source, error)
 	WaitForE(ctx context.Context, namespace string, name string, interval time.Duration, condition ConditionFuncE) (*v1alpha1.Source, error)
 
+	// Utility functions
+	WaitForDeletion(ctx context.Context, namespace string, name string, interval time.Duration) (*v1alpha1.Source, error)
+
 	// ClientExtension can be used by the developer to extend the client.
 	ClientExtension
 }
 
 type coreClient struct {
 	kclient      cv1alpha1.SourcesGetter
-	upsertMutate MutatorList
+	upsertMutate Mutator
 }
 
 func (core *coreClient) preprocessUpsert(obj *v1alpha1.Source) error {
-	if err := core.upsertMutate.Apply(obj); err != nil {
-		return err
+	if core.upsertMutate == nil {
+		return nil
 	}
 
-	return nil
+	return core.upsertMutate(obj)
 }
 
 // Create inserts the given v1alpha1.Source into the cluster.
@@ -263,10 +209,6 @@ func (cfg deleteConfig) ToDeleteOptions() *metav1.DeleteOptions {
 		resp.PropagationPolicy = &propigationPolicy
 	}
 
-	if cfg.DeleteImmediately {
-		resp.GracePeriodSeconds = new(int64)
-	}
-
 	return &resp
 }
 
@@ -280,16 +222,16 @@ func (core *coreClient) List(namespace string, opts ...ListOption) ([]v1alpha1.S
 		return nil, fmt.Errorf("couldn't list Builds: %v", err)
 	}
 
-	return List(res.Items).Filter(AllPredicate(cfg.filters...)), nil
+	if cfg.filter == nil {
+		return res.Items, nil
+	}
+
+	return List(res.Items).Filter(cfg.filter), nil
 }
 
 func (cfg listConfig) ToListOptions() (resp metav1.ListOptions) {
 	if cfg.fieldSelector != nil {
 		resp.FieldSelector = metav1.FormatLabelSelector(metav1.SetAsLabelSelector(cfg.fieldSelector))
-	}
-
-	if cfg.labelSelector != nil {
-		resp.LabelSelector = metav1.FormatLabelSelector(metav1.SetAsLabelSelector(cfg.labelSelector))
 	}
 
 	return
@@ -379,4 +321,9 @@ func wrapPredicate(condition Predicate) ConditionFuncE {
 
 		return condition(obj), nil
 	}
+}
+
+// WaitForDeletion is a utility function that combines WaitForE with ConditionDeleted.
+func (core *coreClient) WaitForDeletion(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1alpha1.Source, err error) {
+	return core.WaitForE(ctx, namespace, name, interval, ConditionDeleted)
 }

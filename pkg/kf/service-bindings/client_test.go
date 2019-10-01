@@ -16,22 +16,18 @@ package servicebindings_test
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	testclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/fake"
-	"github.com/google/kf/pkg/kf/apps"
-	appsfake "github.com/google/kf/pkg/kf/apps/fake"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/google/kf/pkg/kf/testutil"
 	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 )
 
 type fakeDependencies struct {
-	apiserver  *testutil.FakeApiServer
-	appsClient *appsfake.FakeClient
+	apiserver *testutil.FakeApiServer
 }
 
 type ServiceBindingApiTestCase struct {
@@ -47,99 +43,9 @@ func (tc *ServiceBindingApiTestCase) ExecuteTest(t *testing.T) {
 
 	appsController := gomock.NewController(t)
 	defer appsController.Finish()
-	fakeApps := appsfake.NewFakeClient(appsController)
 
-	client := servicebindings.NewClient(fakeApps, cs)
-	tc.Run(t, fakeDependencies{apiserver: fakeApiServer, appsClient: fakeApps}, client)
-}
-
-func TestClient_Create(t *testing.T) {
-	cases := map[string]ServiceBindingApiTestCase{
-		"server error": {
-			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.appsClient.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api error"))
-				_, err := client.Create("mydb", "myapp")
-				testutil.AssertErrorsEqual(t, errors.New("api error"), err)
-			},
-		},
-		"custom namespace": {
-			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.appsClient.EXPECT().Transform("custom-ns", gomock.Any(), gomock.Any()).Return(nil, nil)
-				_, err := client.Create("mydb", "myapp", servicebindings.WithCreateNamespace("custom-ns"))
-				testutil.AssertNil(t, "create err", err)
-			},
-		},
-		"default values": {
-			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.appsClient.EXPECT().Transform("default", gomock.Any(), gomock.Any()).DoAndReturn(func(ns, appName string, transformer apps.Mutator) (*kfv1alpha1.App, error) {
-					app := &kfv1alpha1.App{}
-					err := transformer(app)
-					testutil.AssertNil(t, "err", err)
-					testutil.AssertEqual(t, "Spec.InstanceRef.Name", "mydb", app.Spec.ServiceBindings[0].Instance)
-					return app, nil
-				})
-
-				_, err := client.Create("mydb", "myapp")
-				testutil.AssertNil(t, "err", err)
-			},
-		},
-		"custom values": {
-			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.appsClient.EXPECT().Transform("custom-ns", "myapp", gomock.Any()).DoAndReturn(func(ns, appName string, transformer apps.Mutator) (*kfv1alpha1.App, error) {
-					app := &kfv1alpha1.App{}
-					err := transformer(app)
-					testutil.AssertNil(t, "err", err)
-					testutil.AssertEqual(t, "Spec.InstanceRef.Name", "mydb", app.Spec.ServiceBindings[0].Instance)
-					testutil.AssertEqual(t, "Spec.BindingName", "binding-name", app.Spec.ServiceBindings[0].BindingName)
-					testutil.AssertEqual(t, "Spec.InstanceRef.Parameters", `{"username":"my-user"}`, string(app.Spec.ServiceBindings[0].Parameters))
-					return app, nil
-				})
-
-				_, err := client.Create("mydb", "myapp",
-					servicebindings.WithCreateBindingName("binding-name"),
-					servicebindings.WithCreateNamespace("custom-ns"),
-					servicebindings.WithCreateParams(map[string]interface{}{"username": "my-user"}))
-				testutil.AssertNil(t, "err", err)
-			},
-		},
-	}
-
-	for tn, tc := range cases {
-		t.Run(tn, tc.ExecuteTest)
-	}
-}
-
-func TestClient_Delete(t *testing.T) {
-	cases := map[string]ServiceBindingApiTestCase{
-		"api-error": {
-			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.appsClient.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api-error"))
-
-				err := client.Delete("mydb", "myapp")
-				testutil.AssertErrorsEqual(t, errors.New("api-error"), err)
-			},
-		},
-		"default options": {
-			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.appsClient.EXPECT().Transform("default", "myapp", gomock.Any()).Return(nil, nil)
-
-				err := client.Delete("mydb", "myapp")
-				testutil.AssertNil(t, "delete err", err)
-			},
-		},
-		"full options": {
-			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
-				deps.appsClient.EXPECT().Transform("custom-ns", "myapp2", gomock.Any()).Return(nil, nil)
-
-				err := client.Delete("mydb2", "myapp2", servicebindings.WithDeleteNamespace("custom-ns"))
-				testutil.AssertNil(t, "delete err", err)
-			},
-		},
-	}
-
-	for tn, tc := range cases {
-		t.Run(tn, tc.ExecuteTest)
-	}
+	client := servicebindings.NewClient(cs)
+	tc.Run(t, fakeDependencies{apiserver: fakeApiServer}, client)
 }
 
 func TestClient_List(t *testing.T) {
@@ -236,32 +142,4 @@ func TestClient_List(t *testing.T) {
 	for tn, tc := range cases {
 		t.Run(tn, tc.ExecuteTest)
 	}
-}
-
-func ExampleBindService() {
-	myApp := &kfv1alpha1.App{}
-	servicebindings.BindService(myApp, &kfv1alpha1.AppSpecServiceBinding{
-		Instance:    "some-service",
-		BindingName: "some-binding-name",
-	})
-	servicebindings.BindService(myApp, &kfv1alpha1.AppSpecServiceBinding{
-		Instance:    "another-service",
-		BindingName: "some-binding-name",
-	})
-	servicebindings.BindService(myApp, &kfv1alpha1.AppSpecServiceBinding{
-		Instance:    "third-service",
-		BindingName: "third",
-	})
-	servicebindings.BindService(myApp, &kfv1alpha1.AppSpecServiceBinding{
-		Instance:    "forth-service",
-		BindingName: "forth",
-	})
-	servicebindings.UnbindService(myApp, "third")
-
-	for _, b := range myApp.Spec.ServiceBindings {
-		fmt.Println("Instance", b.Instance, "BindingName", b.BindingName)
-	}
-
-	// Output: Instance another-service BindingName some-binding-name
-	// Instance forth-service BindingName forth
 }

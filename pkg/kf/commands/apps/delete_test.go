@@ -17,78 +17,89 @@ package apps
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/pkg/kf/testutil"
 )
 
 func TestDeleteCommand(t *testing.T) {
 	t.Parallel()
 
-	for tn, tc := range map[string]struct {
+	cases := map[string]struct {
 		namespace string
-		appName   string
-		wantErr   error
-		deleteErr error
+		args      []string
+
+		wantErr error
+		setup   func(t *testing.T, fc *fake.FakeClient)
 	}{
-		"deletes given app in namespace": {
+		"valid sync call": {
 			namespace: "some-namespace",
-			appName:   "some-app",
+			args:      []string{"some-app"},
+
+			setup: func(t *testing.T, fc *fake.FakeClient) {
+				fc.EXPECT().DeleteInForeground("some-namespace", "some-app")
+				fc.EXPECT().WaitForDeletion(gomock.Any(), "some-namespace", "some-app", gomock.Any())
+			},
+		},
+		"valid async call": {
+			namespace: "some-namespace",
+			args:      []string{"--async", "some-app"},
+
+			setup: func(t *testing.T, fc *fake.FakeClient) {
+				fc.EXPECT().DeleteInForeground("some-namespace", "some-app")
+			},
 		},
 		"delete app error": {
-			wantErr:   errors.New("some error"),
-			deleteErr: errors.New("some error"),
 			namespace: "some-namespace",
-			appName:   "some-app",
+			args:      []string{"some-app"},
+
+			setup: func(t *testing.T, fc *fake.FakeClient) {
+				fc.EXPECT().DeleteInForeground(gomock.Any(), gomock.Any()).Return(errors.New("some error"))
+			},
+			wantErr: errors.New("some error"),
 		},
-		"delete app error without specify namespace": {
+		"bad namespace error": {
+			args: []string{"some-app"},
+
+			setup: func(t *testing.T, fc *fake.FakeClient) {
+				// expect no calls
+			},
 			wantErr: errors.New(utils.EmptyNamespaceError),
-			appName: "some-app",
 		},
-	} {
+		"wait error": {
+			namespace: "some-namespace",
+			args:      []string{"some-app"},
+
+			setup: func(t *testing.T, fc *fake.FakeClient) {
+				fc.EXPECT().DeleteInForeground(gomock.Any(), gomock.Any())
+				fc.EXPECT().WaitForDeletion(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("some error"))
+			},
+			wantErr: errors.New("couldn't delete: some error"),
+		},
+	}
+
+	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			fakeDeleter := fake.NewFakeClient(ctrl)
 
-			fakeRecorder := fakeDeleter.
-				EXPECT().
-				DeleteInForeground(gomock.Any(), gomock.Any()).
-				DoAndReturn(func(namespace, appName string) error {
-					if appName != tc.appName {
-						t.Fatalf("wanted appName %s, got %s", tc.appName, appName)
-					}
-
-					if ns := namespace; ns != tc.namespace {
-						t.Fatalf("expected namespace %s, got %s", tc.namespace, ns)
-					}
-					return tc.deleteErr
-				})
+			tc.setup(t, fakeDeleter)
 
 			buffer := &bytes.Buffer{}
 			c := NewDeleteCommand(&config.KfParams{
 				Namespace: tc.namespace,
 			}, fakeDeleter)
 			c.SetOutput(buffer)
+			c.SetArgs(tc.args)
+			gotErr := c.Execute()
 
-			gotErr := c.RunE(c, []string{tc.appName})
 			if tc.wantErr != nil || gotErr != nil {
-				// We don't really care if Push was invoked if we want an
-				// error.
-				fakeRecorder.AnyTimes()
-
-				if fmt.Sprint(tc.wantErr) != fmt.Sprint(gotErr) {
-					t.Fatalf("wanted err: %v, got: %v", tc.wantErr, gotErr)
-				}
-
-				if !c.SilenceUsage {
-					t.Fatalf("wanted %v, got %v", true, c.SilenceUsage)
-				}
-
+				testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
 				return
 			}
 		})

@@ -18,13 +18,13 @@ import (
 	"fmt"
 
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/spf13/cobra"
 )
 
 // NewDeleteServiceCommand allows users to delete service instances.
-func NewDeleteServiceCommand(p *config.KfParams, client services.ClientInterface) *cobra.Command {
+func NewDeleteServiceCommand(p *config.KfParams, client services.Client) *cobra.Command {
 	deleteCmd := &cobra.Command{
 		Use:     "delete-service SERVICE_INSTANCE",
 		Aliases: []string{"ds"},
@@ -40,7 +40,7 @@ func NewDeleteServiceCommand(p *config.KfParams, client services.ClientInterface
 				return err
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "Deleting service instance %q %s", instanceName, utils.AsyncLogSuffix)
-			return client.DeleteService(instanceName, services.WithDeleteServiceNamespace(p.Namespace))
+			return client.Delete(p.Namespace, instanceName)
 		},
 	}
 

@@ -28,7 +28,7 @@ import (
 	"github.com/google/kf/pkg/kf/apps"
 	appsfake "github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	svbFake "github.com/google/kf/pkg/kf/service-bindings/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -83,7 +83,7 @@ func TestPushCommand(t *testing.T) {
 			args: []string{
 				"example-app",
 				"--buildpack", "some-buildpack",
-				"--grpc",
+				"--enable-http2",
 				"--env", "env1=val1",
 				"-e", "env2=val2",
 				"--container-registry", "some-reg.io",
@@ -93,6 +93,9 @@ func TestPushCommand(t *testing.T) {
 				"-u", "http",
 				"-t", "28",
 				"-s", "cflinuxfs3",
+				"--entrypoint", "start-web.sh",
+				"--args", "a",
+				"--args", "b",
 			},
 			wantImagePrefix: "some-reg.io/src-some-namespace-example-app",
 			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
@@ -108,6 +111,8 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushEnvironmentVariables(map[string]string{"env1": "val1", "env2": "val2"}),
 				apps.WithPushNoStart(true),
 				apps.WithPushExactScale(intPtr(1)),
+				apps.WithPushArgs([]string{"a", "b"}),
+				apps.WithPushCommand([]string{"start-web.sh"}),
 				apps.WithPushHealthCheck(&corev1.Probe{
 					TimeoutSeconds: 28,
 					Handler: corev1.Handler{
@@ -577,6 +582,8 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "health check", expectOpts.HealthCheck(), actualOpts.HealthCheck())
 					testutil.AssertEqual(t, "default route", expectOpts.DefaultRouteDomain(), actualOpts.DefaultRouteDomain())
 					testutil.AssertEqual(t, "random route", expectOpts.RandomRouteDomain(), actualOpts.RandomRouteDomain())
+					testutil.AssertEqual(t, "command", expectOpts.Command(), actualOpts.Command())
+					testutil.AssertEqual(t, "args", expectOpts.Args(), actualOpts.Args())
 					testutil.AssertEqual(t, "Dockerfile path", expectOpts.DockerfilePath(), actualOpts.DockerfilePath())
 
 					if !strings.HasPrefix(actualOpts.SourceImage(), tc.wantImagePrefix) {

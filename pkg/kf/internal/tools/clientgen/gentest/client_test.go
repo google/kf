@@ -33,56 +33,16 @@ import (
 	cv1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
-func TestAllPredicate(t *testing.T) {
-	pass := func(obj *v1.Secret) bool {
-		return true
-	}
-
-	fail := func(obj *v1.Secret) bool {
-		return false
-	}
-
-	cases := map[string]struct {
-		Children []Predicate
-		Expected bool
-	}{
-		"empty true": {
-			Children: []Predicate{},
-			Expected: true,
-		},
-		"pass": {
-			Children: []Predicate{pass},
-			Expected: true,
-		},
-		"fail": {
-			Children: []Predicate{fail},
-			Expected: false,
-		},
-		"mixed": {
-			Children: []Predicate{pass, fail, pass},
-			Expected: false,
-		},
-	}
-
-	for tn, tc := range cases {
-		t.Run(tn, func(t *testing.T) {
-			pred := AllPredicate(tc.Children...)
-			actual := pred(nil)
-			testutil.AssertEqual(t, "predicate result", tc.Expected, actual)
-		})
-	}
-}
-
 func ExampleList_Filter() {
-	first := v1.Secret{}
+	first := v1.Pod{}
 	first.Name = "ok"
 
-	second := v1.Secret{}
+	second := v1.Pod{}
 	second.Name = "name-too-long-to-pass"
 
 	list := List{first, second}
 
-	filtered := list.Filter(func(s *v1.Secret) bool {
+	filtered := list.Filter(func(s *v1.Pod) bool {
 		return len(s.Name) < 8
 	})
 
@@ -95,28 +55,8 @@ func ExampleList_Filter() {
 	// - ok
 }
 
-func ExampleMutatorList_Apply() {
-	mutators := MutatorList{
-		func(s *v1.Secret) error {
-			s.Name = "Name"
-			return nil
-		},
-		func(s *v1.Secret) error {
-			return errors.New("some-error")
-		},
-	}
-	res := v1.Secret{}
-	err := mutators.Apply(&res)
-
-	fmt.Println("Error:", err)
-	fmt.Println("Mutated name:", res.Name)
-
-	// Output: Error: some-error
-	// Mutated name: Name
-}
-
 func ExampleLabelSetMutator() {
-	out := &v1.Secret{}
+	out := &v1.Pod{}
 	managedAdder := LabelSetMutator(map[string]string{"managed-by": "kf"})
 
 	managedAdder(out)
@@ -125,66 +65,38 @@ func ExampleLabelSetMutator() {
 	// Output: Labels: map[managed-by:kf]
 }
 
-func ExampleLabelEqualsPredicate() {
-	out := &v1.Secret{}
-	out.Labels = map[string]string{"managed-by": "not kf"}
-	pred := LabelEqualsPredicate("managed-by", "kf")
-
-	fmt.Printf("Not Equal: %v\n", pred(out))
-
-	out.Labels["managed-by"] = "kf"
-	fmt.Printf("Equal: %v\n", pred(out))
-
-	// Output: Not Equal: false
-	// Equal: true
-}
-
-func ExampleLabelsContainsPredicate() {
-	out := &v1.Secret{}
-	out.Labels = map[string]string{"my-label": ""}
-
-	mylabelpred := LabelsContainsPredicate("my-label")
-	missinglabelpred := LabelsContainsPredicate("missing")
-
-	fmt.Printf("Contained: %v\n", mylabelpred(out))
-	fmt.Printf("Not Contained: %v\n", missinglabelpred(out))
-
-	// Output: Contained: true
-	// Not Contained: false
-}
-
 func TestClient_invariant(t *testing.T) {
 	// This test validates that the mutators are applied to read and
 	// write operations.
 	mockK8s := testclient.NewSimpleClientset().CoreV1()
 
-	secretsClient := NewExampleClient(mockK8s)
+	client := NewExampleClient(mockK8s)
 
 	t.Run("create", func(t *testing.T) {
-		good := &v1.Secret{}
+		good := &v1.Pod{}
 		good.Name = "created-through-client"
 
-		if _, err := secretsClient.Create("default", good); err != nil {
+		if _, err := client.Create("default", good); err != nil {
 			t.Fatal(err)
 		}
 	})
 
 	t.Run("list", func(t *testing.T) {
-		out, err := secretsClient.List("default")
+		out, err := client.List("default")
 		testutil.AssertNil(t, "list err", err)
 
-		testutil.AssertEqual(t, "secret count", 1, len(out))
+		testutil.AssertEqual(t, "object count", 1, len(out))
 	})
 
 	t.Run("transform", func(t *testing.T) {
-		transformResult, err := secretsClient.Transform("default", "created-through-client", func(s *v1.Secret) error {
+		transformResult, err := client.Transform("default", "created-through-client", func(s *v1.Pod) error {
 			s.Labels["mutated"] = "true"
 
 			return nil
 		})
 		testutil.AssertNil(t, "transform err", err)
 
-		modified, err := secretsClient.Get("default", "created-through-client")
+		modified, err := client.Get("default", "created-through-client")
 		testutil.AssertNil(t, "get err", err)
 
 		testutil.AssertEqual(t, "mutated label", "true", modified.Labels["mutated"])
@@ -200,22 +112,22 @@ func TestClient_Delete(t *testing.T) {
 		Name      string
 		Options   []DeleteOption
 		ExpectErr error
-		Setup     func(mockK8s cv1.SecretsGetter)
+		Setup     func(mockK8s cv1.PodsGetter)
 	}{
-		"secret does not exist": {
+		"object does not exist": {
 			Namespace: "default",
-			Name:      "some-secret",
+			Name:      "some-object",
 			Options:   []DeleteOption{},
-			ExpectErr: errors.New(`couldn't delete the OperatorConfig with the name "some-secret": secrets "some-secret" not found`),
+			ExpectErr: errors.New(`couldn't delete the OperatorConfig with the name "some-object": pods "some-object" not found`),
 		},
-		"secret exists": {
+		"object exists": {
 			Namespace: "my-namespace",
-			Name:      "some-secret",
+			Name:      "some-object",
 			Options:   []DeleteOption{},
-			Setup: func(mockK8s cv1.SecretsGetter) {
-				secret := &v1.Secret{}
-				secret.Name = "some-secret"
-				mockK8s.Secrets("my-namespace").Create(secret)
+			Setup: func(mockK8s cv1.PodsGetter) {
+				obj := &v1.Pod{}
+				obj.Name = "some-object"
+				mockK8s.Pods("my-namespace").Create(obj)
 			},
 		},
 	}
@@ -228,25 +140,25 @@ func TestClient_Delete(t *testing.T) {
 				tc.Setup(mockK8s)
 			}
 
-			secretsClient := coreClient{
+			client := coreClient{
 				kclient: mockK8s,
 			}
 
-			actualErr := secretsClient.Delete(tc.Namespace, tc.Name, tc.Options...)
+			actualErr := client.Delete(tc.Namespace, tc.Name, tc.Options...)
 			if tc.ExpectErr != nil || actualErr != nil {
 				testutil.AssertErrorsEqual(t, tc.ExpectErr, actualErr)
 
 				return
 			}
 
-			secrets, err := mockK8s.Secrets(tc.Namespace).List(metav1.ListOptions{})
+			objects, err := mockK8s.Pods(tc.Namespace).List(metav1.ListOptions{})
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			for _, s := range secrets.Items {
+			for _, s := range objects.Items {
 				if s.Name == tc.Name {
-					t.Fatal("The secret wasn't deleted")
+					t.Fatal("The object wasn't deleted")
 				}
 			}
 		})
@@ -254,55 +166,55 @@ func TestClient_Delete(t *testing.T) {
 }
 
 func TestClient_Upsert(t *testing.T) {
-	fakeSecret := func(name string, value string) *v1.Secret {
-		s := &v1.Secret{}
+	fakePod := func(name string, hostname string) *v1.Pod {
+		s := &v1.Pod{}
 		s.Name = name
-		s.StringData = map[string]string{"value": value}
-
+		s.Spec.Hostname = hostname
 		return s
 	}
+
 	cases := map[string]struct {
 		Namespace   string
-		PreExisting []*v1.Secret
-		ToUpsert    *v1.Secret
+		PreExisting []*v1.Pod
+		ToUpsert    *v1.Pod
 		Merger      Merger
 		ExpectErr   error
-		Validate    func(t *testing.T, mockK8s cv1.SecretsGetter)
+		Validate    func(t *testing.T, mockK8s cv1.PodsGetter)
 	}{
 		"inserts if not found": {
 			Namespace: "default",
-			ToUpsert:  fakeSecret("foo", "new"),
+			ToUpsert:  fakePod("foo", "new"),
 			Merger:    nil, // should not be called
-			Validate: func(t *testing.T, mockK8s cv1.SecretsGetter) {
-				secret, err := mockK8s.Secrets("default").Get("foo", metav1.GetOptions{})
-				testutil.AssertNil(t, "secrets err", err)
-				testutil.AssertEqual(t, "value", "new", secret.StringData["value"])
+			Validate: func(t *testing.T, mockK8s cv1.PodsGetter) {
+				obj, err := mockK8s.Pods("default").Get("foo", metav1.GetOptions{})
+				testutil.AssertNil(t, "get err", err)
+				testutil.AssertEqual(t, "value", "new", obj.Spec.Hostname)
 			},
 		},
 		"update if found": {
-			PreExisting: []*v1.Secret{fakeSecret("foo", "old")},
+			PreExisting: []*v1.Pod{fakePod("foo", "old")},
 			Namespace:   "testing",
-			ToUpsert:    fakeSecret("foo", "new"),
-			Merger:      func(n, o *v1.Secret) *v1.Secret { return n },
-			Validate: func(t *testing.T, mockK8s cv1.SecretsGetter) {
-				secret, err := mockK8s.Secrets("testing").Get("foo", metav1.GetOptions{})
-				testutil.AssertNil(t, "secrets err", err)
-				testutil.AssertEqual(t, "value", "new", secret.StringData["value"])
+			ToUpsert:    fakePod("foo", "new"),
+			Merger:      func(n, o *v1.Pod) *v1.Pod { return n },
+			Validate: func(t *testing.T, mockK8s cv1.PodsGetter) {
+				obj, err := mockK8s.Pods("testing").Get("foo", metav1.GetOptions{})
+				testutil.AssertNil(t, "get err", err)
+				testutil.AssertEqual(t, "value", "new", obj.Spec.Hostname)
 			},
 		},
 		"calls merge with right order": {
 			Namespace:   "default",
-			PreExisting: []*v1.Secret{fakeSecret("foo", "old")},
-			ToUpsert:    fakeSecret("foo", "new"),
-			Merger: func(n, o *v1.Secret) *v1.Secret {
-				n.StringData["value"] = n.StringData["value"] + "-" + o.StringData["value"]
+			PreExisting: []*v1.Pod{fakePod("foo", "old")},
+			ToUpsert:    fakePod("foo", "new"),
+			Merger: func(n, o *v1.Pod) *v1.Pod {
+				n.Spec.Hostname = n.Spec.Hostname + "-" + o.Spec.Hostname
 				return n
 			},
 			ExpectErr: nil,
-			Validate: func(t *testing.T, mockK8s cv1.SecretsGetter) {
-				secret, err := mockK8s.Secrets("default").Get("foo", metav1.GetOptions{})
-				testutil.AssertNil(t, "secrets err", err)
-				testutil.AssertEqual(t, "value", "new-old", secret.StringData["value"])
+			Validate: func(t *testing.T, mockK8s cv1.PodsGetter) {
+				obj, err := mockK8s.Pods("default").Get("foo", metav1.GetOptions{})
+				testutil.AssertNil(t, "get err", err)
+				testutil.AssertEqual(t, "value", "new-old", obj.Spec.Hostname)
 			},
 		},
 	}
@@ -311,14 +223,14 @@ func TestClient_Upsert(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 			mockK8s := testclient.NewSimpleClientset().CoreV1()
 
-			secretsClient := NewExampleClient(mockK8s)
+			client := NewExampleClient(mockK8s)
 
 			for _, v := range tc.PreExisting {
-				_, err := secretsClient.Create(tc.Namespace, v)
-				testutil.AssertNil(t, "creating preexisting secrets", err)
+				_, err := client.Create(tc.Namespace, v)
+				testutil.AssertNil(t, "creating preexisting objects", err)
 			}
 
-			_, actualErr := secretsClient.Upsert(tc.Namespace, tc.ToUpsert, tc.Merger)
+			_, actualErr := client.Upsert(tc.Namespace, tc.ToUpsert, tc.Merger)
 			if tc.ExpectErr != nil || actualErr != nil {
 				testutil.AssertErrorsEqual(t, tc.ExpectErr, actualErr)
 
@@ -333,29 +245,29 @@ func TestClient_Upsert(t *testing.T) {
 }
 
 func ExampleDiffWrapper_noDiff() {
-	secret := &v1.Secret{}
+	obj := &v1.Pod{}
 
-	wrapper := DiffWrapper(os.Stdout, func(s *v1.Secret) error {
-		// don't mutate the secret
+	wrapper := DiffWrapper(os.Stdout, func(s *v1.Pod) error {
+		// don't mutate the object
 		return nil
 	})
 
-	wrapper(secret)
+	wrapper(obj)
 
 	// Output: No changes
 }
 
 func ExampleDiffWrapper_changes() {
-	secret := &v1.Secret{}
-	secret.Type = "opaque"
+	obj := &v1.Pod{}
+	obj.Spec.Hostname = "opaque"
 
 	contents := &bytes.Buffer{}
-	wrapper := DiffWrapper(contents, func(s *v1.Secret) error {
-		s.Type = "docker-creds"
+	wrapper := DiffWrapper(contents, func(obj *v1.Pod) error {
+		obj.Spec.Hostname = "docker-creds"
 		return nil
 	})
 
-	fmt.Println("Error:", wrapper(secret))
+	fmt.Println("Error:", wrapper(obj))
 	firstLine := strings.Split(contents.String(), "\n")[0]
 	fmt.Println("First line:", firstLine)
 
@@ -364,13 +276,13 @@ func ExampleDiffWrapper_changes() {
 }
 
 func ExampleDiffWrapper_err() {
-	secret := &v1.Secret{}
+	obj := &v1.Pod{}
 
-	wrapper := DiffWrapper(os.Stdout, func(s *v1.Secret) error {
+	wrapper := DiffWrapper(os.Stdout, func(_ *v1.Pod) error {
 		return errors.New("some-error")
 	})
 
-	fmt.Println(wrapper(secret))
+	fmt.Println(wrapper(obj))
 
 	// Output: some-error
 }
@@ -383,7 +295,7 @@ func TestConditionDeleted(t *testing.T) {
 		wantErr  error
 	}{
 		"not found error": {
-			apiErr:   apierrors.NewNotFound(schema.GroupResource{}, "my-secret"),
+			apiErr:   apierrors.NewNotFound(schema.GroupResource{}, "my-obj"),
 			wantDone: true,
 		},
 		"nil error": {
@@ -409,9 +321,9 @@ func TestConditionDeleted(t *testing.T) {
 
 func ExampleClient_WaitForE_conditionDeleted() {
 	mockK8s := testclient.NewSimpleClientset().CoreV1()
-	secretsClient := NewExampleClient(mockK8s)
+	client := NewExampleClient(mockK8s)
 
-	instance, err := secretsClient.WaitForE(context.Background(), "default", "secret-name", 1*time.Second, ConditionDeleted)
+	instance, err := client.WaitForE(context.Background(), "default", "obj-name", 1*time.Second, ConditionDeleted)
 	fmt.Println("Instance:", instance)
 	fmt.Println("Error:", err)
 
@@ -421,13 +333,13 @@ func ExampleClient_WaitForE_conditionDeleted() {
 
 func ExampleClient_WaitForE_timeout() {
 	mockK8s := testclient.NewSimpleClientset().CoreV1()
-	secretsClient := NewExampleClient(mockK8s)
+	client := NewExampleClient(mockK8s)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 250*time.Millisecond)
 	defer cancel()
 
 	called := 0
-	instance, err := secretsClient.WaitForE(ctx, "default", "secret-name", 100*time.Millisecond, func(_ *v1.Secret, _ error) (bool, error) {
+	instance, err := client.WaitForE(ctx, "default", "object-name", 100*time.Millisecond, func(_ *v1.Pod, _ error) (bool, error) {
 		called++
 		return false, nil
 	})
@@ -471,7 +383,7 @@ func TestWrapPredicate(t *testing.T) {
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
 			called := false
-			wrapped := wrapPredicate(func(_ *v1.Secret) bool {
+			wrapped := wrapPredicate(func(_ *v1.Pod) bool {
 				called = true
 				return tc.predicateResponse
 			})
@@ -480,6 +392,75 @@ func TestWrapPredicate(t *testing.T) {
 			testutil.AssertErrorsEqual(t, tc.wantErr, actualErr)
 			testutil.AssertEqual(t, "done", tc.wantDone, actualDone)
 			testutil.AssertEqual(t, "predicate called", tc.wantCall, called)
+		})
+	}
+}
+
+func TestCheckConditionTrue(t *testing.T) {
+	cases := map[string]struct {
+		conditions []v1.PodCondition
+		err        error
+
+		wantDone bool
+		wantErr  error
+	}{
+		"error supplied": {
+			err: errors.New("test"),
+
+			wantDone: true,
+			wantErr:  errors.New("test"),
+		},
+		"condition missing": {
+			conditions: []v1.PodCondition{},
+			wantDone:   false,
+			wantErr:    nil,
+		},
+		"condition unknown": {
+			conditions: []v1.PodCondition{
+				{
+					Type:   v1.PodConditionType(ConditionReady),
+					Status: v1.ConditionUnknown,
+				},
+			},
+			wantDone: false,
+			wantErr:  nil,
+		},
+		"condition true": {
+			conditions: []v1.PodCondition{
+				{
+					Type:   v1.PodConditionType(ConditionReady),
+					Status: v1.ConditionTrue,
+				},
+			},
+			wantDone: true,
+			wantErr:  nil,
+		},
+		"condition false": {
+			conditions: []v1.PodCondition{
+				{
+					Type:    v1.PodConditionType(ConditionReady),
+					Status:  v1.ConditionFalse,
+					Message: "SomeMessage",
+					Reason:  "SomeReason",
+				},
+			},
+			wantDone: true,
+			wantErr:  errors.New("checking Ready failed, status: False message: SomeMessage reason: SomeReason"),
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			pod := &v1.Pod{
+				Status: v1.PodStatus{
+					Conditions: tc.conditions,
+				},
+			}
+
+			actualDone, actualErr := checkConditionTrue(pod, tc.err, ConditionReady)
+
+			testutil.AssertErrorsEqual(t, tc.wantErr, actualErr)
+			testutil.AssertEqual(t, "done", tc.wantDone, actualDone)
 		})
 	}
 }

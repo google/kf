@@ -19,9 +19,10 @@ package commands
 import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	kfv1alpha1 "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
+	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
+	scv1beta1 "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/typed/servicecatalog/v1beta1"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/buildpacks"
-	"github.com/google/kf/pkg/kf/builds"
 	capps "github.com/google/kf/pkg/kf/commands/apps"
 	cbuildpacks "github.com/google/kf/pkg/kf/commands/buildpacks"
 	cbuilds "github.com/google/kf/pkg/kf/commands/builds"
@@ -35,6 +36,7 @@ import (
 	cspaces "github.com/google/kf/pkg/kf/commands/spaces"
 	"github.com/google/kf/pkg/kf/istio"
 	kflogs "github.com/google/kf/pkg/kf/logs"
+	"github.com/google/kf/pkg/kf/marketplace"
 	"github.com/google/kf/pkg/kf/routeclaims"
 	"github.com/google/kf/pkg/kf/routes"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
@@ -50,10 +52,6 @@ import (
 
 func provideSrcImageBuilder() capps.SrcImageBuilder {
 	return capps.SrcImageBuilderFunc(kontext.BuildImage)
-}
-
-func provideBuildTailer() builds.BuildTailer {
-	return builds.BuildTailerFunc(logs.Tail)
 }
 
 ///////////////////
@@ -173,37 +171,47 @@ func InjectUnsetEnv(p *config.KfParams) *cobra.Command {
 ////////////////
 // Services //
 /////////////
+
+func provideServiceInstancesGetter(sc servicecatalogclient.Interface) scv1beta1.ServiceInstancesGetter {
+	return sc.ServicecatalogV1beta1()
+}
+
+var ServicesSet = wire.NewSet(
+	provideServiceInstancesGetter,
+	config.GetServiceCatalogClient,
+	config.GetSvcatApp,
+	marketplace.NewClient,
+	services.NewClient,
+)
+
 func InjectCreateService(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		config.GetServiceCatalogClient,
 		servicescmd.NewCreateServiceCommand,
+		ServicesSet,
 	)
 	return nil
 }
 
 func InjectDeleteService(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		services.NewClient,
 		servicescmd.NewDeleteServiceCommand,
-		config.GetSvcatApp,
+		ServicesSet,
 	)
 	return nil
 }
 
 func InjectGetService(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		services.NewClient,
 		servicescmd.NewGetServiceCommand,
-		config.GetSvcatApp,
+		ServicesSet,
 	)
 	return nil
 }
 
 func InjectListServices(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		services.NewClient,
 		servicescmd.NewListServicesCommand,
-		config.GetSvcatApp,
+		ServicesSet,
 		AppsSet,
 	)
 	return nil
@@ -211,9 +219,8 @@ func InjectListServices(p *config.KfParams) *cobra.Command {
 
 func InjectMarketplace(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		services.NewClient,
 		servicescmd.NewMarketplaceCommand,
-		config.GetSvcatApp,
+		ServicesSet,
 	)
 	return nil
 }
@@ -223,9 +230,7 @@ func InjectMarketplace(p *config.KfParams) *cobra.Command {
 /////////////////////
 func InjectBindingService(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		servicebindings.NewClient,
 		servicebindingscmd.NewBindServiceCommand,
-		config.GetServiceCatalogClient,
 		AppsSet,
 	)
 	return nil
@@ -236,16 +241,13 @@ func InjectListBindings(p *config.KfParams) *cobra.Command {
 		servicebindings.NewClient,
 		servicebindingscmd.NewListBindingsCommand,
 		config.GetServiceCatalogClient,
-		AppsSet,
 	)
 	return nil
 }
 
 func InjectUnbindService(p *config.KfParams) *cobra.Command {
 	wire.Build(
-		servicebindings.NewClient,
 		servicebindingscmd.NewUnbindServiceCommand,
-		config.GetServiceCatalogClient,
 		AppsSet,
 	)
 	return nil
@@ -419,6 +421,15 @@ func InjectUnmapRoute(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
+func InjectProxyRoute(p *config.KfParams) *cobra.Command {
+	wire.Build(
+		croutes.NewProxyRouteCommand,
+		istio.NewIstioClient,
+		config.GetKubernetes,
+	)
+	return nil
+}
+
 ////////////////////
 // Builds Command //
 ////////////////////
@@ -430,7 +441,7 @@ func provideKfSources(ki kfv1alpha1.KfV1alpha1Interface) kfv1alpha1.SourcesGette
 }
 
 func provideSourcesBuildTailer() sources.BuildTailer {
-	return builds.BuildTailerFunc(logs.Tail)
+	return sources.BuildTailerFunc(logs.Tail)
 }
 
 func InjectBuilds(p *config.KfParams) *cobra.Command {

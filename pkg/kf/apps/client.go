@@ -15,7 +15,6 @@
 package apps
 
 import (
-	"fmt"
 	"io"
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -31,6 +30,8 @@ type ClientExtension interface {
 	DeployLogs(out io.Writer, appName, resourceVersion, namespace string, noStart bool) error
 	Restart(namespace, name string) error
 	Restage(namespace, name string) (*v1alpha1.App, error)
+	BindService(namespace, name string, binding *v1alpha1.AppSpecServiceBinding) (*v1alpha1.App, error)
+	UnbindService(namespace, name, bindingName string) (*v1alpha1.App, error)
 }
 
 type appsClient struct {
@@ -45,19 +46,17 @@ func NewClient(
 	return &appsClient{
 		coreClient: coreClient{
 			kclient: kclient,
-			upsertMutate: MutatorList{
-				func(app *v1alpha1.App) error {
-					// Dedupe Routes
-					// TODO(https://github.com/knative/pkg/issues/542): Route
-					// already exists and the webhook can't dedupe for us.
-					app.Spec.Routes = []v1alpha1.RouteSpecFields(
-						algorithms.Dedupe(
-							v1alpha1.RouteSpecFieldsSlice(app.Spec.Routes),
-						).(v1alpha1.RouteSpecFieldsSlice),
-					)
+			upsertMutate: func(app *v1alpha1.App) error {
+				// Dedupe Routes
+				// TODO(https://github.com/knative/pkg/issues/542): Route
+				// already exists and the webhook can't dedupe for us.
+				app.Spec.Routes = []v1alpha1.RouteSpecFields(
+					algorithms.Dedupe(
+						v1alpha1.RouteSpecFieldsSlice(app.Spec.Routes),
+					).(v1alpha1.RouteSpecFieldsSlice),
+				)
 
-					return nil
-				},
+				return nil
 			},
 		},
 		sourcesClient: sourcesClient,
@@ -94,32 +93,18 @@ func (ac *appsClient) Restage(namespace, name string) (app *v1alpha1.App, err er
 	return ac.coreClient.Update(namespace, app)
 }
 
-// ConditionServiceBindingsReady returns true if service bindings are ready and
-// errors if the bindings failed.
-func ConditionServiceBindingsReady(app *v1alpha1.App, apiErr error) (isFinal bool, err error) {
-	if apiErr != nil {
-		return true, apiErr
-	}
+// BindService adds the given service binding to the app.
+func (ac *appsClient) BindService(namespace, name string, binding *v1alpha1.AppSpecServiceBinding) (app *v1alpha1.App, err error) {
+	return ac.coreClient.Transform(namespace, name, func(a *v1alpha1.App) error {
+		BindService(app, binding)
+		return nil
+	})
+}
 
-	// don't propagate old statuses
-	if app.Generation != app.Status.ObservedGeneration {
-		return false, nil
-	}
-
-	if cond := app.Status.GetCondition(v1alpha1.AppConditionServiceBindingsReady); cond != nil {
-		switch {
-		case cond.IsTrue():
-			return true, nil
-
-		case cond.IsUnknown():
-			return false, nil
-
-		default:
-			// return true and a failrue assuming IsFalse and other statuses can't be
-			// recovered from because they violate the K8s spec
-			return true, fmt.Errorf("checking %s failed, status: %s message: %s reason: %s", cond.Type, cond.Status, cond.Message, cond.Reason)
-		}
-	}
-
-	return false, nil
+// UnbindService removes the given service binding from the app.
+func (ac *appsClient) UnbindService(namespace, name, bindingName string) (app *v1alpha1.App, err error) {
+	return ac.coreClient.Transform(namespace, name, func(a *v1alpha1.App) error {
+		UnbindService(app, bindingName)
+		return nil
+	})
 }

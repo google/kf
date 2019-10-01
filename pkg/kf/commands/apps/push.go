@@ -28,12 +28,12 @@ import (
 	"github.com/google/kf/pkg/internal/envutil"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
-	kfi "github.com/google/kf/pkg/kf/internal/kf"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/manifest"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"knative.dev/pkg/ptr"
 )
 
 // SrcImageBuilder creates and uploads a container image that contains the
@@ -85,7 +85,7 @@ func NewPushCommand(
 		buildpack          string
 		stack              string
 		envs               []string
-		grpc               bool
+		enableHTTP2        bool
 		noManifest         bool
 		noStart            bool
 		healthCheckType    string
@@ -93,6 +93,9 @@ func NewPushCommand(
 		memoryRequest      *resource.Quantity
 		storageRequest     *resource.Quantity
 		cpuRequest         *resource.Quantity
+		startupCommand      string
+		containerEntrypoint string
+		containerArgs       []string
 
 		// Route Flags
 		rawRoutes         []string
@@ -164,7 +167,9 @@ func NewPushCommand(
 			{
 				overrides.Docker.Image = containerImage
 				overrides.Stack = stack
-
+				overrides.Command = startupCommand
+				overrides.Args = containerArgs
+				overrides.Entrypoint = containerEntrypoint
 				overrides.Dockerfile.Path = dockerfilePath
 
 				// Read environment variables from cli args
@@ -217,9 +222,23 @@ func NewPushCommand(
 				if cmd.Flags().Lookup("max-scale").Changed {
 					overrides.MaxScale = &maxScale
 				}
+
+				if cmd.Flags().Lookup("enable-http2").Changed {
+					overrides.EnableHTTP2 = ptr.Bool(enableHTTP2)
+				}
+
+				if cmd.Flags().Lookup("no-start").Changed {
+					overrides.NoStart = ptr.Bool(noStart)
+				}
 			}
 
 			for _, app := range appsToDeploy {
+				// Warn the user about unofficial fields they might be using before
+				// overriding the manifest.
+				if err := app.WarnUnofficialFields(cmd.OutOrStderr()); err != nil {
+					return err
+				}
+
 				if err := app.Override(overrides); err != nil {
 					return err
 				}
@@ -289,11 +308,9 @@ func NewPushCommand(
 				pushOpts := []apps.PushOption{
 					apps.WithPushNamespace(p.Namespace),
 					apps.WithPushEnvironmentVariables(app.Env),
-					apps.WithPushGrpc(grpc),
 					apps.WithPushExactScale(exactScale),
 					apps.WithPushMinScale(minScale),
 					apps.WithPushMaxScale(maxScale),
-					apps.WithPushNoStart(noStart),
 					apps.WithPushRoutes(routes),
 					apps.WithPushMemory(memoryRequest),
 					apps.WithPushDiskQuota(storageRequest),
@@ -301,6 +318,16 @@ func NewPushCommand(
 					apps.WithPushHealthCheck(healthCheck),
 					apps.WithPushRandomRouteDomain(randomRouteDomain),
 					apps.WithPushDefaultRouteDomain(defaultRouteDomain),
+					apps.WithPushCommand(app.CommandEntrypoint()),
+					apps.WithPushArgs(app.CommandArgs()),
+				}
+
+				if app.EnableHTTP2 != nil {
+					pushOpts = append(pushOpts, apps.WithPushGrpc(*app.EnableHTTP2))
+				}
+
+				if app.NoStart != nil {
+					pushOpts = append(pushOpts, apps.WithPushNoStart(*app.NoStart))
 				}
 
 				if app.Docker.Image == "" {
@@ -372,7 +399,7 @@ func NewPushCommand(
 
 				err = pusher.Push(app.Name, pushOpts...)
 
-				cmd.SilenceUsage = !kfi.ConfigError(err)
+				cmd.SilenceUsage = !utils.ConfigError(err)
 
 				if err != nil {
 					return err
@@ -410,10 +437,10 @@ func NewPushCommand(
 	)
 
 	pushCmd.Flags().BoolVar(
-		&grpc,
-		"grpc",
+		&enableHTTP2,
+		"enable-http2",
 		false,
-		"Setup the container to allow application to use gRPC.",
+		"Setup the container to allow application to use HTTP2 and gRPC.",
 	)
 
 	pushCmd.Flags().BoolVar(
@@ -533,6 +560,28 @@ func NewPushCommand(
 		"route",
 		nil,
 		"Use the routes flag to provide multiple HTTP and TCP routes. Each route for this app is created if it does not already exist.",
+	)
+
+	pushCmd.Flags().StringVarP(
+		&startupCommand,
+		"command",
+		"c",
+		"",
+		"Startup command for the app, this overrides the default command specified by the web process.",
+	)
+
+	pushCmd.Flags().StringVar(
+		&containerEntrypoint,
+		"entrypoint",
+		"",
+		"Overwrite the default entrypoint of the image. Can't be used with the command flag.",
+	)
+
+	pushCmd.Flags().StringArrayVar(
+		&containerArgs,
+		"args",
+		nil,
+		"Overwrite the args for the image. Can't be used with the command flag.",
 	)
 
 	return pushCmd

@@ -20,7 +20,7 @@ import (
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -29,7 +29,7 @@ func NewRestageCommand(
 	p *config.KfParams,
 	client apps.Client,
 ) *cobra.Command {
-	var async bool
+	var async utils.AsyncFlags
 
 	cmd := &cobra.Command{
 		Use:     "restage APP_NAME",
@@ -51,7 +51,7 @@ func NewRestageCommand(
 				return fmt.Errorf("failed to restage app: %s", err)
 			}
 
-			if !async {
+			if async.IsSynchronous() {
 				if err := client.DeployLogsForApp(cmd.OutOrStdout(), app); err != nil {
 					return fmt.Errorf("failed to restage app: %s", err)
 				}
@@ -63,13 +63,7 @@ func NewRestageCommand(
 		},
 	}
 
-	cmd.Flags().BoolVarP(
-		&async,
-		"async",
-		"",
-		false,
-		"Don't wait for the restage to finish before returning.",
-	)
+	async.Add(cmd)
 
 	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 

@@ -25,7 +25,6 @@ type ClientExtension interface {
 // NewClient creates a new route client.
 func NewClient(kclient kf.KfV1alpha1Interface) Client {
 	return &coreClient{
-		kclient:      kclient,
-		upsertMutate: MutatorList{},
+		kclient: kclient,
 	}
 }

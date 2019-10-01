@@ -14,10 +14,11 @@
 
 package fake
 
-import "github.com/google/kf/pkg/kf/builds"
+import "github.com/google/kf/pkg/kf/marketplace"
 
-//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_client.go --mock_names=Client=FakeClient github.com/google/kf/pkg/kf/builds/fake Client
+//go:generate mockgen --package=fake --destination=fake_client_interface.go --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --mock_names=ClientInterface=FakeClientInterface github.com/google/kf/pkg/kf/marketplace/fake ClientInterface
 
-type Client interface {
-	builds.ClientInterface
+// ClientInterface is implementd by marketplace.Client.
+type ClientInterface interface {
+	marketplace.ClientInterface
 }

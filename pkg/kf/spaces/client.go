@@ -26,8 +26,7 @@ type ClientExtension interface {
 // NewClient creates a new space client.
 func NewClient(kclient cv1alpha1.SpacesGetter) Client {
 	return &coreClient{
-		kclient:      kclient,
-		upsertMutate: MutatorList{},
+		kclient: kclient,
 	}
 }
 

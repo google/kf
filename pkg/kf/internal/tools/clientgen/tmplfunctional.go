@@ -34,21 +34,15 @@ const (
 	APIVersion = "{{.Kubernetes.Version}}"
 )
 
+{{ if .SupportsConditions }}
+var (
+	{{ range .Kubernetes.Conditions }}
+	{{.ConditionName}} = apis.ConditionType({{.Definition}}){{ end }}
+)
+{{ end }}
+
 // Predicate is a boolean function for a {{.Type}}.
 type Predicate func(*{{.Type}}) bool
-
-// AllPredicate is a predicate that passes if all children pass.
-func AllPredicate(children ...Predicate) Predicate {
-	return func(obj *{{.Type}}) bool {
-		for _, filter := range children {
-			if !filter(obj) {
-				return false
-			}
-		}
-
-		return true
-	}
-}
 
 // Mutator is a function that changes {{.Type}}.
 type Mutator func(*{{.Type}}) error
@@ -103,48 +97,31 @@ func (list List) Filter(filter Predicate) (out List) {
 	return
 }
 
-// MutatorList is a list of mutators.
-type MutatorList []Mutator
 
-// Apply passes the given value to each of the mutators in the list failing if
-// one of them returns an error.
-func (list MutatorList) Apply(svc *{{.Type}}) error {
-	for _, mutator := range list {
-		if err := mutator(svc); err != nil {
-			return err
-		}
+{{ if .SupportsObservedGeneration }}
+// ObservedGenerationMatchesGeneration is a predicate that returns true if the
+// object's ObservedGeneration matches the genration of the object.
+func ObservedGenerationMatchesGeneration(obj *{{.Type}}) bool {
+	return obj.Generation == obj.{{.Kubernetes.ObservedGenerationFieldPath}}
+}
+{{ end }}
+
+{{ if .SupportsConditions }}
+// ExtractConditions converts the native condition types into an apis.Condition
+// array with the Type, Status, Reason, and Message fields intact.
+func ExtractConditions(obj *{{.Type}}) (extracted []apis.Condition) {
+	for _, cond := range obj.{{.Kubernetes.ConditionsFieldPath}} {
+		// Only copy the following four fields to be compatible with
+		// recommended Kuberntes fields.
+		extracted = append(extracted, apis.Condition{
+			Type:    apis.ConditionType(cond.Type),
+			Status:  cond.Status,
+			Reason:  cond.Reason,
+			Message: cond.Message,
+		})
 	}
 
-	return nil
+	return
 }
-
-// LabelSetMutator creates a mutator that sets the given labels on the object.
-func LabelSetMutator(labels map[string]string) Mutator {
-	return func(obj *{{.Type}}) error {
-		if obj.Labels == nil {
-			obj.Labels = make(map[string]string)
-		}
-
-		for key, value := range labels {
-			obj.Labels[key] = value
-		}
-
-		return nil
-	}
-}
-
-// LabelEqualsPredicate validates that the given label exists exactly on the object.
-func LabelEqualsPredicate(key, value string) Predicate {
-	return func(obj *{{.Type}}) bool {
-		return obj.Labels[key] == value
-	}
-}
-
-// LabelsContainsPredicate validates that the given label exists on the object.
-func LabelsContainsPredicate(key string) Predicate {
-	return func(obj *{{.Type}}) bool {
-		_, ok := obj.Labels[key]
-		return ok
-	}
-}
+{{ end }}
 `))

@@ -24,7 +24,7 @@ kf restage APP_NAME [flags]
 ### Options
 
 ```
-      --async   Don't wait for the restage to finish before returning.
+      --async   Don't wait for the action to complete on the server before returning
   -h, --help    help for restage
 ```
 

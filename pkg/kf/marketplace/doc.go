@@ -12,12 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package secrets
-
-import "fmt"
-
-func ExampleBrokerCredentialSecretName() {
-	fmt.Println(BrokerCredentialSecretName("my-broker"))
-
-	// Output: service-broker-my-broker-creds
-}
+// Package marketplace provides access to the resources provided by service
+// brokers for consumption by developers.
+package marketplace

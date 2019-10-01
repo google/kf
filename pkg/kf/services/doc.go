@@ -12,11 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package secrets
+// Package services contains the client for working with service catalog
+// service instances.
+package services
 
-import "fmt"
-
-// BrokerCredentialSecretName creates a deterministic secret name from a broker name.
-func BrokerCredentialSecretName(brokerName string) string {
-	return fmt.Sprintf("service-broker-%s-creds", brokerName)
-}
+//go:generate go run ../internal/tools/option-builder/option-builder.go --pkg services ../internal/tools/clientgen/common-options.yml zz_generated.clientoptions.go
+//go:generate go run ../internal/tools/clientgen/genclient.go client.yml

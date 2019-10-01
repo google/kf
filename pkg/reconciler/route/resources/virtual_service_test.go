@@ -29,6 +29,30 @@ import (
 	networking "knative.dev/pkg/apis/istio/v1alpha3"
 )
 
+func makeRouteSpecFields(host, domain, path string) v1alpha1.RouteSpecFields {
+	return v1alpha1.RouteSpecFields{
+		Hostname: host,
+		Domain:   domain,
+		Path:     path,
+	}
+}
+
+func makeRoute(host, domain, path string) *v1alpha1.Route {
+	return &v1alpha1.Route{
+		Spec: v1alpha1.RouteSpec{
+			RouteSpecFields: makeRouteSpecFields(host, domain, path),
+		},
+	}
+}
+
+func makeRouteClaim(host, domain, path string) *v1alpha1.RouteClaim {
+	return &v1alpha1.RouteClaim{
+		Spec: v1alpha1.RouteClaimSpec{
+			RouteSpecFields: makeRouteSpecFields(host, domain, path),
+		},
+	}
+}
+
 func TestMakeVirtualService(t *testing.T) {
 	t.Parallel()
 
@@ -50,11 +74,7 @@ func TestMakeVirtualService(t *testing.T) {
 						Labels:    map[string]string{"a": "1", "b": "2"},
 					},
 					Spec: v1alpha1.RouteClaimSpec{
-						RouteSpecFields: v1alpha1.RouteSpecFields{
-							Hostname: "some-host",
-							Domain:   "example.com",
-							Path:     "some-path",
-						},
+						RouteSpecFields: makeRouteSpecFields("some-host", "example.com", "some-path"),
 					},
 				},
 			},
@@ -65,15 +85,7 @@ func TestMakeVirtualService(t *testing.T) {
 					Kind:       "VirtualService",
 				}, v.TypeMeta)
 
-				route := &v1alpha1.Route{
-					Spec: v1alpha1.RouteSpec{
-						RouteSpecFields: v1alpha1.RouteSpecFields{
-							Hostname: "some-host",
-							Domain:   "example.com",
-							Path:     "/some-path",
-						},
-					},
-				}
+				route := makeRoute("some-host", "example.com", "/some-path")
 
 				testutil.AssertEqual(t, "ObjectMeta", metav1.ObjectMeta{
 					Name:      v1alpha1.GenerateName(route.Spec.Hostname, route.Spec.Domain),
@@ -96,11 +108,7 @@ func TestMakeVirtualService(t *testing.T) {
 			Claims: []*v1alpha1.RouteClaim{
 				{
 					Spec: v1alpha1.RouteClaimSpec{
-						RouteSpecFields: v1alpha1.RouteSpecFields{
-							Hostname: "some-host",
-							Domain:   "example.com",
-							Path:     "/some-path",
-						},
+						RouteSpecFields: makeRouteSpecFields("some-host", "example.com", "/some-path"),
 					},
 				},
 			},
@@ -117,84 +125,61 @@ func TestMakeVirtualService(t *testing.T) {
 		},
 		"Route": {
 			Claims: []*v1alpha1.RouteClaim{
-				{
-					Spec: v1alpha1.RouteClaimSpec{
-						RouteSpecFields: v1alpha1.RouteSpecFields{
-							Hostname: "some-host",
-							Domain:   "example.com",
-							Path:     "/some-other-path",
-						},
-					},
-				},
+				makeRouteClaim("some-host", "example.com", "/some-other-path"),
 			},
 			Routes: []*v1alpha1.Route{
-				{
-					Spec: v1alpha1.RouteSpec{
-						RouteSpecFields: v1alpha1.RouteSpecFields{
-							Hostname: "some-host",
-							Domain:   "example.com",
-							Path:     "/some-path",
-						},
-					},
-				},
+				makeRoute("some-host", "example.com", "/some-path"),
 			},
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
 				testutil.AssertNil(t, "err", err)
 				testutil.AssertEqual(t, "HTTP len", 2, len(v.Spec.HTTP))
 				for i := range v.Spec.HTTP {
 					testutil.AssertEqual(t, "HTTP Route len", 1, len(v.Spec.HTTP[i].Route))
-					testutil.AssertEqual(t, "HTTP Route", networking.HTTPRouteDestination{
-						Destination: networking.Destination{
-							Host: resources.GatewayHost,
+					testutil.AssertEqual(t, "HTTP Route fault", &networking.HTTPFaultInjection{
+						Abort: &networking.InjectAbort{
+							Percent:    100,
+							HTTPStatus: http.StatusServiceUnavailable,
 						},
-						Weight: 100,
-					}, v.Spec.HTTP[i].Route[0])
+					}, v.Spec.HTTP[i].Fault)
 				}
 			},
 		},
 		"Prefers Routes over Claims": {
 			Claims: []*v1alpha1.RouteClaim{
 				{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "some-namespace",
+					},
 					Spec: v1alpha1.RouteClaimSpec{
-						RouteSpecFields: v1alpha1.RouteSpecFields{
-							Hostname: "some-host",
-							Domain:   "example.com",
-							Path:     "/some-path",
-						},
+						RouteSpecFields: makeRouteSpecFields("some-host", "example.com", "/some-path"),
 					},
 				},
 			},
 			Routes: []*v1alpha1.Route{
 				{
 					Spec: v1alpha1.RouteSpec{
-						AppName: "some-app-name",
-						RouteSpecFields: v1alpha1.RouteSpecFields{
-							Hostname: "some-host",
-							Domain:   "example.com",
-							Path:     "/some-path",
-						},
+						AppName:         "some-app-name",
+						RouteSpecFields: makeRouteSpecFields("some-host", "example.com", "/some-path"),
 					},
 				},
 			},
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
 				testutil.AssertNil(t, "err", err)
 				testutil.AssertEqual(t, "HTTP len", 1, len(v.Spec.HTTP))
+				testutil.AssertEqual(t, "HTTP route destination", networking.HTTPRouteDestination{
+					Destination: networking.Destination{
+						Host: "istio-ingressgateway.istio-system.svc.cluster.local",
+					},
+					Weight: 100,
+				}, v.Spec.HTTP[0].Route[0])
 				testutil.AssertEqual(t, "HTTP Rewrite", &networking.HTTPRewrite{
-					Authority: network.GetServiceHostname("some-app-name", ""),
+					Authority: network.GetServiceHostname("some-app-name", "some-namespace"),
 				}, v.Spec.HTTP[0].Rewrite)
 			},
 		},
 		"when there aren't any bound services, setup fault to 503": {
 			Claims: []*v1alpha1.RouteClaim{
-				{
-					Spec: v1alpha1.RouteClaimSpec{
-						RouteSpecFields: v1alpha1.RouteSpecFields{
-							Hostname: "some-host",
-							Domain:   "example.com",
-							Path:     "/some-path",
-						},
-					},
-				},
+				makeRouteClaim("some-host", "example.com", "/some-path"),
 			},
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
 				testutil.AssertNil(t, "err", err)
@@ -214,11 +199,7 @@ func TestMakeVirtualService(t *testing.T) {
 						Namespace: "some-namespace",
 					},
 					Spec: v1alpha1.RouteClaimSpec{
-						RouteSpecFields: v1alpha1.RouteSpecFields{
-							Hostname: "some-host",
-							Domain:   "example.com",
-							Path:     "/some-path",
-						},
+						RouteSpecFields: makeRouteSpecFields("some-host", "example.com", "/some-path"),
 					},
 				},
 			},
@@ -228,58 +209,56 @@ func TestMakeVirtualService(t *testing.T) {
 						Namespace: "some-namespace",
 					},
 					Spec: v1alpha1.RouteSpec{
-						RouteSpecFields: v1alpha1.RouteSpecFields{
-							Hostname: "some-host",
-							Domain:   "example.com",
-							Path:     "/some-path",
-						},
-						AppName: "ksvc-1",
+						RouteSpecFields: makeRouteSpecFields("some-host", "example.com", "/some-path"),
+						AppName:         "ksvc-1",
 					},
 				},
 			},
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
+				expectedHTTP := []networking.HTTPRoute{
+					{
+						Match: []networking.HTTPMatchRequest{
+							{URI: &istio.StringMatch{Regex: "^/some-path(/.*)?"}},
+						},
+						Rewrite: &networking.HTTPRewrite{
+							Authority: network.GetServiceHostname("ksvc-1", "some-namespace"),
+						},
+						Route: []networking.HTTPRouteDestination{
+							{
+								Destination: networking.Destination{Host: "istio-ingressgateway.istio-system.svc.cluster.local"},
+								Weight:      100,
+							},
+						},
+						Headers: &networking.Headers{
+							Request: &networking.HeaderOperations{
+								Add: map[string]string{
+									"X-Forwarded-Host": "some-host.example.com",
+									"Forwarded":        "host=some-host.example.com",
+								},
+							},
+						},
+					},
+				}
+
 				testutil.AssertNil(t, "err", err)
-				testutil.AssertEqual(t, "HTTP len", 1, len(v.Spec.HTTP))
-				testutil.AssertEqual(t, "HTTP Rewrite", &networking.HTTPRewrite{
-					Authority: network.GetServiceHostname("ksvc-1", "some-namespace"),
-				}, v.Spec.HTTP[0].Rewrite)
-				testutil.AssertEqual(t, "HTTP Match len", 1, len(v.Spec.HTTP[0].Match))
-				testutil.AssertEqual(t, "HTTP Match", "^/some-path(/.*)?", v.Spec.HTTP[0].Match[0].URI.Regex)
+				testutil.AssertEqual(t, "HTTP", expectedHTTP, v.Spec.HTTP)
 			},
 		},
 		"Hosts with subdomain": {
 			Claims: []*v1alpha1.RouteClaim{
-				{
-					Spec: v1alpha1.RouteClaimSpec{
-						RouteSpecFields: v1alpha1.RouteSpecFields{
-							Hostname: "some-host",
-							Domain:   "example.com",
-							Path:     "/some-path",
-						},
-					},
-				},
+				makeRouteClaim("some-host", "example.com", "/some-path"),
 			},
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
 				testutil.AssertNil(t, "err", err)
-				testutil.AssertEqual(t, "Hosts len", 1, len(v.Spec.Hosts))
 				testutil.AssertEqual(t, "Hosts", []string{"some-host.example.com"}, v.Spec.Hosts)
 			},
 		},
 		"Hosts without subdomain": {
 			Claims: []*v1alpha1.RouteClaim{
-				{
-					Spec: v1alpha1.RouteClaimSpec{
-						RouteSpecFields: v1alpha1.RouteSpecFields{
-							Hostname: "",
-							Domain:   "example.com",
-							Path:     "/some-path",
-						},
-					},
-				},
+				makeRouteClaim("", "example.com", "/some-path"),
 			},
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
 				testutil.AssertNil(t, "err", err)
-				testutil.AssertEqual(t, "Hosts len", 1, len(v.Spec.Hosts))
 				testutil.AssertEqual(t, "Hosts", []string{"example.com"}, v.Spec.Hosts)
 			},
 		},
@@ -292,43 +271,17 @@ func TestMakeVirtualService(t *testing.T) {
 }
 
 func ExampleMakeVirtualService() {
-	vs, err := resources.MakeVirtualService([]*v1alpha1.RouteClaim{
-		{
-			Spec: v1alpha1.RouteClaimSpec{
-				RouteSpecFields: v1alpha1.RouteSpecFields{
-					Hostname: "some-host",
-					Domain:   "example.com/",
-				},
-			},
-		},
-	}, []*v1alpha1.Route{
-		{
-			Spec: v1alpha1.RouteSpec{
-				RouteSpecFields: v1alpha1.RouteSpecFields{
-					Hostname: "some-host",
-					Domain:   "example.com/",
-				},
-			},
-		},
-		{
-			Spec: v1alpha1.RouteSpec{
-				RouteSpecFields: v1alpha1.RouteSpecFields{
-					Hostname: "some-host",
-					Domain:   "example.com",
-					Path:     "/some-path-1",
-				},
-			},
-		},
-		{
-			Spec: v1alpha1.RouteSpec{
-				RouteSpecFields: v1alpha1.RouteSpecFields{
-					Hostname: "some-host",
-					Domain:   "example.com",
-					Path:     "/some-path-2",
-				},
-			},
-		},
-	})
+	claims := []*v1alpha1.RouteClaim{
+		makeRouteClaim("some-host", "example.com/", ""),
+	}
+
+	routes := []*v1alpha1.Route{
+		makeRoute("some-host", "example.com/", ""),
+		makeRoute("some-host", "example.com/", "/some-path-1"),
+		makeRoute("some-host", "example.com/", "/some-path-2"),
+	}
+
+	vs, err := resources.MakeVirtualService(claims, routes)
 	if err != nil {
 		panic(err)
 	}
