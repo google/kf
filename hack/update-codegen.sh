@@ -182,6 +182,9 @@ case $GENS in
     svccat-codegen
     svccat-knative-gen
     ;;
+  *)
+    echo "invalid codegen argument: $GENS"
+    exit 1
 esac
 
 gofmt -s -w .
