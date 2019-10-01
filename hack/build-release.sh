@@ -37,7 +37,11 @@ version=`cat version`
 # Modify version number to prepend git hash
 hash=$(git rev-parse HEAD)
 [ -z "$hash" ] && echo "failed to read hash" && exit 1
-version="$version ($hash)"
+version="$version-$hash"
+
+# Prepare dirs
+mkdir -p $output/$version
+output=$output/$version
 
 # Login to gcloud
 set +x
@@ -78,7 +82,6 @@ ko resolve --filename config | sed "s/VERSION_PLACEHOLDER/$version/" > ${output}
 ###################
 # Generate kf CLI #
 ###################
-
 mkdir ${output}/bin
 
 # Build the binaries

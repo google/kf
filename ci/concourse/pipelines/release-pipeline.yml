@@ -26,14 +26,15 @@ vars:
 - &ci_image_uri ((ci_image_uri))
 - &service_account_json ((service_account_json))
 
-# nightly build vars
+# nightly and release build vars
 - &release_service_account_json ((release_service_account_json))
+- &release_project ((release_project))
 - &ko_docker_release_repo ((ko_docker_release_repo))
-- &release_bucket ((release_bucket))
-- &cli_release_bucket ((cli_release_bucket))
+- &release_bucket ((bucket_name))
 
 # k8s config
 - &gcp_project_id ((gcp_project_id))
+- &k8s_network_selflink ((k8s_network_selflink))
 - &k8s_cluster_name ((k8s_cluster_name))
 - &k8s_cluster_zone ((k8s_cluster_zone))
 
@@ -41,25 +42,38 @@ vars:
 - &go_proxy https://proxy.golang.org
 - &go_sum_db sum.golang.org
 
+# Terraform vars
+- &tf_state_bucket ((tf_state_bucket))
+- &tf_service_account ((service_account_json))
+# ---- end vars ----
+
+# Templates are YAML anchors that are referenced throughout the
+# manifest with YAML aliases. This allows common components to
+# be reused.
+templates:
 - &ci-image-source
   repository: *ci_image_uri
   username: _json_key
   password: *service_account_json
-
+  
 - &on_failure
   put: release-pr
   params:
     path: release-pr
     status: FAILURE
     description: Concourse "release" job failed.
-# ---- end vars ----
+# ---- end templates ----
 
 resource_types:
 - name: pull-request
   type: docker-image
   source:
     repository: m0pt0pmatt/github-pr-resource
-
+- name: terraform
+  type: docker-image
+  source:
+    repository: ljfranklin/terraform-resource
+    tag: latest
 resources:
 - name: release-pr
   type: pull-request
@@ -75,6 +89,18 @@ resources:
     uri: *ci_git_uri
     paths:
     - ci/concourse/pipelines
+- name: terraform
+  type: terraform
+  source:
+    backend_type: gcs
+    backend_config:
+      bucket: *tf_state_bucket
+      credentials: *service_account_json
+    vars:
+      project: *gcp_project_id
+      k8s_network_selflink: *k8s_network_selflink
+    env:
+      GOOGLE_CREDENTIALS: *service_account_json
 jobs:
 - name: unit-test
   plan:
@@ -94,61 +120,18 @@ jobs:
       - name: release-pr
       - name: ci-pipelines-src
       run:
-        dir: release-pr
         path: bash
         args:
         - -exc
         - |
-          # Run unit tests
-          hack/unit-test.sh
+          pushd release-pr
+            # Run unit tests
+            ../ci-pipelines-src/hack/unit-test.sh
+          popd
       params:
         GOPROXY: *go_proxy
         GOSUMDB: *go_sum_db
-
-- name: integration-test
-  plan:
-  - get: release-pr
-    trigger: true
-  - get: ci-pipelines-src
-    trigger: false
-    params: {submodules: none}
-  - task: integration
-    timeout: 10m
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source: *ci-image-source
-      inputs:
-      - name: release-pr
-      - name: ci-pipelines-src
-      run:
-        dir: release-pr
-        path: bash
-        args:
-        - -exc
-        - |
-          # Login to Kubernetes
-          set +x
-          /bin/echo "$SERVICE_ACCOUNT_JSON" > key.json
-          set -x
-          /bin/echo Authenticating to kubernetes...
-          gcloud auth activate-service-account --key-file key.json
-          gcloud config set project "$GCP_PROJECT_ID"
-          gcloud container clusters get-credentials "$K8S_CLUSTER_NAME" \
-            --zone "$K8S_CLUSTER_ZONE" \
-            --project "$GCP_PROJECT_ID"
-          /bin/echo 'y' | gcloud auth configure-docker
-
-          # Run unit tests
-          hack/integration-test.sh
-      params:
-        GOPROXY: *go_proxy
-        GOSUMDB: *go_sum_db
-        SERVICE_ACCOUNT_JSON: *service_account_json
-        GCP_PROJECT_ID: *gcp_project_id
-        K8S_CLUSTER_NAME: *k8s_cluster_name
-        K8S_CLUSTER_ZONE: *k8s_cluster_zone
+    on_failure: *on_failure
 - name: check
   plan:
   - aggregate:
@@ -169,83 +152,69 @@ jobs:
         source: *ci-image-source
       inputs:
       - name: release-pr
+      - name: ci-pipelines-src
       params:
         GOPROXY: *go_proxy
         GOSUMDB: *go_sum_db
       run:
-        dir: release-pr
         path: bash
         args:
         - -exc
         - |
-          hack/check-linters.sh
-          hack/check-go-generate.sh
-          hack/check-code-generator.sh
+          pushd release-pr
+            ../ci-pipelines-src/hack/check-vendor-license.sh
+            ../ci-pipelines-src/hack/check-linters.sh
+            ../ci-pipelines-src/hack/check-go-generate.sh
+            ../ci-pipelines-src/hack/check-code-generator.sh
+          popd
     on_failure: *on_failure
-- name: build
+
+- name: build-and-integrate
+  serial: true
   plan:
   - aggregate:
     - get: release-pr
       trigger: true
-      passed: [unit-test, integration-test]
+      passed: [unit-test]
     - get: ci-pipelines-src
       trigger: false
       params: {submodules: none}
-  - task: build
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source: *ci-image-source
-      params:
-        SERVICE_ACCOUNT_JSON: *release_service_account_json
-        GCP_PROJECT_ID: *gcp_project_id
-        KO_DOCKER_REPO: *ko_docker_release_repo
-        RELEASE_BUCKET: *release_bucket
-        CLI_RELEASE_BUCKET: *cli_release_bucket
-      inputs:
-      - name: release-pr
-      outputs:
-      - name: artifacts
-      run:
-        path: bash
-        args:
-        - -exc
-        - |
-          artifacts=`pwd`/artifacts
-          pushd release-pr
-            ./hack/build-release.sh $artifacts
-          popd
-  - task: prepare-cluster
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source: *ci-image-source
-      params:
-        SERVICE_ACCOUNT_JSON: *release_service_account_json
-        GCP_PROJECT_ID: *gcp_project_id
-        RELEASE_BUCKET: *release_bucket
-        CLI_RELEASE_BUCKET: *cli_release_bucket
-      inputs:
-      - name: release-pr
-      - name: artifacts
-      run:
-        path: bash
-        args:
-        - -exc
-        - |
-          ls -la artifacts/
-    on_failure: *on_failure
-- name: manual-approval
-  plan:
   - aggregate:
-    - get: release-pr
-      trigger: false
-      passed: [build, check]
-    - get: ci-pipelines-src
-      trigger: false
-  - task: build
+    - put: terraform
+      params:
+        terraform_source: ci-pipelines-src/ci/concourse/terraform
+        env_name: release
+        delete_on_failure: true
+    - task: build
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        params:
+          SERVICE_ACCOUNT_JSON: *release_service_account_json
+          GCP_PROJECT_ID: *release_project
+          KO_DOCKER_REPO: *ko_docker_release_repo
+        inputs:
+        - name: release-pr
+        - name: ci-pipelines-src
+        outputs:
+        - name: artifacts
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            artifacts=`pwd`/artifacts
+            pushd release-pr
+              # Generate license
+              ../ci-pipelines-src/hack/update-vendor-license.sh $artifacts
+              cp third_party/VENDOR-LICENSE $artifacts
+              # Build CLI and controllers
+              ../ci-pipelines-src/hack/build-release.sh $artifacts
+            popd
+  - task: integration
+    timeout: 1h30m
     config:
       platform: linux
       image_resource:
@@ -253,17 +222,64 @@ jobs:
         source: *ci-image-source
       inputs:
       - name: release-pr
+      - name: ci-pipelines-src
+      - name: artifacts
+      - name: terraform
       run:
         path: bash
         args:
         - -exc
         - |
-          exit 0
-    on_failure: *on_failure
-    on_success:
-      put: release-pr
+          # Get TF outputs for GKE details
+          project=`cat terraform/metadata | jq -r '.cluster_project'`
+          cluster=`cat terraform/metadata | jq -r '.cluster_name'`
+          region=`cat terraform/metadata | jq -r '.cluster_region'`
+          # Login to Kubernetes
+          set +x
+          /bin/echo "$SERVICE_ACCOUNT_JSON" > key.json
+          set -x
+          /bin/echo Authenticating to kubernetes...
+          gcloud auth activate-service-account --key-file key.json
+          gcloud config set project "$project"
+          gcloud container clusters get-credentials "$cluster" \
+            --region "$region" \
+            --project "$project"
+          /bin/echo 'y' | gcloud auth configure-docker
+
+          # Install SC
+          kubectl apply -f https://github.com/google/kf/raw/master/third_party/service-catalog/manifests/catalog/templates/etcd-pvc.yaml
+          kubectl apply -f https://github.com/google/kf/raw/master/third_party/service-catalog/manifests/catalog/templates/apiregistration.yaml
+          kubectl apply -f https://github.com/google/kf/raw/master/third_party/service-catalog/manifests/catalog/templates/apiserver-deployment.yaml
+          kubectl apply -f https://github.com/google/kf/raw/master/third_party/service-catalog/manifests/catalog/templates/apiserver-service.yaml
+          kubectl apply -f https://github.com/google/kf/raw/master/third_party/service-catalog/manifests/catalog/templates/controller-manager-deployment.yaml
+          kubectl apply -f https://github.com/google/kf/raw/master/third_party/service-catalog/manifests/catalog/templates/rbac.yaml
+          kubectl apply -f https://github.com/google/kf/raw/master/third_party/service-catalog/manifests/catalog/templates/serviceaccounts.yaml
+          # Install Knative Build
+          kubectl apply --filename https://github.com/knative/build/releases/download/v0.6.0/build.yaml
+          # Install Kf
+          kubectl apply --filename artifacts/release.yaml
+
+          pushd release-pr
+            # Run unit tests
+            ../ci-pipelines-src/hack/integration-test.sh
+          popd
       params:
-        path: release-pr
-        status: SUCCESS
-        comment: OK to merge release PR!
-        description: OK to merge release PR!
+        GOPROXY: *go_proxy
+        GOSUMDB: *go_sum_db
+        SERVICE_ACCOUNT_JSON: *service_account_json
+    on_failure: *on_failure
+  - put: terraform
+    params:
+      terraform_source: ci-pipelines-src/ci/concourse/terraform
+      env_name: release
+      action: destroy
+    get_params:
+      terraform_source: ci-pipelines-src/ci/concourse/terraform
+      env_name: release
+      action: destroy
+  - put: release-pr
+    params:
+      path: release-pr
+      status: SUCCESS
+      comment: OK to merge release PR!
+      description: OK to merge release PR!
