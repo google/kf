@@ -50,9 +50,7 @@ const (
 	APIVersion = "v1beta1"
 )
 
-var (
-	ConditionReady = apis.ConditionType(v1beta1.ServiceBindingConditionReady)
-)
+var ()
 
 // Predicate is a boolean function for a v1beta1.ServiceInstance.
 type Predicate func(*v1beta1.ServiceInstance) bool
@@ -151,7 +149,6 @@ type Client interface {
 
 	// Utility functions
 	WaitForDeletion(ctx context.Context, namespace string, name string, interval time.Duration) (*v1beta1.ServiceInstance, error)
-	WaitForConditionReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (*v1beta1.ServiceInstance, error)
 
 	// ClientExtension can be used by the developer to extend the client.
 	ClientExtension
@@ -385,15 +382,4 @@ func checkConditionTrue(obj *v1beta1.ServiceInstance, err error, condition apis.
 	}
 
 	return false, nil
-}
-
-// ConditionReadyTrue is a ConditionFuncE that waits for Condition{Ready v1beta1.ServiceBindingConditionReady } to
-// become true and fails with an error if the condition becomes false.
-func ConditionReadyTrue(obj *v1beta1.ServiceInstance, err error) (bool, error) {
-	return checkConditionTrue(obj, err, ConditionReady)
-}
-
-// WaitForConditionReadyTrue is a utility function that combines WaitForE with ConditionReadyTrue.
-func (core *coreClient) WaitForConditionReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1beta1.ServiceInstance, err error) {
-	return core.WaitForE(ctx, namespace, name, interval, ConditionReadyTrue)
 }

@@ -48,7 +48,7 @@ func NewDeleteServiceCommand(p *config.KfParams, client services.Client) *cobra.
 				return err
 			}
 
-			action := fmt.Sprintf("Deleting service instance %q", instanceName)
+			action := fmt.Sprintf("Deleting service instance %q in space %q", instanceName, p.Namespace)
 			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
 				_, err := client.WaitForDeletion(context.Background(), p.Namespace, instanceName, 1*time.Second)
 				return err

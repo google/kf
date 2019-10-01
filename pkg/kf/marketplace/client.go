@@ -37,6 +37,12 @@ type ClientInterface interface {
 
 	// BrokerName fetches the service broker name for a service.
 	BrokerName(service v1beta1.ServiceInstance) (string, error)
+
+	// ListClusterPlans gets cluster-wide plans matching the given filter.
+	ListClusterPlans(filter ListPlanOptions) ([]servicecatalogv1beta1.ClusterServicePlan, error)
+
+	// ListNamespacedPlans gets namespaced plans matching the given filter.
+	ListNamespacedPlans(namespace string, filter ListPlanOptions) ([]servicecatalogv1beta1.ServicePlan, error)
 }
 
 // SClientFactory creates a Service Catalog client.
@@ -116,6 +122,7 @@ type ListPlanOptions struct {
 	BrokerName  string
 }
 
+// ListClusterPlans gets cluster-wide plans matching the given filter.
 func (c *Client) ListClusterPlans(filter ListPlanOptions) ([]servicecatalogv1beta1.ClusterServicePlan, error) {
 	var matchingPlans []servicecatalogv1beta1.ClusterServicePlan
 
@@ -154,6 +161,7 @@ func (c *Client) ListClusterPlans(filter ListPlanOptions) ([]servicecatalogv1bet
 	return matchingPlans, nil
 }
 
+// ListNamespacedPlans gets namespaced plans matching the given filter.
 func (c *Client) ListNamespacedPlans(namespace string, filter ListPlanOptions) ([]servicecatalogv1beta1.ServicePlan, error) {
 	var matchingPlans []servicecatalogv1beta1.ServicePlan
 

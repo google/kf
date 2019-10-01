@@ -64,6 +64,36 @@ func (mr *FakeClientInterfaceMockRecorder) BrokerName(arg0 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BrokerName", reflect.TypeOf((*FakeClientInterface)(nil).BrokerName), arg0)
 }
 
+// ListClusterPlans mocks base method
+func (m *FakeClientInterface) ListClusterPlans(arg0 marketplace.ListPlanOptions) ([]v1beta1.ClusterServicePlan, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListClusterPlans", arg0)
+	ret0, _ := ret[0].([]v1beta1.ClusterServicePlan)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListClusterPlans indicates an expected call of ListClusterPlans
+func (mr *FakeClientInterfaceMockRecorder) ListClusterPlans(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListClusterPlans", reflect.TypeOf((*FakeClientInterface)(nil).ListClusterPlans), arg0)
+}
+
+// ListNamespacedPlans mocks base method
+func (m *FakeClientInterface) ListNamespacedPlans(arg0 string, arg1 marketplace.ListPlanOptions) ([]v1beta1.ServicePlan, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListNamespacedPlans", arg0, arg1)
+	ret0, _ := ret[0].([]v1beta1.ServicePlan)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListNamespacedPlans indicates an expected call of ListNamespacedPlans
+func (mr *FakeClientInterfaceMockRecorder) ListNamespacedPlans(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListNamespacedPlans", reflect.TypeOf((*FakeClientInterface)(nil).ListNamespacedPlans), arg0, arg1)
+}
+
 // Marketplace mocks base method
 func (m *FakeClientInterface) Marketplace(arg0 string) (*marketplace.KfMarketplace, error) {
 	m.ctrl.T.Helper()

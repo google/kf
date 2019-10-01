@@ -10,9 +10,6 @@ kubernetes:
   namespaced: true
   observedGenerationFieldPath: Status.ObservedGeneration
   conditionsFieldPath: Status.Conditions
-  conditions:
-  - name: Ready
-    ref: v1beta1.ServiceBindingConditionReady
 type: "v1beta1.ServiceInstance"
 clientType: "cv1beta1.ServiceInstancesGetter"
 cf:
