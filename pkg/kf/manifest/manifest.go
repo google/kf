@@ -39,7 +39,6 @@ type Application struct {
 	Buildpacks      []string          `json:"buildpacks,omitempty"`
 	Stack           string            `json:"stack,omitempty"`
 	Docker          AppDockerImage    `json:"docker,omitempty"`
-	Dockerfile      Dockerfile        `json:"dockerfile,omitempty"`
 	Env             map[string]string `json:"env,omitempty"`
 	Services        []string          `json:"services,omitempty"`
 	DiskQuota       string            `json:"disk_quota,omitempty"`
@@ -83,6 +82,8 @@ type KfApplicationExtension struct {
 
 	Entrypoint string   `json:"entrypoint,omitempty"`
 	Args       []string `json:"args,omitempty"`
+
+	Dockerfile Dockerfile `json:"dockerfile,omitempty"`
 }
 
 // AppDockerImage is the struct for docker configuration.

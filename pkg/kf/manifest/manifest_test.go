@@ -144,8 +144,10 @@ applications:
 				Applications: []manifest.Application{
 					{
 						Name: "MY-APP",
-						Dockerfile: manifest.Dockerfile{
-							Path: "foo/Dockerfile",
+						KfApplicationExtension: manifest.KfApplicationExtension{
+							Dockerfile: manifest.Dockerfile{
+								Path: "foo/Dockerfile",
+							},
 						},
 					},
 				},
