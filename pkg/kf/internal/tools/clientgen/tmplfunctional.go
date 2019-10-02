@@ -34,9 +34,11 @@ const (
 	APIVersion = "{{.Kubernetes.Version}}"
 )
 
-{{ if .SupportsConditions }}
-{{ range .Kubernetes.Conditions }}
-var {{.ConditionName}} = apis.ConditionType({{.Definition}}){{ end }}
+{{ if and .SupportsConditions .Kubernetes.Conditions }}
+var (
+	{{ range .Kubernetes.Conditions }}
+	{{.ConditionName}} = apis.ConditionType({{.Definition}}){{ end }}
+)
 {{ end }}
 
 // Predicate is a boolean function for a {{.Type}}.

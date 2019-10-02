@@ -42,13 +42,15 @@ func TestProvisionSuccess(t *testing.T) {
 			wantDone: true,
 			wantErr:  errors.New("bad request"),
 		},
-
 		"not ready": {
 			args: args{
 				obj: &v1beta1.ServiceInstance{
 					Status: v1beta1.ServiceInstanceStatus{
 						Conditions: []v1beta1.ServiceInstanceCondition{
-							{Type: v1beta1.ServiceInstanceConditionReady, Status: v1beta1.ConditionFalse},
+							{
+								Type:   v1beta1.ServiceInstanceConditionReady,
+								Status: v1beta1.ConditionFalse,
+							},
 						},
 					},
 				},
