@@ -38,6 +38,14 @@ const (
 	// healthchecks in seconds. This matches Cloud Foundry's default timeout.
 	DefaultHealthCheckProbeTimeout = 60
 
+	// DefaultHealthCheckPeriodSeconds holds the default period to use for health
+	// checks.
+	DefaultHealthCheckPeriodSeconds = 10
+
+	// DefaultHealthCheckFailureThreshold holds the failure threshold for health
+	// checks.
+	DefaultHealthCheckFailureThreshold = 3
+
 	// DefaultHealthCheckProbeEndpoint is the default endpoint to use for HTTP
 	// Get health checks.
 	DefaultHealthCheckProbeEndpoint = "/"
@@ -120,9 +128,17 @@ func SetKfAppContainerDefaults(_ context.Context, container *corev1.Container) {
 
 	readinessProbe := container.ReadinessProbe
 
-	// Default the probe timeout
+	// Default the probe settings
 	if readinessProbe.TimeoutSeconds == 0 {
 		readinessProbe.TimeoutSeconds = DefaultHealthCheckProbeTimeout
+	}
+
+	if readinessProbe.PeriodSeconds == 0 {
+		readinessProbe.PeriodSeconds = DefaultHealthCheckPeriodSeconds
+	}
+
+	if readinessProbe.FailureThreshold == 0 {
+		readinessProbe.FailureThreshold = DefaultHealthCheckFailureThreshold
 	}
 
 	// If the probe is HTTP, default the path
