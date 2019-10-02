@@ -198,37 +198,23 @@ func ExampleKfApp_GetHealthCheck() {
 	//   Endpoint:  /healthz
 }
 
-func ExampleKfApp_GetMemory() {
+func ExampleKfApp_GetResourceRequests() {
+	requests := corev1.ResourceList{
+		corev1.ResourceCPU:    resource.MustParse("100m"),
+		corev1.ResourceMemory: resource.MustParse("1Gi"),
+	}
+
 	myApp := NewKfApp()
-	mem := resource.MustParse("1Gi")
-	myApp.SetMemory(&mem)
+	myApp.SetResourceRequests(requests)
 
-	getMem := myApp.GetMemory()
-	fmt.Println((*getMem).String())
+	out := myApp.GetResourceRequests()
+	for _, key := range []corev1.ResourceName{corev1.ResourceCPU, corev1.ResourceMemory} {
+		qty := out[key]
+		fmt.Println(key, "=", qty.String())
+	}
 
-	// Output: 1Gi
-}
-
-func ExampleKfApp_GetStorage() {
-	myApp := NewKfApp()
-	storage := resource.MustParse("2Gi")
-	myApp.SetStorage(&storage)
-
-	getStorage := myApp.GetStorage()
-	fmt.Println((*getStorage).String())
-
-	// Output: 2Gi
-}
-
-func ExampleKfApp_GetCPU() {
-	myApp := NewKfApp()
-	cpu := resource.MustParse("100m")
-	myApp.SetCPU(&cpu)
-
-	getCPU := myApp.GetCPU()
-	fmt.Println((*getCPU).String())
-
-	// Output: 100m
+	// Output: cpu = 100m
+	// memory = 1Gi
 }
 
 func ExampleKfApp_GetClusterURL() {

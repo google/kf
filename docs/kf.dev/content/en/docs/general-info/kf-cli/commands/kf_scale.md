@@ -33,6 +33,7 @@ kf scale APP_NAME [flags]
 ### Options
 
 ```
+      --async           Don't wait for the action to complete on the server before returning
   -h, --help            help for scale
   -i, --instances int   Number of instances. (default -1)
       --max int         Maximum number of instances to allow the autoscaler to scale to. 0 implies the app can be scaled to ∞. (default -1)

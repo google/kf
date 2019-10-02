@@ -24,7 +24,8 @@ kf set-env APP_NAME ENV_VAR_NAME ENV_VAR_VALUE [flags]
 ### Options
 
 ```
-  -h, --help   help for set-env
+      --async   Don't wait for the action to complete on the server before returning
+  -h, --help    help for set-env
 ```
 
 ### Options inherited from parent commands

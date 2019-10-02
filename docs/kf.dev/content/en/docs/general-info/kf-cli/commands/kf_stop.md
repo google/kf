@@ -24,7 +24,8 @@ kf stop APP_NAME [flags]
 ### Options
 
 ```
-  -h, --help   help for stop
+      --async   Don't wait for the action to complete on the server before returning
+  -h, --help    help for stop
 ```
 
 ### Options inherited from parent commands
