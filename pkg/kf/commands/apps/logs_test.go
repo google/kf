@@ -15,6 +15,7 @@
 package apps
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -107,11 +108,13 @@ func TestLogsCommand(t *testing.T) {
 			fake := fake.NewFakeTailer(ctrl)
 			tc.Setup(t, fake)
 
+			var buf bytes.Buffer
 			cmd := NewLogsCommand(
 				&config.KfParams{Namespace: tc.Namespace},
 				fake,
 			)
 			cmd.SetArgs(tc.Args)
+			cmd.SetOutput(&buf)
 
 			gotErr := cmd.Execute()
 

@@ -15,7 +15,9 @@
 package apps
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
@@ -26,7 +28,9 @@ import (
 )
 
 // NewUnsetEnvCommand creates a SetEnv command.
-func NewUnsetEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command {
+func NewUnsetEnvCommand(p *config.KfParams, client apps.Client) *cobra.Command {
+	var async utils.AsyncFlags
+
 	cmd := &cobra.Command{
 		Use:     "unset-env APP_NAME ENV_VAR_NAME",
 		Short:   "Unset an environment variable for an app",
@@ -42,7 +46,7 @@ func NewUnsetEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Comman
 
 			cmd.SilenceUsage = true
 
-			_, err := appClient.Transform(p.Namespace, appName, func(app *v1alpha1.App) error {
+			_, err := client.Transform(p.Namespace, appName, func(app *v1alpha1.App) error {
 				kfapp := (*apps.KfApp)(app)
 				kfapp.DeleteEnvVars([]string{name})
 
@@ -53,10 +57,15 @@ func NewUnsetEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Comman
 				return fmt.Errorf("failed to unset env var on app: %s", err)
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Unsetting environment variable on app %q %s", appName, utils.AsyncLogSuffix)
-			return nil
+			action := fmt.Sprintf("Unsetting environment variable on app %q in space %q", appName, p.Namespace)
+			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
+				_, err := client.WaitForConditionKnativeServiceReadyTrue(context.Background(), p.Namespace, appName, 1*time.Second)
+				return err
+			})
 		},
 	}
+
+	async.Add(cmd)
 
 	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 
