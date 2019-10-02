@@ -73,26 +73,26 @@ func NewPushCommand(
 	serviceBindingClient servicebindings.ClientInterface,
 ) *cobra.Command {
 	var (
-		containerRegistry  string
-		sourceImage        string
-		containerImage     string
-		dockerfilePath     string
-		manifestFile       string
-		instances          int
-		minScale           int
-		maxScale           int
-		path               string
-		buildpack          string
-		stack              string
-		envs               []string
-		enableHTTP2        bool
-		noManifest         bool
-		noStart            bool
-		healthCheckType    string
-		healthCheckTimeout int
-		memoryRequest      *resource.Quantity
-		storageRequest     *resource.Quantity
-		cpuRequest         *resource.Quantity
+		containerRegistry   string
+		sourceImage         string
+		containerImage      string
+		dockerfilePath      string
+		manifestFile        string
+		instances           int
+		minScale            int
+		maxScale            int
+		path                string
+		buildpack           string
+		stack               string
+		envs                []string
+		enableHTTP2         bool
+		noManifest          bool
+		noStart             bool
+		healthCheckType     string
+		healthCheckTimeout  int
+		memoryRequest       *resource.Quantity
+		storageRequest      *resource.Quantity
+		cpuRequest          *resource.Quantity
 		startupCommand      string
 		containerEntrypoint string
 		containerArgs       []string
