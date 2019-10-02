@@ -40,5 +40,14 @@ func (app *Application) Validate(ctx context.Context) (errs *apis.FieldError) {
 		}
 	}
 
+	if app.Instances != nil {
+		if app.KfApplicationExtension.MinScale != nil {
+			errs = errs.Also(apis.ErrMultipleOneOf("min-scale", "instances"))
+		}
+		if app.KfApplicationExtension.MaxScale != nil {
+			errs = errs.Also(apis.ErrMultipleOneOf("max-scale", "instances"))
+		}
+	}
+
 	return
 }

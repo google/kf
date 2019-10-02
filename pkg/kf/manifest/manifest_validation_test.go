@@ -63,6 +63,24 @@ func TestApplication_Validation(t *testing.T) {
 			},
 			want: apis.ErrMultipleOneOf("buildpack", "buildpacks"),
 		},
+		"min and instances": {
+			spec: Application{
+				Instances: intPtr(3),
+				KfApplicationExtension: KfApplicationExtension{
+					MinScale: intPtr(3),
+				},
+			},
+			want: apis.ErrMultipleOneOf("instances", "min-scale"),
+		},
+		"max and instances": {
+			spec: Application{
+				Instances: intPtr(3),
+				KfApplicationExtension: KfApplicationExtension{
+					MaxScale: intPtr(3),
+				},
+			},
+			want: apis.ErrMultipleOneOf("instances", "max-scale"),
+		},
 	}
 
 	for tn, tc := range cases {

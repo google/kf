@@ -15,13 +15,13 @@
 package apps
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"net/url"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -32,7 +32,6 @@ import (
 	"github.com/google/kf/pkg/kf/manifest"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"knative.dev/pkg/ptr"
 )
 
@@ -89,9 +88,6 @@ func NewPushCommand(
 		noStart             bool
 		healthCheckType     string
 		healthCheckTimeout  int
-		memoryRequest       *resource.Quantity
-		storageRequest      *resource.Quantity
-		cpuRequest          *resource.Quantity
 		startupCommand      string
 		containerEntrypoint string
 		containerArgs       []string
@@ -241,7 +237,11 @@ func NewPushCommand(
 					return err
 				}
 
-				exactScale, minScale, maxScale, err := calculateScaleBounds(app.Instances, app.MinScale, app.MaxScale)
+				if err := app.Validate(context.Background()); err.Error() != "" {
+					return err
+				}
+
+				resourceRequests, err := app.ToResourceRequests()
 				if err != nil {
 					return err
 				}
@@ -254,38 +254,6 @@ func NewPushCommand(
 				routes, err := setupRoutes(space, app)
 				if err != nil {
 					return err
-				}
-
-				if app.Memory != "" {
-					memStr, err := convertResourceQuantityStr(app.Memory)
-					if err != nil {
-						return err
-					}
-					mem, parseErr := resource.ParseQuantity(memStr)
-					if parseErr != nil {
-						return fmt.Errorf("couldn't parse resource quantity %s: %v", memStr, parseErr)
-					}
-					memoryRequest = &mem
-				}
-
-				if app.DiskQuota != "" {
-					storageStr, err := convertResourceQuantityStr(app.DiskQuota)
-					if err != nil {
-						return err
-					}
-					storage, parseErr := resource.ParseQuantity(storageStr)
-					if parseErr != nil {
-						return fmt.Errorf("couldn't parse resource quantity %s: %v", storageStr, parseErr)
-					}
-					storageRequest = &storage
-				}
-
-				if app.CPU != "" {
-					cpu, parseErr := resource.ParseQuantity(app.CPU)
-					if parseErr != nil {
-						return fmt.Errorf("couldn't parse resource quantity %s: %v", app.CPU, parseErr)
-					}
-					cpuRequest = &cpu
 				}
 
 				healthCheck, err := apps.NewHealthCheck(app.HealthCheckType, app.HealthCheckHTTPEndpoint, app.HealthCheckTimeout)
@@ -306,26 +274,18 @@ func NewPushCommand(
 				pushOpts := []apps.PushOption{
 					apps.WithPushNamespace(p.Namespace),
 					apps.WithPushEnvironmentVariables(app.Env),
-					apps.WithPushExactScale(exactScale),
-					apps.WithPushMinScale(minScale),
-					apps.WithPushMaxScale(maxScale),
 					apps.WithPushRoutes(routes),
-					apps.WithPushMemory(memoryRequest),
-					apps.WithPushDiskQuota(storageRequest),
-					apps.WithPushCPU(cpuRequest),
 					apps.WithPushHealthCheck(healthCheck),
 					apps.WithPushRandomRouteDomain(randomRouteDomain),
 					apps.WithPushDefaultRouteDomain(defaultRouteDomain),
 					apps.WithPushCommand(app.CommandEntrypoint()),
 					apps.WithPushArgs(app.CommandArgs()),
+					apps.WithPushResourceRequests(resourceRequests),
+					apps.WithPushAppSpecInstances(app.ToAppSpecInstances()),
 				}
 
 				if app.EnableHTTP2 != nil {
 					pushOpts = append(pushOpts, apps.WithPushGrpc(*app.EnableHTTP2))
-				}
-
-				if app.NoStart != nil {
-					pushOpts = append(pushOpts, apps.WithPushNoStart(*app.NoStart))
 				}
 
 				if app.Docker.Image == "" {
@@ -391,7 +351,6 @@ func NewPushCommand(
 				if err != nil {
 					return err
 				}
-
 			}
 
 			return nil
@@ -567,21 +526,6 @@ func NewPushCommand(
 	return pushCmd
 }
 
-func calculateScaleBounds(instances, minScale, maxScale *int) (exact, min, max *int, err error) {
-	switch {
-	case instances != nil:
-		// Exactly
-		if minScale != nil || maxScale != nil {
-			return nil, nil, nil, errors.New("couldn't set the -i flag and the minScale/maxScale flags in manifest together")
-		}
-
-		return instances, nil, nil, nil
-	default:
-		// Autoscaling or unset
-		return nil, minScale, maxScale, nil
-	}
-}
-
 func createRoute(routeStr, namespace string) (v1alpha1.RouteSpecFields, error) {
 	hostname, domain, path, err := parseRouteStr(routeStr)
 	if err != nil {
@@ -638,35 +582,6 @@ func parseRouteStr(routeStr string) (string, string, string, error) {
 
 	return hostname, domain, path, nil
 }
-
-// convertResourceQuantityStr converts CF resource quantities into the equivalent k8s quantity strings.
-// CF interprets K, M, G, T as binary SI units while k8s interprets them as decimal, so we convert them here
-// into the k8s binary SI units (Ki, Mi, Gi, Ti)
-func convertResourceQuantityStr(r string) (string, error) {
-	// Break down resource quantity string into int and unit of measurement
-	// Below method breaks down "50G" into ["50G" "50" "G"]
-	parts := cfValidBytesPattern.FindStringSubmatch(strings.TrimSpace(r))
-	if len(parts) < 3 {
-		return "", errors.New("Byte quantity must be an integer with a unit of measurement like M, MB, G, or GB")
-	}
-	num := parts[1]
-	unit := strings.ToUpper(parts[2])
-	newUnit := unit
-	switch unit {
-	case "T":
-		newUnit = "Ti"
-	case "G":
-		newUnit = "Gi"
-	case "M":
-		newUnit = "Mi"
-	case "K":
-		newUnit = "Ki"
-	}
-
-	return num + newUnit, nil
-}
-
-var cfValidBytesPattern = regexp.MustCompile(`(?i)^(-?\d+)([KMGT])B?$`)
 
 func spaceDefaultDomain(space *v1alpha1.Space) (string, error) {
 	for _, domain := range space.Spec.Execution.Domains {
