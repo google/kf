@@ -24,7 +24,8 @@ kf unset-env APP_NAME ENV_VAR_NAME [flags]
 ### Options
 
 ```
-  -h, --help   help for unset-env
+      --async   Don't wait for the action to complete on the server before returning
+  -h, --help    help for unset-env
 ```
 
 ### Options inherited from parent commands

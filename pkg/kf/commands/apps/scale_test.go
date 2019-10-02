@@ -58,6 +58,7 @@ func TestNewScaleCommand(t *testing.T) {
 						testutil.AssertEqual(t, "app.spec.instances.min", true, app.Spec.Instances.Min == nil)
 						testutil.AssertEqual(t, "app.spec.axstances.max", true, app.Spec.Instances.Max == nil)
 					})
+				fake.EXPECT().WaitForConditionKnativeServiceReadyTrue(gomock.Any(), "default", "my-app", gomock.Any())
 			},
 		},
 		"updates app auto scaling": {
@@ -82,6 +83,14 @@ func TestNewScaleCommand(t *testing.T) {
 						// Assert stopped wasn't altered
 						testutil.AssertEqual(t, "app.spec.instances.stopped", true, app.Spec.Instances.Stopped)
 					})
+				fake.EXPECT().WaitForConditionKnativeServiceReadyTrue(gomock.Any(), "default", "my-app", gomock.Any())
+			},
+		},
+		"async does not wait": {
+			Namespace: "default",
+			Args:      []string{"my-app", "--min=3", "--max=5", "--async"},
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any())
 			},
 		},
 		"no app name": {
@@ -113,26 +122,26 @@ func TestNewScaleCommand(t *testing.T) {
 			},
 		},
 		"autoscale and exact flags set": {
-			Namespace: "default",
-			Args:      []string{"my-app", "--instances=3", "--max=9"},
+			Namespace:   "default",
+			Args:        []string{"my-app", "--instances=3", "--max=9"},
+			ExpectedErr: errors.New("failed to scale app: expected exactly one, got both: exactly, max"),
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().
 					Transform("default", "my-app", gomock.Any()).
-					Do(func(_, _ string, m apps.Mutator) {
-						app := v1alpha1.App{}
-						testutil.AssertNotNil(t, "mutator error", m(&app))
+					DoAndReturn(func(_, _ string, m apps.Mutator) (*v1alpha1.App, error) {
+						return nil, m(&v1alpha1.App{})
 					})
 			},
 		},
 		"min greater than max": {
-			Namespace: "default",
-			Args:      []string{"my-app", "--min=8", "--max=5"},
+			Namespace:   "default",
+			Args:        []string{"my-app", "--min=8", "--max=5"},
+			ExpectedErr: errors.New("failed to scale app: max must be >= min: max, min"),
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().
 					Transform("default", "my-app", gomock.Any()).
-					Do(func(_, _ string, m apps.Mutator) {
-						app := v1alpha1.App{}
-						testutil.AssertNotNil(t, "mutator error", m(&app))
+					DoAndReturn(func(_, _ string, m apps.Mutator) (*v1alpha1.App, error) {
+						return nil, m(&v1alpha1.App{})
 					})
 			},
 		},

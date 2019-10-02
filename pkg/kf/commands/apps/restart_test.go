@@ -40,6 +40,14 @@ func TestRestart(t *testing.T) {
 			Args:      []string{"my-app"},
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().Restart("default", "my-app")
+				fake.EXPECT().WaitForConditionKnativeServiceReadyTrue(gomock.Any(), "default", "my-app", gomock.Any())
+			},
+		},
+		"async call does not wait": {
+			Namespace: "default",
+			Args:      []string{"my-app", "--async"},
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Restart(gomock.Any(), gomock.Any())
 			},
 		},
 		"no app name": {

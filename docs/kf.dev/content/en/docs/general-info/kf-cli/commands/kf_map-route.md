@@ -26,6 +26,7 @@ kf map-route APP_NAME DOMAIN [--hostname HOSTNAME] [--path PATH] [flags]
 ### Options
 
 ```
+      --async             Don't wait for the action to complete on the server before returning
   -h, --help              help for map-route
       --hostname string   Hostname for the route
       --path string       URL Path for the route
