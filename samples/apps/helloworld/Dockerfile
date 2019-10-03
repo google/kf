@@ -21,6 +21,9 @@ RUN GO111MODULE=on CGO_ENABLED=0 go build -o /bin/hello
 FROM scratch
 COPY --from=build /bin/hello /bin/hello
 
+# Setting the PORT and EXPOSE allows the app to be run as a normal Docker
+# container outside kf, you don't need them if you're building images only for
+# kf.
 ENV PORT 8080
 EXPOSE 8080/tcp
 

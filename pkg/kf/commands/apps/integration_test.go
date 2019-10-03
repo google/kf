@@ -78,8 +78,8 @@ func TestIntegration_Push_update(t *testing.T) {
 		kf.Push(ctx, appName,
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/helloworld"),
 		)
-		// XXX: it takes a moment after the app becomes ready to reconcile the
-		// routes
+		// BUG(730): it takes a moment after the app becomes ready to reconcile the
+		// routes, the app is accessible but still points to the old one.
 		time.Sleep(30 * time.Second)
 		checkHelloWorldApp(ctx, t, kf, appName, 8088, ExpectedAddr(appName, ""))
 	})
@@ -104,9 +104,8 @@ func TestIntegration_Push_docker(t *testing.T) {
 	})
 }
 
-// TestIntegration_Push pushes the echo app, lists it to ensure it can find a
-// domain, uses the proxy command and then posts to it. It finally deletes the
-// app.
+// TestIntegration_Push_dockerfile pushes a sample dockerfile app then attempts
+// to connect to it to ensure it started correctly.
 func TestIntegration_Push_dockerfile(t *testing.T) {
 	t.Parallel()
 	checkClusterStatus(t)
