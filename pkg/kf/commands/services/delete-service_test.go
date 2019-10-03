@@ -18,6 +18,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	servicescmd "github.com/google/kf/pkg/kf/commands/services"
 	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/services/fake"
@@ -34,6 +35,7 @@ func TestNewDeleteServiceCommand(t *testing.T) {
 			Namespace: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClient) {
 				f.EXPECT().Delete("custom-ns", "mydb").Return(nil)
+				f.EXPECT().WaitForDeletion(gomock.Any(), "custom-ns", "mydb", gomock.Any())
 			},
 		},
 		"empty namespace": {
@@ -47,6 +49,13 @@ func TestNewDeleteServiceCommand(t *testing.T) {
 				f.EXPECT().Delete("custom-ns", "mydb").Return(errors.New("server-call-error"))
 			},
 			ExpectedErr: errors.New("server-call-error"),
+		},
+		"async skips wait": {
+			Args:      []string{"mydb", "--async"},
+			Namespace: "custom-ns",
+			Setup: func(t *testing.T, f *fake.FakeClient) {
+				f.EXPECT().Delete(gomock.Any(), gomock.Any())
+			},
 		},
 	}
 

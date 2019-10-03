@@ -28,6 +28,7 @@ kf create-service SERVICE PLAN SERVICE_INSTANCE [-c PARAMETERS_AS_JSON] [-b serv
 ### Options
 
 ```
+      --async           Don't wait for the action to complete on the server before returning
   -b, --broker string   Service broker to use.
   -h, --help            help for create-service
 ```

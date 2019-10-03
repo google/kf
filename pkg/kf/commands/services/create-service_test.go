@@ -16,270 +16,187 @@ package services_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
-	"fmt"
-	"os"
 	"testing"
 
-	servicecatalogclientfake "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/fake"
+	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/kf/commands/config"
 	servicescmd "github.com/google/kf/pkg/kf/commands/services"
 	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
+	marketplacefake "github.com/google/kf/pkg/kf/marketplace/fake"
+	servicesfake "github.com/google/kf/pkg/kf/services/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	clienttesting "k8s.io/client-go/testing"
 )
 
 func TestNewCreateServiceCommand(t *testing.T) {
-
-	plan := servicecatalogv1beta1.ServicePlan{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "db-service-free",
-			Namespace: "custom-ns",
-		},
-		Spec: servicecatalogv1beta1.ServicePlanSpec{
-			ServiceBrokerName: "broker-a",
-			CommonServicePlanSpec: servicecatalogv1beta1.CommonServicePlanSpec{
-				ExternalName: "free",
-				Free:         false,
-			},
-			ServiceClassRef: servicecatalogv1beta1.LocalObjectReference{
-				Name: "db-service-id",
-			},
-		},
-	}
-
-	class := &servicecatalogv1beta1.ServiceClass{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "db-service-id",
-			Namespace: "custom-ns",
-		},
-		Spec: servicecatalogv1beta1.ServiceClassSpec{
-			ServiceBrokerName: "broker-a",
-			CommonServiceClassSpec: servicecatalogv1beta1.CommonServiceClassSpec{
-				ExternalName: "db-service",
-			},
-		},
-	}
-
-	planList := &servicecatalogv1beta1.ServicePlanList{
-		Items: []servicecatalogv1beta1.ServicePlan{
-			plan,
-		},
-	}
-
-	clusterPlan := servicecatalogv1beta1.ClusterServicePlan{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "db-service-free",
-		},
-		Spec: servicecatalogv1beta1.ClusterServicePlanSpec{
-			ClusterServiceBrokerName: "broker-a",
-			CommonServicePlanSpec: servicecatalogv1beta1.CommonServicePlanSpec{
-				ExternalName: "free",
-				Free:         true,
-			},
-			ClusterServiceClassRef: servicecatalogv1beta1.ClusterObjectReference{
-				Name: "db-service-id",
-			},
-		},
-	}
-
-	clusterClass := &servicecatalogv1beta1.ClusterServiceClass{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "db-service-id",
-		},
-		Spec: servicecatalogv1beta1.ClusterServiceClassSpec{
-			ClusterServiceBrokerName: "broker-a",
-			CommonServiceClassSpec: servicecatalogv1beta1.CommonServiceClassSpec{
-				ExternalName: "db-service",
-			},
-		},
-	}
-
-	clusterPlanList := &servicecatalogv1beta1.ClusterServicePlanList{
-		Items: []servicecatalogv1beta1.ClusterServicePlan{
-			clusterPlan,
-		},
+	type fakes struct {
+		services    *servicesfake.FakeClient
+		marketplace *marketplacefake.FakeClientInterface
 	}
 
 	cases := map[string]struct {
-		Args      []string
-		Setup     func(t *testing.T) *servicecatalogclientfake.Clientset
-		Namespace string
-
-		ExpectedErr     error
-		ExpectedStrings []string
+		args      []string
+		namespace string
+		setup     func(*testing.T, fakes)
+		expectErr error
 	}{
-		"too few params": {
-			Args:        []string{},
-			ExpectedErr: errors.New("accepts 3 arg(s), received 0"),
+		// user errors
+		"bad number of args": {
+			expectErr: errors.New("accepts 3 arg(s), received 0"),
 		},
-		"command params get passed correctly": {
-			Args:      []string{"db-service", "free", "mydb", `--config={"ram_gb":4}`},
-			Namespace: "custom-ns",
-			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				return servicecatalogclientfake.NewSimpleClientset(planList, class)
-			},
-			ExpectedStrings: []string{
-				"db-service",
-				"mydb",
-				"free",
-				"ram_gb",
-			},
-		},
-		"service from cluster broker": {
-			Args:      []string{"db-service", "free", "mydb", `--config={"ram_gb":4}`},
-			Namespace: "custom-ns",
-			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				return servicecatalogclientfake.NewSimpleClientset(clusterPlanList, clusterClass)
-			},
-			ExpectedStrings: []string{
-				"db-service",
-				"mydb",
-				"free",
-				"ram_gb",
-			},
-		},
-		"none for broker": {
-			Args:      []string{"db-service", "free", "mydb", "--broker=does-not-exist"},
-			Namespace: "custom-ns",
-			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				client := servicecatalogclientfake.NewSimpleClientset(planList, class)
-				return client
-			},
-			ExpectedErr: errors.New("no plan free found for class db-service for the service-broker does-not-exist"),
-		},
-		"none for cluster broker": {
-			Args:      []string{"db-service", "free", "mydb", "--broker=does-not-exist"},
-			Namespace: "custom-ns",
-			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				client := servicecatalogclientfake.NewSimpleClientset(clusterPlanList, clusterClass)
-				return client
-			},
-			ExpectedErr: errors.New("no plan free found for class db-service for the service-broker does-not-exist"),
-		},
-		"cluster over namespaced": {
-			Args:      []string{"db-service", "free", "mydb", `--config={"ram_gb":4}`},
-			Namespace: "custom-ns",
-			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				client := servicecatalogclientfake.NewSimpleClientset(planList, clusterPlanList, class, clusterClass)
-				client.PrependReactor("*", "serviceplans", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, nil, errors.New("dont ask for namespaced plans")
-				})
-				return client
-			},
-			ExpectedStrings: []string{
-				"db-service",
-				"mydb",
-				"free",
-				"ram_gb",
-			},
-		},
-		"empty namespace": {
-			Args:        []string{"db-service", "free", "mydb", `--config={"ram_gb":4}`},
-			ExpectedErr: errors.New(utils.EmptyNamespaceError),
-		},
-		"defaults config": {
-			Args:      []string{"db-service", "free", "mydb"},
-			Namespace: "custom-ns",
-			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				return servicecatalogclientfake.NewSimpleClientset(planList, class)
-			},
+		"bad namespace": {
+			args:      []string{"db-service", "free", "mydb"},
+			expectErr: errors.New(utils.EmptyNamespaceError),
 		},
 		"bad path": {
-			Args:        []string{"db-service", "free", "mydb", `--config=/some/bad/path`},
-			Namespace:   "custom-ns",
-			ExpectedErr: errors.New("couldn't read file: open /some/bad/path: no such file or directory"),
+			namespace: "test-ns",
+			args:      []string{"db-service", "free", "mydb", "--config=/some/bad/path"},
+			expectErr: errors.New("couldn't read file: open /some/bad/path: no such file or directory"),
 		},
-		"bad server call": {
-			Args:      []string{"db-service", "free", "mydb"},
-			Namespace: "custom-ns",
-			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				client := servicecatalogclientfake.NewSimpleClientset()
-				client.PrependReactor("*", "*", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, nil, errors.New("server-call-error")
-				})
-				return client
+
+		// server errors
+		"cluster plan failure": {
+			namespace: "test-ns",
+			args:      []string{"db-service", "free", "mydb"},
+			setup: func(t *testing.T, fakes fakes) {
+				fakes.marketplace.EXPECT().ListClusterPlans(gomock.Any()).Return(nil, errors.New("cluster-list-failure"))
 			},
-			ExpectedErr: errors.New("server-call-error"),
+			expectErr: errors.New("cluster-list-failure"),
 		},
-		"bad server call listing cluster plans": {
-			Args:      []string{"db-service", "free", "mydb"},
-			Namespace: "custom-ns",
-			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				client := servicecatalogclientfake.NewSimpleClientset(clusterPlanList, planList, clusterClass, class)
-				client.PrependReactor("*", "clusterserviceplans", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, nil, errors.New("server-call-error")
-				})
-				return client
+		"namespace plan failure": {
+			namespace: "test-ns",
+			args:      []string{"db-service", "free", "mydb"},
+			setup: func(t *testing.T, fakes fakes) {
+				fakes.marketplace.EXPECT().ListClusterPlans(gomock.Any())
+				fakes.marketplace.EXPECT().ListNamespacedPlans(gomock.Any(), gomock.Any()).Return(nil, errors.New("ns-list-failure"))
 			},
-			ExpectedErr: errors.New("server-call-error"),
+			expectErr: errors.New("ns-list-failure"),
 		},
-		"bad server call listing plans": {
-			Args:      []string{"db-service", "free", "mydb"},
-			Namespace: "custom-ns",
-			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				client := servicecatalogclientfake.NewSimpleClientset(planList, class)
-				client.PrependReactor("list", "serviceplans", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, nil, errors.New("server-call-error")
-				})
-				return client
+
+		// plans errors
+		"no plans all brokers": {
+			namespace: "test-ns",
+			args:      []string{"db-service", "free", "mydb"},
+			setup: func(t *testing.T, fakes fakes) {
+				fakes.marketplace.EXPECT().ListClusterPlans(gomock.Any())
+				fakes.marketplace.EXPECT().ListNamespacedPlans(gomock.Any(), gomock.Any())
 			},
-			ExpectedErr: errors.New("server-call-error"),
+			expectErr: errors.New("no plan free found for class db-service for all service-brokers"),
 		},
-		"bad server call creating from cluster": {
-			Args:      []string{"db-service", "free", "mydb"},
-			Namespace: "custom-ns",
-			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				client := servicecatalogclientfake.NewSimpleClientset(clusterPlanList, clusterClass)
-				client.PrependReactor("create", "serviceinstances", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, nil, errors.New("server-call-error")
-				})
-				return client
+		"no plans specific broker": {
+			namespace: "test-ns",
+			args:      []string{"db-service", "free", "mydb", "-b", "testbroker"},
+			setup: func(t *testing.T, fakes fakes) {
+				fakes.marketplace.EXPECT().ListClusterPlans(gomock.Any())
+				fakes.marketplace.EXPECT().ListNamespacedPlans(gomock.Any(), gomock.Any())
 			},
-			ExpectedErr: errors.New("server-call-error"),
+			expectErr: errors.New("no plan free found for class db-service for the service-broker testbroker"),
 		},
-		"bad server call creating": {
-			Args:      []string{"db-service", "free", "mydb"},
-			Namespace: "custom-ns",
-			Setup: func(t *testing.T) *servicecatalogclientfake.Clientset {
-				client := servicecatalogclientfake.NewSimpleClientset(planList, class)
-				client.PrependReactor("create", "serviceinstances", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, nil, errors.New("server-call-error")
-				})
-				return client
+		"multiple plan matches": {
+			namespace: "test-ns",
+			args:      []string{"db-service", "free", "mydb", "-b", "testbroker"},
+			setup: func(t *testing.T, fakes fakes) {
+				fakes.marketplace.EXPECT().ListClusterPlans(gomock.Any()).Return([]servicecatalogv1beta1.ClusterServicePlan{{}}, nil)
+				fakes.marketplace.EXPECT().ListNamespacedPlans(gomock.Any(), gomock.Any()).Return([]servicecatalogv1beta1.ServicePlan{{}}, nil)
 			},
-			ExpectedErr: errors.New("server-call-error"),
+			expectErr: errors.New("plans matched from multiple brokers, specify a broker with --broker"),
+		},
+
+		// good results
+		"cluster": {
+			namespace: "test-ns",
+			args:      []string{"db-service", "free", "mydb", "-b", "testbroker"},
+			setup: func(t *testing.T, fakes fakes) {
+				fakes.marketplace.EXPECT().ListClusterPlans(gomock.Any()).Return([]servicecatalogv1beta1.ClusterServicePlan{{}}, nil)
+				fakes.marketplace.EXPECT().ListNamespacedPlans(gomock.Any(), gomock.Any())
+
+				fakes.services.EXPECT().Create("test-ns", &servicecatalogv1beta1.ServiceInstance{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "mydb",
+						Namespace: "test-ns",
+					},
+					Spec: servicecatalogv1beta1.ServiceInstanceSpec{
+						PlanReference: servicecatalogv1beta1.PlanReference{
+							ClusterServicePlanExternalName:  "free",
+							ClusterServiceClassExternalName: "db-service",
+						},
+						Parameters: &runtime.RawExtension{
+							Raw: json.RawMessage(`{}`),
+						},
+					},
+				})
+
+				fakes.services.EXPECT().WaitForProvisionSuccess(gomock.Any(), "test-ns", "mydb", gomock.Any())
+			},
+		},
+		"namespaced": {
+			namespace: "test-ns",
+			args:      []string{"db-service", "free", "mydb", "-b", "testbroker"},
+			setup: func(t *testing.T, fakes fakes) {
+				fakes.marketplace.EXPECT().ListClusterPlans(gomock.Any())
+				fakes.marketplace.EXPECT().ListNamespacedPlans(gomock.Any(), gomock.Any()).Return([]servicecatalogv1beta1.ServicePlan{{}}, nil)
+
+				fakes.services.EXPECT().Create("test-ns", &servicecatalogv1beta1.ServiceInstance{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "mydb",
+						Namespace: "test-ns",
+					},
+					Spec: servicecatalogv1beta1.ServiceInstanceSpec{
+						PlanReference: servicecatalogv1beta1.PlanReference{
+							ServicePlanExternalName:  "free",
+							ServiceClassExternalName: "db-service",
+						},
+						Parameters: &runtime.RawExtension{
+							Raw: json.RawMessage(`{}`),
+						},
+					},
+				})
+
+				fakes.services.EXPECT().WaitForProvisionSuccess(gomock.Any(), "test-ns", "mydb", gomock.Any())
+			},
+		},
+		"async": {
+			namespace: "test-ns",
+			args:      []string{"db-service", "free", "mydb", "--async"},
+			setup: func(t *testing.T, fakes fakes) {
+				fakes.marketplace.EXPECT().ListClusterPlans(gomock.Any())
+				fakes.marketplace.EXPECT().ListNamespacedPlans(gomock.Any(), gomock.Any()).Return([]servicecatalogv1beta1.ServicePlan{{}}, nil)
+				fakes.services.EXPECT().Create(gomock.Any(), gomock.Any())
+				// expect WaitForConditionReadyTrue not to be called
+			},
 		},
 	}
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			sClient := servicesfake.NewFakeClient(ctrl)
+			mClient := marketplacefake.NewFakeClientInterface(ctrl)
+			if tc.setup != nil {
+				tc.setup(t, fakes{
+					services:    sClient,
+					marketplace: mClient,
+				})
+			}
 
 			buf := new(bytes.Buffer)
 			p := &config.KfParams{
-				Namespace: tc.Namespace,
+				Namespace: tc.namespace,
 			}
 
-			var client *servicecatalogclientfake.Clientset
-			if tc.Setup != nil {
-				client = tc.Setup(t)
-			} else {
-				client = servicecatalogclientfake.NewSimpleClientset()
-			}
-
-			cmd := servicescmd.NewCreateServiceCommand(p, client)
-			fmt.Fprintf(os.Stderr, "%s", buf.String())
+			cmd := servicescmd.NewCreateServiceCommand(p, sClient, mClient)
 			cmd.SetOutput(buf)
-			cmd.SetArgs(tc.Args)
+			cmd.SetArgs(tc.args)
 			_, actualErr := cmd.ExecuteC()
-			if tc.ExpectedErr != nil || actualErr != nil {
-				testutil.AssertErrorsEqual(t, tc.ExpectedErr, actualErr)
+			if tc.expectErr != nil || actualErr != nil {
+				testutil.AssertErrorsEqual(t, tc.expectErr, actualErr)
 			}
-
-			testutil.AssertContainsAll(t, buf.String(), tc.ExpectedStrings)
 		})
 	}
 }
