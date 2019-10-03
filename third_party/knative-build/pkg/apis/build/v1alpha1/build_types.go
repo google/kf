@@ -260,7 +260,7 @@ type BuildStatus struct {
 
 	// StepsCompleted lists the name of build steps completed.
 	// +optional
-	StepsCompleted []string `json:"stepsCompleted",omitempty`
+	StepsCompleted []string `json:"stepsCompleted,omitempty"`
 }
 
 // Check that BuildStatus may have its conditions managed.

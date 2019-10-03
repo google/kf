@@ -22,13 +22,13 @@ import (
 	"time"
 
 	buildv1alpha1 "github.com/google/kf/third_party/knative-build/pkg/client/clientset/versioned/typed/build/v1alpha1"
-	duckv1alpha1 "knative.dev/pkg/apis/duck/v1alpha1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	duckv1alpha1 "knative.dev/pkg/apis/duck/v1alpha1"
 )
 
 const buildExecuteFailed = "BuildExecuteFailed"
