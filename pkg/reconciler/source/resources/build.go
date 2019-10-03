@@ -17,7 +17,6 @@ package resources
 import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	build "github.com/google/kf/third_party/knative-build/pkg/apis/build/v1alpha1"
-	"github.com/knative/serving/pkg/resources"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/kmeta"
@@ -121,7 +120,7 @@ func makeObjectMeta(source *v1alpha1.Source) metav1.ObjectMeta {
 			*kmeta.NewControllerRef(source),
 		},
 		// Copy labels from the parent
-		Labels: resources.UnionMaps(
+		Labels: v1alpha1.UnionMaps(
 			source.GetLabels(), map[string]string{
 				managedByLabel: "kf",
 			}),

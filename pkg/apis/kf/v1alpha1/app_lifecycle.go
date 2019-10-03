@@ -17,7 +17,7 @@ package v1alpha1
 import (
 	"fmt"
 
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	serving "github.com/google/kf/third_party/knative-serving/pkg/apis/serving/v1alpha1"
 	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"

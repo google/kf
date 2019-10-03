@@ -246,3 +246,19 @@ func TestIsStatusFinal(t *testing.T) {
 		})
 	}
 }
+
+func ExampleUnionMaps() {
+	x := map[string]string{"a": "1", "b": "x", "c": "x"}
+	y := map[string]string{"a": "1", "b": "2", "c": "3"}
+	z := map[string]string{"a": "1", "b": "2", "c": "3"}
+
+	result := UnionMaps(x, y, z)
+
+	for _, key := range []string{"a", "b", "c"} {
+		fmt.Printf("%s: %s\n", key, result[key])
+	}
+
+	// Output: a: 1
+	// b: 2
+	// c: 3
+}

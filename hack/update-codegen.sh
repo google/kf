@@ -34,6 +34,7 @@ KF_PACKAGE="github.com/google/kf"
 KF_PACKAGE_LOCATION="./"
 KF_RESOURCE="kf:v1alpha1"
 BUILD_RESOURCE="build:v1alpha1"
+SERVING_RESOURCE="serving:v1alpha1"
 HEADER_FILE=${KF_PACKAGE_LOCATION}/pkg/kf/internal/tools/option-builder/LICENSE_HEADER.go.txt
 
 GENS=$1
@@ -129,7 +130,23 @@ kbuild-knative-gen() {
     "injection" \
     "github.com/google/kf/third_party/knative-build/pkg/client" \
     "github.com/google/kf/third_party/knative-build/pkg/apis" \
-    "build:v1alpha1"
+    "$BUILD_RESOURCE"
+}
+
+kserving-code-gen() {
+  code-generator-gen \
+    "deepcopy,client,informer,lister" \
+    "github.com/google/kf/third_party/knative-serving/pkg/client" \
+    "github.com/google/kf/third_party/knative-serving/pkg/apis" \
+    "$SERVING_RESOURCE"
+}
+
+kserving-knative-gen() {
+  knative-injection-gen \
+    "injection" \
+    "github.com/google/kf/third_party/knative-serving/pkg/client" \
+    "github.com/google/kf/third_party/knative-serving/pkg/apis" \
+    "$SERVING_RESOURCE"
 }
 
 svccat-codegen() {
@@ -160,6 +177,7 @@ case $GENS in
   knative)
     kf-knative-gen
     kbuild-knative-gen
+    kserving-knative-gen
     svccat-knative-gen
     ;;
   kf)
@@ -170,6 +188,10 @@ case $GENS in
     kbuild-code-gen
     kbuild-knative-gen
     ;;
+  kserving)
+    kserving-code-gen
+    kserving-knative-gen
+    ;;
   svccat)
     svccat-codegen
     svccat-knative-gen
@@ -179,6 +201,8 @@ case $GENS in
     kf-knative-gen
     kbuild-code-gen
     kbuild-knative-gen
+    kserving-code-gen
+    kserving-knative-gen
     svccat-codegen
     svccat-knative-gen
     ;;

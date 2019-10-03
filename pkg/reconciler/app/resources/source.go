@@ -19,7 +19,6 @@ import (
 	"path"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/knative/serving/pkg/resources"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/kmeta"
 )
@@ -66,7 +65,7 @@ func MakeSource(app *v1alpha1.App, space *v1alpha1.Space) (*v1alpha1.Source, err
 			OwnerReferences: []metav1.OwnerReference{
 				*kmeta.NewControllerRef(app),
 			},
-			Labels: resources.UnionMaps(app.GetLabels(), app.ComponentLabels(buildComponentName)),
+			Labels: v1alpha1.UnionMaps(app.GetLabels(), app.ComponentLabels(buildComponentName)),
 		},
 		Spec: *source,
 	}, nil
