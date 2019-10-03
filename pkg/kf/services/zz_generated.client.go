@@ -25,10 +25,11 @@ import (
 	"strings"
 	"time"
 
-	"knative.dev/pkg/kmp"
-
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"knative.dev/pkg/apis"
+	"knative.dev/pkg/kmp"
 )
 
 // User defined imports
@@ -100,6 +101,29 @@ func (list List) Filter(filter Predicate) (out List) {
 		if filter(&v) {
 			out = append(out, v)
 		}
+	}
+
+	return
+}
+
+// ObservedGenerationMatchesGeneration is a predicate that returns true if the
+// object's ObservedGeneration matches the genration of the object.
+func ObservedGenerationMatchesGeneration(obj *v1beta1.ServiceInstance) bool {
+	return obj.Generation == obj.Status.ObservedGeneration
+}
+
+// ExtractConditions converts the native condition types into an apis.Condition
+// array with the Type, Status, Reason, and Message fields intact.
+func ExtractConditions(obj *v1beta1.ServiceInstance) (extracted []apis.Condition) {
+	for _, cond := range obj.Status.Conditions {
+		// Only copy the following four fields to be compatible with
+		// recommended Kuberntes fields.
+		extracted = append(extracted, apis.Condition{
+			Type:    apis.ConditionType(cond.Type),
+			Status:  corev1.ConditionStatus(cond.Status),
+			Reason:  cond.Reason,
+			Message: cond.Message,
+		})
 	}
 
 	return
@@ -326,4 +350,34 @@ func wrapPredicate(condition Predicate) ConditionFuncE {
 // WaitForDeletion is a utility function that combines WaitForE with ConditionDeleted.
 func (core *coreClient) WaitForDeletion(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1beta1.ServiceInstance, err error) {
 	return core.WaitForE(ctx, namespace, name, interval, ConditionDeleted)
+}
+
+func checkConditionTrue(obj *v1beta1.ServiceInstance, err error, condition apis.ConditionType) (bool, error) {
+	if err != nil {
+		return true, err
+	}
+
+	// don't propagate old statuses
+	if !ObservedGenerationMatchesGeneration(obj) {
+		return false, nil
+	}
+
+	for _, cond := range ExtractConditions(obj) {
+		if cond.Type == condition {
+			switch {
+			case cond.IsTrue():
+				return true, nil
+
+			case cond.IsUnknown():
+				return false, nil
+
+			default:
+				// return true and a failure assuming IsFalse and other statuses can't be
+				// recovered from because they violate the K8s spec
+				return true, fmt.Errorf("checking %s failed, status: %s message: %s reason: %s", cond.Type, cond.Status, cond.Message, cond.Reason)
+			}
+		}
+	}
+
+	return false, nil
 }

@@ -25,6 +25,7 @@ import (
 	"strings"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
@@ -52,6 +53,8 @@ const (
 var (
 	ConditionReady                = apis.ConditionType(v1alpha1.AppConditionReady)
 	ConditionServiceBindingsReady = apis.ConditionType(v1alpha1.AppConditionServiceBindingsReady)
+	ConditionKnativeServiceReady  = apis.ConditionType(v1alpha1.AppConditionKnativeServiceReady)
+	ConditionRoutesReady          = apis.ConditionType(v1alpha1.AppConditionRouteReady)
 )
 
 // Predicate is a boolean function for a v1alpha1.App.
@@ -124,7 +127,7 @@ func ExtractConditions(obj *v1alpha1.App) (extracted []apis.Condition) {
 		// recommended Kuberntes fields.
 		extracted = append(extracted, apis.Condition{
 			Type:    apis.ConditionType(cond.Type),
-			Status:  cond.Status,
+			Status:  corev1.ConditionStatus(cond.Status),
 			Reason:  cond.Reason,
 			Message: cond.Message,
 		})
@@ -153,6 +156,8 @@ type Client interface {
 	WaitForDeletion(ctx context.Context, namespace string, name string, interval time.Duration) (*v1alpha1.App, error)
 	WaitForConditionReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (*v1alpha1.App, error)
 	WaitForConditionServiceBindingsReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (*v1alpha1.App, error)
+	WaitForConditionKnativeServiceReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (*v1alpha1.App, error)
+	WaitForConditionRoutesReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (*v1alpha1.App, error)
 
 	// ClientExtension can be used by the developer to extend the client.
 	ClientExtension
@@ -408,4 +413,26 @@ func ConditionServiceBindingsReadyTrue(obj *v1alpha1.App, err error) (bool, erro
 // WaitForConditionServiceBindingsReadyTrue is a utility function that combines WaitForE with ConditionServiceBindingsReadyTrue.
 func (core *coreClient) WaitForConditionServiceBindingsReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1alpha1.App, err error) {
 	return core.WaitForE(ctx, namespace, name, interval, ConditionServiceBindingsReadyTrue)
+}
+
+// ConditionKnativeServiceReadyTrue is a ConditionFuncE that waits for Condition{KnativeServiceReady v1alpha1.AppConditionKnativeServiceReady } to
+// become true and fails with an error if the condition becomes false.
+func ConditionKnativeServiceReadyTrue(obj *v1alpha1.App, err error) (bool, error) {
+	return checkConditionTrue(obj, err, ConditionKnativeServiceReady)
+}
+
+// WaitForConditionKnativeServiceReadyTrue is a utility function that combines WaitForE with ConditionKnativeServiceReadyTrue.
+func (core *coreClient) WaitForConditionKnativeServiceReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1alpha1.App, err error) {
+	return core.WaitForE(ctx, namespace, name, interval, ConditionKnativeServiceReadyTrue)
+}
+
+// ConditionRoutesReadyTrue is a ConditionFuncE that waits for Condition{RoutesReady v1alpha1.AppConditionRouteReady } to
+// become true and fails with an error if the condition becomes false.
+func ConditionRoutesReadyTrue(obj *v1alpha1.App, err error) (bool, error) {
+	return checkConditionTrue(obj, err, ConditionRoutesReady)
+}
+
+// WaitForConditionRoutesReadyTrue is a utility function that combines WaitForE with ConditionRoutesReadyTrue.
+func (core *coreClient) WaitForConditionRoutesReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1alpha1.App, err error) {
+	return core.WaitForE(ctx, namespace, name, interval, ConditionRoutesReadyTrue)
 }

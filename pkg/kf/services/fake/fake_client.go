@@ -224,3 +224,18 @@ func (mr *FakeClientMockRecorder) WaitForE(arg0, arg1, arg2, arg3, arg4 interfac
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitForE", reflect.TypeOf((*FakeClient)(nil).WaitForE), arg0, arg1, arg2, arg3, arg4)
 }
+
+// WaitForProvisionSuccess mocks base method
+func (m *FakeClient) WaitForProvisionSuccess(arg0 context.Context, arg1, arg2 string, arg3 time.Duration) (*v1beta1.ServiceInstance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WaitForProvisionSuccess", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(*v1beta1.ServiceInstance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// WaitForProvisionSuccess indicates an expected call of WaitForProvisionSuccess
+func (mr *FakeClientMockRecorder) WaitForProvisionSuccess(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitForProvisionSuccess", reflect.TypeOf((*FakeClient)(nil).WaitForProvisionSuccess), arg0, arg1, arg2, arg3)
+}

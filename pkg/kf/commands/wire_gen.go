@@ -21,7 +21,7 @@ import (
 	routes2 "github.com/google/kf/pkg/kf/commands/routes"
 	servicebindings2 "github.com/google/kf/pkg/kf/commands/service-bindings"
 	"github.com/google/kf/pkg/kf/commands/service-brokers"
-	"github.com/google/kf/pkg/kf/commands/services"
+	services2 "github.com/google/kf/pkg/kf/commands/services"
 	spaces2 "github.com/google/kf/pkg/kf/commands/spaces"
 	"github.com/google/kf/pkg/kf/istio"
 	"github.com/google/kf/pkg/kf/logs"
@@ -29,11 +29,11 @@ import (
 	"github.com/google/kf/pkg/kf/routeclaims"
 	"github.com/google/kf/pkg/kf/routes"
 	"github.com/google/kf/pkg/kf/service-bindings"
-	services2 "github.com/google/kf/pkg/kf/services"
+	"github.com/google/kf/pkg/kf/services"
 	"github.com/google/kf/pkg/kf/sources"
 	"github.com/google/kf/pkg/kf/spaces"
+	logs2 "github.com/google/kf/third_party/knative-build/pkg/logs"
 	"github.com/google/wire"
-	logs2 "github.com/knative/build/pkg/logs"
 	"github.com/poy/kontext"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes/typed/core/v1"
@@ -204,30 +204,34 @@ func InjectUnsetEnv(p *config.KfParams) *cobra.Command {
 
 func InjectCreateService(p *config.KfParams) *cobra.Command {
 	versionedInterface := config.GetServiceCatalogClient(p)
-	command := services.NewCreateServiceCommand(p, versionedInterface)
+	serviceInstancesGetter := provideServiceInstancesGetter(versionedInterface)
+	client := services.NewClient(serviceInstancesGetter)
+	sClientFactory := config.GetSvcatApp(p)
+	clientInterface := marketplace.NewClient(sClientFactory, versionedInterface)
+	command := services2.NewCreateServiceCommand(p, client, clientInterface)
 	return command
 }
 
 func InjectDeleteService(p *config.KfParams) *cobra.Command {
 	versionedInterface := config.GetServiceCatalogClient(p)
 	serviceInstancesGetter := provideServiceInstancesGetter(versionedInterface)
-	client := services2.NewClient(serviceInstancesGetter)
-	command := services.NewDeleteServiceCommand(p, client)
+	client := services.NewClient(serviceInstancesGetter)
+	command := services2.NewDeleteServiceCommand(p, client)
 	return command
 }
 
 func InjectGetService(p *config.KfParams) *cobra.Command {
 	versionedInterface := config.GetServiceCatalogClient(p)
 	serviceInstancesGetter := provideServiceInstancesGetter(versionedInterface)
-	client := services2.NewClient(serviceInstancesGetter)
-	command := services.NewGetServiceCommand(p, client)
+	client := services.NewClient(serviceInstancesGetter)
+	command := services2.NewGetServiceCommand(p, client)
 	return command
 }
 
 func InjectListServices(p *config.KfParams) *cobra.Command {
 	versionedInterface := config.GetServiceCatalogClient(p)
 	serviceInstancesGetter := provideServiceInstancesGetter(versionedInterface)
-	client := services2.NewClient(serviceInstancesGetter)
+	client := services.NewClient(serviceInstancesGetter)
 	kfV1alpha1Interface := config.GetKfClient(p)
 	appsGetter := provideAppsGetter(kfV1alpha1Interface)
 	sourcesGetter := provideKfSources(kfV1alpha1Interface)
@@ -235,15 +239,16 @@ func InjectListServices(p *config.KfParams) *cobra.Command {
 	sourcesClient := sources.NewClient(sourcesGetter, buildTailer)
 	appsClient := apps.NewClient(appsGetter, sourcesClient)
 	sClientFactory := config.GetSvcatApp(p)
-	clientInterface := marketplace.NewClient(sClientFactory)
-	command := services.NewListServicesCommand(p, client, appsClient, clientInterface)
+	clientInterface := marketplace.NewClient(sClientFactory, versionedInterface)
+	command := services2.NewListServicesCommand(p, client, appsClient, clientInterface)
 	return command
 }
 
 func InjectMarketplace(p *config.KfParams) *cobra.Command {
 	sClientFactory := config.GetSvcatApp(p)
-	clientInterface := marketplace.NewClient(sClientFactory)
-	command := services.NewMarketplaceCommand(p, clientInterface)
+	versionedInterface := config.GetServiceCatalogClient(p)
+	clientInterface := marketplace.NewClient(sClientFactory, versionedInterface)
+	command := services2.NewMarketplaceCommand(p, clientInterface)
 	return command
 }
 
@@ -485,7 +490,7 @@ func provideServiceInstancesGetter(sc versioned.Interface) v1beta1.ServiceInstan
 }
 
 var ServicesSet = wire.NewSet(
-	provideServiceInstancesGetter, config.GetServiceCatalogClient, config.GetSvcatApp, marketplace.NewClient, services2.NewClient,
+	provideServiceInstancesGetter, config.GetServiceCatalogClient, config.GetSvcatApp, marketplace.NewClient, services.NewClient,
 )
 
 /////////////////

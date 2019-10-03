@@ -8,6 +8,8 @@ kubernetes:
   kind: "ServiceInstance"
   version: "v1beta1"
   namespaced: true
+  observedGenerationFieldPath: Status.ObservedGeneration
+  conditionsFieldPath: Status.Conditions
 type: "v1beta1.ServiceInstance"
 clientType: "cv1beta1.ServiceInstancesGetter"
 cf:

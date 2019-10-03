@@ -17,8 +17,6 @@ require (
 	github.com/google/wire v0.2.2
 	github.com/gorilla/mux v1.7.0
 	github.com/imdario/mergo v0.3.7
-	github.com/knative/build v0.7.0
-	github.com/knative/pkg v0.0.0-20190621200921-9c5d970cbc9e
 	github.com/knative/serving v0.7.1-0.20190701162519-7ca25646a186
 	github.com/manifoldco/promptui v0.3.2
 	github.com/markbates/inflect v1.0.4 // indirect
@@ -52,9 +50,6 @@ require (
 // opencensus and go-cmp are fixed to satisfy unspecified dependencies in
 // knative/pkg; update once https://github.com/knative/pkg/pull/475 goes through
 replace go.opencensus.io => go.opencensus.io v0.20.2
-
-// Remove once https://github.com/google/kf/issues/238 is resolved
-replace github.com/knative/pkg => github.com/poy/knative-pkg v99.0.0+incompatible
 
 replace (
 	contrib.go.opencensus.io/exporter/stackdriver => contrib.go.opencensus.io/exporter/stackdriver v0.9.2

@@ -18,10 +18,10 @@ import (
 	"context"
 
 	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	buildclient "github.com/google/kf/pkg/client/build/injection/client"
-	buildinformer "github.com/google/kf/pkg/client/build/injection/informers/build/v1alpha1/build"
 	sourceinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/source"
 	"github.com/google/kf/pkg/reconciler"
+	buildclient "github.com/google/kf/third_party/knative-build/pkg/client/injection/client"
+	buildinformer "github.com/google/kf/third_party/knative-build/pkg/client/injection/informers/build/v1alpha1/build"
 	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/configmap"
 	controller "knative.dev/pkg/controller"

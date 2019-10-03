@@ -48,6 +48,14 @@ func TestStop(t *testing.T) {
 						mutator(&app)
 						testutil.AssertEqual(t, "app.spec.instances.stopped", true, app.Spec.Instances.Stopped)
 					})
+				fake.EXPECT().WaitForConditionKnativeServiceReadyTrue(gomock.Any(), "default", "my-app", gomock.Any())
+			},
+		},
+		"async does not wait": {
+			Namespace: "default",
+			Args:      []string{"my-app", "--async"},
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any())
 			},
 		},
 		"no app name": {

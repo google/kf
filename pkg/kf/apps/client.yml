@@ -13,6 +13,10 @@ kubernetes:
     ref: v1alpha1.AppConditionReady
   - name: ServiceBindingsReady
     ref: v1alpha1.AppConditionServiceBindingsReady
+  - name: KnativeServiceReady
+    ref: v1alpha1.AppConditionKnativeServiceReady
+  - name: RoutesReady
+    ref: v1alpha1.AppConditionRouteReady
 type: "v1alpha1.App"
 clientType: "cv1alpha1.AppsGetter"
 cf:

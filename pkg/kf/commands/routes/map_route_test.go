@@ -33,16 +33,14 @@ func TestMapRoute(t *testing.T) {
 	t.Parallel()
 
 	for tn, tc := range map[string]struct {
-		Namespace string
-		Args      []string
-		Setup     func(t *testing.T, appsfake *appsfake.FakeClient)
-		Assert    func(t *testing.T, buffer *bytes.Buffer, err error)
+		Namespace   string
+		Args        []string
+		Setup       func(t *testing.T, appsfake *appsfake.FakeClient)
+		ExpectedErr error
 	}{
 		"wrong number of args": {
-			Args: []string{"some-app", "example.com", "extra"},
-			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
-				testutil.AssertErrorsEqual(t, errors.New("accepts 2 arg(s), received 3"), err)
-			},
+			Args:        []string{"some-app", "example.com", "extra"},
+			ExpectedErr: errors.New("accepts 2 arg(s), received 3"),
 		},
 		"transforming App fails": {
 			Args:      []string{"some-app", "example.com"},
@@ -52,9 +50,7 @@ func TestMapRoute(t *testing.T) {
 					Transform(gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil, errors.New("some-error"))
 			},
-			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
-				testutil.AssertErrorsEqual(t, errors.New("failed to map Route: some-error"), err)
-			},
+			ExpectedErr: errors.New("failed to map Route: some-error"),
 		},
 		"namespace": {
 			Args:      []string{"some-app", "example.com"},
@@ -62,9 +58,7 @@ func TestMapRoute(t *testing.T) {
 			Setup: func(t *testing.T, appsfake *appsfake.FakeClient) {
 				appsfake.EXPECT().
 					Transform("some-space", gomock.Any(), gomock.Any())
-			},
-			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
-				testutil.AssertNil(t, "err", err)
+				appsfake.EXPECT().WaitForConditionRoutesReadyTrue(gomock.Any(), "some-space", gomock.Any(), gomock.Any())
 			},
 		},
 		"app name": {
@@ -73,20 +67,12 @@ func TestMapRoute(t *testing.T) {
 			Setup: func(t *testing.T, appsfake *appsfake.FakeClient) {
 				appsfake.EXPECT().
 					Transform(gomock.Any(), "some-app", gomock.Any())
-			},
-			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
-				testutil.AssertNil(t, "err", err)
+				appsfake.EXPECT().WaitForConditionRoutesReadyTrue(gomock.Any(), gomock.Any(), "some-app", gomock.Any())
 			},
 		},
 		"without namespace": {
-			Args: []string{"some-app", "example.com"},
-			Setup: func(t *testing.T, appsfake *appsfake.FakeClient) {
-				appsfake.EXPECT().
-					Transform("some-space", gomock.Any(), gomock.Any())
-			},
-			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
-				testutil.AssertErrorsEqual(t, errors.New(utils.EmptyNamespaceError), err)
-			},
+			Args:        []string{"some-app", "example.com"},
+			ExpectedErr: errors.New(utils.EmptyNamespaceError),
 		},
 		"transform App by adding new routes": {
 			Args:      []string{"some-app", "example.com", "--hostname=some-host", "--path=some-path"},
@@ -102,6 +88,7 @@ func TestMapRoute(t *testing.T) {
 						testutil.AssertEqual(t, "Domain", "example.com", oldApp.Spec.Routes[0].Domain)
 						testutil.AssertEqual(t, "Path", "/some-path", oldApp.Spec.Routes[0].Path)
 					})
+				appsfake.EXPECT().WaitForConditionRoutesReadyTrue(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 			},
 		},
 		"transform App and keep old routes": {
@@ -120,14 +107,13 @@ func TestMapRoute(t *testing.T) {
 						// Existing Route
 						testutil.AssertEqual(t, "Domain", "other.example.com", oldApp.Spec.Routes[0].Domain)
 					})
-			},
-			Assert: func(t *testing.T, buffer *bytes.Buffer, err error) {
-				testutil.AssertNil(t, "err", err)
+				appsfake.EXPECT().WaitForConditionRoutesReadyTrue(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 			},
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
 			appsfake := appsfake.NewFakeClient(ctrl)
 
 			if tc.Setup != nil {
@@ -145,15 +131,9 @@ func TestMapRoute(t *testing.T) {
 			cmd.SetOutput(&buffer)
 
 			gotErr := cmd.Execute()
-
-			if tc.Assert != nil {
-				tc.Assert(t, &buffer, gotErr)
+			if gotErr != nil || tc.ExpectedErr != nil {
+				testutil.AssertErrorsEqual(t, tc.ExpectedErr, gotErr)
 			}
-
-			if gotErr != nil {
-				return
-			}
-			ctrl.Finish()
 		})
 	}
 }
