@@ -16,41 +16,42 @@
 
 set -eux
 
-# Make sure the script is invoked from the project root
-[[ "$0" =~ (./)?hack/.*.sh$ ]] || ( echo Script must be run from project root; exit 1 )
+[[ -n "${KO_DOCKER_REPO-}" ]] || ( echo KO_DOCKER_REPO must be set; exit 1)
+[[ -n "${SERVICE_ACCOUNT_JSON-}" ]] || ( echo SERVICE_ACCOUNT_JSON must be set; exit 1)
+[[ -n "${GCP_PROJECT_ID-}" ]] || ( echo GCP_PROJECT_ID must be set; exit 1)
 
 if [ "$#" -ne 1 ]; then
         echo "usage: $0 [OUTPUT PATH]"
         exit 1
 fi
 
+# Change to the project root directory
+cd "${0%/*}"/..
+
+# Directory where output artifacts will go
 output=$1
 
-[[ -n "${KO_DOCKER_REPO-}" ]] || ( echo KO_DOCKER_REPO must be set; exit 1)
+# Login to gcloud
+/bin/echo Authenticating to kubernetes...
+sakey=`mktemp -t gcloud-key-XXXXXX`
+set +x
+/bin/echo "$SERVICE_ACCOUNT_JSON" > $sakey
+set -x
+gcloud auth activate-service-account --key-file $sakey
+gcloud config set project "$GCP_PROJECT_ID"
+gcloud -q auth configure-docker
 
-
+# Process version
 version=`cat version`
 # Modify version number if this is a nightly build.
 # Set NIGHTLY to any value to enable a nightly build.
 [[ -n "${NIGHTLY-}" ]] && version="$version-nightly-`date +%F`"
+echo $version > $output/version
 
 # Modify version number to prepend git hash
-hash=$(git rev-parse HEAD)
+hash=$(git rev-parse --short HEAD)
 [ -z "$hash" ] && echo "failed to read hash" && exit 1
 version="$version-$hash"
-
-# Prepare dirs
-mkdir -p $output/$version
-output=$output/$version
-
-# Login to gcloud
-set +x
-/bin/echo "$SERVICE_ACCOUNT_JSON" > key.json
-set -x
-/bin/echo Authenticating to kubernetes...
-gcloud auth activate-service-account --key-file key.json
-gcloud config set project "$GCP_PROJECT_ID"
-gcloud -q auth configure-docker
 
 # Temp dir for temp GOPATH
 tmpgo=`mktemp -d -t go-XXXXXXXXXX`
