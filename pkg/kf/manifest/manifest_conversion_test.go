@@ -121,3 +121,171 @@ func TestApplication_ToAppSpecInstances(t *testing.T) {
 		})
 	}
 }
+
+func TestApplication_ToHealthCheck(t *testing.T) {
+	cases := map[string]struct {
+		checkType string
+		endpoint  string
+		timeout   int
+
+		expectProbe *corev1.Probe
+		expectErr   error
+	}{
+		"invalid type": {
+			checkType: "foo",
+			expectErr: errors.New("unknown health check type foo, supported types are http and port"),
+		},
+		"process type": {
+			checkType: "process",
+			expectErr: errors.New("kf doesn't support the process health check type"),
+		},
+		"none is process type": {
+			checkType: "none",
+			expectErr: errors.New("kf doesn't support the process health check type"),
+		},
+		"http complete": {
+			checkType: "http",
+			endpoint:  "/healthz",
+			timeout:   180,
+			expectProbe: &corev1.Probe{
+				TimeoutSeconds: int32(180),
+				Handler: corev1.Handler{
+					HTTPGet: &corev1.HTTPGetAction{
+						Path: "/healthz",
+					},
+				},
+			},
+		},
+		"http default": {
+			checkType: "http",
+			expectProbe: &corev1.Probe{
+				Handler: corev1.Handler{
+					HTTPGet: &corev1.HTTPGetAction{},
+				},
+			},
+		},
+		"blank type uses port": {
+			expectProbe: &corev1.Probe{
+				Handler: corev1.Handler{
+					TCPSocket: &corev1.TCPSocketAction{},
+				},
+			},
+		},
+		"negative timeout": {
+			timeout:   -1,
+			expectErr: errors.New("health check timeouts can't be negative"),
+		},
+		"port complete": {
+			checkType: "port",
+			timeout:   180,
+			expectProbe: &corev1.Probe{
+				TimeoutSeconds: int32(180),
+				Handler: corev1.Handler{
+					TCPSocket: &corev1.TCPSocketAction{},
+				},
+			},
+		},
+		"port default": {
+			checkType: "port",
+			expectProbe: &corev1.Probe{
+				Handler: corev1.Handler{
+					TCPSocket: &corev1.TCPSocketAction{},
+				},
+			},
+		},
+		"port with endpoint": {
+			checkType: "port",
+			endpoint:  "/healthz",
+			expectErr: errors.New("health check endpoints can only be used with http checks"),
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			app := Application{
+				HealthCheckType:         tc.checkType,
+				HealthCheckHTTPEndpoint: tc.endpoint,
+				HealthCheckTimeout:      tc.timeout,
+			}
+
+			actualProbe, actualErr := app.ToHealthCheck()
+
+			testutil.AssertErrorsEqual(t, tc.expectErr, actualErr)
+			testutil.AssertEqual(t, "probe", tc.expectProbe, actualProbe)
+		})
+	}
+}
+
+func TestApplication_ToContainer(t *testing.T) {
+	defaultHealthCheck := &corev1.Probe{
+		Handler: corev1.Handler{
+			TCPSocket: &corev1.TCPSocketAction{},
+		},
+	}
+
+	cases := map[string]struct {
+		app             Application
+		expectContainer corev1.Container
+		expectErr       error
+	}{
+		"empty manifest": {
+			app: Application{},
+			expectContainer: corev1.Container{
+				ReadinessProbe: defaultHealthCheck,
+			},
+		},
+		"bad resource requests": {
+			app: Application{
+				Memory: "21ZB",
+			},
+			expectErr: errors.New("couldn't parse resource quantity 21ZB: quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'"),
+		},
+		"bad health check": {
+			app: Application{
+				HealthCheckType: "NOT ALLOWED",
+			},
+			expectErr: errors.New("unknown health check type NOT ALLOWED, supported types are http and port"),
+		},
+		"full manifest": {
+			app: Application{
+				HealthCheckType: "http",
+				Memory:          "30M",
+				DiskQuota:       "1Gi",
+				Env:             map[string]string{"KEYMASTER": "GATEKEEPER"},
+				KfApplicationExtension: KfApplicationExtension{
+					Args:        []string{"foo", "bar"},
+					Entrypoint:  "bash",
+					EnableHTTP2: ptr.Bool(true),
+				},
+			},
+			expectContainer: corev1.Container{
+				Args:    []string{"foo", "bar"},
+				Command: []string{"bash"},
+				ReadinessProbe: &corev1.Probe{
+					Handler: corev1.Handler{
+						HTTPGet: &corev1.HTTPGetAction{},
+					},
+				},
+				Env: []corev1.EnvVar{
+					{Name: "KEYMASTER", Value: "GATEKEEPER"},
+				},
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceMemory:           resource.MustParse("30Mi"),
+						corev1.ResourceEphemeralStorage: resource.MustParse("1Gi"),
+					},
+				},
+				Ports: HTTP2ContainerPort(),
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			actualContainer, actualErr := tc.app.ToContainer()
+
+			testutil.AssertErrorsEqual(t, tc.expectErr, actualErr)
+			testutil.AssertEqual(t, "container", tc.expectContainer, actualContainer)
+		})
+	}
+}

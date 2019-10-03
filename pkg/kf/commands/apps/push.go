@@ -241,11 +241,6 @@ func NewPushCommand(
 					return err
 				}
 
-				resourceRequests, err := app.ToResourceRequests()
-				if err != nil {
-					return err
-				}
-
 				defaultDomain, err := spaceDefaultDomain(space)
 				if err != nil {
 					return err
@@ -256,7 +251,7 @@ func NewPushCommand(
 					return err
 				}
 
-				healthCheck, err := apps.NewHealthCheck(app.HealthCheckType, app.HealthCheckHTTPEndpoint, app.HealthCheckTimeout)
+				container, err := app.ToContainer()
 				if err != nil {
 					return err
 				}
@@ -273,19 +268,11 @@ func NewPushCommand(
 
 				pushOpts := []apps.PushOption{
 					apps.WithPushNamespace(p.Namespace),
-					apps.WithPushEnvironmentVariables(app.Env),
 					apps.WithPushRoutes(routes),
-					apps.WithPushHealthCheck(healthCheck),
 					apps.WithPushRandomRouteDomain(randomRouteDomain),
 					apps.WithPushDefaultRouteDomain(defaultRouteDomain),
-					apps.WithPushCommand(app.CommandEntrypoint()),
-					apps.WithPushArgs(app.CommandArgs()),
-					apps.WithPushResourceRequests(resourceRequests),
 					apps.WithPushAppSpecInstances(app.ToAppSpecInstances()),
-				}
-
-				if app.EnableHTTP2 != nil {
-					pushOpts = append(pushOpts, apps.WithPushGrpc(*app.EnableHTTP2))
+					apps.WithPushContainer(container),
 				}
 
 				if app.Docker.Image == "" {

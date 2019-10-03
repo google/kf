@@ -15,10 +15,12 @@
 package manifest
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/internal/envutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -86,4 +88,73 @@ func cfToSIUnits(orig string) string {
 
 	// if it's not a CF unit, return the value unmodified
 	return orig
+}
+
+// ToHealthCheck creates a corev1.Probe that maps the health checks CloudFoundry
+// does.
+func (source *Application) ToHealthCheck() (*corev1.Probe, error) {
+	if source.HealthCheckTimeout < 0 {
+		return nil, errors.New("health check timeouts can't be negative")
+	}
+
+	probe := &corev1.Probe{TimeoutSeconds: int32(source.HealthCheckTimeout)}
+
+	switch source.HealthCheckType {
+	case "http":
+		probe.Handler.HTTPGet = &corev1.HTTPGetAction{Path: source.HealthCheckHTTPEndpoint}
+		return probe, nil
+
+	case "port", "": // By default, cf uses a port based health check.
+		if source.HealthCheckHTTPEndpoint != "" {
+			return nil, errors.New("health check endpoints can only be used with http checks")
+		}
+
+		probe.Handler.TCPSocket = &corev1.TCPSocketAction{}
+		return probe, nil
+
+	case "process", "none":
+		return nil, errors.New("kf doesn't support the process health check type")
+
+	default:
+		return nil, fmt.Errorf("unknown health check type %s, supported types are http and port", source.HealthCheckType)
+	}
+}
+
+// ToContainer converts the manifest to a container suitable for use in a pod,
+// ksvc, or app.
+func (source *Application) ToContainer() (corev1.Container, error) {
+	resourceRequests, err := source.ToResourceRequests()
+	if err != nil {
+		return corev1.Container{}, err
+	}
+
+	healthCheck, err := source.ToHealthCheck()
+	if err != nil {
+		return corev1.Container{}, err
+	}
+
+	container := corev1.Container{
+		Args:    source.CommandArgs(),
+		Command: source.CommandEntrypoint(),
+		Resources: corev1.ResourceRequirements{
+			Requests: resourceRequests,
+		},
+		ReadinessProbe: healthCheck,
+	}
+
+	if len(source.Env) > 0 {
+		container.Env = envutil.MapToEnvVars(source.Env)
+	}
+
+	if source.EnableHTTP2 != nil && *source.EnableHTTP2 {
+		container.Ports = HTTP2ContainerPort()
+	}
+
+	return container, nil
+}
+
+// HTTP2ContainerPort returns the container port used to notify Knative that
+// the container should be allowed to accept HTTP2 requests.
+func HTTP2ContainerPort() []corev1.ContainerPort {
+	return []corev1.ContainerPort{{Name: "h2c", ContainerPort: 8080}}
 }

@@ -24,7 +24,6 @@ import (
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/internal/envutil"
 	"github.com/google/kf/pkg/kf/sources"
-	corev1 "k8s.io/api/core/v1"
 )
 
 //go:generate go run ../internal/tools/option-builder/option-builder.go push-options.yml push_options.go
@@ -48,40 +47,24 @@ func NewPusher(appsClient Client) Pusher {
 }
 
 func newApp(appName string, opts ...PushOption) (*v1alpha1.App, error) {
-
 	cfg := PushOptionDefaults().Extend(opts).toConfig()
-
-	var envs []corev1.EnvVar
-	if len(cfg.EnvironmentVariables) > 0 {
-		envs = envutil.MapToEnvVars(cfg.EnvironmentVariables)
-	}
 
 	src := sources.NewKfSource()
 	src.SetBuildpackBuildSource(cfg.SourceImage)
 	src.SetContainerImageSource(cfg.ContainerImage)
-	src.SetBuildpackBuildEnv(envs)
+	src.SetBuildpackBuildEnv(cfg.Container.Env)
 	src.SetBuildpackBuildBuildpack(cfg.Buildpack)
 	src.SetBuildpackBuildStack(cfg.Stack)
 
 	app := NewKfApp()
 	app.SetName(appName)
 	app.SetNamespace(cfg.Namespace)
-	app.SetSource(src)
-	app.SetResourceRequests(cfg.ResourceRequests)
+	app.SetContainer(cfg.Container)
+
+	app.Spec.Source = src.Spec
 	app.Spec.Instances = cfg.AppSpecInstances
-	app.SetHealthCheck(cfg.HealthCheck)
 	app.Spec.Routes = cfg.Routes
 	app.Spec.ServiceBindings = cfg.ServiceBindings
-	app.SetCommand(cfg.Command)
-	app.SetArgs(cfg.Args)
-
-	if cfg.Grpc {
-		app.SetContainerPorts([]corev1.ContainerPort{{Name: "h2c", ContainerPort: 8080}})
-	}
-
-	if len(envs) > 0 {
-		app.SetEnvVars(envs)
-	}
 
 	return app.ToApp(), nil
 }
@@ -124,8 +107,8 @@ func (p *pusher) Push(appName string, opts ...PushOption) error {
 		status = "deployed without starting"
 	}
 
-	_, err = fmt.Fprintf(cfg.Output, "%q successfully %s\n", appName, status)
-	return err
+	fmt.Fprintf(cfg.Output, "%q successfully %s\n", appName, status)
+	return nil
 }
 
 func setupRoutes(cfg pushConfig, appName string, r []v1alpha1.RouteSpecFields) (routes []v1alpha1.RouteSpecFields, hasDefaultRoutes bool) {
@@ -195,11 +178,6 @@ func mergeApps(cfg pushConfig, hasDefaultRoutes bool) func(newapp, oldapp *v1alp
 	}
 }
 
-// AppImageName gets the image name for an application.
-func AppImageName(namespace, appName string) string {
-	return fmt.Sprintf("app-%s-%s:%d", namespace, appName, time.Now().UnixNano())
-}
-
 // SourceImageName gets the image name for source code for an application.
 func SourceImageName(namespace, appName string) string {
 	return fmt.Sprintf("src-%s-%s:%d", namespace, appName, time.Now().UnixNano())
@@ -208,10 +186,4 @@ func SourceImageName(namespace, appName string) string {
 // JoinRepositoryImage joins a repository and image name.
 func JoinRepositoryImage(repository, imageName string) string {
 	return fmt.Sprintf("%s/%s", repository, imageName)
-}
-
-// BuildName gets a build name based on the current time.
-// Build names are limited by Knative to be 64 characters long.
-func BuildName() string {
-	return fmt.Sprintf("build-%d", time.Now().UnixNano())
 }

@@ -26,21 +26,9 @@ configs:
     type: "io.Writer"
     description: the io.Writer to write output such as build logs
     default: "os.Stdout"
-  - name: EnvironmentVariables
-    type: "map[string]string"
-    description: set environment variables
-  - name: Grpc
-    type: bool
-    description: setup the ports for the container to allow gRPC to work
-  - name: ResourceRequests
-    type: corev1.ResourceList
-    description: Resource requests for the container
   - name: AppSpecInstances
     type: v1alpha1.AppSpecInstances
     description: Scaling information for the service
-  - name: HealthCheck
-    type: "*corev1.Probe"
-    description: the health check to use on the app
   - name: Routes
     type: "[]v1alpha1.RouteSpecFields"
     description: routes for the app
@@ -53,10 +41,6 @@ configs:
   - name: ServiceBindings
     type: "[]v1alpha1.AppSpecServiceBinding"
     description: a list of Services to bind to the app
-  - name: Command
-    type: "[]string"
-    description: the app container entrypoint
-  - name: Args
-    type: "[]string"
-    description: the app container arguments
-- name: Deploy
+  - name: Container
+    type: "corev1.Container"
+    description: the app container template

@@ -21,12 +21,9 @@ import (
 
 	"github.com/golang/mock/gomock"
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/internal/envutil"
 	"github.com/google/kf/pkg/kf/apps"
 	appsfake "github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/testutil"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -105,10 +102,6 @@ func TestPush_Logs(t *testing.T) {
 
 func TestPush(t *testing.T) {
 	t.Parallel()
-
-	mem := resource.MustParse("2Gi")
-	storage := resource.MustParse("2Gi")
-	cpu := resource.MustParse("2m")
 
 	for tn, tc := range map[string]struct {
 		appName   string
@@ -283,27 +276,6 @@ func TestPush(t *testing.T) {
 					}).Return(&v1alpha1.App{}, nil)
 			},
 		},
-		"pushes app with environment variables": {
-			appName:   "some-app",
-			buildpack: "some-buildpack",
-			opts: apps.PushOptions{
-				apps.WithPushSourceImage("some-image"),
-				apps.WithPushEnvironmentVariables(map[string]string{"ENV1": "val1", "ENV2": "val2"}),
-			},
-			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
-				appsClient.EXPECT().
-					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
-					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
-						actual := envutil.GetAppEnvVars(newApp)
-						envutil.SortEnvVars(actual)
-						testutil.AssertEqual(t, "envs",
-							[]corev1.EnvVar{{Name: "ENV1", Value: "val1"}, {Name: "ENV2", Value: "val2"}},
-							actual,
-						)
-					}).
-					Return(&v1alpha1.App{}, nil)
-			},
-		},
 		"pushes a container image": {
 			appName: "some-app",
 			opts: apps.PushOptions{
@@ -430,48 +402,6 @@ func TestPush(t *testing.T) {
 				testutil.AssertNil(t, "err", err)
 			},
 		},
-		"pushes with resource requests": {
-			appName: "some-app",
-			opts: apps.PushOptions{
-				apps.WithPushResourceRequests(corev1.ResourceList{
-					corev1.ResourceMemory:           mem,
-					corev1.ResourceEphemeralStorage: storage,
-					corev1.ResourceCPU:              cpu,
-				}),
-			},
-			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
-				appsClient.EXPECT().
-					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
-					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
-						resourceRequests := newObj.Spec.Template.Spec.Containers[0].Resources.Requests
-						testutil.AssertEqual(t, "memory", mem, resourceRequests[corev1.ResourceMemory])
-						testutil.AssertEqual(t, "storage", storage, resourceRequests[corev1.ResourceEphemeralStorage])
-						testutil.AssertEqual(t, "cpu", cpu, resourceRequests[corev1.ResourceCPU])
-					}).
-					Return(&v1alpha1.App{}, nil)
-			},
-		},
-		"pushes with partial resource requests": {
-			appName: "some-app",
-			opts: apps.PushOptions{
-				apps.WithPushResourceRequests(corev1.ResourceList{
-					corev1.ResourceMemory: mem,
-				}),
-			},
-			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
-				appsClient.EXPECT().
-					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
-					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
-						resourceRequests := newObj.Spec.Template.Spec.Containers[0].Resources.Requests
-						_, storageRequestExists := resourceRequests[corev1.ResourceEphemeralStorage]
-						_, cpuRequestExists := resourceRequests[corev1.ResourceCPU]
-						testutil.AssertEqual(t, "memory", mem, resourceRequests[corev1.ResourceMemory])
-						testutil.AssertEqual(t, "storage", false, storageRequestExists)
-						testutil.AssertEqual(t, "cpu", false, cpuRequestExists)
-					}).
-					Return(&v1alpha1.App{}, nil)
-			},
-		},
 		"deployer returns an error": {
 			appName: "some-app",
 			opts: apps.PushOptions{
@@ -482,30 +412,6 @@ func TestPush(t *testing.T) {
 			},
 			assert: func(t *testing.T, err error) {
 				testutil.AssertErrorsEqual(t, errors.New("failed to push app: some-error"), err)
-			},
-		},
-		"set ports to h2c for gRPC": {
-			appName: "some-app",
-			opts: apps.PushOptions{
-				apps.WithPushGrpc(true),
-			},
-			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
-				appsClient.EXPECT().
-					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
-					Do(func(namespace string, newApp *v1alpha1.App, merge apps.Merger) {
-						ka := apps.NewFromApp(newApp)
-
-						testutil.AssertEqual(
-							t,
-							"container.ports",
-							[]corev1.ContainerPort{{Name: "h2c", ContainerPort: 8080}},
-							ka.GetContainerPorts(),
-						)
-					}).
-					Return(&v1alpha1.App{}, nil)
-			},
-			assert: func(t *testing.T, err error) {
-				testutil.AssertNil(t, "err", err)
 			},
 		},
 		"NoStart sets stopped": {

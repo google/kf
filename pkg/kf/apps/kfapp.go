@@ -18,7 +18,6 @@ import (
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 
 	"github.com/google/kf/pkg/internal/envutil"
-	"github.com/google/kf/pkg/kf/sources"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -79,53 +78,9 @@ func (k *KfApp) getContainerOrNil() *corev1.Container {
 	return nil
 }
 
-// SetImage sets the image for the application and a policy to always refresh it.
-func (k *KfApp) SetImage(imageName string) {
-	container := k.getOrCreateContainer()
-	container.ImagePullPolicy = "Always"
-	container.Image = imageName
-}
-
-// GetImage gets the image associated with the container.
-func (k *KfApp) GetImage() string {
-	if container := k.getContainerOrNil(); container != nil {
-		return container.Image
-	}
-
-	return ""
-}
-
-// SetContainerPorts sets the ports the container will open.
-func (k *KfApp) SetContainerPorts(ports []corev1.ContainerPort) {
-	k.getOrCreateContainer().Ports = ports
-}
-
-// GetContainerPorts gets the ports the container will open.
-func (k *KfApp) GetContainerPorts() []corev1.ContainerPort {
-	if container := k.getContainerOrNil(); container != nil {
-		return container.Ports
-	}
-
-	return nil
-}
-
-// SetServiceAccount sets the account the application will run as.
-func (k *KfApp) SetServiceAccount(sa string) {
-	k.getOrCreateRevisionTemplateSpec().Spec.ServiceAccountName = sa
-}
-
-// SetSource sets the source the application will use to build.
-func (k *KfApp) SetSource(src sources.KfSource) {
-	k.Spec.Source = src.Spec
-}
-
-// GetServiceAccount returns the service account used by the container.
-func (k *KfApp) GetServiceAccount() string {
-	if rl := k.getRevisionTemplateSpecOrNil(); rl != nil {
-		return rl.Spec.ServiceAccountName
-	}
-
-	return ""
+// GetContainer returns the container of the app or nil if it's blank.
+func (k *KfApp) GetContainer() *corev1.Container {
+	return k.getContainerOrNil()
 }
 
 // GetEnvVars reads the environment variables off an app.
@@ -151,21 +106,6 @@ func (k *KfApp) MergeEnvVars(env []corev1.EnvVar) {
 // DeleteEnvVars removes environment variables with the given key.
 func (k *KfApp) DeleteEnvVars(names []string) {
 	k.SetEnvVars(envutil.RemoveEnvVars(names, k.GetEnvVars()))
-}
-
-// SetResourceRequests sets the resource request list for the container
-func (k *KfApp) SetResourceRequests(requests v1.ResourceList) {
-	container := k.getOrCreateContainer()
-	container.Resources.Requests = requests
-}
-
-// GetResourceRequests gets the resource request list for the container
-func (k *KfApp) GetResourceRequests() v1.ResourceList {
-	if container := k.getContainerOrNil(); container != nil {
-		return container.Resources.Requests
-	}
-
-	return nil
 }
 
 // Set a resource request for an app. Request amount can be cleared by passing in nil
@@ -194,42 +134,13 @@ func (k *KfApp) GetHealthCheck() *corev1.Probe {
 	return nil
 }
 
-// SetHealthCheck sets the readiness probe for the container.
-func (k *KfApp) SetHealthCheck(probe *corev1.Probe) {
-	container := k.getOrCreateContainer()
-	container.ReadinessProbe = probe
-}
-
 func (k *KfApp) GetServiceBindings() []v1alpha1.AppSpecServiceBinding {
 	return k.Spec.ServiceBindings
 }
 
-// SetCommand sets the entrypoint for the app.
-func (k *KfApp) SetCommand(entrypoint []string) {
-	k.getOrCreateContainer().Command = entrypoint
-}
-
-// GetCommand gets the entrypoint for the app.
-func (k *KfApp) GetCommand() []string {
-	if container := k.getContainerOrNil(); container != nil {
-		return container.Command
-	}
-
-	return nil
-}
-
-// SetArgs sets the arguments for the app.
-func (k *KfApp) SetArgs(args []string) {
-	k.getOrCreateContainer().Args = args
-}
-
-// GetArgs gets the arguments for the app.
-func (k *KfApp) GetArgs() []string {
-	if container := k.getContainerOrNil(); container != nil {
-		return container.Args
-	}
-
-	return nil
+// SetContainer sets the container for the app.
+func (k *KfApp) SetContainer(container corev1.Container) {
+	k.Spec.Template.Spec.Containers = []corev1.Container{container}
 }
 
 // GetClusterURL gets the internal address of the app or the empty string if

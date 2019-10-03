@@ -25,10 +25,12 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/internal/envutil"
 	"github.com/google/kf/pkg/kf/apps"
 	appsfake "github.com/google/kf/pkg/kf/apps/fake"
 	"github.com/google/kf/pkg/kf/commands/config"
 	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/pkg/kf/manifest"
 	svbFake "github.com/google/kf/pkg/kf/service-bindings/fake"
 	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -50,11 +52,9 @@ func TestPushCommand(t *testing.T) {
 	wantDiskQuota := resource.MustParse("2Gi")
 	wantCPU := resource.MustParse("2")
 
-	defaultTCPHealthCheck := &corev1.Probe{
-		Handler: corev1.Handler{
-			TCPSocket: &corev1.TCPSocketAction{},
-		},
-	}
+	app := manifest.Application{}
+	defaultContainer, err := app.ToContainer()
+	testutil.AssertNil(t, "default container err", err)
 
 	defaultSpaceSpecExecution := v1alpha1.SpaceSpecExecution{
 		Domains: []v1alpha1.SpaceDomain{
@@ -63,8 +63,10 @@ func TestPushCommand(t *testing.T) {
 	}
 
 	defaultOptions := []apps.PushOption{
-		apps.WithPushHealthCheck(defaultTCPHealthCheck),
 		apps.WithPushDefaultRouteDomain("example.com"),
+		apps.WithPushContainer(corev1.Container{
+			ReadinessProbe: defaultContainer.ReadinessProbe,
+		}),
 	}
 
 	for tn, tc := range map[string]struct {
@@ -105,20 +107,22 @@ func TestPushCommand(t *testing.T) {
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushGrpc(true),
 				apps.WithPushBuildpack("some-buildpack"),
 				apps.WithPushStack("cflinuxfs3"),
-				apps.WithPushEnvironmentVariables(map[string]string{"env1": "val1", "env2": "val2"}),
 				apps.WithPushAppSpecInstances(v1alpha1.AppSpecInstances{
 					Stopped: true,
 					Exactly: intPtr(1),
 				}),
-				apps.WithPushArgs([]string{"a", "b"}),
-				apps.WithPushCommand([]string{"start-web.sh"}),
-				apps.WithPushHealthCheck(&corev1.Probe{
-					TimeoutSeconds: 28,
-					Handler: corev1.Handler{
-						HTTPGet: &corev1.HTTPGetAction{},
+				apps.WithPushContainer(corev1.Container{
+					Args:    []string{"a", "b"},
+					Command: []string{"start-web.sh"},
+					Env:     envutil.MapToEnvVars(map[string]string{"env1": "val1", "env2": "val2"}),
+					Ports:   manifest.HTTP2ContainerPort(),
+					ReadinessProbe: &corev1.Probe{
+						TimeoutSeconds: 28,
+						Handler: corev1.Handler{
+							HTTPGet: &corev1.HTTPGetAction{},
+						},
 					},
 				}),
 			),
@@ -304,7 +308,10 @@ func TestPushCommand(t *testing.T) {
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushContainerImage("some-image"),
-				apps.WithPushEnvironmentVariables(map[string]string{"WHATNOW": "BROWNCOW"}),
+				apps.WithPushContainer(corev1.Container{
+					Env:            envutil.MapToEnvVars(map[string]string{"WHATNOW": "BROWNCOW"}),
+					ReadinessProbe: defaultContainer.ReadinessProbe,
+				}),
 			),
 		},
 		"invalid buildpack and container image": {
@@ -471,10 +478,12 @@ func TestPushCommand(t *testing.T) {
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushContainerImage("gcr.io/http-health-check-app"),
-				apps.WithPushHealthCheck(&corev1.Probe{
-					TimeoutSeconds: 42,
-					Handler: corev1.Handler{
-						HTTPGet: &corev1.HTTPGetAction{Path: "/healthz"},
+				apps.WithPushContainer(corev1.Container{
+					ReadinessProbe: &corev1.Probe{
+						TimeoutSeconds: 42,
+						Handler: corev1.Handler{
+							HTTPGet: &corev1.HTTPGetAction{Path: "/healthz"},
+						},
 					},
 				}),
 			),
@@ -488,10 +497,12 @@ func TestPushCommand(t *testing.T) {
 			wantOpts: append(defaultOptions,
 				apps.WithPushContainerImage("gcr.io/tcp-health-check-app"),
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushHealthCheck(&corev1.Probe{
-					TimeoutSeconds: 33,
-					Handler: corev1.Handler{
-						TCPSocket: &corev1.TCPSocketAction{},
+				apps.WithPushContainer(corev1.Container{
+					ReadinessProbe: &corev1.Probe{
+						TimeoutSeconds: 33,
+						Handler: corev1.Handler{
+							TCPSocket: &corev1.TCPSocketAction{},
+						},
 					},
 				}),
 			),
@@ -512,10 +523,15 @@ func TestPushCommand(t *testing.T) {
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushResourceRequests(corev1.ResourceList{
-					corev1.ResourceMemory:           wantMemory,
-					corev1.ResourceEphemeralStorage: wantDiskQuota,
-					corev1.ResourceCPU:              wantCPU,
+				apps.WithPushContainer(corev1.Container{
+					ReadinessProbe: defaultContainer.ReadinessProbe,
+					Resources: corev1.ResourceRequirements{
+						Requests: corev1.ResourceList{
+							corev1.ResourceMemory:           wantMemory,
+							corev1.ResourceEphemeralStorage: wantDiskQuota,
+							corev1.ResourceCPU:              wantCPU,
+						},
+					},
 				}),
 			),
 		},
@@ -540,16 +556,11 @@ func TestPushCommand(t *testing.T) {
 					actualOpts := apps.PushOptions(opts)
 					testutil.AssertEqual(t, "namespace", expectOpts.Namespace(), actualOpts.Namespace())
 					testutil.AssertEqual(t, "buildpack", expectOpts.Buildpack(), actualOpts.Buildpack())
-					testutil.AssertEqual(t, "grpc", expectOpts.Grpc(), actualOpts.Grpc())
-					testutil.AssertEqual(t, "env vars", expectOpts.EnvironmentVariables(), actualOpts.EnvironmentVariables())
 					testutil.AssertEqual(t, "instances", expectOpts.AppSpecInstances(), actualOpts.AppSpecInstances())
 					testutil.AssertEqual(t, "routes", expectOpts.Routes(), actualOpts.Routes())
-					testutil.AssertEqual(t, "resource requests", expectOpts.ResourceRequests(), actualOpts.ResourceRequests())
-					testutil.AssertEqual(t, "health check", expectOpts.HealthCheck(), actualOpts.HealthCheck())
 					testutil.AssertEqual(t, "default route", expectOpts.DefaultRouteDomain(), actualOpts.DefaultRouteDomain())
 					testutil.AssertEqual(t, "random route", expectOpts.RandomRouteDomain(), actualOpts.RandomRouteDomain())
-					testutil.AssertEqual(t, "command", expectOpts.Command(), actualOpts.Command())
-					testutil.AssertEqual(t, "args", expectOpts.Args(), actualOpts.Args())
+					testutil.AssertEqual(t, "container", expectOpts.Container(), actualOpts.Container())
 
 					if !strings.HasPrefix(actualOpts.SourceImage(), tc.wantImagePrefix) {
 						t.Errorf("Wanted srcImage to start with %s got: %s", tc.wantImagePrefix, actualOpts.SourceImage())
