@@ -203,8 +203,6 @@ github.com/juju/ansiterm v0.0.0-20180109212912-720a0952cc2a h1:FaWFmfWdAUKbSCtOU
 github.com/juju/ansiterm v0.0.0-20180109212912-720a0952cc2a/go.mod h1:UJSiEoRfvx3hP73CvoARgeLjaIOjybY9vj8PUPPFGeU=
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
-github.com/knative/build v0.7.0 h1:YqqiShED6wILhPRZyUJjTX2B6OgbgEqWe1WNrAcDclw=
-github.com/knative/build v0.7.0/go.mod h1:/sU74ZQkwlYA5FwYDJhYTy61i/Kn+5eWfln2jDbw3Qo=
 github.com/knative/serving v0.7.1-0.20190701162519-7ca25646a186 h1:04gbgh/HiLV4UogTY2YrtD4Z6Jyh8Bcc1BqaM+whs2U=
 github.com/knative/serving v0.7.1-0.20190701162519-7ca25646a186/go.mod h1:ljvMfwQy2qanaM/8xnBSK4Mz3Vv2NawC2fo5kFRJS1A=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
@@ -274,8 +272,6 @@ github.com/pkg/sftp v0.0.0-20160930220758-4d0e916071f6/go.mod h1:NxmoDg/QLVWluQD
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmorie/go-open-service-broker-client v0.0.0-20181213160916-6988c0983446/go.mod h1:6d5FSWVMC68G2RoLKixGVhkoNlgoEC/phmruM0yHdjQ=
-github.com/poy/knative-pkg v99.0.0+incompatible h1:onvjBYN3yXNLGESi51Sajk70NBU7i5LISPor5ANJ59M=
-github.com/poy/knative-pkg v99.0.0+incompatible/go.mod h1:+LGy4PaS4RL2Ii5I2Ow8OGR9dMhJZ9+LCKUdwtDgyUU=
 github.com/poy/kontext v0.0.0-20190801225340-1f98414f4e12 h1:oqr2ATVxA+L8ymMwVeWUWvsiBFvqA3vw1133ih+V8so=
 github.com/poy/kontext v0.0.0-20190801225340-1f98414f4e12/go.mod h1:EZ/Zsx68w8CAzOTosTajuX/M9sL+2s1IMy8jpzuJm2Q=
 github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c h1:5tVj7ImrbnEHf8FNnasPiDBDuSaFRVq8r2ilMLfukzA=

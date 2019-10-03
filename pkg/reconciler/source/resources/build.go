@@ -16,7 +16,7 @@ package resources
 
 import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	build "github.com/knative/build/pkg/apis/build/v1alpha1"
+	build "github.com/google/kf/third_party/knative-build/pkg/apis/build/v1alpha1"
 	"github.com/knative/serving/pkg/resources"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
