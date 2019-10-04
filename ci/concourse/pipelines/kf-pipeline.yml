@@ -236,7 +236,7 @@ jobs:
           pipelines=$(mktemp)
           ./fly -t "$FLY_TARGET" pipelines \
             | awk '{print $1}' \
-            | grep -v '^kf$' \
+            | grep '^[0-9]*$'  \
             | sort \
             | uniq > $pipelines
 
