@@ -17,26 +17,24 @@
 vars:
 
 # pull request vars
-- &github_repo evandbrown/kf
+- &github_repo google/kf
 - &github_access_token ((github_access_token)) 
 
 # ci config vars
-- &ci_git_uri ((ci_git_uri))
-- &ci_git_branch ((ci_git_branch))
+- &ci_git_uri ((git_uri))
+- &ci_git_branch develop
 - &ci_image_uri ((ci_image_uri))
 - &service_account_json ((service_account_json))
 
 # nightly and release build vars
 - &release_service_account_json ((release_service_account_json))
 - &release_project ((release_project))
+- &release_bucket ((release_bucket))
 - &ko_docker_release_repo ((ko_docker_release_repo))
-- &release_bucket ((bucket_name))
 
 # k8s config
 - &gcp_project_id ((gcp_project_id))
 - &k8s_network_selflink ((k8s_network_selflink))
-- &k8s_cluster_name ((k8s_cluster_name))
-- &k8s_cluster_zone ((k8s_cluster_zone))
 
 # go config
 - &go_proxy https://proxy.golang.org

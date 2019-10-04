@@ -21,15 +21,15 @@ vars:
 - &nightly_branch develop
 
 # ci config vars
-- &ci_git_uri https://github.com/evandbrown/kf.git
-- &ci_git_branch feature/release-automation
+- &ci_git_uri ((git_uri))
+- &ci_git_branch develop
 - &ci_image_uri ((ci_image_uri))
 - &service_account_json ((service_account_json))
 
 # nightly and release build vars
 - &release_service_account_json ((release_service_account_json))
 - &release_project ((release_project))
-- &release_bucket gs://artifacts.kf-releases.appspot.com/test
+- &release_bucket ((release_bucket))
 - &ko_docker_release_repo ((ko_docker_release_repo))
 
 # k8s config
