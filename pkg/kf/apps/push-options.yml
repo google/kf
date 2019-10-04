@@ -19,6 +19,9 @@ configs:
   - name: Buildpack
     type: string
     description: skip the detect buildpack step and use the given name
+  - name: DockerfilePath
+    type: string
+    description: the path to a Dockerfile to build
   - name: Stack
     type: string
     description: the builder stack to use for buildpack based apps

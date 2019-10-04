@@ -36,6 +36,8 @@ type pushConfig struct {
 	ContainerImage string
 	// DefaultRouteDomain is Domain for a defaultroute. Only used if a route doesn't already exist
 	DefaultRouteDomain string
+	// DockerfilePath is the path to a Dockerfile to build
+	DockerfilePath string
 	// EnvironmentVariables is set environment variables
 	EnvironmentVariables map[string]string
 	// Grpc is setup the ports for the container to allow gRPC to work
@@ -120,6 +122,12 @@ func (opts PushOptions) ContainerImage() string {
 // if not set.
 func (opts PushOptions) DefaultRouteDomain() string {
 	return opts.toConfig().DefaultRouteDomain
+}
+
+// DockerfilePath returns the last set value for DockerfilePath or the empty value
+// if not set.
+func (opts PushOptions) DockerfilePath() string {
+	return opts.toConfig().DockerfilePath
 }
 
 // EnvironmentVariables returns the last set value for EnvironmentVariables or the empty value
@@ -227,6 +235,13 @@ func WithPushContainerImage(val string) PushOption {
 func WithPushDefaultRouteDomain(val string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.DefaultRouteDomain = val
+	}
+}
+
+// WithPushDockerfilePath creates an Option that sets the path to a Dockerfile to build
+func WithPushDockerfilePath(val string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.DockerfilePath = val
 	}
 }
 

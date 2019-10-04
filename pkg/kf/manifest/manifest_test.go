@@ -133,6 +133,26 @@ applications:
 				},
 			},
 		},
+		"dockerfile": {
+			fileContent: `---
+applications:
+- name: MY-APP
+  dockerfile:
+    path: "foo/Dockerfile"
+`,
+			expected: &manifest.Manifest{
+				Applications: []manifest.Application{
+					{
+						Name: "MY-APP",
+						KfApplicationExtension: manifest.KfApplicationExtension{
+							Dockerfile: manifest.Dockerfile{
+								Path: "foo/Dockerfile",
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for tn, tc := range cases {
