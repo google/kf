@@ -75,8 +75,6 @@ resources:
   source:
     branch: *ci_git_branch
     uri: *ci_git_uri
-    paths:
-    - ci/concourse/pipelines
 - name: terraform
   type: terraform
   source:
@@ -103,6 +101,7 @@ jobs:
       trigger: true
     - get: kf-dev
       trigger: false
+      params: {submodules: none}
     - get: ci-pipelines-src
       trigger: false
       params: {submodules: none}
@@ -135,6 +134,7 @@ jobs:
       trigger: true
     - get: kf-dev
       trigger: false
+      params: {submodules: none}
     - get: ci-pipelines-src
       trigger: false
       params: {submodules: none}

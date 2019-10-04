@@ -29,7 +29,6 @@ while getopts "v" opt; do
   esac
 done
 
-HACK_DIR="${0%/*}"
 KF_PACKAGE="github.com/google/kf"
 KF_PACKAGE_LOCATION="./"
 KF_RESOURCE="kf:v1alpha1"

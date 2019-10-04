@@ -25,8 +25,10 @@ if [ "$#" -ne 1 ]; then
         exit 1
 fi
 
-# Change to the project root directory
-cd "${0%/*}"/..
+# Go to root dir
+cd $(git rev-parse --show-toplevel)
+
+/bin/echo "Executing build from: `pwd`"
 
 # Directory where output artifacts will go
 output=$1
