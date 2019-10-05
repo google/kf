@@ -284,9 +284,9 @@ jobs:
   - put: terraform
     params:
       terraform_source: ci-pipelines-src/ci/concourse/terraform
-      env_name: release
+      env_name: nightly
       action: destroy
     get_params:
       terraform_source: ci-pipelines-src/ci/concourse/terraform
-      env_name: release
+      env_name: nightly
       action: destroy
