@@ -148,8 +148,8 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 				Spec: v1alpha1.SpaceSpec{
 					Execution: v1alpha1.SpaceSpecExecution{
 						Domains: []v1alpha1.SpaceDomain{
-							{Domain: "other-example.com", Default: true},
 							{Domain: "example.com"},
+							{Domain: "other-example.com", Default: true},
 						},
 					},
 				},
@@ -157,9 +157,9 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 			args: []string{"set-default-domain", space, "example.com"},
 			validate: func(t *testing.T, space *v1alpha1.Space) {
 				testutil.AssertEqual(t, "len(domains)", 2, len(space.Spec.Execution.Domains))
-				testutil.AssertEqual(t, "domains", "example.com", space.Spec.Execution.Domains[1].Domain)
-				testutil.AssertEqual(t, "default", true, space.Spec.Execution.Domains[1].Default)
-				testutil.AssertEqual(t, "unsets previous default", false, space.Spec.Execution.Domains[0].Default)
+				testutil.AssertEqual(t, "domains", "example.com", space.Spec.Execution.Domains[0].Domain)
+				testutil.AssertEqual(t, "default", true, space.Spec.Execution.Domains[0].Default)
+				testutil.AssertEqual(t, "unsets previous default", false, space.Spec.Execution.Domains[1].Default)
 			},
 		},
 
