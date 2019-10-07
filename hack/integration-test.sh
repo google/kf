@@ -19,7 +19,7 @@ set -e
 # Go to root dir
 cd $(git rev-parse --show-toplevel)
 
-/bin/echo "Executing integration tests from: `pwd`"
+echo "Executing integration tests from: `pwd`"
 if [ "${DOCKER_REGISTRY}" = "" ]; then
   echo running integration tests
   export DOCKER_REGISTRY="gcr.io/$(gcloud config get-value project)"

@@ -31,10 +31,10 @@ fi
 release_dir=$1
 
 # Login to gcloud
-/bin/echo Authenticating to kubernetes...
+echo Authenticating to kubernetes...
 sakey=`mktemp -t gcloud-key-XXXXXX`
 set +x
-/bin/echo "$SERVICE_ACCOUNT_JSON" > $sakey
+echo "$SERVICE_ACCOUNT_JSON" > $sakey
 set -x
 gcloud auth activate-service-account --key-file $sakey
 gcloud config set project "$GCP_PROJECT_ID"

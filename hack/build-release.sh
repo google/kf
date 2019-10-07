@@ -30,16 +30,16 @@ fi
 # Go to root dir
 cd $(git rev-parse --show-toplevel)
 
-/bin/echo "Executing build from: `pwd`"
+echo "Executing build from: `pwd`"
 
 # Directory where output artifacts will go
 output=$1
 
 # Login to gcloud
-/bin/echo Authenticating to kubernetes...
+echo Authenticating to kubernetes...
 sakey=`mktemp -t gcloud-key-XXXXXX`
 set +x
-/bin/echo "$SERVICE_ACCOUNT_JSON" > $sakey
+echo "$SERVICE_ACCOUNT_JSON" > $sakey
 set -x
 gcloud auth activate-service-account --key-file $sakey
 gcloud config set project "$GCP_PROJECT_ID"

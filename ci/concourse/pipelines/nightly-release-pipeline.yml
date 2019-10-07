@@ -230,15 +230,15 @@ jobs:
           region=`cat terraform/metadata | jq -r '.cluster_region'`
           # Login to Kubernetes
           set +x
-          /bin/echo "$SERVICE_ACCOUNT_JSON" > key.json
+          echo "$SERVICE_ACCOUNT_JSON" > key.json
           set -x
-          /bin/echo Authenticating to kubernetes...
+          echo Authenticating to kubernetes...
           gcloud auth activate-service-account --key-file key.json
           gcloud config set project "$project"
           gcloud container clusters get-credentials "$cluster" \
             --region "$region" \
             --project "$project"
-          /bin/echo 'y' | gcloud auth configure-docker
+          echo 'y' | gcloud auth configure-docker
 
           # Install SC
           kubectl apply -f https://github.com/google/kf/raw/master/third_party/service-catalog/manifests/catalog/templates/etcd-pvc.yaml
