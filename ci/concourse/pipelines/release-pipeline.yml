@@ -1,0 +1,295 @@
+# Copyright 2019 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the License);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an AS IS BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+---
+# Store these in your credential manager.
+vars:
+
+# pull request vars
+- &github_repo google/kf
+- &github_access_token ((github_access_token)) 
+
+# ci config vars
+- &ci_git_uri ((git_uri))
+- &ci_git_branch develop
+- &ci_image_uri ((ci_image_uri))
+- &service_account_json ((service_account_json))
+
+# nightly and release build vars
+- &release_service_account_json ((release_service_account_json))
+- &release_project ((release_project))
+- &release_bucket ((release_bucket))
+- &ko_docker_release_repo ((ko_docker_release_repo))
+
+# k8s config
+- &gcp_project_id ((gcp_project_id))
+- &k8s_network_selflink ((k8s_network_selflink))
+
+# go config
+- &go_proxy https://proxy.golang.org
+- &go_sum_db sum.golang.org
+
+# Terraform vars
+- &tf_state_bucket ((tf_state_bucket))
+- &tf_service_account ((service_account_json))
+# ---- end vars ----
+
+# Templates are YAML anchors that are referenced throughout the
+# manifest with YAML aliases. This allows common components to
+# be reused.
+templates:
+- &ci-image-source
+  repository: *ci_image_uri
+  username: _json_key
+  password: *service_account_json
+  
+- &on_failure
+  put: release-pr
+  params:
+    path: release-pr
+    status: FAILURE
+    description: Concourse "release" job failed.
+# ---- end templates ----
+
+resource_types:
+- name: pull-request
+  type: docker-image
+  source:
+    repository: m0pt0pmatt/github-pr-resource
+- name: terraform
+  type: docker-image
+  source:
+    repository: ljfranklin/terraform-resource
+    tag: latest
+resources:
+- name: release-pr
+  type: pull-request
+  check_every: 10s 
+  source:
+    repository: *github_repo
+    access_token: *github_access_token
+    labels: ["release"]
+- name: ci-pipelines-src
+  type: git
+  source:
+    branch: *ci_git_branch
+    uri: *ci_git_uri
+- name: terraform
+  type: terraform
+  source:
+    backend_type: gcs
+    backend_config:
+      bucket: *tf_state_bucket
+      credentials: *service_account_json
+    vars:
+      project: *gcp_project_id
+      k8s_network_selflink: *k8s_network_selflink
+    env:
+      GOOGLE_CREDENTIALS: *service_account_json
+jobs:
+- name: unit-test
+  plan:
+  - get: release-pr
+    trigger: true
+  - get: ci-pipelines-src
+    trigger: false
+    params: {submodules: none}
+  - task: unit
+    timeout: 10m
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: *ci-image-source
+      inputs:
+      - name: release-pr
+      - name: ci-pipelines-src
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          pushd release-pr
+            # Run unit tests
+            ../ci-pipelines-src/hack/unit-test.sh
+          popd
+      params:
+        GOPROXY: *go_proxy
+        GOSUMDB: *go_sum_db
+    on_failure: *on_failure
+- name: check
+  plan:
+  - aggregate:
+    - get: release-pr
+      trigger: true
+    - get: ci-pipelines-src
+      trigger: false
+      params: {submodules: none}
+  - put: release-pr
+    params:
+      path: release-pr
+      status: PENDING
+  - task: check
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: *ci-image-source
+      inputs:
+      - name: release-pr
+      - name: ci-pipelines-src
+      params:
+        GOPROXY: *go_proxy
+        GOSUMDB: *go_sum_db
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          pushd release-pr
+            ../ci-pipelines-src/hack/check-vendor-license.sh
+            ../ci-pipelines-src/hack/check-linters.sh
+            ../ci-pipelines-src/hack/check-go-generate.sh
+            ../ci-pipelines-src/hack/check-code-generator.sh
+          popd
+    on_failure: *on_failure
+
+- name: build-and-integrate
+  serial: true
+  plan:
+  - aggregate:
+    - get: release-pr
+      trigger: true
+      passed: [unit-test, check]
+    - get: ci-pipelines-src
+      trigger: false
+      params: {submodules: none}
+  - aggregate:
+    - put: terraform
+      params:
+        terraform_source: ci-pipelines-src/ci/concourse/terraform
+        env_name: release
+        delete_on_failure: true
+    - task: build
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        params:
+          SERVICE_ACCOUNT_JSON: *release_service_account_json
+          GCP_PROJECT_ID: *release_project
+          KO_DOCKER_REPO: *ko_docker_release_repo
+        inputs:
+        - name: release-pr
+        - name: ci-pipelines-src
+        outputs:
+        - name: artifacts
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            artifacts=`pwd`/artifacts
+            pushd release-pr
+              # Generate license
+              ../ci-pipelines-src/hack/update-vendor-license.sh $artifacts
+              cp third_party/VENDOR-LICENSE $artifacts
+              # Build CLI and controllers
+              ../ci-pipelines-src/hack/build-release.sh $artifacts
+            popd
+  - task: integration
+    timeout: 1h30m
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: *ci-image-source
+      inputs:
+      - name: release-pr
+      - name: ci-pipelines-src
+      - name: artifacts
+      - name: terraform
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          # Get TF outputs for GKE details
+          project=`cat terraform/metadata | jq -r '.cluster_project'`
+          cluster=`cat terraform/metadata | jq -r '.cluster_name'`
+          region=`cat terraform/metadata | jq -r '.cluster_region'`
+          # Login to Kubernetes
+          set +x
+          echo "$SERVICE_ACCOUNT_JSON" > key.json
+          set -x
+          echo Authenticating to kubernetes...
+          gcloud auth activate-service-account --key-file key.json
+          gcloud config set project "$project"
+          gcloud container clusters get-credentials "$cluster" \
+            --region "$region" \
+            --project "$project"
+          echo 'y' | gcloud auth configure-docker
+
+          # Install SC
+          kubectl apply --recursive --filename kf-dev/third_party/service-catalog/manifests/catalog/templates/
+          # Install Knative Build
+          kubectl apply --filename https://github.com/knative/build/releases/download/v0.6.0/build.yaml
+          # Install Kf
+          kubectl apply --filename artifacts/release.yaml
+
+          pushd release-pr
+            # Run unit tests
+            ../ci-pipelines-src/hack/integration-test.sh
+          popd
+      params:
+        GOPROXY: *go_proxy
+        GOSUMDB: *go_sum_db
+        SERVICE_ACCOUNT_JSON: *service_account_json
+  - task: publish
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: *ci-image-source
+      params:
+        SERVICE_ACCOUNT_JSON: *release_service_account_json
+        GCP_PROJECT_ID: *release_project
+        RELEASE_BUCKET: *release_bucket
+      inputs:
+      - name: artifacts
+      - name: ci-pipelines-src
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          artifacts=`pwd`/artifacts
+          ./ci-pipelines-src/hack/upload-release.sh $artifacts
+    on_failure: *on_failure
+  - put: terraform
+    params:
+      terraform_source: ci-pipelines-src/ci/concourse/terraform
+      env_name: release
+      action: destroy
+    get_params:
+      terraform_source: ci-pipelines-src/ci/concourse/terraform
+      env_name: release
+      action: destroy
+  - put: release-pr
+    params:
+      path: release-pr
+      status: SUCCESS
+      comment: OK to merge release PR!
+      description: OK to merge release PR!
