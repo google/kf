@@ -16,9 +16,11 @@
 
 set -eux
 
-[[ -n "${KO_DOCKER_REPO-}" ]] || ( echo KO_DOCKER_REPO must be set; exit 1)
-[[ -n "${SERVICE_ACCOUNT_JSON-}" ]] || ( echo SERVICE_ACCOUNT_JSON must be set; exit 1)
-[[ -n "${GCP_PROJECT_ID-}" ]] || ( echo GCP_PROJECT_ID must be set; exit 1)
+source "`dirname $0`/util.sh"
+
+require_env KO_DOCKER_REPO
+require_env SERVICE_ACCOUNT_JSON
+require_env GCP_PROJECT_ID
 
 if [ "$#" -ne 1 ]; then
         echo "usage: $0 [OUTPUT PATH]"

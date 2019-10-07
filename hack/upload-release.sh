@@ -16,9 +16,11 @@
 
 set -eux
 
-[[ -n "${SERVICE_ACCOUNT_JSON-}" ]] || ( echo SERVICE_ACCOUNT_JSON must be set; exit 1)
-[[ -n "${GCP_PROJECT_ID-}" ]] || ( echo GCP_PROJECT_ID must be set; exit 1)
-[[ -n "${RELEASE_BUCKET-}" ]] || ( echo RELEASE_BUCKET must be set; exit 1)
+source "`dirname $0`/util.sh"
+
+require_env SERVICE_ACCOUNT_JSON
+require_env GCP_PROJECT_ID
+require_env RELEASE_BUCKET
 
 if [ "$#" -ne 1 ]; then
         echo "usage: $0 [RELEASE ARTIFACTS PATH]"
