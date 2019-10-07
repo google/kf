@@ -13,7 +13,6 @@ require (
 	github.com/google/go-containerregistry v0.0.0-20190306174256-678f6c51f585
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
-	github.com/google/kf/third_party/cf-cli-glob v0.0.0
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/google/wire v0.2.2
 	github.com/gorilla/mux v1.7.0
@@ -27,6 +26,7 @@ require (
 	github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c
 	github.com/rogpeppe/go-internal v1.3.0 // indirect
 	github.com/russross/blackfriday v1.5.2
+	github.com/sabhiram/go-gitignore v0.0.0-20180611051255-d3107576ba94
 	github.com/segmentio/textio v1.2.0
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
@@ -51,8 +51,6 @@ require (
 // opencensus and go-cmp are fixed to satisfy unspecified dependencies in
 // knative/pkg; update once https://github.com/knative/pkg/pull/475 goes through
 replace go.opencensus.io => go.opencensus.io v0.20.2
-
-replace github.com/google/kf/third_party/cf-cli-glob => ./third_party/cf-cli-glob
 
 replace (
 	contrib.go.opencensus.io/exporter/stackdriver => contrib.go.opencensus.io/exporter/stackdriver v0.9.2

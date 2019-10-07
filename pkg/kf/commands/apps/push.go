@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"os"
@@ -32,7 +31,7 @@ import (
 	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/manifest"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
-	glob "github.com/google/kf/third_party/cf-cli-glob"
+	ignore "github.com/sabhiram/go-gitignore"
 	"github.com/spf13/cobra"
 	"knative.dev/pkg/ptr"
 )
@@ -638,21 +637,44 @@ func buildIgnoreFilter(srcPath string) func(path string) (bool, error) {
 		".cfignore",
 	}
 
-	var text string
+	var defaultIgnoreLines = []string{
+		".cfignore",
+		"/manifest.yml",
+		".gitignore",
+		".git",
+		".hg",
+		".svn",
+		"_darcs",
+		".DS_Store",
+	}
+
+	var (
+		gitignore *ignore.GitIgnore
+		err       error
+	)
 	for _, ignoreFile := range ignoreFiles {
-		data, err := ioutil.ReadFile(filepath.Join(srcPath, ignoreFile))
+		gitignore, err = ignore.CompileIgnoreFileAndLines(
+			filepath.Join(srcPath, ignoreFile),
+			defaultIgnoreLines...,
+		)
 		if err != nil {
 			// Just move on.
 			continue
 		}
 
-		text = string(data)
 		break
 	}
 
-	cfIgnore := glob.NewCfIgnore(text)
+	if gitignore == nil {
+		gitignore, err = ignore.CompileIgnoreLines(defaultIgnoreLines...)
+		if err != nil {
+			return func(string) (bool, error) {
+				return false, err
+			}
+		}
+	}
 
 	return func(path string) (bool, error) {
-		return !cfIgnore.FileShouldBeIgnored(path), nil
+		return !gitignore.MatchesPath(path), nil
 	}
 }

@@ -121,54 +121,6 @@ func AssertContainsAll(t Failable, haystack string, needles []string) {
 	}
 }
 
-// AssertConsistOf fails if the container (slice or array, string, map, or
-// channel) does not consist of the given needles. Order does not matter, but
-// length does. If haystack is a map, the keys are evaluated. If haystack is a
-// channel, then values are read from the channel (therefore it destroys the
-// input).
-func AssertConsistOf(t Failable, fieldName string, haystack interface{}, needles ...interface{}) {
-	var idxF func(int) interface{}
-
-	v := reflect.ValueOf(haystack)
-	switch reflect.TypeOf(haystack).Kind() {
-	case reflect.Slice, reflect.Array:
-		idxF = func(i int) interface{} {
-			return v.Index(i).Interface()
-		}
-	case reflect.String:
-		str := haystack.(string)
-		idxF = func(i int) interface{} {
-			return interface{}(str[i])
-		}
-	case reflect.Map:
-		keys := v.MapKeys()
-		idxF = func(i int) interface{} {
-			return v.MapIndex(keys[i]).Interface()
-		}
-	case reflect.Chan:
-		idxF = func(i int) interface{} {
-			r, _ := v.Recv()
-			return r.Interface()
-		}
-	default:
-		t.Fatalf("%s: AssertConsistOf supports Slices, Arrays, Strings, Maps and Chans", t.Name())
-	}
-
-	// We do this after our type assertion so we can properly return what
-	// Assertion function is mad.
-	AssertLen(t, len(needles), haystack)
-
-	// We can loop over needles many times, however we can only loop over the
-	// actual container once. This is because if the container is a channel,
-	// then we're changing the container for each read.
-	for i := 0; i < len(needles); i++ {
-		h := idxF(i)
-		for j := 0; i < len(needles); i++ {
-			AssertEqual(t, fieldName, needles[j], h)
-		}
-	}
-}
-
 // AssertNil fails the test if the value is not nil.
 func AssertNil(t Failable, name string, value interface{}) {
 	t.Helper()
@@ -221,30 +173,5 @@ func AssertJSONEqual(t Failable, expected, actual string) {
 
 	if !reflect.DeepEqual(em, am) {
 		t.Fatalf("%s: expected %q to equal %q", t.Name(), actual, expected)
-	}
-}
-
-// AssertLen checks the length of a slice, array, string, map, or channel.
-// If actual is nil, it will assume a length 0.
-func AssertLen(t Failable, expected int, actual interface{}) {
-	t.Helper()
-	check := func(actual int) {
-		t.Helper()
-		if actual != expected {
-			t.Fatalf("%s: expected len %d to equal %d", t.Name(), actual, expected)
-		}
-	}
-
-	if actual == nil {
-		// We'll assume length 0 for nil cases
-		check(0)
-		return
-	}
-
-	switch reflect.TypeOf(actual).Kind() {
-	case reflect.Slice, reflect.Array, reflect.String, reflect.Map, reflect.Chan:
-		check(reflect.ValueOf(actual).Len())
-	default:
-		t.Fatalf("%s: AssertLen only supports Slices, Arrays, Strings, Maps and Chans", t.Name())
 	}
 }

@@ -589,7 +589,26 @@ func checkCfignoreApp(
 
 		files := []string{}
 		AssertNil(t, "err", json.NewDecoder(resp.Body).Decode(&files))
-		AssertConsistOf(t, "files", files, ".", "go.mod", "go.sum", "main.go", "app.out")
+
+		expectedFiles := []string{".", "go.mod", "go.sum", "main.go", "app.out"}
+
+		if len(expectedFiles) != len(files) {
+			t.Fatalf("expected %#v to consist of %#v. (wrong len %d)", files, expectedFiles, len(files))
+		}
+
+		for _, expectedFile := range expectedFiles {
+			var found bool
+			for _, actualFile := range files {
+				if expectedFile == actualFile {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				t.Fatalf("expected %#v to consist of %#v. (unable to find %s)", files, expectedFiles, expectedFile)
+			}
+		}
 
 		Logf(t, "done hitting cfignore app to ensure its working.")
 	})

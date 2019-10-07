@@ -250,13 +250,9 @@ github.com/onsi/ginkgo v0.0.0-20170318221715-67b9df7f55fe/go.mod h1:lLunBs/Ym6LB
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.7.0 h1:WSHQ+IS43OoUrWtD1/bbclrwK8TTH5hzp+umCiuxHgs=
 github.com/onsi/ginkgo v1.7.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
-github.com/onsi/ginkgo v1.10.2 h1:uqH7bpe+ERSiDa34FDOF7RikN6RzXgduUF8yarlZp94=
-github.com/onsi/ginkgo v1.10.2/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/gomega v0.0.0-20160911051023-d59fa0ac68bb/go.mod h1:C1qb7wdrVGGVU+Z6iS04AVkA3Q65CEZX59MT0QO5uiA=
 github.com/onsi/gomega v1.4.3 h1:RE1xgDvH7imwFD45h+u2SgIfERHlS2yNG4DObb5BSKU=
 github.com/onsi/gomega v1.4.3/go.mod h1:ex+gbHU/CVuBBDIJjb2X0qEXbFg53c61hWP/1CpauHY=
-github.com/onsi/gomega v1.7.0 h1:XPnZz8VVBHjVsy1vzJmRwIcSwiUO+JFfrv/xGiigmME=
-github.com/onsi/gomega v1.7.0/go.mod h1:ex+gbHU/CVuBBDIJjb2X0qEXbFg53c61hWP/1CpauHY=
 github.com/openzipkin/zipkin-go v0.1.6/go.mod h1:QgAqvLzwWbR/WpD4A3cGpPtJrZXNIiJc5AZX7/PBEpw=
 github.com/pborman/uuid v0.0.0-20150603214016-ca53cad383ca h1:dKRMHfduZ/ZqOHuYGk/0kkTIUbnyorkAfzLOp6Ts8pU=
 github.com/pborman/uuid v0.0.0-20150603214016-ca53cad383ca/go.mod h1:VyrYX9gd7irzKovcSS6BIIEwPRkP2Wm2m9ufcdFSJ34=
@@ -300,6 +296,8 @@ github.com/rogpeppe/go-internal v1.3.0 h1:RR9dF3JtopPvtkroDZuVD7qquD0bnHlKSqaQhg
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/russross/blackfriday v1.5.2 h1:HyvC0ARfnZBqnXwABFeSZHpKvJHJJfPz81GNueLj0oo=
 github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR/rfWxYHBV53g=
+github.com/sabhiram/go-gitignore v0.0.0-20180611051255-d3107576ba94 h1:G04eS0JkAIVZfaJLjla9dNxkJCPiKIGZlw9AfOhzOD0=
+github.com/sabhiram/go-gitignore v0.0.0-20180611051255-d3107576ba94/go.mod h1:b18R55ulyQ/h3RaWyloPyER7fWQVZvimKKhnI5OfrJQ=
 github.com/segmentio/textio v1.2.0 h1:Ug4IkV3kh72juJbG8azoSBlgebIbUUxVNrfFcKHfTSQ=
 github.com/segmentio/textio v1.2.0/go.mod h1:+Rb7v0YVODP+tK5F7FD9TCkV7gOYx9IgLHWiqtvY8ag=
 github.com/sergi/go-diff v1.0.0 h1:Kpca3qRNrduNnOQeazBd0ysaKrUJiIuISHxogkT9RPQ=
