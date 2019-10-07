@@ -24,12 +24,9 @@ resource "google_service_account" "kf_test" {
   display_name = "Managed by Terraform in Concourse"
 }
 
-resource "google_project_iam_binding" "kf_test" {
+resource "google_project_iam_member" "kf_test" {
   role    = "roles/storage.admin"
-
-  members = [
-    "serviceAccount:${google_service_account.kf_test.email}",
-  ]
+  member = "serviceAccount:${google_service_account.kf_test.email}"
 }
 
 resource "google_container_cluster" "kf_test" {
