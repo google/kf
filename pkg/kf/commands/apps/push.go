@@ -39,14 +39,18 @@ import (
 // SrcImageBuilder creates and uploads a container image that contains the
 // contents of the argument 'dir'.
 type SrcImageBuilder interface {
-	BuildSrcImage(dir, srcImage string, filter func(path string) (bool, error)) error
+	BuildSrcImage(dir, srcImage string, filter KontextFilter) error
 }
 
+// KontextFilter is used to select which files should be packaged into the
+// Kontext container.
+type KontextFilter = func(path string) (bool, error)
+
 // SrcImageBuilderFunc converts a func into a SrcImageBuilder.
-type SrcImageBuilderFunc func(dir, srcImage string, rebase bool, filter func(path string) (bool, error)) error
+type SrcImageBuilderFunc func(dir, srcImage string, rebase bool, filter KontextFilter) error
 
 // BuildSrcImage implements SrcImageBuilder.
-func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string, filter func(path string) (bool, error)) error {
+func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string, filter KontextFilter) error {
 	oldPrefix := log.Prefix()
 	oldFlags := log.Flags()
 
@@ -631,7 +635,7 @@ func setupRoutes(space *v1alpha1.Space, app manifest.Application) (routes []v1al
 	return routes, nil
 }
 
-func buildIgnoreFilter(srcPath string) func(path string) (bool, error) {
+func buildIgnoreFilter(srcPath string) KontextFilter {
 	ignoreFiles := []string{
 		".kfignore",
 		".cfignore",
