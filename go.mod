@@ -26,6 +26,7 @@ require (
 	github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c
 	github.com/rogpeppe/go-internal v1.3.0 // indirect
 	github.com/russross/blackfriday v1.5.2
+	github.com/sabhiram/go-gitignore v0.0.0-20180611051255-d3107576ba94
 	github.com/segmentio/textio v1.2.0
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3

@@ -51,7 +51,7 @@ import (
 )
 
 func provideSrcImageBuilder() capps.SrcImageBuilder {
-	return capps.SrcImageBuilderFunc(kontext.BuildImage)
+	return capps.SrcImageBuilderFunc(kontext.BuildImageWithFilter)
 }
 
 ///////////////////

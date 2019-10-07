@@ -31,6 +31,7 @@ import (
 	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/manifest"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
+	ignore "github.com/sabhiram/go-gitignore"
 	"github.com/spf13/cobra"
 	"knative.dev/pkg/ptr"
 )
@@ -38,14 +39,18 @@ import (
 // SrcImageBuilder creates and uploads a container image that contains the
 // contents of the argument 'dir'.
 type SrcImageBuilder interface {
-	BuildSrcImage(dir, srcImage string) error
+	BuildSrcImage(dir, srcImage string, filter KontextFilter) error
 }
 
+// KontextFilter is used to select which files should be packaged into the
+// Kontext container.
+type KontextFilter = func(path string) (bool, error)
+
 // SrcImageBuilderFunc converts a func into a SrcImageBuilder.
-type SrcImageBuilderFunc func(dir, srcImage string, rebase bool) error
+type SrcImageBuilderFunc func(dir, srcImage string, rebase bool, filter KontextFilter) error
 
 // BuildSrcImage implements SrcImageBuilder.
-func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string) error {
+func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string, filter KontextFilter) error {
 	oldPrefix := log.Prefix()
 	oldFlags := log.Flags()
 
@@ -54,7 +59,7 @@ func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string) error {
 	log.SetOutput(os.Stdout)
 
 	log.Printf("Uploading %s to image %s", dir, srcImage)
-	err := f(dir, srcImage, false)
+	err := f(dir, srcImage, false, filter)
 
 	log.SetPrefix(oldPrefix)
 	log.SetFlags(oldFlags)
@@ -323,7 +328,7 @@ func NewPushCommand(
 							}
 						}
 
-						if err := b.BuildSrcImage(srcPath, imageName); err != nil {
+						if err := b.BuildSrcImage(srcPath, imageName, buildIgnoreFilter(srcPath)); err != nil {
 							return err
 						}
 					}
@@ -628,4 +633,52 @@ func setupRoutes(space *v1alpha1.Space, app manifest.Application) (routes []v1al
 	}
 
 	return routes, nil
+}
+
+func buildIgnoreFilter(srcPath string) KontextFilter {
+	ignoreFiles := []string{
+		".kfignore",
+		".cfignore",
+	}
+
+	var defaultIgnoreLines = []string{
+		".cfignore",
+		"/manifest.yml",
+		".gitignore",
+		".git",
+		".hg",
+		".svn",
+		"_darcs",
+		".DS_Store",
+	}
+
+	var (
+		gitignore *ignore.GitIgnore
+		err       error
+	)
+	for _, ignoreFile := range ignoreFiles {
+		gitignore, err = ignore.CompileIgnoreFileAndLines(
+			filepath.Join(srcPath, ignoreFile),
+			defaultIgnoreLines...,
+		)
+		if err != nil {
+			// Just move on.
+			continue
+		}
+
+		break
+	}
+
+	if gitignore == nil {
+		gitignore, err = ignore.CompileIgnoreLines(defaultIgnoreLines...)
+		if err != nil {
+			return func(string) (bool, error) {
+				return false, err
+			}
+		}
+	}
+
+	return func(path string) (bool, error) {
+		return !gitignore.MatchesPath(path), nil
+	}
 }
