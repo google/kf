@@ -51,7 +51,8 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 	if len(claims) == 0 {
 		return nil, errors.New("claims must not be empty")
 	}
-	namespace := claims[0].GetNamespace()
+
+	namespace := claims[0].Namespace
 	hostname := claims[0].Spec.RouteSpecFields.Hostname
 	domain := claims[0].Spec.RouteSpecFields.Domain
 	labels := MakeVirtualServiceLabels(claims[0].Spec.RouteSpecFields)
@@ -98,12 +99,8 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 // Paths that do not have an app bound to them will return a 503 when a request is sent to that path.
 func buildHTTPRoutes(hostDomain string, pathApps map[string]sets.String, namespace string) ([]networking.HTTPRoute, error) {
 	var httpRoutes []networking.HTTPRoute
-	paths := make([]string, 0)
-	for key := range pathApps {
-		paths = append(paths, key)
-	}
 
-	for _, path := range paths {
+	for path, apps := range pathApps {
 		var httpRoute networking.HTTPRoute
 
 		pathMatchers, err := buildPathMatchers(path)
@@ -111,7 +108,6 @@ func buildHTTPRoutes(hostDomain string, pathApps map[string]sets.String, namespa
 			return nil, err
 		}
 
-		apps := pathApps[path]
 		if apps.Len() == 0 {
 			// no apps bound to this path, return http route with fault for path
 			httpRoute = networking.HTTPRoute{
@@ -201,20 +197,19 @@ func getRouteWeights(numRoutes int) []int {
 // buildPathMatchers creates regex matchers for a given route path.
 // These matchers are used in the virtual service to determine which path a request was sent to
 func buildPathMatchers(urlPath string) ([]networking.HTTPMatchRequest, error) {
-	var pathMatchers []networking.HTTPMatchRequest
 	urlPath = path.Join("/", urlPath, "/")
 	regexpPath, err := v1alpha1.BuildPathRegexp(urlPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert path to regexp: %s", err)
 	}
 
-	pathMatchers = append(pathMatchers, networking.HTTPMatchRequest{
-		URI: &istio.StringMatch{
-			Regex: regexpPath,
+	return []networking.HTTPMatchRequest{
+		{
+			URI: &istio.StringMatch{
+				Regex: regexpPath,
+			},
 		},
-	})
-
-	return pathMatchers, nil
+	}, nil
 }
 
 // buildForwardingHeaders sets forwarding headers so the app gets the real hostname it's serving

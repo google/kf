@@ -15,7 +15,6 @@
 package resources_test
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -332,8 +331,6 @@ func ExampleMakeVirtualService_weightedRoutes() {
 	}
 
 	vs, err := resources.MakeVirtualService(claims, routes)
-	s, _ := json.MarshalIndent(vs, "", "\t")
-	fmt.Println(string(s))
 	if err != nil {
 		panic(err)
 	}
