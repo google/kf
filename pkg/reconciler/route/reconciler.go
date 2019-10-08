@@ -87,7 +87,7 @@ func (r *Reconciler) ApplyChanges(
 	// Fetch Claims with the same Hostname+Domain.
 	claims, err := r.routeClaimLister.
 		RouteClaims(namespace).
-		List(appresources.MakeRouteSelector(fields))
+		List(appresources.MakeRouteSelectorNoPath(fields))
 	if err != nil {
 		return err
 	}
@@ -127,7 +127,7 @@ func (r *Reconciler) ApplyChanges(
 	// Fetch routes with the same Hostname+Domain.
 	routes, err := r.routeLister.
 		Routes(namespace).
-		List(appresources.MakeRouteSelector(fields))
+		List(appresources.MakeRouteSelectorNoPath(fields))
 	if err != nil {
 		return err
 	}
