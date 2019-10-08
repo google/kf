@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+	"sort"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/knative/serving/pkg/network"
@@ -62,7 +63,6 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 
 	// Build map of paths to set of bound apps
 	pathApps := buildPathApps(claims, routes)
-
 	httpRoutes, err := buildHTTPRoutes(hostDomain, pathApps, namespace)
 	if err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 // Paths that do not have an app bound to them will return a 503 when a request is sent to that path.
 func buildHTTPRoutes(hostDomain string, pathApps map[string]sets.String, namespace string) ([]networking.HTTPRoute, error) {
 	var httpRoutes []networking.HTTPRoute
-	paths := make([]string, len(pathApps))
+	paths := make([]string, 0)
 	for key := range pathApps {
 		paths = append(paths, key)
 	}
@@ -134,6 +134,9 @@ func buildHTTPRoutes(hostDomain string, pathApps map[string]sets.String, namespa
 		}
 		httpRoutes = append(httpRoutes, httpRoute)
 	}
+
+	// Sort by reverse to defer to the longest matchers.
+	sort.Sort(sort.Reverse(v1alpha1.HTTPRoutes(httpRoutes)))
 
 	return httpRoutes, nil
 }
@@ -242,11 +245,16 @@ func buildPathApps(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route) map[
 	pathApps := make(map[string]sets.String)
 
 	for _, claim := range claims {
-		pathApps[claim.Spec.RouteSpecFields.Path] = sets.NewString()
+		path := claim.Spec.RouteSpecFields.Path
+		pathApps[path] = sets.NewString()
 	}
 
 	for _, route := range routes {
-		pathApps[route.Spec.RouteSpecFields.Path].Insert(route.Spec.AppName)
+		path := route.Spec.RouteSpecFields.Path
+		// only add apps to route if route claim exists
+		if _, exists := pathApps[path]; exists {
+			pathApps[path].Insert(route.Spec.AppName)
+		}
 	}
 
 	return pathApps

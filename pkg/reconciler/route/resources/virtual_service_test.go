@@ -37,9 +37,10 @@ func makeRouteSpecFields(host, domain, path string) v1alpha1.RouteSpecFields {
 	}
 }
 
-func makeRoute(host, domain, path string) *v1alpha1.Route {
+func makeRoute(host, domain, path, appName string) *v1alpha1.Route {
 	return &v1alpha1.Route{
 		Spec: v1alpha1.RouteSpec{
+			AppName:         appName,
 			RouteSpecFields: makeRouteSpecFields(host, domain, path),
 		},
 	}
@@ -85,7 +86,7 @@ func TestMakeVirtualService(t *testing.T) {
 					Kind:       "VirtualService",
 				}, v.TypeMeta)
 
-				route := makeRoute("some-host", "example.com", "/some-path")
+				route := makeRoute("some-host", "example.com", "/some-path", "some-app")
 
 				testutil.AssertEqual(t, "ObjectMeta", metav1.ObjectMeta{
 					Name:      v1alpha1.GenerateName(route.Spec.Hostname, route.Spec.Domain),
@@ -125,23 +126,15 @@ func TestMakeVirtualService(t *testing.T) {
 		},
 		"Route": {
 			Claims: []*v1alpha1.RouteClaim{
-				makeRouteClaim("some-host", "example.com", "/some-other-path"),
+				makeRouteClaim("some-host", "example.com", "/some-path"),
 			},
 			Routes: []*v1alpha1.Route{
-				makeRoute("some-host", "example.com", "/some-path"),
+				makeRoute("some-host", "example.com", "/some-path", "some-app"),
 			},
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
 				testutil.AssertNil(t, "err", err)
-				testutil.AssertEqual(t, "HTTP len", 2, len(v.Spec.HTTP))
-				for i := range v.Spec.HTTP {
-					testutil.AssertEqual(t, "HTTP Route len", 1, len(v.Spec.HTTP[i].Route))
-					testutil.AssertEqual(t, "HTTP Route fault", &networking.HTTPFaultInjection{
-						Abort: &networking.InjectAbort{
-							Percent:    100,
-							HTTPStatus: http.StatusServiceUnavailable,
-						},
-					}, v.Spec.HTTP[i].Fault)
-				}
+				testutil.AssertEqual(t, "HTTP len", 1, len(v.Spec.HTTP))
+				testutil.AssertEqual(t, "HTTP Route len", 1, len(v.Spec.HTTP[0].Route))
 			},
 		},
 		"Prefers Routes over Claims": {
@@ -166,15 +159,13 @@ func TestMakeVirtualService(t *testing.T) {
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
 				testutil.AssertNil(t, "err", err)
 				testutil.AssertEqual(t, "HTTP len", 1, len(v.Spec.HTTP))
-				testutil.AssertEqual(t, "HTTP route destination", networking.HTTPRouteDestination{
-					Destination: networking.Destination{
-						Host: "istio-ingressgateway.istio-system.svc.cluster.local",
-					},
-					Weight: 100,
-				}, v.Spec.HTTP[0].Route[0])
-				testutil.AssertEqual(t, "HTTP Rewrite", &networking.HTTPRewrite{
-					Authority: network.GetServiceHostname("some-app-name", "some-namespace"),
-				}, v.Spec.HTTP[0].Rewrite)
+				testutil.AssertEqual(t, "HTTP route destination host", networking.Destination{
+					Host: "istio-ingressgateway.istio-system.svc.cluster.local",
+				}, v.Spec.HTTP[0].Route[0].Destination)
+				testutil.AssertEqual(t, "HTTP route destination weight", 100,
+					v.Spec.HTTP[0].Route[0].Weight)
+				testutil.AssertEqual(t, "HTTP Host Header", network.GetServiceHostname("some-app-name", "some-namespace"),
+					v.Spec.HTTP[0].Route[0].Headers.Request.Set["Host"])
 			},
 		},
 		"when there aren't any bound services, setup fault to 503": {
@@ -220,13 +211,17 @@ func TestMakeVirtualService(t *testing.T) {
 						Match: []networking.HTTPMatchRequest{
 							{URI: &istio.StringMatch{Regex: "^/some-path(/.*)?"}},
 						},
-						Rewrite: &networking.HTTPRewrite{
-							Authority: network.GetServiceHostname("ksvc-1", "some-namespace"),
-						},
 						Route: []networking.HTTPRouteDestination{
 							{
 								Destination: networking.Destination{Host: "istio-ingressgateway.istio-system.svc.cluster.local"},
 								Weight:      100,
+								Headers: &networking.Headers{
+									Request: &networking.HeaderOperations{
+										Set: map[string]string{
+											"Host": network.GetServiceHostname("ksvc-1", "some-namespace"),
+										},
+									},
+								},
 							},
 						},
 						Headers: &networking.Headers{
@@ -273,12 +268,14 @@ func TestMakeVirtualService(t *testing.T) {
 func ExampleMakeVirtualService() {
 	claims := []*v1alpha1.RouteClaim{
 		makeRouteClaim("some-host", "example.com/", ""),
+		makeRouteClaim("some-host", "example.com/", "some-path-1"),
+		makeRouteClaim("some-host", "example.com/", "some-path-2"),
 	}
 
 	routes := []*v1alpha1.Route{
-		makeRoute("some-host", "example.com/", ""),
-		makeRoute("some-host", "example.com/", "/some-path-1"),
-		makeRoute("some-host", "example.com/", "/some-path-2"),
+		makeRoute("some-host", "example.com/", "", "some-app"),
+		makeRoute("some-host", "example.com/", "/some-path-1", "some-app-1"),
+		makeRoute("some-host", "example.com/", "/some-path-2", "some-app-2"),
 	}
 
 	vs, err := resources.MakeVirtualService(claims, routes)
@@ -290,7 +287,7 @@ func ExampleMakeVirtualService() {
 		fmt.Printf("Regex %d: %s\n", i, h.Match[0].URI.Regex)
 	}
 
-	// Output: Regex 0: ^(/.*)?
+	// Output: Regex 0: ^/some-path-2(/.*)?
 	// Regex 1: ^/some-path-1(/.*)?
-	// Regex 2: ^/some-path-2(/.*)?
+	// Regex 2: ^(/.*)?
 }
