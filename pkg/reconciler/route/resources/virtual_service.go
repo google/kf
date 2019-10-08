@@ -136,6 +136,7 @@ func buildHTTPRoutes(hostDomain string, pathApps map[string]sets.String, namespa
 	}
 
 	// Sort by reverse to defer to the longest matchers.
+	// Routing rules are evaluated in order from first to last, where the first rule is given highest priority.
 	sort.Sort(sort.Reverse(v1alpha1.HTTPRoutes(httpRoutes)))
 
 	return httpRoutes, nil
@@ -245,8 +246,7 @@ func buildPathApps(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route) map[
 	pathApps := make(map[string]sets.String)
 
 	for _, claim := range claims {
-		path := claim.Spec.RouteSpecFields.Path
-		pathApps[path] = sets.NewString()
+		pathApps[claim.Spec.RouteSpecFields.Path] = sets.NewString()
 	}
 
 	for _, route := range routes {
