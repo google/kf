@@ -15,6 +15,7 @@
 package resources_test
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -46,8 +47,11 @@ func makeRoute(host, domain, path, appName string) *v1alpha1.Route {
 	}
 }
 
-func makeRouteClaim(host, domain, path string) *v1alpha1.RouteClaim {
+func makeRouteClaim(host, domain, path, namespace string) *v1alpha1.RouteClaim {
 	return &v1alpha1.RouteClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+		},
 		Spec: v1alpha1.RouteClaimSpec{
 			RouteSpecFields: makeRouteSpecFields(host, domain, path),
 		},
@@ -75,7 +79,7 @@ func TestMakeVirtualService(t *testing.T) {
 						Labels:    map[string]string{"a": "1", "b": "2"},
 					},
 					Spec: v1alpha1.RouteClaimSpec{
-						RouteSpecFields: makeRouteSpecFields("some-host", "example.com", "some-path"),
+						RouteSpecFields: makeRouteSpecFields("some-host", "example.com", "/some-path"),
 					},
 				},
 			},
@@ -105,13 +109,27 @@ func TestMakeVirtualService(t *testing.T) {
 				}, v.ObjectMeta)
 			},
 		},
+		"Hosts with subdomain": {
+			Claims: []*v1alpha1.RouteClaim{
+				makeRouteClaim("some-host", "example.com", "/some-path", "some-namespace"),
+			},
+			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
+				testutil.AssertNil(t, "err", err)
+				testutil.AssertEqual(t, "Hosts", []string{"some-host.example.com"}, v.Spec.Hosts)
+			},
+		},
+		"Hosts without subdomain": {
+			Claims: []*v1alpha1.RouteClaim{
+				makeRouteClaim("", "example.com", "/some-path", "some-namespace"),
+			},
+			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
+				testutil.AssertNil(t, "err", err)
+				testutil.AssertEqual(t, "Hosts", []string{"example.com"}, v.Spec.Hosts)
+			},
+		},
 		"Path Matchers": {
 			Claims: []*v1alpha1.RouteClaim{
-				{
-					Spec: v1alpha1.RouteClaimSpec{
-						RouteSpecFields: makeRouteSpecFields("some-host", "example.com", "/some-path"),
-					},
-				},
+				makeRouteClaim("some-host", "example.com", "/some-path", "some-namespace"),
 			},
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
 				testutil.AssertNil(t, "err", err)
@@ -126,7 +144,7 @@ func TestMakeVirtualService(t *testing.T) {
 		},
 		"Route": {
 			Claims: []*v1alpha1.RouteClaim{
-				makeRouteClaim("some-host", "example.com", "/some-path"),
+				makeRouteClaim("some-host", "example.com", "/some-path", "some-namespace"),
 			},
 			Routes: []*v1alpha1.Route{
 				makeRoute("some-host", "example.com", "/some-path", "some-app"),
@@ -137,40 +155,9 @@ func TestMakeVirtualService(t *testing.T) {
 				testutil.AssertEqual(t, "HTTP Route len", 1, len(v.Spec.HTTP[0].Route))
 			},
 		},
-		"Prefers Routes over Claims": {
-			Claims: []*v1alpha1.RouteClaim{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Namespace: "some-namespace",
-					},
-					Spec: v1alpha1.RouteClaimSpec{
-						RouteSpecFields: makeRouteSpecFields("some-host", "example.com", "/some-path"),
-					},
-				},
-			},
-			Routes: []*v1alpha1.Route{
-				{
-					Spec: v1alpha1.RouteSpec{
-						AppName:         "some-app-name",
-						RouteSpecFields: makeRouteSpecFields("some-host", "example.com", "/some-path"),
-					},
-				},
-			},
-			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
-				testutil.AssertNil(t, "err", err)
-				testutil.AssertEqual(t, "HTTP len", 1, len(v.Spec.HTTP))
-				testutil.AssertEqual(t, "HTTP route destination host", networking.Destination{
-					Host: "istio-ingressgateway.istio-system.svc.cluster.local",
-				}, v.Spec.HTTP[0].Route[0].Destination)
-				testutil.AssertEqual(t, "HTTP route destination weight", 100,
-					v.Spec.HTTP[0].Route[0].Weight)
-				testutil.AssertEqual(t, "HTTP Host Header", network.GetServiceHostname("some-app-name", "some-namespace"),
-					v.Spec.HTTP[0].Route[0].Headers.Request.Set["Host"])
-			},
-		},
 		"when there aren't any bound services, setup fault to 503": {
 			Claims: []*v1alpha1.RouteClaim{
-				makeRouteClaim("some-host", "example.com", "/some-path"),
+				makeRouteClaim("some-host", "example.com", "/some-path", "some-namespace"),
 			},
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
 				testutil.AssertNil(t, "err", err)
@@ -181,29 +168,15 @@ func TestMakeVirtualService(t *testing.T) {
 						HTTPStatus: http.StatusServiceUnavailable,
 					},
 				}, v.Spec.HTTP[0].Fault)
+				testutil.AssertNotNil(t, "HTTP route destination", v.Spec.HTTP[0].Route[0])
 			},
 		},
 		"setup routes to bound services": {
 			Claims: []*v1alpha1.RouteClaim{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Namespace: "some-namespace",
-					},
-					Spec: v1alpha1.RouteClaimSpec{
-						RouteSpecFields: makeRouteSpecFields("some-host", "example.com", "/some-path"),
-					},
-				},
+				makeRouteClaim("some-host", "example.com", "/some-path", "some-namespace"),
 			},
 			Routes: []*v1alpha1.Route{
-				{
-					ObjectMeta: metav1.ObjectMeta{
-						Namespace: "some-namespace",
-					},
-					Spec: v1alpha1.RouteSpec{
-						RouteSpecFields: makeRouteSpecFields("some-host", "example.com", "/some-path"),
-						AppName:         "ksvc-1",
-					},
-				},
+				makeRoute("some-host", "example.com", "/some-path", "ksvc-1"),
 			},
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
 				expectedHTTP := []networking.HTTPRoute{
@@ -239,22 +212,69 @@ func TestMakeVirtualService(t *testing.T) {
 				testutil.AssertEqual(t, "HTTP", expectedHTTP, v.Spec.HTTP)
 			},
 		},
-		"Hosts with subdomain": {
+		"multiple apps per route": {
 			Claims: []*v1alpha1.RouteClaim{
-				makeRouteClaim("some-host", "example.com", "/some-path"),
+				makeRouteClaim("some-host", "example.com", "/some-path", "some-namespace"),
+			},
+			Routes: []*v1alpha1.Route{
+				makeRoute("some-host", "example.com", "/some-path", "app-1"),
+				makeRoute("some-host", "example.com", "/some-path", "app-2"),
+				makeRoute("some-host", "example.com", "/some-path", "app-3"),
 			},
 			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
+				expectedHTTP := []networking.HTTPRoute{
+					{
+						Match: []networking.HTTPMatchRequest{
+							{URI: &istio.StringMatch{Regex: "^/some-path(/.*)?"}},
+						},
+						Route: []networking.HTTPRouteDestination{
+							{
+								Destination: networking.Destination{Host: "istio-ingressgateway.istio-system.svc.cluster.local"},
+								Weight:      34,
+								Headers: &networking.Headers{
+									Request: &networking.HeaderOperations{
+										Set: map[string]string{
+											"Host": network.GetServiceHostname("app-1", "some-namespace"),
+										},
+									},
+								},
+							},
+							{
+								Destination: networking.Destination{Host: "istio-ingressgateway.istio-system.svc.cluster.local"},
+								Weight:      33,
+								Headers: &networking.Headers{
+									Request: &networking.HeaderOperations{
+										Set: map[string]string{
+											"Host": network.GetServiceHostname("app-2", "some-namespace"),
+										},
+									},
+								},
+							},
+							{
+								Destination: networking.Destination{Host: "istio-ingressgateway.istio-system.svc.cluster.local"},
+								Weight:      33,
+								Headers: &networking.Headers{
+									Request: &networking.HeaderOperations{
+										Set: map[string]string{
+											"Host": network.GetServiceHostname("app-3", "some-namespace"),
+										},
+									},
+								},
+							},
+						},
+						Headers: &networking.Headers{
+							Request: &networking.HeaderOperations{
+								Add: map[string]string{
+									"X-Forwarded-Host": "some-host.example.com",
+									"Forwarded":        "host=some-host.example.com",
+								},
+							},
+						},
+					},
+				}
+
 				testutil.AssertNil(t, "err", err)
-				testutil.AssertEqual(t, "Hosts", []string{"some-host.example.com"}, v.Spec.Hosts)
-			},
-		},
-		"Hosts without subdomain": {
-			Claims: []*v1alpha1.RouteClaim{
-				makeRouteClaim("", "example.com", "/some-path"),
-			},
-			Assert: func(t *testing.T, v *networking.VirtualService, err error) {
-				testutil.AssertNil(t, "err", err)
-				testutil.AssertEqual(t, "Hosts", []string{"example.com"}, v.Spec.Hosts)
+				testutil.AssertEqual(t, "HTTP", expectedHTTP, v.Spec.HTTP)
 			},
 		},
 	} {
@@ -265,11 +285,11 @@ func TestMakeVirtualService(t *testing.T) {
 	}
 }
 
-func ExampleMakeVirtualService() {
+func ExampleMakeVirtualService_pathMatchers() {
 	claims := []*v1alpha1.RouteClaim{
-		makeRouteClaim("some-host", "example.com/", ""),
-		makeRouteClaim("some-host", "example.com/", "some-path-1"),
-		makeRouteClaim("some-host", "example.com/", "some-path-2"),
+		makeRouteClaim("some-host", "example.com/", "", "some-namespace"),
+		makeRouteClaim("some-host", "example.com/", "/some-path-1", "some-namespace"),
+		makeRouteClaim("some-host", "example.com/", "/some-path-2", "some-namespace"),
 	}
 
 	routes := []*v1alpha1.Route{
@@ -290,4 +310,69 @@ func ExampleMakeVirtualService() {
 	// Output: Regex 0: ^/some-path-2(/.*)?
 	// Regex 1: ^/some-path-1(/.*)?
 	// Regex 2: ^(/.*)?
+}
+
+func ExampleMakeVirtualService_weightedRoutes() {
+	claims := []*v1alpha1.RouteClaim{
+		makeRouteClaim("some-host", "example.com/", "", "some-namespace"),
+		makeRouteClaim("some-host", "example.com/", "/path-a", "some-namespace"),
+		makeRouteClaim("some-host", "example.com/", "/path-b", "some-namespace"),
+	}
+
+	routes := []*v1alpha1.Route{
+		makeRoute("some-host", "example.com/", "", "some-app"),
+		makeRoute("some-host", "example.com/", "/path-a", "app-a-1"),
+		makeRoute("some-host", "example.com/", "/path-a", "app-a-2"),
+		makeRoute("some-host", "example.com/", "/path-b", "app-b-1"),
+		makeRoute("some-host", "example.com/", "/path-b", "app-b-2"),
+		makeRoute("some-host", "example.com/", "/path-b", "app-b-3"),
+		makeRoute("some-host", "example.com/", "/path-b", "app-b-4"),
+		makeRoute("some-host", "example.com/", "/path-b", "app-b-5"),
+		makeRoute("some-host", "example.com/", "/path-b", "app-b-6"),
+	}
+
+	vs, err := resources.MakeVirtualService(claims, routes)
+	s, _ := json.MarshalIndent(vs, "", "\t")
+	fmt.Println(string(s))
+	if err != nil {
+		panic(err)
+	}
+
+	for i, h := range vs.Spec.HTTP {
+		fmt.Printf("Path %d: %s\n", i, h.Match[0].URI.Regex)
+		for _, routeDestination := range h.Route {
+			fmt.Printf("App host: %s\n", routeDestination.Headers.Request.Set["Host"])
+			fmt.Printf("Route weight %%: %d\n\n", routeDestination.Weight)
+		}
+	}
+
+	// Output: Path 0: ^/path-b(/.*)?
+	// App host: app-b-1.some-namespace.svc.cluster.local
+	// Route weight %: 17
+
+	// App host: app-b-2.some-namespace.svc.cluster.local
+	// Route weight %: 17
+
+	// App host: app-b-3.some-namespace.svc.cluster.local
+	// Route weight %: 17
+
+	// App host: app-b-4.some-namespace.svc.cluster.local
+	// Route weight %: 17
+
+	// App host: app-b-5.some-namespace.svc.cluster.local
+	// Route weight %: 16
+
+	// App host: app-b-6.some-namespace.svc.cluster.local
+	// Route weight %: 16
+
+	// Path 1: ^/path-a(/.*)?
+	// App host: app-a-1.some-namespace.svc.cluster.local
+	// Route weight %: 50
+
+	// App host: app-a-2.some-namespace.svc.cluster.local
+	// Route weight %: 50
+
+	// Path 2: ^(/.*)?
+	// App host: some-app.some-namespace.svc.cluster.local
+	// Route weight %: 100
 }
