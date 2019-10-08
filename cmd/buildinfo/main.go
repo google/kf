@@ -77,6 +77,11 @@ func main() {
 		}
 
 		describe.SectionWriter(w, "Auth", func(w io.Writer) {
+			if len(cfg.Auth) == 0 {
+				fmt.Fprintln(w, "<none>")
+				return
+			}
+
 			fmt.Fprintln(w, "Registry\tUsername\tEmail\tPassword")
 			for registry, v := range cfg.Auth {
 				pass := "<blank>"
@@ -94,6 +99,11 @@ func main() {
 		})
 
 		describe.SectionWriter(w, "Credential helpers", func(w io.Writer) {
+			if len(cfg.CredHelpers) == 0 {
+				fmt.Fprintln(w, "<none>")
+				return
+			}
+
 			fmt.Fprintln(w, "Registry\tHelper")
 			for registry, helper := range cfg.CredHelpers {
 				fmt.Fprintf(w, "%s\t%s\n", registry, helper)
