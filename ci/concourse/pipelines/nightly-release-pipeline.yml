@@ -156,6 +156,7 @@ jobs:
         - -exc
         - |
           pushd kf-dev
+            ../ci-pipelines-src/hack/check-vendor-license.sh
             ../ci-pipelines-src/hack/check-linters.sh
             ../ci-pipelines-src/hack/check-go-generate.sh
             ../ci-pipelines-src/hack/check-code-generator.sh
@@ -167,7 +168,7 @@ jobs:
   - aggregate:
     - get: kf-dev
       trigger: true
-      passed: [unit-test]
+      passed: [unit-test, check]
       params: {submodules: none}
     - get: ci-pipelines-src
       trigger: false
@@ -179,6 +180,7 @@ jobs:
         env_name: nightly
         delete_on_failure: true
     - task: build
+      attempts: 3
       config:
         platform: linux
         image_resource:

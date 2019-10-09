@@ -59,7 +59,7 @@ templates:
   params:
     path: release-pr
     status: FAILURE
-    description: Concourse "release" job failed.
+    description: Concourse "release" pipeline failed.
 # ---- end templates ----
 
 resource_types:
@@ -99,6 +99,7 @@ resources:
       GOOGLE_CREDENTIALS: *service_account_json
 jobs:
 - name: unit-test
+  on_failure: *on_failure
   plan:
   - get: release-pr
     trigger: true
@@ -127,8 +128,8 @@ jobs:
       params:
         GOPROXY: *go_proxy
         GOSUMDB: *go_sum_db
-    on_failure: *on_failure
 - name: check
+  on_failure: *on_failure
   plan:
   - aggregate:
     - get: release-pr
@@ -163,9 +164,9 @@ jobs:
             ../ci-pipelines-src/hack/check-go-generate.sh
             ../ci-pipelines-src/hack/check-code-generator.sh
           popd
-    on_failure: *on_failure
 
 - name: build-and-integrate
+  on_failure: *on_failure
   serial: true
   plan:
   - aggregate:
@@ -182,6 +183,7 @@ jobs:
         env_name: release
         delete_on_failure: true
     - task: build
+      attempts: 3
       config:
         platform: linux
         image_resource:
@@ -277,7 +279,6 @@ jobs:
         - |
           artifacts=`pwd`/artifacts
           ./ci-pipelines-src/hack/upload-release.sh $artifacts
-    on_failure: *on_failure
   - put: terraform
     params:
       terraform_source: ci-pipelines-src/ci/concourse/terraform
