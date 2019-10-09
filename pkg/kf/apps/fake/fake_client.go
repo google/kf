@@ -52,6 +52,21 @@ func (m *FakeClient) EXPECT() *FakeClientMockRecorder {
 	return m.recorder
 }
 
+// BindService mocks base method
+func (m *FakeClient) BindService(arg0, arg1 string, arg2 *v1alpha1.AppSpecServiceBinding) (*v1alpha1.App, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BindService", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*v1alpha1.App)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BindService indicates an expected call of BindService
+func (mr *FakeClientMockRecorder) BindService(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BindService", reflect.TypeOf((*FakeClient)(nil).BindService), arg0, arg1, arg2)
+}
+
 // Create mocks base method
 func (m *FakeClient) Create(arg0 string, arg1 *v1alpha1.App, arg2 ...apps.CreateOption) (*v1alpha1.App, error) {
 	m.ctrl.T.Helper()
@@ -217,6 +232,21 @@ func (mr *FakeClientMockRecorder) Transform(arg0, arg1, arg2 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Transform", reflect.TypeOf((*FakeClient)(nil).Transform), arg0, arg1, arg2)
 }
 
+// UnbindService mocks base method
+func (m *FakeClient) UnbindService(arg0, arg1, arg2 string) (*v1alpha1.App, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UnbindService", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*v1alpha1.App)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UnbindService indicates an expected call of UnbindService
+func (mr *FakeClientMockRecorder) UnbindService(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnbindService", reflect.TypeOf((*FakeClient)(nil).UnbindService), arg0, arg1, arg2)
+}
+
 // Update mocks base method
 func (m *FakeClient) Update(arg0 string, arg1 *v1alpha1.App, arg2 ...apps.UpdateOption) (*v1alpha1.App, error) {
 	m.ctrl.T.Helper()
@@ -267,6 +297,21 @@ func (mr *FakeClientMockRecorder) WaitFor(arg0, arg1, arg2, arg3, arg4 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitFor", reflect.TypeOf((*FakeClient)(nil).WaitFor), arg0, arg1, arg2, arg3, arg4)
 }
 
+// WaitForConditionKnativeServiceReadyTrue mocks base method
+func (m *FakeClient) WaitForConditionKnativeServiceReadyTrue(arg0 context.Context, arg1, arg2 string, arg3 time.Duration) (*v1alpha1.App, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WaitForConditionKnativeServiceReadyTrue", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(*v1alpha1.App)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// WaitForConditionKnativeServiceReadyTrue indicates an expected call of WaitForConditionKnativeServiceReadyTrue
+func (mr *FakeClientMockRecorder) WaitForConditionKnativeServiceReadyTrue(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitForConditionKnativeServiceReadyTrue", reflect.TypeOf((*FakeClient)(nil).WaitForConditionKnativeServiceReadyTrue), arg0, arg1, arg2, arg3)
+}
+
 // WaitForConditionReadyTrue mocks base method
 func (m *FakeClient) WaitForConditionReadyTrue(arg0 context.Context, arg1, arg2 string, arg3 time.Duration) (*v1alpha1.App, error) {
 	m.ctrl.T.Helper()
@@ -280,6 +325,21 @@ func (m *FakeClient) WaitForConditionReadyTrue(arg0 context.Context, arg1, arg2 
 func (mr *FakeClientMockRecorder) WaitForConditionReadyTrue(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitForConditionReadyTrue", reflect.TypeOf((*FakeClient)(nil).WaitForConditionReadyTrue), arg0, arg1, arg2, arg3)
+}
+
+// WaitForConditionRoutesReadyTrue mocks base method
+func (m *FakeClient) WaitForConditionRoutesReadyTrue(arg0 context.Context, arg1, arg2 string, arg3 time.Duration) (*v1alpha1.App, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WaitForConditionRoutesReadyTrue", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(*v1alpha1.App)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// WaitForConditionRoutesReadyTrue indicates an expected call of WaitForConditionRoutesReadyTrue
+func (mr *FakeClientMockRecorder) WaitForConditionRoutesReadyTrue(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitForConditionRoutesReadyTrue", reflect.TypeOf((*FakeClient)(nil).WaitForConditionRoutesReadyTrue), arg0, arg1, arg2, arg3)
 }
 
 // WaitForConditionServiceBindingsReadyTrue mocks base method

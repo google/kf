@@ -29,7 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type commandFactory func(p *config.KfParams, client services.ClientInterface) *cobra.Command
+type commandFactory func(p *config.KfParams, client services.Client) *cobra.Command
 
 func dummyServerInstance(instanceName string) *v1beta1.ServiceInstance {
 	instance := v1beta1.ServiceInstance{}
@@ -47,7 +47,7 @@ func dummyServerInstance(instanceName string) *v1beta1.ServiceInstance {
 
 type serviceTest struct {
 	Args      []string
-	Setup     func(t *testing.T, f *fake.FakeClientInterface)
+	Setup     func(t *testing.T, f *fake.FakeClient)
 	Namespace string
 
 	ExpectedErr     error
@@ -55,10 +55,11 @@ type serviceTest struct {
 }
 
 func runTest(t *testing.T, tc serviceTest, newCommand commandFactory) {
+	t.Helper()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 
-	client := fake.NewFakeClientInterface(ctrl)
+	client := fake.NewFakeClient(ctrl)
 	if tc.Setup != nil {
 		tc.Setup(t, client)
 	}

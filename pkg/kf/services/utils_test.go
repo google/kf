@@ -15,6 +15,7 @@
 package services
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -24,44 +25,47 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestParseJSONString(t *testing.T) {
+func TestAssertJSONMap(t *testing.T) {
 	cases := map[string]struct {
 		Value         string
-		ExpectedMap   map[string]interface{}
+		ExpectedJSON  json.RawMessage
 		ExpectedError error
 	}{
 		"bad JSON": {
 			Value:         "}}{{",
-			ExpectedError: errors.New(`invalid JSON provided: "}}{{"`),
+			ExpectedError: errors.New(`value must be a JSON map, got: "}}{{"`),
 		},
 		"empty JSON": {
-			Value:       "{}",
-			ExpectedMap: make(map[string]interface{}),
+			Value:        "{}",
+			ExpectedJSON: json.RawMessage("{}"),
 		},
 		"JSON with contents": {
-			Value:       `{"foo": "bar"}`,
-			ExpectedMap: map[string]interface{}{"foo": "bar"},
+			Value:        `{"foo": "bar"}`,
+			ExpectedJSON: json.RawMessage(`{"foo": "bar"}`),
+		},
+		"not a map": {
+			Value:         `1234`,
+			ExpectedError: errors.New(`value must be a JSON map, got: "1234"`),
 		},
 	}
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			actualMap, actualErr := ParseJSONString(tc.Value)
+			actualJSON, actualErr := AssertJSONMap(json.RawMessage(tc.Value))
 
 			if tc.ExpectedError != nil || actualErr != nil {
-				if fmt.Sprint(tc.ExpectedError) != fmt.Sprint(actualErr) {
-					t.Fatalf("expected err: %v, got: %v", tc.ExpectedError, actualErr)
-				}
+				testutil.AssertErrorsEqual(t, tc.ExpectedError, actualErr)
 
 				return
 			}
 
-			if !reflect.DeepEqual(tc.ExpectedMap, actualMap) {
-				t.Errorf("expected map: %v, got: %v", tc.ExpectedMap, actualMap)
+			if !reflect.DeepEqual(tc.ExpectedJSON, actualJSON) {
+				t.Errorf("expected JSON: %v, got: %v", string(tc.ExpectedJSON), string(actualJSON))
 			}
 		})
 	}
@@ -86,16 +90,16 @@ func TestParseJSONOrFile(t *testing.T) {
 
 	cases := map[string]struct {
 		Value         string
-		ExpectedMap   map[string]interface{}
+		ExpectedJSON  json.RawMessage
 		ExpectedError error
 	}{
 		"empty JSON": {
-			Value:       "{}",
-			ExpectedMap: make(map[string]interface{}),
+			Value:        "{}",
+			ExpectedJSON: json.RawMessage(`{}`),
 		},
 		"JSON with contents": {
-			Value:       `{"foo": "bar"}`,
-			ExpectedMap: map[string]interface{}{"foo": "bar"},
+			Value:        `{"foo": "bar"}`,
+			ExpectedJSON: json.RawMessage(`{"foo": "bar"}`),
 		},
 		"missing file": {
 			Value:         `/path/does/not/exist`,
@@ -103,28 +107,26 @@ func TestParseJSONOrFile(t *testing.T) {
 		},
 		"bad file": {
 			Value:         badFile,
-			ExpectedError: fmt.Errorf("couldn't parse %s as JSON: invalid JSON provided: \"}}{{\"", badFile),
+			ExpectedError: fmt.Errorf("couldn't parse %s as JSON: value must be a JSON map, got: \"}}{{\"", badFile),
 		},
 		"good file": {
-			Value:       goodFile,
-			ExpectedMap: map[string]interface{}{"foo": "bar"},
+			Value:        goodFile,
+			ExpectedJSON: json.RawMessage(`{"foo":"bar"}`),
 		},
 	}
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			actualMap, actualErr := ParseJSONOrFile(tc.Value)
+			actualJSON, actualErr := ParseJSONOrFile(tc.Value)
 
 			if tc.ExpectedError != nil || actualErr != nil {
-				if fmt.Sprint(tc.ExpectedError) != fmt.Sprint(actualErr) {
-					t.Fatalf("expected err: %v, got: %v", tc.ExpectedError, actualErr)
-				}
+				testutil.AssertErrorsEqual(t, tc.ExpectedError, actualErr)
 
 				return
 			}
 
-			if !reflect.DeepEqual(tc.ExpectedMap, actualMap) {
-				t.Errorf("expected map: %v, got: %v", tc.ExpectedMap, actualMap)
+			if !reflect.DeepEqual(tc.ExpectedJSON, actualJSON) {
+				t.Errorf("expected JSON: %v, got: %v", string(tc.ExpectedJSON), string(actualJSON))
 			}
 		})
 	}

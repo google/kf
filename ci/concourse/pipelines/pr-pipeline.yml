@@ -106,17 +106,12 @@ jobs:
         SERVICE_ACCOUNT_JSON: *service_account_json
       run:
         dir: src
-        path: sh
+        path: bash
         args:
         - -exc
         - |
           hack/check-linters.sh
           hack/check-go-generate.sh
-          mkdir -p $(go env GOPATH)/src/github.com/google
-          olddir=$(pwd)
-          cd $(go env GOPATH)/src/github.com/google
-          ln -s $olddir kf
-          cd $olddir
           hack/check-code-generator.sh
     on_failure: *on_failure
 - name: build
@@ -140,7 +135,7 @@ jobs:
         SERVICE_ACCOUNT_JSON: *service_account_json
       run:
         dir: src
-        path: sh
+        path: bash
         args:
         - -exc
         - |
@@ -171,7 +166,7 @@ jobs:
         K8S_CLUSTER_ZONE: *k8s_cluster_zone
       run:
         dir: src
-        path: sh
+        path: bash
         args:
         - -exc
         - |
@@ -200,25 +195,10 @@ jobs:
   - get: ci-src
   - task: unit-tests
     timeout: 10m
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source: *ci-image-source
-      inputs:
-      - name: src
-      - name: ci-src
-      params:
-        GOPROXY: *go_proxy
-        GOSUMDB: *go_sum_db
-      run:
-        dir: src
-        path: sh
-        args:
-        - -exc
-        - |
-          # Run unit tests
-          hack/unit-test.sh
+    file: ci-src/ci/concourse/tasks/set-status.yml
+    params:
+      GOPROXY: *go_proxy
+      GOSUMDB: *go_sum_db
   - task: integration-tests
     timeout: 1h30m
     config:
@@ -238,7 +218,7 @@ jobs:
         K8S_CLUSTER_ZONE: *k8s_cluster_zone
       run:
         dir: src
-        path: sh
+        path: bash
         args:
         - -exc
         - |

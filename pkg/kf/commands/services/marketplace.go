@@ -21,13 +21,13 @@ import (
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/describe"
 	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	"github.com/google/kf/pkg/kf/services"
+	"github.com/google/kf/pkg/kf/marketplace"
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
 	"github.com/spf13/cobra"
 )
 
 // NewMarketplaceCommand allows users to get a service instance.
-func NewMarketplaceCommand(p *config.KfParams, client services.ClientInterface) *cobra.Command {
+func NewMarketplaceCommand(p *config.KfParams, client marketplace.ClientInterface) *cobra.Command {
 	var serviceName string
 
 	marketplaceCommand := &cobra.Command{
@@ -49,7 +49,7 @@ func NewMarketplaceCommand(p *config.KfParams, client services.ClientInterface) 
 				return err
 			}
 
-			marketplace, err := client.Marketplace(services.WithMarketplaceNamespace(p.Namespace))
+			marketplace, err := client.Marketplace(p.Namespace)
 			if err != nil {
 				return err
 			}

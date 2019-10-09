@@ -26,7 +26,6 @@ import (
 )
 
 const (
-	gkeClusterVersion     = "1.13.6-gke.13"
 	machineType           = "n1-standard-4"
 	imageType             = "COS"
 	diskType              = "pd-standard"
@@ -445,7 +444,6 @@ func buildGKECluster(
 		"beta", "container", "clusters", "create", gkeCfg.clusterName,
 		"--zone", gkeCfg.zone,
 		"--no-enable-basic-auth",
-		"--cluster-version", gkeClusterVersion,
 		"--machine-type", machineType,
 		"--image-type", imageType,
 		"--disk-type", diskType,

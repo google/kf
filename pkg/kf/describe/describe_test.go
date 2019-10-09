@@ -324,6 +324,27 @@ func ExampleSourceSpec_docker() {
 	//     Image:  mysql/mysql
 }
 
+func ExampleSourceSpec_dockerfile() {
+	spec := kfv1alpha1.SourceSpec{
+		ServiceAccount: "builder-account",
+		Dockerfile: kfv1alpha1.SourceSpecDockerfile{
+			Source: "gcr.io/my-registry/src-mysource",
+			Path:   "path/to/build/Dockerfile",
+			Image:  "gcr.io/my-registry/my-image:latest",
+		},
+	}
+
+	describe.SourceSpec(os.Stdout, spec)
+
+	// Output: Source:
+	//   Build Type:       dockerfile
+	//   Service Account:  builder-account
+	//   Dockerfile Build:
+	//     Source:           gcr.io/my-registry/src-mysource
+	//     Dockerfile Path:  path/to/build/Dockerfile
+	//     Destination:      gcr.io/my-registry/my-image:latest
+}
+
 func ExampleHealthCheck_nil() {
 	describe.HealthCheck(os.Stdout, nil)
 

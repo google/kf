@@ -1,0 +1,16 @@
+# This file contains options for genfunctional.go
+---
+package: services
+imports:
+  github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1: v1beta1
+  github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/typed/servicecatalog/v1beta1: cv1beta1
+kubernetes:
+  kind: "ServiceInstance"
+  version: "v1beta1"
+  namespaced: true
+  observedGenerationFieldPath: Status.ObservedGeneration
+  conditionsFieldPath: Status.Conditions
+type: "v1beta1.ServiceInstance"
+clientType: "cv1beta1.ServiceInstancesGetter"
+cf:
+  name: "Service"

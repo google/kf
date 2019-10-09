@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/spf13/cobra"
@@ -62,6 +63,8 @@ func NewVcapServicesCommand(
 			return nil
 		},
 	}
+
+	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 
 	return cmd
 }

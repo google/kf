@@ -30,6 +30,8 @@ type ClientExtension interface {
 	DeployLogs(out io.Writer, appName, resourceVersion, namespace string, noStart bool) error
 	Restart(namespace, name string) error
 	Restage(namespace, name string) (*v1alpha1.App, error)
+	BindService(namespace, name string, binding *v1alpha1.AppSpecServiceBinding) (*v1alpha1.App, error)
+	UnbindService(namespace, name, bindingName string) (*v1alpha1.App, error)
 }
 
 type appsClient struct {
@@ -70,8 +72,8 @@ func (ac *appsClient) DeleteInForeground(namespace string, name string) error {
 // Restart causes the controller to create a new revision for the knative
 // service.
 func (ac *appsClient) Restart(namespace, name string) error {
-	_, err := ac.coreClient.Transform(namespace, name, func(a *v1alpha1.App) error {
-		a.Spec.Template.UpdateRequests++
+	_, err := ac.coreClient.Transform(namespace, name, func(app *v1alpha1.App) error {
+		app.Spec.Template.UpdateRequests++
 		return nil
 	})
 
@@ -89,4 +91,20 @@ func (ac *appsClient) Restage(namespace, name string) (app *v1alpha1.App, err er
 	app.Spec.Source.UpdateRequests++
 
 	return ac.coreClient.Update(namespace, app)
+}
+
+// BindService adds the given service binding to the app.
+func (ac *appsClient) BindService(namespace, name string, binding *v1alpha1.AppSpecServiceBinding) (app *v1alpha1.App, err error) {
+	return ac.coreClient.Transform(namespace, name, func(app *v1alpha1.App) error {
+		BindService(app, binding)
+		return nil
+	})
+}
+
+// UnbindService removes the given service binding from the app.
+func (ac *appsClient) UnbindService(namespace, name, bindingName string) (app *v1alpha1.App, err error) {
+	return ac.coreClient.Transform(namespace, name, func(app *v1alpha1.App) error {
+		UnbindService(app, bindingName)
+		return nil
+	})
 }

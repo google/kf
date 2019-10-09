@@ -17,7 +17,7 @@ package v1alpha1
 import (
 	"fmt"
 
-	build "github.com/knative/build/pkg/apis/build/v1alpha1"
+	build "github.com/google/kf/third_party/knative-build/pkg/apis/build/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"knative.dev/pkg/apis"
@@ -39,6 +39,7 @@ const (
 	BuildArgBuildpack         = "BUILDPACK"
 	BuildArgBuildpackBuilder  = "BUILDER_IMAGE"
 	BuildArgBuildpackRunImage = "RUN_IMAGE"
+	BuildArgDockerfile        = "DOCKERFILE"
 )
 
 func (status *SourceStatus) manage() apis.ConditionManager {

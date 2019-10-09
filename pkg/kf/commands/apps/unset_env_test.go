@@ -56,6 +56,7 @@ func TestUnsetEnvCommand(t *testing.T) {
 			Namespace: "some-namespace",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().Transform("some-namespace", "app-name", gomock.Any())
+				fake.EXPECT().WaitForConditionKnativeServiceReadyTrue(gomock.Any(), "some-namespace", "app-name", gomock.Any())
 			},
 		},
 		"namespace is not provided": {
@@ -81,6 +82,14 @@ func TestUnsetEnvCommand(t *testing.T) {
 					actualVars := envutil.EnvVarsToMap(result.GetEnvVars())
 					testutil.AssertEqual(t, "final values", map[string]string{"PORT": "8080"}, actualVars)
 				})
+				fake.EXPECT().WaitForConditionKnativeServiceReadyTrue(gomock.Any(), "some-namespace", "app-name", gomock.Any())
+			},
+		},
+		"async call does not wait": {
+			Args:      []string{"app-name", "NAME", "--async"},
+			Namespace: "some-namespace",
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any())
 			},
 		},
 	} {

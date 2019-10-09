@@ -15,13 +15,13 @@
 package apps
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"net/url"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -31,21 +31,26 @@ import (
 	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/manifest"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
+	ignore "github.com/sabhiram/go-gitignore"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/api/resource"
+	"knative.dev/pkg/ptr"
 )
 
 // SrcImageBuilder creates and uploads a container image that contains the
 // contents of the argument 'dir'.
 type SrcImageBuilder interface {
-	BuildSrcImage(dir, srcImage string) error
+	BuildSrcImage(dir, srcImage string, filter KontextFilter) error
 }
 
+// KontextFilter is used to select which files should be packaged into the
+// Kontext container.
+type KontextFilter = func(path string) (bool, error)
+
 // SrcImageBuilderFunc converts a func into a SrcImageBuilder.
-type SrcImageBuilderFunc func(dir, srcImage string, rebase bool) error
+type SrcImageBuilderFunc func(dir, srcImage string, rebase bool, filter KontextFilter) error
 
 // BuildSrcImage implements SrcImageBuilder.
-func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string) error {
+func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string, filter KontextFilter) error {
 	oldPrefix := log.Prefix()
 	oldFlags := log.Flags()
 
@@ -54,7 +59,7 @@ func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string) error {
 	log.SetOutput(os.Stdout)
 
 	log.Printf("Uploading %s to image %s", dir, srcImage)
-	err := f(dir, srcImage, false)
+	err := f(dir, srcImage, false, filter)
 
 	log.SetPrefix(oldPrefix)
 	log.SetFlags(oldFlags)
@@ -75,6 +80,7 @@ func NewPushCommand(
 		containerRegistry   string
 		sourceImage         string
 		containerImage      string
+		dockerfilePath      string
 		manifestFile        string
 		instances           int
 		minScale            int
@@ -83,14 +89,11 @@ func NewPushCommand(
 		buildpack           string
 		stack               string
 		envs                []string
-		grpc                bool
+		enableHTTP2         bool
 		noManifest          bool
 		noStart             bool
 		healthCheckType     string
 		healthCheckTimeout  int
-		memoryRequest       *resource.Quantity
-		storageRequest      *resource.Quantity
-		cpuRequest          *resource.Quantity
 		startupCommand      string
 		containerEntrypoint string
 		containerArgs       []string
@@ -108,7 +111,7 @@ func NewPushCommand(
   kf push myapp
   kf push myapp --buildpack my.special.buildpack # Discover via kf buildpacks
   kf push myapp --env FOO=bar --env BAZ=foo
-	kf push myapp --stack cloudfoundry/cflinuxfs3 # Use a cflinuxfs3 runtime
+  kf push myapp --stack cloudfoundry/cflinuxfs3 # Use a cflinuxfs3 runtime
   `,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -168,6 +171,7 @@ func NewPushCommand(
 				overrides.Command = startupCommand
 				overrides.Args = containerArgs
 				overrides.Entrypoint = containerEntrypoint
+				overrides.Dockerfile.Path = dockerfilePath
 
 				// Read environment variables from cli args
 				envVars, err := envutil.ParseCLIEnvVars(envs)
@@ -219,14 +223,32 @@ func NewPushCommand(
 				if cmd.Flags().Lookup("max-scale").Changed {
 					overrides.MaxScale = &maxScale
 				}
+
+				if cmd.Flags().Lookup("enable-http2").Changed {
+					overrides.EnableHTTP2 = ptr.Bool(enableHTTP2)
+				}
+
+				if cmd.Flags().Lookup("no-start").Changed {
+					overrides.NoStart = ptr.Bool(noStart)
+				}
 			}
 
 			for _, app := range appsToDeploy {
+				// Warn the user about unofficial fields they might be using before
+				// overriding the manifest.
+				if err := app.WarnUnofficialFields(cmd.OutOrStderr()); err != nil {
+					return err
+				}
+
 				if err := app.Override(overrides); err != nil {
 					return err
 				}
 
-				exactScale, minScale, maxScale, err := calculateScaleBounds(app.Instances, app.MinScale, app.MaxScale)
+				if err := app.Validate(context.Background()); err.Error() != "" {
+					return err
+				}
+
+				resourceRequests, err := app.ToResourceRequests()
 				if err != nil {
 					return err
 				}
@@ -239,38 +261,6 @@ func NewPushCommand(
 				routes, err := setupRoutes(space, app)
 				if err != nil {
 					return err
-				}
-
-				if app.Memory != "" {
-					memStr, err := convertResourceQuantityStr(app.Memory)
-					if err != nil {
-						return err
-					}
-					mem, parseErr := resource.ParseQuantity(memStr)
-					if parseErr != nil {
-						return fmt.Errorf("couldn't parse resource quantity %s: %v", memStr, parseErr)
-					}
-					memoryRequest = &mem
-				}
-
-				if app.DiskQuota != "" {
-					storageStr, err := convertResourceQuantityStr(app.DiskQuota)
-					if err != nil {
-						return err
-					}
-					storage, parseErr := resource.ParseQuantity(storageStr)
-					if parseErr != nil {
-						return fmt.Errorf("couldn't parse resource quantity %s: %v", storageStr, parseErr)
-					}
-					storageRequest = &storage
-				}
-
-				if app.CPU != "" {
-					cpu, parseErr := resource.ParseQuantity(app.CPU)
-					if parseErr != nil {
-						return fmt.Errorf("couldn't parse resource quantity %s: %v", app.CPU, parseErr)
-					}
-					cpuRequest = &cpu
 				}
 
 				healthCheck, err := apps.NewHealthCheck(app.HealthCheckType, app.HealthCheckHTTPEndpoint, app.HealthCheckTimeout)
@@ -291,24 +281,22 @@ func NewPushCommand(
 				pushOpts := []apps.PushOption{
 					apps.WithPushNamespace(p.Namespace),
 					apps.WithPushEnvironmentVariables(app.Env),
-					apps.WithPushGrpc(grpc),
-					apps.WithPushExactScale(exactScale),
-					apps.WithPushMinScale(minScale),
-					apps.WithPushMaxScale(maxScale),
-					apps.WithPushNoStart(noStart),
 					apps.WithPushRoutes(routes),
-					apps.WithPushMemory(memoryRequest),
-					apps.WithPushDiskQuota(storageRequest),
-					apps.WithPushCPU(cpuRequest),
 					apps.WithPushHealthCheck(healthCheck),
 					apps.WithPushRandomRouteDomain(randomRouteDomain),
 					apps.WithPushDefaultRouteDomain(defaultRouteDomain),
 					apps.WithPushCommand(app.CommandEntrypoint()),
 					apps.WithPushArgs(app.CommandArgs()),
+					apps.WithPushResourceRequests(resourceRequests),
+					apps.WithPushAppSpecInstances(app.ToAppSpecInstances()),
+				}
+
+				if app.EnableHTTP2 != nil {
+					pushOpts = append(pushOpts, apps.WithPushGrpc(*app.EnableHTTP2))
 				}
 
 				if app.Docker.Image == "" {
-					// buildpack app
+					// buildpack or Dockerfile app
 					registry := containerRegistry
 					switch {
 					case registry != "":
@@ -330,7 +318,17 @@ func NewPushCommand(
 						if err != nil {
 							return err
 						}
-						if err := b.BuildSrcImage(srcPath, imageName); err != nil {
+
+						// Sanity check that the Dockerfile is in the source
+						if app.Dockerfile.Path != "" {
+							absDockerPath := filepath.Join(srcPath, filepath.FromSlash(app.Dockerfile.Path))
+							if _, err := os.Stat(absDockerPath); os.IsNotExist(err) {
+								fmt.Fprintln(cmd.OutOrStdout(), "app root:", srcPath)
+								return fmt.Errorf("the Dockerfile %s couldn't be found under the app root", app.Dockerfile.Path)
+							}
+						}
+
+						if err := b.BuildSrcImage(srcPath, imageName, buildIgnoreFilter(srcPath)); err != nil {
 							return err
 						}
 					}
@@ -338,6 +336,7 @@ func NewPushCommand(
 						apps.WithPushSourceImage(imageName),
 						apps.WithPushBuildpack(app.Buildpack()),
 						apps.WithPushStack(app.Stack),
+						apps.WithPushDockerfilePath(app.Dockerfile.Path),
 					)
 				} else {
 					if containerRegistry != "" {
@@ -370,7 +369,6 @@ func NewPushCommand(
 				if err != nil {
 					return err
 				}
-
 			}
 
 			return nil
@@ -403,10 +401,10 @@ func NewPushCommand(
 	)
 
 	pushCmd.Flags().BoolVar(
-		&grpc,
-		"grpc",
+		&enableHTTP2,
+		"enable-http2",
 		false,
-		"Setup the container to allow application to use gRPC.",
+		"Setup the container to allow application to use HTTP2 and gRPC.",
 	)
 
 	pushCmd.Flags().BoolVar(
@@ -445,6 +443,13 @@ func NewPushCommand(
 		"docker-image",
 		"",
 		"Docker image to deploy.",
+	)
+
+	pushCmd.Flags().StringVar(
+		&dockerfilePath,
+		"dockerfile",
+		"",
+		"Path to the Dockerfile to build. Relative to the source root.",
 	)
 
 	pushCmd.Flags().StringVarP(
@@ -546,21 +551,6 @@ func NewPushCommand(
 	return pushCmd
 }
 
-func calculateScaleBounds(instances, minScale, maxScale *int) (exact, min, max *int, err error) {
-	switch {
-	case instances != nil:
-		// Exactly
-		if minScale != nil || maxScale != nil {
-			return nil, nil, nil, errors.New("couldn't set the -i flag and the minScale/maxScale flags in manifest together")
-		}
-
-		return instances, nil, nil, nil
-	default:
-		// Autoscaling or unset
-		return nil, minScale, maxScale, nil
-	}
-}
-
 func createRoute(routeStr, namespace string) (v1alpha1.RouteSpecFields, error) {
 	hostname, domain, path, err := parseRouteStr(routeStr)
 	if err != nil {
@@ -618,35 +608,6 @@ func parseRouteStr(routeStr string) (string, string, string, error) {
 	return hostname, domain, path, nil
 }
 
-// convertResourceQuantityStr converts CF resource quantities into the equivalent k8s quantity strings.
-// CF interprets K, M, G, T as binary SI units while k8s interprets them as decimal, so we convert them here
-// into the k8s binary SI units (Ki, Mi, Gi, Ti)
-func convertResourceQuantityStr(r string) (string, error) {
-	// Break down resource quantity string into int and unit of measurement
-	// Below method breaks down "50G" into ["50G" "50" "G"]
-	parts := cfValidBytesPattern.FindStringSubmatch(strings.TrimSpace(r))
-	if len(parts) < 3 {
-		return "", errors.New("Byte quantity must be an integer with a unit of measurement like M, MB, G, or GB")
-	}
-	num := parts[1]
-	unit := strings.ToUpper(parts[2])
-	newUnit := unit
-	switch unit {
-	case "T":
-		newUnit = "Ti"
-	case "G":
-		newUnit = "Gi"
-	case "M":
-		newUnit = "Mi"
-	case "K":
-		newUnit = "Ki"
-	}
-
-	return num + newUnit, nil
-}
-
-var cfValidBytesPattern = regexp.MustCompile(`(?i)^(-?\d+)([KMGT])B?$`)
-
 func spaceDefaultDomain(space *v1alpha1.Space) (string, error) {
 	for _, domain := range space.Spec.Execution.Domains {
 		if domain.Default {
@@ -672,4 +633,52 @@ func setupRoutes(space *v1alpha1.Space, app manifest.Application) (routes []v1al
 	}
 
 	return routes, nil
+}
+
+func buildIgnoreFilter(srcPath string) KontextFilter {
+	ignoreFiles := []string{
+		".kfignore",
+		".cfignore",
+	}
+
+	var defaultIgnoreLines = []string{
+		".cfignore",
+		"/manifest.yml",
+		".gitignore",
+		".git",
+		".hg",
+		".svn",
+		"_darcs",
+		".DS_Store",
+	}
+
+	var (
+		gitignore *ignore.GitIgnore
+		err       error
+	)
+	for _, ignoreFile := range ignoreFiles {
+		gitignore, err = ignore.CompileIgnoreFileAndLines(
+			filepath.Join(srcPath, ignoreFile),
+			defaultIgnoreLines...,
+		)
+		if err != nil {
+			// Just move on.
+			continue
+		}
+
+		break
+	}
+
+	if gitignore == nil {
+		gitignore, err = ignore.CompileIgnoreLines(defaultIgnoreLines...)
+		if err != nil {
+			return func(string) (bool, error) {
+				return false, err
+			}
+		}
+	}
+
+	return func(path string) (bool, error) {
+		return !gitignore.MatchesPath(path), nil
+	}
 }

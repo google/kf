@@ -22,10 +22,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/google/kf/pkg/internal/envutil"
 	"github.com/imdario/mergo"
+	"knative.dev/pkg/kmp"
 	"sigs.k8s.io/yaml"
 )
 
@@ -41,18 +43,10 @@ type Application struct {
 	Services        []string          `json:"services,omitempty"`
 	DiskQuota       string            `json:"disk_quota,omitempty"`
 	Memory          string            `json:"memory,omitempty"`
-	CPU             string            `json:"cpu,omitempty"`
 	Instances       *int              `json:"instances,omitempty"`
 
 	// Container command configuration
-	Entrypoint string   `json:"entrypoint,omitempty"`
-	Args       []string `json:"args,omitempty"`
-	Command    string   `json:"command,omitempty"`
-
-	// TODO(#95): These aren't CF proper. How do we expose these in the
-	// manifest?
-	MinScale *int `json:"min-scale,omitempty"`
-	MaxScale *int `json:"max-scale,omitempty"`
+	Command string `json:"command,omitempty"`
 
 	Routes      []Route `json:"routes,omitempty"`
 	NoRoute     *bool   `json:"no-route,omitempty"`
@@ -69,6 +63,27 @@ type Application struct {
 	// HealthCheckHTTPEndpoint holds the HTTP endpoint that will receive the
 	// get requests to determine liveness if HealthCheckType is http.
 	HealthCheckHTTPEndpoint string `json:"health-check-http-endpoint,omitempty"`
+
+	// KfApplicationExtension holds fields that aren't officially in cf
+	KfApplicationExtension `json:",inline"`
+}
+
+// KfApplicationExtension holds fields that aren't officially in cf
+type KfApplicationExtension struct {
+	// TODO(#95): These aren't CF proper. How do we expose these in the manifest?
+
+	CPU string `json:"cpu,omitempty"`
+
+	MinScale *int  `json:"min-scale,omitempty"`
+	MaxScale *int  `json:"max-scale,omitempty"`
+	NoStart  *bool `json:"no-start,omitempty"`
+
+	EnableHTTP2 *bool `json:"enable-http2,omitempty"`
+
+	Entrypoint string   `json:"entrypoint,omitempty"`
+	Args       []string `json:"args,omitempty"`
+
+	Dockerfile Dockerfile `json:"dockerfile,omitempty"`
 }
 
 // AppDockerImage is the struct for docker configuration.
@@ -84,6 +99,11 @@ type Route struct {
 // Manifest is an application's configuration.
 type Manifest struct {
 	Applications []Application `json:"applications"`
+}
+
+// Dockerfile contains the path to a Dockerfile to build.
+type Dockerfile struct {
+	Path string `json:"path,omitempty"`
 }
 
 // NewFromFile creates a Manifest from a manifest file.
@@ -164,19 +184,6 @@ func (m Manifest) App(name string) (*Application, error) {
 // Override overrides values using corresponding non-empty values from overrides.
 // Environment variables are extended with override taking priority.
 func (app *Application) Override(overrides *Application) error {
-
-	// TODO(#95) MinScale and MaxScale aren't CF proper and therefore may not
-	// stick around. We should warn the user, however there is no reason to
-	// not support it for now.
-	if app.MinScale != nil || app.MaxScale != nil {
-		fmt.Fprintf(os.Stderr, `
-WARNING! min-scale and max-scale are not normal CF fields in a manifest.
-Therefore they are subject to change.
-Please follow the thread in https://github.com/google/kf/issues/95
-for more info.
-`)
-	}
-
 	appEnv := envutil.MapToEnvVars(app.Env)
 	overrideEnv := envutil.MapToEnvVars(overrides.Env)
 	combined := append(appEnv, overrideEnv...)
@@ -206,6 +213,28 @@ for more info.
 
 	if err := app.Validate(context.Background()); err.Error() != "" {
 		return err
+	}
+
+	return nil
+}
+
+// WarnUnofficialFields prints a message to the given writer if the user is
+// using any kf specific fields in their configuration.
+func (app *Application) WarnUnofficialFields(w io.Writer) error {
+	// TODO(#95) Warn the user about using unofficial fields that are subject to
+	// change.
+	unofficialFields, err := kmp.CompareSetFields(app.KfApplicationExtension, KfApplicationExtension{})
+	if err != nil {
+		return err
+	}
+
+	if len(unofficialFields) != 0 {
+		sort.Strings(unofficialFields)
+
+		fmt.Fprintln(w)
+		fmt.Fprintf(w, "WARNING! The field(s) %v are Kf-specific manifest extensions and may change.\n", unofficialFields)
+		fmt.Fprintln(w, "See https://github.com/google/kf/issues/95 for more info.")
+		fmt.Fprintln(w)
 	}
 
 	return nil

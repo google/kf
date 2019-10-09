@@ -83,7 +83,7 @@ func TestPushCommand(t *testing.T) {
 			args: []string{
 				"example-app",
 				"--buildpack", "some-buildpack",
-				"--grpc",
+				"--enable-http2",
 				"--env", "env1=val1",
 				"-e", "env2=val2",
 				"--container-registry", "some-reg.io",
@@ -98,7 +98,7 @@ func TestPushCommand(t *testing.T) {
 				"--args", "b",
 			},
 			wantImagePrefix: "some-reg.io/src-some-namespace-example-app",
-			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
+			srcImageBuilder: func(dir, srcImage string, rebase bool, filter func(path string) (bool, error)) error {
 				testutil.AssertEqual(t, "path", true, strings.Contains(dir, "example-app"))
 				testutil.AssertEqual(t, "path is abs", true, filepath.IsAbs(dir))
 				return nil
@@ -109,8 +109,10 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushBuildpack("some-buildpack"),
 				apps.WithPushStack("cflinuxfs3"),
 				apps.WithPushEnvironmentVariables(map[string]string{"env1": "val1", "env2": "val2"}),
-				apps.WithPushNoStart(true),
-				apps.WithPushExactScale(intPtr(1)),
+				apps.WithPushAppSpecInstances(v1alpha1.AppSpecInstances{
+					Stopped: true,
+					Exactly: intPtr(1),
+				}),
 				apps.WithPushArgs([]string{"a", "b"}),
 				apps.WithPushCommand([]string{"start-web.sh"}),
 				apps.WithPushHealthCheck(&corev1.Probe{
@@ -126,7 +128,7 @@ func TestPushCommand(t *testing.T) {
 			args: []string{
 				"app-name",
 			},
-			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
+			srcImageBuilder: func(dir, srcImage string, rebase bool, filter func(path string) (bool, error)) error {
 				cwd, err := os.Getwd()
 				testutil.AssertNil(t, "cwd err", err)
 				testutil.AssertEqual(t, "path", cwd, dir)
@@ -157,7 +159,7 @@ func TestPushCommand(t *testing.T) {
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushExactScale(intPtr(11)),
+				apps.WithPushAppSpecInstances(v1alpha1.AppSpecInstances{Exactly: intPtr(11)}),
 			),
 		},
 		"instances from manifest": {
@@ -168,7 +170,7 @@ func TestPushCommand(t *testing.T) {
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushExactScale(intPtr(9)),
+				apps.WithPushAppSpecInstances(v1alpha1.AppSpecInstances{Exactly: intPtr(9)}),
 			),
 		},
 		"override manifest min instances": {
@@ -180,8 +182,7 @@ func TestPushCommand(t *testing.T) {
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushMinScale(intPtr(11)),
-				apps.WithPushMaxScale(intPtr(11)),
+				apps.WithPushAppSpecInstances(v1alpha1.AppSpecInstances{Min: intPtr(11), Max: intPtr(11)}),
 			),
 		},
 		"override manifest max instances": {
@@ -194,8 +195,7 @@ func TestPushCommand(t *testing.T) {
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
 				// Manifest has 9 for min
-				apps.WithPushMinScale(intPtr(9)),
-				apps.WithPushMaxScale(intPtr(13)),
+				apps.WithPushAppSpecInstances(v1alpha1.AppSpecInstances{Min: intPtr(9), Max: intPtr(13)}),
 			),
 		},
 		"min and max instances from manifest": {
@@ -206,8 +206,7 @@ func TestPushCommand(t *testing.T) {
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushMinScale(intPtr(9)),
-				apps.WithPushMaxScale(intPtr(11)),
+				apps.WithPushAppSpecInstances(v1alpha1.AppSpecInstances{Min: intPtr(9), Max: intPtr(11)}),
 			),
 		},
 		"bind-service-instance": {
@@ -216,7 +215,7 @@ func TestPushCommand(t *testing.T) {
 				"app-name",
 				"--manifest", "testdata/manifest-services.yaml",
 			},
-			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
+			srcImageBuilder: func(dir, srcImage string, rebase bool, filter func(path string) (bool, error)) error {
 				cwd, err := os.Getwd()
 				testutil.AssertNil(t, "cwd err", err)
 				testutil.AssertEqual(t, "path", cwd, dir)
@@ -272,7 +271,7 @@ func TestPushCommand(t *testing.T) {
 			namespace: "some-namespace",
 			args:      []string{"app-name"},
 			wantErr:   errors.New("some error"),
-			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
+			srcImageBuilder: func(dir, srcImage string, rebase bool, filter func(path string) (bool, error)) error {
 				return errors.New("some error")
 			},
 		},
@@ -513,15 +512,47 @@ func TestPushCommand(t *testing.T) {
 			},
 			wantOpts: append(defaultOptions,
 				apps.WithPushNamespace("some-namespace"),
-				apps.WithPushMemory(&wantMemory),
-				apps.WithPushDiskQuota(&wantDiskQuota),
-				apps.WithPushCPU(&wantCPU),
+				apps.WithPushResourceRequests(corev1.ResourceList{
+					corev1.ResourceMemory:           wantMemory,
+					corev1.ResourceEphemeralStorage: wantDiskQuota,
+					corev1.ResourceCPU:              wantCPU,
+				}),
+			),
+		},
+		"bad dockerfile": {
+			namespace: "some-namespace",
+			args: []string{
+				"bad-dockerfile-app",
+				"--manifest", "testdata/manifest.yml",
+			},
+			wantErr: errors.New("the Dockerfile does-not-exist couldn't be found under the app root"),
+		},
+		"good dockerfile": {
+			namespace: "some-namespace",
+			args: []string{
+				"dockerfile-app",
+				"--path", "testdata",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushDockerfilePath("Dockerfile"),
+			),
+		},
+		"provided dockerfile": {
+			namespace: "some-namespace",
+			args: []string{
+				"dockerfile-app",
+				"--dockerfile", "testdata/dockerfile-app/Dockerfile",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushDockerfilePath("testdata/dockerfile-app/Dockerfile"),
 			),
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			if tc.srcImageBuilder == nil {
-				tc.srcImageBuilder = func(dir, srcImage string, rebase bool) error { return nil }
+				tc.srcImageBuilder = func(dir, srcImage string, rebase bool, filter func(path string) (bool, error)) error { return nil }
 			}
 
 			ctrl := gomock.NewController(t)
@@ -541,19 +572,15 @@ func TestPushCommand(t *testing.T) {
 					testutil.AssertEqual(t, "buildpack", expectOpts.Buildpack(), actualOpts.Buildpack())
 					testutil.AssertEqual(t, "grpc", expectOpts.Grpc(), actualOpts.Grpc())
 					testutil.AssertEqual(t, "env vars", expectOpts.EnvironmentVariables(), actualOpts.EnvironmentVariables())
-					testutil.AssertEqual(t, "exact scale bound", expectOpts.ExactScale(), actualOpts.ExactScale())
-					testutil.AssertEqual(t, "min scale bound", expectOpts.MinScale(), actualOpts.MinScale())
-					testutil.AssertEqual(t, "max scale bound", expectOpts.MaxScale(), actualOpts.MaxScale())
-					testutil.AssertEqual(t, "no start", expectOpts.NoStart(), actualOpts.NoStart())
+					testutil.AssertEqual(t, "instances", expectOpts.AppSpecInstances(), actualOpts.AppSpecInstances())
 					testutil.AssertEqual(t, "routes", expectOpts.Routes(), actualOpts.Routes())
-					testutil.AssertEqual(t, "memory requests", expectOpts.Memory(), actualOpts.Memory())
-					testutil.AssertEqual(t, "storage requests", expectOpts.DiskQuota(), actualOpts.DiskQuota())
-					testutil.AssertEqual(t, "cpu requests", expectOpts.CPU(), actualOpts.CPU())
+					testutil.AssertEqual(t, "resource requests", expectOpts.ResourceRequests(), actualOpts.ResourceRequests())
 					testutil.AssertEqual(t, "health check", expectOpts.HealthCheck(), actualOpts.HealthCheck())
 					testutil.AssertEqual(t, "default route", expectOpts.DefaultRouteDomain(), actualOpts.DefaultRouteDomain())
 					testutil.AssertEqual(t, "random route", expectOpts.RandomRouteDomain(), actualOpts.RandomRouteDomain())
 					testutil.AssertEqual(t, "command", expectOpts.Command(), actualOpts.Command())
 					testutil.AssertEqual(t, "args", expectOpts.Args(), actualOpts.Args())
+					testutil.AssertEqual(t, "Dockerfile path", expectOpts.DockerfilePath(), actualOpts.DockerfilePath())
 
 					if !strings.HasPrefix(actualOpts.SourceImage(), tc.wantImagePrefix) {
 						t.Errorf("Wanted srcImage to start with %s got: %s", tc.wantImagePrefix, actualOpts.SourceImage())

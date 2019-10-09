@@ -36,6 +36,11 @@ func TestAppSpecSourceMask(t *testing.T) {
 		ContainerImage: SourceSpecContainerImage{
 			Image: "mysql/mysql",
 		},
+		Dockerfile: SourceSpecDockerfile{
+			Image:  "",
+			Path:   "path/to/Dockerfile",
+			Source: "gcr.io/custom-source:dockerfilesource",
+		},
 	}
 
 	input := SourceSpec{
@@ -51,6 +56,11 @@ func TestAppSpecSourceMask(t *testing.T) {
 		},
 		ContainerImage: SourceSpecContainerImage{
 			Image: "mysql/mysql",
+		},
+		Dockerfile: SourceSpecDockerfile{
+			Image:  "gcr.io/custom-image:label",
+			Path:   "path/to/Dockerfile",
+			Source: "gcr.io/custom-source:dockerfilesource",
 		},
 	}
 

@@ -57,20 +57,27 @@ func newApp(appName string, opts ...PushOption) (*v1alpha1.App, error) {
 	}
 
 	src := sources.NewKfSource()
-	src.SetBuildpackBuildSource(cfg.SourceImage)
-	src.SetContainerImageSource(cfg.ContainerImage)
-	src.SetBuildpackBuildEnv(envs)
-	src.SetBuildpackBuildBuildpack(cfg.Buildpack)
-	src.SetBuildpackBuildStack(cfg.Stack)
+	switch {
+	case cfg.ContainerImage != "":
+		src.SetContainerImageSource(cfg.ContainerImage)
+
+	case cfg.DockerfilePath != "":
+		src.SetDockerfilePath(cfg.DockerfilePath)
+		src.SetDockerfileSource(cfg.SourceImage)
+
+	default: // default to buildpack build
+		src.SetBuildpackBuildEnv(envs)
+		src.SetBuildpackBuildBuildpack(cfg.Buildpack)
+		src.SetBuildpackBuildSource(cfg.SourceImage)
+		src.SetBuildpackBuildStack(cfg.Stack)
+	}
 
 	app := NewKfApp()
 	app.SetName(appName)
 	app.SetNamespace(cfg.Namespace)
 	app.SetSource(src)
-	app.SetMemory(cfg.Memory)
-	app.SetStorage(cfg.DiskQuota)
-	app.SetCPU(cfg.CPU)
-	app.Spec.Instances.Stopped = cfg.NoStart
+	app.SetResourceRequests(cfg.ResourceRequests)
+	app.Spec.Instances = cfg.AppSpecInstances
 	app.SetHealthCheck(cfg.HealthCheck)
 	app.Spec.Routes = cfg.Routes
 	app.Spec.ServiceBindings = cfg.ServiceBindings
@@ -102,14 +109,7 @@ func (p *pusher) Push(appName string, opts ...PushOption) error {
 	app.Spec.Routes, hasDefaultRoutes = setupRoutes(cfg, app.Name, app.Spec.Routes)
 
 	// Scaling
-	if cfg.ExactScale != nil {
-		// Exactly
-		app.Spec.Instances.Exactly = cfg.ExactScale
-	} else if !noCfgScaling(cfg) {
-		// Autoscaling or unset
-		app.Spec.Instances.Min = cfg.MinScale
-		app.Spec.Instances.Max = cfg.MaxScale
-	} else {
+	if noScaling(app.Spec.Instances) {
 		// Default to 1
 		singleInstance := 1
 		app.Spec.Instances.Exactly = &singleInstance
@@ -129,15 +129,12 @@ func (p *pusher) Push(appName string, opts ...PushOption) error {
 	}
 
 	status := "deployed"
-	if cfg.NoStart {
+	if resultingApp.Spec.Instances.Stopped {
 		status = "deployed without starting"
 	}
 
 	_, err = fmt.Fprintf(cfg.Output, "%q successfully %s\n", appName, status)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func setupRoutes(cfg pushConfig, appName string, r []v1alpha1.RouteSpecFields) (routes []v1alpha1.RouteSpecFields, hasDefaultRoutes bool) {
@@ -168,14 +165,10 @@ func setupRoutes(cfg pushConfig, appName string, r []v1alpha1.RouteSpecFields) (
 	}
 }
 
-func noCfgScaling(cfg pushConfig) bool {
-	return cfg.MinScale == nil && cfg.MaxScale == nil && cfg.ExactScale == nil
-}
-
-func noScaling(app *v1alpha1.App) bool {
-	return app.Spec.Instances.Exactly == nil &&
-		app.Spec.Instances.Min == nil &&
-		app.Spec.Instances.Max == nil
+func noScaling(instances v1alpha1.AppSpecInstances) bool {
+	return instances.Exactly == nil &&
+		instances.Min == nil &&
+		instances.Max == nil
 }
 
 func mergeApps(cfg pushConfig, hasDefaultRoutes bool) func(newapp, oldapp *v1alpha1.App) *v1alpha1.App {
@@ -186,7 +179,7 @@ func mergeApps(cfg pushConfig, hasDefaultRoutes bool) func(newapp, oldapp *v1alp
 		}
 
 		// Scaling overrides
-		if noCfgScaling(cfg) {
+		if noScaling(cfg.AppSpecInstances) {
 			// Looks like the user did not set a new value, use the old one
 			newapp.Spec.Instances.Exactly = oldapp.Spec.Instances.Exactly
 			newapp.Spec.Instances.Min = oldapp.Spec.Instances.Min
@@ -194,7 +187,7 @@ func mergeApps(cfg pushConfig, hasDefaultRoutes bool) func(newapp, oldapp *v1alp
 		}
 
 		// Default scaling
-		if noCfgScaling(cfg) && noScaling(oldapp) {
+		if noScaling(cfg.AppSpecInstances) && noScaling(oldapp.Spec.Instances) {
 			// No scaling in old or new, go with a default of 1. This is to
 			// match expectaions for CF users. See
 			// https://github.com/google/kf/issues/8 for more context.
@@ -211,11 +204,6 @@ func mergeApps(cfg pushConfig, hasDefaultRoutes bool) func(newapp, oldapp *v1alp
 	}
 }
 
-// AppImageName gets the image name for an application.
-func AppImageName(namespace, appName string) string {
-	return fmt.Sprintf("app-%s-%s:%d", namespace, appName, time.Now().UnixNano())
-}
-
 // SourceImageName gets the image name for source code for an application.
 func SourceImageName(namespace, appName string) string {
 	return fmt.Sprintf("src-%s-%s:%d", namespace, appName, time.Now().UnixNano())
@@ -224,10 +212,4 @@ func SourceImageName(namespace, appName string) string {
 // JoinRepositoryImage joins a repository and image name.
 func JoinRepositoryImage(repository, imageName string) string {
 	return fmt.Sprintf("%s/%s", repository, imageName)
-}
-
-// BuildName gets a build name based on the current time.
-// Build names are limited by Knative to be 64 characters long.
-func BuildName() string {
-	return fmt.Sprintf("build-%d", time.Now().UnixNano())
 }

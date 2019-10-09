@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -73,6 +74,13 @@ func TestIntegration_Push_update(t *testing.T) {
 		)
 		defer kf.Delete(ctx, appName)
 		checkEchoApp(ctx, t, kf, appName, 8087, ExpectedAddr(appName, ""))
+
+		kf.Push(ctx, appName,
+			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/helloworld"),
+		)
+		// BUG(730): it takes a moment after the app becomes ready to reconcile the
+		// routes, the app is accessible but still points to the old one.
+		time.Sleep(30 * time.Second)
 		checkHelloWorldApp(ctx, t, kf, appName, 8088, ExpectedAddr(appName, ""))
 	})
 }
@@ -93,6 +101,23 @@ func TestIntegration_Push_docker(t *testing.T) {
 		)
 		defer kf.Delete(ctx, appName)
 		checkEchoApp(ctx, t, kf, appName, 8086, ExpectedAddr(appName, ""))
+	})
+}
+
+// TestIntegration_Push_dockerfile pushes a sample dockerfile app then attempts
+// to connect to it to ensure it started correctly.
+func TestIntegration_Push_dockerfile(t *testing.T) {
+	t.Parallel()
+	checkClusterStatus(t)
+	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+		currentTime := time.Now().UnixNano()
+		appName := fmt.Sprintf("integration-dockerfile-%d", currentTime)
+		appPath := filepath.Join(RootDir(ctx, t), "samples", "apps", "helloworld")
+
+		kf.Push(ctx, appName, "--path", appPath, "--dockerfile", "Dockerfile")
+		defer kf.Delete(ctx, appName)
+
+		checkHelloWorldApp(ctx, t, kf, appName, 8089, ExpectedAddr(appName, ""))
 	})
 }
 
@@ -248,7 +273,7 @@ func TestIntegration_Delete(t *testing.T) {
 		Logf(t, "done ensuring app is there.")
 
 		// Delete the app.
-		kf.Delete(ctx, appName)
+		kf.Delete(ctx, appName, "--async")
 
 		// Make sure the app is "deleting"
 		// List the apps and make sure we can find the app.
@@ -381,6 +406,25 @@ func TestIntegration_LogsNoContainer(t *testing.T) {
 				// Not closed, command still going.
 			}
 		}
+	})
+}
+
+// TestIntegration_CfIgnore tests that .{k,c}fignore files are adhered to.  It
+// pushes the sample application cfignore. This application returns the
+// directory structure it was pushed with. It has a complex .cfignore file
+// that should be adhered to.
+func TestIntegration_CfIgnore(t *testing.T) {
+	t.Parallel()
+	checkClusterStatus(t)
+	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+		appName := fmt.Sprintf("integration-cfignore-%d", time.Now().UnixNano())
+
+		kf.Push(ctx, appName,
+			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/cfignore"),
+		)
+		defer kf.Delete(ctx, appName)
+
+		checkCfignoreApp(ctx, t, kf, appName, 8084, ExpectedAddr(appName, ""))
 	})
 }
 
@@ -522,12 +566,52 @@ func checkApp(
 	// for two reasons:
 	// 1. Test the proxy.
 	// 2. Tests work even if a domain isn't setup.
-	Logf(t, "hitting echo app to ensure its working...")
+	Logf(t, "hitting %s app to ensure its working...", appName)
 
 	// TODO(#46): Use port 0 so that we don't have to worry about port
 	// collisions.
 	go kf.Proxy(ctx, appName, proxyPort)
 	assert(ctx, t, fmt.Sprintf("http://localhost:%d", proxyPort))
+}
+
+func checkCfignoreApp(
+	ctx context.Context,
+	t *testing.T,
+	kf *Kf,
+	appName string,
+	proxyPort int,
+	expectedRoutes ...string,
+) {
+	checkApp(ctx, t, kf, appName, expectedRoutes, proxyPort, func(ctx context.Context, t *testing.T, addr string) {
+		resp, respCancel := RetryPost(ctx, t, addr, appTimeout, http.StatusOK, "testing")
+		defer resp.Body.Close()
+		defer respCancel()
+
+		files := []string{}
+		AssertNil(t, "err", json.NewDecoder(resp.Body).Decode(&files))
+
+		expectedFiles := []string{".", "go.mod", "go.sum", "main.go", "app.out"}
+
+		if len(expectedFiles) != len(files) {
+			t.Fatalf("expected %#v to consist of %#v. (wrong len %d)", files, expectedFiles, len(files))
+		}
+
+		for _, expectedFile := range expectedFiles {
+			var found bool
+			for _, actualFile := range files {
+				if expectedFile == actualFile {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				t.Fatalf("expected %#v to consist of %#v. (unable to find %s)", files, expectedFiles, expectedFile)
+			}
+		}
+
+		Logf(t, "done hitting cfignore app to ensure its working.")
+	})
 }
 
 func checkEchoApp(
@@ -564,6 +648,12 @@ func checkHelloWorldApp(
 		resp, respCancel := RetryPost(ctx, t, addr, appTimeout, http.StatusOK, "testing")
 		defer resp.Body.Close()
 		defer respCancel()
+
+		data, err := ioutil.ReadAll(resp.Body)
+		AssertNil(t, "body error", err)
+
+		expectedBody := fmt.Sprintf("hello from %s!", appName)
+		AssertEqual(t, "body", expectedBody, strings.TrimSpace(string(data)))
 		Logf(t, "done hitting helloworld app to ensure its working.")
 	})
 }

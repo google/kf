@@ -181,6 +181,8 @@ func SourceSpec(w io.Writer, spec kfv1alpha1.SourceSpec) {
 			fmt.Fprintln(w, "Build Type:\tcontainer")
 		case spec.IsBuildpackBuild():
 			fmt.Fprintln(w, "Build Type:\tbuildpack")
+		case spec.IsDockerfileBuild():
+			fmt.Fprintln(w, "Build Type:\tdockerfile")
 		default:
 			fmt.Fprintln(w, "Build Type:\tunknown")
 		}
@@ -206,6 +208,16 @@ func SourceSpec(w io.Writer, spec kfv1alpha1.SourceSpec) {
 				fmt.Fprintf(w, "Bulider:\t%s\n", buildpackBuild.BuildpackBuilder)
 				fmt.Fprintf(w, "Destination:\t%s\n", buildpackBuild.Image)
 				EnvVars(w, buildpackBuild.Env)
+			})
+		}
+
+		if spec.IsDockerfileBuild() {
+			SectionWriter(w, "Dockerfile Build", func(w io.Writer) {
+				build := spec.Dockerfile
+
+				fmt.Fprintf(w, "Source:\t%s\n", build.Source)
+				fmt.Fprintf(w, "Dockerfile Path:\t%s\n", build.Path)
+				fmt.Fprintf(w, "Destination:\t%s\n", build.Image)
 			})
 		}
 	})

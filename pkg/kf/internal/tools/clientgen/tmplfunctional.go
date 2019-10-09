@@ -34,7 +34,7 @@ const (
 	APIVersion = "{{.Kubernetes.Version}}"
 )
 
-{{ if .SupportsConditions }}
+{{ if and .SupportsConditions .Kubernetes.Conditions }}
 var (
 	{{ range .Kubernetes.Conditions }}
 	{{.ConditionName}} = apis.ConditionType({{.Definition}}){{ end }}
@@ -115,7 +115,7 @@ func ExtractConditions(obj *{{.Type}}) (extracted []apis.Condition) {
 		// recommended Kuberntes fields.
 		extracted = append(extracted, apis.Condition{
 			Type:    apis.ConditionType(cond.Type),
-			Status:  cond.Status,
+			Status:  corev1.ConditionStatus(cond.Status),
 			Reason:  cond.Reason,
 			Message: cond.Message,
 		})

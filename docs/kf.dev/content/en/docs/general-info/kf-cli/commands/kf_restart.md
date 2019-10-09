@@ -24,7 +24,8 @@ kf restart APP_NAME [flags]
 ### Options
 
 ```
-  -h, --help   help for restart
+      --async   Don't wait for the action to complete on the server before returning
+  -h, --help    help for restart
 ```
 
 ### Options inherited from parent commands

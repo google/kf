@@ -17,20 +17,22 @@ package servicebindings
 import (
 	"context"
 	"fmt"
+	"time"
 
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
 	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/spf13/cobra"
 )
 
 // NewBindServiceCommand allows users to bind apps to service instances.
-func NewBindServiceCommand(p *config.KfParams, client servicebindings.ClientInterface) *cobra.Command {
+func NewBindServiceCommand(p *config.KfParams, client apps.Client) *cobra.Command {
 	var (
 		bindingName  string
 		configAsJSON string
-		async        bool
+		async        utils.AsyncFlags
 	)
 
 	createCmd := &cobra.Command{
@@ -49,27 +51,24 @@ func NewBindServiceCommand(p *config.KfParams, client servicebindings.ClientInte
 				return err
 			}
 
-			if bindingName == "" {
-				bindingName = instanceName
-			}
-
-			params, err := services.ParseJSONOrFile(configAsJSON)
+			parameters, err := services.ParseJSONOrFile(configAsJSON)
 			if err != nil {
 				return err
 			}
 
-			_, err = client.Create(instanceName, appName,
-				servicebindings.WithCreateBindingName(bindingName),
-				servicebindings.WithCreateParams(params),
-				servicebindings.WithCreateNamespace(p.Namespace),
-			)
-			if err != nil {
+			binding := &v1alpha1.AppSpecServiceBinding{
+				Instance:    instanceName,
+				Parameters:  parameters,
+				BindingName: bindingName,
+			}
+
+			if _, err := client.BindService(p.Namespace, appName, binding); err != nil {
 				return err
 			}
 
-			if !async {
+			if async.IsSynchronous() {
 				fmt.Fprintf(cmd.OutOrStderr(), "Waiting for bindings to become ready on %s...\n", appName)
-				if err := client.WaitForBindings(context.Background(), p.Namespace, appName); err != nil {
+				if _, err := client.WaitForConditionServiceBindingsReadyTrue(context.Background(), p.Namespace, appName, 2*time.Second); err != nil {
 					return fmt.Errorf("bind failed: %s", err)
 				}
 			}
@@ -94,13 +93,7 @@ func NewBindServiceCommand(p *config.KfParams, client servicebindings.ClientInte
 		"",
 		"Name to expose service instance to app process with (default: service instance name)")
 
-	createCmd.Flags().BoolVarP(
-		&async,
-		"async",
-		"",
-		false,
-		"Don't wait for the binding to be ready before returning",
-	)
+	async.Add(createCmd)
 
 	return createCmd
 }

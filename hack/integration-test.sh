@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # Copyright 2019 Google LLC
 #
@@ -19,6 +19,7 @@ set -e
 # Go to root dir
 cd $(git rev-parse --show-toplevel)
 
+echo "Executing integration tests from: `pwd`"
 if [ "${DOCKER_REGISTRY}" = "" ]; then
   echo running integration tests
   export DOCKER_REGISTRY="gcr.io/$(gcloud config get-value project)"

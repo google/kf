@@ -24,23 +24,23 @@ The `kf` CLI is built nightly from the master branch. It can be downloaded
 from the following URLs:
 
 ### Linux
-> https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/cli/kf-linux-latest
+> https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly/latest/bin/kf-linux
 ```sh
-wget https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/cli/kf-linux-latest -O kf
+wget https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly/latest/bin/kf-linux -O kf
 chmod +x kf
 sudo mv kf /usr/local/bin
 ```
 
 ### Mac
-> https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/cli/kf-darwin-latest
+> https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly/latest/bin/kf-darwin
 ```sh
-curl https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/cli/kf-darwin-latest --output kf
+curl https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly/latest/bin/kf-darwin --output kf
 chmod +x kf
 sudo mv kf /usr/local/bin
 ```
 
 ### Windows
-> https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/cli/kf-windows-latest.exe
+> https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly/latest/bin/kf-windows.exe
 
 ## Create a Kubernetes cluster
 
@@ -76,7 +76,7 @@ containers and YAML are built nightly from the master branch. Install the latest
 nightly snapshot (note: it does not offer an upgrade path) with:
 
 ```sh
-kubectl apply -f https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly-builds/releases/release-latest.yaml
+kubectl apply -f https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly/latest/release.yaml
 ```
 
 ## Test your installation

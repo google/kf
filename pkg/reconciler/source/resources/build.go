@@ -16,7 +16,7 @@ package resources
 
 import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	build "github.com/knative/build/pkg/apis/build/v1alpha1"
+	build "github.com/google/kf/third_party/knative-build/pkg/apis/build/v1alpha1"
 	"github.com/knative/serving/pkg/resources"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,6 +27,7 @@ const (
 	managedByLabel         = "app.kubernetes.io/managed-by"
 	buildpackBuildTemplate = "buildpack"
 	containerImageTemplate = "container"
+	dockerImageTemplate    = "kaniko"
 )
 
 // BuildName gets the name of a Build for a Source.
@@ -47,6 +48,28 @@ func makeContainerImageBuild(source *v1alpha1.Source) (*build.Build, error) {
 						Name:  v1alpha1.BuildArgImage,
 						Value: source.Spec.ContainerImage.Image,
 					},
+				},
+			},
+		},
+	}, nil
+}
+
+func makeDockerImageBuild(source *v1alpha1.Source) (*build.Build, error) {
+	return &build.Build{
+		ObjectMeta: makeObjectMeta(source),
+		Spec: build.BuildSpec{
+			ServiceAccountName: source.Spec.ServiceAccount,
+			Source: &build.SourceSpec{
+				Custom: &corev1.Container{
+					Image: source.Spec.Dockerfile.Source,
+				},
+			},
+			Template: &build.TemplateInstantiationSpec{
+				Name: dockerImageTemplate,
+				Kind: "ClusterBuildTemplate",
+				Arguments: []build.ArgumentSpec{
+					{Name: v1alpha1.BuildArgImage, Value: source.Spec.Dockerfile.Image},
+					{Name: v1alpha1.BuildArgDockerfile, Value: source.Spec.Dockerfile.Path},
 				},
 			},
 		},
@@ -107,9 +130,12 @@ func makeObjectMeta(source *v1alpha1.Source) metav1.ObjectMeta {
 
 // MakeBuild creates a Build for a Source.
 func MakeBuild(source *v1alpha1.Source) (*build.Build, error) {
-	if source.Spec.IsContainerBuild() {
+	switch {
+	case source.Spec.IsContainerBuild():
 		return makeContainerImageBuild(source)
-	} else {
+	case source.Spec.IsDockerfileBuild():
+		return makeDockerImageBuild(source)
+	default:
 		return makeBuildpackBuild(source)
 	}
 }

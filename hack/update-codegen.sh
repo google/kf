@@ -29,7 +29,6 @@ while getopts "v" opt; do
   esac
 done
 
-HACK_DIR="${0%/*}"
 KF_PACKAGE="github.com/google/kf"
 KF_PACKAGE_LOCATION="./"
 KF_RESOURCE="kf:v1alpha1"
@@ -119,16 +118,16 @@ kf-knative-gen() {
 kbuild-code-gen() {
   code-generator-gen \
     "deepcopy,client,informer,lister" \
-    "$KF_PACKAGE/pkg/client/build" \
-    "github.com/knative/build/pkg/apis" \
+    "github.com/google/kf/third_party/knative-build/pkg/client" \
+    "github.com/google/kf/third_party/knative-build/pkg/apis" \
     "$BUILD_RESOURCE"
 }
 
 kbuild-knative-gen() {
   knative-injection-gen \
     "injection" \
-    "github.com/google/kf/pkg/client/build" \
-    "github.com/knative/build/pkg/apis" \
+    "github.com/google/kf/third_party/knative-build/pkg/client" \
+    "github.com/google/kf/third_party/knative-build/pkg/apis" \
     "build:v1alpha1"
 }
 
@@ -182,6 +181,9 @@ case $GENS in
     svccat-codegen
     svccat-knative-gen
     ;;
+  *)
+    echo "invalid codegen argument: $GENS"
+    exit 1
 esac
 
 gofmt -s -w .
