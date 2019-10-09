@@ -994,6 +994,46 @@ func (k *Kf) CreateRoute(ctx context.Context, domain string, extraArgs ...string
 	StreamOutput(ctx, k.t, output)
 }
 
+// MapRoute runs the map-route command.
+func (k *Kf) MapRoute(ctx context.Context, appName, domain string, extraArgs ...string) {
+	k.t.Helper()
+	Logf(k.t, "running map-route...")
+	defer Logf(k.t, "done running map-route.")
+
+	args := []string{
+		"map-route",
+		"--namespace", SpaceFromContext(ctx),
+		appName,
+		domain,
+	}
+
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: append(args, extraArgs...),
+	})
+	PanicOnError(ctx, k.t, "map-route", errs)
+	StreamOutput(ctx, k.t, output)
+}
+
+// UnmapRoute runs the unmap-route command.
+func (k *Kf) UnmapRoute(ctx context.Context, appName, domain string, extraArgs ...string) {
+	k.t.Helper()
+	Logf(k.t, "running unmap-route...")
+	defer Logf(k.t, "done running unmap-route.")
+
+	args := []string{
+		"unmap-route",
+		"--namespace", SpaceFromContext(ctx),
+		appName,
+		domain,
+	}
+
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: append(args, extraArgs...),
+	})
+	PanicOnError(ctx, k.t, "unmap-route", errs)
+	StreamOutput(ctx, k.t, output)
+}
+
 // DeleteRoute runs the delete-route command.
 func (k *Kf) DeleteRoute(ctx context.Context, domain string, extraArgs ...string) {
 	k.t.Helper()

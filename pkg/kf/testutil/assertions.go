@@ -43,6 +43,15 @@ func Assert(t Failable, m gomock.Matcher, actual interface{}) {
 	}
 }
 
+// AssertTrue causes a test to fail if the asserted statement is not true.
+func AssertTrue(t Failable, fieldName string, predicate bool) {
+	t.Helper()
+
+	if !predicate {
+		t.Fatalf("expected %s to be true, actual: %t", t.Name(), fieldName, predicate)
+	}
+}
+
 // AssertEqual causes a test to fail if the two values are not DeepEqual to
 // one another.
 func AssertEqual(t Failable, fieldName string, expected, actual interface{}) {
