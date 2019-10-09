@@ -59,7 +59,7 @@ templates:
   params:
     path: release-pr
     status: FAILURE
-    description: Concourse "release" pipeline failed failed.
+    description: Concourse "release" pipeline failed.
 # ---- end templates ----
 
 resource_types:
