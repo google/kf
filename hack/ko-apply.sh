@@ -14,5 +14,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -x
+set -eu
+
+# Go to root dir
+cd $(git rev-parse --show-toplevel)
+
+# ko requires a proper go path and deps to be vendored
+# TODO remove this once https://github.com/google/ko/issues/7 is
+# resolved.
+echo "Vendoring from: `pwd`"
+go mod vendor
+
+readonly kfpath="$GOPATH/src/github.com/google/kf"
+
+echo "Checking that $kfpath exists"
+if [[ ! -d "$kfpath" ]]; then
+  echo "Linking $kfpath"
+  mkdir -p $GOPATH/src/github.com/google/
+  ln -s $PWD $kfpath
+fi
+
+pushd $kfpath
 ko apply -f config
+popd
