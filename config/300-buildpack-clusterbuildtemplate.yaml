@@ -43,7 +43,7 @@ spec:
     default: ''
   steps:
   - name: info
-    image: github.com/google/kf/cmd/buildinfo
+    image: github.com/google/kf/cmd/setup-buildpack-build
     imagePullPolicy: Always
     args:
     - "--uid=${USER_ID}"

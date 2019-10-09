@@ -15,7 +15,6 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -24,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/google/kf/pkg/dockerutil"
 	"github.com/google/kf/pkg/kf/describe"
 	"github.com/segmentio/textio"
 )
@@ -69,48 +69,7 @@ func main() {
 	})
 	fmt.Fprintln(w)
 
-	describe.SectionWriter(w, "Docker config", func(w io.Writer) {
-		cfg, err := readDockerConfig()
-		if err != nil {
-			fmt.Fprintf(w, "ERROR: %v\n", err)
-			return
-		}
-
-		describe.SectionWriter(w, "Auth", func(w io.Writer) {
-			if len(cfg.Auth) == 0 {
-				fmt.Fprintln(w, "<none>")
-				return
-			}
-
-			fmt.Fprintln(w, "Registry\tUsername\tEmail\tPassword")
-			for registry, v := range cfg.Auth {
-				pass := "<blank>"
-				if v.Password != "" {
-					pass = "*****"
-				}
-
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
-					registry,
-					v.Username,
-					v.Email,
-					pass,
-				)
-			}
-		})
-
-		describe.SectionWriter(w, "Credential helpers", func(w io.Writer) {
-			if len(cfg.CredHelpers) == 0 {
-				fmt.Fprintln(w, "<none>")
-				return
-			}
-
-			fmt.Fprintln(w, "Registry\tHelper")
-			for registry, helper := range cfg.CredHelpers {
-				fmt.Fprintf(w, "%s\t%s\n", registry, helper)
-			}
-		})
-	})
-	fmt.Fprintln(w)
+	dockerutil.DescribeDefaultConfig(w)
 }
 
 func chown(path string, uid, gid int) error {
@@ -141,33 +100,4 @@ func ls(w io.Writer, path string) {
 			io.WriteString(textio.NewTreeWriter(tree), f.Name())
 		}
 	}
-}
-
-type configFile struct {
-	Auth        map[string]entry  `json:"auths"`
-	CredHelpers map[string]string `json:"credHelpers"`
-}
-
-type entry struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Auth     string `json:"auth"`
-	Email    string `json:"email"`
-}
-
-func readDockerConfig() (*configFile, error) {
-	dockerDir := filepath.Join(os.Getenv("HOME"), ".docker")
-	configPath := filepath.Join(dockerDir, "config.json")
-
-	rawCfg, err := ioutil.ReadFile(configPath)
-	if err != nil {
-		return nil, err
-	}
-
-	dockerConfig := configFile{}
-	if err := json.Unmarshal(rawCfg, &dockerConfig); err != nil {
-		return nil, err
-	}
-
-	return &dockerConfig, nil
 }
