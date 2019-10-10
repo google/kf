@@ -136,6 +136,11 @@ func (status *AppStatus) PropagateEnvVarSecretStatus(secret *v1.Secret) {
 	status.manage().MarkTrue(AppConditionEnvVarSecretReady)
 }
 
+// PropagateRouteStatus updates the route readiness status.
+func (status *AppStatus) PropagateRouteStatus() {
+	status.manage().MarkTrue(AppConditionRouteReady)
+}
+
 // serviceBindingConditionType creates a Conditiontype for a ServiceBinding.
 func serviceBindingConditionType(binding *servicecatalogv1beta1.ServiceBinding) (apis.ConditionType, error) {
 	serviceInstance, ok := binding.Labels[ComponentLabel]
