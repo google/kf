@@ -250,15 +250,16 @@ func TestIsStatusFinal(t *testing.T) {
 func ExampleUnionMaps() {
 	x := map[string]string{"a": "1", "b": "x", "c": "x"}
 	y := map[string]string{"a": "1", "b": "2", "c": "3"}
-	z := map[string]string{"a": "1", "b": "2", "c": "3"}
+	z := map[string]string{"a": "1", "b": "2", "d": "4"}
 
 	result := UnionMaps(x, y, z)
 
-	for _, key := range []string{"a", "b", "c"} {
+	for _, key := range []string{"a", "b", "c", "d"} {
 		fmt.Printf("%s: %s\n", key, result[key])
 	}
 
 	// Output: a: 1
 	// b: 2
 	// c: 3
+	// d: 4
 }
