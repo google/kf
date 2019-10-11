@@ -23,7 +23,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
 	"knative.dev/pkg/apis/duck"
-	duckv1alpha1 "knative.dev/pkg/apis/duck/v1alpha1"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 	apitesting "knative.dev/pkg/apis/testing"
 )
@@ -184,10 +183,10 @@ func happyBuild() *build.Build {
 			},
 		},
 		Status: build.BuildStatus{
-			Status: duckv1alpha1.Status{
-				Conditions: duckv1alpha1.Conditions{
+			Status: duckv1beta1.Status{
+				Conditions: duckv1beta1.Conditions{
 					{
-						Type:   duckv1alpha1.ConditionType("Succeeded"),
+						Type:   apis.ConditionType("Succeeded"),
 						Status: corev1.ConditionTrue,
 					},
 				},
@@ -212,10 +211,10 @@ func pendingBuild() *build.Build {
 			},
 		},
 		Status: build.BuildStatus{
-			Status: duckv1alpha1.Status{
-				Conditions: duckv1alpha1.Conditions{
+			Status: duckv1beta1.Status{
+				Conditions: duckv1beta1.Conditions{
 					{
-						Type:   duckv1alpha1.ConditionType("Succeeded"),
+						Type:   apis.ConditionType("Succeeded"),
 						Status: corev1.ConditionUnknown,
 					},
 				},

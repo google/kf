@@ -21,7 +21,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	duckv1alpha1 "knative.dev/pkg/apis/duck/v1alpha1"
+	"knative.dev/pkg/apis"
+	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 	"knative.dev/pkg/kmeta"
 )
 
@@ -233,7 +234,7 @@ const (
 
 // BuildStatus is the status for a Build resource
 type BuildStatus struct {
-	duckv1alpha1.Status `json:",inline"`
+	duckv1beta1.Status `json:",inline"`
 
 	// +optional
 	Builder BuildProvider `json:"builder,omitempty"`
@@ -264,7 +265,7 @@ type BuildStatus struct {
 }
 
 // Check that BuildStatus may have its conditions managed.
-var _ duckv1alpha1.ConditionsAccessor = (*BuildStatus)(nil)
+var _ apis.ConditionsAccessor = (*BuildStatus)(nil)
 
 // ClusterSpec provides information about the on-cluster build, if applicable.
 type ClusterSpec struct {
@@ -285,11 +286,11 @@ type GoogleSpec struct {
 //
 // If the build is ongoing, its status will be Unknown. If it fails, its status
 // will be False.
-const BuildSucceeded = duckv1alpha1.ConditionSucceeded
+const BuildSucceeded = apis.ConditionSucceeded
 
-const BuildCancelled duckv1alpha1.ConditionType = "Cancelled"
+const BuildCancelled apis.ConditionType = "Cancelled"
 
-var buildCondSet = duckv1alpha1.NewBatchConditionSet()
+var buildCondSet = apis.NewBatchConditionSet()
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -303,28 +304,8 @@ type BuildList struct {
 }
 
 // GetCondition returns the Condition matching the given type.
-func (bs *BuildStatus) GetCondition(t duckv1alpha1.ConditionType) *duckv1alpha1.Condition {
+func (bs *BuildStatus) GetCondition(t apis.ConditionType) *apis.Condition {
 	return buildCondSet.Manage(bs).GetCondition(t)
-}
-
-// SetCondition sets the condition, unsetting previous conditions with the same
-// type as necessary.
-func (bs *BuildStatus) SetCondition(newCond *duckv1alpha1.Condition) {
-	if newCond != nil {
-		buildCondSet.Manage(bs).SetCondition(*newCond)
-	}
-}
-
-// GetConditions returns the Conditions array. This enables generic handling of
-// conditions by implementing the duckv1alpha1.Conditions interface.
-func (bs *BuildStatus) GetConditions() duckv1alpha1.Conditions {
-	return bs.Conditions
-}
-
-// SetConditions sets the Conditions array. This enables generic handling of
-// conditions by implementing the duckv1alpha1.Conditions interface.
-func (bs *BuildStatus) SetConditions(conditions duckv1alpha1.Conditions) {
-	bs.Conditions = conditions
 }
 
 func (b *Build) GetGroupVersionKind() schema.GroupVersionKind {
