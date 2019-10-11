@@ -25,8 +25,9 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/system"
-	apiconfig "github.com/knative/serving/pkg/apis/config"
-	"github.com/knative/serving/pkg/apis/serving/v1beta1"
+	apiconfig "github.com/google/kf/third_party/knative-serving/pkg/apis/config"
+	"github.com/google/kf/third_party/knative-serving/pkg/apis/serving/v1beta1"
+	routecfg "github.com/google/kf/third_party/knative-serving/pkg/reconciler/route/config"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/kubernetes"
 	cv1alpha3 "knative.dev/pkg/client/clientset/versioned/typed/istio/v1alpha3"
@@ -36,7 +37,6 @@ import (
 	"knative.dev/pkg/signals"
 	"knative.dev/pkg/version"
 	"knative.dev/pkg/webhook"
-	routecfg "knative.dev/serving/pkg/reconciler/route/config"
 )
 
 const (
