@@ -29,6 +29,8 @@ import (
 	"github.com/google/kf/pkg/kf/routeclaims"
 	"github.com/google/kf/pkg/kf/routes"
 	"github.com/google/kf/pkg/kf/service-bindings"
+	"github.com/google/kf/pkg/kf/service-brokers/cluster"
+	"github.com/google/kf/pkg/kf/service-brokers/namespaced"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/google/kf/pkg/kf/sources"
 	"github.com/google/kf/pkg/kf/spaces"
@@ -289,13 +291,21 @@ func InjectVcapServices(p *config.KfParams) *cobra.Command {
 
 func InjectCreateServiceBroker(p *config.KfParams) *cobra.Command {
 	versionedInterface := config.GetServiceCatalogClient(p)
-	command := servicebrokers.NewCreateServiceBrokerCommand(p, versionedInterface)
+	clusterServiceBrokersGetter := provideClusterServiceBrokerGetter(versionedInterface)
+	client := cluster.NewClient(clusterServiceBrokersGetter)
+	serviceBrokersGetter := provideServiceBrokerGetter(versionedInterface)
+	namespacedClient := namespaced.NewClient(serviceBrokersGetter)
+	command := servicebrokers.NewCreateServiceBrokerCommand(p, client, namespacedClient)
 	return command
 }
 
 func InjectDeleteServiceBroker(p *config.KfParams) *cobra.Command {
 	versionedInterface := config.GetServiceCatalogClient(p)
-	command := servicebrokers.NewDeleteServiceBrokerCommand(p, versionedInterface)
+	clusterServiceBrokersGetter := provideClusterServiceBrokerGetter(versionedInterface)
+	client := cluster.NewClient(clusterServiceBrokersGetter)
+	serviceBrokersGetter := provideServiceBrokerGetter(versionedInterface)
+	namespacedClient := namespaced.NewClient(serviceBrokersGetter)
+	command := servicebrokers.NewDeleteServiceBrokerCommand(p, client, namespacedClient)
 	return command
 }
 
@@ -491,6 +501,18 @@ func provideServiceInstancesGetter(sc versioned.Interface) v1beta1.ServiceInstan
 
 var ServicesSet = wire.NewSet(
 	provideServiceInstancesGetter, config.GetServiceCatalogClient, config.GetSvcatApp, marketplace.NewClient, services.NewClient,
+)
+
+func provideClusterServiceBrokerGetter(sc versioned.Interface) v1beta1.ClusterServiceBrokersGetter {
+	return sc.ServicecatalogV1beta1()
+}
+
+func provideServiceBrokerGetter(sc versioned.Interface) v1beta1.ServiceBrokersGetter {
+	return sc.ServicecatalogV1beta1()
+}
+
+var serviceBrokerSet = wire.NewSet(config.GetServiceCatalogClient, provideClusterServiceBrokerGetter,
+	provideServiceBrokerGetter, cluster.NewClient, namespaced.NewClient,
 )
 
 /////////////////

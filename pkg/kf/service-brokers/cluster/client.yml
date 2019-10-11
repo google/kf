@@ -1,0 +1,20 @@
+# This file contains options for genfunctional.go
+---
+package: cluster
+imports:
+  github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1: v1beta1
+  github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/typed/servicecatalog/v1beta1: cv1beta1
+kubernetes:
+  kind: "ClusterServiceBroker"
+  version: "v1beta1"
+  namespaced: false
+  # ReconciledGeneration does not update if the service fails
+  #observedGenerationFieldPath: Status.ReconciledGeneration
+  conditionsFieldPath: Status.Conditions
+  conditions:
+  - name: Ready
+    ref: v1beta1.ServiceBrokerConditionReady
+type: "v1beta1.ClusterServiceBroker"
+clientType: "cv1beta1.ClusterServiceBrokersGetter"
+cf:
+  name: "ClusterServiceBroker"
