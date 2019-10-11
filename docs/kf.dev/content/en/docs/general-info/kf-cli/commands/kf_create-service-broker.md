@@ -24,6 +24,7 @@ kf create-service-broker BROKER_NAME URL [flags]
 ### Options
 
 ```
+      --async          Don't wait for the action to complete on the server before returning
   -h, --help           help for create-service-broker
       --space-scoped   Set to create a space scoped service broker.
 ```
