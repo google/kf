@@ -186,7 +186,7 @@ func happyBuild() *build.Build {
 			Status: duckv1beta1.Status{
 				Conditions: duckv1beta1.Conditions{
 					{
-						Type:   apis.ConditionType("Succeeded"),
+						Type:   apis.ConditionSucceeded,
 						Status: corev1.ConditionTrue,
 					},
 				},
@@ -214,7 +214,7 @@ func pendingBuild() *build.Build {
 			Status: duckv1beta1.Status{
 				Conditions: duckv1beta1.Conditions{
 					{
-						Type:   apis.ConditionType("Succeeded"),
+						Type:   apis.ConditionSucceeded,
 						Status: corev1.ConditionUnknown,
 					},
 				},
