@@ -89,6 +89,7 @@ jobs:
         GAE_SA: *gae_sa
         GOOGLE_PROJECT: *gae_project
         VERSION: develop
+        DEFAULT: true
       run:
         path: bash
         args:
