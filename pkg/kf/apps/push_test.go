@@ -541,6 +541,53 @@ func TestPush(t *testing.T) {
 					}).Return(&v1alpha1.App{}, nil)
 			},
 		},
+		"does not overwrite existing ServiceBindings": {
+			appName: "some-app",
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
+				appsClient.EXPECT().
+					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
+						app := &v1alpha1.App{}
+						app.Spec.ServiceBindings = []v1alpha1.AppSpecServiceBinding{
+							{Instance: "existing-binding"},
+						}
+						app = merge(newObj, app)
+
+						testutil.AssertEqual(t, "len(ServiceBindings)", 1, len(app.Spec.ServiceBindings))
+						testutil.AssertEqual(t, "ServiceBindings.Instance", "existing-binding", app.Spec.ServiceBindings[0].Instance)
+					}).
+					Return(&v1alpha1.App{}, nil)
+			},
+			assert: func(t *testing.T, err error) {
+				testutil.AssertNil(t, "err", err)
+			},
+		},
+		"uses new ServiceBindings": {
+			appName: "some-app",
+			opts: apps.PushOptions{
+				apps.WithPushServiceBindings([]v1alpha1.AppSpecServiceBinding{
+					{Instance: "new-binding"},
+				}),
+			},
+			setup: func(t *testing.T, appsClient *appsfake.FakeClient) {
+				appsClient.EXPECT().
+					Upsert(gomock.Not(gomock.Nil()), gomock.Any(), gomock.Any()).
+					Do(func(namespace string, newObj *v1alpha1.App, merge apps.Merger) {
+						app := &v1alpha1.App{}
+						app.Spec.ServiceBindings = []v1alpha1.AppSpecServiceBinding{
+							{Instance: "existing-binding"},
+						}
+						app = merge(newObj, app)
+
+						testutil.AssertEqual(t, "len(ServiceBindings)", 1, len(app.Spec.ServiceBindings))
+						testutil.AssertEqual(t, "ServiceBindings.Instance", "new-binding", app.Spec.ServiceBindings[0].Instance)
+					}).
+					Return(&v1alpha1.App{}, nil)
+			},
+			assert: func(t *testing.T, err error) {
+				testutil.AssertNil(t, "err", err)
+			},
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			if tc.assert == nil {
