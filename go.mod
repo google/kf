@@ -8,8 +8,9 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/evanphx/json-patch v0.0.0-20190203023257-5858425f7550 // indirect
 	github.com/fatih/color v1.7.0
-	github.com/ghodss/yaml v1.0.0 // indirect
+	github.com/ghodss/yaml v1.0.0
 	github.com/golang/mock v1.3.1
+	github.com/google/go-cmp v0.2.0
 	github.com/google/go-containerregistry v0.0.0-20190306174256-678f6c51f585
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
@@ -17,7 +18,6 @@ require (
 	github.com/google/wire v0.2.2
 	github.com/gorilla/mux v1.7.0
 	github.com/imdario/mergo v0.3.7
-	github.com/knative/serving v0.7.1-0.20190701162519-7ca25646a186
 	github.com/manifoldco/promptui v0.3.2
 	github.com/markbates/inflect v1.0.4 // indirect
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
@@ -26,12 +26,13 @@ require (
 	github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c
 	github.com/rogpeppe/go-internal v1.3.0 // indirect
 	github.com/russross/blackfriday v1.5.2
+	github.com/sabhiram/go-gitignore v0.0.0-20180611051255-d3107576ba94
 	github.com/segmentio/textio v1.2.0
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
 	github.com/stretchr/testify v1.3.0 // indirect
 	go.opencensus.io v0.22.0 // indirect
-	go.uber.org/zap v1.9.1
+	go.uber.org/zap v1.10.0
 	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a // indirect
 	google.golang.org/appengine v1.5.0 // indirect
 	k8s.io/api v0.0.0
@@ -43,7 +44,6 @@ require (
 	k8s.io/klog v0.3.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20190228160746-b3a7cee44a30 // indirect
 	knative.dev/pkg v0.0.0-20190626215608-1104d6c75533
-	knative.dev/serving v0.8.0
 	sigs.k8s.io/yaml v1.1.0
 )
 

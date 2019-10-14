@@ -19,7 +19,6 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/cfutil"
-	"github.com/knative/serving/pkg/resources"
 	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,7 +45,7 @@ func MakeKfInjectedEnvSecret(app *v1alpha1.App, space *v1alpha1.Space, serviceBi
 			OwnerReferences: []metav1.OwnerReference{
 				*kmeta.NewControllerRef(app),
 			},
-			Labels: resources.UnionMaps(app.GetLabels(), app.ComponentLabels("secret")),
+			Labels: v1alpha1.UnionMaps(app.GetLabels(), app.ComponentLabels("secret")),
 		},
 		Data: make(map[string][]byte),
 	}

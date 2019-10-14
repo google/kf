@@ -25,7 +25,7 @@ import (
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/istio/fake"
 	"github.com/google/kf/pkg/kf/testutil"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	serving "github.com/google/kf/third_party/knative-serving/pkg/apis/serving/v1alpha1"
 	"knative.dev/pkg/apis"
 
 	corev1 "k8s.io/api/core/v1"

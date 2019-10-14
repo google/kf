@@ -19,7 +19,6 @@ import (
 	"regexp"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/knative/serving/pkg/resources"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
@@ -113,7 +112,7 @@ func MakeRoutes(
 					app.Name,
 				),
 				Namespace: space.Name,
-				Labels: UnionMaps(
+				Labels: v1alpha1.UnionMaps(
 					app.GetLabels(),
 					MakeRouteLabels(*appRoute),
 					MakeRouteAppLabels(app),
@@ -147,16 +146,4 @@ func MakeRoutes(
 	}
 
 	return routes, claims, nil
-}
-
-// UnionMaps is similar to github.com/knative/serving/pkg/resources however it
-// takes multiple maps instead of only 2.
-func UnionMaps(maps ...map[string]string) map[string]string {
-	var result map[string]string
-
-	for _, m := range maps {
-		result = resources.UnionMaps(result, m)
-	}
-
-	return result
 }

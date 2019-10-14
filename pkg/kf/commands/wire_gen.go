@@ -469,7 +469,7 @@ func InjectNamesCommand(p *config.KfParams) *cobra.Command {
 // wire_injector.go:
 
 func provideSrcImageBuilder() apps2.SrcImageBuilder {
-	return apps2.SrcImageBuilderFunc(kontext.BuildImage)
+	return apps2.SrcImageBuilderFunc(kontext.BuildImageWithFilter)
 }
 
 var AppsSet = wire.NewSet(

@@ -41,6 +41,14 @@ const (
 	// DefaultHealthCheckProbeEndpoint is the default endpoint to use for HTTP
 	// Get health checks.
 	DefaultHealthCheckProbeEndpoint = "/"
+
+	// DefaultHealthCheckPeriodSeconds holds the default period between health
+	// check polls.
+	DefaultHealthCheckPeriodSeconds = 10
+
+	// DefaultHealthCheckFailureThreshold is the number of times the probe can
+	// return a failure before the app is considered bad.
+	DefaultHealthCheckFailureThreshold = 3
 )
 
 // SetDefaults implements apis.Defaultable
@@ -123,6 +131,16 @@ func SetKfAppContainerDefaults(_ context.Context, container *corev1.Container) {
 	// Default the probe timeout
 	if readinessProbe.TimeoutSeconds == 0 {
 		readinessProbe.TimeoutSeconds = DefaultHealthCheckProbeTimeout
+	}
+
+	// Knative serving 0.8 requires PeriodSeconds and FailureThreshold to be set
+	// even if we don't expose them to users directly.
+	if readinessProbe.PeriodSeconds == 0 {
+		readinessProbe.PeriodSeconds = DefaultHealthCheckPeriodSeconds
+	}
+
+	if readinessProbe.FailureThreshold == 0 {
+		readinessProbe.FailureThreshold = DefaultHealthCheckFailureThreshold
 	}
 
 	// If the probe is HTTP, default the path

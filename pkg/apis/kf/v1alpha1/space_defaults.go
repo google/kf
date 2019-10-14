@@ -19,7 +19,7 @@ import (
 	"fmt"
 
 	"github.com/google/kf/pkg/kf/algorithms"
-	routecfg "knative.dev/serving/pkg/reconciler/route/config"
+	routecfg "github.com/google/kf/third_party/knative-serving/pkg/reconciler/route/config"
 )
 
 // TODO(#396): We should pull these from a ConfigMap

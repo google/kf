@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/knative/serving/pkg/apis/serving"
+	"github.com/google/kf/third_party/knative-serving/pkg/apis/serving"
 	v1 "k8s.io/api/core/v1"
 	"knative.dev/pkg/apis"
 )

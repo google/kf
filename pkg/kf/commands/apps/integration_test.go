@@ -409,6 +409,25 @@ func TestIntegration_LogsNoContainer(t *testing.T) {
 	})
 }
 
+// TestIntegration_CfIgnore tests that .{k,c}fignore files are adhered to.  It
+// pushes the sample application cfignore. This application returns the
+// directory structure it was pushed with. It has a complex .cfignore file
+// that should be adhered to.
+func TestIntegration_CfIgnore(t *testing.T) {
+	t.Parallel()
+	checkClusterStatus(t)
+	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+		appName := fmt.Sprintf("integration-cfignore-%d", time.Now().UnixNano())
+
+		kf.Push(ctx, appName,
+			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/cfignore"),
+		)
+		defer kf.Delete(ctx, appName)
+
+		checkCfignoreApp(ctx, t, kf, appName, 8084, ExpectedAddr(appName, ""))
+	})
+}
+
 // assertVars uses Env and the output of the app to ensure the expected
 // variables. It will retry for a while if the environment variables aren't
 // returning the correct values. This is to give the enventually consistent
@@ -553,6 +572,46 @@ func checkApp(
 	// collisions.
 	go kf.Proxy(ctx, appName, proxyPort)
 	assert(ctx, t, fmt.Sprintf("http://localhost:%d", proxyPort))
+}
+
+func checkCfignoreApp(
+	ctx context.Context,
+	t *testing.T,
+	kf *Kf,
+	appName string,
+	proxyPort int,
+	expectedRoutes ...string,
+) {
+	checkApp(ctx, t, kf, appName, expectedRoutes, proxyPort, func(ctx context.Context, t *testing.T, addr string) {
+		resp, respCancel := RetryPost(ctx, t, addr, appTimeout, http.StatusOK, "testing")
+		defer resp.Body.Close()
+		defer respCancel()
+
+		files := []string{}
+		AssertNil(t, "err", json.NewDecoder(resp.Body).Decode(&files))
+
+		expectedFiles := []string{".", "go.mod", "go.sum", "main.go", "app.out"}
+
+		if len(expectedFiles) != len(files) {
+			t.Fatalf("expected %#v to consist of %#v. (wrong len %d)", files, expectedFiles, len(files))
+		}
+
+		for _, expectedFile := range expectedFiles {
+			var found bool
+			for _, actualFile := range files {
+				if expectedFile == actualFile {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				t.Fatalf("expected %#v to consist of %#v. (unable to find %s)", files, expectedFiles, expectedFile)
+			}
+		}
+
+		Logf(t, "done hitting cfignore app to ensure its working.")
+	})
 }
 
 func checkEchoApp(

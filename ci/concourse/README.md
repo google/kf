@@ -34,24 +34,26 @@ If any step fails, the PR check is set to `failure`.
 
 The following variables should be stored in your credential manager.
 
-| Name                 | Description                                              | kf-pipeline | pr-pipeline |
-| -------------------- | -------------------------------------------------------- | ----------- | ----------- |
-| github_repo          | Github repo name                                         | ✅          |             |
-| github_access_token  | Github access token for setting PR status checks         | ✅          |             |
-| github_webhook_token | Github webhook argument. See [this][3]                   | ✅          |             |
-| pr_comment           | Comment to leave on a PR when a pipeline is created      | ✅          |             |
-| ci_git_uri           | Git URI for pulling this directory                       | ✅          |             |
-| ci_git_branch        | Git branch for pulling this directory. Preferably master | ✅          |             |
-| ci_image_uri         | Container image for pulling/pushing the build image      | ✅          |             |
-| fly_user             | Concourse user                                           | ✅          |             |
-| fly_password         | Concourse password                                       | ✅          |             |
-| fly_target           | Concourse target                                         | ✅          |             |
-| fly_url              | Concourse server URL                                     | ✅          |             |
-| fly_team             | Concourse team                                           | ✅          |             |
-| service_account_json | Google Cloud Service Account Key for pushing build image | ✅          |             |
-| gcp_project_id       | Google Cloud Project where test GKE cluster resides      |             | ✅          |
-| k8s_cluster_name     | GKE cluster name                                         |             | ✅          |
-| k8s_cluster_zone     | GKE cluster zone                                         |             | ✅          |
+| Name                         | Description                                                                                                      | kf-pipeline | pr-pipeline | release-pipeline |
+| --------------------         | --------------------------------------------------------                                                         | ----------- | ----------- | ---------------- |
+| github_repo                  | Github repo name                                                                                                 | ✅          |             | ✅               |
+| github_access_token          | Github access token for setting PR status checks                                                                 | ✅          |             | ✅               |
+| github_webhook_token         | Github webhook argument. See [this][3]                                                                           | ✅          |             |                  |
+| pr_comment                   | Comment to leave on a PR when a pipeline is created                                                              | ✅          |             |                  |
+| ci_git_uri                   | Git URI for pulling this directory                                                                               | ✅          |             | ✅               |
+| ci_git_branch                | Git branch for pulling this directory. Preferably master                                                         | ✅          |             | ✅               |
+| ci_image_uri                 | Container image for pulling/pushing the build image                                                              | ✅          |             | ✅               |
+| fly_user                     | Concourse user                                                                                                   | ✅          |             |                  |
+| fly_password                 | Concourse password                                                                                               | ✅          |             |                  |
+| fly_target                   | Concourse target                                                                                                 | ✅          |             |                  |
+| fly_url                      | Concourse server URL                                                                                             | ✅          |             |                  |
+| fly_team                     | Concourse team                                                                                                   | ✅          |             |                  |
+| service_account_json         | Google Cloud Service Account Key for pushing build image                                                         | ✅          |             | ✅               |
+| gcp_project_id               | Google Cloud Project where test GKE cluster resides                                                              |             | ✅          |                  |
+| k8s_cluster_name             | GKE cluster name                                                                                                 |             | ✅          |                  |
+| k8s_cluster_zone             | GKE cluster zone                                                                                                 |             | ✅          |                  |
+| release_service_account_json | Google Cloud Service Account Key for pushing release artifacts, including Ko manifests, images, and CLI binaries |             |             | ✅               |
+| tf_state_bucket              | GCS bucket where CI-related Terraform state is stored                                                            |             |             | ✅               |
 
 # Tasks
 
