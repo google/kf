@@ -130,11 +130,12 @@ func (mr *FakeClientMockRecorder) List(arg0 ...interface{}) *gomock.Call {
 }
 
 // Transform mocks base method
-func (m *FakeClient) Transform(arg0 string, arg1 spaces.Mutator) error {
+func (m *FakeClient) Transform(arg0 string, arg1 spaces.Mutator) (*v1alpha1.Space, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Transform", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*v1alpha1.Space)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Transform indicates an expected call of Transform
@@ -191,6 +192,21 @@ func (m *FakeClient) WaitFor(arg0 context.Context, arg1 string, arg2 time.Durati
 func (mr *FakeClientMockRecorder) WaitFor(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitFor", reflect.TypeOf((*FakeClient)(nil).WaitFor), arg0, arg1, arg2, arg3)
+}
+
+// WaitForDeletion mocks base method
+func (m *FakeClient) WaitForDeletion(arg0 context.Context, arg1 string, arg2 time.Duration) (*v1alpha1.Space, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WaitForDeletion", arg0, arg1, arg2)
+	ret0, _ := ret[0].(*v1alpha1.Space)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// WaitForDeletion indicates an expected call of WaitForDeletion
+func (mr *FakeClientMockRecorder) WaitForDeletion(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WaitForDeletion", reflect.TypeOf((*FakeClient)(nil).WaitForDeletion), arg0, arg1, arg2)
 }
 
 // WaitForE mocks base method

@@ -26,7 +26,7 @@ import (
 	"github.com/google/kf/pkg/kf/apps"
 	sourcesfake "github.com/google/kf/pkg/kf/sources/fake"
 	"github.com/google/kf/pkg/kf/testutil"
-	build "github.com/knative/build/pkg/apis/build/v1alpha1"
+	build "github.com/google/kf/third_party/knative-build/pkg/apis/build/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	ktesting "k8s.io/client-go/testing"

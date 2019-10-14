@@ -16,7 +16,9 @@ package testutil
 
 import (
 	"bufio"
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -125,12 +127,26 @@ type KfTestOutput struct {
 	Done   <-chan struct{}
 }
 
-func kf(ctx context.Context, t *testing.T, binaryPath string, cfg KfTestConfig) (KfTestOutput, <-chan error) {
+// Kf provides a DSL for running integration tests.
+type Kf struct {
+	t          *testing.T
+	binaryPath string
+}
+
+// NewKf creates a Kf for running tests with.
+func NewKf(t *testing.T, binaryPath string) *Kf {
+	return &Kf{
+		t:          t,
+		binaryPath: binaryPath,
+	}
+}
+
+func (k *Kf) kf(ctx context.Context, t *testing.T, cfg KfTestConfig) (KfTestOutput, <-chan error) {
 	t.Helper()
 
 	Logf(t, "kf %s\n", strings.Join(cfg.Args, " "))
 
-	cmd := exec.CommandContext(ctx, binaryPath, cfg.Args...)
+	cmd := exec.CommandContext(ctx, k.binaryPath, cfg.Args...)
 	for name, value := range cfg.Env {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", name, value))
 	}
@@ -166,8 +182,26 @@ func kf(ctx context.Context, t *testing.T, binaryPath string, cfg KfTestConfig) 
 	}, errs
 }
 
-// KfInvoker will synchronously invoke `kf` with the given configuration.
-type KfInvoker func(context.Context, *testing.T, KfTestConfig) (KfTestOutput, <-chan error)
+// RunSynchronous runs kf with the provided configuration and returns the
+// results.
+func (k *Kf) RunSynchronous(ctx context.Context, cfg KfTestConfig) (stdout, stderr []byte, err error) {
+	k.t.Helper()
+	Logf(k.t, "kf %s\n", strings.Join(cfg.Args, " "))
+
+	var stdoutBuf, stderrBuf bytes.Buffer
+
+	cmd := exec.CommandContext(ctx, k.binaryPath, cfg.Args...)
+	for name, value := range cfg.Env {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", name, value))
+	}
+	cmd.Stdout = &stdoutBuf
+	cmd.Stderr = &stderrBuf
+
+	err = cmd.Run()
+	stdout = stdoutBuf.Bytes()
+	stderr = stderrBuf.Bytes()
+	return
+}
 
 // KfTest is a test ran by RunKfTest.
 type KfTest func(ctx context.Context, t *testing.T, kf *Kf)
@@ -187,9 +221,7 @@ func RunKfTest(t *testing.T, test KfTest) {
 	RunIntegrationTest(t, func(ctx context.Context, t *testing.T) {
 		t.Helper()
 
-		kf := KF(t, func(ctx context.Context, t *testing.T, cfg KfTestConfig) (KfTestOutput, <-chan error) {
-			return kf(ctx, t, kfPath, cfg)
-		})
+		kf := NewKf(t, kfPath)
 
 		// Create the space
 		spaceName := fmt.Sprintf("apps-integration-test-%d", time.Now().UnixNano())
@@ -440,6 +472,7 @@ func RetryPost(
 	expectedStatusCode int,
 	body string,
 ) (*http.Response, func()) {
+	t.Helper()
 	ctx, cancel := context.WithTimeout(ctx, duration)
 
 	for {
@@ -477,17 +510,50 @@ func RetryPost(
 	}
 }
 
-// Kf provides a DSL for running integration tests.
-type Kf struct {
-	t  *testing.T
-	kf KfInvoker
-}
+// RetryGet will send a get request until successful, duration has been reached or context is
+// done. A close function is returned for closing the sub-context.
+func RetryGet(
+	ctx context.Context,
+	t *testing.T,
+	addr string,
+	duration time.Duration,
+	expectedStatusCode int,
+) (*http.Response, func()) {
+	t.Helper()
+	ctx, cancel := context.WithTimeout(ctx, duration)
 
-// KF returns a kf.
-func KF(t *testing.T, kf KfInvoker) *Kf {
-	return &Kf{
-		t:  t,
-		kf: kf,
+	for {
+		select {
+		case <-ctx.Done():
+			cancel()
+			t.Fatalf("context cancelled")
+		default:
+		}
+
+		req, err := http.NewRequest(http.MethodGet, addr, nil)
+		if err != nil {
+			cancel()
+			t.Fatalf("failed to create request: %s", err)
+		}
+		req = req.WithContext(ctx)
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			Logf(t, "failed to get (retrying...): %s", err)
+			time.Sleep(1000 * time.Millisecond)
+			continue
+		}
+
+		if resp.StatusCode != expectedStatusCode {
+			Logf(t, "got %d, wanted %d (retrying...)", resp.StatusCode, expectedStatusCode)
+			time.Sleep(1000 * time.Millisecond)
+			continue
+		}
+
+		return resp, func() {
+			cancel()
+			resp.Body.Close()
+		}
 	}
 }
 
@@ -671,17 +737,46 @@ func (k *Kf) Apps(ctx context.Context) map[string]AppInfo {
 	return results
 }
 
+// App gets a single app by name and returns its JSON representation.
+func (k *Kf) App(ctx context.Context, name string) json.RawMessage {
+	k.t.Helper()
+
+	Logf(k.t, "getting app %s", name)
+	defer Logf(k.t, "done getting app %s", name)
+
+	stdout, _, err := k.RunSynchronous(ctx, KfTestConfig{
+		Args: []string{
+			"app",
+			"--namespace", SpaceFromContext(ctx),
+			"-o", "json",
+			name,
+		},
+	})
+
+	if err != nil {
+		k.t.Fatal(err)
+	}
+
+	if !json.Valid(stdout) {
+		k.t.Fatal("App JSON was invalid:", string(stdout))
+	}
+
+	return stdout
+}
+
 // Delete deletes an application.
-func (k *Kf) Delete(ctx context.Context, appName string) {
+func (k *Kf) Delete(ctx context.Context, appName string, extraArgs ...string) {
 	k.t.Helper()
 	Logf(k.t, "deleting %q...", appName)
 	defer Logf(k.t, "done deleting %q.", appName)
+	args := []string{
+		"delete",
+		"--namespace", SpaceFromContext(ctx),
+		appName,
+	}
+
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
-		Args: []string{
-			"delete",
-			"--namespace", SpaceFromContext(ctx),
-			appName,
-		},
+		Args: append(args, extraArgs...),
 	})
 	PanicOnError(ctx, k.t, fmt.Sprintf("delete %q", appName), errs)
 	StreamOutput(ctx, k.t, output)
@@ -749,6 +844,23 @@ func (k *Kf) Proxy(ctx context.Context, appName string, port int) {
 		},
 	})
 	PanicOnError(ctx, k.t, fmt.Sprintf("proxy %q", appName), errs)
+	StreamOutput(ctx, k.t, output)
+}
+
+// ProxyRoute starts a proxy for a route.
+func (k *Kf) ProxyRoute(ctx context.Context, routeHost string, port int) {
+	k.t.Helper()
+	Logf(k.t, "running proxy for %q...", routeHost)
+	defer Logf(k.t, "done running proxy for %q.", routeHost)
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: []string{
+			"proxy-route",
+			"--namespace", SpaceFromContext(ctx),
+			routeHost,
+			fmt.Sprintf("--port=%d", port),
+		},
+	})
+	PanicOnError(ctx, k.t, fmt.Sprintf("proxy %q", routeHost), errs)
 	StreamOutput(ctx, k.t, output)
 }
 
@@ -881,6 +993,46 @@ func (k *Kf) CreateRoute(ctx context.Context, domain string, extraArgs ...string
 		Args: append(args, extraArgs...),
 	})
 	PanicOnError(ctx, k.t, "create-route", errs)
+	StreamOutput(ctx, k.t, output)
+}
+
+// MapRoute runs the map-route command.
+func (k *Kf) MapRoute(ctx context.Context, appName, domain string, extraArgs ...string) {
+	k.t.Helper()
+	Logf(k.t, "running map-route...")
+	defer Logf(k.t, "done running map-route.")
+
+	args := []string{
+		"map-route",
+		"--namespace", SpaceFromContext(ctx),
+		appName,
+		domain,
+	}
+
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: append(args, extraArgs...),
+	})
+	PanicOnError(ctx, k.t, "map-route", errs)
+	StreamOutput(ctx, k.t, output)
+}
+
+// UnmapRoute runs the unmap-route command.
+func (k *Kf) UnmapRoute(ctx context.Context, appName, domain string, extraArgs ...string) {
+	k.t.Helper()
+	Logf(k.t, "running unmap-route...")
+	defer Logf(k.t, "done running unmap-route.")
+
+	args := []string{
+		"unmap-route",
+		"--namespace", SpaceFromContext(ctx),
+		appName,
+		domain,
+	}
+
+	output, errs := k.kf(ctx, k.t, KfTestConfig{
+		Args: append(args, extraArgs...),
+	})
+	PanicOnError(ctx, k.t, "unmap-route", errs)
 	StreamOutput(ctx, k.t, output)
 }
 

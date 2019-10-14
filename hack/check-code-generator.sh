@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # Copyright 2019 Google LLC
 #
@@ -17,6 +17,27 @@
 # This script is used by the CI to check if 'go generate ./...' is up to date.
 
 set -eux
+
+# Change to the project root directory
+cd "${0%/*}"/..
+
+# https://github.com/kubernetes-sigs/kubebuilder/issues/359
+# K8s code generation is broken when used in projects that use Go modules.
+# Until that is fixed, this script will symlink the project into your GOPATH
+# and remove the symlink when it is done. A GOPATH is required.
+if [[ -z "$GOPATH" ]]; then
+  echo "GOPATH must be set"
+  exit 1
+fi
+
+# Symlink the project into the GOPATH.
+# Required until https://github.com/kubernetes-sigs/kubebuilder/issues/359 is fixed
+function finish {
+  unlink $GOPATH/src/github.com/google/kf
+}
+trap finish EXIT
+mkdir -p $GOPATH/src/github.com/google
+ln -s `pwd` $GOPATH/src/github.com/google/kf
 
 hack/update-codegen.sh
 

@@ -198,37 +198,23 @@ func ExampleKfApp_GetHealthCheck() {
 	//   Endpoint:  /healthz
 }
 
-func ExampleKfApp_GetMemory() {
+func ExampleKfApp_GetResourceRequests() {
+	requests := corev1.ResourceList{
+		corev1.ResourceCPU:    resource.MustParse("100m"),
+		corev1.ResourceMemory: resource.MustParse("1Gi"),
+	}
+
 	myApp := NewKfApp()
-	mem := resource.MustParse("1Gi")
-	myApp.SetMemory(&mem)
+	myApp.SetResourceRequests(requests)
 
-	getMem := myApp.GetMemory()
-	fmt.Println((*getMem).String())
+	out := myApp.GetResourceRequests()
+	for _, key := range []corev1.ResourceName{corev1.ResourceCPU, corev1.ResourceMemory} {
+		qty := out[key]
+		fmt.Println(key, "=", qty.String())
+	}
 
-	// Output: 1Gi
-}
-
-func ExampleKfApp_GetStorage() {
-	myApp := NewKfApp()
-	storage := resource.MustParse("2Gi")
-	myApp.SetStorage(&storage)
-
-	getStorage := myApp.GetStorage()
-	fmt.Println((*getStorage).String())
-
-	// Output: 2Gi
-}
-
-func ExampleKfApp_GetCPU() {
-	myApp := NewKfApp()
-	cpu := resource.MustParse("100m")
-	myApp.SetCPU(&cpu)
-
-	getCPU := myApp.GetCPU()
-	fmt.Println((*getCPU).String())
-
-	// Output: 100m
+	// Output: cpu = 100m
+	// memory = 1Gi
 }
 
 func ExampleKfApp_GetClusterURL() {
@@ -245,4 +231,26 @@ func ExampleKfApp_GetClusterURL() {
 	fmt.Println(app.GetClusterURL())
 
 	// Output: http://app-a.some-namespace.svc.cluster.local
+}
+
+func ExampleKfApp_GetArgs() {
+	myApp := NewKfApp()
+	fmt.Printf("Default: %v\n", myApp.GetArgs())
+
+	myApp.SetArgs([]string{"arg1", "arg2"})
+	fmt.Printf("After set: %v\n", myApp.GetArgs())
+
+	// Output: Default: []
+	// After set: [arg1 arg2]
+}
+
+func ExampleKfApp_GetCommand() {
+	myApp := NewKfApp()
+	fmt.Printf("Default: %v\n", myApp.GetCommand())
+
+	myApp.SetCommand([]string{"/bin/bash", "-x"})
+	fmt.Printf("After set: %v\n", myApp.GetCommand())
+
+	// Output: Default: []
+	// After set: [/bin/bash -x]
 }

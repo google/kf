@@ -23,11 +23,11 @@ import (
 	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
+	"sigs.k8s.io/yaml"
 )
 
 // EnvVars prints out environment variables.
@@ -181,6 +181,8 @@ func SourceSpec(w io.Writer, spec kfv1alpha1.SourceSpec) {
 			fmt.Fprintln(w, "Build Type:\tcontainer")
 		case spec.IsBuildpackBuild():
 			fmt.Fprintln(w, "Build Type:\tbuildpack")
+		case spec.IsDockerfileBuild():
+			fmt.Fprintln(w, "Build Type:\tdockerfile")
 		default:
 			fmt.Fprintln(w, "Build Type:\tunknown")
 		}
@@ -206,6 +208,16 @@ func SourceSpec(w io.Writer, spec kfv1alpha1.SourceSpec) {
 				fmt.Fprintf(w, "Bulider:\t%s\n", buildpackBuild.BuildpackBuilder)
 				fmt.Fprintf(w, "Destination:\t%s\n", buildpackBuild.Image)
 				EnvVars(w, buildpackBuild.Env)
+			})
+		}
+
+		if spec.IsDockerfileBuild() {
+			SectionWriter(w, "Dockerfile Build", func(w io.Writer) {
+				build := spec.Dockerfile
+
+				fmt.Fprintf(w, "Source:\t%s\n", build.Source)
+				fmt.Fprintf(w, "Dockerfile Path:\t%s\n", build.Path)
+				fmt.Fprintf(w, "Destination:\t%s\n", build.Image)
 			})
 		}
 	})

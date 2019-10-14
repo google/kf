@@ -23,7 +23,7 @@ import (
 	"github.com/google/kf/pkg/kf/buildpacks/fake"
 	cbuildpacks "github.com/google/kf/pkg/kf/commands/buildpacks"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/testutil"
 )
 

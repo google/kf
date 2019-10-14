@@ -24,7 +24,8 @@ kf delete-service SERVICE_INSTANCE [flags]
 ### Options
 
 ```
-  -h, --help   help for delete-service
+      --async   Don't wait for the action to complete on the server before returning
+  -h, --help    help for delete-service
 ```
 
 ### Options inherited from parent commands

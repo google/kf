@@ -96,6 +96,48 @@ func (k *KfSource) GetBuildpackBuildBuildpack() string {
 	return k.Spec.BuildpackBuild.Buildpack
 }
 
+// SetDockerfileSource sets the container image used to fetch the app's source
+// code from.
+func (k *KfSource) SetDockerfileSource(source string) {
+	k.Spec.Dockerfile.Source = source
+}
+
+// GetDockerfileSource gets the container image used to fetch the app's source
+// code from.
+func (k *KfSource) GetDockerfileSource() string {
+	return k.Spec.Dockerfile.Source
+}
+
+// SetDockerfilePath sets the path for the Dockerfile in the source image.
+func (k *KfSource) SetDockerfilePath(path string) {
+	k.Spec.Dockerfile.Path = path
+}
+
+// GetDockerfilePath gets the path for the Dockerfile in the source image.
+func (k *KfSource) GetDockerfilePath() string {
+	return k.Spec.Dockerfile.Path
+}
+
+// SetDockerfileImage sets the destination image for dockerfile based builds.
+func (k *KfSource) SetDockerfileImage(image string) {
+	k.Spec.Dockerfile.Image = image
+}
+
+// GetDockerfileImage gets the destination image for dockerfile based builds.
+func (k *KfSource) GetDockerfileImage() string {
+	return k.Spec.Dockerfile.Image
+}
+
+// SetBuildpackBuildStack sets the stack to use with a buildpack build.
+func (k *KfSource) SetBuildpackBuildStack(stack string) {
+	k.Spec.BuildpackBuild.Stack = stack
+}
+
+// GetBuildpackBuildStack gets the stack to use with a buildpack build.
+func (k *KfSource) GetBuildpackBuildStack() string {
+	return k.Spec.BuildpackBuild.Stack
+}
+
 // ToSource casts this alias back into a Namespace.
 func (k *KfSource) ToSource() *v1alpha1.Source {
 	return (*v1alpha1.Source)(k)

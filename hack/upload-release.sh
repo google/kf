@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # Copyright 2019 Google LLC
 #
@@ -16,74 +16,42 @@
 
 set -eux
 
-# Change to the project root directory
-cd "${0%/*}"/..
+source "`dirname $0`/util.sh"
+
+require_env SERVICE_ACCOUNT_JSON
+require_env GCP_PROJECT_ID
+require_env RELEASE_BUCKET
+
+if [ "$#" -ne 1 ]; then
+        echo "usage: $0 [RELEASE ARTIFACTS PATH]"
+        exit 1
+fi
+
+# Directory where output artifacts will go
+release_dir=$1
 
 # Login to gcloud
+echo Authenticating to kubernetes...
+sakey=`mktemp -t gcloud-key-XXXXXX`
 set +x
-/bin/echo "$SERVICE_ACCOUNT_JSON" > key.json
+echo "$SERVICE_ACCOUNT_JSON" > $sakey
 set -x
-/bin/echo Authenticating to kubernetes...
-gcloud auth activate-service-account --key-file key.json
+gcloud auth activate-service-account --key-file $sakey
 gcloud config set project "$GCP_PROJECT_ID"
-gcloud -q auth configure-docker
 
-# Used to suffix the artifacts
-current_time=$(date +%s)
+# Parse the release version from a file
+release_version=`cat $release_dir/version`
+prefix="$release_version/"
+prefix_latest="latest/"
 
-#########################
-# Generate Release YAML #
-#########################
+# Modify the prefix if this is a nightly
+if [[ $release_version == *"nightly"* ]]; then
+  prefix="nightly/$prefix"
+  prefix_latest="nightly/$prefix_latest"
+fi
 
-# Environment Variables for go build
-export GOPATH=/go
-export GOPROXY=https://proxy.golang.org
-export GOSUMDB=sum.golang.org
-export GO111MODULE=on
-export CGO_ENABLED=0
+# Upload release
+gsutil -m cp -a public-read -r $release_dir/* $RELEASE_BUCKET/$prefix
 
-# ko requires a proper go path and deps to be vendored
-# TODO remove this once https://github.com/google/ko/issues/7 is
-# resolved.
-go mod vendor
-mkdir -p $GOPATH/src/github.com/google/
-ln -s $PWD $GOPATH/src/github.com/google/kf
-cd $GOPATH/src/github.com/google/kf
-
-# Build artifacts
-tmp_dir=$(mktemp -d)
-./hack/build-release.sh ${tmp_dir}
-
-# save release to a bucket
-release_name=release-${current_time}.yaml
-gsutil cp ${tmp_dir}/release.yaml ${RELEASE_BUCKET}/${release_name}
-
-# Make this the latest
-gsutil cp ${RELEASE_BUCKET}/${release_name} ${RELEASE_BUCKET}/release-latest.yaml
-
-###################
-# Generate kf CLI #
-###################
-
-# Upload the binaries
-for cli in $(ls ${tmp_dir}/bin); do
-  # Extract file extensions (e.g., .exe)
-  filename=$(basename -- "${cli}")
-  extension="${filename##*.}"
-  filename="${filename%.*}"
-
-  destination=${filename}-${current_time}
-  latest_destination=${filename}-latest
-
-  # Check to see if it has a file extension
-  if [ "${extension}" != "${filename}" ]; then
-      destination=${destination}.${extension}
-      latest_destination=${latest_destination}.${extension}
-  fi
-
-  # Upload
-  gsutil cp ${tmp_dir}/bin/${cli} ${CLI_RELEASE_BUCKET}/${destination}
-
-  # Make this the latest
-  gsutil cp ${CLI_RELEASE_BUCKET}/${destination} ${CLI_RELEASE_BUCKET}/${latest_destination}
-done
+# Upload latest
+gsutil -m cp -a public-read -r $release_dir/* $RELEASE_BUCKET/$prefix_latest

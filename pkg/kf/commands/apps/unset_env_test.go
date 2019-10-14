@@ -19,7 +19,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/internal/envutil"
@@ -48,7 +48,7 @@ func TestUnsetEnvCommand(t *testing.T) {
 			Namespace:   "some-namespace",
 			ExpectedErr: errors.New("failed to unset env var on app: some-error"),
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform(gomock.Any(), "app-name", gomock.Any()).Return(errors.New("some-error"))
+				fake.EXPECT().Transform(gomock.Any(), "app-name", gomock.Any()).Return(nil, errors.New("some-error"))
 			},
 		},
 		"custom namespace": {
@@ -56,6 +56,7 @@ func TestUnsetEnvCommand(t *testing.T) {
 			Namespace: "some-namespace",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().Transform("some-namespace", "app-name", gomock.Any())
+				fake.EXPECT().WaitForConditionKnativeServiceReadyTrue(gomock.Any(), "some-namespace", "app-name", gomock.Any())
 			},
 		},
 		"namespace is not provided": {
@@ -81,6 +82,14 @@ func TestUnsetEnvCommand(t *testing.T) {
 					actualVars := envutil.EnvVarsToMap(result.GetEnvVars())
 					testutil.AssertEqual(t, "final values", map[string]string{"PORT": "8080"}, actualVars)
 				})
+				fake.EXPECT().WaitForConditionKnativeServiceReadyTrue(gomock.Any(), "some-namespace", "app-name", gomock.Any())
+			},
+		},
+		"async call does not wait": {
+			Args:      []string{"app-name", "NAME", "--async"},
+			Namespace: "some-namespace",
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any())
 			},
 		},
 	} {

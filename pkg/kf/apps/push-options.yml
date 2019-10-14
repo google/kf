@@ -1,7 +1,7 @@
 # This file contains options for option-builder.go
 ---
 package: apps
-imports: {"io":"", "os":"", "k8s.io/api/core/v1":"corev1","github.com/google/kf/pkg/apis/kf/v1alpha1":"", "k8s.io/apimachinery/pkg/api/resource":""}
+imports: {"io":"", "os":"", "k8s.io/api/core/v1":"corev1","github.com/google/kf/pkg/apis/kf/v1alpha1":""}
 common:
 - name: Namespace
   type: string
@@ -19,6 +19,12 @@ configs:
   - name: Buildpack
     type: string
     description: skip the detect buildpack step and use the given name
+  - name: DockerfilePath
+    type: string
+    description: the path to a Dockerfile to build
+  - name: Stack
+    type: string
+    description: the builder stack to use for buildpack based apps
   - name: Output
     type: "io.Writer"
     description: the io.Writer to write output such as build logs
@@ -29,18 +35,12 @@ configs:
   - name: Grpc
     type: bool
     description: setup the ports for the container to allow gRPC to work
-  - name: MinScale
-    type: "*int"
-    description: the lower scale bound
-  - name: MaxScale
-    type: "*int"
-    description: the upper scale bound
-  - name: ExactScale
-    type: "*int"
-    description: scale exactly to this number of instances
-  - name: NoStart
-    type: bool
-    description: setup the app without starting it
+  - name: ResourceRequests
+    type: corev1.ResourceList
+    description: Resource requests for the container
+  - name: AppSpecInstances
+    type: v1alpha1.AppSpecInstances
+    description: Scaling information for the service
   - name: HealthCheck
     type: "*corev1.Probe"
     description: the health check to use on the app
@@ -53,16 +53,13 @@ configs:
   - name: RandomRouteDomain
     type: string
     description: Domain for a random route. Only used if a route doesn't already exist
-  - name: DiskQuota
-    type: "*resource.Quantity"
-    description: app disk storage quota
-  - name: Memory
-    type: "*resource.Quantity"
-    description: app memory request
-  - name: CPU
-    type: "*resource.Quantity"
-    description: app CPU request
   - name: ServiceBindings
     type: "[]v1alpha1.AppSpecServiceBinding"
     description: a list of Services to bind to the app
+  - name: Command
+    type: "[]string"
+    description: the app container entrypoint
+  - name: Args
+    type: "[]string"
+    description: the app container arguments
 - name: Deploy

@@ -119,8 +119,6 @@ func GetOptionDefaults() GetOptions {
 }
 
 type deleteConfig struct {
-	// DeleteImmediately is If the resource should be deleted immediately.
-	DeleteImmediately bool
 	// ForegroundDeletion is If the resource should be deleted in the foreground.
 	ForegroundDeletion bool
 }
@@ -151,23 +149,10 @@ func (opts DeleteOptions) Extend(other DeleteOptions) DeleteOptions {
 	return out
 }
 
-// DeleteImmediately returns the last set value for DeleteImmediately or the empty value
-// if not set.
-func (opts DeleteOptions) DeleteImmediately() bool {
-	return opts.toConfig().DeleteImmediately
-}
-
 // ForegroundDeletion returns the last set value for ForegroundDeletion or the empty value
 // if not set.
 func (opts DeleteOptions) ForegroundDeletion() bool {
 	return opts.toConfig().ForegroundDeletion
-}
-
-// WithDeleteDeleteImmediately creates an Option that sets If the resource should be deleted immediately.
-func WithDeleteDeleteImmediately(val bool) DeleteOption {
-	return func(cfg *deleteConfig) {
-		cfg.DeleteImmediately = val
-	}
 }
 
 // WithDeleteForegroundDeletion creates an Option that sets If the resource should be deleted in the foreground.
@@ -185,10 +170,8 @@ func DeleteOptionDefaults() DeleteOptions {
 type listConfig struct {
 	// fieldSelector is A selector on the resource's fields.
 	fieldSelector map[string]string
-	// filters is Additional filters to apply.
-	filters []Predicate
-	// labelSelector is A label selector.
-	labelSelector map[string]string
+	// filter is Filter to apply.
+	filter Predicate
 }
 
 // ListOption is a single option for configuring a listConfig
@@ -223,16 +206,10 @@ func (opts ListOptions) fieldSelector() map[string]string {
 	return opts.toConfig().fieldSelector
 }
 
-// filters returns the last set value for filters or the empty value
+// filter returns the last set value for filter or the empty value
 // if not set.
-func (opts ListOptions) filters() []Predicate {
-	return opts.toConfig().filters
-}
-
-// labelSelector returns the last set value for labelSelector or the empty value
-// if not set.
-func (opts ListOptions) labelSelector() map[string]string {
-	return opts.toConfig().labelSelector
+func (opts ListOptions) filter() Predicate {
+	return opts.toConfig().filter
 }
 
 // WithListFieldSelector creates an Option that sets A selector on the resource's fields.
@@ -242,17 +219,10 @@ func WithListFieldSelector(val map[string]string) ListOption {
 	}
 }
 
-// WithListFilters creates an Option that sets Additional filters to apply.
-func WithListFilters(val []Predicate) ListOption {
+// WithListFilter creates an Option that sets Filter to apply.
+func WithListFilter(val Predicate) ListOption {
 	return func(cfg *listConfig) {
-		cfg.filters = val
-	}
-}
-
-// WithListLabelSelector creates an Option that sets A label selector.
-func WithListLabelSelector(val map[string]string) ListOption {
-	return func(cfg *listConfig) {
-		cfg.labelSelector = val
+		cfg.filter = val
 	}
 }
 

@@ -15,19 +15,61 @@
 package servicebindings_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/apps"
+	"github.com/google/kf/pkg/kf/apps/fake"
+	"github.com/google/kf/pkg/kf/commands/config"
 	servicebindingscmd "github.com/google/kf/pkg/kf/commands/service-bindings"
-	"github.com/google/kf/pkg/kf/commands/utils"
-	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
-	"github.com/google/kf/pkg/kf/service-bindings/fake"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/spf13/cobra"
 )
 
+type appsCommandFactory func(p *config.KfParams, client apps.Client) *cobra.Command
+
+type appsTest struct {
+	Args      []string
+	Setup     func(t *testing.T, f *fake.FakeClient)
+	Namespace string
+
+	ExpectedErr     error
+	ExpectedStrings []string
+}
+
+func runAppsTest(t *testing.T, tc appsTest, newCommand appsCommandFactory) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	client := fake.NewFakeClient(ctrl)
+	if tc.Setup != nil {
+		tc.Setup(t, client)
+	}
+
+	buf := new(bytes.Buffer)
+	p := &config.KfParams{
+		Namespace: tc.Namespace,
+	}
+
+	cmd := newCommand(p, client)
+	cmd.SetOutput(buf)
+	cmd.SetArgs(tc.Args)
+	_, actualErr := cmd.ExecuteC()
+	if tc.ExpectedErr != nil || actualErr != nil {
+		testutil.AssertErrorsEqual(t, tc.ExpectedErr, actualErr)
+		return
+	}
+
+	testutil.AssertContainsAll(t, buf.String(), tc.ExpectedStrings)
+}
+
 func TestNewBindServiceCommand(t *testing.T) {
-	cases := map[string]serviceTest{
+	cases := map[string]appsTest{
 		"wrong number of args": {
 			Args:        []string{},
 			ExpectedErr: errors.New("accepts 2 arg(s), received 0"),
@@ -35,14 +77,14 @@ func TestNewBindServiceCommand(t *testing.T) {
 		"command params get passed correctly": {
 			Args:      []string{"APP_NAME", "SERVICE_INSTANCE", `--config={"ram_gb":4}`, "--binding-name=BINDING_NAME"},
 			Namespace: "custom-ns",
-			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-				f.EXPECT().Create("SERVICE_INSTANCE", "APP_NAME", gomock.Any()).Do(func(instance, app string, opts ...servicebindings.CreateOption) {
-					config := servicebindings.CreateOptions(opts)
-					testutil.AssertEqual(t, "params", map[string]interface{}{"ram_gb": 4.0}, config.Params())
-					testutil.AssertEqual(t, "namespace", "custom-ns", config.Namespace())
-				}).Return(dummyBindingRequestInstance("APP_NAME", "SERVICE_INSTANCE"), nil)
+			Setup: func(t *testing.T, f *fake.FakeClient) {
+				f.EXPECT().BindService("custom-ns", "APP_NAME", &v1alpha1.AppSpecServiceBinding{
+					Instance:    "SERVICE_INSTANCE",
+					Parameters:  json.RawMessage(`{"ram_gb":4}`),
+					BindingName: "BINDING_NAME",
+				})
 
-				f.EXPECT().WaitForBindings(gomock.Any(), "custom-ns", "APP_NAME").Return(nil)
+				f.EXPECT().WaitForConditionServiceBindingsReadyTrue(gomock.Any(), "custom-ns", "APP_NAME", gomock.Any())
 			},
 		},
 		"empty namespace": {
@@ -52,14 +94,13 @@ func TestNewBindServiceCommand(t *testing.T) {
 		"defaults config": {
 			Args:      []string{"APP_NAME", "SERVICE_INSTANCE"},
 			Namespace: "custom-ns",
-			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-				f.EXPECT().Create("SERVICE_INSTANCE", "APP_NAME", gomock.Any()).Do(func(instance, app string, opts ...servicebindings.CreateOption) {
-					config := servicebindings.CreateOptions(opts)
-					testutil.AssertEqual(t, "params", map[string]interface{}{}, config.Params())
-					testutil.AssertEqual(t, "namespace", "custom-ns", config.Namespace())
-				}).Return(dummyBindingRequestInstance("APP_NAME", "SERVICE_INSTANCE"), nil)
+			Setup: func(t *testing.T, f *fake.FakeClient) {
+				f.EXPECT().BindService("custom-ns", "APP_NAME", &v1alpha1.AppSpecServiceBinding{
+					Instance:   "SERVICE_INSTANCE",
+					Parameters: json.RawMessage(`{}`),
+				})
 
-				f.EXPECT().WaitForBindings(gomock.Any(), "custom-ns", "APP_NAME").Return(nil)
+				f.EXPECT().WaitForConditionServiceBindingsReadyTrue(gomock.Any(), "custom-ns", "APP_NAME", gomock.Any())
 			},
 		},
 		"bad config path": {
@@ -70,24 +111,24 @@ func TestNewBindServiceCommand(t *testing.T) {
 		"bad server call": {
 			Args:      []string{"APP_NAME", "SERVICE_INSTANCE"},
 			Namespace: "custom-ns",
-			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-				f.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api-error"))
+			Setup: func(t *testing.T, f *fake.FakeClient) {
+				f.EXPECT().BindService(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api-error"))
 			},
 			ExpectedErr: errors.New("api-error"),
 		},
 		"async": {
 			Args:      []string{"--async", "APP_NAME", "SERVICE_INSTANCE"},
 			Namespace: "default",
-			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-				f.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(dummyBindingRequestInstance("APP_NAME", "SERVICE_INSTANCE"), nil)
+			Setup: func(t *testing.T, f *fake.FakeClient) {
+				f.EXPECT().BindService(gomock.Any(), gomock.Any(), gomock.Any())
 			},
 		},
 		"failed binding": {
 			Args:      []string{"APP_NAME", "SERVICE_INSTANCE"},
 			Namespace: "custom-ns",
-			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-				f.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(dummyBindingRequestInstance("APP_NAME", "SERVICE_INSTANCE"), nil)
-				f.EXPECT().WaitForBindings(gomock.Any(), "custom-ns", "APP_NAME").Return(errors.New("binding already exists"))
+			Setup: func(t *testing.T, f *fake.FakeClient) {
+				f.EXPECT().BindService(gomock.Any(), gomock.Any(), gomock.Any())
+				f.EXPECT().WaitForConditionServiceBindingsReadyTrue(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("binding already exists"))
 			},
 			ExpectedErr: errors.New("bind failed: binding already exists"),
 		},
@@ -95,7 +136,7 @@ func TestNewBindServiceCommand(t *testing.T) {
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			runTest(t, tc, servicebindingscmd.NewBindServiceCommand)
+			runAppsTest(t, tc, servicebindingscmd.NewBindServiceCommand)
 		})
 	}
 }

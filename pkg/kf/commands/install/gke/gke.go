@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/google/kf/pkg/kf/commands/install/kf"
@@ -26,7 +27,8 @@ import (
 )
 
 const (
-	gkeClusterVersion     = "1.13.6-gke.13"
+	GKEVersionEnvVar = "GKE_VERSION"
+
 	machineType           = "n1-standard-4"
 	imageType             = "COS"
 	diskType              = "pd-standard"
@@ -34,6 +36,7 @@ const (
 	numNodes              = "3"
 	defaultMaxPodsPerNode = "110"
 	addons                = "HorizontalPodAutoscaling,HttpLoadBalancing,Istio,CloudRun"
+	defaultGKEVersion     = "1.13.7-gke.24"
 )
 
 // NewGKECommand creates a command that can install kf to GKE+Cloud Run.
@@ -51,7 +54,10 @@ func NewGKECommand() *cobra.Command {
 			This interactive installer will walk you through the process of installing kf
 			on GKE with Cloud Run. You MUST have gcloud and kubectl installed and
 			available on the path. Note: running this will incur costs to run GKE. See
-			https://cloud.google.com/products/calculator/ to get an estimate.`,
+			https://cloud.google.com/products/calculator/ to get an estimate.
+
+			To override the GKE version that's chosen, set the environment variable
+			GKE_VERSION.`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 
@@ -445,7 +451,6 @@ func buildGKECluster(
 		"beta", "container", "clusters", "create", gkeCfg.clusterName,
 		"--zone", gkeCfg.zone,
 		"--no-enable-basic-auth",
-		"--cluster-version", gkeClusterVersion,
 		"--machine-type", machineType,
 		"--image-type", imageType,
 		"--disk-type", diskType,
@@ -461,6 +466,14 @@ func buildGKECluster(
 		"--enable-autoupgrade",
 		"--enable-autorepair",
 		"--project", projID,
+	}
+
+	if gkeClusterVersion, ok := os.LookupEnv(GKEVersionEnvVar); ok {
+		args = append(args, "--cluster-version", gkeClusterVersion)
+	} else {
+		Logf(ctx, "Setting the GKE version to be %q, override it by setting the environment variable %s", defaultGKEVersion, GKEVersionEnvVar)
+		args = append(args, "--cluster-version", defaultGKEVersion)
+
 	}
 
 	if gkeCfg.network != "" {

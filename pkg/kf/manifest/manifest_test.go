@@ -24,6 +24,7 @@ import (
 
 	"github.com/google/kf/pkg/kf/manifest"
 	"github.com/google/kf/pkg/kf/testutil"
+	"knative.dev/pkg/ptr"
 )
 
 func TestNewFromReader(t *testing.T) {
@@ -44,6 +45,42 @@ applications:
 				},
 			},
 		},
+		"buildpacks": {
+			fileContent: `---
+applications:
+- name: MY-APP
+  stack: cflinuxfs3
+  buildpacks:
+  - java
+  - node
+`,
+			expected: &manifest.Manifest{
+				Applications: []manifest.Application{
+					{
+						Name:       "MY-APP",
+						Stack:      "cflinuxfs3",
+						Buildpacks: []string{"java", "node"},
+					},
+				},
+			},
+		},
+		"legacy-buildpack": {
+			fileContent: `---
+applications:
+- name: MY-APP
+  stack: cflinuxfs3
+  buildpack: java
+`,
+			expected: &manifest.Manifest{
+				Applications: []manifest.Application{
+					{
+						Name:            "MY-APP",
+						Stack:           "cflinuxfs3",
+						LegacyBuildpack: "java",
+					},
+				},
+			},
+		},
 		"docker": {
 			fileContent: `---
 applications:
@@ -57,6 +94,60 @@ applications:
 						Name: "MY-APP",
 						Docker: manifest.AppDockerImage{
 							Image: "gcr.io/my-image",
+						},
+					},
+				},
+			},
+		},
+		"cf style command": {
+			fileContent: `---
+applications:
+- name: CUSTOM_START
+  command: rake run $VAR
+`,
+			expected: &manifest.Manifest{
+				Applications: []manifest.Application{
+					{
+						Name:    "CUSTOM_START",
+						Command: "rake run $VAR",
+					},
+				},
+			},
+		},
+		"docker style command": {
+			fileContent: `---
+applications:
+- name: CUSTOM_START
+  entrypoint: python
+  args: ["-m", "SimpleHTTPServer"]
+`,
+			expected: &manifest.Manifest{
+				Applications: []manifest.Application{
+					{
+						Name: "CUSTOM_START",
+						KfApplicationExtension: manifest.KfApplicationExtension{
+							Entrypoint: "python",
+							Args:       []string{"-m", "SimpleHTTPServer"},
+						},
+					},
+				},
+			},
+		},
+		"dockerfile": {
+			fileContent: `---
+applications:
+- name: MY-APP
+  dockerfile:
+    path: "foo/Dockerfile"
+`,
+			expected: &manifest.Manifest{
+				Applications: []manifest.Application{
+					{
+						Name: "MY-APP",
+						KfApplicationExtension: manifest.KfApplicationExtension{
+							Dockerfile: manifest.Dockerfile{
+								Path: "foo/Dockerfile",
+							},
 						},
 					},
 				},
@@ -155,6 +246,16 @@ func TestOverride(t *testing.T) {
 			override: manifest.Application{Buildpacks: []string{"node", "npm"}},
 			expected: manifest.Application{Buildpacks: []string{"node", "npm"}},
 		},
+		"no start, no override": {
+			base:     manifest.Application{KfApplicationExtension: manifest.KfApplicationExtension{NoStart: ptr.Bool(true)}},
+			override: manifest.Application{},
+			expected: manifest.Application{KfApplicationExtension: manifest.KfApplicationExtension{NoStart: ptr.Bool(true)}},
+		},
+		"no start, override": {
+			base:     manifest.Application{KfApplicationExtension: manifest.KfApplicationExtension{NoStart: ptr.Bool(false)}},
+			override: manifest.Application{KfApplicationExtension: manifest.KfApplicationExtension{NoStart: ptr.Bool(true)}},
+			expected: manifest.Application{KfApplicationExtension: manifest.KfApplicationExtension{NoStart: ptr.Bool(true)}},
+		},
 	}
 
 	for tn, tc := range cases {
@@ -169,12 +270,67 @@ func TestOverride(t *testing.T) {
 
 func ExampleApplication_Buildpack() {
 	app := manifest.Application{}
+	app.LegacyBuildpack = "hidden-legacy-buildpack"
+	fmt.Println("Legacy:", app.Buildpack())
+
 	app.Buildpacks = []string{"java"}
 	fmt.Println("One:", app.Buildpack())
 
 	app.Buildpacks = []string{"maven", "java"}
 	fmt.Println("Two:", app.Buildpack())
 
-	// Output: One: java
+	// Output: Legacy: hidden-legacy-buildpack
+	// One: java
 	// Two: maven,java
+}
+
+func ExampleApplication_CommandArgs() {
+	app := manifest.Application{}
+	fmt.Printf("Blank: %v\n", app.CommandArgs())
+
+	app = manifest.Application{
+		Command: "start.sh && exit 1",
+	}
+	fmt.Printf("Command: %v\n", app.CommandArgs())
+
+	app = manifest.Application{
+		KfApplicationExtension: manifest.KfApplicationExtension{
+			Args: []string{"-m", "SimpleHTTPServer"},
+		},
+	}
+	fmt.Printf("Args: %v\n", app.CommandArgs())
+
+	// Output: Blank: []
+	// Command: [start.sh && exit 1]
+	// Args: [-m SimpleHTTPServer]
+}
+
+func ExampleApplication_CommandEntrypoint() {
+	app := manifest.Application{}
+	fmt.Printf("Blank: %v\n", app.CommandEntrypoint())
+
+	app = manifest.Application{
+		KfApplicationExtension: manifest.KfApplicationExtension{
+			Entrypoint: "python",
+		},
+	}
+	fmt.Printf("Entrypoint: %v\n", app.CommandEntrypoint())
+
+	// Output: Blank: []
+	// Entrypoint: [python]
+}
+
+func ExampleApplication_WarnUnofficialFields() {
+	app := manifest.Application{
+		KfApplicationExtension: manifest.KfApplicationExtension{
+			EnableHTTP2: ptr.Bool(true),
+			NoStart:     ptr.Bool(false),
+		},
+	}
+
+	app.WarnUnofficialFields(os.Stdout)
+
+	// Output:
+	// WARNING! The field(s) [enable-http2 no-start] are Kf-specific manifest extensions and may change.
+	// See https://github.com/google/kf/issues/95 for more info.
 }

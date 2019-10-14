@@ -42,7 +42,8 @@ kf delete APP_NAME [flags]
 ### Options
 
 ```
-  -h, --help   help for delete
+      --async   Don't wait for the action to complete on the server before returning
+  -h, --help    help for delete
 ```
 
 ### Options inherited from parent commands

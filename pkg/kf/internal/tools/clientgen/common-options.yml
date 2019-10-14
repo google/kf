@@ -29,17 +29,11 @@ configs:
   - name: ForegroundDeletion
     type: bool
     description: If the resource should be deleted in the foreground.
-  - name: DeleteImmediately
-    type: bool
-    description: If the resource should be deleted immediately.
 - name: List
   options:
-  - name: labelSelector
-    type: "map[string]string"
-    description: A label selector.
   - name: fieldSelector
     type: "map[string]string"
     description: A selector on the resource's fields.
-  - name: filters
-    type: "[]Predicate"
-    description: Additional filters to apply.
+  - name: filter
+    type: "Predicate"
+    description: Filter to apply.

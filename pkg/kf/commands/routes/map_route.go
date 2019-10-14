@@ -15,13 +15,15 @@
 package routes
 
 import (
+	"context"
 	"fmt"
 	"path"
+	"time"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +32,11 @@ func NewMapRouteCommand(
 	p *config.KfParams,
 	appsClient apps.Client,
 ) *cobra.Command {
-	var hostname, urlPath string
+	var (
+		async    utils.AsyncFlags
+		hostname string
+		urlPath  string
+	)
 
 	cmd := &cobra.Command{
 		Use:   "map-route APP_NAME DOMAIN [--hostname HOSTNAME] [--path PATH]",
@@ -61,15 +67,19 @@ func NewMapRouteCommand(
 				return nil
 			}
 
-			err := appsClient.Transform(p.Namespace, appName, mutator)
-			if err != nil {
+			if _, err := appsClient.Transform(p.Namespace, appName, mutator); err != nil {
 				return fmt.Errorf("failed to map Route: %s", err)
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Mapping route... %s", utils.AsyncLogSuffix)
-			return nil
+			action := fmt.Sprintf("Mapping route to app %q in space %q", appName, p.Namespace)
+			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
+				_, err := appsClient.WaitForConditionRoutesReadyTrue(context.Background(), p.Namespace, appName, 1*time.Second)
+				return err
+			})
 		},
 	}
+
+	async.Add(cmd)
 
 	cmd.Flags().StringVar(
 		&hostname,

@@ -15,6 +15,7 @@
 package apps
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -22,8 +23,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
-	"github.com/google/kf/pkg/kf/internal/kf"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/logs"
 	"github.com/google/kf/pkg/kf/logs/fake"
 	"github.com/google/kf/pkg/kf/testutil"
@@ -69,7 +69,7 @@ func TestLogsCommand(t *testing.T) {
 			Setup: func(t *testing.T, fake *fake.FakeTailer) {
 				fake.EXPECT().
 					Tail(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(kf.ConfigErr{Reason: "some-error"})
+					Return(utils.ConfigErr{Reason: "some-error"})
 			},
 			Assert: func(t *testing.T, cmd *cobra.Command, err error) {
 				testutil.AssertEqual(t, "SilenceUsage", false, cmd.SilenceUsage)
@@ -108,11 +108,13 @@ func TestLogsCommand(t *testing.T) {
 			fake := fake.NewFakeTailer(ctrl)
 			tc.Setup(t, fake)
 
+			var buf bytes.Buffer
 			cmd := NewLogsCommand(
 				&config.KfParams{Namespace: tc.Namespace},
 				fake,
 			)
 			cmd.SetArgs(tc.Args)
+			cmd.SetOutput(&buf)
 
 			gotErr := cmd.Execute()
 

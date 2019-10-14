@@ -11,6 +11,8 @@ Install kf on GKE with Cloud Run (Note: this will incur GCP costs)
 
 This interactive installer will walk you through the process of installing kf on GKE with Cloud Run. You MUST have gcloud and kubectl installed and available on the path. Note: running this will incur costs to run GKE. See https://cloud.google.com/products/calculator/ to get an estimate.
 
+ To override the GKE version that's chosen, set the environment variable GKE_VERSION.
+
 ```
 kf install gke [subcommand] [flags]
 ```

@@ -15,13 +15,15 @@
 package apps
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -30,6 +32,8 @@ func NewStopCommand(
 	p *config.KfParams,
 	client apps.Client,
 ) *cobra.Command {
+	var async utils.AsyncFlags
+
 	cmd := &cobra.Command{
 		Use:     "stop APP_NAME",
 		Short:   "Stop a running application",
@@ -49,14 +53,19 @@ func NewStopCommand(
 				return nil
 			}
 
-			if err := client.Transform(p.Namespace, appName, mutator); err != nil {
+			if _, err := client.Transform(p.Namespace, appName, mutator); err != nil {
 				return fmt.Errorf("failed to stop app: %s", err)
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Stopping app %q %s", appName, utils.AsyncLogSuffix)
-			return nil
+			action := fmt.Sprintf("Stopping app %q in space %q", appName, p.Namespace)
+			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
+				_, err := client.WaitForConditionKnativeServiceReadyTrue(context.Background(), p.Namespace, appName, 1*time.Second)
+				return err
+			})
 		},
 	}
+
+	async.Add(cmd)
 
 	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 

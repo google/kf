@@ -15,13 +15,15 @@
 package services
 
 import (
-	"encoding/json"
+	"context"
+	"errors"
 	"fmt"
+	"time"
 
-	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/describe"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/pkg/kf/marketplace"
 	"github.com/google/kf/pkg/kf/services"
 	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"github.com/spf13/cobra"
@@ -30,10 +32,11 @@ import (
 )
 
 // NewCreateServiceCommand allows users to create service instances.
-func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Interface) *cobra.Command {
+func NewCreateServiceCommand(p *config.KfParams, client services.Client, marketplaceClient marketplace.ClientInterface) *cobra.Command {
 	var (
 		configAsJSON string
 		broker       string
+		async        utils.AsyncFlags
 	)
 
 	createCmd := &cobra.Command{
@@ -58,60 +61,84 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 				return err
 			}
 
-			params, err := services.ParseJSONOrFile(configAsJSON)
-			if err != nil {
-				return err
-			}
-			paramBytes, err := json.Marshal(params)
-			if err != nil {
-				return err
-			}
-			rawParams := &runtime.RawExtension{
-				Raw: paramBytes,
-			}
-
-			matchingClusterPlans, err := findMatchingClusterPlans(client, planName, serviceName, broker)
+			paramBytes, err := services.ParseJSONOrFile(configAsJSON)
 			if err != nil {
 				return err
 			}
 
-			if len(matchingClusterPlans) != 0 {
-
-				// plan found
-				created, err := createServiceInstance(client, p, rawParams, serviceName, planName, instanceName, broker, false)
-				if err != nil {
-					return err
-				}
-				fmt.Fprintf(cmd.OutOrStdout(), "Creating service instance %q %s", instanceName, utils.AsyncLogSuffix)
-				describe.ServiceInstance(cmd.OutOrStdout(), created)
-				return nil
+			planFilters := marketplace.ListPlanOptions{
+				PlanName:    planName,
+				ServiceName: serviceName,
+				BrokerName:  broker,
 			}
 
-			matchingNamespacedPlans, err := findMatchingNamespacedPlans(client, p.Namespace, planName, serviceName, broker)
+			matchingClusterPlans, err := marketplaceClient.ListClusterPlans(planFilters)
 			if err != nil {
 				return err
 			}
+			hasClusterPlans := len(matchingClusterPlans) > 0
 
-			if len(matchingNamespacedPlans) != 0 {
+			matchingNamespacedPlans, err := marketplaceClient.ListNamespacedPlans(p.Namespace, planFilters)
+			if err != nil {
+				return err
+			}
+			hasNamespacedPlans := len(matchingNamespacedPlans) > 0
 
-				// plan found
-				created, err := createServiceInstance(client, p, rawParams, serviceName, planName, instanceName, broker, true)
-				if err != nil {
-					return err
+			var planRef servicecatalogv1beta1.PlanReference
+
+			switch {
+			case hasClusterPlans && hasNamespacedPlans:
+				return errors.New("plans matched from multiple brokers, specify a broker with --broker")
+
+			case hasClusterPlans:
+				planRef = servicecatalogv1beta1.PlanReference{
+					ClusterServicePlanExternalName:  planName,
+					ClusterServiceClassExternalName: serviceName,
 				}
 
-				fmt.Fprintf(cmd.OutOrStdout(), "Creating service instance %q %s", instanceName, utils.AsyncLogSuffix)
-				describe.ServiceInstance(cmd.OutOrStdout(), created)
-				return nil
-			}
+			case hasNamespacedPlans:
+				planRef = servicecatalogv1beta1.PlanReference{
+					ServicePlanExternalName:  planName,
+					ServiceClassExternalName: serviceName,
+				}
 
-			if broker != "" {
+			// No plans match
+			case broker != "":
 				return fmt.Errorf("no plan %s found for class %s for the service-broker %s", planName, serviceName, broker)
-			} else {
+			default:
 				return fmt.Errorf("no plan %s found for class %s for all service-brokers", planName, serviceName)
 			}
+
+			created, err := client.Create(p.Namespace, &servicecatalogv1beta1.ServiceInstance{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      instanceName,
+					Namespace: p.Namespace,
+				},
+				Spec: servicecatalogv1beta1.ServiceInstanceSpec{
+					PlanReference: planRef,
+					Parameters: &runtime.RawExtension{
+						Raw: paramBytes,
+					},
+				},
+			})
+			if err != nil {
+				return err
+			}
+
+			action := fmt.Sprintf("Creating service instance %q in space %q", instanceName, p.Namespace)
+			if err := async.AwaitAndLog(cmd.OutOrStdout(), action, func() (err error) {
+				created, err = client.WaitForProvisionSuccess(context.Background(), p.Namespace, instanceName, 1*time.Second)
+				return
+			}); err != nil {
+				return err
+			}
+
+			describe.ServiceInstance(cmd.OutOrStdout(), created)
+			return nil
 		},
 	}
+
+	async.Add(createCmd)
 
 	createCmd.Flags().StringVarP(
 		&configAsJSON,
@@ -128,113 +155,4 @@ func NewCreateServiceCommand(p *config.KfParams, client servicecatalogclient.Int
 		"Service broker to use.")
 
 	return createCmd
-}
-
-func createServiceInstance(client servicecatalogclient.Interface, p *config.KfParams, rawParams *runtime.RawExtension, serviceName, planName, instanceName, broker string, spaceScoped bool) (*servicecatalogv1beta1.ServiceInstance, error) {
-	if spaceScoped {
-		return client.ServicecatalogV1beta1().
-			ServiceInstances(p.Namespace).
-			Create(&servicecatalogv1beta1.ServiceInstance{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      instanceName,
-					Namespace: p.Namespace,
-				},
-				Spec: servicecatalogv1beta1.ServiceInstanceSpec{
-					PlanReference: servicecatalogv1beta1.PlanReference{
-						ServicePlanExternalName:  planName,
-						ServiceClassExternalName: serviceName,
-					},
-					Parameters: rawParams,
-				},
-			})
-	} else {
-		return client.ServicecatalogV1beta1().
-			ServiceInstances(p.Namespace).
-			Create(&servicecatalogv1beta1.ServiceInstance{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      instanceName,
-					Namespace: p.Namespace,
-				},
-				Spec: servicecatalogv1beta1.ServiceInstanceSpec{
-					PlanReference: servicecatalogv1beta1.PlanReference{
-						ClusterServicePlanExternalName:  planName,
-						ClusterServiceClassExternalName: serviceName,
-					},
-					Parameters: rawParams,
-				},
-			})
-	}
-}
-func findMatchingClusterPlans(client servicecatalogclient.Interface, planName, serviceName, broker string) ([]servicecatalogv1beta1.ClusterServicePlan, error) {
-
-	var matchingPlans []servicecatalogv1beta1.ClusterServicePlan
-
-	plans, err := client.ServicecatalogV1beta1().
-		ClusterServicePlans().
-		List(metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, plan := range plans.Items {
-		if planName != plan.Spec.ExternalName {
-			continue
-		}
-
-		class, err := client.ServicecatalogV1beta1().
-			ClusterServiceClasses().
-			Get(plan.Spec.ClusterServiceClassRef.Name, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-
-		if serviceName != class.Spec.ExternalName {
-			continue
-		}
-
-		if broker != "" && broker != plan.Spec.ClusterServiceBrokerName {
-			continue
-		}
-
-		matchingPlans = append(matchingPlans, plan)
-	}
-
-	return matchingPlans, nil
-}
-
-func findMatchingNamespacedPlans(client servicecatalogclient.Interface, namespace, planName, serviceName, broker string) ([]servicecatalogv1beta1.ServicePlan, error) {
-
-	var matchingPlans []servicecatalogv1beta1.ServicePlan
-
-	plans, err := client.ServicecatalogV1beta1().
-		ServicePlans(namespace).
-		List(metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, plan := range plans.Items {
-		if planName != plan.Spec.ExternalName {
-			continue
-		}
-
-		class, err := client.ServicecatalogV1beta1().
-			ServiceClasses(namespace).
-			Get(plan.Spec.ServiceClassRef.Name, metav1.GetOptions{})
-		if err != nil {
-			return nil, err
-		}
-
-		if serviceName != class.Spec.ExternalName {
-			continue
-		}
-
-		if broker != "" && broker != plan.Spec.ServiceBrokerName {
-			continue
-		}
-
-		matchingPlans = append(matchingPlans, plan)
-	}
-
-	return matchingPlans, nil
 }

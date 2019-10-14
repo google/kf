@@ -16,14 +16,14 @@ package services
 
 import (
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
 	"github.com/google/kf/pkg/kf/describe"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/spf13/cobra"
 )
 
 // NewGetServiceCommand allows users to get a service instance.
-func NewGetServiceCommand(p *config.KfParams, client services.ClientInterface) *cobra.Command {
+func NewGetServiceCommand(p *config.KfParams, client services.Client) *cobra.Command {
 	serviceCommand := &cobra.Command{
 		Use:     "service SERVICE_INSTANCE",
 		Short:   "Show service instance info",
@@ -38,7 +38,7 @@ func NewGetServiceCommand(p *config.KfParams, client services.ClientInterface) *
 
 			cmd.SilenceUsage = true
 
-			instance, err := client.GetService(instanceName, services.WithGetServiceNamespace(p.Namespace))
+			instance, err := client.Get(p.Namespace, instanceName)
 			if err != nil {
 				return err
 			}

@@ -21,7 +21,7 @@ import (
 	"github.com/google/kf/pkg/kf/algorithms"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/routeclaims"
 	"github.com/spf13/cobra"
 )
@@ -63,14 +63,12 @@ func NewDeleteRouteCommand(
 			// routes with the proper labels first, then use their apps.
 			apps, err := a.List(
 				p.Namespace,
-				apps.WithListFilters([]apps.Predicate{
-					func(app *v1alpha1.App) bool {
-						return algorithms.Search(
-							0,
-							v1alpha1.RouteSpecFieldsSlice{route},
-							v1alpha1.RouteSpecFieldsSlice(app.Spec.Routes),
-						)
-					},
+				apps.WithListFilter(func(app *v1alpha1.App) bool {
+					return algorithms.Search(
+						0,
+						v1alpha1.RouteSpecFieldsSlice{route},
+						v1alpha1.RouteSpecFieldsSlice(app.Spec.Routes),
+					)
 				}),
 			)
 			if err != nil {

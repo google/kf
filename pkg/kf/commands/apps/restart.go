@@ -15,12 +15,14 @@
 package apps
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -29,6 +31,8 @@ func NewRestartCommand(
 	p *config.KfParams,
 	client apps.Client,
 ) *cobra.Command {
+	var async utils.AsyncFlags
+
 	cmd := &cobra.Command{
 		Use:     "restart APP_NAME",
 		Short:   "Restarts all running instances of the app",
@@ -47,10 +51,15 @@ func NewRestartCommand(
 				return fmt.Errorf("failed to restart app: %s", err)
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Restarting app %q %s", appName, utils.AsyncLogSuffix)
-			return nil
+			action := fmt.Sprintf("Restarting app %q in space %q", appName, p.Namespace)
+			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
+				_, err := client.WaitForConditionKnativeServiceReadyTrue(context.Background(), p.Namespace, appName, 1*time.Second)
+				return err
+			})
 		},
 	}
+
+	async.Add(cmd)
 
 	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 

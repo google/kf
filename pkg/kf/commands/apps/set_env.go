@@ -15,19 +15,23 @@
 package apps
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 )
 
 // NewSetEnvCommand creates a SetEnv command.
-func NewSetEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command {
+func NewSetEnvCommand(p *config.KfParams, client apps.Client) *cobra.Command {
+	var async utils.AsyncFlags
+
 	cmd := &cobra.Command{
 		Use:     "set-env APP_NAME ENV_VAR_NAME ENV_VAR_VALUE",
 		Short:   "Set an environment variable for an app",
@@ -48,20 +52,25 @@ func NewSetEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command 
 				{Name: name, Value: value},
 			}
 
-			mutator := func(app *v1alpha1.App) error {
+			_, err := client.Transform(p.Namespace, appName, func(app *v1alpha1.App) error {
 				kfapp := (*apps.KfApp)(app)
 				kfapp.MergeEnvVars(toSet)
 				return nil
-			}
+			})
 
-			if err := appClient.Transform(p.Namespace, appName, mutator); err != nil {
+			if err != nil {
 				return fmt.Errorf("failed to set env var on app: %s", err)
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Setting environment variable on app %q %s", appName, utils.AsyncLogSuffix)
-			return nil
+			action := fmt.Sprintf("Setting environment variable on app %q in space %q", appName, p.Namespace)
+			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
+				_, err := client.WaitForConditionKnativeServiceReadyTrue(context.Background(), p.Namespace, appName, 1*time.Second)
+				return err
+			})
 		},
 	}
+
+	async.Add(cmd)
 
 	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 

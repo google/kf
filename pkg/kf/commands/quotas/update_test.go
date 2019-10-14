@@ -48,7 +48,7 @@ func TestUpdateQuotaCommand(t *testing.T) {
 				fakeUpdater.
 					EXPECT().
 					Transform(gomock.Any(), gomock.Any()).
-					Return(errors.New("some-error"))
+					Return(nil, errors.New("some-error"))
 			},
 		},
 		"some flags": {
@@ -58,7 +58,7 @@ func TestUpdateQuotaCommand(t *testing.T) {
 				fakeUpdater.
 					EXPECT().
 					Transform(gomock.Any(), gomock.Any()).
-					Return(nil)
+					Return(nil, nil)
 			},
 		},
 		"update success": {

@@ -114,7 +114,8 @@ func (sm spaceMutator) ToCommand(client spaces.Client) *cobra.Command {
 			cmd.SilenceUsage = true
 
 			diffPrintingMutator := spaces.DiffWrapper(cmd.OutOrStdout(), mutator)
-			return client.Transform(spaceName, diffPrintingMutator)
+			_, err = client.Transform(spaceName, diffPrintingMutator)
+			return err
 		},
 	}
 
@@ -274,7 +275,6 @@ func newSetDefaultDomainMutator() spaceMutator {
 					}
 					found = true
 					space.Spec.Execution.Domains[i].Default = true
-					return nil
 				}
 
 				if !found {

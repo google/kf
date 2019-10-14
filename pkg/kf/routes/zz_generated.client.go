@@ -25,9 +25,10 @@ import (
 	"strings"
 	"time"
 
+	"knative.dev/pkg/kmp"
+
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"knative.dev/pkg/kmp"
 )
 
 // User defined imports
@@ -50,19 +51,6 @@ const (
 
 // Predicate is a boolean function for a v1alpha1.Route.
 type Predicate func(*v1alpha1.Route) bool
-
-// AllPredicate is a predicate that passes if all children pass.
-func AllPredicate(children ...Predicate) Predicate {
-	return func(obj *v1alpha1.Route) bool {
-		for _, filter := range children {
-			if !filter(obj) {
-				return false
-			}
-		}
-
-		return true
-	}
-}
 
 // Mutator is a function that changes v1alpha1.Route.
 type Mutator func(*v1alpha1.Route) error
@@ -117,51 +105,6 @@ func (list List) Filter(filter Predicate) (out List) {
 	return
 }
 
-// MutatorList is a list of mutators.
-type MutatorList []Mutator
-
-// Apply passes the given value to each of the mutators in the list failing if
-// one of them returns an error.
-func (list MutatorList) Apply(svc *v1alpha1.Route) error {
-	for _, mutator := range list {
-		if err := mutator(svc); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// LabelSetMutator creates a mutator that sets the given labels on the object.
-func LabelSetMutator(labels map[string]string) Mutator {
-	return func(obj *v1alpha1.Route) error {
-		if obj.Labels == nil {
-			obj.Labels = make(map[string]string)
-		}
-
-		for key, value := range labels {
-			obj.Labels[key] = value
-		}
-
-		return nil
-	}
-}
-
-// LabelEqualsPredicate validates that the given label exists exactly on the object.
-func LabelEqualsPredicate(key, value string) Predicate {
-	return func(obj *v1alpha1.Route) bool {
-		return obj.Labels[key] == value
-	}
-}
-
-// LabelsContainsPredicate validates that the given label exists on the object.
-func LabelsContainsPredicate(key string) Predicate {
-	return func(obj *v1alpha1.Route) bool {
-		_, ok := obj.Labels[key]
-		return ok
-	}
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Client
 ////////////////////////////////////////////////////////////////////////////////
@@ -170,7 +113,7 @@ func LabelsContainsPredicate(key string) Predicate {
 type Client interface {
 	Create(namespace string, obj *v1alpha1.Route, opts ...CreateOption) (*v1alpha1.Route, error)
 	Update(namespace string, obj *v1alpha1.Route, opts ...UpdateOption) (*v1alpha1.Route, error)
-	Transform(namespace string, name string, transformer Mutator) error
+	Transform(namespace string, name string, transformer Mutator) (*v1alpha1.Route, error)
 	Get(namespace string, name string, opts ...GetOption) (*v1alpha1.Route, error)
 	Delete(namespace string, name string, opts ...DeleteOption) error
 	List(namespace string, opts ...ListOption) ([]v1alpha1.Route, error)
@@ -178,23 +121,24 @@ type Client interface {
 	WaitFor(ctx context.Context, namespace string, name string, interval time.Duration, condition Predicate) (*v1alpha1.Route, error)
 	WaitForE(ctx context.Context, namespace string, name string, interval time.Duration, condition ConditionFuncE) (*v1alpha1.Route, error)
 
+	// Utility functions
+	WaitForDeletion(ctx context.Context, namespace string, name string, interval time.Duration) (*v1alpha1.Route, error)
+
 	// ClientExtension can be used by the developer to extend the client.
 	ClientExtension
 }
 
 type coreClient struct {
-	kclient cv1alpha1.RoutesGetter
-
-	upsertMutate        MutatorList
-	membershipValidator Predicate
+	kclient      cv1alpha1.RoutesGetter
+	upsertMutate Mutator
 }
 
 func (core *coreClient) preprocessUpsert(obj *v1alpha1.Route) error {
-	if err := core.upsertMutate.Apply(obj); err != nil {
-		return err
+	if core.upsertMutate == nil {
+		return nil
 	}
 
-	return nil
+	return core.upsertMutate(obj)
 }
 
 // Create inserts the given v1alpha1.Route into the cluster.
@@ -217,23 +161,20 @@ func (core *coreClient) Update(namespace string, obj *v1alpha1.Route, opts ...Up
 	return core.kclient.Routes(namespace).Update(obj)
 }
 
-// Transform performs a read/modify/write on the object with the given name.
-// Transform manages the options for the Get and Update calls.
-func (core *coreClient) Transform(namespace string, name string, mutator Mutator) error {
+// Transform performs a read/modify/write on the object with the given name
+// and returns the updated object. Transform manages the options for the Get and
+// Update calls.
+func (core *coreClient) Transform(namespace string, name string, mutator Mutator) (*v1alpha1.Route, error) {
 	obj, err := core.Get(namespace, name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := mutator(obj); err != nil {
-		return err
+		return nil, err
 	}
 
-	if _, err := core.Update(namespace, obj); err != nil {
-		return err
-	}
-
-	return nil
+	return core.Update(namespace, obj)
 }
 
 // Get retrieves an existing object in the cluster with the given name.
@@ -245,11 +186,7 @@ func (core *coreClient) Get(namespace string, name string, opts ...GetOption) (*
 		return nil, fmt.Errorf("couldn't get the Route with the name %q: %v", name, err)
 	}
 
-	if core.membershipValidator(res) {
-		return res, nil
-	}
-
-	return nil, fmt.Errorf("an object with the name %s exists, but it doesn't appear to be a Route", name)
+	return res, nil
 }
 
 // Delete removes an existing object in the cluster.
@@ -272,10 +209,6 @@ func (cfg deleteConfig) ToDeleteOptions() *metav1.DeleteOptions {
 		resp.PropagationPolicy = &propigationPolicy
 	}
 
-	if cfg.DeleteImmediately {
-		resp.GracePeriodSeconds = new(int64)
-	}
-
 	return &resp
 }
 
@@ -289,18 +222,16 @@ func (core *coreClient) List(namespace string, opts ...ListOption) ([]v1alpha1.R
 		return nil, fmt.Errorf("couldn't list Routes: %v", err)
 	}
 
-	return List(res.Items).
-		Filter(core.membershipValidator).
-		Filter(AllPredicate(cfg.filters...)), nil
+	if cfg.filter == nil {
+		return res.Items, nil
+	}
+
+	return List(res.Items).Filter(cfg.filter), nil
 }
 
 func (cfg listConfig) ToListOptions() (resp metav1.ListOptions) {
 	if cfg.fieldSelector != nil {
 		resp.FieldSelector = metav1.FormatLabelSelector(metav1.SetAsLabelSelector(cfg.fieldSelector))
-	}
-
-	if cfg.labelSelector != nil {
-		resp.LabelSelector = metav1.FormatLabelSelector(metav1.SetAsLabelSelector(cfg.labelSelector))
 	}
 
 	return
@@ -390,4 +321,9 @@ func wrapPredicate(condition Predicate) ConditionFuncE {
 
 		return condition(obj), nil
 	}
+}
+
+// WaitForDeletion is a utility function that combines WaitForE with ConditionDeleted.
+func (core *coreClient) WaitForDeletion(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1alpha1.Route, err error) {
+	return core.WaitForE(ctx, namespace, name, interval, ConditionDeleted)
 }

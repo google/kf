@@ -25,8 +25,10 @@ import (
 	"strings"
 	"time"
 
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"knative.dev/pkg/apis"
 	"knative.dev/pkg/kmp"
 )
 
@@ -48,21 +50,15 @@ const (
 	APIVersion = "v1alpha1"
 )
 
+var (
+	ConditionReady                = apis.ConditionType(v1alpha1.AppConditionReady)
+	ConditionServiceBindingsReady = apis.ConditionType(v1alpha1.AppConditionServiceBindingsReady)
+	ConditionKnativeServiceReady  = apis.ConditionType(v1alpha1.AppConditionKnativeServiceReady)
+	ConditionRoutesReady          = apis.ConditionType(v1alpha1.AppConditionRouteReady)
+)
+
 // Predicate is a boolean function for a v1alpha1.App.
 type Predicate func(*v1alpha1.App) bool
-
-// AllPredicate is a predicate that passes if all children pass.
-func AllPredicate(children ...Predicate) Predicate {
-	return func(obj *v1alpha1.App) bool {
-		for _, filter := range children {
-			if !filter(obj) {
-				return false
-			}
-		}
-
-		return true
-	}
-}
 
 // Mutator is a function that changes v1alpha1.App.
 type Mutator func(*v1alpha1.App) error
@@ -117,49 +113,27 @@ func (list List) Filter(filter Predicate) (out List) {
 	return
 }
 
-// MutatorList is a list of mutators.
-type MutatorList []Mutator
-
-// Apply passes the given value to each of the mutators in the list failing if
-// one of them returns an error.
-func (list MutatorList) Apply(svc *v1alpha1.App) error {
-	for _, mutator := range list {
-		if err := mutator(svc); err != nil {
-			return err
-		}
-	}
-
-	return nil
+// ObservedGenerationMatchesGeneration is a predicate that returns true if the
+// object's ObservedGeneration matches the genration of the object.
+func ObservedGenerationMatchesGeneration(obj *v1alpha1.App) bool {
+	return obj.Generation == obj.Status.ObservedGeneration
 }
 
-// LabelSetMutator creates a mutator that sets the given labels on the object.
-func LabelSetMutator(labels map[string]string) Mutator {
-	return func(obj *v1alpha1.App) error {
-		if obj.Labels == nil {
-			obj.Labels = make(map[string]string)
-		}
-
-		for key, value := range labels {
-			obj.Labels[key] = value
-		}
-
-		return nil
+// ExtractConditions converts the native condition types into an apis.Condition
+// array with the Type, Status, Reason, and Message fields intact.
+func ExtractConditions(obj *v1alpha1.App) (extracted []apis.Condition) {
+	for _, cond := range obj.Status.Conditions {
+		// Only copy the following four fields to be compatible with
+		// recommended Kuberntes fields.
+		extracted = append(extracted, apis.Condition{
+			Type:    apis.ConditionType(cond.Type),
+			Status:  corev1.ConditionStatus(cond.Status),
+			Reason:  cond.Reason,
+			Message: cond.Message,
+		})
 	}
-}
 
-// LabelEqualsPredicate validates that the given label exists exactly on the object.
-func LabelEqualsPredicate(key, value string) Predicate {
-	return func(obj *v1alpha1.App) bool {
-		return obj.Labels[key] == value
-	}
-}
-
-// LabelsContainsPredicate validates that the given label exists on the object.
-func LabelsContainsPredicate(key string) Predicate {
-	return func(obj *v1alpha1.App) bool {
-		_, ok := obj.Labels[key]
-		return ok
-	}
+	return
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -170,7 +144,7 @@ func LabelsContainsPredicate(key string) Predicate {
 type Client interface {
 	Create(namespace string, obj *v1alpha1.App, opts ...CreateOption) (*v1alpha1.App, error)
 	Update(namespace string, obj *v1alpha1.App, opts ...UpdateOption) (*v1alpha1.App, error)
-	Transform(namespace string, name string, transformer Mutator) error
+	Transform(namespace string, name string, transformer Mutator) (*v1alpha1.App, error)
 	Get(namespace string, name string, opts ...GetOption) (*v1alpha1.App, error)
 	Delete(namespace string, name string, opts ...DeleteOption) error
 	List(namespace string, opts ...ListOption) ([]v1alpha1.App, error)
@@ -178,23 +152,28 @@ type Client interface {
 	WaitFor(ctx context.Context, namespace string, name string, interval time.Duration, condition Predicate) (*v1alpha1.App, error)
 	WaitForE(ctx context.Context, namespace string, name string, interval time.Duration, condition ConditionFuncE) (*v1alpha1.App, error)
 
+	// Utility functions
+	WaitForDeletion(ctx context.Context, namespace string, name string, interval time.Duration) (*v1alpha1.App, error)
+	WaitForConditionReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (*v1alpha1.App, error)
+	WaitForConditionServiceBindingsReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (*v1alpha1.App, error)
+	WaitForConditionKnativeServiceReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (*v1alpha1.App, error)
+	WaitForConditionRoutesReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (*v1alpha1.App, error)
+
 	// ClientExtension can be used by the developer to extend the client.
 	ClientExtension
 }
 
 type coreClient struct {
-	kclient cv1alpha1.AppsGetter
-
-	upsertMutate        MutatorList
-	membershipValidator Predicate
+	kclient      cv1alpha1.AppsGetter
+	upsertMutate Mutator
 }
 
 func (core *coreClient) preprocessUpsert(obj *v1alpha1.App) error {
-	if err := core.upsertMutate.Apply(obj); err != nil {
-		return err
+	if core.upsertMutate == nil {
+		return nil
 	}
 
-	return nil
+	return core.upsertMutate(obj)
 }
 
 // Create inserts the given v1alpha1.App into the cluster.
@@ -217,23 +196,20 @@ func (core *coreClient) Update(namespace string, obj *v1alpha1.App, opts ...Upda
 	return core.kclient.Apps(namespace).Update(obj)
 }
 
-// Transform performs a read/modify/write on the object with the given name.
-// Transform manages the options for the Get and Update calls.
-func (core *coreClient) Transform(namespace string, name string, mutator Mutator) error {
+// Transform performs a read/modify/write on the object with the given name
+// and returns the updated object. Transform manages the options for the Get and
+// Update calls.
+func (core *coreClient) Transform(namespace string, name string, mutator Mutator) (*v1alpha1.App, error) {
 	obj, err := core.Get(namespace, name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := mutator(obj); err != nil {
-		return err
+		return nil, err
 	}
 
-	if _, err := core.Update(namespace, obj); err != nil {
-		return err
-	}
-
-	return nil
+	return core.Update(namespace, obj)
 }
 
 // Get retrieves an existing object in the cluster with the given name.
@@ -245,11 +221,7 @@ func (core *coreClient) Get(namespace string, name string, opts ...GetOption) (*
 		return nil, fmt.Errorf("couldn't get the App with the name %q: %v", name, err)
 	}
 
-	if core.membershipValidator(res) {
-		return res, nil
-	}
-
-	return nil, fmt.Errorf("an object with the name %s exists, but it doesn't appear to be a App", name)
+	return res, nil
 }
 
 // Delete removes an existing object in the cluster.
@@ -272,10 +244,6 @@ func (cfg deleteConfig) ToDeleteOptions() *metav1.DeleteOptions {
 		resp.PropagationPolicy = &propigationPolicy
 	}
 
-	if cfg.DeleteImmediately {
-		resp.GracePeriodSeconds = new(int64)
-	}
-
 	return &resp
 }
 
@@ -289,18 +257,16 @@ func (core *coreClient) List(namespace string, opts ...ListOption) ([]v1alpha1.A
 		return nil, fmt.Errorf("couldn't list Apps: %v", err)
 	}
 
-	return List(res.Items).
-		Filter(core.membershipValidator).
-		Filter(AllPredicate(cfg.filters...)), nil
+	if cfg.filter == nil {
+		return res.Items, nil
+	}
+
+	return List(res.Items).Filter(cfg.filter), nil
 }
 
 func (cfg listConfig) ToListOptions() (resp metav1.ListOptions) {
 	if cfg.fieldSelector != nil {
 		resp.FieldSelector = metav1.FormatLabelSelector(metav1.SetAsLabelSelector(cfg.fieldSelector))
-	}
-
-	if cfg.labelSelector != nil {
-		resp.LabelSelector = metav1.FormatLabelSelector(metav1.SetAsLabelSelector(cfg.labelSelector))
 	}
 
 	return
@@ -390,4 +356,83 @@ func wrapPredicate(condition Predicate) ConditionFuncE {
 
 		return condition(obj), nil
 	}
+}
+
+// WaitForDeletion is a utility function that combines WaitForE with ConditionDeleted.
+func (core *coreClient) WaitForDeletion(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1alpha1.App, err error) {
+	return core.WaitForE(ctx, namespace, name, interval, ConditionDeleted)
+}
+
+func checkConditionTrue(obj *v1alpha1.App, err error, condition apis.ConditionType) (bool, error) {
+	if err != nil {
+		return true, err
+	}
+
+	// don't propagate old statuses
+	if !ObservedGenerationMatchesGeneration(obj) {
+		return false, nil
+	}
+
+	for _, cond := range ExtractConditions(obj) {
+		if cond.Type == condition {
+			switch {
+			case cond.IsTrue():
+				return true, nil
+
+			case cond.IsUnknown():
+				return false, nil
+
+			default:
+				// return true and a failure assuming IsFalse and other statuses can't be
+				// recovered from because they violate the K8s spec
+				return true, fmt.Errorf("checking %s failed, status: %s message: %s reason: %s", cond.Type, cond.Status, cond.Message, cond.Reason)
+			}
+		}
+	}
+
+	return false, nil
+}
+
+// ConditionReadyTrue is a ConditionFuncE that waits for Condition{Ready v1alpha1.AppConditionReady } to
+// become true and fails with an error if the condition becomes false.
+func ConditionReadyTrue(obj *v1alpha1.App, err error) (bool, error) {
+	return checkConditionTrue(obj, err, ConditionReady)
+}
+
+// WaitForConditionReadyTrue is a utility function that combines WaitForE with ConditionReadyTrue.
+func (core *coreClient) WaitForConditionReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1alpha1.App, err error) {
+	return core.WaitForE(ctx, namespace, name, interval, ConditionReadyTrue)
+}
+
+// ConditionServiceBindingsReadyTrue is a ConditionFuncE that waits for Condition{ServiceBindingsReady v1alpha1.AppConditionServiceBindingsReady } to
+// become true and fails with an error if the condition becomes false.
+func ConditionServiceBindingsReadyTrue(obj *v1alpha1.App, err error) (bool, error) {
+	return checkConditionTrue(obj, err, ConditionServiceBindingsReady)
+}
+
+// WaitForConditionServiceBindingsReadyTrue is a utility function that combines WaitForE with ConditionServiceBindingsReadyTrue.
+func (core *coreClient) WaitForConditionServiceBindingsReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1alpha1.App, err error) {
+	return core.WaitForE(ctx, namespace, name, interval, ConditionServiceBindingsReadyTrue)
+}
+
+// ConditionKnativeServiceReadyTrue is a ConditionFuncE that waits for Condition{KnativeServiceReady v1alpha1.AppConditionKnativeServiceReady } to
+// become true and fails with an error if the condition becomes false.
+func ConditionKnativeServiceReadyTrue(obj *v1alpha1.App, err error) (bool, error) {
+	return checkConditionTrue(obj, err, ConditionKnativeServiceReady)
+}
+
+// WaitForConditionKnativeServiceReadyTrue is a utility function that combines WaitForE with ConditionKnativeServiceReadyTrue.
+func (core *coreClient) WaitForConditionKnativeServiceReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1alpha1.App, err error) {
+	return core.WaitForE(ctx, namespace, name, interval, ConditionKnativeServiceReadyTrue)
+}
+
+// ConditionRoutesReadyTrue is a ConditionFuncE that waits for Condition{RoutesReady v1alpha1.AppConditionRouteReady } to
+// become true and fails with an error if the condition becomes false.
+func ConditionRoutesReadyTrue(obj *v1alpha1.App, err error) (bool, error) {
+	return checkConditionTrue(obj, err, ConditionRoutesReady)
+}
+
+// WaitForConditionRoutesReadyTrue is a utility function that combines WaitForE with ConditionRoutesReadyTrue.
+func (core *coreClient) WaitForConditionRoutesReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1alpha1.App, err error) {
+	return core.WaitForE(ctx, namespace, name, interval, ConditionRoutesReadyTrue)
 }

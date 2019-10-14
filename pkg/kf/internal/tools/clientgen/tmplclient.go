@@ -29,6 +29,7 @@ var clientTemplate = template.Must(template.New("").Funcs(generator.TemplateFunc
 {{ $nssig := "" }}
 {{ $ns := "" }}
 {{ $nsparam := "" }}
+{{ $type := .Type }}
 
 {{ if .Kubernetes.Namespaced }}
   {{ $nssig = "namespace string," }}
@@ -40,7 +41,7 @@ var clientTemplate = template.Must(template.New("").Funcs(generator.TemplateFunc
 type Client interface {
 	Create({{ $nssig }} obj *{{.Type}}, opts ...CreateOption) (*{{.Type}}, error)
 	Update({{ $nssig }} obj *{{.Type}}, opts ...UpdateOption) (*{{.Type}}, error)
-	Transform({{ $nssig }} name string, transformer Mutator) error
+	Transform({{ $nssig }} name string, transformer Mutator) (*{{.Type}}, error)
 	Get({{ $nssig }} name string, opts ...GetOption) (*{{.Type}}, error)
 	Delete({{ $nssig }} name string, opts ...DeleteOption) error
 	List({{ $nssig }} opts ...ListOption) ([]{{.Type}}, error)
@@ -48,23 +49,27 @@ type Client interface {
 	WaitFor(ctx context.Context, {{ $nssig }} name string, interval time.Duration, condition Predicate) (*{{.Type}}, error)
 	WaitForE(ctx context.Context, {{ $nssig }} name string, interval time.Duration, condition ConditionFuncE) (*{{.Type}}, error)
 
+	// Utility functions
+	WaitForDeletion(ctx context.Context, {{ $nssig }} name string, interval time.Duration) (*{{.Type}}, error)
+	{{ if .SupportsConditions }}{{ range .Kubernetes.Conditions }}{{.WaitForName}}(ctx context.Context, {{ $nssig }} name string, interval time.Duration) (*{{$type}}, error)
+	{{ end }}
+	{{ end }}
+
 	// ClientExtension can be used by the developer to extend the client.
 	ClientExtension
 }
 
 type coreClient struct {
 	kclient {{.ClientType}}
-
-	upsertMutate        MutatorList
-	membershipValidator Predicate
+	upsertMutate Mutator
 }
 
 func (core *coreClient) preprocessUpsert(obj *{{.Type}}) error {
-	if err := core.upsertMutate.Apply(obj); err != nil {
-		return err
+	if core.upsertMutate == nil {
+		return nil
 	}
 
-	return nil
+	return core.upsertMutate(obj)
 }
 
 // Create inserts the given {{.Type}} into the cluster.
@@ -87,23 +92,20 @@ func (core *coreClient) Update({{ $nssig }} obj *{{.Type}}, opts ...UpdateOption
 	return core.kclient.{{ .Kubernetes.Plural }}({{ $ns }}).Update(obj)
 }
 
-// Transform performs a read/modify/write on the object with the given name.
-// Transform manages the options for the Get and Update calls.
-func (core *coreClient) Transform({{ $nssig }} name string, mutator Mutator) error {
+// Transform performs a read/modify/write on the object with the given name
+// and returns the updated object. Transform manages the options for the Get and
+// Update calls.
+func (core *coreClient) Transform({{ $nssig }} name string, mutator Mutator) (*{{.Type}}, error) {
 	obj, err := core.Get({{ $nsparam }} name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := mutator(obj); err != nil {
-		return err
+		return nil, err
 	}
 
-	if _, err := core.Update({{ $nsparam }} obj); err != nil {
-		return err
-	}
-
-	return nil
+	return core.Update({{ $nsparam }} obj)
 }
 
 // Get retrieves an existing object in the cluster with the given name.
@@ -115,11 +117,7 @@ func (core *coreClient) Get({{ $nssig }} name string, opts ...GetOption) (*{{.Ty
 		return nil, fmt.Errorf("couldn't get the {{.CF.Name}} with the name %q: %v", name, err)
 	}
 
-	if core.membershipValidator(res) {
-		return res, nil
-	}
-
-	return nil, fmt.Errorf("an object with the name %s exists, but it doesn't appear to be a {{.CF.Name}}", name)
+	return res, nil
 }
 
 // Delete removes an existing object in the cluster.
@@ -142,10 +140,6 @@ func (cfg deleteConfig) ToDeleteOptions() (*metav1.DeleteOptions) {
 		resp.PropagationPolicy = &propigationPolicy
 	}
 
-	if cfg.DeleteImmediately {
-		resp.GracePeriodSeconds = new(int64)
-	}
-
 	return &resp
 }
 
@@ -159,18 +153,16 @@ func (core *coreClient) List({{ $nssig }} opts ...ListOption) ([]{{.Type}}, erro
 		return nil, fmt.Errorf("couldn't list {{.CF.Name}}s: %v", err)
 	}
 
-	return List(res.Items).
-		Filter(core.membershipValidator).
-		Filter(AllPredicate(cfg.filters...)), nil
+	if cfg.filter == nil {
+		return res.Items, nil
+	}
+
+	return List(res.Items).Filter(cfg.filter), nil
 }
 
 func (cfg listConfig) ToListOptions() (resp metav1.ListOptions) {
 	if cfg.fieldSelector != nil {
 		resp.FieldSelector = metav1.FormatLabelSelector(metav1.SetAsLabelSelector(cfg.fieldSelector))
-	}
-
-	if cfg.labelSelector != nil {
-		resp.LabelSelector = metav1.FormatLabelSelector(metav1.SetAsLabelSelector(cfg.labelSelector))
 	}
 
 	return
@@ -261,4 +253,56 @@ func wrapPredicate(condition Predicate) ConditionFuncE {
 		return condition(obj), nil
 	}
 }
+
+// WaitForDeletion is a utility function that combines WaitForE with ConditionDeleted.
+func (core *coreClient) WaitForDeletion(ctx context.Context, {{ $nssig }} name string, interval time.Duration) (instance *{{.Type}}, err error) {
+	return core.WaitForE(ctx, {{ $nsparam }} name, interval, ConditionDeleted)
+}
+
+{{ if .SupportsConditions }}
+func checkConditionTrue(obj *{{.Type}}, err error, condition apis.ConditionType) (bool, error) {
+	if err != nil {
+		return true, err
+	}
+
+	{{ if .SupportsObservedGeneration }}// don't propagate old statuses
+	if !ObservedGenerationMatchesGeneration(obj){
+		return false, nil
+	}
+	{{ end }}
+	for _, cond := range ExtractConditions(obj) {
+		if cond.Type == condition {
+			switch {
+			case cond.IsTrue():
+				return true, nil
+
+			case cond.IsUnknown():
+				return false, nil
+
+			default:
+				// return true and a failure assuming IsFalse and other statuses can't be
+				// recovered from because they violate the K8s spec
+				return true, fmt.Errorf("checking %s failed, status: %s message: %s reason: %s", cond.Type, cond.Status, cond.Message, cond.Reason)
+			}
+		}
+	}
+
+	return false, nil
+}
+
+{{ range .Kubernetes.Conditions }}
+// {{.PredicateName}} is a ConditionFuncE that waits for Condition{{.}} to
+// become true and fails with an error if the condition becomes false.
+func {{.PredicateName}}(obj *{{$type}}, err error) (bool, error) {
+	return checkConditionTrue(obj, err, {{.ConditionName}})
+}
+
+// {{.WaitForName}} is a utility function that combines WaitForE with {{.PredicateName}}.
+func (core *coreClient) {{.WaitForName}}(ctx context.Context, {{ $nssig }} name string, interval time.Duration) (instance *{{$type}}, err error) {
+	return core.WaitForE(ctx, {{ $nsparam }} name, interval, {{.PredicateName}})
+}
+{{ end }}
+
+{{ end }}
+
 `))

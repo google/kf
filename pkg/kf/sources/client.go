@@ -29,7 +29,7 @@ type ClientExtension interface {
 	Status(namespace, name string) (bool, error)
 }
 
-// BuildTailer is implemented by github.com/knative/build/pkg/logs
+// BuildTailer is implemented by github.com/google/kf/third_party/knative-build/pkg/logs
 type BuildTailer interface {
 	Tail(ctx context.Context, out io.Writer, buildName, namespace string) error
 }
@@ -44,9 +44,7 @@ type sourcesClient struct {
 func NewClient(kclient cv1alpha1.SourcesGetter, buildTailer BuildTailer) Client {
 	return &sourcesClient{
 		coreClient: coreClient{
-			kclient:             kclient,
-			upsertMutate:        MutatorList{},
-			membershipValidator: AllPredicate(),
+			kclient: kclient,
 		},
 		buildTailer: buildTailer,
 	}

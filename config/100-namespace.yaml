@@ -18,3 +18,4 @@ metadata:
   name: kf
   labels:
     app.kubernetes.io/name: kf
+    app.kubernetes.io/version: VERSION_PLACEHOLDER

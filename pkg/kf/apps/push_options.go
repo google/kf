@@ -20,49 +20,46 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"io"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"os"
 )
 
 type pushConfig struct {
+	// AppSpecInstances is Scaling information for the service
+	AppSpecInstances v1alpha1.AppSpecInstances
+	// Args is the app container arguments
+	Args []string
 	// Buildpack is skip the detect buildpack step and use the given name
 	Buildpack string
-	// CPU is app CPU request
-	CPU *resource.Quantity
+	// Command is the app container entrypoint
+	Command []string
 	// ContainerImage is the container to deploy
 	ContainerImage string
 	// DefaultRouteDomain is Domain for a defaultroute. Only used if a route doesn't already exist
 	DefaultRouteDomain string
-	// DiskQuota is app disk storage quota
-	DiskQuota *resource.Quantity
+	// DockerfilePath is the path to a Dockerfile to build
+	DockerfilePath string
 	// EnvironmentVariables is set environment variables
 	EnvironmentVariables map[string]string
-	// ExactScale is scale exactly to this number of instances
-	ExactScale *int
 	// Grpc is setup the ports for the container to allow gRPC to work
 	Grpc bool
 	// HealthCheck is the health check to use on the app
 	HealthCheck *corev1.Probe
-	// MaxScale is the upper scale bound
-	MaxScale *int
-	// Memory is app memory request
-	Memory *resource.Quantity
-	// MinScale is the lower scale bound
-	MinScale *int
 	// Namespace is the Kubernetes namespace to use
 	Namespace string
-	// NoStart is setup the app without starting it
-	NoStart bool
 	// Output is the io.Writer to write output such as build logs
 	Output io.Writer
 	// RandomRouteDomain is Domain for a random route. Only used if a route doesn't already exist
 	RandomRouteDomain string
+	// ResourceRequests is Resource requests for the container
+	ResourceRequests corev1.ResourceList
 	// Routes is routes for the app
 	Routes []v1alpha1.RouteSpecFields
 	// ServiceBindings is a list of Services to bind to the app
 	ServiceBindings []v1alpha1.AppSpecServiceBinding
 	// SourceImage is the source code as a container image
 	SourceImage string
+	// Stack is the builder stack to use for buildpack based apps
+	Stack string
 }
 
 // PushOption is a single option for configuring a pushConfig
@@ -91,16 +88,28 @@ func (opts PushOptions) Extend(other PushOptions) PushOptions {
 	return out
 }
 
+// AppSpecInstances returns the last set value for AppSpecInstances or the empty value
+// if not set.
+func (opts PushOptions) AppSpecInstances() v1alpha1.AppSpecInstances {
+	return opts.toConfig().AppSpecInstances
+}
+
+// Args returns the last set value for Args or the empty value
+// if not set.
+func (opts PushOptions) Args() []string {
+	return opts.toConfig().Args
+}
+
 // Buildpack returns the last set value for Buildpack or the empty value
 // if not set.
 func (opts PushOptions) Buildpack() string {
 	return opts.toConfig().Buildpack
 }
 
-// CPU returns the last set value for CPU or the empty value
+// Command returns the last set value for Command or the empty value
 // if not set.
-func (opts PushOptions) CPU() *resource.Quantity {
-	return opts.toConfig().CPU
+func (opts PushOptions) Command() []string {
+	return opts.toConfig().Command
 }
 
 // ContainerImage returns the last set value for ContainerImage or the empty value
@@ -115,22 +124,16 @@ func (opts PushOptions) DefaultRouteDomain() string {
 	return opts.toConfig().DefaultRouteDomain
 }
 
-// DiskQuota returns the last set value for DiskQuota or the empty value
+// DockerfilePath returns the last set value for DockerfilePath or the empty value
 // if not set.
-func (opts PushOptions) DiskQuota() *resource.Quantity {
-	return opts.toConfig().DiskQuota
+func (opts PushOptions) DockerfilePath() string {
+	return opts.toConfig().DockerfilePath
 }
 
 // EnvironmentVariables returns the last set value for EnvironmentVariables or the empty value
 // if not set.
 func (opts PushOptions) EnvironmentVariables() map[string]string {
 	return opts.toConfig().EnvironmentVariables
-}
-
-// ExactScale returns the last set value for ExactScale or the empty value
-// if not set.
-func (opts PushOptions) ExactScale() *int {
-	return opts.toConfig().ExactScale
 }
 
 // Grpc returns the last set value for Grpc or the empty value
@@ -145,34 +148,10 @@ func (opts PushOptions) HealthCheck() *corev1.Probe {
 	return opts.toConfig().HealthCheck
 }
 
-// MaxScale returns the last set value for MaxScale or the empty value
-// if not set.
-func (opts PushOptions) MaxScale() *int {
-	return opts.toConfig().MaxScale
-}
-
-// Memory returns the last set value for Memory or the empty value
-// if not set.
-func (opts PushOptions) Memory() *resource.Quantity {
-	return opts.toConfig().Memory
-}
-
-// MinScale returns the last set value for MinScale or the empty value
-// if not set.
-func (opts PushOptions) MinScale() *int {
-	return opts.toConfig().MinScale
-}
-
 // Namespace returns the last set value for Namespace or the empty value
 // if not set.
 func (opts PushOptions) Namespace() string {
 	return opts.toConfig().Namespace
-}
-
-// NoStart returns the last set value for NoStart or the empty value
-// if not set.
-func (opts PushOptions) NoStart() bool {
-	return opts.toConfig().NoStart
 }
 
 // Output returns the last set value for Output or the empty value
@@ -185,6 +164,12 @@ func (opts PushOptions) Output() io.Writer {
 // if not set.
 func (opts PushOptions) RandomRouteDomain() string {
 	return opts.toConfig().RandomRouteDomain
+}
+
+// ResourceRequests returns the last set value for ResourceRequests or the empty value
+// if not set.
+func (opts PushOptions) ResourceRequests() corev1.ResourceList {
+	return opts.toConfig().ResourceRequests
 }
 
 // Routes returns the last set value for Routes or the empty value
@@ -205,6 +190,26 @@ func (opts PushOptions) SourceImage() string {
 	return opts.toConfig().SourceImage
 }
 
+// Stack returns the last set value for Stack or the empty value
+// if not set.
+func (opts PushOptions) Stack() string {
+	return opts.toConfig().Stack
+}
+
+// WithPushAppSpecInstances creates an Option that sets Scaling information for the service
+func WithPushAppSpecInstances(val v1alpha1.AppSpecInstances) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.AppSpecInstances = val
+	}
+}
+
+// WithPushArgs creates an Option that sets the app container arguments
+func WithPushArgs(val []string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.Args = val
+	}
+}
+
 // WithPushBuildpack creates an Option that sets skip the detect buildpack step and use the given name
 func WithPushBuildpack(val string) PushOption {
 	return func(cfg *pushConfig) {
@@ -212,10 +217,10 @@ func WithPushBuildpack(val string) PushOption {
 	}
 }
 
-// WithPushCPU creates an Option that sets app CPU request
-func WithPushCPU(val *resource.Quantity) PushOption {
+// WithPushCommand creates an Option that sets the app container entrypoint
+func WithPushCommand(val []string) PushOption {
 	return func(cfg *pushConfig) {
-		cfg.CPU = val
+		cfg.Command = val
 	}
 }
 
@@ -233,10 +238,10 @@ func WithPushDefaultRouteDomain(val string) PushOption {
 	}
 }
 
-// WithPushDiskQuota creates an Option that sets app disk storage quota
-func WithPushDiskQuota(val *resource.Quantity) PushOption {
+// WithPushDockerfilePath creates an Option that sets the path to a Dockerfile to build
+func WithPushDockerfilePath(val string) PushOption {
 	return func(cfg *pushConfig) {
-		cfg.DiskQuota = val
+		cfg.DockerfilePath = val
 	}
 }
 
@@ -244,13 +249,6 @@ func WithPushDiskQuota(val *resource.Quantity) PushOption {
 func WithPushEnvironmentVariables(val map[string]string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.EnvironmentVariables = val
-	}
-}
-
-// WithPushExactScale creates an Option that sets scale exactly to this number of instances
-func WithPushExactScale(val *int) PushOption {
-	return func(cfg *pushConfig) {
-		cfg.ExactScale = val
 	}
 }
 
@@ -268,38 +266,10 @@ func WithPushHealthCheck(val *corev1.Probe) PushOption {
 	}
 }
 
-// WithPushMaxScale creates an Option that sets the upper scale bound
-func WithPushMaxScale(val *int) PushOption {
-	return func(cfg *pushConfig) {
-		cfg.MaxScale = val
-	}
-}
-
-// WithPushMemory creates an Option that sets app memory request
-func WithPushMemory(val *resource.Quantity) PushOption {
-	return func(cfg *pushConfig) {
-		cfg.Memory = val
-	}
-}
-
-// WithPushMinScale creates an Option that sets the lower scale bound
-func WithPushMinScale(val *int) PushOption {
-	return func(cfg *pushConfig) {
-		cfg.MinScale = val
-	}
-}
-
 // WithPushNamespace creates an Option that sets the Kubernetes namespace to use
 func WithPushNamespace(val string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.Namespace = val
-	}
-}
-
-// WithPushNoStart creates an Option that sets setup the app without starting it
-func WithPushNoStart(val bool) PushOption {
-	return func(cfg *pushConfig) {
-		cfg.NoStart = val
 	}
 }
 
@@ -314,6 +284,13 @@ func WithPushOutput(val io.Writer) PushOption {
 func WithPushRandomRouteDomain(val string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.RandomRouteDomain = val
+	}
+}
+
+// WithPushResourceRequests creates an Option that sets Resource requests for the container
+func WithPushResourceRequests(val corev1.ResourceList) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.ResourceRequests = val
 	}
 }
 
@@ -335,6 +312,13 @@ func WithPushServiceBindings(val []v1alpha1.AppSpecServiceBinding) PushOption {
 func WithPushSourceImage(val string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.SourceImage = val
+	}
+}
+
+// WithPushStack creates an Option that sets the builder stack to use for buildpack based apps
+func WithPushStack(val string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.Stack = val
 	}
 }
 

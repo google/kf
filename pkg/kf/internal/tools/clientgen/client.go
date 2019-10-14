@@ -18,40 +18,87 @@ package clientgen
 
 import (
 	"bytes"
+	"fmt"
 	"text/template"
 )
 
+type Condition struct {
+	Name string `json:"name"`
+	Ref  string `json:"ref"`
+	Val  string `json:"value"`
+}
+
+func (c *Condition) Definition() string {
+	if c.Ref != "" {
+		return c.Ref
+	}
+
+	return fmt.Sprintf("%q", c.Val)
+}
+
+func (c *Condition) ConditionName() string {
+	return fmt.Sprintf("Condition%s", c.Name)
+}
+
+func (c *Condition) PredicateName() string {
+	return fmt.Sprintf("%sTrue", c.ConditionName())
+}
+
+func (c *Condition) WaitForName() string {
+	return fmt.Sprintf("WaitFor%s", c.PredicateName())
+}
+
 type ClientParams struct {
 	// Package is the package the client will be generated in.
-	Package string `yaml:"package"`
+	Package string `json:"package"`
 
 	// Imports is used for imports into the client.
-	Imports map[string]string `yaml:"imports"`
+	Imports map[string]string `json:"imports"`
 
 	// Kubernetes holds information about the backing API.
 	Kubernetes struct {
 		// Kind is the kind of the resource.
-		Kind string `yaml:"kind"`
+		Kind string `json:"kind"`
 		// Version is the version of the resource kf supports.
-		Version string `yaml:"version"`
+		Version string `json:"version"`
 		// Namespaced indicates whether this object is namespaced or global.
-		Namespaced bool `yaml:"namespaced"`
+		Namespaced bool `json:"namespaced"`
 		// Plural contains the pluralizataion of kind. If blank, default of Kind+"s"
 		// is assumed.
-		Plural string `yaml:"plural"`
-	} `yaml:"kubernetes"`
+		Plural string `json:"plural"`
+		// ObservedGenerationField contains the name of the field used for
+		// ObservedGenerations (if the resource suuports it).
+		ObservedGenerationFieldPath string `json:"observedGenerationFieldPath"`
+		// ConditionField contains the name of the field used for
+		// conditions.
+		ConditionsFieldPath string `json:"conditionsFieldPath"`
+		// Conditions holds the names of interesting conditions that will be turned
+		// into predicates.
+		Conditions []Condition `json:"conditions"`
+	} `json:"kubernetes"`
 
 	// CF contains information about this resource from a CF side.
 	CF struct {
 		// The name of the CF type.
-		Name string `yaml:"name"`
-	} `yaml:"cf"`
+		Name string `json:"name"`
+	} `json:"cf"`
 
 	// Type is the Go type of the resource. This MUST be imported using Imports.
-	Type string `yaml:"type"`
+	Type string `json:"type"`
 
 	// ClientType is the Go type of the Kubernetes client. This MUST be imported using Imports.
-	ClientType string `yaml:"clientType"`
+	ClientType string `json:"clientType"`
+}
+
+// SupportsObservedGeneration returns true if the type supports
+// ObservedGeneration fields.
+func (f *ClientParams) SupportsObservedGeneration() bool {
+	return f.Kubernetes.ObservedGenerationFieldPath != ""
+}
+
+// SupportsConditions returns true if the type supports condition fields.
+func (f *ClientParams) SupportsConditions() bool {
+	return f.Kubernetes.ConditionsFieldPath != ""
 }
 
 func (f *ClientParams) Render() ([]byte, error) {

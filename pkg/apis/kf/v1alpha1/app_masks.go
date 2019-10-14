@@ -33,11 +33,14 @@ func AppSpecSourceMask(in SourceSpec) SourceSpec {
 	out.BuildpackBuild.Stack = in.BuildpackBuild.Stack
 	out.UpdateRequests = in.UpdateRequests
 	out.ContainerImage.Image = in.ContainerImage.Image
+	out.Dockerfile.Source = in.Dockerfile.Source
+	out.Dockerfile.Path = in.Dockerfile.Path
 
 	// Disallowed fields
 	// This list is unnecessary, but added here for clarity
 	out.BuildpackBuild.Image = ""
 	out.BuildpackBuild.BuildpackBuilder = ""
+	out.Dockerfile.Image = ""
 	out.ServiceAccount = ""
 
 	return out

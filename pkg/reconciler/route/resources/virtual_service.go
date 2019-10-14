@@ -72,7 +72,7 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 	for _, route := range claims {
 		urlPath := route.Spec.RouteSpecFields.Path
 
-		httpRoute, err := buildHTTPRoute(namespace, urlPath, nil)
+		httpRoute, err := buildHTTPRoute(hostDomain, namespace, urlPath, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -92,7 +92,7 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 			appNames = append(appNames, route.Spec.AppName)
 		}
 
-		httpRoute, err := buildHTTPRoute(namespace, urlPath, appNames)
+		httpRoute, err := buildHTTPRoute(hostDomain, namespace, urlPath, appNames)
 		if err != nil {
 			return nil, err
 		}
@@ -129,9 +129,8 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 	}, nil
 }
 
-func buildHTTPRoute(namespace, urlPath string, appNames []string) ([]networking.HTTPRoute, error) {
+func buildHTTPRoute(hostDomain, namespace, urlPath string, appNames []string) ([]networking.HTTPRoute, error) {
 	var pathMatchers []networking.HTTPMatchRequest
-
 	urlPath = path.Join("/", urlPath, "/")
 	regexpPath, err := v1alpha1.BuildPathRegexp(urlPath)
 	if err != nil {
@@ -155,6 +154,17 @@ func buildHTTPRoute(namespace, urlPath string, appNames []string) ([]networking.
 			Rewrite: &networking.HTTPRewrite{
 				Authority: network.GetServiceHostname(appName, namespace),
 			},
+			Headers: &networking.Headers{
+				Request: &networking.HeaderOperations{
+					Add: map[string]string{
+						// Set forwarding headers so the app gets the real hostname it's serving
+						// at rather than the internal one:
+						// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded1
+						"X-Forwarded-Host": hostDomain,
+						"Forwarded":        fmt.Sprintf("host=%s", hostDomain),
+					},
+				},
+			},
 		})
 	}
 
@@ -164,13 +174,13 @@ func buildHTTPRoute(namespace, urlPath string, appNames []string) ([]networking.
 		return []networking.HTTPRoute{
 			{
 				Match: pathMatchers,
-				Route: buildRouteDestination(),
 				Fault: &networking.HTTPFaultInjection{
 					Abort: &networking.InjectAbort{
 						Percent:    100,
 						HTTPStatus: http.StatusServiceUnavailable,
 					},
 				},
+				Route: buildRouteDestination(),
 			},
 		}, nil
 	}

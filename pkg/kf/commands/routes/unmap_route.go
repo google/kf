@@ -15,23 +15,26 @@
 package routes
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"path"
+	"time"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/algorithms"
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/utils"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/spf13/cobra"
 )
 
 // NewUnmapRouteCommand creates a MapRoute command.
 func NewUnmapRouteCommand(
 	p *config.KfParams,
-	c apps.Client,
+	appsClient apps.Client,
 ) *cobra.Command {
+	var async utils.AsyncFlags
 	var hostname, urlPath string
 
 	cmd := &cobra.Command{
@@ -57,9 +60,19 @@ func NewUnmapRouteCommand(
 				Path:     path.Join("/", urlPath),
 			}
 
-			return unmapApp(p.Namespace, appName, route, c, cmd.OutOrStdout())
+			if err := unmapApp(p.Namespace, appName, route, appsClient, cmd.OutOrStdout()); err != nil {
+				return err
+			}
+
+			action := fmt.Sprintf("Unmapping route to app %q in space %q", appName, p.Namespace)
+			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
+				_, err := appsClient.WaitForConditionRoutesReadyTrue(context.Background(), p.Namespace, appName, 1*time.Second)
+				return err
+			})
 		},
 	}
+
+	async.Add(cmd)
 
 	cmd.Flags().StringVar(
 		&hostname,
@@ -81,7 +94,7 @@ func unmapApp(
 	namespace string,
 	appName string,
 	route v1alpha1.RouteSpecFields,
-	c apps.Client,
+	appsClient apps.Client,
 	w io.Writer,
 ) error {
 	mutator := apps.Mutator(func(app *v1alpha1.App) error {
@@ -102,10 +115,9 @@ func unmapApp(
 		return nil
 	})
 
-	if err := c.Transform(namespace, appName, mutator); err != nil {
+	if _, err := appsClient.Transform(namespace, appName, mutator); err != nil {
 		return fmt.Errorf("failed to unmap Route: %s", err)
 	}
 
-	fmt.Fprintf(w, "Unmapping route... %s", utils.AsyncLogSuffix)
 	return nil
 }

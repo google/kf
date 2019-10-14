@@ -36,7 +36,7 @@ func NewDeleteQuotaCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		RunE: func(cmd *cobra.Command, args []string) error {
 			spaceName := args[0]
 
-			err := client.Transform(spaceName, spaces.DiffWrapper(cmd.OutOrStdout(), func(space *v1alpha1.Space) error {
+			_, err := client.Transform(spaceName, spaces.DiffWrapper(cmd.OutOrStdout(), func(space *v1alpha1.Space) error {
 				kfspace := spaces.NewFromSpace(space)
 				return kfspace.DeleteQuota()
 			}))
