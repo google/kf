@@ -185,3 +185,18 @@ func IsStatusFinal(duck duckv1beta1.Status) bool {
 
 	return false
 }
+
+// UnionMaps is similar to
+// github.com/google/kf/third_party/knative-serving/pkg/resources however it
+// takes multiple maps instead of only 2.
+func UnionMaps(maps ...map[string]string) map[string]string {
+	result := map[string]string{}
+
+	for _, m := range maps {
+		for k, v := range m {
+			result[k] = v
+		}
+	}
+
+	return result
+}

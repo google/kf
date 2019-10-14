@@ -22,7 +22,7 @@ import (
 	"sort"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/knative/serving/pkg/network"
+	"github.com/google/kf/third_party/knative-serving/pkg/network"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	istio "knative.dev/pkg/apis/istio/common/v1alpha1"

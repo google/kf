@@ -106,6 +106,7 @@ func TestIntegration_MapRoute(t *testing.T) {
 	})
 }
 
+<<<<<<< HEAD
 // TestIntegration_MultipleAppsPerRoute pushes two apps and creates a route via `create-route`,
 // then maps both apps to the same route. The test verifies that hitting the route returns a 200 OK
 // and that traffic to the route is roughly split equally between the two apps.
@@ -173,6 +174,8 @@ func TestIntegration_MultipleAppsPerRoute(t *testing.T) {
 	})
 }
 
+=======
+>>>>>>> develop
 func findRoute(ctx context.Context, t *testing.T, kf *Kf, hostname, domain, path string, shouldFind bool) {
 	// TODO (#699): Stop using panics for flow control
 	RetryOnPanic(ctx, t, func() {

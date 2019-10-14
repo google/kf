@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/google/kf/pkg/kf/testutil"
-	"github.com/knative/serving/pkg/apis/autoscaling"
+	"github.com/google/kf/third_party/knative-serving/pkg/apis/autoscaling"
 )
 
 func intPtr(val int) *int {

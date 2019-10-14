@@ -17,7 +17,7 @@ package v1alpha1
 import (
 	"fmt"
 
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
+	serving "github.com/google/kf/third_party/knative-serving/pkg/apis/serving/v1alpha1"
 	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -134,6 +134,11 @@ func (status *AppStatus) PropagateKnativeServiceStatus(service *serving.Service)
 // PropagateEnvVarSecretStatus updates the env var secret readiness status.
 func (status *AppStatus) PropagateEnvVarSecretStatus(secret *v1.Secret) {
 	status.manage().MarkTrue(AppConditionEnvVarSecretReady)
+}
+
+// PropagateRouteStatus updates the route readiness status.
+func (status *AppStatus) PropagateRouteStatus() {
+	status.manage().MarkTrue(AppConditionRouteReady)
 }
 
 // serviceBindingConditionType creates a Conditiontype for a ServiceBinding.
