@@ -245,7 +245,7 @@ jobs:
           echo 'y' | gcloud auth configure-docker
 
           # Install SC
-          kubectl apply --recursive --filename kf-dev/third_party/service-catalog/manifests/catalog/templates/
+          kubectl apply --recursive --filename release-pr/third_party/service-catalog/manifests/catalog/templates/
           # Install Knative Build
           kubectl apply --filename https://github.com/knative/build/releases/download/v0.6.0/build.yaml
           # Install Kf
