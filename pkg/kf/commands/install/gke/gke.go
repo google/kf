@@ -461,7 +461,7 @@ func gkeClusterConfig(
 		case len(availableMachineTypes) == 1:
 			cfg.machineType = availableMachineTypes[0]
 		default:
-			_, cfg.machineType, err = SelectPrompt(ctx, "Machine Type", availableMachineTypes...)
+			_, cfg.machineType, err = SelectPrompt(ctx, "Machine Type (minimum recommended: 'n1-standard-4')", availableMachineTypes...)
 			if err != nil {
 				return gkeConfig{}, err
 			}
