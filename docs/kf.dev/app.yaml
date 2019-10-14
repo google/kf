@@ -1,0 +1,24 @@
+runtime: python27
+api_version: 1
+threadsafe: true
+
+handlers:
+- url: /robots.txt
+  static_files: www/robots.txt
+  upload: www/robots.txt
+  secure: always
+
+- url: /(.*\..*)
+  static_files: www/\1
+  upload: www/(.*)
+  secure: always
+
+- url: /(.*)/
+  static_files: www/\1/index.html
+  upload: www/(.*)/index.html
+  secure: always
+
+- url: /
+  static_files: www/index.html
+  upload: www/index.html
+  secure: always
