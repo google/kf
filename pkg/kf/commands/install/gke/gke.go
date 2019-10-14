@@ -313,6 +313,20 @@ func networks(ctx context.Context, projID string) ([]string, error) {
 	)
 }
 
+// machineTypes uses gcloud to list all the available machine for a project ID and zone.
+func machineTypes(ctx context.Context, projID, zone string) ([]string, error) {
+	Logf(ctx, "Finding your machine types...")
+	return gcloud(
+		ctx,
+		"compute",
+		"machine-types",
+		"list",
+		"--project", projID,
+		"--zones", zone,
+		"--format", "value(name)",
+	)
+}
+
 func createNewCluster(ctx context.Context, projID string) (string, string, error) {
 	ctx = SetLogPrefix(ctx, "Create New GKE Config")
 
@@ -351,6 +365,7 @@ type gkeConfig struct {
 	serviceAccount string
 	zone           string
 	network        string
+	machineType    string
 }
 
 func gkeClusterConfig(
@@ -432,6 +447,22 @@ func gkeClusterConfig(
 			cfg.network = availableNetworks[0]
 		default:
 			_, cfg.network, err = SelectPrompt(ctx, "Network", availableNetworks...)
+			if err != nil {
+				return gkeConfig{}, err
+			}
+		}
+	}
+
+	// Machine Type
+	{
+		availableMachineTypes, err := machineTypes(ctx, projID, cfg.zone)
+		switch {
+		case err != nil:
+			return gkeConfig{}, err
+		case len(availableMachineTypes) == 1:
+			cfg.machineType = availableMachineTypes[0]
+		default:
+			_, cfg.machineType, err = SelectPrompt(ctx, "Machine Type", availableMachineTypes...)
 			if err != nil {
 				return gkeConfig{}, err
 			}
