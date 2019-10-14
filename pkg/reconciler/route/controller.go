@@ -70,6 +70,18 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		Handler:    controller.HandleAll(logError(logger, EnqueueRoutesOfVirtualService(enqueue, c.routeLister))),
 	})
 
+	// configmap stuff
+	logger.Info("Setting up ConfigMap receivers")
+	configsToResync := []interface{}{
+		&network.Config{},
+		&config.Domain{},
+	}
+	resync := configmap.TypeFilter(configsToResync...)(func(string, interface{}) {
+		impl.GlobalResync(routeInformer.Informer())
+	})
+	configStore := config.NewStore(c.Logger.Named("config-store"), controller.GetResyncPeriod(ctx), resync)
+	configStore.WatchConfigs(cmw)
+	c.configStore = configStore
 	return impl
 }
 
