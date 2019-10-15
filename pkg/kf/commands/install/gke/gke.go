@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/google/kf/pkg/kf/commands/install/kf"
@@ -26,13 +27,15 @@ import (
 )
 
 const (
-	machineType           = "n1-standard-4"
+	GKEVersionEnvVar = "GKE_VERSION"
+
 	imageType             = "COS"
 	diskType              = "pd-standard"
 	diskSize              = "100"
 	numNodes              = "3"
 	defaultMaxPodsPerNode = "110"
 	addons                = "HorizontalPodAutoscaling,HttpLoadBalancing,Istio,CloudRun"
+	defaultGKEVersion     = "1.13.7-gke.24"
 )
 
 // NewGKECommand creates a command that can install kf to GKE+Cloud Run.
@@ -50,7 +53,10 @@ func NewGKECommand() *cobra.Command {
 			This interactive installer will walk you through the process of installing kf
 			on GKE with Cloud Run. You MUST have gcloud and kubectl installed and
 			available on the path. Note: running this will incur costs to run GKE. See
-			https://cloud.google.com/products/calculator/ to get an estimate.`,
+			https://cloud.google.com/products/calculator/ to get an estimate.
+
+			To override the GKE version that's chosen, set the environment variable
+			GKE_VERSION.`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
 
@@ -306,6 +312,20 @@ func networks(ctx context.Context, projID string) ([]string, error) {
 	)
 }
 
+// machineTypes uses gcloud to list all the available machine for a project ID and zone.
+func machineTypes(ctx context.Context, projID, zone string) ([]string, error) {
+	Logf(ctx, "Finding your machine types...")
+	return gcloud(
+		ctx,
+		"compute",
+		"machine-types",
+		"list",
+		"--project", projID,
+		"--zones", zone,
+		"--format", "value(name)",
+	)
+}
+
 func createNewCluster(ctx context.Context, projID string) (string, string, error) {
 	ctx = SetLogPrefix(ctx, "Create New GKE Config")
 
@@ -344,6 +364,7 @@ type gkeConfig struct {
 	serviceAccount string
 	zone           string
 	network        string
+	machineType    string
 }
 
 func gkeClusterConfig(
@@ -431,6 +452,22 @@ func gkeClusterConfig(
 		}
 	}
 
+	// Machine Type
+	{
+		availableMachineTypes, err := machineTypes(ctx, projID, cfg.zone)
+		switch {
+		case err != nil:
+			return gkeConfig{}, err
+		case len(availableMachineTypes) == 1:
+			cfg.machineType = availableMachineTypes[0]
+		default:
+			_, cfg.machineType, err = SelectPrompt(ctx, "Machine Type (minimum recommended: 'n1-standard-4')", availableMachineTypes...)
+			if err != nil {
+				return gkeConfig{}, err
+			}
+		}
+	}
+
 	return
 }
 
@@ -444,7 +481,7 @@ func buildGKECluster(
 		"beta", "container", "clusters", "create", gkeCfg.clusterName,
 		"--zone", gkeCfg.zone,
 		"--no-enable-basic-auth",
-		"--machine-type", machineType,
+		"--machine-type", gkeCfg.machineType,
 		"--image-type", imageType,
 		"--disk-type", diskType,
 		"--disk-size", diskSize,
@@ -459,6 +496,14 @@ func buildGKECluster(
 		"--enable-autoupgrade",
 		"--enable-autorepair",
 		"--project", projID,
+	}
+
+	if gkeClusterVersion, ok := os.LookupEnv(GKEVersionEnvVar); ok {
+		args = append(args, "--cluster-version", gkeClusterVersion)
+	} else {
+		Logf(ctx, "Setting the GKE version to be %q, override it by setting the environment variable %s", defaultGKEVersion, GKEVersionEnvVar)
+		args = append(args, "--cluster-version", defaultGKEVersion)
+
 	}
 
 	if gkeCfg.network != "" {

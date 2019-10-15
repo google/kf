@@ -409,6 +409,9 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		}
 	}
 
+	// If there are no errors reconciling Routes and RouteClaims, mark RouteReady as true
+	app.Status.PropagateRouteStatus()
+
 	return r.gcRevisions(ctx, app)
 }
 
