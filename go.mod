@@ -6,7 +6,7 @@ require (
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
-	github.com/evanphx/json-patch v0.0.0-20190203023257-5858425f7550 // indirect
+	github.com/evanphx/json-patch v4.2.0+incompatible // indirect
 	github.com/fatih/color v1.7.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/golang/mock v1.3.1
@@ -21,6 +21,8 @@ require (
 	github.com/manifoldco/promptui v0.3.2
 	github.com/markbates/inflect v1.0.4 // indirect
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
+	github.com/onsi/ginkgo v1.10.1 // indirect
+	github.com/onsi/gomega v1.7.0 // indirect
 	github.com/pborman/uuid v1.2.0 // indirect
 	github.com/poy/kontext v0.0.0-20190801225340-1f98414f4e12
 	github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c
@@ -33,16 +35,21 @@ require (
 	github.com/stretchr/testify v1.3.0 // indirect
 	go.opencensus.io v0.22.0 // indirect
 	go.uber.org/zap v1.10.0
+	golang.org/x/crypto v0.0.0-20190611184440-5c40567a22f8 // indirect
+	golang.org/x/net v0.0.0-20190613194153-d28f0bde5980 // indirect
 	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a // indirect
+	golang.org/x/sys v0.0.0-20190616124812-15dcb6c0061f // indirect
+	golang.org/x/text v0.3.2 // indirect
+	golang.org/x/tools v0.0.0-20190614205625-5aca471b1d59 // indirect
 	google.golang.org/appengine v1.5.0 // indirect
+	gopkg.in/yaml.v2 v2.2.4 // indirect
 	k8s.io/api v0.0.0
 	k8s.io/apimachinery v0.0.0
 	k8s.io/cli-runtime v0.0.0
 	k8s.io/client-go v2.0.0-alpha.0.0.20190226174127-78295b709ec6+incompatible
 	k8s.io/code-generator v0.0.0
-	k8s.io/gengo v0.0.0-20190116091435-f8a0810f38af // indirect
-	k8s.io/klog v0.3.1 // indirect
-	k8s.io/kube-openapi v0.0.0-20190228160746-b3a7cee44a30 // indirect
+	k8s.io/klog v1.0.0 // indirect
+	k8s.io/kube-openapi v0.0.0-20190816220812-743ec37842bf // indirect
 	knative.dev/pkg v0.0.0-20190626215608-1104d6c75533
 	sigs.k8s.io/yaml v1.1.0
 )

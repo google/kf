@@ -15,25 +15,24 @@
 package describe
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 	"unicode"
+
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-// JSONData prints out a JSON struct.
-func JSONData(w io.Writer, data []byte) error {
-	deserialized := make(map[string]interface{})
-	if err := json.Unmarshal(data, &deserialized); err != nil {
-		return err
-	}
-
-	printJSONObject(w, deserialized)
-	return nil
+// Unstructured prints information about an unstructured Kubernetes
+// object.
+func Unstructured(w io.Writer, resource *unstructured.Unstructured) {
+	UnstructuredMap(w, resource.UnstructuredContent())
 }
 
-func printJSONObject(w io.Writer, obj map[string]interface{}) {
+// UnstructuredMap writes information about a JSON style unstructured
+// object.
+func UnstructuredMap(w io.Writer, obj map[string]interface{}) {
 	TabbedWriter(w, func(w io.Writer) {
 		var keys []string
 		for k := range obj {
@@ -48,11 +47,11 @@ func printJSONObject(w io.Writer, obj map[string]interface{}) {
 			switch val := rawVal.(type) {
 			case map[string]interface{}:
 				SectionWriter(w, key, func(w io.Writer) {
-					printJSONObject(w, val)
+					UnstructuredMap(w, val)
 				})
 			case []interface{}:
 				SectionWriter(w, key, func(w io.Writer) {
-					printJSONArray(w, val)
+					UnstructuredArray(w, val)
 				})
 			default:
 				fmt.Fprintf(w, "%s:\t%v\n", key, val)
@@ -61,19 +60,21 @@ func printJSONObject(w io.Writer, obj map[string]interface{}) {
 	})
 }
 
-func printJSONArray(w io.Writer, anArray []interface{}) {
+// UnstructuredArray formats and writes an array to the output.
+func UnstructuredArray(w io.Writer, anArray []interface{}) {
 	for _, rawVal := range anArray {
 		switch val := rawVal.(type) {
 		case map[string]interface{}:
-			printJSONObject(w, val)
+			UnstructuredMap(w, val)
 		case []interface{}:
-			printJSONArray(w, val)
+			UnstructuredArray(w, val)
 		default:
 			fmt.Fprintf(w, "%v\n", val)
 		}
 	}
 }
 
+// JSONKeyToTitleCase converts a JSON key to a human friendly casing.
 func JSONKeyToTitleCase(name string) string {
 	out := ""
 
@@ -111,5 +112,15 @@ func JSONKeyToTitleCase(name string) string {
 		last = curr
 	}
 
-	return out
+	// Replace aconyms for nicer output
+	parts := strings.Split(out, " ")
+	for i, part := range parts {
+		for _, acronym := range []string{"API", "URL", "UID", "OSB", "GUID"} {
+			if strings.ToUpper(part) == acronym {
+				parts[i] = acronym
+			}
+		}
+	}
+
+	return strings.Join(parts, " ")
 }
