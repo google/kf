@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # Copyright 2019 Google LLC
 #
@@ -16,43 +16,42 @@
 
 set -eux
 
-# Change to the project root directory
-cd "${0%/*}"/..
+source "`dirname $0`/util.sh"
 
-# Used to suffix the artifacts
-current_time=$(date +%s)
+require_env SERVICE_ACCOUNT_JSON
+require_env GCP_PROJECT_ID
+require_env RELEASE_BUCKET
 
-# Build artifacts
-# NOTE: This will login to gcloud for us.
-tmp_dir=$(mktemp -d)
-./hack/build-release.sh ${tmp_dir}
+if [ "$#" -ne 1 ]; then
+        echo "usage: $0 [RELEASE ARTIFACTS PATH]"
+        exit 1
+fi
 
-# save release to a bucket
-release_name=release-${current_time}.yaml
-gsutil cp ${tmp_dir}/release.yaml ${RELEASE_BUCKET}/${release_name}
+# Directory where output artifacts will go
+release_dir=$1
 
-# Make this the latest
-gsutil cp ${RELEASE_BUCKET}/${release_name} ${RELEASE_BUCKET}/release-latest.yaml
+# Login to gcloud
+echo Authenticating to kubernetes...
+sakey=`mktemp -t gcloud-key-XXXXXX`
+set +x
+echo "$SERVICE_ACCOUNT_JSON" > $sakey
+set -x
+gcloud auth activate-service-account --key-file $sakey
+gcloud config set project "$GCP_PROJECT_ID"
 
-# Upload the binaries
-for cli in $(ls ${tmp_dir}/bin); do
-  # Extract file extensions (e.g., .exe)
-  filename=$(basename -- "${cli}")
-  extension="${filename##*.}"
-  filename="${filename%.*}"
+# Parse the release version from a file
+release_version=`cat $release_dir/version`
+prefix="$release_version/"
+prefix_latest="latest/"
 
-  destination=${filename}-${current_time}
-  latest_destination=${filename}-latest
+# Modify the prefix if this is a nightly
+if [[ $release_version == *"nightly"* ]]; then
+  prefix="nightly/$prefix"
+  prefix_latest="nightly/$prefix_latest"
+fi
 
-  # Check to see if it has a file extension
-  if [ "${extension}" != "${filename}" ]; then
-      destination=${destination}.${extension}
-      latest_destination=${latest_destination}.${extension}
-  fi
+# Upload release
+gsutil -m cp -a public-read -r $release_dir/* $RELEASE_BUCKET/$prefix
 
-  # Upload
-  gsutil cp ${tmp_dir}/bin/${cli} ${CLI_RELEASE_BUCKET}/${destination}
-
-  # Make this the latest
-  gsutil cp ${CLI_RELEASE_BUCKET}/${destination} ${CLI_RELEASE_BUCKET}/${latest_destination}
-done
+# Upload latest
+gsutil -m cp -a public-read -r $release_dir/* $RELEASE_BUCKET/$prefix_latest

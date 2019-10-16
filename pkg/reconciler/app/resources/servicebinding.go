@@ -19,7 +19,6 @@ import (
 	"fmt"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/knative/serving/pkg/resources"
 	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -71,7 +70,7 @@ func MakeServiceBinding(app *v1alpha1.App, binding *v1alpha1.AppSpecServiceBindi
 			OwnerReferences: []metav1.OwnerReference{
 				*kmeta.NewControllerRef(app),
 			},
-			Labels: resources.UnionMaps(app.GetLabels(), MakeServiceBindingLabels(app, binding)),
+			Labels: v1alpha1.UnionMaps(app.GetLabels(), MakeServiceBindingLabels(app, binding)),
 		},
 		Spec: servicecatalogv1beta1.ServiceBindingSpec{
 			InstanceRef: servicecatalogv1beta1.LocalObjectReference{

@@ -426,7 +426,6 @@ Module: github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c
 Module: github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf
 Module: github.com/google/shlex v0.0.0-20181106134648-c34317bd91bf
 Module: github.com/google/wire v0.2.2
-Module: github.com/knative/serving v0.7.1-0.20190701162519-7ca25646a186
 Module: google.golang.org/appengine v1.5.0
 Module: google.golang.org/genproto v0.0.0-20190307195333-5fe7a883aa19
 Module: google.golang.org/grpc v1.19.0
@@ -436,7 +435,6 @@ Module: k8s.io/cli-runtime v0.0.0-20190528110732-ad79ea2fbc0f (imported as k8s.i
 Module: k8s.io/client-go v0.0.0-20190226174127-78295b709ec6 (imported as k8s.io/client-go v2.0.0-alpha.0.0.20190226174127-78295b709ec6+incompatible)
 Module: k8s.io/code-generator v0.0.0-20181128191024-b1289fc74931 (imported as k8s.io/code-generator v0.0.0)
 Module: k8s.io/kube-openapi v0.0.0-20190228160746-b3a7cee44a30
-Module: knative.dev/serving v0.8.0
 
 
 
@@ -1254,7 +1252,7 @@ Module: github.com/prometheus/client_golang v0.9.3-0.20190127221311-3c4408c8b829
 Module: github.com/prometheus/client_model v0.0.0-20190115171406-56726106282f
 Module: github.com/prometheus/common v0.2.0
 Module: github.com/prometheus/procfs v0.0.0-20190117184657-bf6a532e95b1
-Module: knative.dev/pkg v0.0.0-20190626215608-1104d6c75533
+Module: knative.dev/pkg v0.0.0-20190626215608-1104d6c75533 (imported as knative.dev/pkg v0.0.0-20191007173910-c119a8065cf9)
 
 
                                  Apache License
@@ -3207,7 +3205,7 @@ THE SOFTWARE.
 
 
 ===========================================================
-Module: go.uber.org/zap v1.9.1
+Module: go.uber.org/zap v1.10.0
 
 
 Copyright (c) 2016-2017 Uber Technologies, Inc.

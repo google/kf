@@ -16,7 +16,6 @@ package resources
 
 import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/knative/serving/pkg/resources"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/kmeta"
@@ -36,7 +35,7 @@ func MakeLimitRange(space *v1alpha1.Space) (*v1.LimitRange, error) {
 		OwnerReferences: []metav1.OwnerReference{
 			*kmeta.NewControllerRef(space),
 		},
-		Labels: resources.UnionMaps(space.GetLabels(), map[string]string{
+		Labels: v1alpha1.UnionMaps(space.GetLabels(), map[string]string{
 			"app.kubernetes.io/managed-by": "kf",
 		}),
 	}

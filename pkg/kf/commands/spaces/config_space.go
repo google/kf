@@ -275,7 +275,6 @@ func newSetDefaultDomainMutator() spaceMutator {
 					}
 					found = true
 					space.Spec.Execution.Domains[i].Default = true
-					return nil
 				}
 
 				if !found {

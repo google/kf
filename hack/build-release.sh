@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # Copyright 2019 Google LLC
 #
@@ -16,27 +16,51 @@
 
 set -eux
 
+source "`dirname $0`/util.sh"
+
+require_env KO_DOCKER_REPO
+require_env SERVICE_ACCOUNT_JSON
+require_env GCP_PROJECT_ID
+
 if [ "$#" -ne 1 ]; then
         echo "usage: $0 [OUTPUT PATH]"
         exit 1
 fi
 
+# Go to root dir
+cd $(git rev-parse --show-toplevel)
+
+echo "Executing build from: `pwd`"
+
+# Directory where output artifacts will go
 output=$1
 
-# Change to the project root directory
-cd "${0%/*}"/..
-
 # Login to gcloud
+echo Authenticating to kubernetes...
+sakey=`mktemp -t gcloud-key-XXXXXX`
 set +x
-/bin/echo "$SERVICE_ACCOUNT_JSON" > key.json
+echo "$SERVICE_ACCOUNT_JSON" > $sakey
 set -x
-/bin/echo Authenticating to kubernetes...
-gcloud auth activate-service-account --key-file key.json
+gcloud auth activate-service-account --key-file $sakey
 gcloud config set project "$GCP_PROJECT_ID"
 gcloud -q auth configure-docker
 
+# Process version
+version=`cat version`
+# Modify version number if this is a nightly build.
+# Set NIGHTLY to any value to enable a nightly build.
+[[ -n "${NIGHTLY-}" ]] && version="$version-nightly-`date +%F`"
+echo $version > $output/version
+
+# Modify version number to prepend git hash
+hash=$(git rev-parse --short HEAD)
+[ -z "$hash" ] && echo "failed to read hash" && exit 1
+version="$version-$hash"
+
+# Temp dir for temp GOPATH
+tmpgo=`mktemp -d -t go-XXXXXXXXXX`
 # Environment Variables for go build
-export GOPATH=/go
+export GOPATH=$tmpgo
 export GOPROXY=https://proxy.golang.org
 export GOSUMDB=sum.golang.org
 export GO111MODULE=on
@@ -56,17 +80,14 @@ cd $GOPATH/src/github.com/google/kf
 
 # ko resolve
 # This publishes the images to KO_DOCKER_REPO and writes the yaml to
-# stdout.
-ko resolve --filename config > ${output}/release.yaml
+# stdout. $version is substited in the yaml and the result is written
+# to a file.
+ko resolve --filename config | sed "s/VERSION_PLACEHOLDER/$version/" > ${output}/release.yaml
 
 ###################
 # Generate kf CLI #
 ###################
-
 mkdir ${output}/bin
-
-hash=$(git rev-parse HEAD)
-[ -z "$hash" ] && echo "failed to read hash" && exit 1
 
 # Build the binaries
 for os in $(echo linux darwin windows); do
@@ -77,5 +98,5 @@ for os in $(echo linux darwin windows); do
   fi
 
   # Build
-  GOOS=${os} go build -o ${destination} --ldflags "-X github.com/google/kf/pkg/kf/commands.Version=${hash}" ./cmd/kf
+  GOOS=${os} go build -o ${destination} --ldflags "-X 'github.com/google/kf/pkg/kf/commands.Version=${version}'" ./cmd/kf
 done

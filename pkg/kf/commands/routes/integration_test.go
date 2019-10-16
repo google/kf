@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -63,6 +64,42 @@ func TestIntegration_UnmappedRoute(t *testing.T) {
 		}
 
 		kf.DeleteRoute(ctx, "example.com", "--hostname="+hostname, "--path="+path)
+		findRoute(ctx, t, kf, hostname, domain, path, false)
+	})
+}
+
+// TestIntegration_MapRoute pushes an app and creates a route via `create-route`, then maps the app to the route.
+// The test verifies that the route exists with `routes`, and checks that hitting the route returns a 200 OK
+// with `proxy-route`.
+func TestIntegration_MapRoute(t *testing.T) {
+	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+		appName := fmt.Sprintf("integration-routes-%d", time.Now().UnixNano())
+
+		kf.Push(ctx, appName,
+			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/helloworld"),
+		)
+		defer kf.Delete(ctx, appName)
+
+		hostname := fmt.Sprintf("some-host-%d", time.Now().UnixNano())
+		domain := "example.com"
+		path := "mypath"
+
+		kf.CreateRoute(ctx, domain, "--hostname="+hostname, "--path="+path)
+		routeHost := fmt.Sprintf("%s.%s", hostname, domain)
+		findRoute(ctx, t, kf, hostname, domain, path, true)
+
+		kf.MapRoute(ctx, appName, domain, "--hostname="+hostname, "--path="+path)
+		go kf.ProxyRoute(ctx, routeHost, 8083)
+
+		{
+			resp, respCancel := RetryGet(ctx, t, "http://localhost:8083/"+path, 90*time.Second, http.StatusOK)
+			defer resp.Body.Close()
+			defer respCancel()
+			Logf(t, "testing for 200")
+		}
+
+		kf.UnmapRoute(ctx, appName, domain, "--hostname="+hostname, "--path="+path)
+		kf.DeleteRoute(ctx, domain, "--hostname="+hostname, "--path="+path)
 		findRoute(ctx, t, kf, hostname, domain, path, false)
 	})
 }
