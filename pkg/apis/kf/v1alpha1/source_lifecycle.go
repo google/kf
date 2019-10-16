@@ -18,7 +18,6 @@ import (
 	"fmt"
 
 	build "github.com/google/kf/third_party/knative-build/pkg/apis/build/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
@@ -78,19 +77,9 @@ func (status *SourceStatus) PropagateBuildStatus(build *build.Build) {
 	status.BuildName = build.Name
 	status.manage().MarkUnknown(SourceConditionBuildSucceeded, "initializing", "Build in progress")
 
-	for _, condition := range build.Status.GetConditions() {
-		if condition.Type == "Succeeded" {
-			switch condition.Status {
-			case corev1.ConditionTrue:
-				status.Image = GetBuildArg(build, BuildArgImage)
-
-				status.manage().MarkTrue(SourceConditionBuildSucceeded)
-			case corev1.ConditionFalse:
-				status.manage().MarkFalse(SourceConditionBuildSucceeded, condition.Reason, "Build failed: %s", condition.Message)
-			case corev1.ConditionUnknown:
-				status.manage().MarkUnknown(SourceConditionBuildSucceeded, condition.Reason, "Build in progress")
-			}
-		}
+	cond := build.Status.GetCondition(apis.ConditionSucceeded)
+	if PropagateCondition(status.manage(), SourceConditionBuildSucceeded, cond) {
+		status.Image = GetBuildArg(build, BuildArgImage)
 	}
 }
 

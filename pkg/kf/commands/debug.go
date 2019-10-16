@@ -23,10 +23,12 @@ import (
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/describe"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sclient "k8s.io/client-go/kubernetes"
 )
 
 // NewDebugCommand creates a command that prints debugging information.
-func NewDebugCommand(p *config.KfParams) *cobra.Command {
+func NewDebugCommand(p *config.KfParams, kubernetes k8sclient.Interface) *cobra.Command {
 	return &cobra.Command{
 		Use:     "debug",
 		Short:   "Show debugging information useful for filing a bug report",
@@ -37,6 +39,7 @@ func NewDebugCommand(p *config.KfParams) *cobra.Command {
 
 			debugRuntime(w)
 			debugKfParams(w, p)
+			debugVersion(w, kubernetes)
 			dockerutil.DescribeDefaultConfig(w)
 
 			return nil
@@ -64,4 +67,27 @@ func debugRuntime(w io.Writer) {
 		fmt.Fprintf(w, "Arch:\t%s\n", runtime.GOARCH)
 		fmt.Fprintf(w, "OS:\t%s\n", runtime.GOOS)
 	})
+}
+
+func debugVersion(w io.Writer, kubernetes k8sclient.Interface) {
+	describe.SectionWriter(w, "Version", func(w io.Writer) {
+		fmt.Fprintf(w, "Kf Client:\t%s\n", Version)
+
+		if version, err := kubernetes.Discovery().ServerVersion(); err != nil {
+			fmt.Fprintf(w, "Server version error:\t%s\n", err)
+		} else {
+			fmt.Fprintf(w, "Server version:\t%v\n", version)
+		}
+
+		namespaceLabel(w, kubernetes, "kf", "app.kubernetes.io/version")
+		namespaceLabel(w, kubernetes, "knative-serving", "serving.knative.dev/release")
+	})
+}
+
+func namespaceLabel(w io.Writer, kubernetes k8sclient.Interface, namespace, label string) {
+	if ns, err := kubernetes.CoreV1().Namespaces().Get(namespace, metav1.GetOptions{}); err != nil {
+		fmt.Fprintf(w, "%s[%q]:\terror: %s\n", namespace, label, err)
+	} else {
+		fmt.Fprintf(w, "%s[%q]:\t%v\n", namespace, label, ns.Labels[label])
+	}
 }
