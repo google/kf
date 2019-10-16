@@ -74,7 +74,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	// configmap stuff
 	logger.Info("Setting up ConfigMap receivers")
 	configsToResync := []interface{}{
-		&config.Config{},
+		&config.RoutingConfig{},
 	}
 	resync := configmap.TypeFilter(configsToResync...)(func(string, interface{}) {
 		impl.GlobalResync(routeInformer.Informer())
