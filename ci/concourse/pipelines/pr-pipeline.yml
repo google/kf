@@ -93,7 +93,7 @@ jobs:
   - get: ci-src
   - aggregate:
     - task: check-linters
-      timeout: 2h30m
+      timeout: 10m
       config:
         platform: linux
         image_resource:
@@ -114,7 +114,7 @@ jobs:
             hack/check-linters.sh
       on_failure: *on_failure
     - task: check-go-generate
-      timeout: 2h30m
+      timeout: 10m
       config:
         platform: linux
         image_resource:
@@ -135,7 +135,7 @@ jobs:
             hack/check-go-generate.sh
       on_failure: *on_failure
     - task: check-code-generator
-      timeout: 2h30m
+      timeout: 10m
       config:
         platform: linux
         image_resource:
@@ -156,7 +156,7 @@ jobs:
             hack/check-code-generator.sh
       on_failure: *on_failure
     - task: check-go-sum
-      timeout: 2h30m
+      timeout: 10m
       config:
         platform: linux
         image_resource:
@@ -177,7 +177,7 @@ jobs:
             hack/check-go-sum.sh
       on_failure: *on_failure
     - task: check-vendor-license
-      timeout: 2h30m
+      timeout: 10m
       config:
         platform: linux
         image_resource:
