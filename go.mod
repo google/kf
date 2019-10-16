@@ -6,6 +6,8 @@ require (
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
+	github.com/docker/cli v0.0.0-20191007193719-3e07fa728a30
+	github.com/docker/docker-credential-helpers v0.6.3 // indirect
 	github.com/evanphx/json-patch v4.2.0+incompatible // indirect
 	github.com/fatih/color v1.7.0
 	github.com/ghodss/yaml v1.0.0
@@ -43,6 +45,7 @@ require (
 	golang.org/x/tools v0.0.0-20190614205625-5aca471b1d59 // indirect
 	google.golang.org/appengine v1.5.0 // indirect
 	gopkg.in/yaml.v2 v2.2.4 // indirect
+	gotest.tools v2.2.0+incompatible // indirect
 	k8s.io/api v0.0.0
 	k8s.io/apimachinery v0.0.0
 	k8s.io/cli-runtime v0.0.0
