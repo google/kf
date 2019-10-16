@@ -44,6 +44,7 @@ type Reconciler struct {
 	routeLister          kflisters.RouteLister
 	routeClaimLister     kflisters.RouteClaimLister
 	virtualServiceLister istiolisters.VirtualServiceLister
+	configStore          reconciler.ConfigStore
 }
 
 // Check that our Reconciler implements controller.Reconciler
@@ -99,7 +100,7 @@ func (r *Reconciler) ApplyChanges(
 	// virtualservice, it won't be cleaned up.
 	if len(claims) == 0 {
 		err := r.SharedClientSet.
-			Networking().
+			NetworkingV1alpha3().
 			VirtualServices(v1alpha1.KfNamespace).
 			Delete(v1alpha1.GenerateName(
 				fields.Hostname,
@@ -143,7 +144,7 @@ func (r *Reconciler) ApplyChanges(
 	if errors.IsNotFound(err) {
 		// VirtualService doesn't exist, make one.
 		if _, err := r.SharedClientSet.
-			Networking().
+			NetworkingV1alpha3().
 			VirtualServices(v1alpha1.KfNamespace).
 			Create(desired); err != nil {
 			return err
@@ -204,7 +205,7 @@ func (r *Reconciler) update(
 	sort.Sort(sort.Reverse(v1alpha1.HTTPRoutes(existing.Spec.HTTP)))
 
 	return r.SharedClientSet.
-		Networking().
+		NetworkingV1alpha3().
 		VirtualServices(existing.GetNamespace()).
 		Update(existing)
 }

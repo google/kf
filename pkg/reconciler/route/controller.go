@@ -25,6 +25,7 @@ import (
 	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
 	"github.com/google/kf/pkg/reconciler"
 	appresources "github.com/google/kf/pkg/reconciler/app/resources"
+	"github.com/google/kf/pkg/reconciler/route/config"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
@@ -73,15 +74,15 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	// configmap stuff
 	logger.Info("Setting up ConfigMap receivers")
 	configsToResync := []interface{}{
-		&network.Config{},
-		&config.Domain{},
+		&config.Config{},
 	}
 	resync := configmap.TypeFilter(configsToResync...)(func(string, interface{}) {
 		impl.GlobalResync(routeInformer.Informer())
 	})
-	configStore := config.NewStore(c.Logger.Named("config-store"), controller.GetResyncPeriod(ctx), resync)
+	configStore := config.NewStore(logger.Named("config-store"), controller.GetResyncPeriod(ctx), resync)
 	configStore.WatchConfigs(cmw)
 	c.configStore = configStore
+
 	return impl
 }
 

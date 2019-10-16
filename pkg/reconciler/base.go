@@ -36,6 +36,11 @@ import (
 	"knative.dev/pkg/logging/logkey"
 )
 
+// ConfigStore is a minimal interface to the config stores used by our controllers.
+type ConfigStore interface {
+	ToContext(ctx context.Context) context.Context
+}
+
 // Base implements the core controller logic, given a Reconciler.
 type Base struct {
 	// KubeClientSet allows us to talk to the k8s for core APIs
