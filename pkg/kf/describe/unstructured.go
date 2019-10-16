@@ -112,7 +112,7 @@ func JSONKeyToTitleCase(name string) string {
 		last = curr
 	}
 
-	// Replace aconyms for nicer output
+	// Replace acronyms for nicer output
 	parts := strings.Split(out, " ")
 	for i, part := range parts {
 		for _, acronym := range []string{"API", "URL", "UID", "OSB", "GUID"} {
