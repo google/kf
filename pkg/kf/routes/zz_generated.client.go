@@ -29,6 +29,7 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // User defined imports
@@ -41,13 +42,40 @@ import (
 // Functional Utilities
 ////////////////////////////////////////////////////////////////////////////////
 
-const (
-	// Kind contains the kind for the backing Kubernetes API.
-	Kind = "Route"
+type ResourceInfo struct{}
 
-	// APIVersion contains the version for the backing Kubernetes API.
-	APIVersion = "v1alpha1"
-)
+// NewResourceInfo returns a new instance of ResourceInfo
+func NewResourceInfo() *ResourceInfo {
+	return &ResourceInfo{}
+}
+
+// Namespaced returns true if the type belongs in a namespace.
+func (*ResourceInfo) Namespaced() bool {
+	return true
+}
+
+// GroupVersionResource gets the GVR struct for the resource.
+func (*ResourceInfo) GroupVersionResource() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "kf.dev",
+		Version:  "v1alpha1",
+		Resource: "routes",
+	}
+}
+
+// GroupVersionKind gets the GVK struct for the resource.
+func (*ResourceInfo) GroupVersionKind() schema.GroupVersionKind {
+	return schema.GroupVersionKind{
+		Group:   "kf.dev",
+		Version: "v1alpha1",
+		Kind:    "Route",
+	}
+}
+
+// FriendlyName gets the user-facing name of the resource.
+func (*ResourceInfo) FriendlyName() string {
+	return "Route"
+}
 
 // Predicate is a boolean function for a v1alpha1.Route.
 type Predicate func(*v1alpha1.Route) bool

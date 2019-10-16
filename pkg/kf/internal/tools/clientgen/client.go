@@ -57,6 +57,8 @@ type ClientParams struct {
 
 	// Kubernetes holds information about the backing API.
 	Kubernetes struct {
+		// Group is the group of the k8s resource.
+		Group string `json:"group"`
 		// Kind is the kind of the resource.
 		Kind string `json:"kind"`
 		// Version is the version of the resource kf supports.
