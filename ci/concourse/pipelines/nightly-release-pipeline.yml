@@ -171,6 +171,9 @@ jobs:
       trigger: true
       passed: [unit-test, check]
       params: {submodules: none}
+    - get: nightly-build-trigger
+      trigger: true
+      passed: [unit-test, check]
     - get: ci-pipelines-src
       trigger: false
       params: {submodules: none}
