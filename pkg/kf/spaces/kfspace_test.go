@@ -28,13 +28,16 @@ func ExampleKfSpace() {
 	// Setup
 	space.SetName("nsname")
 	space.SetContainerRegistry("gcr.io/my-registry")
+	space.SetBuildServiceAccount("some-service-account")
 
 	// Values
 	fmt.Println("Name:", space.GetName())
 	fmt.Println("Registry:", space.GetContainerRegistry())
+	fmt.Println("Build Service Account:", space.GetBuildServiceAccount())
 
 	// Output: Name: nsname
 	// Registry: gcr.io/my-registry
+	// Build Service Account: some-service-account
 }
 
 func TestKfSpace_ToSpace(t *testing.T) {

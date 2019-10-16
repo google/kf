@@ -61,6 +61,7 @@ func NewConfigSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		newAppendDomainMutator(),
 		newSetDefaultDomainMutator(),
 		newRemoveDomainMutator(),
+		newBuildServiceAccountMutator(),
 	}
 
 	for _, sm := range subcommands {
@@ -73,6 +74,7 @@ func NewConfigSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		newGetExecutionEnvAccessor(),
 		newGetBuildpackEnvAccessor(),
 		newGetDomainsAccessor(),
+		newGetBuildServiceAccountAccessor(),
 	}
 
 	for _, sa := range accessors {
@@ -307,6 +309,23 @@ func newRemoveDomainMutator() spaceMutator {
 	}
 }
 
+func newBuildServiceAccountMutator() spaceMutator {
+	return spaceMutator{
+		Name:        "set-build-service-account",
+		Short:       "Set the service account to use when building containers",
+		Args:        []string{"SERVICE_ACCOUNT"},
+		ExampleArgs: []string{"myserviceaccount"},
+		Init: func(args []string) (spaces.Mutator, error) {
+			serviceAccount := args[0]
+
+			return func(space *v1alpha1.Space) error {
+				space.Spec.Security.BuildServiceAccount = serviceAccount
+				return nil
+			}, nil
+		},
+	}
+}
+
 type spaceAccessor struct {
 	Name     string
 	Short    string
@@ -397,6 +416,16 @@ func newGetDomainsAccessor() spaceAccessor {
 		Short: "Get domains associated with the space.",
 		Accessor: func(space *v1alpha1.Space) interface{} {
 			return space.Spec.Execution.Domains
+		},
+	}
+}
+
+func newGetBuildServiceAccountAccessor() spaceAccessor {
+	return spaceAccessor{
+		Name:  "get-build-service-account",
+		Short: "Get the service account that is used when building containers in the space.",
+		Accessor: func(space *v1alpha1.Space) interface{} {
+			return space.Spec.Security.BuildServiceAccount
 		},
 	}
 }

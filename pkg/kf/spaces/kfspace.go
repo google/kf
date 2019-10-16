@@ -44,6 +44,16 @@ func (k *KfSpace) SetContainerRegistry(registry string) {
 	k.Spec.BuildpackBuild.ContainerRegistry = registry
 }
 
+// GetBuildServiceAccount gets the build service account for the space.
+func (k *KfSpace) GetBuildServiceAccount() string {
+	return k.Spec.Security.BuildServiceAccount
+}
+
+// SetBuildServiceAccount sets the build service account for the space.
+func (k *KfSpace) SetBuildServiceAccount(serviceAccount string) {
+	k.Spec.Security.BuildServiceAccount = serviceAccount
+}
+
 // GetQuota retrieves the space quota.
 func (k *KfSpace) GetQuota() v1.ResourceList {
 	return k.Spec.ResourceLimits.SpaceQuota
