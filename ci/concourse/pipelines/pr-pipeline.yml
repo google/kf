@@ -91,29 +91,112 @@ jobs:
     passed: [pending]
   - get: ci-image
   - get: ci-src
-  - task: check
-    timeout: 2h30m
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source: *ci-image-source
-      inputs:
-      - name: src
-      params:
-        GOPROXY: *go_proxy
-        GOSUMDB: *go_sum_db
-        SERVICE_ACCOUNT_JSON: *service_account_json
-      run:
-        dir: src
-        path: bash
-        args:
-        - -exc
-        - |
-          hack/check-linters.sh
-          hack/check-go-generate.sh
-          hack/check-code-generator.sh
-    on_failure: *on_failure
+  - aggregate:
+    - task: check-linters
+      timeout: 2h30m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: src
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *service_account_json
+        run:
+          dir: src
+          path: bash
+          args:
+          - -exc
+          - |
+            hack/check-linters.sh
+      on_failure: *on_failure
+    - task: check-go-generate
+      timeout: 2h30m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: src
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *service_account_json
+        run:
+          dir: src
+          path: bash
+          args:
+          - -exc
+          - |
+            hack/check-go-generate.sh
+      on_failure: *on_failure
+    - task: check-code-generator
+      timeout: 2h30m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: src
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *service_account_json
+        run:
+          dir: src
+          path: bash
+          args:
+          - -exc
+          - |
+            hack/check-code-generator.sh
+      on_failure: *on_failure
+    - task: check-go-sum
+      timeout: 2h30m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: src
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *service_account_json
+        run:
+          dir: src
+          path: bash
+          args:
+          - -exc
+          - |
+            hack/check-go-sum.sh
+      on_failure: *on_failure
+    - task: check-vendor-license
+      timeout: 2h30m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: src
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *service_account_json
+        run:
+          dir: src
+          path: bash
+          args:
+          - -exc
+          - |
+            hack/check-vendor-license.sh
+      on_failure: *on_failure
 - name: build
   plan:
   - get: src
