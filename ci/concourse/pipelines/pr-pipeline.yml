@@ -183,7 +183,7 @@ jobs:
           /bin/echo 'y' | gcloud auth configure-docker
 
           # Update server-side components of kf
-          ko apply -f config
+          hack/ko-apply.sh
 
     on_failure: *on_failure
 - name: test
