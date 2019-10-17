@@ -215,6 +215,7 @@ case $GENS in
     svccat-knative-gen
     ;;
   all)
+    rm -fr "${REPO_ROOT}/pkg/client"
     kf-code-gen
     kf-knative-gen
     kbuild-code-gen
