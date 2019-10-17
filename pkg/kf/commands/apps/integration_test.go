@@ -262,9 +262,6 @@ func TestIntegration_Delete(t *testing.T) {
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
 		)
 
-		// This is only in place for cleanup if the test fails.
-		defer kf.Delete(ctx, appName)
-
 		// List the apps and make sure we can find the app.
 		Logf(t, "ensuring app is there...")
 		_, ok := kf.Apps(ctx)[appName]
@@ -278,7 +275,7 @@ func TestIntegration_Delete(t *testing.T) {
 		// List the apps and make sure we can find the app.
 		Logf(t, "ensuring app is gone from list...")
 		_, ok = kf.Apps(ctx)[appName]
-		AssertEqual(t, "requested state", false, ok)
+		AssertEqual(t, "app exists", false, ok)
 		Logf(t, "done ensuring app is gone.")
 	})
 }
