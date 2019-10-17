@@ -21,6 +21,7 @@ import (
 	spaceinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/space"
 	"github.com/google/kf/pkg/reconciler"
 	namespaceinformer "knative.dev/pkg/injection/informers/kubeinformers/corev1/namespace"
+	serviceaccountinformer "knative.dev/pkg/injection/informers/kubeinformers/corev1/serviceaccount"
 	roleinformer "knative.dev/pkg/injection/informers/kubeinformers/rbacv1/role"
 
 	// TODO (juliaguo): replace with knative informer pkgs once they are merged in
@@ -43,15 +44,17 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	roleInformer := roleinformer.Get(ctx)
 	quotaInformer := quotainformer.Get(ctx)
 	limitRangeInformer := limitrangeinformer.Get(ctx)
+	serviceAccountInformer := serviceaccountinformer.Get(ctx)
 
 	// Create reconciler
 	c := &Reconciler{
-		Base:                reconciler.NewBase(ctx, cmw),
-		spaceLister:         spaceInformer.Lister(),
-		namespaceLister:     nsInformer.Lister(),
-		roleLister:          roleInformer.Lister(),
-		resourceQuotaLister: quotaInformer.Lister(),
-		limitRangeLister:    limitRangeInformer.Lister(),
+		Base:                 reconciler.NewBase(ctx, cmw),
+		spaceLister:          spaceInformer.Lister(),
+		namespaceLister:      nsInformer.Lister(),
+		roleLister:           roleInformer.Lister(),
+		resourceQuotaLister:  quotaInformer.Lister(),
+		limitRangeLister:     limitRangeInformer.Lister(),
+		serviceAccountLister: serviceAccountInformer.Lister(),
 	}
 
 	impl := controller.NewImpl(c, logger, "Spaces")
@@ -76,6 +79,11 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	})
 
 	limitRangeInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+		FilterFunc: controller.Filter(v1alpha1.SchemeGroupVersion.WithKind("Space")),
+		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
+	})
+
+	serviceAccountInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.Filter(v1alpha1.SchemeGroupVersion.WithKind("Space")),
 		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
 	})
