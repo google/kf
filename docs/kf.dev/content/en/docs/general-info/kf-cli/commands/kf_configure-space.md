@@ -39,6 +39,7 @@ kf configure-space [subcommand] [flags]
 * [kf](/docs/general-info/kf-cli/commands/kf/)	 - A MicroPaaS for Kubernetes with a Cloud Foundry style developer expeience
 * [kf configure-space append-domain](/docs/general-info/kf-cli/commands/kf-configure-space-append-domain/)	 - Append a domain for a space
 * [kf configure-space delete-quota](/docs/general-info/kf-cli/commands/kf-configure-space-delete-quota/)	 - Remove all quotas for the space
+* [kf configure-space get-build-service-account](/docs/general-info/kf-cli/commands/kf-configure-space-get-build-service-account/)	 - Get the service account that is used when building containers in the space.
 * [kf configure-space get-buildpack-builder](/docs/general-info/kf-cli/commands/kf-configure-space-get-buildpack-builder/)	 - Get the buildpack builder used for builds.
 * [kf configure-space get-buildpack-env](/docs/general-info/kf-cli/commands/kf-configure-space-get-buildpack-env/)	 - Get the environment variables for buildpack builds in a space.
 * [kf configure-space get-container-registry](/docs/general-info/kf-cli/commands/kf-configure-space-get-container-registry/)	 - Get the container registry used for builds.
@@ -46,6 +47,7 @@ kf configure-space [subcommand] [flags]
 * [kf configure-space get-execution-env](/docs/general-info/kf-cli/commands/kf-configure-space-get-execution-env/)	 - Get the space-wide environment variables.
 * [kf configure-space quota](/docs/general-info/kf-cli/commands/kf-configure-space-quota/)	 - Show quota info for a space
 * [kf configure-space remove-domain](/docs/general-info/kf-cli/commands/kf-configure-space-remove-domain/)	 - Remove a domain from a space
+* [kf configure-space set-build-service-account](/docs/general-info/kf-cli/commands/kf-configure-space-set-build-service-account/)	 - Set the service account to use when building containers
 * [kf configure-space set-buildpack-builder](/docs/general-info/kf-cli/commands/kf-configure-space-set-buildpack-builder/)	 - Set the buildpack builder image.
 * [kf configure-space set-buildpack-env](/docs/general-info/kf-cli/commands/kf-configure-space-set-buildpack-env/)	 - Set an environment variable for buildpack builds in a space.
 * [kf configure-space set-container-registry](/docs/general-info/kf-cli/commands/kf-configure-space-set-container-registry/)	 - Set the container registry used for builds.
