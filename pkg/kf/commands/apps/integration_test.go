@@ -249,8 +249,7 @@ func copyManifest(appName, appPath string, currentTime int64) (string, func(), e
 	}, nil
 }
 
-// TestIntegration_Delete pushes an app and then deletes it. It then makes
-// sure it is marked as "Deleting".
+// TestIntegration_Delete pushes an app and then deletes it.
 func TestIntegration_Delete(t *testing.T) {
 	t.Parallel()
 	checkClusterStatus(t)
@@ -273,14 +272,14 @@ func TestIntegration_Delete(t *testing.T) {
 		Logf(t, "done ensuring app is there.")
 
 		// Delete the app.
-		kf.Delete(ctx, appName, "--async")
+		kf.Delete(ctx, appName)
 
-		// Make sure the app is "deleting"
+		// Make sure the app is gone
 		// List the apps and make sure we can find the app.
-		Logf(t, "ensuring app is deleting...")
-		app := kf.Apps(ctx)[appName]
-		AssertEqual(t, "requested state", "deleting", app.RequestedState)
-		Logf(t, "done ensuring app is deleting.")
+		Logf(t, "ensuring app is gone from list...")
+		_, ok = kf.Apps(ctx)[appName]
+		AssertEqual(t, "requested state", false, ok)
+		Logf(t, "done ensuring app is gone.")
 	})
 }
 
