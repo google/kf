@@ -15,7 +15,9 @@
 package spaces
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
@@ -26,6 +28,8 @@ import (
 
 // NewDeleteSpaceCommand allows users to delete spaces.
 func NewDeleteSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Command {
+	var async utils.AsyncFlags
+
 	cmd := &cobra.Command{
 		Use:     "delete-space SPACE",
 		Short:   "Delete a space",
@@ -53,10 +57,20 @@ func NewDeleteSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 			cmd.SilenceUsage = true
 
 			name := args[0]
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleting space %q %s", name, utils.AsyncLogSuffix)
-			return client.Delete(name)
+
+			if err := client.Delete(name); err != nil {
+				return fmt.Errorf("failed to delete space: %s", err)
+			}
+
+			action := fmt.Sprintf("Deleting space %q", name)
+			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
+				_, err := client.WaitForDeletion(context.Background(), name, 1*time.Second)
+				return err
+			})
 		},
 	}
+
+	async.Add(cmd)
 
 	completion.MarkArgCompletionSupported(cmd, completion.SpaceCompletion)
 

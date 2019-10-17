@@ -6,6 +6,10 @@ variable "k8s_network_selflink" {
   type = string
 }
 
+variable "gke_version" {
+  type = string
+}
+
 provider "google" {
   project     = var.project
   region      = "us-central1"
@@ -33,6 +37,8 @@ resource "google_container_cluster" "kf_test" {
   provider = "google-beta"
   name     = "kf-test-${random_pet.kf_test.id}"
   location = "us-central1"
+
+  min_master_version = var.gke_version
 
   remove_default_node_pool = true
   initial_node_count = 1
@@ -98,4 +104,8 @@ output "cluster_region" {
 
 output "cluster_project" {
   value = var.project
+}
+
+output "cluster_version" {
+  value = google_container_cluster.kf_test.master_version
 }

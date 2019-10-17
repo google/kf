@@ -28,6 +28,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"knative.dev/pkg/apis"
 	"knative.dev/pkg/kmp"
 )
@@ -42,13 +43,40 @@ import (
 // Functional Utilities
 ////////////////////////////////////////////////////////////////////////////////
 
-const (
-	// Kind contains the kind for the backing Kubernetes API.
-	Kind = "ServiceInstance"
+type ResourceInfo struct{}
 
-	// APIVersion contains the version for the backing Kubernetes API.
-	APIVersion = "v1beta1"
-)
+// NewResourceInfo returns a new instance of ResourceInfo
+func NewResourceInfo() *ResourceInfo {
+	return &ResourceInfo{}
+}
+
+// Namespaced returns true if the type belongs in a namespace.
+func (*ResourceInfo) Namespaced() bool {
+	return true
+}
+
+// GroupVersionResource gets the GVR struct for the resource.
+func (*ResourceInfo) GroupVersionResource() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "servicecatalog.k8s.io",
+		Version:  "v1beta1",
+		Resource: "serviceinstances",
+	}
+}
+
+// GroupVersionKind gets the GVK struct for the resource.
+func (*ResourceInfo) GroupVersionKind() schema.GroupVersionKind {
+	return schema.GroupVersionKind{
+		Group:   "servicecatalog.k8s.io",
+		Version: "v1beta1",
+		Kind:    "ServiceInstance",
+	}
+}
+
+// FriendlyName gets the user-facing name of the resource.
+func (*ResourceInfo) FriendlyName() string {
+	return "Service"
+}
 
 // Predicate is a boolean function for a v1beta1.ServiceInstance.
 type Predicate func(*v1beta1.ServiceInstance) bool

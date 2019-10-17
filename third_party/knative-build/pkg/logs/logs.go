@@ -28,7 +28,7 @@ import (
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-	duckv1alpha1 "knative.dev/pkg/apis/duck/v1alpha1"
+	"knative.dev/pkg/apis"
 )
 
 const buildExecuteFailed = "BuildExecuteFailed"
@@ -227,7 +227,7 @@ func podName(cfg *rest.Config, out io.Writer, buildName, namespace string) (stri
 			return cluster.PodName, nil
 		}
 
-		condition := b.Status.GetCondition(duckv1alpha1.ConditionSucceeded)
+		condition := b.Status.GetCondition(apis.ConditionSucceeded)
 		if condition.IsFalse() {
 			return "", fmt.Errorf("build failed for reason: %s and msg: %s", condition.Reason, condition.Message)
 		}

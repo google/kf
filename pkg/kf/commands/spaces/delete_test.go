@@ -40,9 +40,14 @@ func TestNewDeleteSpaceCommand(t *testing.T) {
 		"calls delete": {
 			args: []string{"my-ns"},
 			setup: func(t *testing.T, fakeSpaces *fake.FakeClient) {
-				fakeSpaces.
-					EXPECT().
-					Delete("my-ns")
+				fakeSpaces.EXPECT().Delete("my-ns")
+				fakeSpaces.EXPECT().WaitForDeletion(gomock.Any(), "my-ns", gomock.Any())
+			},
+		},
+		"calls delete async doesn't wait": {
+			args: []string{"my-ns", "--async"},
+			setup: func(t *testing.T, fakeSpaces *fake.FakeClient) {
+				fakeSpaces.EXPECT().Delete(gomock.Any())
 			},
 		},
 		"server failure": {
@@ -53,7 +58,7 @@ func TestNewDeleteSpaceCommand(t *testing.T) {
 					Delete("my-ns").
 					Return(errors.New("some-server-error"))
 			},
-			wantErr: errors.New("some-server-error"),
+			wantErr: errors.New("failed to delete space: some-server-error"),
 		},
 	}
 

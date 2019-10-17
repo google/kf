@@ -450,6 +450,12 @@ func InjectBuilds(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
+func InjectBuild(p *config.KfParams) *cobra.Command {
+	wire.Build(cbuilds.NewGetBuildCommand, config.GetDynamicClient)
+
+	return nil
+}
+
 func InjectBuildLogs(p *config.KfParams) *cobra.Command {
 	wire.Build(cbuilds.NewBuildLogsCommand, SourcesSet)
 

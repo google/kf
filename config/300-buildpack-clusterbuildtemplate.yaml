@@ -42,22 +42,30 @@ spec:
     description: When set, skip the detect step and use the given buildpack.
     default: ''
   steps:
-  - args:
-    - -c
-    - |
-      chown -R "${USER_ID}:${GROUP_ID}" "/builder/home" \
-        && chown -R "${USER_ID}:${GROUP_ID}" /layers \
-        && chown -R "${USER_ID}:${GROUP_ID}" /workspace
-    command:
-    - /bin/sh
-    image: alpine
+  - name: info
+    image: github.com/google/kf/cmd/setup-buildpack-build
     imagePullPolicy: Always
-    name: prepare
-    resources: {}
+    args:
+    - "--uid=${USER_ID}"
+    - "--gid=${GROUP_ID}"
+    - "--app=/workspace"
+    - "--image=${IMAGE}"
+    - "--run-image=${RUN_IMAGE}"
+    - "--builder-image=${BUILDER_IMAGE}"
+    - "--use-cred-helpers=${USE_CRED_HELPERS}"
+    - "--cache=${CACHE}"
+    - "--buildpack=${BUILDPACK}"
     volumeMounts:
-    - mountPath: /layers
-      name: ${CACHE}
-  - args:
+    - name: "layers-dir"
+      mountPath: /layers
+    - name: "${CACHE}"
+      mountPath: /cache
+
+  - name: detect
+    image: ${BUILDER_IMAGE}
+    imagePullPolicy: Always
+    command: ["/bin/bash"]
+    args:
     - -c
     - |
       if [[ -z "${BUILDPACK}" ]]; then
@@ -69,58 +77,89 @@ spec:
         touch /layers/plan.toml
         echo -e "[[buildpacks]]\nid = \"${BUILDPACK}\"\nversion = \"latest\"\n" > /layers/group.toml
       fi
-    command:
-    - /bin/bash
+    volumeMounts:
+    - name: "${CACHE}"
+      mountPath: /cache
+    - name: "layers-dir"
+      mountPath: /layers
+
+  - name: restore
     image: ${BUILDER_IMAGE}
     imagePullPolicy: Always
-    name: detect
-    resources: {}
+    command: ["/lifecycle/restorer"]
+    args:
+    - "-group=/layers/group.toml"
+    - "-layers=/layers"
+    - "-path=/cache"
     volumeMounts:
-    - mountPath: /layers
-      name: ${CACHE}
-  - args:
+    - name: "${CACHE}"
+      mountPath: /cache
+    - name: "layers-dir"
+      mountPath: /layers
+
+  - name: analyze
+    image: ${BUILDER_IMAGE}
+    imagePullPolicy: Always
+    command: ["/lifecycle/analyzer"]
+    args:
     - -layers=/layers
     - -helpers=${USE_CRED_HELPERS}
     - -group=/layers/group.toml
     - ${IMAGE}
-    command:
-    - /lifecycle/analyzer
+    volumeMounts:
+    - name: "${CACHE}"
+      mountPath: /cache
+    - name: "layers-dir"
+      mountPath: /layers
+
+  - name: build
     image: ${BUILDER_IMAGE}
     imagePullPolicy: Always
-    name: analyze
-    resources: {}
-    volumeMounts:
-    - mountPath: /layers
-      name: ${CACHE}
-  - args:
+    command: ["/lifecycle/builder"]
+    args:
     - -layers=/layers
     - -app=/workspace
     - -group=/layers/group.toml
     - -plan=/layers/plan.toml
-    command:
-    - /lifecycle/builder
+    volumeMounts:
+    - name: "${CACHE}"
+      mountPath: /cache
+    - name: "layers-dir"
+      mountPath: /layers
+
+  - name: export
     image: ${BUILDER_IMAGE}
     imagePullPolicy: Always
-    name: build
-    resources: {}
-    volumeMounts:
-    - mountPath: /layers
-      name: ${CACHE}
-  - args:
+    command: ["/lifecycle/exporter"]
+    args:
     - -layers=/layers
     - -helpers=${USE_CRED_HELPERS}
     - -app=/workspace
     - -image=${RUN_IMAGE}
     - -group=/layers/group.toml
     - ${IMAGE}
-    command:
-    - /lifecycle/exporter
+    volumeMounts:
+    - name: "${CACHE}"
+      mountPath: /cache
+    - name: "layers-dir"
+      mountPath: /layers
+
+  - name: cache
     image: ${BUILDER_IMAGE}
     imagePullPolicy: Always
-    name: export
-    resources: {}
+    command: ["/lifecycle/cacher"]
+    args:
+    - "-layers=/layers"
+    - "-group=/layers/group.toml"
+    - "-path=/cache"
     volumeMounts:
-    - mountPath: /layers
-      name: ${CACHE}
+    - name: "${CACHE}"
+      mountPath: /cache
+    - name: "layers-dir"
+      mountPath: /layers
+
   volumes:
   - name: empty-dir
+    emptyDir: {}
+  - name: layers-dir
+    emptyDir: {}
