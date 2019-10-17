@@ -38,7 +38,8 @@ kf delete-space SPACE [flags]
 ### Options
 
 ```
-  -h, --help   help for delete-space
+      --async   Don't wait for the action to complete on the server before returning
+  -h, --help    help for delete-space
 ```
 
 ### Options inherited from parent commands
