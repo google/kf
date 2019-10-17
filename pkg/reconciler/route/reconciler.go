@@ -60,6 +60,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 
 	logger := logging.FromContext(ctx).With("namespace", route.Namespace)
 
+	ctx = r.configStore.ToContext(ctx)
+
 	if r.IsNamespaceTerminating(route.Namespace) {
 		logger.Errorf("skipping sync for route %#v", route)
 		return nil
@@ -100,7 +102,7 @@ func (r *Reconciler) ApplyChanges(
 	// virtualservice, it won't be cleaned up.
 	if len(claims) == 0 {
 		err := r.SharedClientSet.
-			NetworkingV1alpha3().
+			Networking().
 			VirtualServices(v1alpha1.KfNamespace).
 			Delete(v1alpha1.GenerateName(
 				fields.Hostname,
@@ -133,7 +135,7 @@ func (r *Reconciler) ApplyChanges(
 		return err
 	}
 
-	desired, err := resources.MakeVirtualService(claims, routes)
+	desired, err := resources.MakeVirtualService(ctx, claims, routes)
 	if err != nil {
 		return err
 	}
@@ -144,7 +146,7 @@ func (r *Reconciler) ApplyChanges(
 	if errors.IsNotFound(err) {
 		// VirtualService doesn't exist, make one.
 		if _, err := r.SharedClientSet.
-			NetworkingV1alpha3().
+			Networking().
 			VirtualServices(v1alpha1.KfNamespace).
 			Create(desired); err != nil {
 			return err
@@ -205,7 +207,7 @@ func (r *Reconciler) update(
 	sort.Sort(sort.Reverse(v1alpha1.HTTPRoutes(existing.Spec.HTTP)))
 
 	return r.SharedClientSet.
-		NetworkingV1alpha3().
+		Networking().
 		VirtualServices(existing.GetNamespace()).
 		Update(existing)
 }

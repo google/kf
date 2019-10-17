@@ -45,8 +45,8 @@ type RoutingConfig struct {
 	GatewayHost string
 }
 
-// NewConfigFromConfigMap creates a RoutingConfig from the supplied ConfigMap
-func NewConfigFromConfigMap(configMap *corev1.ConfigMap) (*RoutingConfig, error) {
+// NewRoutingConfigFromConfigMap creates a RoutingConfig from the supplied ConfigMap
+func NewRoutingConfigFromConfigMap(configMap *corev1.ConfigMap) (*RoutingConfig, error) {
 	nc := &RoutingConfig{}
 
 	if ingressServiceName, ok := configMap.Data[IngressServiceNameKey]; !ok {

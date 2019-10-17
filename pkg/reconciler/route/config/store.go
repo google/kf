@@ -16,7 +16,6 @@ package config
 
 import (
 	"context"
-	"time"
 
 	"knative.dev/pkg/configmap"
 )
@@ -59,7 +58,7 @@ func NewStore(logger configmap.Logger, onAfterStore ...func(name string, value i
 			"routing",
 			logger,
 			configmap.Constructors{
-				RoutingConfigName:   NewRoutingConfigFromConfigMap,
+				RoutingConfigName: NewRoutingConfigFromConfigMap,
 			},
 			onAfterStore...,
 		),
@@ -73,7 +72,8 @@ func (s *Store) ToContext(ctx context.Context) context.Context {
 }
 
 func (s *Store) Load() *Config {
-	return &Config{
-		Domain:  s.UntypedLoad(DomainConfigName).(*Domain).DeepCopy(),
-	}
+	// return &Config{
+	// 	Routing: s.UntypedLoad(RoutingConfigName).(*RoutingConfig),
+	// }
+	return &Config{}
 }

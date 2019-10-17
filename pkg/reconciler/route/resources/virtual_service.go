@@ -15,6 +15,7 @@
 package resources
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -22,6 +23,7 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/algorithms"
+	"github.com/google/kf/pkg/reconciler/route/config"
 	"github.com/google/kf/third_party/knative-serving/pkg/network"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	istio "knative.dev/pkg/apis/istio/common/v1alpha1"
@@ -29,9 +31,7 @@ import (
 )
 
 const (
-	ManagedByLabel        = "app.kubernetes.io/managed-by"
-	KnativeIngressGateway = "knative-ingress-gateway.knative-serving.svc.cluster.local"
-	GatewayHost           = "istio-ingressgateway.istio-system.svc.cluster.local"
+	ManagedByLabel = "app.kubernetes.io/managed-by"
 )
 
 // MakeVirtualServiceLabels creates Labels that can be used to tie a
@@ -46,7 +46,7 @@ func MakeVirtualServiceLabels(spec v1alpha1.RouteSpecFields) map[string]string {
 }
 
 // MakeVirtualService creates a VirtualService from a Route object.
-func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route) (*networking.VirtualService, error) {
+func MakeVirtualService(ctx context.Context, claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route) (*networking.VirtualService, error) {
 	if len(claims) == 0 {
 		return nil, errors.New("claims must not be empty")
 	}
@@ -72,7 +72,7 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 	for _, route := range claims {
 		urlPath := route.Spec.RouteSpecFields.Path
 
-		httpRoute, err := buildHTTPRoute(hostDomain, namespace, urlPath, nil)
+		httpRoute, err := buildHTTPRoute(ctx, hostDomain, namespace, urlPath, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -92,7 +92,7 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 			appNames = append(appNames, route.Spec.AppName)
 		}
 
-		httpRoute, err := buildHTTPRoute(hostDomain, namespace, urlPath, appNames)
+		httpRoute, err := buildHTTPRoute(ctx, hostDomain, namespace, urlPath, appNames)
 		if err != nil {
 			return nil, err
 		}
@@ -122,14 +122,14 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 			},
 		},
 		Spec: networking.VirtualServiceSpec{
-			Gateways: []string{KnativeIngressGateway},
+			Gateways: []string{config.FromContext(ctx).Routing.KnativeIngressGateway},
 			Hosts:    []string{hostDomain},
 			HTTP:     httpRoutes,
 		},
 	}, nil
 }
 
-func buildHTTPRoute(hostDomain, namespace, urlPath string, appNames []string) ([]networking.HTTPRoute, error) {
+func buildHTTPRoute(ctx context.Context, hostDomain, namespace, urlPath string, appNames []string) ([]networking.HTTPRoute, error) {
 	var pathMatchers []networking.HTTPMatchRequest
 	urlPath = path.Join("/", urlPath, "/")
 	regexpPath, err := v1alpha1.BuildPathRegexp(urlPath)
@@ -150,7 +150,7 @@ func buildHTTPRoute(hostDomain, namespace, urlPath string, appNames []string) ([
 	for _, appName := range appNames {
 		httpRoutes = append(httpRoutes, networking.HTTPRoute{
 			Match: pathMatchers,
-			Route: buildRouteDestination(),
+			Route: buildRouteDestination(ctx),
 			Rewrite: &networking.HTTPRewrite{
 				Authority: network.GetServiceHostname(appName, namespace),
 			},
@@ -180,7 +180,7 @@ func buildHTTPRoute(hostDomain, namespace, urlPath string, appNames []string) ([
 						HTTPStatus: http.StatusServiceUnavailable,
 					},
 				},
-				Route: buildRouteDestination(),
+				Route: buildRouteDestination(ctx),
 			},
 		}, nil
 	}
@@ -188,11 +188,11 @@ func buildHTTPRoute(hostDomain, namespace, urlPath string, appNames []string) ([
 	return httpRoutes, nil
 }
 
-func buildRouteDestination() []networking.HTTPRouteDestination {
+func buildRouteDestination(ctx context.Context) []networking.HTTPRouteDestination {
 	return []networking.HTTPRouteDestination{
 		{
 			Destination: networking.Destination{
-				Host: GatewayHost,
+				Host: config.FromContext(ctx).Routing.GatewayHost,
 			},
 			Weight: 100,
 		},

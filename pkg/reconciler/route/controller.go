@@ -79,7 +79,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	resync := configmap.TypeFilter(configsToResync...)(func(string, interface{}) {
 		impl.GlobalResync(routeInformer.Informer())
 	})
-	configStore := config.NewStore(logger.Named("config-store"), controller.GetResyncPeriod(ctx), resync)
+	configStore := config.NewStore(logger.Named("routing-config-store"), resync)
 	configStore.WatchConfigs(cmw)
 	c.configStore = configStore
 
