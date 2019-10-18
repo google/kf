@@ -19,6 +19,7 @@ import (
 	"io"
 	"runtime"
 
+	"github.com/google/kf/pkg/dockerutil"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/describe"
 	"github.com/spf13/cobra"
@@ -39,6 +40,7 @@ func NewDebugCommand(p *config.KfParams, kubernetes k8sclient.Interface) *cobra.
 			debugRuntime(w)
 			debugKfParams(w, p)
 			debugVersion(w, kubernetes)
+			dockerutil.DescribeDefaultConfig(w)
 
 			return nil
 		},

@@ -164,7 +164,26 @@ svccat-knative-gen() {
     "servicecatalog:v1beta1"
 }
 
+REPO_ROOT="${REPO_ROOT:-$(git rev-parse --show-toplevel)}"
+cd "${REPO_ROOT}"
+
+# enable modules and the proxy cache
+export GO111MODULE="on"
+GOPROXY="${GOPROXY:-https://proxy.golang.org}"
+export GOPROXY
+
 go mod vendor
+export GO111MODULE="off"
+
+# fake being in a gopath
+FAKE_GOPATH="$(mktemp -d)"
+trap 'rm -rf ${FAKE_GOPATH}' EXIT
+
+FAKE_REPOPATH="${FAKE_GOPATH}/src/github.com/google/kf"
+mkdir -p "$(dirname "${FAKE_REPOPATH}")" && ln -s "${REPO_ROOT}" "${FAKE_REPOPATH}"
+export GOPATH="${FAKE_GOPATH}"
+cd "${FAKE_REPOPATH}"
+
 download-scripts
 
 case $GENS in

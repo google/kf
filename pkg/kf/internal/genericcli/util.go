@@ -12,40 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package clientgen
+package genericcli
 
 import (
-	"text/template"
-
-	"github.com/google/kf/pkg/kf/internal/tools/generator"
-)
-
-var headerTemplate = template.Must(template.New("").Funcs(generator.TemplateFuncs()).Parse(`
-{{genlicense}}
-
-{{gennotice "functions.go"}}
-
-package {{.Package}}
-
-// Generator defined imports
-import (
-	"context"
-	"errors"
-	"fmt"
-	"io"
-	"strings"
-	"time"
-
-	"knative.dev/pkg/kmp"
-	{{ if .SupportsConditions }}"knative.dev/pkg/apis"
-	corev1 "k8s.io/api/core/v1"{{ end }}
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 )
 
+// Type is the interface components need to satisfy to generate generic CLI
+// utilities for them.
+type Type interface {
+	Namespaced() bool
+	GroupVersionResource() schema.GroupVersionResource
+	GroupVersionKind() schema.GroupVersionKind
+	FriendlyName() string
+}
 
-// User defined imports
-{{genimports .Imports}}
+func getResourceInterface(t Type, client dynamic.Interface, ns string) dynamic.ResourceInterface {
+	if t.Namespaced() {
+		return client.Resource(t.GroupVersionResource()).Namespace(ns)
+	}
 
-`))
+	return client.Resource(t.GroupVersionResource())
+}

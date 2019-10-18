@@ -85,6 +85,7 @@ resources:
     vars:
       project: *gcp_project_id
       k8s_network_selflink: *k8s_network_selflink
+      gke_version: 1.13.7-gke.24
     env:
       GOOGLE_CREDENTIALS: *service_account_json
 - name: nightly-build-trigger
@@ -170,6 +171,9 @@ jobs:
       trigger: true
       passed: [unit-test, check]
       params: {submodules: none}
+    - get: nightly-build-trigger
+      trigger: true
+      passed: [unit-test, check]
     - get: ci-pipelines-src
       trigger: false
       params: {submodules: none}
