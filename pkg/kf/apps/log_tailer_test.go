@@ -88,6 +88,32 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			wantedMsgs:   []string{"msg-1"},
 			unwantedMsgs: []string{"msg-2"},
 		},
+		"logs metav1.Status errors": {
+			appName:         "some-app",
+			namespace:       "default",
+			resourceVersion: "some-version",
+			noStart:         true,
+			events: append([]watch.Event{
+				{
+					Object: &metav1.Status{
+						Status: metav1.StatusFailure,
+					},
+				},
+			}, createMsgEvents("some-app", duckv1beta1.Conditions{
+				{
+					Type:    "SourceReady",
+					Status:  "True",
+					Message: "msg-1",
+				},
+				{
+					Type:    "Ready",
+					Status:  "True",
+					Message: "msg-2",
+				},
+			})...),
+			wantedMsgs:   []string{"msg-1"},
+			unwantedMsgs: []string{"msg-2"},
+		},
 		"watch service returns an error, return error": {
 			appName:         "some-app",
 			namespace:       "default",
@@ -217,12 +243,14 @@ func buildLogWatchFakes(
 	serviceErr, buildErr error,
 ) (*gomock.Controller, *v1alpha1fake.FakeKfV1alpha1) {
 	ctrl := gomock.NewController(t)
+
+	events := createEvents(serviceEvents)
 	fakeWatcher := NewFakeWatcher(ctrl)
 	fakeWatcher.
 		EXPECT().
 		ResultChan().
 		DoAndReturn(func() <-chan watch.Event {
-			return createEvents(serviceEvents)
+			return events
 		}).
 		AnyTimes()
 

@@ -114,23 +114,35 @@ func (t *pushLogTailer) handleWatch() (bool, error) {
 	defer ws.Stop()
 
 	for e := range ws.ResultChan() {
-		app, ok := e.Object.(*v1alpha1.App)
-		if !ok {
+		switch e.Object.(type) {
+		case *v1alpha1.App:
+			app := e.Object.(*v1alpha1.App)
+
+			// skip out of date apps
+			if app.Generation != app.Status.ObservedGeneration {
+				continue
+			}
+
+			done, err := t.handleUpdate(app)
+			if err != nil {
+				return true, err
+			}
+			if done {
+				return true, nil
+			}
+		case *k8smeta.Status:
+			status := e.Object.(*k8smeta.Status)
+			if status.Status != k8smeta.StatusFailure {
+				// TODO: I'm not sure when/if we would get this.
+				continue
+			}
+
+			t.logger.Printf("status error: %s:%s\n", status.Reason, status.Message)
+
+			return false, nil
+		default:
 			t.logger.Printf("Unexpected type in watch stream: %T\n", e.Object)
 			continue
-		}
-
-		// skip out of date apps
-		if app.Generation != app.Status.ObservedGeneration {
-			continue
-		}
-
-		done, err := t.handleUpdate(app)
-		if err != nil {
-			return true, err
-		}
-		if done {
-			return true, nil
 		}
 	}
 
