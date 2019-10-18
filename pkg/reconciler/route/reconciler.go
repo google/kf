@@ -60,7 +60,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 
 	logger := logging.FromContext(ctx).With("namespace", route.Namespace)
 
+	logger.Infow("in reconcile func, about to move config store to context")
 	ctx = r.configStore.ToContext(ctx)
+
+	logger.Infof("ctx is %#v", ctx)
 
 	if r.IsNamespaceTerminating(route.Namespace) {
 		logger.Errorf("skipping sync for route %#v", route)

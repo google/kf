@@ -72,8 +72,8 @@ func (s *Store) ToContext(ctx context.Context) context.Context {
 }
 
 func (s *Store) Load() *Config {
-	// return &Config{
-	// 	Routing: s.UntypedLoad(RoutingConfigName).(*RoutingConfig),
-	// }
-	return &Config{}
+	return &Config{
+		Routing: s.UntypedLoad(RoutingConfigName).(*RoutingConfig),
+	}
+	// return &Config{}
 }
