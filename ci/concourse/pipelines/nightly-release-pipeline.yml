@@ -35,8 +35,6 @@ vars:
 # k8s config
 - &gcp_project_id ((gcp_project_id))
 - &k8s_network_selflink ((k8s_network_selflink))
-- &k8s_cluster_name ((k8s_cluster_name))
-- &k8s_cluster_zone ((k8s_cluster_zone))
 
 # go config
 - &go_proxy https://proxy.golang.org
