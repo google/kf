@@ -557,8 +557,8 @@ k8s.io/kube-openapi v0.0.0-20190816220812-743ec37842bf h1:EYm5AW/UUDbnmnI+gK0TJD
 k8s.io/kube-openapi v0.0.0-20190816220812-743ec37842bf/go.mod h1:1TqjTSzOxsLGIKfj0lK8EeCP7K1iUG65v09OM0/WG5E=
 k8s.io/kubectl v0.0.0-20181112202209-a45bc6067dfd h1:Qnp1efm3GC/LK5xAMI05+OLYkT6FeC8YnxD2BwhlgfA=
 k8s.io/kubectl v0.0.0-20181112202209-a45bc6067dfd/go.mod h1:EB+3ydgwGODs2kdxh8bSZwgE1veo9VehVcxOVjWl8sI=
-knative.dev/pkg v0.0.0-20190626215608-1104d6c75533 h1:MGc8u3z/TOBWoht1+RSfkedr4Yeu/8GZN2uIJI397UE=
-knative.dev/pkg v0.0.0-20190626215608-1104d6c75533/go.mod h1:pgODObA1dTyhNoFxPZTTjNWfx6F0aKsKzn+vaT9XO/Q=
+knative.dev/pkg v0.0.0-20190703054432-db778775199d h1:FFWo4VmezWj91MYIC/cnofRTZBMLE1JEv15SH+RFPAQ=
+knative.dev/pkg v0.0.0-20190703054432-db778775199d/go.mod h1:pgODObA1dTyhNoFxPZTTjNWfx6F0aKsKzn+vaT9XO/Q=
 sigs.k8s.io/structured-merge-diff v0.0.0-20190525122527-15d366b2352e/go.mod h1:wWxsB5ozmmv/SG7nM11ayaAW51xMvak/t1r0CSlcokI=
 sigs.k8s.io/yaml v1.1.0 h1:4A07+ZFc2wgJwo8YNlQpr1rVlgUDlxXHhPJciaPY5gs=
 sigs.k8s.io/yaml v1.1.0/go.mod h1:UJmg0vDUVViEyp3mgSv9WPwZCDxu4rQW1olrI1uml+o=

@@ -53,7 +53,7 @@ require (
 	k8s.io/code-generator v0.0.0
 	k8s.io/klog v1.0.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20190816220812-743ec37842bf // indirect
-	knative.dev/pkg v0.0.0-20190626215608-1104d6c75533
+	knative.dev/pkg v0.0.0-20190703054432-db778775199d
 	sigs.k8s.io/yaml v1.1.0
 )
 
