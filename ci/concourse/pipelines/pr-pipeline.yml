@@ -278,10 +278,26 @@ jobs:
   - get: ci-src
   - task: unit-tests
     timeout: 10m
-    file: ci-src/ci/concourse/tasks/set-status.yml
-    params:
-      GOPROXY: *go_proxy
-      GOSUMDB: *go_sum_db
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: *ci-image-source
+      inputs:
+      - name: src
+      - name: ci-src
+      params:
+        GOPROXY: *go_proxy
+        GOSUMDB: *go_sum_db
+      run:
+        dir: src
+        path: sh
+        args:
+        - -exc
+        - |
+          # Run unit tests
+          hack/unit-test.sh
+    on_failure: *on_failure
   - task: integration-tests
     timeout: 1h30m
     config:
