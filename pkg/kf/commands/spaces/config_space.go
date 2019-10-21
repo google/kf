@@ -15,6 +15,7 @@
 package spaces
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 
@@ -97,13 +98,24 @@ type spaceMutator struct {
 	Init        func(args []string) (spaces.Mutator, error)
 }
 
+func (sm spaceMutator) exampleCommands() string {
+	joinedArgs := strings.Join(sm.ExampleArgs, " ")
+	buffer := &bytes.Buffer{}
+	fmt.Fprintln(buffer)
+	fmt.Fprintf(buffer, "  # Configure the space \"my-space\"\n")
+	fmt.Fprintf(buffer, "  kf configure-space %s my-space %s\n", sm.Name, joinedArgs)
+	fmt.Fprintf(buffer, "  # Configure the targeted space\n")
+	fmt.Fprintf(buffer, "  kf configure-space %s %s\n", sm.Name, joinedArgs)
+	return buffer.String()
+}
+
 func (sm spaceMutator) ToCommand(p *config.KfParams, client spaces.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     fmt.Sprintf("%s SPACE_NAME %s", sm.Name, strings.Join(sm.Args, " ")),
+		Use:     fmt.Sprintf("%s [SPACE_NAME] %s", sm.Name, strings.Join(sm.Args, " ")),
 		Short:   sm.Short,
 		Long:    sm.Short,
 		Args:    cobra.RangeArgs(len(sm.Args), 1+len(sm.Args)),
-		Example: fmt.Sprintf("kf configure-space %s my-space %s", sm.Name, strings.Join(sm.ExampleArgs, " ")),
+		Example: sm.exampleCommands(),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var spaceName string
 			if len(args) <= len(sm.Args) {
@@ -323,12 +335,22 @@ type spaceAccessor struct {
 	Accessor func(space *v1alpha1.Space) interface{}
 }
 
+func (sm spaceAccessor) exampleCommands() string {
+	buffer := &bytes.Buffer{}
+	fmt.Fprintln(buffer)
+	fmt.Fprintf(buffer, "  # Configure the space \"my-space\"\n")
+	fmt.Fprintf(buffer, "  kf configure-space %s my-space\n", sm.Name)
+	fmt.Fprintf(buffer, "  # Configure the targeted space\n")
+	fmt.Fprintf(buffer, "  kf configure-space %s\n", sm.Name)
+	return buffer.String()
+}
+
 func (sm spaceAccessor) ToCommand(p *config.KfParams, client spaces.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     fmt.Sprintf("%s SPACE_NAME", sm.Name),
+		Use:     fmt.Sprintf("%s [SPACE_NAME]", sm.Name),
 		Short:   sm.Short,
 		Long:    sm.Short,
-		Example: fmt.Sprintf("kf configure-space %s my-space", sm.Name),
+		Example: sm.exampleCommands(),
 		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var spaceName string
