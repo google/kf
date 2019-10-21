@@ -51,20 +51,6 @@ resource_types:
     repository: m0pt0pmatt/github-pr-resource
 
 resources:
-- name: src
-  type: pull-request
-  check_every: 1m
-  webhook_token: *github_webhook_token
-  source:
-    repository: *github_repo
-    access_token: *github_access_token
-- name: ci-pipelines-src
-  type: git
-  source:
-    branch: *ci_git_branch
-    uri: *ci_git_uri
-    paths:
-    - ci/concourse/pipelines
 - name: ci-image-src
   type: git
   source:
@@ -94,72 +80,6 @@ jobs:
   - put: ci-image
     params:
       build: ci-image-src/ci/concourse/image
-
-# creates a pipeline for each pr
-- name: pr-start
-  plan:
-  - get: src
-    version: every
-    trigger: true
-  - get: ci-pipelines-src
-  - task: fly-set-pipeline
-    config:
-      platform: linux
-      image_resource:
-        type: docker-image
-        source: *ci-image-source
-      inputs:
-      - name: ci-pipelines-src
-      - name: src
-      params:
-        FLY_TARGET: *fly_target
-        FLY_USER: *fly_user
-        FLY_PASSWORD: *fly_password
-        FLY_URL: *fly_url
-        FLY_TEAM: *fly_team
-      run:
-        dir: ci-pipelines-src
-        path: bash
-        args:
-        - -exc
-        - |
-          # Download the fly executable for the given concourse server
-          wget "${FLY_URL}/api/v1/cli?arch=amd64&platform=linux" -O fly
-          chmod +x ./fly
-
-          # Login
-          set +x
-          echo fly login...
-          ./fly login\
-            -t "$FLY_TARGET" \
-            -c "$FLY_URL" \
-            -n "$FLY_TEAM" \
-            -u "$FLY_USER" \
-            -p "$FLY_PASSWORD"
-          set -x
-
-          # Read PR number and branch from the PR resource
-          metadata=../src/.git/resource/metadata.json
-          jq_for() {
-            jq -r ".[] | select(.name == \"$1\") | .value"
-          }
-          pr_number=$(cat "$metadata" | jq_for pr)
-          git_uri=$(cat "$metadata" | jq_for head_repository_url)
-          git_branch=$(cat "$metadata" | jq_for head_name)
-
-          # Create the pipeline
-          ./fly -t "$FLY_TARGET" set-pipeline \
-            -n \
-            -p "$pr_number" \
-            -c ci/concourse/pipelines/pr-pipeline.yml \
-            -v git_uri="$git_uri" \
-            -v git_branch="$git_branch" \
-            -v pr_number="$pr_number"
-    on_failure:
-      put: src
-      params:
-        path: src
-        status: failure
 
 # destroys any leftover pr pipelines
 - name: pr-cleanup
