@@ -59,8 +59,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 
 	logger := logging.FromContext(ctx).With("namespace", route.Namespace)
 
-	// logger.Infof("current routespecfields being reconciled is %#v", route)
-
 	if r.IsNamespaceTerminating(route.Namespace) {
 		logger.Errorf("skipping sync for route %#v", route)
 		return nil
@@ -93,12 +91,6 @@ func (r *Reconciler) ApplyChanges(
 	if err != nil {
 		return err
 	}
-
-	// logger.Infof("number of matching claims is %d", len(claims))
-
-	// for claim := range claims {
-	// 	logger.Infof("matching claim is %#v", claim)
-	// }
 
 	// There aren't any claims, so there shouldn't be any VirtualServices
 	// or Routes.

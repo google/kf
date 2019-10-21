@@ -61,7 +61,7 @@ func mustRequirement(key string, op selection.Operator, val string) labels.Requi
 // corresponding Routes excluding Path.
 func MakeRouteSelectorNoPath(spec v1alpha1.RouteSpecFields) labels.Selector {
 	return labels.NewSelector().Add(
-		// mustRequirement(v1alpha1.ManagedByLabel, selection.Equals, "kf"),
+		mustRequirement(v1alpha1.ManagedByLabel, selection.Equals, "kf"),
 		mustRequirement(v1alpha1.RouteHostname, selection.Equals, spec.Hostname),
 		mustRequirement(v1alpha1.RouteDomain, selection.Equals, spec.Domain),
 	)
