@@ -41,7 +41,7 @@ func TestDeleteCommand(t *testing.T) {
 			args:      []string{"some-app"},
 
 			setup: func(t *testing.T, fc *fake.FakeClient) {
-				fc.EXPECT().DeleteInForeground("some-namespace", "some-app")
+				fc.EXPECT().Delete("some-namespace", "some-app")
 				fc.EXPECT().WaitForDeletion(gomock.Any(), "some-namespace", "some-app", gomock.Any())
 			},
 		},
@@ -50,7 +50,7 @@ func TestDeleteCommand(t *testing.T) {
 			args:      []string{"--async", "some-app"},
 
 			setup: func(t *testing.T, fc *fake.FakeClient) {
-				fc.EXPECT().DeleteInForeground("some-namespace", "some-app")
+				fc.EXPECT().Delete("some-namespace", "some-app")
 			},
 		},
 		"delete app error": {
@@ -58,7 +58,7 @@ func TestDeleteCommand(t *testing.T) {
 			args:      []string{"some-app"},
 
 			setup: func(t *testing.T, fc *fake.FakeClient) {
-				fc.EXPECT().DeleteInForeground(gomock.Any(), gomock.Any()).Return(errors.New("some error"))
+				fc.EXPECT().Delete(gomock.Any(), gomock.Any()).Return(errors.New("some error"))
 			},
 			wantErr: errors.New("some error"),
 		},
@@ -75,7 +75,7 @@ func TestDeleteCommand(t *testing.T) {
 			args:      []string{"some-app"},
 
 			setup: func(t *testing.T, fc *fake.FakeClient) {
-				fc.EXPECT().DeleteInForeground(gomock.Any(), gomock.Any())
+				fc.EXPECT().Delete(gomock.Any(), gomock.Any())
 				fc.EXPECT().WaitForDeletion(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("some error"))
 			},
 			wantErr: errors.New("couldn't delete: some error"),

@@ -25,7 +25,6 @@ import (
 
 // ClientExtension holds additional functions that should be exposed by client.
 type ClientExtension interface {
-	DeleteInForeground(namespace string, name string) error
 	DeployLogsForApp(out io.Writer, app *v1alpha1.App) error
 	DeployLogs(out io.Writer, appName, resourceVersion, namespace string, noStart bool) error
 	Restart(namespace, name string) error
@@ -61,12 +60,6 @@ func NewClient(
 		},
 		sourcesClient: sourcesClient,
 	}
-}
-
-// DeleteInForeground causes the deletion to happen in the foreground for
-// a client. kf uses this to display correct lifecycle info.
-func (ac *appsClient) DeleteInForeground(namespace string, name string) error {
-	return ac.coreClient.Delete(namespace, name, WithDeleteForegroundDeletion(true))
 }
 
 // Restart causes the controller to create a new revision for the knative
