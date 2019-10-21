@@ -114,16 +114,14 @@ func (t *pushLogTailer) handleWatch() (bool, error) {
 	defer ws.Stop()
 
 	for e := range ws.ResultChan() {
-		switch e.Object.(type) {
+		switch obj := e.Object.(type) {
 		case *v1alpha1.App:
-			app := e.Object.(*v1alpha1.App)
-
 			// skip out of date apps
-			if app.Generation != app.Status.ObservedGeneration {
+			if obj.Generation != obj.Status.ObservedGeneration {
 				continue
 			}
 
-			done, err := t.handleUpdate(app)
+			done, err := t.handleUpdate(obj)
 			if err != nil {
 				return true, err
 			}
@@ -131,13 +129,13 @@ func (t *pushLogTailer) handleWatch() (bool, error) {
 				return true, nil
 			}
 		case *k8smeta.Status:
-			status := e.Object.(*k8smeta.Status)
-			if status.Status != k8smeta.StatusFailure {
+			t.resourceVersion = obj.ResourceVersion
+			if obj.Status != k8smeta.StatusFailure {
 				// TODO: I'm not sure when/if we would get this.
 				continue
 			}
 
-			t.logger.Printf("status error: %s:%s\n", status.Reason, status.Message)
+			t.logger.Printf("status error: %s:%s\n", obj.Reason, obj.Message)
 
 			return false, nil
 		default:
