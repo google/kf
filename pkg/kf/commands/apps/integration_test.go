@@ -80,7 +80,7 @@ func TestIntegration_Push_update(t *testing.T) {
 		)
 		// BUG(730): it takes a moment after the app becomes ready to reconcile the
 		// routes, the app is accessible but still points to the old one.
-		time.Sleep(30 * time.Second)
+		time.Sleep(45 * time.Second)
 		checkHelloWorldApp(ctx, t, kf, appName, 8088, ExpectedAddr(appName, ""))
 	})
 }

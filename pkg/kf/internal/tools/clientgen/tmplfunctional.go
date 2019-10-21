@@ -26,13 +26,40 @@ var functionalUtilTemplate = template.Must(template.New("").Funcs(generator.Temp
 // Functional Utilities
 ////////////////////////////////////////////////////////////////////////////////
 
-const (
-	// Kind contains the kind for the backing Kubernetes API.
-	Kind = "{{.Kubernetes.Kind}}"
+type ResourceInfo struct{}
 
-	// APIVersion contains the version for the backing Kubernetes API.
-	APIVersion = "{{.Kubernetes.Version}}"
-)
+// NewResourceInfo returns a new instance of ResourceInfo
+func NewResourceInfo() *ResourceInfo {
+	return &ResourceInfo{}
+}
+
+// Namespaced returns true if the type belongs in a namespace.
+func (*ResourceInfo) Namespaced() bool {
+	return {{.Kubernetes.Namespaced}}
+}
+
+// GroupVersionResource gets the GVR struct for the resource.
+func (*ResourceInfo) GroupVersionResource() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    "{{ .Kubernetes.Group }}",
+		Version:  "{{ .Kubernetes.Version }}",
+		Resource: "{{ .Kubernetes.Plural | lower }}",
+	}
+}
+
+// GroupVersionKind gets the GVK struct for the resource.
+func (*ResourceInfo) GroupVersionKind() schema.GroupVersionKind {
+	return schema.GroupVersionKind{
+		Group:   "{{ .Kubernetes.Group }}",
+		Version: "{{ .Kubernetes.Version }}",
+		Kind:    "{{ .Kubernetes.Kind }}",
+	}
+}
+
+// FriendlyName gets the user-facing name of the resource.
+func (*ResourceInfo) FriendlyName() string {
+	return "{{.CF.Name}}"
+}
 
 {{ if and .SupportsConditions .Kubernetes.Conditions }}
 var (

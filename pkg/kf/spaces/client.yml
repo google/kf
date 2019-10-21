@@ -3,6 +3,7 @@
 package: spaces
 imports: {"github.com/google/kf/pkg/apis/kf/v1alpha1":"v1alpha1", "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1": "cv1alpha1"}
 kubernetes:
+  group: "kf.dev"
   kind: "Space"
   version: "v1alpha1"
   namespaced: false

@@ -167,6 +167,7 @@ func NewKfCommand() *cobra.Command {
 			Commands: []*cobra.Command{
 				InjectBuilds(p),
 				InjectBuildLogs(p),
+				InjectBuild(p),
 			},
 		},
 		{

@@ -5,6 +5,7 @@ imports:
   github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1: v1beta1
   github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/typed/servicecatalog/v1beta1: cv1beta1
 kubernetes:
+  group: "servicecatalog.k8s.io"
   kind: "ServiceInstance"
   version: "v1beta1"
   namespaced: true

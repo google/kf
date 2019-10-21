@@ -87,5 +87,6 @@ func TemplateFuncs() template.FuncMap {
 		"genimports": GenImports,
 		"gennotice":  GenNotice,
 		"title":      strings.Title,
+		"lower":      strings.ToLower,
 	}
 }
