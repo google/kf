@@ -165,6 +165,10 @@ svccat-knative-gen() {
 }
 
 REPO_ROOT="${REPO_ROOT:-$(git rev-parse --show-toplevel)}"
+if [[ "$REPO_ROOT" = "" ]]; then
+  echo could not find REPO_ROOT 1>&2
+  exit 1
+fi
 cd "${REPO_ROOT}"
 
 # enable modules and the proxy cache
