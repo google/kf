@@ -106,20 +106,6 @@ func (mr *FakeClientMockRecorder) Delete(arg0, arg1 interface{}, arg2 ...interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*FakeClient)(nil).Delete), varargs...)
 }
 
-// DeleteInForeground mocks base method
-func (m *FakeClient) DeleteInForeground(arg0, arg1 string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteInForeground", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteInForeground indicates an expected call of DeleteInForeground
-func (mr *FakeClientMockRecorder) DeleteInForeground(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteInForeground", reflect.TypeOf((*FakeClient)(nil).DeleteInForeground), arg0, arg1)
-}
-
 // DeployLogs mocks base method
 func (m *FakeClient) DeployLogs(arg0 io.Writer, arg1, arg2, arg3 string, arg4 bool) error {
 	m.ctrl.T.Helper()

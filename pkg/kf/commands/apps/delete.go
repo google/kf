@@ -67,7 +67,7 @@ func NewDeleteCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 			// Cobra ensures we are only called with a single argument.
 			appName := args[0]
 
-			if err := appsClient.DeleteInForeground(p.Namespace, appName); err != nil {
+			if err := appsClient.Delete(p.Namespace, appName); err != nil {
 				return err
 			}
 
