@@ -96,6 +96,9 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			events: append([]watch.Event{
 				{
 					Object: &metav1.Status{
+						ListMeta: metav1.ListMeta{
+							ResourceVersion: "some-version",
+						},
 						Status: metav1.StatusFailure,
 					},
 				},
