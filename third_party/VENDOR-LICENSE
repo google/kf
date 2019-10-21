@@ -1252,7 +1252,7 @@ Module: github.com/prometheus/client_golang v0.9.3-0.20190127221311-3c4408c8b829
 Module: github.com/prometheus/client_model v0.0.0-20190115171406-56726106282f
 Module: github.com/prometheus/common v0.2.0
 Module: github.com/prometheus/procfs v0.0.0-20190117184657-bf6a532e95b1
-Module: knative.dev/pkg v0.0.0-20190626215608-1104d6c75533
+Module: knative.dev/pkg v0.0.0-20190703054432-db778775199d
 
 
                                  Apache License
