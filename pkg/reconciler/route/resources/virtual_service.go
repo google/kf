@@ -19,11 +19,12 @@ import (
 	"fmt"
 	"net/http"
 	"path"
+	"sort"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/algorithms"
 	"github.com/google/kf/third_party/knative-serving/pkg/network"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 	istio "knative.dev/pkg/apis/istio/common/v1alpha1"
 	networking "knative.dev/pkg/apis/istio/v1alpha3"
 )
@@ -61,46 +62,11 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 		hostDomain = hostname + "." + domain
 	}
 
-	var (
-		httpRoutes []networking.HTTPRoute
-	)
-
-	// Build up HTTP Routes
-	// We'll do claims first so when we merge the Routes in (which have apps
-	// associated), they will replace the claims.
-
-	for _, route := range claims {
-		urlPath := route.Spec.RouteSpecFields.Path
-
-		httpRoute, err := buildHTTPRoute(hostDomain, namespace, urlPath, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		httpRoutes = algorithms.Merge(
-			v1alpha1.HTTPRoutes(httpRoutes),
-			v1alpha1.HTTPRoutes(httpRoute),
-		).(v1alpha1.HTTPRoutes)
-	}
-
-	for _, route := range routes {
-		var appNames []string
-		urlPath := route.Spec.RouteSpecFields.Path
-
-		// AppNames
-		if route.Spec.AppName != "" {
-			appNames = append(appNames, route.Spec.AppName)
-		}
-
-		httpRoute, err := buildHTTPRoute(hostDomain, namespace, urlPath, appNames)
-		if err != nil {
-			return nil, err
-		}
-
-		httpRoutes = algorithms.Merge(
-			v1alpha1.HTTPRoutes(httpRoutes),
-			v1alpha1.HTTPRoutes(httpRoute),
-		).(v1alpha1.HTTPRoutes)
+	// Build map of paths to set of bound apps
+	pathApps := buildPathApps(claims, routes)
+	httpRoutes, err := buildHTTPRoutes(hostDomain, pathApps, namespace)
+	if err != nil {
+		return nil, err
 	}
 
 	return &networking.VirtualService{
@@ -129,50 +95,22 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 	}, nil
 }
 
-func buildHTTPRoute(hostDomain, namespace, urlPath string, appNames []string) ([]networking.HTTPRoute, error) {
-	var pathMatchers []networking.HTTPMatchRequest
-	urlPath = path.Join("/", urlPath, "/")
-	regexpPath, err := v1alpha1.BuildPathRegexp(urlPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert path to regexp: %s", err)
-	}
-
-	if urlPath != "" {
-		pathMatchers = append(pathMatchers, networking.HTTPMatchRequest{
-			URI: &istio.StringMatch{
-				Regex: regexpPath,
-			},
-		})
-	}
-
+// Create HTTP routes for all paths with the same host + domain.
+// Paths that do not have an app bound to them will return a 503 when a request is sent to that path.
+func buildHTTPRoutes(hostDomain string, pathApps map[string]sets.String, namespace string) ([]networking.HTTPRoute, error) {
 	var httpRoutes []networking.HTTPRoute
 
-	for _, appName := range appNames {
-		httpRoutes = append(httpRoutes, networking.HTTPRoute{
-			Match: pathMatchers,
-			Route: buildRouteDestination(),
-			Rewrite: &networking.HTTPRewrite{
-				Authority: network.GetServiceHostname(appName, namespace),
-			},
-			Headers: &networking.Headers{
-				Request: &networking.HeaderOperations{
-					Add: map[string]string{
-						// Set forwarding headers so the app gets the real hostname it's serving
-						// at rather than the internal one:
-						// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded1
-						"X-Forwarded-Host": hostDomain,
-						"Forwarded":        fmt.Sprintf("host=%s", hostDomain),
-					},
-				},
-			},
-		})
-	}
+	for path, apps := range pathApps {
+		var httpRoute networking.HTTPRoute
 
-	// If there aren't any services bound to the route, we just want to
-	// serve a 503.
-	if len(httpRoutes) == 0 {
-		return []networking.HTTPRoute{
-			{
+		pathMatchers, err := buildPathMatchers(path)
+		if err != nil {
+			return nil, err
+		}
+
+		if apps.Len() == 0 {
+			// no apps bound to this path, return http route with fault for path
+			httpRoute = networking.HTTPRoute{
 				Match: pathMatchers,
 				Fault: &networking.HTTPFaultInjection{
 					Abort: &networking.InjectAbort{
@@ -180,15 +118,50 @@ func buildHTTPRoute(hostDomain, namespace, urlPath string, appNames []string) ([
 						HTTPStatus: http.StatusServiceUnavailable,
 					},
 				},
-				Route: buildRouteDestination(),
-			},
-		}, nil
+				Route: buildDefaultRouteDestination(),
+			}
+		} else {
+			// create HTTP route for path with app(s) bound
+			httpRoute = networking.HTTPRoute{
+				Match:   pathMatchers,
+				Route:   buildRouteDestinations(apps.List(), namespace),
+				Headers: buildForwardingHeaders(hostDomain),
+			}
+		}
+		httpRoutes = append(httpRoutes, httpRoute)
 	}
+
+	// Sort by reverse to defer to the longest matchers.
+	// Routing rules are evaluated in order from first to last, where the first rule is given highest priority.
+	sort.Sort(sort.Reverse(v1alpha1.HTTPRoutes(httpRoutes)))
 
 	return httpRoutes, nil
 }
 
-func buildRouteDestination() []networking.HTTPRouteDestination {
+// Hostname + domain + path combos with bound app(s) have a custom route destination for each path.
+// The request is sent back to the istio ingress gateway with the host set as the app's internal host name.
+// If there are multiple apps bound to a route, the traffic is split uniformly across the apps.
+func buildRouteDestinations(appNames []string, namespace string) []networking.HTTPRouteDestination {
+	routeWeights := getRouteWeights(len(appNames))
+	routeDestinations := []networking.HTTPRouteDestination{}
+
+	for i, app := range appNames {
+		routeDestination := networking.HTTPRouteDestination{
+			Destination: networking.Destination{
+				Host: GatewayHost,
+			},
+			Headers: buildHostHeader(app, namespace),
+			Weight:  routeWeights[i],
+		}
+		routeDestinations = append(routeDestinations, routeDestination)
+	}
+
+	return routeDestinations
+}
+
+// Hostname + domain + path combos without an app are given the default route destination,
+// which simply redirects the request back to the istio ingress gateway
+func buildDefaultRouteDestination() []networking.HTTPRouteDestination {
 	return []networking.HTTPRouteDestination{
 		{
 			Destination: networking.Destination{
@@ -197,4 +170,87 @@ func buildRouteDestination() []networking.HTTPRouteDestination {
 			Weight: 100,
 		},
 	}
+}
+
+// getRouteWeights generates a list of integer percentages for route weights that sum to 100.
+// If the number of routes does not evenly divide 100, the weights are calculated as follows:
+// Round all the weights down, find the difference between that sum and 100, then distribute
+// the difference among the weights.
+//
+// e.g. if numRoutes = 6, then 100/6 = 16.666, which rounds down to 16, with a remainder of 100 % 6 = 4.
+// The final percentages would be [17, 17, 17, 17, 16, 16].
+func getRouteWeights(numRoutes int) []int {
+	weights := make([]int, numRoutes)
+	uniformRouteWeight := 100 / numRoutes // round down
+	remainder := 100 % numRoutes
+
+	for i := 0; i < numRoutes; i++ {
+		weights[i] = uniformRouteWeight
+		if i < remainder {
+			weights[i]++
+		}
+	}
+
+	return weights
+}
+
+// buildPathMatchers creates regex matchers for a given route path.
+// These matchers are used in the virtual service to determine which path a request was sent to
+func buildPathMatchers(urlPath string) ([]networking.HTTPMatchRequest, error) {
+	urlPath = path.Join("/", urlPath, "/")
+	regexpPath, err := v1alpha1.BuildPathRegexp(urlPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert path to regexp: %s", err)
+	}
+
+	return []networking.HTTPMatchRequest{
+		{
+			URI: &istio.StringMatch{
+				Regex: regexpPath,
+			},
+		},
+	}, nil
+}
+
+// buildForwardingHeaders sets forwarding headers so the app gets the real hostname it's serving
+// at rather than the internal one (https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded1)
+func buildForwardingHeaders(hostDomain string) *networking.Headers {
+	return &networking.Headers{
+		Request: &networking.HeaderOperations{
+			Add: map[string]string{
+				"X-Forwarded-Host": hostDomain,
+				"Forwarded":        fmt.Sprintf("host=%s", hostDomain),
+			},
+		},
+	}
+}
+
+// buildHostHeader sets the host of the request (e.g. myapp.namespace.svc.cluster.local) to the app's internal host name
+func buildHostHeader(appName, namespace string) *networking.Headers {
+	return &networking.Headers{
+		Request: &networking.HeaderOperations{
+			Set: map[string]string{
+				"Host": network.GetServiceHostname(appName, namespace),
+			},
+		},
+	}
+}
+
+// buildPathApps creates a map of route paths to the apps bound to those paths (represented as a set).
+func buildPathApps(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route) map[string]sets.String {
+	pathApps := make(map[string]sets.String)
+
+	for _, claim := range claims {
+		pathApps[claim.Spec.RouteSpecFields.Path] = sets.NewString()
+	}
+
+	for _, route := range routes {
+		path := route.Spec.RouteSpecFields.Path
+		// only add apps to route if route claim exists
+		if _, exists := pathApps[path]; exists {
+			pathApps[path].Insert(route.Spec.AppName)
+		}
+	}
+
+	return pathApps
 }
