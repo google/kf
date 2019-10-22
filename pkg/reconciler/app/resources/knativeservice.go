@@ -21,9 +21,8 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/internal/envutil"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	servingv1beta1 "github.com/knative/serving/pkg/apis/serving/v1beta1"
-	"github.com/knative/serving/pkg/resources"
+	serving "github.com/google/kf/third_party/knative-serving/pkg/apis/serving/v1alpha1"
+	servingv1beta1 "github.com/google/kf/third_party/knative-serving/pkg/apis/serving/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/kmeta"
@@ -88,7 +87,7 @@ func MakeKnativeService(
 			OwnerReferences: []metav1.OwnerReference{
 				*kmeta.NewControllerRef(app),
 			},
-			Labels: resources.UnionMaps(app.GetLabels(), app.ComponentLabels("app-scaler")),
+			Labels: v1alpha1.UnionMaps(app.GetLabels(), app.ComponentLabels("app-scaler")),
 		},
 		Spec: serving.ServiceSpec{
 			ConfigurationSpec: serving.ConfigurationSpec{

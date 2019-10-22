@@ -16,7 +16,6 @@ package resources
 
 import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/knative/serving/pkg/resources"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/kmeta"
@@ -43,7 +42,7 @@ func MakeNamespace(space *v1alpha1.Space) (*v1.Namespace, error) {
 			// Copy labels from the parent and enable istio-injection on the namespace
 			// so services can communicate in an East/West direction rather than just
 			// North/South.
-			Labels: resources.UnionMaps(
+			Labels: v1alpha1.UnionMaps(
 				space.GetLabels(), map[string]string{
 					istioInjectionLabel: "enabled",
 					managedByLabel:      "kf",

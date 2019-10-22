@@ -15,14 +15,14 @@ Pipeline triggered by changes to the `docs/kf.dev` dir on the `master` branch.
 
 The following variables should be stored in your credential manager.
 
-| Name                         | Description                                              | website-pipeline |
-| ---------------------------- | -------------------------------------------------------- | ---------------- |
-| ci_git_uri                   | Git URI for pulling this directory                       | ✅               |
-| ci_website_git_branch        | Git branch for pulling this directory. Preferably master | ✅               |
-| ci_website_image_uri         | Container image for pulling/pushing the build image      | ✅               |
-| website_firebase_token       | Authentication token for authenticating Firebase calls   | ✅               |
-| website_firebase_project     | Firebase project name/ID                                 | ✅               |
-| service_account_json         | Google Cloud Service Account Key for pushing build image | ✅               |
+| Name                              | Description                                              | website-pipeline |
+| ----------------------------      | -------------------------------------------------------- | ---------------- |
+| ci_git_uri                        | Git URI for pulling this directory                       | ✅               |
+| ci_website_git_branch             | Git branch for pulling this directory. Preferably master | ✅               |
+| ci_website_image_uri              | Container image for pulling/pushing the build image      | ✅               |
+| website_appengine_service_account | Authentication token for AppEngine calls                 | ✅               |
+| website_appengine_project         | AppEngine project name/ID                                | ✅               |
+| service_account_json              | Google Cloud Service Account Key for pushing build image | ✅               |
 
 # Images
 

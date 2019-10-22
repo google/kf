@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"strings"
 
-	routecfg "knative.dev/serving/pkg/reconciler/route/config"
+	routecfg "github.com/google/kf/third_party/knative-serving/pkg/reconciler/route/config"
 )
 
 func dummyConfig() context.Context {

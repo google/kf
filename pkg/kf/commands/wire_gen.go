@@ -461,6 +461,12 @@ func InjectBuilds(p *config.KfParams) *cobra.Command {
 	return command
 }
 
+func InjectBuild(p *config.KfParams) *cobra.Command {
+	dynamicInterface := config.GetDynamicClient(p)
+	command := builds.NewGetBuildCommand(p, dynamicInterface)
+	return command
+}
+
 func InjectBuildLogs(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	sourcesGetter := provideKfSources(kfV1alpha1Interface)

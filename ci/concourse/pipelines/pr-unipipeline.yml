@@ -1,0 +1,363 @@
+vars:
+# ci config vars
+- &ci_image_uri ((ci_image_uri))
+- &ci_pool_git_key ((ci_pool_git_key))
+- &ci_git_uri https://github.com/evandbrown/kf.git
+- &ci_git_branch feature/ci-pr-unification
+- &service_account_json ((service_account_json))
+
+# pull request vars
+- &github_repo google/kf
+- &github_access_token ((github_access_token)) 
+
+# Terraform vars
+- &tf_state_bucket ((tf_state_bucket))
+- &tf_service_account ((service_account_json))
+
+# k8s config
+- &gcp_project_id ((gcp_project_id))
+- &k8s_network_selflink ((k8s_network_selflink))
+
+# go config
+- &go_proxy https://proxy.golang.org
+- &go_sum_db sum.golang.org
+
+# build vars
+- &release_service_account_json ((release_service_account_json))
+- &release_project ((release_project))
+- &ko_docker_release_repo ((ko_docker_release_repo))
+
+templates:
+- &terraform-create
+  put: terraform
+  params:
+    terraform_source: ci-pipelines-src/ci/concourse/terraform
+    env_name_file: gke-prs/name
+    delete_on_failure: true
+
+- &terraform-destroy
+  put: terraform
+  params:
+    terraform_source: ci-pipelines-src/ci/concourse/terraform
+    env_name_file: gke-prs/name
+    action: destroy
+  get_params:
+    terraform_source: ci-pipelines-src/ci/concourse/terraform
+    env_name_file: gke-prs/name
+    action: destroy
+
+- &acquire-lock
+   put: gke-prs
+   params: {acquire: true}
+
+- &release-lock
+   put: gke-prs
+   params: {release: gke-prs}
+
+- &ci-image-source
+  repository: *ci_image_uri
+  username: _json_key
+  password: *service_account_json
+
+- &on-failure
+  do:
+  - put: pr
+    params:
+      path: pr
+      status: FAILURE
+      description: Concourse integration pipeline failed
+      comment: Concourse integration pipeline failed
+  - *terraform-destroy
+  - *terraform-create 
+  - *release-lock
+
+- &on-success
+  do:
+  - *terraform-destroy
+  - *terraform-create 
+  - *release-lock
+
+resource_types:
+- name: pull-request
+  type: docker-image
+  source:
+    repository: m0pt0pmatt/github-pr-resource
+- name: terraform
+  type: docker-image
+  source:
+    repository: ljfranklin/terraform-resource
+    tag: latest
+
+resources:
+- name: gke-prs
+  type: pool
+  source:
+    uri: ssh://evanbrown@google.com@source.developers.google.com:2022/p/kf-source/r/kf-gke-pool
+    branch: master
+    pool: pr
+    private_key: *ci_pool_git_key
+- name: ci-pipelines-src
+  type: git
+  source:
+    branch: *ci_git_branch
+    uri: *ci_git_uri
+- name: pr
+  type: pull-request
+  check_every: 10s 
+  source:
+    repository: *github_repo
+    access_token: *github_access_token
+    labels: ["ok-to-test"]
+- name: terraform
+  type: terraform
+  source:
+    backend_type: gcs
+    backend_config:
+      bucket: *tf_state_bucket
+      credentials: *service_account_json
+    vars:
+      project: *gcp_project_id
+      k8s_network_selflink: *k8s_network_selflink
+      gke_version: 1.13.7-gke.24
+    env:
+      GOOGLE_CREDENTIALS: *service_account_json
+
+jobs:
+- name: test
+  on_failure: *on-failure
+  on_success: *on-success
+  plan:
+  - get: pr
+    trigger: true
+  - put: pr
+    params:
+      path: pr
+      status: PENDING
+  - aggregate:
+    - get: ci-pipelines-src
+      trigger: false
+      params: {submodules: none}
+    - *acquire-lock
+  - aggregate:
+    # We always execute the terraform-create task as the first step. The final step of this
+    # job - whether it fails or succeeds - is to delete and recreate the Terraform environment,
+    # so we're optimistic that the terraform-create task is a effectively a no-op when we do it
+    # here. In the worst case, we've manually added an environment to the pool that hasn't been
+    # initialized, and the initialization happens here. This has the benefit of not requiring
+    # a separate process for resource management.
+    - *terraform-create 
+    - task: check-linters
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: pr
+        - name: ci-pipelines-src
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *service_account_json
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            pushd pr
+              ../ci-pipelines-src/hack/check-linters.sh
+            popd
+    - task: check-go-generate
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: pr
+        - name: ci-pipelines-src
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *service_account_json
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            pushd pr
+              ../ci-pipelines-src/hack/check-go-generate.sh
+            popd
+    - task: check-code-generator
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: pr
+        - name: ci-pipelines-src
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *service_account_json
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            pushd pr
+              ../ci-pipelines-src/hack/check-code-generator.sh
+            popd
+    - task: check-go-sum
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: pr
+        - name: ci-pipelines-src
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *service_account_json
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            pushd pr
+              ../ci-pipelines-src/hack/check-go-sum.sh
+            popd
+    - task: check-vendor-license
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: pr
+        - name: ci-pipelines-src
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *service_account_json
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            pushd pr
+              ../ci-pipelines-src/hack/check-vendor-license.sh
+            popd
+    - task: unit
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: pr
+        - name: ci-pipelines-src
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            pushd pr
+              # Run unit tests
+              ../ci-pipelines-src/hack/unit-test.sh
+            popd
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+    - task: build
+      attempts: 3
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        params:
+          SERVICE_ACCOUNT_JSON: *release_service_account_json
+          GCP_PROJECT_ID: *release_project
+          KO_DOCKER_REPO: *ko_docker_release_repo
+        inputs:
+        - name: pr
+        - name: ci-pipelines-src
+        outputs:
+        - name: artifacts
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            artifacts=`pwd`/artifacts
+            pushd pr
+              # Generate license
+              ../ci-pipelines-src/hack/update-vendor-license.sh $artifacts
+              cp third_party/VENDOR-LICENSE $artifacts
+              # Build CLI and controllers
+              ../ci-pipelines-src/hack/build-release.sh $artifacts
+            popd
+  - task: integration
+    timeout: 1h30m
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source: *ci-image-source
+      inputs:
+      - name: pr
+      - name: ci-pipelines-src
+      - name: artifacts
+      - name: terraform
+      run:
+        path: bash
+        args:
+        - -exc
+        - |
+          # Get TF outputs for GKE details
+          project=`cat terraform/metadata | jq -r '.cluster_project'`
+          cluster=`cat terraform/metadata | jq -r '.cluster_name'`
+          region=`cat terraform/metadata | jq -r '.cluster_region'`
+          # Login to Kubernetes
+          set +x
+          echo "$SERVICE_ACCOUNT_JSON" > key.json
+          set -x
+          echo Authenticating to kubernetes...
+          gcloud auth activate-service-account --key-file key.json
+          gcloud config set project "$project"
+          gcloud container clusters get-credentials "$cluster" \
+            --region "$region" \
+            --project "$project"
+          echo 'y' | gcloud auth configure-docker
+
+          # Install SC
+          kubectl apply --recursive --filename pr/third_party/service-catalog/manifests/catalog/templates/
+          # Install Knative Build
+          kubectl apply --filename https://github.com/knative/build/releases/download/v0.6.0/build.yaml
+          # Install Kf
+          kubectl apply --filename artifacts/release.yaml
+
+          pushd pr
+            # Run unit tests
+            ../ci-pipelines-src/hack/integration-test.sh
+          popd
+      params:
+        GOPROXY: *go_proxy
+        GOSUMDB: *go_sum_db
+        SERVICE_ACCOUNT_JSON: *service_account_json
+  - put: pr
+    params:
+      path: pr
+      status: SUCCESS
+      description: Concourse integration pipeline succeeded
+      comment: Concourse integration pipeline succeeded

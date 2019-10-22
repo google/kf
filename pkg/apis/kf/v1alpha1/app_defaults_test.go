@@ -80,7 +80,9 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 			template: &corev1.Container{},
 			expected: &corev1.Container{
 				ReadinessProbe: &corev1.Probe{
-					TimeoutSeconds: DefaultHealthCheckProbeTimeout,
+					TimeoutSeconds:   DefaultHealthCheckProbeTimeout,
+					PeriodSeconds:    DefaultHealthCheckPeriodSeconds,
+					FailureThreshold: DefaultHealthCheckFailureThreshold,
 					Handler: corev1.Handler{
 						TCPSocket: &corev1.TCPSocketAction{},
 					},
@@ -97,7 +99,9 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 		"http path gets defaulted": {
 			template: &corev1.Container{
 				ReadinessProbe: &corev1.Probe{
-					TimeoutSeconds: DefaultHealthCheckProbeTimeout,
+					TimeoutSeconds:   DefaultHealthCheckProbeTimeout,
+					PeriodSeconds:    DefaultHealthCheckPeriodSeconds,
+					FailureThreshold: DefaultHealthCheckFailureThreshold,
 					Handler: corev1.Handler{
 						HTTPGet: &corev1.HTTPGetAction{},
 					},
@@ -105,7 +109,9 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 			},
 			expected: &corev1.Container{
 				ReadinessProbe: &corev1.Probe{
-					TimeoutSeconds: DefaultHealthCheckProbeTimeout,
+					TimeoutSeconds:   DefaultHealthCheckProbeTimeout,
+					PeriodSeconds:    DefaultHealthCheckPeriodSeconds,
+					FailureThreshold: DefaultHealthCheckFailureThreshold,
 					Handler: corev1.Handler{
 						HTTPGet: &corev1.HTTPGetAction{Path: DefaultHealthCheckProbeEndpoint},
 					},
@@ -116,7 +122,9 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 		"full http doesn't get overwritten": {
 			template: &corev1.Container{
 				ReadinessProbe: &corev1.Probe{
-					TimeoutSeconds: 180,
+					TimeoutSeconds:   180,
+					PeriodSeconds:    180,
+					FailureThreshold: 300,
 					Handler: corev1.Handler{
 						HTTPGet: &corev1.HTTPGetAction{Path: "/healthz"},
 					},
@@ -124,7 +132,9 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 			},
 			expected: &corev1.Container{
 				ReadinessProbe: &corev1.Probe{
-					TimeoutSeconds: 180,
+					TimeoutSeconds:   180,
+					PeriodSeconds:    180,
+					FailureThreshold: 300,
 					Handler: corev1.Handler{
 						HTTPGet: &corev1.HTTPGetAction{Path: "/healthz"},
 					},

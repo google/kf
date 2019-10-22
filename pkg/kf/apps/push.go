@@ -174,6 +174,7 @@ func noScaling(instances v1alpha1.AppSpecInstances) bool {
 func mergeApps(cfg pushConfig, hasDefaultRoutes bool) func(newapp, oldapp *v1alpha1.App) *v1alpha1.App {
 	return func(newapp, oldapp *v1alpha1.App) *v1alpha1.App {
 
+		// Routes
 		if len(oldapp.Spec.Routes) > 0 && hasDefaultRoutes {
 			newapp.Spec.Routes = oldapp.Spec.Routes
 		}
@@ -196,9 +197,19 @@ func mergeApps(cfg pushConfig, hasDefaultRoutes bool) func(newapp, oldapp *v1alp
 		}
 
 		newapp.ResourceVersion = oldapp.ResourceVersion
+
+		// Envs
 		newEnvs := envutil.GetAppEnvVars(newapp)
 		oldEnvs := envutil.GetAppEnvVars(oldapp)
-		envutil.SetAppEnvVars(newapp, envutil.DeduplicateEnvVars(append(oldEnvs, newEnvs...)))
+		envutil.SetAppEnvVars(
+			newapp,
+			envutil.DeduplicateEnvVars(append(oldEnvs, newEnvs...)),
+		)
+
+		// Service Bindings
+		if len(newapp.Spec.ServiceBindings) == 0 {
+			newapp.Spec.ServiceBindings = oldapp.Spec.ServiceBindings
+		}
 
 		return newapp
 	}

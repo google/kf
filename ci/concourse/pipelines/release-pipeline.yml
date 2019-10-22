@@ -95,6 +95,7 @@ resources:
     vars:
       project: *gcp_project_id
       k8s_network_selflink: *k8s_network_selflink
+      gke_version: 1.13.7-gke.24
     env:
       GOOGLE_CREDENTIALS: *service_account_json
 jobs:
@@ -245,7 +246,7 @@ jobs:
           echo 'y' | gcloud auth configure-docker
 
           # Install SC
-          kubectl apply --recursive --filename kf-dev/third_party/service-catalog/manifests/catalog/templates/
+          kubectl apply --recursive --filename release-pr/third_party/service-catalog/manifests/catalog/templates/
           # Install Knative Build
           kubectl apply --filename https://github.com/knative/build/releases/download/v0.6.0/build.yaml
           # Install Kf
