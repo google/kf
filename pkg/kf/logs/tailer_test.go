@@ -19,7 +19,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 	"testing"
 	time "time"
 
@@ -31,27 +30,6 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	ktesting "k8s.io/client-go/testing"
 )
-
-type mutexBuffer struct {
-	b bytes.Buffer
-	sync.Mutex
-}
-
-func (mb *mutexBuffer) Read(p []byte) (n int, err error) {
-	mb.Lock()
-	defer mb.Unlock()
-	return mb.b.Read(p)
-}
-func (mb *mutexBuffer) Write(p []byte) (n int, err error) {
-	mb.Lock()
-	defer mb.Unlock()
-	return mb.b.Write(p)
-}
-func (mb *mutexBuffer) String() string {
-	mb.Lock()
-	defer mb.Unlock()
-	return mb.b.String()
-}
 
 func TestTailer_Tail_invalid_input(t *testing.T) {
 	t.Parallel()
@@ -87,7 +65,7 @@ func TestTailer_Tail(t *testing.T) {
 	for tn, tc := range map[string]struct {
 		opts   []logs.TailOption
 		setup  func(cs *fake.Clientset) context.Context
-		assert func(t *testing.T, buf *mutexBuffer, err error)
+		assert func(t *testing.T, buf *bytes.Buffer, err error)
 	}{
 		"default namespace": {
 			opts: []logs.TailOption{
@@ -113,7 +91,7 @@ func TestTailer_Tail(t *testing.T) {
 				cs.PrependWatchReactor("pods", errorWatchReactor(t, errors.New("some-error")))
 				return context.Background()
 			},
-			assert: func(t *testing.T, buf *mutexBuffer, err error) {
+			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
 				testutil.AssertErrorsEqual(t, errors.New("failed to watch pods: some-error"), err)
 			},
 		},
@@ -128,7 +106,7 @@ func TestTailer_Tail(t *testing.T) {
 				go watcher.Add(&metav1.Status{})
 				return context.Background()
 			},
-			assert: func(t *testing.T, buf *mutexBuffer, err error) {
+			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
 				testutil.AssertContainsAll(t, buf.String(), []string{
 					"[WARN] watched object is not pod\n",
@@ -146,7 +124,7 @@ func TestTailer_Tail(t *testing.T) {
 				cancel()
 				return ctx
 			},
-			assert: func(t *testing.T, buf *mutexBuffer, err error) {
+			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
 			},
 		},
@@ -160,7 +138,7 @@ func TestTailer_Tail(t *testing.T) {
 				watcher.Stop()
 				return context.Background()
 			},
-			assert: func(t *testing.T, buf *mutexBuffer, err error) {
+			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
 			},
 		},
@@ -188,7 +166,7 @@ func TestTailer_Tail(t *testing.T) {
 				})
 				return context.Background()
 			},
-			assert: func(t *testing.T, buf *mutexBuffer, err error) {
+			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
 				testutil.AssertContainsAll(t, buf.String(), []string{
 					fmt.Sprintf("Pod 'default/%s' is deleted\n", defaultAppName),
@@ -203,7 +181,7 @@ func TestTailer_Tail(t *testing.T) {
 			// We're going to setup a watcher, but the pod doesn't exist
 			// so Pods(namespace).Get() will return an error.
 			setup: whenAddEvent(nil),
-			assert: func(t *testing.T, buf *mutexBuffer, err error) {
+			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
 				testutil.AssertContainsAll(t, buf.String(), []string{
 					fmt.Sprintf(`[WARN] failed to get Pod '%s': pods "%s" not found`, defaultAppName, defaultAppName),
@@ -225,7 +203,7 @@ func TestTailer_Tail(t *testing.T) {
 					},
 				}, nil),
 			),
-			assert: func(t *testing.T, buf *mutexBuffer, err error) {
+			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
 				testutil.AssertContainsAll(t, buf.String(), []string{
 					fmt.Sprintf("[INFO] Pod 'default/%s' is terminated\n", defaultAppName),
@@ -247,7 +225,7 @@ func TestTailer_Tail(t *testing.T) {
 					},
 				}, nil),
 			),
-			assert: func(t *testing.T, buf *mutexBuffer, err error) {
+			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
 				testutil.AssertContainsAll(t, buf.String(), []string{
 					fmt.Sprintf("[INFO] Pod 'default/%s' is not running\n", defaultAppName),
@@ -259,14 +237,14 @@ func TestTailer_Tail(t *testing.T) {
 				// This helps the test move a little faster.
 				logs.WithTailTimeout(250 * time.Millisecond),
 			},
-			assert: func(t *testing.T, buf *mutexBuffer, err error) {
+			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
 				t.Skip("https://github.com/kubernetes/kubernetes/issues/84203")
 			},
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			if tc.assert == nil {
-				tc.assert = func(t *testing.T, buf *mutexBuffer, err error) {
+				tc.assert = func(t *testing.T, buf *bytes.Buffer, err error) {
 					testutil.AssertNil(t, "err", err)
 				}
 			}
@@ -280,19 +258,20 @@ func TestTailer_Tail(t *testing.T) {
 			fakeClient := fake.NewSimpleClientset()
 			ctx := tc.setup(fakeClient)
 
-			buf := &mutexBuffer{}
-			gotErr := logs.NewTailer(fakeClient).Tail(ctx, defaultAppName, buf, tc.opts...)
+			// We need to use a MutexWriter because the Tailer writes to the
+			// writer on different go routines than what we are reading from.
+			// We need to ensure that we can read safely while not upsetting
+			// the race detector.
+			mw := &logs.MutexWriter{Writer: &bytes.Buffer{}}
+			gotErr := logs.NewTailer(fakeClient).Tail(ctx, defaultAppName, mw, tc.opts...)
 
+			buf := &bytes.Buffer{}
+			mw.Lock()
+			buf.Write(mw.Writer.(*bytes.Buffer).Bytes())
+			mw.Unlock()
 			tc.assert(t, buf, gotErr)
 		})
 	}
-}
-
-func createUpdatedEvent(es watch.Event) <-chan watch.Event {
-	c := make(chan watch.Event, 1)
-	defer close(c)
-	c <- es
-	return c
 }
 
 func namespaceWatchReactor(t *testing.T, namespace string) ktesting.WatchReactionFunc {

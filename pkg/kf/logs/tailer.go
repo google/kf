@@ -115,7 +115,7 @@ func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, wr
 
 			pod, ok := e.Object.(*corev1.Pod)
 			if !ok {
-				writer.Write("[WARN] watched object is not pod\n")
+				writer.WriteStringf("[WARN] watched object is not pod\n")
 				continue
 			}
 
@@ -125,7 +125,7 @@ func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, wr
 					t.readLogs(ctx, namespace, pod.Name, writer, opts)
 				}(e)
 			case watch.Deleted:
-				err = writer.Write(fmt.Sprintf("[INFO] Pod '%s/%s' is deleted\n", namespace, pod.Name))
+				err = writer.WriteStringf("[INFO] Pod '%s/%s' is deleted\n", namespace, pod.Name)
 				if err != nil {
 					return err
 				}
@@ -146,7 +146,7 @@ func (t *tailer) readLogs(
 
 	for ctx.Err() == nil && !stop {
 		if stop, err = t.readStream(ctx, name, namespace, out, opts); err != nil {
-			out.Write(fmt.Sprintf("[WARN] %s", err))
+			out.WriteStringf("[WARN] %s", err)
 		}
 
 		if !opts.Follow {
@@ -164,7 +164,7 @@ func (t *tailer) readStream(ctx context.Context, name, namespace string, mw *Mut
 	}
 
 	if !pod.DeletionTimestamp.IsZero() {
-		err = mw.Write(fmt.Sprintf("[INFO] Pod '%s/%s' is terminated\n", namespace, name))
+		err = mw.WriteStringf("[INFO] Pod '%s/%s' is terminated\n", namespace, name)
 		if err != nil {
 			return false, err
 		}
@@ -173,7 +173,7 @@ func (t *tailer) readStream(ctx context.Context, name, namespace string, mw *Mut
 	}
 
 	if pod.Status.Phase != corev1.PodRunning {
-		err = mw.Write(fmt.Sprintf("[INFO] Pod '%s/%s' is not running\n", namespace, name))
+		err = mw.WriteStringf("[INFO] Pod '%s/%s' is not running\n", namespace, name)
 		if err != nil {
 			return false, err
 		}
@@ -181,7 +181,7 @@ func (t *tailer) readStream(ctx context.Context, name, namespace string, mw *Mut
 		return false, nil
 	}
 
-	err = mw.Write(fmt.Sprintf("[INFO] Pod '%s/%s' is running\n", namespace, pod.Name))
+	err = mw.WriteStringf("[INFO] Pod '%s/%s' is running\n", namespace, pod.Name)
 	if err != nil {
 		return false, err
 	}
