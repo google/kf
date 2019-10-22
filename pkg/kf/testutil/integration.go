@@ -33,6 +33,16 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
+	"knative.dev/pkg/injection"
 )
 
 const (
@@ -91,6 +101,123 @@ func RunIntegrationTest(t *testing.T, test func(ctx context.Context, t *testing.
 	t.Log()
 
 	test(ctx, t)
+}
+
+// RunKubeAPITest is for executing tests against the Kubernetes API directly.
+func RunKubeAPITest(t *testing.T, test func(ctx context.Context, t *testing.T)) {
+	if !strings.HasPrefix(t.Name(), "TestIntegration_") {
+		// We want to enforce a convention so scripts can single out
+		// integration tests.
+		t.Fatalf("Integration tests must have the name format of 'TestIntegration_XXX`")
+	}
+
+	t.Helper()
+	if testing.Short() {
+		t.Skip()
+	}
+
+	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
+	clientCfg := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, &clientcmd.ConfigOverrides{})
+	restCfg, err := clientCfg.ClientConfig()
+	if err != nil {
+		t.Fatalf("couldn't fetch kubeconfig: %v", err)
+	}
+
+	start := time.Now()
+	defer func() {
+		state := "PASSED"
+		if t.Failed() {
+			state = "FAILED"
+		}
+		t.Logf("Test %s took %v and %s", t.Name(), time.Since(start), state)
+	}()
+
+	// Setup context that will allow us to cleanup if the user wants to
+	// cancel the tests.
+	ctx, cancel := context.WithCancel(context.Background())
+
+	ctx = contextWithRestConfig(ctx, restCfg)
+
+	// Set up the autowired informers so they can be used in testing
+	ctx, _ = injection.Default.SetupInformers(ctx, restCfg)
+
+	// Give everything time to clean up.
+	defer time.Sleep(time.Second)
+	defer cancel()
+	CancelOnSignal(ctx, cancel, t.Log)
+	t.Log()
+
+	test(ctx, t)
+}
+
+type restConfigKey struct{}
+
+func contextWithRestConfig(ctx context.Context, cfg *rest.Config) context.Context {
+	return context.WithValue(ctx, restConfigKey{}, cfg)
+}
+
+func restConfigFromContext(ctx context.Context) *rest.Config {
+	return ctx.Value(restConfigKey{}).(*rest.Config)
+}
+
+// WithRestConfig gets the rest config from the context and passes it to the callback.
+func WithRestConfig(ctx context.Context, t *testing.T, callback func(cfg *rest.Config)) {
+	t.Helper()
+
+	callback(restConfigFromContext(ctx))
+}
+
+// WithKubernetes creates a Kubernetes client from the config on the context
+// and passes it to the callback.
+func WithKubernetes(ctx context.Context, t *testing.T, callback func(k8s kubernetes.Interface)) {
+	t.Helper()
+
+	WithRestConfig(ctx, t, func(cfg *rest.Config) {
+		k8s, err := kubernetes.NewForConfig(cfg)
+		if err != nil {
+			t.Fatalf("Creating Kubernetes: %v", err)
+		}
+
+		callback(k8s)
+	})
+}
+
+// WithDynamicClient creates a dynamic Kubernetes client from the config on the
+// context and passes it to the callback.
+func WithDynamicClient(ctx context.Context, t *testing.T, callback func(client dynamic.Interface)) {
+	t.Helper()
+
+	WithRestConfig(ctx, t, func(cfg *rest.Config) {
+		dynamic, err := dynamic.NewForConfig(cfg)
+		if err != nil {
+			t.Fatalf("Creating dynamic client: %v", err)
+		}
+
+		callback(dynamic)
+	})
+}
+
+// WithNamespace creates a namespace and deletes it after the test is done.
+// It can be used within the context of a RunKubeAPITest.
+func WithNamespace(ctx context.Context, t *testing.T, callback func(namespace string)) {
+	t.Helper()
+
+	WithKubernetes(ctx, t, func(k8s kubernetes.Interface) {
+		name := fmt.Sprintf("integration-%d", time.Now().UnixNano())
+		namespace := &corev1.Namespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+		}
+
+		if _, err := k8s.CoreV1().Namespaces().Create(namespace); err != nil {
+			t.Fatalf("Creating namespace: %v", err)
+		}
+		defer k8s.CoreV1().Namespaces().Delete(name, &metav1.DeleteOptions{})
+
+		t.Logf("With Namespace: %s", name)
+		callback(name)
+	})
 }
 
 // CancelOnSignal watches for a kill signal. If it gets one, it invokes the
