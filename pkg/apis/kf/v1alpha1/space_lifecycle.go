@@ -48,6 +48,9 @@ const (
 	// SpaceConditionLimitRangeReady is set when the limit range is
 	// ready.
 	SpaceConditionLimitRangeReady apis.ConditionType = "LimitRangeReady"
+	// SpaceConditionBuildServiceAccountReady is set when the
+	// BuildServiceAccount is ready.
+	SpaceConditionBuildServiceAccountReady apis.ConditionType = "BuildServiceAccountReady"
 )
 
 func (status *SpaceStatus) manage() apis.ConditionManager {
@@ -57,6 +60,7 @@ func (status *SpaceStatus) manage() apis.ConditionManager {
 		SpaceConditionAuditorRoleReady,
 		SpaceConditionResourceQuotaReady,
 		SpaceConditionLimitRangeReady,
+		SpaceConditionBuildServiceAccountReady,
 	).Manage(status)
 }
 
@@ -105,6 +109,13 @@ func (status *SpaceStatus) MarkLimitRangeNotOwned(name string) {
 		fmt.Sprintf("There is an existing limitrange %q that we do not own.", name))
 }
 
+// MarkBuildServiceAccountNotOwned marks the build ServiceAccount as not being
+// owned by the Space.
+func (status *SpaceStatus) MarkBuildServiceAccountNotOwned(name string) {
+	status.manage().MarkFalse(SpaceConditionBuildServiceAccountReady, "NotOwned",
+		fmt.Sprintf("There is an existing build serviceaccount %q that we do not own.", name))
+}
+
 // PropagateNamespaceStatus copies fields from the Namespace status to Space
 // and updates the readiness based on the current phase.
 func (status *SpaceStatus) PropagateNamespaceStatus(ns *v1.Namespace) {
@@ -145,6 +156,12 @@ func (status *SpaceStatus) PropagateResourceQuotaStatus(quota *v1.ResourceQuota)
 // based on if a LimitRange exists.
 func (status *SpaceStatus) PropagateLimitRangeStatus(limitRange *v1.LimitRange) {
 	status.manage().MarkTrue(SpaceConditionLimitRangeReady)
+}
+
+// PropagateBuildServiceAccountStatus updates the readiness of the space based
+// on if a BuildServiceAccount exists.
+func (status *SpaceStatus) PropagateBuildServiceAccountStatus(sa *v1.ServiceAccount) {
+	status.manage().MarkTrue(SpaceConditionBuildServiceAccountReady)
 }
 
 func (status *SpaceStatus) duck() *duckv1beta1.Status {
