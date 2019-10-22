@@ -87,6 +87,8 @@ func (r *Reconciler) ApplyChanges(
 	logger := logging.FromContext(ctx)
 	fields.SetDefaults(ctx)
 
+	logger.Infof("about to apply changes for the route fields %#v", fields)
+
 	// Sync VirtualService
 	logger.Debug("reconciling VirtualService")
 

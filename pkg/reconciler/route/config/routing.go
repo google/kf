@@ -15,6 +15,8 @@
 package config
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -48,6 +50,8 @@ type RoutingConfig struct {
 // NewRoutingConfigFromConfigMap creates a RoutingConfig from the supplied ConfigMap
 func NewRoutingConfigFromConfigMap(configMap *corev1.ConfigMap) (*RoutingConfig, error) {
 	nc := &RoutingConfig{}
+
+	fmt.Printf("configmap looks like %#v", configMap)
 
 	if ingressServiceName, ok := configMap.Data[IngressServiceNameKey]; !ok {
 		nc.IngressServiceName = DefaultIngressServiceName

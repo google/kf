@@ -15,6 +15,7 @@
 package resources_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -278,7 +279,8 @@ func TestMakeVirtualService(t *testing.T) {
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
-			s, err := resources.MakeVirtualService(tc.Claims, tc.Routes)
+			ctx := context.TODO()
+			s, err := resources.MakeVirtualService(ctx, tc.Claims, tc.Routes)
 			tc.Assert(t, s, err)
 		})
 	}
@@ -297,7 +299,8 @@ func ExampleMakeVirtualService_pathMatchers() {
 		makeRoute("some-host", "example.com/", "/some-path-2", "some-app-2"),
 	}
 
-	vs, err := resources.MakeVirtualService(claims, routes)
+	ctx := context.TODO()
+	vs, err := resources.MakeVirtualService(ctx, claims, routes)
 	if err != nil {
 		panic(err)
 	}
@@ -330,7 +333,8 @@ func ExampleMakeVirtualService_weightedRoutes() {
 		makeRoute("some-host", "example.com/", "/path-b", "app-b-6"),
 	}
 
-	vs, err := resources.MakeVirtualService(claims, routes)
+	ctx := context.TODO()
+	vs, err := resources.MakeVirtualService(ctx, claims, routes)
 	if err != nil {
 		panic(err)
 	}
