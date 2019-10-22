@@ -54,7 +54,7 @@ func TestIntegration_ApplyDefaults(t *testing.T) {
 							Group:    tc.Group,
 							Version:  tc.Version,
 							Resource: tc.Resource,
-						})
+						}).Namespace(namespace)
 
 						objPath := filepath.Join("testdata", tc.File)
 						objBytes, err := ioutil.ReadFile(objPath)

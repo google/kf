@@ -21,7 +21,7 @@ spec:
         app.kubernetes.io/name: test
     spec:
       containers:
-        image: nginx
+      - image: nginx
   traffic:
   - latestRevision: true
     percent: 100
