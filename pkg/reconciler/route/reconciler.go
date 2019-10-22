@@ -60,10 +60,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 
 	logger := logging.FromContext(ctx).With("namespace", route.Namespace)
 
-	logger.Infow("in reconcile func, about to move config store to context")
 	ctx = r.configStore.ToContext(ctx)
-
-	logger.Infof("ctx is %#v", ctx)
 
 	if r.IsNamespaceTerminating(route.Namespace) {
 		logger.Errorf("skipping sync for route %#v", route)
@@ -86,8 +83,6 @@ func (r *Reconciler) ApplyChanges(
 ) error {
 	logger := logging.FromContext(ctx)
 	fields.SetDefaults(ctx)
-
-	logger.Infof("about to apply changes for the route fields %#v", fields)
 
 	// Sync VirtualService
 	logger.Debug("reconciling VirtualService")
