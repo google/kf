@@ -12,13 +12,16 @@ Set an environment variable for buildpack builds in a space.
 Set an environment variable for buildpack builds in a space.
 
 ```
-kf configure-space set-buildpack-env SPACE_NAME ENV_VAR_NAME ENV_VAR_VALUE [flags]
+kf configure-space set-buildpack-env [SPACE_NAME] ENV_VAR_NAME ENV_VAR_VALUE [flags]
 ```
 
 ### Examples
 
 ```
+  # Configure the space "my-space"
   kf configure-space set-buildpack-env my-space JDK_VERSION 11
+  # Configure the targeted space
+  kf configure-space set-buildpack-env JDK_VERSION 11
 ```
 
 ### Options

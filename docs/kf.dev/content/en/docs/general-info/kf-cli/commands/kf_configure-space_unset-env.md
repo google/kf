@@ -12,13 +12,16 @@ Unset a space-wide environment variable.
 Unset a space-wide environment variable.
 
 ```
-kf configure-space unset-env SPACE_NAME ENV_VAR_NAME [flags]
+kf configure-space unset-env [SPACE_NAME] ENV_VAR_NAME [flags]
 ```
 
 ### Examples
 
 ```
+  # Configure the space "my-space"
   kf configure-space unset-env my-space ENVIRONMENT
+  # Configure the targeted space
+  kf configure-space unset-env ENVIRONMENT
 ```
 
 ### Options

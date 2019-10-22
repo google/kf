@@ -12,13 +12,16 @@ Set a space-wide environment variable.
 Set a space-wide environment variable.
 
 ```
-kf configure-space set-env SPACE_NAME ENV_VAR_NAME ENV_VAR_VALUE [flags]
+kf configure-space set-env [SPACE_NAME] ENV_VAR_NAME ENV_VAR_VALUE [flags]
 ```
 
 ### Examples
 
 ```
+  # Configure the space "my-space"
   kf configure-space set-env my-space ENVIRONMENT production
+  # Configure the targeted space
+  kf configure-space set-env ENVIRONMENT production
 ```
 
 ### Options

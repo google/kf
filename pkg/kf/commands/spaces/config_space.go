@@ -15,6 +15,7 @@
 package spaces
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 
@@ -24,6 +25,7 @@ import (
 	"github.com/google/kf/pkg/kf/commands/completion"
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/commands/quotas"
+	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/spaces"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -64,7 +66,7 @@ func NewConfigSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 	}
 
 	for _, sm := range subcommands {
-		cmd.AddCommand(sm.ToCommand(client))
+		cmd.AddCommand(sm.ToCommand(p, client))
 	}
 
 	accessors := []spaceAccessor{
@@ -76,7 +78,7 @@ func NewConfigSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 	}
 
 	for _, sa := range accessors {
-		cmd.AddCommand(sa.ToCommand(client))
+		cmd.AddCommand(sa.ToCommand(p, client))
 	}
 
 	cmd.AddCommand(
@@ -96,17 +98,37 @@ type spaceMutator struct {
 	Init        func(args []string) (spaces.Mutator, error)
 }
 
-func (sm spaceMutator) ToCommand(client spaces.Client) *cobra.Command {
+func (sm spaceMutator) exampleCommands() string {
+	joinedArgs := strings.Join(sm.ExampleArgs, " ")
+	buffer := &bytes.Buffer{}
+	fmt.Fprintln(buffer)
+	fmt.Fprintf(buffer, "  # Configure the space \"my-space\"\n")
+	fmt.Fprintf(buffer, "  kf configure-space %s my-space %s\n", sm.Name, joinedArgs)
+	fmt.Fprintf(buffer, "  # Configure the targeted space\n")
+	fmt.Fprintf(buffer, "  kf configure-space %s %s\n", sm.Name, joinedArgs)
+	return buffer.String()
+}
+
+func (sm spaceMutator) ToCommand(p *config.KfParams, client spaces.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     fmt.Sprintf("%s SPACE_NAME %s", sm.Name, strings.Join(sm.Args, " ")),
+		Use:     fmt.Sprintf("%s [SPACE_NAME] %s", sm.Name, strings.Join(sm.Args, " ")),
 		Short:   sm.Short,
 		Long:    sm.Short,
-		Args:    cobra.ExactArgs(1 + len(sm.Args)),
-		Example: fmt.Sprintf("kf configure-space %s my-space %s", sm.Name, strings.Join(sm.ExampleArgs, " ")),
+		Args:    cobra.RangeArgs(len(sm.Args), 1+len(sm.Args)),
+		Example: sm.exampleCommands(),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			spaceName := args[0]
+			var spaceName string
+			if len(args) <= len(sm.Args) {
+				if err := utils.ValidateNamespace(p); err != nil {
+					return err
+				}
+				spaceName = p.Namespace
+			} else {
+				spaceName = args[0]
+				args = args[1:]
+			}
 
-			mutator, err := sm.Init(args[1:])
+			mutator, err := sm.Init(args)
 			if err != nil {
 				return err
 			}
@@ -313,15 +335,33 @@ type spaceAccessor struct {
 	Accessor func(space *v1alpha1.Space) interface{}
 }
 
-func (sm spaceAccessor) ToCommand(client spaces.Client) *cobra.Command {
+func (sm spaceAccessor) exampleCommands() string {
+	buffer := &bytes.Buffer{}
+	fmt.Fprintln(buffer)
+	fmt.Fprintf(buffer, "  # Configure the space \"my-space\"\n")
+	fmt.Fprintf(buffer, "  kf configure-space %s my-space\n", sm.Name)
+	fmt.Fprintf(buffer, "  # Configure the targeted space\n")
+	fmt.Fprintf(buffer, "  kf configure-space %s\n", sm.Name)
+	return buffer.String()
+}
+
+func (sm spaceAccessor) ToCommand(p *config.KfParams, client spaces.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     fmt.Sprintf("%s SPACE_NAME", sm.Name),
+		Use:     fmt.Sprintf("%s [SPACE_NAME]", sm.Name),
 		Short:   sm.Short,
 		Long:    sm.Short,
-		Example: fmt.Sprintf("kf configure-space %s my-space", sm.Name),
-		Args:    cobra.ExactArgs(1),
+		Example: sm.exampleCommands(),
+		Args:    cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			spaceName := args[0]
+			var spaceName string
+			if len(args) == 0 {
+				if err := utils.ValidateNamespace(p); err != nil {
+					return err
+				}
+				spaceName = p.Namespace
+			} else {
+				spaceName = args[0]
+			}
 
 			cmd.SilenceUsage = true
 
