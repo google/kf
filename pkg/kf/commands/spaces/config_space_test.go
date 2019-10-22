@@ -207,6 +207,20 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 				testutil.AssertEqual(t, "domains", "example.com", space.Spec.Execution.Domains[0].Domain)
 			},
 		},
+
+		"set-build-service-account valid": {
+			space: v1alpha1.Space{
+				Spec: v1alpha1.SpaceSpec{
+					Security: v1alpha1.SpaceSpecSecurity{
+						BuildServiceAccount: "some-service-account",
+					},
+				},
+			},
+			args: []string{"set-build-service-account", space, "some-other-service-account"},
+			validate: func(t *testing.T, space *v1alpha1.Space) {
+				testutil.AssertEqual(t, "build-service-account", "some-other-service-account", space.Spec.Security.BuildServiceAccount)
+			},
+		},
 	}
 
 	for tn, tc := range cases {
@@ -251,6 +265,9 @@ func TestNewConfigSpaceCommand_accessors(t *testing.T) {
 			Name: "space-name",
 		},
 		Spec: v1alpha1.SpaceSpec{
+			Security: v1alpha1.SpaceSpecSecurity{
+				BuildServiceAccount: "some-service-account",
+			},
 			BuildpackBuild: v1alpha1.SpaceSpecBuildpackBuild{
 				ContainerRegistry: "gcr.io/foo",
 				BuilderImage:      "gcr.io/buildpack-builder:latest",
@@ -322,6 +339,11 @@ func TestNewConfigSpaceCommand_accessors(t *testing.T) {
   domain: example.com
 - domain: other-example.com
 `,
+		},
+		"get-build-service-account valid": {
+			args:       []string{"get-build-service-account", "space-name"},
+			space:      space,
+			wantOutput: "some-service-account\n",
 		},
 	}
 

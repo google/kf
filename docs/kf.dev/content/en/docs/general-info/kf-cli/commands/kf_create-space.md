@@ -18,15 +18,16 @@ kf create-space SPACE [flags]
 ### Examples
 
 ```
-  kf create-space my-space --container-registry gcr.io/my-project --domain myspace.example.com
+  kf create-space my-space --container-registry gcr.io/my-project --domain myspace.example.com --build-service-account myserviceaccount
 ```
 
 ### Options
 
 ```
-      --container-registry string   Container registry built apps and sources will be stored in.
-      --domain stringArray          Sets the valid domains for the space. The first provided domain will be the default.
-  -h, --help                        help for create-space
+      --build-service-account string   Service account that the build pipeline will use to build containers.
+      --container-registry string      Container registry built apps and sources will be stored in.
+      --domain stringArray             Sets the valid domains for the space. The first provided domain will be the default.
+  -h, --help                           help for create-space
 ```
 
 ### Options inherited from parent commands

@@ -30,14 +30,15 @@ import (
 // NewCreateSpaceCommand allows users to create spaces.
 func NewCreateSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Command {
 	var (
-		containerRegistry string
-		domains           []string
+		containerRegistry   string
+		buildServiceAccount string
+		domains             []string
 	)
 
 	cmd := &cobra.Command{
 		Use:     "create-space SPACE",
 		Short:   "Create a space",
-		Example: `kf create-space my-space --container-registry gcr.io/my-project --domain myspace.example.com`,
+		Example: `kf create-space my-space --container-registry gcr.io/my-project --domain myspace.example.com --build-service-account myserviceaccount`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cmd.SilenceUsage = true
@@ -47,6 +48,7 @@ func NewCreateSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 			toCreate := spaces.NewKfSpace()
 			toCreate.SetName(name)
 			toCreate.SetContainerRegistry(containerRegistry)
+			toCreate.SetBuildServiceAccount(buildServiceAccount)
 
 			for i, domain := range domains {
 				toCreate.AppendDomains(v1alpha1.SpaceDomain{Domain: domain, Default: i == 0})
@@ -77,6 +79,13 @@ func NewCreateSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		"container-registry",
 		"",
 		"Container registry built apps and sources will be stored in.",
+	)
+
+	cmd.Flags().StringVar(
+		&buildServiceAccount,
+		"build-service-account",
+		"",
+		"Service account that the build pipeline will use to build containers.",
 	)
 
 	cmd.Flags().StringArrayVar(

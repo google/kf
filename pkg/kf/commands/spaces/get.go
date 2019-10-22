@@ -61,6 +61,7 @@ func NewGetSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Command
 			describe.SectionWriter(w, "Security", func(w io.Writer) {
 				security := space.Spec.Security
 				fmt.Fprintf(w, "Developers can read logs?\t%v\n", security.EnableDeveloperLogsAccess)
+				fmt.Fprintf(w, "Build Service Account:\t%s\n", security.BuildServiceAccount)
 			})
 			fmt.Fprintln(w)
 
