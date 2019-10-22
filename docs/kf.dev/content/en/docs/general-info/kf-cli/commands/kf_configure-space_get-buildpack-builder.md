@@ -12,13 +12,16 @@ Get the buildpack builder used for builds.
 Get the buildpack builder used for builds.
 
 ```
-kf configure-space get-buildpack-builder SPACE_NAME [flags]
+kf configure-space get-buildpack-builder [SPACE_NAME] [flags]
 ```
 
 ### Examples
 
 ```
+  # Configure the space "my-space"
   kf configure-space get-buildpack-builder my-space
+  # Configure the targeted space
+  kf configure-space get-buildpack-builder
 ```
 
 ### Options

@@ -12,13 +12,16 @@ Set the buildpack builder image.
 Set the buildpack builder image.
 
 ```
-kf configure-space set-buildpack-builder SPACE_NAME BUILDER_IMAGE [flags]
+kf configure-space set-buildpack-builder [SPACE_NAME] BUILDER_IMAGE [flags]
 ```
 
 ### Examples
 
 ```
+  # Configure the space "my-space"
   kf configure-space set-buildpack-builder my-space gcr.io/my-project/builder:latest
+  # Configure the targeted space
+  kf configure-space set-buildpack-builder gcr.io/my-project/builder:latest
 ```
 
 ### Options
