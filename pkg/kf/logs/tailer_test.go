@@ -18,23 +18,19 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"testing"
-	"time"
+	time "time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/google/kf/pkg/kf/logs"
 	"github.com/google/kf/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/kubernetes/typed/core/v1/fake"
+	"k8s.io/client-go/kubernetes/fake"
 	ktesting "k8s.io/client-go/testing"
 )
-
-//go:generate mockgen --package logs_test --destination fake_watcher_test.go --mock_names=Interface=FakeWatcher --copyright_file ../internal/tools/option-builder/LICENSE_HEADER k8s.io/apimachinery/pkg/watch Interface
 
 type mutexBuffer struct {
 	b bytes.Buffer
@@ -57,171 +53,237 @@ func (mb *mutexBuffer) String() string {
 	return mb.b.String()
 }
 
-func TestTailer_Tail(t *testing.T) {
+func TestTailer_Tail_invalid_input(t *testing.T) {
 	t.Parallel()
+
 	for tn, tc := range map[string]struct {
-		appName        string
-		opts           []logs.TailOption
-		assert         func(t *testing.T, buf *mutexBuffer, err error)
-		eventType      watch.EventType
-		pod            *v1.Pod
-		expectedOutput string
-		watchErr       error
+		appName string
+		opts    []logs.TailOption
+		wantErr error
 	}{
-		"default namespace": {
-			appName: "some-app",
-			pod: &v1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "some-app-pod1",
-				},
-			},
-		},
-		"custom namespace": {
-			appName: "some-app",
-			opts: []logs.TailOption{
-				logs.WithTailNamespace("custom-namespace"),
-			},
-			pod: &v1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "some-app-pod1",
-				},
-			},
-		},
 		"empty app name": {
 			appName: "",
-			assert: func(t *testing.T, buf *mutexBuffer, err error) {
-				testutil.AssertErrorsEqual(t, errors.New("appName is empty"), err)
-			},
+			wantErr: errors.New("appName is empty"),
 		},
 		"negative number of lines": {
 			appName: "some-app",
 			opts: []logs.TailOption{
 				logs.WithTailNumberLines(-1),
 			},
-			assert: func(t *testing.T, buf *mutexBuffer, err error) {
-				testutil.AssertErrorsEqual(t, errors.New("number of lines must be greater than or equal to 0"), err)
+			wantErr: errors.New("number of lines must be greater than or equal to 0"),
+		},
+	} {
+		t.Run(tn, func(t *testing.T) {
+			gotErr := logs.NewTailer(nil).Tail(context.Background(), tc.appName, nil, tc.opts...)
+			testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
+		})
+	}
+}
+
+const defaultAppName = "some-app"
+
+func TestTailer_Tail(t *testing.T) {
+	t.Parallel()
+	for tn, tc := range map[string]struct {
+		opts   []logs.TailOption
+		setup  func(cs *fake.Clientset) context.Context
+		assert func(t *testing.T, buf *mutexBuffer, err error)
+	}{
+		"default namespace": {
+			opts: []logs.TailOption{
+				logs.WithTailTimeout(0),
+			},
+			setup: func(cs *fake.Clientset) context.Context {
+				cs.PrependWatchReactor("pods", namespaceWatchReactor(t, "default"))
+				return context.Background()
+			},
+		},
+		"custom namespace": {
+			opts: []logs.TailOption{
+				logs.WithTailTimeout(0),
+				logs.WithTailNamespace("custom-namespace"),
+			},
+			setup: func(cs *fake.Clientset) context.Context {
+				cs.PrependWatchReactor("pods", namespaceWatchReactor(t, "custom-namespace"))
+				return context.Background()
 			},
 		},
 		"watching pods fails": {
-			appName:  "some-app",
-			watchErr: errors.New("some-error"),
+			setup: func(cs *fake.Clientset) context.Context {
+				cs.PrependWatchReactor("pods", errorWatchReactor(t, errors.New("some-error")))
+				return context.Background()
+			},
 			assert: func(t *testing.T, buf *mutexBuffer, err error) {
 				testutil.AssertErrorsEqual(t, errors.New("failed to watch pods: some-error"), err)
 			},
 		},
-		"uses service selector": {
-			appName: "some-app",
-			pod: &v1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "some-app-pod1",
-				},
+		"non-pod event": {
+			opts: []logs.TailOption{
+				// This helps the test move a little faster.
+				logs.WithTailTimeout(250 * time.Millisecond),
 			},
-		},
-		"writes logs to the writer": {
-			appName: "some-app",
-			pod: &v1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "some-app-pod1",
-				},
-			},
-		},
-		"writes logs about pending pod": {
-			appName:   "some-app",
-			eventType: watch.Added,
-			pod: &v1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "some-app-pod1",
-				},
-				Status: corev1.PodStatus{
-					Phase: corev1.PodPending,
-				},
+			setup: func(cs *fake.Clientset) context.Context {
+				watcher := watch.NewFake()
+				cs.PrependWatchReactor("pods", ktesting.DefaultWatchReactor(watcher, nil))
+				go watcher.Add(&metav1.Status{})
+				return context.Background()
 			},
 			assert: func(t *testing.T, buf *mutexBuffer, err error) {
 				testutil.AssertNil(t, "err", err)
-				testutil.AssertContainsAll(t, buf.String(), []string{"Pod 'default/some-app-pod1' is not running\n"})
+				testutil.AssertContainsAll(t, buf.String(), []string{
+					"[WARN] watched object is not pod\n",
+				})
+			},
+		},
+		"cancelled context": {
+			opts: []logs.TailOption{
+				logs.WithTailTimeout(time.Hour),
+			},
+			setup: func(cs *fake.Clientset) context.Context {
+				watcher := watch.NewFake()
+				cs.PrependWatchReactor("pods", ktesting.DefaultWatchReactor(watcher, nil))
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+				return ctx
+			},
+			assert: func(t *testing.T, buf *mutexBuffer, err error) {
+				testutil.AssertNil(t, "err", err)
+			},
+		},
+		"stopped watcher": {
+			opts: []logs.TailOption{
+				logs.WithTailTimeout(time.Hour),
+			},
+			setup: func(cs *fake.Clientset) context.Context {
+				watcher := watch.NewFake()
+				cs.PrependWatchReactor("pods", ktesting.DefaultWatchReactor(watcher, nil))
+				watcher.Stop()
+				return context.Background()
+			},
+			assert: func(t *testing.T, buf *mutexBuffer, err error) {
+				testutil.AssertNil(t, "err", err)
+			},
+		},
+		"uses label selector": {
+			opts: []logs.TailOption{
+				logs.WithTailTimeout(0),
+			},
+			setup: func(cs *fake.Clientset) context.Context {
+				cs.PrependWatchReactor("pods", labelSelectorWatchReactor(t, "serving.knative.dev/service="+defaultAppName))
+				return context.Background()
 			},
 		},
 		"writes logs about deleted pod": {
-			appName:   "some-app",
-			eventType: watch.Deleted,
-			pod: &v1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "some-app-pod1",
-				},
+			opts: []logs.TailOption{
+				// This helps the test move a little faster.
+				logs.WithTailTimeout(250 * time.Millisecond),
+			},
+			setup: func(cs *fake.Clientset) context.Context {
+				watcher := watch.NewFake()
+				cs.PrependWatchReactor("pods", ktesting.DefaultWatchReactor(watcher, nil))
+				go watcher.Delete(&corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: defaultAppName,
+					},
+				})
+				return context.Background()
 			},
 			assert: func(t *testing.T, buf *mutexBuffer, err error) {
 				testutil.AssertNil(t, "err", err)
-				testutil.AssertContainsAll(t, buf.String(), []string{"Pod 'default/some-app-pod1' is deleted\n"})
+				testutil.AssertContainsAll(t, buf.String(), []string{
+					fmt.Sprintf("Pod 'default/%s' is deleted\n", defaultAppName),
+				})
 			},
 		},
-		"writes logs about terminated pod": {
-			appName:   "some-app",
-			eventType: watch.Added,
-			pod: &v1.Pod{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:              "some-app-pod1",
-					DeletionTimestamp: &metav1.Time{Time: time.Now()},
-				},
+		"getting pod fails": {
+			opts: []logs.TailOption{
+				// This helps the test move a little faster.
+				logs.WithTailTimeout(250 * time.Millisecond),
 			},
+			// We're going to setup a watcher, but the pod doesn't exist
+			// so Pods(namespace).Get() will return an error.
+			setup: whenAddEvent(nil),
 			assert: func(t *testing.T, buf *mutexBuffer, err error) {
 				testutil.AssertNil(t, "err", err)
-				testutil.AssertContainsAll(t, buf.String(), []string{"Pod 'default/some-app-pod1' is terminated\n"})
+				testutil.AssertContainsAll(t, buf.String(), []string{
+					fmt.Sprintf(`[WARN] failed to get Pod '%s': pods "%s" not found`, defaultAppName, defaultAppName),
+				})
+			},
+		},
+		"pod is deleted": {
+			opts: []logs.TailOption{
+				// This helps the test move a little faster.
+				logs.WithTailTimeout(250 * time.Millisecond),
+			},
+			setup: whenAddEvent(
+				whenPodAdded(&corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: defaultAppName,
+						DeletionTimestamp: &metav1.Time{
+							Time: time.Now(),
+						},
+					},
+				}, nil),
+			),
+			assert: func(t *testing.T, buf *mutexBuffer, err error) {
+				testutil.AssertNil(t, "err", err)
+				testutil.AssertContainsAll(t, buf.String(), []string{
+					fmt.Sprintf("[INFO] Pod 'default/%s' is terminated\n", defaultAppName),
+				})
+			},
+		},
+		"pod is not running": {
+			opts: []logs.TailOption{
+				// This helps the test move a little faster.
+				logs.WithTailTimeout(250 * time.Millisecond),
+			},
+			setup: whenAddEvent(
+				whenPodAdded(&corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: defaultAppName,
+					},
+					Status: corev1.PodStatus{
+						Phase: corev1.PodPending,
+					},
+				}, nil),
+			),
+			assert: func(t *testing.T, buf *mutexBuffer, err error) {
+				testutil.AssertNil(t, "err", err)
+				testutil.AssertContainsAll(t, buf.String(), []string{
+					fmt.Sprintf("[INFO] Pod 'default/%s' is not running\n", defaultAppName),
+				})
+			},
+		},
+		"write logs from pod": {
+			opts: []logs.TailOption{
+				// This helps the test move a little faster.
+				logs.WithTailTimeout(250 * time.Millisecond),
+			},
+			assert: func(t *testing.T, buf *mutexBuffer, err error) {
+				t.Skip("https://github.com/kubernetes/kubernetes/issues/84203")
 			},
 		},
 	} {
-		// Fix data race of tc
-		testCase := tc
 		t.Run(tn, func(t *testing.T) {
-			if testCase.assert == nil {
-				testCase.assert = func(t *testing.T, buf *mutexBuffer, err error) {
+			if tc.assert == nil {
+				tc.assert = func(t *testing.T, buf *mutexBuffer, err error) {
 					testutil.AssertNil(t, "err", err)
 				}
 			}
 
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
-			fakeWatcher := NewFakeWatcher(ctrl)
-			fakeWatcher.
-				EXPECT().
-				ResultChan().
-				DoAndReturn(func() <-chan watch.Event {
-					if len(testCase.eventType) != 0 && testCase.pod != nil {
-						return createUpdatedEvent(watch.Event{
-							Type:   testCase.eventType,
-							Object: testCase.pod,
-						})
-					} else {
-						return nil
-					}
-
-				}).
-				AnyTimes()
-
-			// Ensure Stop is invoked to clean up resources.
-			fakeWatcher.
-				EXPECT().
-				Stop().
-				AnyTimes()
-
-			fakeClient := &fake.FakeCoreV1{
-				Fake: &ktesting.Fake{},
+			if tc.setup == nil {
+				tc.setup = func(*fake.Clientset) context.Context {
+					return context.Background()
+				}
 			}
 
-			fakeClient.AddWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
-				return true, fakeWatcher, testCase.watchErr
-			}))
-
-			if testCase.pod != nil {
-				fakeClient.AddReactor("get", "pods", func(action ktesting.Action) (handled bool, ret runtime.Object, err error) {
-					testutil.AssertEqual(t, "namespace", "default", action.GetNamespace())
-					return true, testCase.pod.DeepCopy(), nil
-				})
-			}
+			fakeClient := fake.NewSimpleClientset()
+			ctx := tc.setup(fakeClient)
 
 			buf := &mutexBuffer{}
-			gotErr := logs.NewTailer(fakeClient).Tail(context.Background(), testCase.appName, buf, testCase.opts...)
+			gotErr := logs.NewTailer(fakeClient).Tail(ctx, defaultAppName, buf, tc.opts...)
 
-			testCase.assert(t, buf, gotErr)
+			tc.assert(t, buf, gotErr)
 		})
 	}
 }
@@ -231,4 +293,63 @@ func createUpdatedEvent(es watch.Event) <-chan watch.Event {
 	defer close(c)
 	c <- es
 	return c
+}
+
+func namespaceWatchReactor(t *testing.T, namespace string) ktesting.WatchReactionFunc {
+	t.Helper()
+	return func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
+		if namespace != action.GetNamespace() {
+			t.Errorf("%s: expected namespace %q, got %q", t.Name(), namespace, action.GetNamespace())
+		}
+
+		return false, nil, nil
+	}
+}
+
+func labelSelectorWatchReactor(t *testing.T, selector string) ktesting.WatchReactionFunc {
+	t.Helper()
+	return func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
+		actualLabel := action.(ktesting.WatchActionImpl).WatchRestrictions.Labels.String()
+
+		if actualLabel != selector {
+			t.Errorf("%s: expected label selector %q, got %q", t.Name(), selector, actualLabel)
+		}
+
+		return false, nil, nil
+	}
+}
+
+func errorWatchReactor(t *testing.T, err error) ktesting.WatchReactionFunc {
+	t.Helper()
+	return func(action ktesting.Action) (bool, watch.Interface, error) {
+		t.Helper()
+		return true, nil, err
+	}
+}
+
+func whenAddEvent(f func(*fake.Clientset)) func(*fake.Clientset) context.Context {
+	return func(cs *fake.Clientset) context.Context {
+		watcher := watch.NewFake()
+		cs.PrependWatchReactor("pods", ktesting.DefaultWatchReactor(watcher, nil))
+		go watcher.Add(&corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: defaultAppName,
+			},
+		})
+
+		if f != nil {
+			f(cs)
+		}
+
+		return context.Background()
+	}
+}
+
+func whenPodAdded(pod *corev1.Pod, f func(*fake.Clientset)) func(*fake.Clientset) {
+	return func(cs *fake.Clientset) {
+		cs.CoreV1().Pods("default").Create(pod)
+		if f != nil {
+			f(cs)
+		}
+	}
 }
