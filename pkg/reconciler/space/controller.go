@@ -23,9 +23,8 @@ import (
 	namespaceinformer "knative.dev/pkg/injection/informers/kubeinformers/corev1/namespace"
 	roleinformer "knative.dev/pkg/injection/informers/kubeinformers/rbacv1/role"
 
-	// TODO (juliaguo): replace with knative informer pkgs once they are merged in
-	limitrangeinformer "github.com/google/kf/pkg/client/injection/informers/kubernetes/limitrange"
-	quotainformer "github.com/google/kf/pkg/client/injection/informers/kubernetes/resourcequota"
+	limitrangeinformer "knative.dev/pkg/injection/informers/kubeinformers/corev1/limitrange"
+	quotainformer "knative.dev/pkg/injection/informers/kubeinformers/corev1/resourcequota"
 
 	"k8s.io/client-go/tools/cache"
 

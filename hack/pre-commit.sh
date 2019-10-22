@@ -30,6 +30,9 @@ echo "Generating updates"
 go generate ./...
 go mod tidy
 
+echo "Generating code-generator packages"
+./hack/update-codegen.sh
+
 echo "Updating license"
 ./hack/check-vendor-license.sh
 

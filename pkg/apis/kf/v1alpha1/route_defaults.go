@@ -65,9 +65,11 @@ func (k *RouteSpecFields) SetDefaults(ctx context.Context) {
 
 func (k *RouteSpecFields) labels() map[string]string {
 	return map[string]string{
-		RouteHostname: k.Hostname,
-		RouteDomain:   k.Domain,
-		RoutePath:     ToBase36(k.Path),
+		ManagedByLabel: "kf",
+		ComponentLabel: "route",
+		RouteHostname:  k.Hostname,
+		RouteDomain:    k.Domain,
+		RoutePath:      ToBase36(k.Path),
 	}
 }
 

@@ -40,7 +40,6 @@ resource "google_container_cluster" "kf_test" {
 
   min_master_version = var.gke_version
 
-  remove_default_node_pool = true
   initial_node_count = 1
 
   master_auth {
@@ -68,17 +67,7 @@ resource "google_container_cluster" "kf_test" {
     }
   }
 
-  network = var.k8s_network_selflink
-}
-
-resource "google_container_node_pool" "kf_test" {
-  name       = "kf-test-${random_pet.kf_test.id}"
-  location   = "us-central1"
-  cluster    = "${google_container_cluster.kf_test.name}"
-  node_count = 1
-
   node_config {
-    preemptible  = true
     machine_type = "n1-standard-4"
 
     metadata = {
@@ -92,6 +81,8 @@ resource "google_container_node_pool" "kf_test" {
       "https://www.googleapis.com/auth/userinfo.email",
     ]
   }
+
+  network = var.k8s_network_selflink
 }
 
 output "cluster_name" {
