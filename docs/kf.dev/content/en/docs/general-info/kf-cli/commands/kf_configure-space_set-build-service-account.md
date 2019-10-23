@@ -12,13 +12,16 @@ Set the service account to use when building containers
 Set the service account to use when building containers
 
 ```
-kf configure-space set-build-service-account SPACE_NAME SERVICE_ACCOUNT [flags]
+kf configure-space set-build-service-account [SPACE_NAME] SERVICE_ACCOUNT [flags]
 ```
 
 ### Examples
 
 ```
+  # Configure the space "my-space"
   kf configure-space set-build-service-account my-space myserviceaccount
+  # Configure the targeted space
+  kf configure-space set-build-service-account myserviceaccount
 ```
 
 ### Options

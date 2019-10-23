@@ -12,13 +12,16 @@ Get the service account that is used when building containers in the space.
 Get the service account that is used when building containers in the space.
 
 ```
-kf configure-space get-build-service-account SPACE_NAME [flags]
+kf configure-space get-build-service-account [SPACE_NAME] [flags]
 ```
 
 ### Examples
 
 ```
+  # Configure the space "my-space"
   kf configure-space get-build-service-account my-space
+  # Configure the targeted space
+  kf configure-space get-build-service-account
 ```
 
 ### Options
