@@ -15,11 +15,14 @@
 package integration
 
 import (
+	"strings"
 	"context"
-	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
+	"encoding/json"
+	"reflect"
+	"sort"
 
 	"github.com/google/kf/pkg/kf/testutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,52 +32,120 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-func TestIntegration_ApplyDefaults(t *testing.T) {
-	cases := map[string]struct {
-		Group    string
-		Version  string
-		Resource string
-		File     string
-	}{
-		"serving": {
-			Group:    "serving.knative.dev",
-			Version:  "v1alpha1",
-			Resource: "services",
-			File:     "serving_v1alpha1_defaults.yaml",
-		},
+// DefaultTest defines validation for defaulting webhooks. The Resource will
+// be created and all paths will be tested for equality.
+type DefaultTest struct {
+	Path string `json:"-"`
+	TestEqualityPaths []string `json:"testEquality"`
+	Resource map[string]interface{} `json:"resource"`
+}
+
+func (dt *DefaultTest) GetUnstructured() *unstructured.Unstructured {
+	return &unstructured.Unstructured{
+		Object: dt.Resource,
+	}
+}
+
+func (dt *DefaultTest) GetGvr() schema.GroupVersionResource {
+	obj := dt.GetUnstructured()
+	gvk := obj.GroupVersionKind()
+
+	return schema.GroupVersionResource{
+		Group:    gvk.Group,
+		Version:  gvk.Version,
+
+		// We can autosidscover this in the future from the API Server like
+		// Kubernetes does, but in the meantime all resources we deal with follow
+		// this formula.
+		Resource: strings.ToLower(gvk.Kind) + "s",
+	}
+}
+
+func loadTests(t *testing.T) []*DefaultTest {
+	t.Helper()
+
+	tests, err := filepath.Glob(filepath.Join("testdata", "defaults", "*.yaml"))
+	testutil.AssertNil(t, "defaults err", err)
+
+	// Sort so the tests are deterministic as different filesystems may traverse
+	// their directories in different ways.
+	sort.Strings(tests)
+
+	var out []*DefaultTest
+
+	for _, testPath := range tests {
+		testBytes, err := ioutil.ReadFile(testPath)
+		testutil.AssertNil(t, "read error", err)
+
+		defaultTest := &DefaultTest{}
+		err = yaml.Unmarshal(testBytes, defaultTest)
+		testutil.AssertNil(t, "unmarshal error", err)
+		defaultTest.Path = testPath
+
+		out = append(out, defaultTest)
 	}
 
-	for tn, tc := range cases {
-		t.Run(tn, func(t *testing.T) {
+	return out
+}
+
+// TestLoadTests validates taht tests can be loaded from disk
+// this test will run even if integration tests are not enabled.
+func TestLoadTests(t *testing.T) {
+	loadTests(t)
+}
+
+func TestIntegration_ApplyDefaults(t *testing.T) {
+	for _, tc := range loadTests(t) {
+		t.Run(tc.Path, func(t *testing.T) {
 			testutil.RunKubeAPITest(t, func(ctx context.Context, t *testing.T) {
 				testutil.WithNamespace(ctx, t, func(namespace string) {
 					testutil.WithDynamicClient(ctx, t, func(client dynamic.Interface) {
 						// pass
-						dyn := client.Resource(schema.GroupVersionResource{
-							Group:    tc.Group,
-							Version:  tc.Version,
-							Resource: tc.Resource,
-						}).Namespace(namespace)
+						dyn := client.Resource(tc.GetGvr()).Namespace(namespace)
 
-						objPath := filepath.Join("testdata", tc.File)
-						objBytes, err := ioutil.ReadFile(objPath)
-						testutil.AssertNil(t, "read error", err)
-
-						unstructuredContent := make(map[string]interface{})
-						err = yaml.Unmarshal(objBytes, &unstructuredContent)
-						testutil.AssertNil(t, "unmarshal error", err)
-
-						obj := &unstructured.Unstructured{}
-						obj.SetUnstructuredContent(unstructuredContent)
+						obj := tc.GetUnstructured()
 						obj.SetNamespace(namespace)
+						expected := obj.DeepCopy()
 
-						out, err := dyn.Create(obj, metav1.CreateOptions{})
+						actual, err := dyn.Create(obj, metav1.CreateOptions{})
 						testutil.AssertNil(t, "creation error", err)
-						fmt.Println(out.UnstructuredContent())
+
+						for _, path := range tc.TestEqualityPaths {
+							t.Run(path, func(t *testing.T){
+								AssertPathEqual(t, path, expected, actual)
+							})
+						}
 					})
 				})
 			})
 		})
 	}
+}
 
+func AssertPathEqual(t *testing.T, path string, expected, actual *unstructured.Unstructured) {
+	t.Helper()
+
+	path = strings.TrimPrefix(path, ".")
+	splitPath := strings.Split(path, ".")
+
+	ev, eok, eerr := unstructured.NestedFieldNoCopy(expected.UnstructuredContent(), splitPath...)
+	testutil.AssertNil(t, "expected path error", eerr)
+
+	av, aok, aerr := unstructured.NestedFieldNoCopy(actual.UnstructuredContent(), splitPath...)
+	testutil.AssertNil(t, "actual path error", aerr)
+
+	// Test ok before trying to marshal objects that might be bad.
+	testutil.AssertEqual(t, "ok", eok, aok)
+
+	// Convert the objects to JSON, this is so we can ignore weird encoding issues
+	// like int32 vs int64.
+	evJSON, eerr := json.Marshal(ev)
+	testutil.AssertNil(t, "expected JSON error", eerr)
+
+	avJSON, aerr := json.Marshal(av)
+	testutil.AssertNil(t, "actual JSON error", aerr)
+
+	if !reflect.DeepEqual(evJSON, avJSON) {
+		testutil.AssertEqual(t, "values", ev, av)
+	}
 }
