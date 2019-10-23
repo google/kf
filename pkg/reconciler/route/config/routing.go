@@ -15,20 +15,21 @@
 package config
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 )
 
 const (
-	RoutingConfigName        = "config-routing"
+	RoutingConfigName = "config-routing"
+
 	IngressServiceNameKey    = "ingress.servicename"
 	IngressNamespaceKey      = "ingress.namespace"
 	KnativeIngressGatewayKey = "knative.ingress.gateway"
-	GatewayHostKey           = "gateway.host"
 
-	DefaultIngressServiceName    = "istio-ingress"
-	DefaultIngressNamespace      = "gke-system"
-	DefaultKnativeIngressGateway = "knative-serving/gke-system-gateway"
-	DefaultGatewayHost           = "cluster-local-gateway.gke-system.svc.cluster.local"
+	DefaultIngressServiceName    = "istio-ingressgateway"
+	DefaultIngressNamespace      = "istio-system"
+	DefaultKnativeIngressGateway = "knative-ingress-gateway"
 )
 
 // RoutingConfig contains the networking configuration defined in the
@@ -40,6 +41,7 @@ type RoutingConfig struct {
 	// K8s namespace to search for Ingresses
 	IngressNamespace string
 
+	// Name of ingress gateway in knative-serving namespace
 	KnativeIngressGateway string
 
 	GatewayHost string
@@ -62,16 +64,12 @@ func NewRoutingConfigFromConfigMap(configMap *corev1.ConfigMap) (*RoutingConfig,
 	}
 
 	if knativeIngressGateway, ok := configMap.Data[KnativeIngressGatewayKey]; !ok {
-		nc.KnativeIngressGateway = DefaultKnativeIngressGateway
+		nc.KnativeIngressGateway = DefaultKnativeIngressGateway + ".knative-serving.svc.cluster.local"
 	} else {
-		nc.KnativeIngressGateway = knativeIngressGateway
+		nc.KnativeIngressGateway = knativeIngressGateway + ".knative-serving.svc.cluster.local"
 	}
 
-	if gatewayHost, ok := configMap.Data[GatewayHostKey]; !ok {
-		nc.GatewayHost = DefaultGatewayHost
-	} else {
-		nc.GatewayHost = gatewayHost
-	}
+	nc.GatewayHost = fmt.Sprintf("%s.%s.svc.cluster.local", nc.IngressServiceName, nc.IngressNamespace)
 
 	return nc, nil
 }

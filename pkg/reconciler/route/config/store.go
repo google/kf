@@ -75,5 +75,4 @@ func (s *Store) Load() *Config {
 	return &Config{
 		Routing: s.UntypedLoad(RoutingConfigName).(*RoutingConfig),
 	}
-	// return &Config{}
 }
