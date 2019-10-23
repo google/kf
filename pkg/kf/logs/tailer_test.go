@@ -64,14 +64,14 @@ func TestTailer_Tail(t *testing.T) {
 	t.Parallel()
 	for tn, tc := range map[string]struct {
 		opts   []logs.TailOption
-		setup  func(cs *fake.Clientset) context.Context
+		setup  func(t *testing.T, cs *fake.Clientset) context.Context
 		assert func(t *testing.T, buf *bytes.Buffer, err error)
 	}{
 		"default namespace": {
 			opts: []logs.TailOption{
 				logs.WithTailTimeout(0),
 			},
-			setup: func(cs *fake.Clientset) context.Context {
+			setup: func(t *testing.T, cs *fake.Clientset) context.Context {
 				cs.PrependWatchReactor("pods", namespaceWatchReactor(t, "default"))
 				return context.Background()
 			},
@@ -81,13 +81,13 @@ func TestTailer_Tail(t *testing.T) {
 				logs.WithTailTimeout(0),
 				logs.WithTailNamespace("custom-namespace"),
 			},
-			setup: func(cs *fake.Clientset) context.Context {
+			setup: func(t *testing.T, cs *fake.Clientset) context.Context {
 				cs.PrependWatchReactor("pods", namespaceWatchReactor(t, "custom-namespace"))
 				return context.Background()
 			},
 		},
 		"watching pods fails": {
-			setup: func(cs *fake.Clientset) context.Context {
+			setup: func(t *testing.T, cs *fake.Clientset) context.Context {
 				cs.PrependWatchReactor("pods", errorWatchReactor(t, errors.New("some-error")))
 				return context.Background()
 			},
@@ -100,7 +100,7 @@ func TestTailer_Tail(t *testing.T) {
 				// This helps the test move a little faster.
 				logs.WithTailTimeout(250 * time.Millisecond),
 			},
-			setup: func(cs *fake.Clientset) context.Context {
+			setup: func(t *testing.T, cs *fake.Clientset) context.Context {
 				watcher := watch.NewFake()
 				cs.PrependWatchReactor("pods", ktesting.DefaultWatchReactor(watcher, nil))
 				go watcher.Add(&metav1.Status{})
@@ -117,7 +117,7 @@ func TestTailer_Tail(t *testing.T) {
 			opts: []logs.TailOption{
 				logs.WithTailTimeout(time.Hour),
 			},
-			setup: func(cs *fake.Clientset) context.Context {
+			setup: func(t *testing.T, cs *fake.Clientset) context.Context {
 				watcher := watch.NewFake()
 				cs.PrependWatchReactor("pods", ktesting.DefaultWatchReactor(watcher, nil))
 				ctx, cancel := context.WithCancel(context.Background())
@@ -132,7 +132,7 @@ func TestTailer_Tail(t *testing.T) {
 			opts: []logs.TailOption{
 				logs.WithTailTimeout(time.Hour),
 			},
-			setup: func(cs *fake.Clientset) context.Context {
+			setup: func(t *testing.T, cs *fake.Clientset) context.Context {
 				watcher := watch.NewFake()
 				cs.PrependWatchReactor("pods", ktesting.DefaultWatchReactor(watcher, nil))
 				watcher.Stop()
@@ -146,7 +146,7 @@ func TestTailer_Tail(t *testing.T) {
 			opts: []logs.TailOption{
 				logs.WithTailTimeout(0),
 			},
-			setup: func(cs *fake.Clientset) context.Context {
+			setup: func(t *testing.T, cs *fake.Clientset) context.Context {
 				cs.PrependWatchReactor("pods", labelSelectorWatchReactor(t, "serving.knative.dev/service="+defaultAppName))
 				return context.Background()
 			},
@@ -156,7 +156,7 @@ func TestTailer_Tail(t *testing.T) {
 				// This helps the test move a little faster.
 				logs.WithTailTimeout(250 * time.Millisecond),
 			},
-			setup: func(cs *fake.Clientset) context.Context {
+			setup: func(t *testing.T, cs *fake.Clientset) context.Context {
 				watcher := watch.NewFake()
 				cs.PrependWatchReactor("pods", ktesting.DefaultWatchReactor(watcher, nil))
 				go watcher.Delete(&corev1.Pod{
@@ -250,13 +250,13 @@ func TestTailer_Tail(t *testing.T) {
 			}
 
 			if tc.setup == nil {
-				tc.setup = func(*fake.Clientset) context.Context {
+				tc.setup = func(*testing.T, *fake.Clientset) context.Context {
 					return context.Background()
 				}
 			}
 
 			fakeClient := fake.NewSimpleClientset()
-			ctx := tc.setup(fakeClient)
+			ctx := tc.setup(t, fakeClient)
 
 			// We need to use a MutexWriter because the Tailer writes to the
 			// writer on different go routines than what we are reading from.
@@ -306,8 +306,8 @@ func errorWatchReactor(t *testing.T, err error) ktesting.WatchReactionFunc {
 	}
 }
 
-func whenAddEvent(f func(*fake.Clientset)) func(*fake.Clientset) context.Context {
-	return func(cs *fake.Clientset) context.Context {
+func whenAddEvent(f func(*testing.T, *fake.Clientset)) func(*testing.T, *fake.Clientset) context.Context {
+	return func(t *testing.T, cs *fake.Clientset) context.Context {
 		watcher := watch.NewFake()
 		cs.PrependWatchReactor("pods", ktesting.DefaultWatchReactor(watcher, nil))
 		go watcher.Add(&corev1.Pod{
@@ -317,18 +317,18 @@ func whenAddEvent(f func(*fake.Clientset)) func(*fake.Clientset) context.Context
 		})
 
 		if f != nil {
-			f(cs)
+			f(t, cs)
 		}
 
 		return context.Background()
 	}
 }
 
-func whenPodAdded(pod *corev1.Pod, f func(*fake.Clientset)) func(*fake.Clientset) {
-	return func(cs *fake.Clientset) {
+func whenPodAdded(pod *corev1.Pod, f func(*testing.T, *fake.Clientset)) func(*testing.T, *fake.Clientset) {
+	return func(t *testing.T, cs *fake.Clientset) {
 		cs.CoreV1().Pods("default").Create(pod)
 		if f != nil {
-			f(cs)
+			f(t, cs)
 		}
 	}
 }
