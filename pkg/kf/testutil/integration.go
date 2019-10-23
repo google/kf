@@ -116,6 +116,10 @@ func RunKubeAPITest(t *testing.T, test func(ctx context.Context, t *testing.T)) 
 		t.Skip()
 	}
 
+	if _, ok := os.LookupEnv(EnvDockerRegistry); !ok {
+		t.Skipf("%s is required for integration tests... Skipping...", EnvDockerRegistry)
+	}
+
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
 	clientCfg := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, &clientcmd.ConfigOverrides{})
 	restCfg, err := clientCfg.ClientConfig()
