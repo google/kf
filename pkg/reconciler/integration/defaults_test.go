@@ -15,14 +15,14 @@
 package integration
 
 import (
-	"strings"
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	"path/filepath"
-	"testing"
-	"encoding/json"
 	"reflect"
 	"sort"
+	"strings"
+	"testing"
 
 	"github.com/google/kf/pkg/kf/testutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -35,9 +35,9 @@ import (
 // DefaultTest defines validation for defaulting webhooks. The Resource will
 // be created and all paths will be tested for equality.
 type DefaultTest struct {
-	Path string `json:"-"`
-	TestEqualityPaths []string `json:"testEquality"`
-	Resource map[string]interface{} `json:"resource"`
+	Path              string                 `json:"-"`
+	TestEqualityPaths []string               `json:"testEquality"`
+	Resource          map[string]interface{} `json:"resource"`
 }
 
 func (dt *DefaultTest) GetUnstructured() *unstructured.Unstructured {
@@ -51,8 +51,8 @@ func (dt *DefaultTest) GetGvr() schema.GroupVersionResource {
 	gvk := obj.GroupVersionKind()
 
 	return schema.GroupVersionResource{
-		Group:    gvk.Group,
-		Version:  gvk.Version,
+		Group:   gvk.Group,
+		Version: gvk.Version,
 
 		// We can autosidscover this in the future from the API Server like
 		// Kubernetes does, but in the meantime all resources we deal with follow
@@ -88,7 +88,7 @@ func loadTests(t *testing.T) []*DefaultTest {
 	return out
 }
 
-// TestLoadTests validates taht tests can be loaded from disk
+// TestLoadTests validates that tests can be loaded from disk
 // this test will run even if integration tests are not enabled.
 func TestLoadTests(t *testing.T) {
 	loadTests(t)
@@ -111,7 +111,7 @@ func TestIntegration_ApplyDefaults(t *testing.T) {
 						testutil.AssertNil(t, "creation error", err)
 
 						for _, path := range tc.TestEqualityPaths {
-							t.Run(path, func(t *testing.T){
+							t.Run(path, func(t *testing.T) {
 								AssertPathEqual(t, path, expected, actual)
 							})
 						}
