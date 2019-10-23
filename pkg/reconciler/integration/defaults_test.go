@@ -46,7 +46,7 @@ func (dt *DefaultTest) GetUnstructured() *unstructured.Unstructured {
 	}
 }
 
-func (dt *DefaultTest) GetGvr() schema.GroupVersionResource {
+func (dt *DefaultTest) GetGVR() schema.GroupVersionResource {
 	obj := dt.GetUnstructured()
 	gvk := obj.GroupVersionKind()
 
@@ -100,8 +100,8 @@ func TestIntegration_ApplyDefaults(t *testing.T) {
 			testutil.RunKubeAPITest(t, func(ctx context.Context, t *testing.T) {
 				testutil.WithNamespace(ctx, t, func(namespace string) {
 					testutil.WithDynamicClient(ctx, t, func(client dynamic.Interface) {
-						// pass
-						dyn := client.Resource(tc.GetGvr()).Namespace(namespace)
+
+						dyn := client.Resource(tc.GetGVR()).Namespace(namespace)
 
 						obj := tc.GetUnstructured()
 						obj.SetNamespace(namespace)
@@ -110,6 +110,13 @@ func TestIntegration_ApplyDefaults(t *testing.T) {
 						actual, err := dyn.Create(obj, metav1.CreateOptions{})
 						testutil.AssertNil(t, "creation error", err)
 
+						// Individual paths are tested because Kubernetes doesn't have a
+						// strict system about what is/isn't allowed to be updated
+						// or the structure of resources.
+						// We need to ignore things we know are going to be set by the
+						// controller like the status, metadata UUID, etc. But maybe also
+						// things in the spec. For example, types that increment a
+						// generation field.
 						for _, path := range tc.TestEqualityPaths {
 							t.Run(path, func(t *testing.T) {
 								AssertPathEqual(t, path, expected, actual)

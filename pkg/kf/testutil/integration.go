@@ -62,25 +62,27 @@ func DockerRegistry() string {
 	return os.Getenv(EnvDockerRegistry)
 }
 
-// RunIntegrationTest skips the tests if testing.Short() is true (via --short
-// flag) or if DOCKER_REGISTRY is not set. Otherwise it runs the given test.
-func RunIntegrationTest(t *testing.T, test func(ctx context.Context, t *testing.T)) {
+func shouldSkipIntegration(t *testing.T) bool {
+	t.Helper()
+
 	if !strings.HasPrefix(t.Name(), "TestIntegration_") {
 		// We want to enforce a convention so scripts can single out
 		// integration tests.
 		t.Fatalf("Integration tests must have the name format of 'TestIntegration_XXX`")
 	}
 
-	t.Helper()
 	if testing.Short() {
-		t.Skip()
+		t.Skipf("Skipping %s because short tests were requested", t.Name())
 	}
 
-	projID := os.Getenv(EnvDockerRegistry)
-	if projID == "" {
+	if _, ok := os.LookupEnv(EnvDockerRegistry); !ok {
 		t.Skipf("%s is required for integration tests... Skipping...", EnvDockerRegistry)
 	}
 
+	return t.Skipped() || t.Failed()
+}
+
+func logTestResults(t *testing.T, f func()) {
 	start := time.Now()
 	defer func() {
 		state := "PASSED"
@@ -90,34 +92,43 @@ func RunIntegrationTest(t *testing.T, test func(ctx context.Context, t *testing.
 		t.Logf("Test %s took %v and %s", t.Name(), time.Since(start), state)
 	}()
 
+	f()
+}
+
+func withSignalCaptureCancel(t *testing.T, f func(ctx context.Context)) {
 	// Setup context that will allow us to cleanup if the user wants to
 	// cancel the tests.
 	ctx, cancel := context.WithCancel(context.Background())
-
 	// Give everything time to clean up.
 	defer time.Sleep(time.Second)
 	defer cancel()
 	CancelOnSignal(ctx, cancel, t.Log)
-	t.Log()
 
-	test(ctx, t)
+	f(ctx)
+}
+
+// RunIntegrationTest skips the tests if testing.Short() is true (via --short
+// flag) or if DOCKER_REGISTRY is not set. Otherwise it runs the given test.
+func RunIntegrationTest(t *testing.T, test func(ctx context.Context, t *testing.T)) {
+	t.Helper()
+
+	if shouldSkipIntegration(t) {
+		return
+	}
+
+	logTestResults(t, func() {
+		withSignalCaptureCancel(t, func(ctx context.Context) {
+			test(ctx, t)
+		})
+	})
 }
 
 // RunKubeAPITest is for executing tests against the Kubernetes API directly.
 func RunKubeAPITest(t *testing.T, test func(ctx context.Context, t *testing.T)) {
-	if !strings.HasPrefix(t.Name(), "TestIntegration_") {
-		// We want to enforce a convention so scripts can single out
-		// integration tests.
-		t.Fatalf("Integration tests must have the name format of 'TestIntegration_XXX`")
-	}
-
 	t.Helper()
-	if testing.Short() {
-		t.Skip()
-	}
 
-	if _, ok := os.LookupEnv(EnvDockerRegistry); !ok {
-		t.Skipf("%s is required for integration tests... Skipping...", EnvDockerRegistry)
+	if shouldSkipIntegration(t) {
+		return
 	}
 
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
@@ -127,31 +138,16 @@ func RunKubeAPITest(t *testing.T, test func(ctx context.Context, t *testing.T)) 
 		t.Fatalf("couldn't fetch kubeconfig: %v", err)
 	}
 
-	start := time.Now()
-	defer func() {
-		state := "PASSED"
-		if t.Failed() {
-			state = "FAILED"
-		}
-		t.Logf("Test %s took %v and %s", t.Name(), time.Since(start), state)
-	}()
+	logTestResults(t, func() {
+		withSignalCaptureCancel(t, func(ctx context.Context) {
+			ctx = contextWithRestConfig(ctx, restCfg)
 
-	// Setup context that will allow us to cleanup if the user wants to
-	// cancel the tests.
-	ctx, cancel := context.WithCancel(context.Background())
+			// Set up the autowired informers so they can be used in testing
+			ctx, _ = injection.Default.SetupInformers(ctx, restCfg)
 
-	ctx = contextWithRestConfig(ctx, restCfg)
-
-	// Set up the autowired informers so they can be used in testing
-	ctx, _ = injection.Default.SetupInformers(ctx, restCfg)
-
-	// Give everything time to clean up.
-	defer time.Sleep(time.Second)
-	defer cancel()
-	CancelOnSignal(ctx, cancel, t.Log)
-	t.Log()
-
-	test(ctx, t)
+			test(ctx, t)
+		})
+	})
 }
 
 type restConfigKey struct{}
