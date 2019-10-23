@@ -47,7 +47,6 @@ import (
 	"github.com/google/wire"
 	"github.com/poy/kontext"
 	"github.com/spf13/cobra"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 func provideSrcImageBuilder() capps.SrcImageBuilder {
@@ -137,13 +136,9 @@ func InjectLogs(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		capps.NewLogsCommand,
 		kflogs.NewTailer,
-		provideCoreV1,
+		config.GetKubernetes,
 	)
 	return nil
-}
-
-func provideCoreV1(p *config.KfParams) corev1.CoreV1Interface {
-	return config.GetKubernetes(p).CoreV1()
 }
 
 /////////////////////////////////////

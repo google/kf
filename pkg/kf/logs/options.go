@@ -16,6 +16,10 @@
 
 package logs
 
+import (
+	time "time"
+)
+
 type tailConfig struct {
 	// Follow is stream the logs
 	Follow bool
@@ -23,6 +27,8 @@ type tailConfig struct {
 	Namespace string
 	// NumberLines is number of lines
 	NumberLines int
+	// Timeout is How much time to wait before giving up when not following.
+	Timeout time.Duration
 }
 
 // TailOption is a single option for configuring a tailConfig
@@ -69,6 +75,12 @@ func (opts TailOptions) NumberLines() int {
 	return opts.toConfig().NumberLines
 }
 
+// Timeout returns the last set value for Timeout or the empty value
+// if not set.
+func (opts TailOptions) Timeout() time.Duration {
+	return opts.toConfig().Timeout
+}
+
 // WithTailFollow creates an Option that sets stream the logs
 func WithTailFollow(val bool) TailOption {
 	return func(cfg *tailConfig) {
@@ -90,10 +102,18 @@ func WithTailNumberLines(val int) TailOption {
 	}
 }
 
+// WithTailTimeout creates an Option that sets How much time to wait before giving up when not following.
+func WithTailTimeout(val time.Duration) TailOption {
+	return func(cfg *tailConfig) {
+		cfg.Timeout = val
+	}
+}
+
 // TailOptionDefaults gets the default values for Tail.
 func TailOptionDefaults() TailOptions {
 	return TailOptions{
 		WithTailNamespace("default"),
 		WithTailNumberLines(10),
+		WithTailTimeout(time.Second),
 	}
 }
