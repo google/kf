@@ -44,6 +44,8 @@ type RoutingConfig struct {
 	// Name of ingress gateway in knative-serving namespace
 	KnativeIngressGateway string
 
+	// Name of gateway set as route destination host in the kf virtualservice
+	// (usually back to the ingress gateway or cluster local gateway)
 	GatewayHost string
 }
 
