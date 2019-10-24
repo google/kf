@@ -68,7 +68,7 @@ func TestReconciler_Reconcile_namespaceIsTerminating(t *testing.T) {
 		Base: &reconciler.Base{
 			NamespaceLister: fakeNamespaceLister,
 		},
-		configStore: newConfigStore(t),
+		configStore: config.NewDefaultConfigStore(logtesting.TestLogger(t)),
 	}
 
 	testutil.AssertNil(t, "err", r.Reconcile(context.Background(), `{"namespace":"some-namespace"}`))
@@ -533,7 +533,7 @@ func TestReconciler_Reconcile_ApplyChanges(t *testing.T) {
 				routeClaimLister:     fakeRouteClaimLister,
 				routeLister:          fakeRouteLister,
 				virtualServiceLister: fakeVirtualServiceLister,
-				configStore:          newConfigStore(t),
+				configStore:          config.NewDefaultConfigStore(logtesting.TestLogger(t)),
 			}
 
 			ctx := r.configStore.ToContext(context.Background())
@@ -547,15 +547,4 @@ func TestReconciler_Reconcile_ApplyChanges(t *testing.T) {
 			testutil.AssertErrorsEqual(t, tc.ExpectedErr, err)
 		})
 	}
-}
-
-func newConfigStore(t *testing.T) *config.Store {
-	store := config.NewStore(logtesting.TestLogger(t))
-	routingConfig := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: config.RoutingConfigName,
-		},
-	}
-	store.OnConfigChanged(routingConfig)
-	return store
 }

@@ -16,7 +16,8 @@ package config
 
 import (
 	"context"
-
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/configmap"
 )
 
@@ -64,6 +65,17 @@ func NewStore(logger configmap.Logger, onAfterStore ...func(name string, value i
 		),
 	}
 
+	return store
+}
+
+func NewDefaultConfigStore(logger configmap.Logger) *Store {
+	store := NewStore(logger)
+	routingConfig := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: RoutingConfigName,
+		},
+	}
+	store.OnConfigChanged(routingConfig)
 	return store
 }
 
