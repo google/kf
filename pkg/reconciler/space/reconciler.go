@@ -284,7 +284,11 @@ func (r *Reconciler) reconcileNs(
 
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
-	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
+
+	// NOTE: We don't compare the Namespace's specs as they only contain
+	// Finalizers, which we don't plan to add any. If this ever changes, we'll
+	// need to ensure the desired Finalizers are in place while ignoring the
+	// existing ones.
 
 	if semanticEqual {
 		return actual, nil
@@ -404,6 +408,10 @@ func (r *Reconciler) reconcileServiceAccount(
 
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
+
+	// TODO: We don't compare Secrets YET. Once we have a desired Secret for
+	// the ServiceAccount, we'll want to ensure its present while ignoring the
+	// existing ones.
 
 	if semanticEqual {
 		return actual, nil
