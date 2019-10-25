@@ -32,11 +32,11 @@ func (l *DefaultConfigLogger) Infof(format string, v ...interface{}) {
 }
 
 func (l *DefaultConfigLogger) Fatalf(format string, v ...interface{}) {
-	fmt.Fprintf(l.w, format, v)
+	fmt.Fprintf(l.w, format, v...)
 }
 
 func (l *DefaultConfigLogger) Errorf(format string, v ...interface{}) {
-	fmt.Fprintf(l.w, format, v)
+	fmt.Fprintf(l.w, format, v...)
 }
 
 // NewDefaultConfigLogger creates an instance of a DefaultConfigLogger

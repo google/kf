@@ -16,6 +16,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -24,6 +25,18 @@ import (
 
 	. "knative.dev/pkg/configmap/testing"
 )
+
+func TestStoreLoadDefault(t *testing.T) {
+	store := NewDefaultConfigStore(logtesting.TestLogger(t))
+	routingConfig := FromContext(store.ToContext(context.Background())).Routing
+
+	t.Run("routing config defaults", func(t *testing.T) {
+		testutil.AssertEqual(t, "ingress name", DefaultIngressServiceName, routingConfig.IngressServiceName)
+		testutil.AssertEqual(t, "ingress ns", DefaultIngressNamespace, routingConfig.IngressNamespace)
+		testutil.AssertEqual(t, "knative ingress", DefaultKnativeIngressGateway+".knative-serving.svc.cluster.local", routingConfig.KnativeIngressGateway)
+		testutil.AssertEqual(t, "gateway host ", fmt.Sprintf("%s.%s.svc.cluster.local", DefaultIngressServiceName, DefaultIngressNamespace), routingConfig.GatewayHost())
+	})
+}
 
 func TestStoreLoadWithContext(t *testing.T) {
 	store := NewDefaultConfigStore(logtesting.TestLogger(t))
@@ -40,6 +53,6 @@ func TestStoreLoadWithContext(t *testing.T) {
 		testutil.AssertEqual(t, "ingress name", "test-ingress-svc", expected.IngressServiceName)
 		testutil.AssertEqual(t, "ingress ns", "test-ingress-ns", expected.IngressNamespace)
 		testutil.AssertEqual(t, "knative ingress", "test-knative-ingress.knative-serving.svc.cluster.local", expected.KnativeIngressGateway)
-		testutil.AssertEqual(t, "ingress name", "test-ingress-svc.test-ingress-ns.svc.cluster.local", expected.GatewayHost())
+		testutil.AssertEqual(t, "gateway host", "test-ingress-svc.test-ingress-ns.svc.cluster.local", expected.GatewayHost())
 	})
 }
