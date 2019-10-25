@@ -404,7 +404,6 @@ func (r *Reconciler) reconcileServiceAccount(
 
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
-	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Secrets, actual.Secrets)
 
 	if semanticEqual {
 		return actual, nil

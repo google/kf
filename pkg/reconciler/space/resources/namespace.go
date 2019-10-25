@@ -48,5 +48,8 @@ func MakeNamespace(space *v1alpha1.Space) (*v1.Namespace, error) {
 					managedByLabel:      "kf",
 				}),
 		},
+		Spec: v1.NamespaceSpec{
+			Finalizers: []v1.FinalizerName{"kubernetes"},
+		},
 	}, nil
 }
