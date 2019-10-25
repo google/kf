@@ -71,7 +71,6 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		Handler:    controller.HandleAll(logError(logger, EnqueueRoutesOfVirtualService(enqueue, c.routeLister))),
 	})
 
-	// configmap stuff
 	logger.Info("Setting up ConfigMap receivers")
 	configsToResync := []interface{}{
 		&config.RoutingConfig{},

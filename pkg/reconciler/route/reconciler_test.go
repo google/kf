@@ -42,7 +42,6 @@ import (
 //go:generate mockgen --package=route --copyright_file ../../kf/internal/tools/option-builder/LICENSE_HEADER --destination=fake_kf_v1alpha1.go --mock_names=KfV1alpha1Interface=FakeKfAlpha1Interface,RouteInterface=FakeRouteInterface github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1 KfV1alpha1Interface,RouteInterface
 //go:generate mockgen --package=route --copyright_file ../../kf/internal/tools/option-builder/LICENSE_HEADER --destination=fake_istio_listers.go --mock_names=VirtualServiceLister=FakeVirtualServiceLister,VirtualServiceNamespaceLister=FakeVirtualServiceNamespaceLister knative.dev/pkg/client/listers/istio/v1alpha3 VirtualServiceLister,VirtualServiceNamespaceLister
 func TestReconciler_Reconcile_badKey(t *testing.T) {
-	t.Skip()
 	t.Parallel()
 
 	r := &Reconciler{}
@@ -51,7 +50,6 @@ func TestReconciler_Reconcile_badKey(t *testing.T) {
 }
 
 func TestReconciler_Reconcile_namespaceIsTerminating(t *testing.T) {
-	t.Skip()
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)

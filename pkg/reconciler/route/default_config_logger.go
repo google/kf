@@ -17,6 +17,8 @@ package route
 
 import "io"
 
+// DefaultConfigLogger is a basic logger used in tests when a *testing.T type
+// is not available (such as in Examples)
 type DefaultConfigLogger struct {
 	w io.Writer
 }
