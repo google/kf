@@ -12,13 +12,16 @@ Remove a domain from a space
 Remove a domain from a space
 
 ```
-kf configure-space remove-domain SPACE_NAME DOMAIN [flags]
+kf configure-space remove-domain [SPACE_NAME] DOMAIN [flags]
 ```
 
 ### Examples
 
 ```
+  # Configure the space "my-space"
   kf configure-space remove-domain my-space myspace.mycompany.com
+  # Configure the targeted space
+  kf configure-space remove-domain myspace.mycompany.com
 ```
 
 ### Options

@@ -26,6 +26,7 @@ import (
 	"github.com/google/kf/pkg/kf/spaces"
 	"github.com/google/kf/pkg/kf/spaces/fake"
 	"github.com/google/kf/pkg/kf/testutil"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestNewConfigSpaceCommand(t *testing.T) {
@@ -40,13 +41,25 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 		"invalid number of args": {
 			// Should have 2 more args
 			args:    []string{"set-container-registry"},
-			wantErr: errors.New("accepts 2 arg(s), received 0"),
+			wantErr: errors.New("accepts between 1 and 2 arg(s), received 0"),
 		},
 
 		"set-container-registry valid": {
 			args: []string{"set-container-registry", space, "gcr.io/foo"},
 			validate: func(t *testing.T, space *v1alpha1.Space) {
 				testutil.AssertEqual(t, "container registry", "gcr.io/foo", space.Spec.BuildpackBuild.ContainerRegistry)
+			},
+		},
+
+		"set with targeted space": {
+			args: []string{"set-container-registry", "gcr.io/foo"},
+			validate: func(t *testing.T, space *v1alpha1.Space) {
+				testutil.AssertEqual(t, "container registry", "gcr.io/foo", space.Spec.BuildpackBuild.ContainerRegistry)
+			},
+			space: v1alpha1.Space{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: space,
+				},
 			},
 		},
 
@@ -194,6 +207,20 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 				testutil.AssertEqual(t, "domains", "example.com", space.Spec.Execution.Domains[0].Domain)
 			},
 		},
+
+		"set-build-service-account valid": {
+			space: v1alpha1.Space{
+				Spec: v1alpha1.SpaceSpec{
+					Security: v1alpha1.SpaceSpecSecurity{
+						BuildServiceAccount: "some-service-account",
+					},
+				},
+			},
+			args: []string{"set-build-service-account", space, "some-other-service-account"},
+			validate: func(t *testing.T, space *v1alpha1.Space) {
+				testutil.AssertEqual(t, "build-service-account", "some-other-service-account", space.Spec.Security.BuildServiceAccount)
+			},
+		},
 	}
 
 	for tn, tc := range cases {
@@ -211,7 +238,9 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 
 			buffer := &bytes.Buffer{}
 
-			c := NewConfigSpaceCommand(&config.KfParams{}, fakeSpaces)
+			c := NewConfigSpaceCommand(&config.KfParams{
+				Namespace: tc.space.GetName(),
+			}, fakeSpaces)
 			c.SetOutput(buffer)
 			c.SetArgs(tc.args)
 
@@ -232,7 +261,13 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 
 func TestNewConfigSpaceCommand_accessors(t *testing.T) {
 	space := v1alpha1.Space{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "space-name",
+		},
 		Spec: v1alpha1.SpaceSpec{
+			Security: v1alpha1.SpaceSpecSecurity{
+				BuildServiceAccount: "some-service-account",
+			},
 			BuildpackBuild: v1alpha1.SpaceSpecBuildpackBuild{
 				ContainerRegistry: "gcr.io/foo",
 				BuilderImage:      "gcr.io/buildpack-builder:latest",
@@ -269,6 +304,15 @@ func TestNewConfigSpaceCommand_accessors(t *testing.T) {
   value: development
 `,
 		},
+		"get-execution-env targeted space": {
+			args:  []string{"get-execution-env"},
+			space: space,
+			wantOutput: `- name: BAR
+  value: BAZZ
+- name: PROFILE
+  value: development
+`,
+		},
 		"get-buildpack-env valid": {
 			args:  []string{"get-buildpack-env", "space-name"},
 			space: space,
@@ -296,6 +340,11 @@ func TestNewConfigSpaceCommand_accessors(t *testing.T) {
 - domain: other-example.com
 `,
 		},
+		"get-build-service-account valid": {
+			args:       []string{"get-build-service-account", "space-name"},
+			space:      space,
+			wantOutput: "some-service-account\n",
+		},
 	}
 
 	for tn, tc := range cases {
@@ -307,7 +356,9 @@ func TestNewConfigSpaceCommand_accessors(t *testing.T) {
 
 			buffer := &bytes.Buffer{}
 
-			c := NewConfigSpaceCommand(&config.KfParams{}, fakeSpaces)
+			c := NewConfigSpaceCommand(&config.KfParams{
+				Namespace: tc.space.GetName(),
+			}, fakeSpaces)
 			c.SetOutput(buffer)
 			c.SetArgs(tc.args)
 

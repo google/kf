@@ -12,13 +12,16 @@ Get domains associated with the space.
 Get domains associated with the space.
 
 ```
-kf configure-space get-domains SPACE_NAME [flags]
+kf configure-space get-domains [SPACE_NAME] [flags]
 ```
 
 ### Examples
 
 ```
+  # Configure the space "my-space"
   kf configure-space get-domains my-space
+  # Configure the targeted space
+  kf configure-space get-domains
 ```
 
 ### Options

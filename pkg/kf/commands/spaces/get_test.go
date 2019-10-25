@@ -35,6 +35,7 @@ func TestNewGetSpaceCommand(t *testing.T) {
 	goodSpace.Name = "my-space"
 	goodSpace.Spec = v1alpha1.SpaceSpec{}
 	goodSpace.Spec.Security.EnableDeveloperLogsAccess = true
+	goodSpace.Spec.Security.BuildServiceAccount = "some-service-account"
 	goodSpace.Status.Conditions = []apis.Condition{{
 		Type:   "Ready",
 		Status: "TESTING",
@@ -67,7 +68,7 @@ func TestNewGetSpaceCommand(t *testing.T) {
 		"security": {
 			args:       []string{"my-space"},
 			space:      goodSpace,
-			wantOutput: []string{"Security", "read logs?", "true"},
+			wantOutput: []string{"Security", "read logs?", "true", "Build Service Account", "some-service-account"},
 		},
 		"build": {
 			args:       []string{"my-space"},

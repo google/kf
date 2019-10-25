@@ -38,7 +38,6 @@ import (
 	"github.com/google/wire"
 	"github.com/poy/kontext"
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 import (
@@ -165,8 +164,8 @@ func InjectProxy(p *config.KfParams) *cobra.Command {
 }
 
 func InjectLogs(p *config.KfParams) *cobra.Command {
-	coreV1Interface := provideCoreV1(p)
-	tailer := logs.NewTailer(coreV1Interface)
+	kubernetesInterface := config.GetKubernetes(p)
+	tailer := logs.NewTailer(kubernetesInterface)
 	command := apps2.NewLogsCommand(p, tailer)
 	return command
 }
@@ -495,10 +494,6 @@ var AppsSet = wire.NewSet(
 
 func provideAppsGetter(ki v1alpha1.KfV1alpha1Interface) v1alpha1.AppsGetter {
 	return ki
-}
-
-func provideCoreV1(p *config.KfParams) v1.CoreV1Interface {
-	return config.GetKubernetes(p).CoreV1()
 }
 
 func provideServiceInstancesGetter(sc versioned.Interface) v1beta1.ServiceInstancesGetter {

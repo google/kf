@@ -12,13 +12,16 @@ Unset an environment variable for buildpack builds in a space.
 Unset an environment variable for buildpack builds in a space.
 
 ```
-kf configure-space unset-buildpack-env SPACE_NAME ENV_VAR_NAME [flags]
+kf configure-space unset-buildpack-env [SPACE_NAME] ENV_VAR_NAME [flags]
 ```
 
 ### Examples
 
 ```
+  # Configure the space "my-space"
   kf configure-space unset-buildpack-env my-space JDK_VERSION
+  # Configure the targeted space
+  kf configure-space unset-buildpack-env JDK_VERSION
 ```
 
 ### Options

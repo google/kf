@@ -17,6 +17,8 @@ package routes_test
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"math"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -100,6 +102,73 @@ func TestIntegration_MapRoute(t *testing.T) {
 
 		kf.UnmapRoute(ctx, appName, domain, "--hostname="+hostname, "--path="+path)
 		kf.DeleteRoute(ctx, domain, "--hostname="+hostname, "--path="+path)
+		findRoute(ctx, t, kf, hostname, domain, path, false)
+	})
+}
+
+// TestIntegration_MultipleAppsPerRoute pushes two apps and creates a route via `create-route`,
+// then maps both apps to the same route. The test verifies that hitting the route returns a 200 OK
+// and that traffic to the route is roughly split equally between the two apps.
+func TestIntegration_MultipleAppsPerRoute(t *testing.T) {
+	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+		helloWorldApp := fmt.Sprintf("integration-hello-%d", time.Now().UnixNano())
+		envsApp := fmt.Sprintf("integration-envs-%d", time.Now().UnixNano())
+
+		kf.Push(ctx, helloWorldApp,
+			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/helloworld"),
+		)
+		defer kf.Delete(ctx, helloWorldApp)
+
+		kf.Push(ctx, envsApp,
+			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/envs"),
+		)
+		defer kf.Delete(ctx, envsApp)
+
+		hostname := fmt.Sprintf("some-host-%d", time.Now().UnixNano())
+		domain := "example.com"
+		path := "mypath"
+
+		kf.CreateRoute(ctx, domain, "--hostname="+hostname, "--path="+path)
+		routeHost := fmt.Sprintf("%s.%s", hostname, domain)
+		findRoute(ctx, t, kf, hostname, domain, path, true)
+
+		kf.MapRoute(ctx, helloWorldApp, domain, "--hostname="+hostname, "--path="+path)
+		kf.MapRoute(ctx, envsApp, domain, "--hostname="+hostname, "--path="+path)
+
+		go kf.ProxyRoute(ctx, routeHost, 8083)
+
+		helloWorldCount := 0
+		envsCount := 0
+		for i := 0; i < 100; i++ {
+			resp, respCancel := RetryGet(ctx, t, "http://localhost:8083/"+path, 90*time.Second, http.StatusOK)
+			defer resp.Body.Close()
+			defer respCancel()
+			if resp.StatusCode == http.StatusOK {
+				body, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+
+				}
+				bodyStr := string(body)
+				if strings.Contains(bodyStr, "hello") {
+					helloWorldCount++
+				} else if strings.Contains(bodyStr, "VCAP_SERVICES") {
+					envsCount++
+				}
+			}
+		}
+
+		Logf(t, "number of requests routed to hello world app: %d", helloWorldCount)
+		Logf(t, "number of requests routed to envs app: %d", envsCount)
+
+		// In practice, traffic won't be split exactly 50/50 between the apps,
+		// and the variance will be higher with so few requests (only 100).
+		// So we will allow for a generous threshold between the traffic % in this test (< 30% difference)
+		AssertTrue(t, "route traffic split between apps", (math.Abs(float64(helloWorldCount-envsCount)) < 30))
+
+		kf.UnmapRoute(ctx, helloWorldApp, domain, "--hostname="+hostname, "--path="+path)
+		kf.UnmapRoute(ctx, envsApp, domain, "--hostname="+hostname, "--path="+path)
+
+		kf.DeleteRoute(ctx, "example.com", "--hostname="+hostname, "--path="+path)
 		findRoute(ctx, t, kf, hostname, domain, path, false)
 	})
 }

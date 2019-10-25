@@ -311,7 +311,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			// knative will bring back a single pod, even if when we set
 			// scaling to 0:
 			// TODO: Reevaluate once
-			// https://github.com/google/kf/third_party/knative-serving//issues/4098 is resolved.
+			// https://github.com/knative/serving/issues/4098
 			if err := r.ServingClientSet.
 				ServingV1alpha1().
 				Services(desired.Namespace).
