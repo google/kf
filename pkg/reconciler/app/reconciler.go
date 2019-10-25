@@ -240,7 +240,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 				}
 			} else if err != nil {
 				return condition.MarkReconciliationError("getting latest", err)
-			} else if actual, err = r.reconcileServiceBinding(&desired, actual); err != nil {
+			} else if actual, err = r.reconcileServiceBinding(ctx, &desired, actual); err != nil {
 				return condition.MarkReconciliationError("updating existing", err)
 			}
 			actualServiceBindings = append(actualServiceBindings, *actual)
@@ -273,7 +273,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			return condition.MarkReconciliationError("getting latest", err)
 		} else if !metav1.IsControlledBy(actual, app) {
 			return condition.MarkChildNotOwned(desired.Name)
-		} else if actual, err = r.reconcileSecret(desired, actual); err != nil {
+		} else if actual, err = r.reconcileSecret(ctx, desired, actual); err != nil {
 			return condition.MarkReconciliationError("updating existing", err)
 		}
 		app.Status.PropagateEnvVarSecretStatus(actual)
@@ -321,7 +321,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 					err,
 				)
 			}
-		} else if actual, err = r.reconcileKnativeService(desired, actual); err != nil {
+		} else if actual, err = r.reconcileKnativeService(ctx, desired, actual); err != nil {
 			return condition.MarkReconciliationError("updating existing", err)
 		}
 
@@ -378,7 +378,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 				}
 			} else if err != nil {
 				return condition.MarkReconciliationError("getting latest", err)
-			} else if actual, err = r.reconcileRoute(&desired, actual); err != nil {
+			} else if actual, err = r.reconcileRoute(ctx, &desired, actual); err != nil {
 				return condition.MarkReconciliationError("updating existing", err)
 			}
 		}
@@ -403,7 +403,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 				}
 			} else if err != nil {
 				return condition.MarkReconciliationError("getting latest", err)
-			} else if actual, err = r.reconcileRouteClaim(&desired, actual); err != nil {
+			} else if actual, err = r.reconcileRouteClaim(ctx, &desired, actual); err != nil {
 				return condition.MarkReconciliationError("updating existing", err)
 			}
 		}
@@ -422,7 +422,13 @@ func (*Reconciler) sourcesAreSemanticallyEqual(desired, actual *v1alpha1.Source)
 	return semanticEqual
 }
 
-func (r *Reconciler) reconcileKnativeService(desired, actual *serving.Service) (*serving.Service, error) {
+func (r *Reconciler) reconcileKnativeService(
+	ctx context.Context,
+	desired *serving.Service,
+	actual *serving.Service,
+) (*serving.Service, error) {
+	logger := logging.FromContext(ctx)
+
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
 	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
@@ -431,9 +437,11 @@ func (r *Reconciler) reconcileKnativeService(desired, actual *serving.Service) (
 		return actual, nil
 	}
 
-	if _, err := kmp.SafeDiff(desired.Spec, actual.Spec); err != nil {
+	diff, err := kmp.SafeDiff(desired.Spec, actual.Spec)
+	if err != nil {
 		return nil, fmt.Errorf("failed to diff serving: %v", err)
 	}
+	logger.Debug("Service.Spec diff:", diff)
 
 	// Don't modify the informers copy.
 	existing := actual.DeepCopy()
@@ -444,7 +452,13 @@ func (r *Reconciler) reconcileKnativeService(desired, actual *serving.Service) (
 	return r.ServingClientSet.ServingV1alpha1().Services(existing.Namespace).Update(existing)
 }
 
-func (r *Reconciler) reconcileRoute(desired, actual *v1alpha1.Route) (*v1alpha1.Route, error) {
+func (r *Reconciler) reconcileRoute(
+	ctx context.Context,
+	desired *v1alpha1.Route,
+	actual *v1alpha1.Route,
+) (*v1alpha1.Route, error) {
+	logger := logging.FromContext(ctx)
+
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
 	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
@@ -453,9 +467,11 @@ func (r *Reconciler) reconcileRoute(desired, actual *v1alpha1.Route) (*v1alpha1.
 		return actual, nil
 	}
 
-	if _, err := kmp.SafeDiff(desired.Spec, actual.Spec); err != nil {
-		return nil, fmt.Errorf("failed to diff serving: %v", err)
+	diff, err := kmp.SafeDiff(desired.Spec, actual.Spec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to diff Route: %v", err)
 	}
+	logger.Debug("Route.Spec diff:", diff)
 
 	// Don't modify the informers copy.
 	existing := actual.DeepCopy()
@@ -469,7 +485,13 @@ func (r *Reconciler) reconcileRoute(desired, actual *v1alpha1.Route) (*v1alpha1.
 		Update(existing)
 }
 
-func (r *Reconciler) reconcileRouteClaim(desired, actual *v1alpha1.RouteClaim) (*v1alpha1.RouteClaim, error) {
+func (r *Reconciler) reconcileRouteClaim(
+	ctx context.Context,
+	desired *v1alpha1.RouteClaim,
+	actual *v1alpha1.RouteClaim,
+) (*v1alpha1.RouteClaim, error) {
+	logger := logging.FromContext(ctx)
+
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
 	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
@@ -478,9 +500,11 @@ func (r *Reconciler) reconcileRouteClaim(desired, actual *v1alpha1.RouteClaim) (
 		return actual, nil
 	}
 
-	if _, err := kmp.SafeDiff(desired.Spec, actual.Spec); err != nil {
-		return nil, fmt.Errorf("failed to diff serving: %v", err)
+	diff, err := kmp.SafeDiff(desired.Spec, actual.Spec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to diff RouteClaim: %v", err)
 	}
+	logger.Debug("RouteClaim.Spec diff:", diff)
 
 	// Don't modify the informers copy.
 	existing := actual.DeepCopy()
@@ -494,7 +518,13 @@ func (r *Reconciler) reconcileRouteClaim(desired, actual *v1alpha1.RouteClaim) (
 		Update(existing)
 }
 
-func (r *Reconciler) reconcileSecret(desired, actual *v1.Secret) (*v1.Secret, error) {
+func (r *Reconciler) reconcileSecret(
+	ctx context.Context,
+	desired *v1.Secret,
+	actual *v1.Secret,
+) (*v1.Secret, error) {
+	logger := logging.FromContext(ctx)
+
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
 	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Data, actual.Data)
@@ -503,9 +533,11 @@ func (r *Reconciler) reconcileSecret(desired, actual *v1.Secret) (*v1.Secret, er
 		return actual, nil
 	}
 
-	if _, err := kmp.SafeDiff(desired.Data, actual.Data); err != nil {
+	diff, err := kmp.SafeDiff(desired.Data, actual.Data)
+	if err != nil {
 		return nil, fmt.Errorf("failed to diff secret: %v", err)
 	}
+	logger.Debug("Secret.Data diff:", diff)
 
 	// Don't modify the informers copy.
 	existing := actual.DeepCopy()
@@ -516,7 +548,13 @@ func (r *Reconciler) reconcileSecret(desired, actual *v1.Secret) (*v1.Secret, er
 	return r.KubeClientSet.CoreV1().Secrets(existing.Namespace).Update(existing)
 }
 
-func (r *Reconciler) reconcileServiceBinding(desired, actual *servicecatalogv1beta1.ServiceBinding) (*servicecatalogv1beta1.ServiceBinding, error) {
+func (r *Reconciler) reconcileServiceBinding(
+	ctx context.Context,
+	desired *servicecatalogv1beta1.ServiceBinding,
+	actual *servicecatalogv1beta1.ServiceBinding,
+) (*servicecatalogv1beta1.ServiceBinding, error) {
+	logger := logging.FromContext(ctx)
+
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
 	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
@@ -525,9 +563,11 @@ func (r *Reconciler) reconcileServiceBinding(desired, actual *servicecatalogv1be
 		return actual, nil
 	}
 
-	if _, err := kmp.SafeDiff(desired.Spec, actual.Spec); err != nil {
+	diff, err := kmp.SafeDiff(desired.Spec, actual.Spec)
+	if err != nil {
 		return nil, fmt.Errorf("failed to diff binding: %v", err)
 	}
+	logger.Debug("ServiceBinding.Spec diff:", diff)
 
 	// Don't modify the informers copy.
 	existing := actual.DeepCopy()

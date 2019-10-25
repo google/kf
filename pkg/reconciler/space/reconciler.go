@@ -122,7 +122,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 		} else if !metav1.IsControlledBy(actual, space) {
 			space.Status.MarkNamespaceNotOwned(namespaceName)
 			return fmt.Errorf("space: %q does not own namespace: %q", space.Name, namespaceName)
-		} else if actual, err = r.reconcileNs(desired, actual); err != nil {
+		} else if actual, err = r.reconcileNs(ctx, desired, actual); err != nil {
 			return err
 		}
 
@@ -157,7 +157,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 		} else if !metav1.IsControlledBy(actual, space) {
 			space.Status.MarkDeveloperRoleNotOwned(desired.Name)
 			return fmt.Errorf("space: %q does not own role: %q", space.Name, desired.Name)
-		} else if actual, err = r.reconcileGenericRole(desired, actual); err != nil {
+		} else if actual, err = r.reconcileGenericRole(ctx, desired, actual); err != nil {
 			return err
 		}
 
@@ -183,7 +183,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 		} else if !metav1.IsControlledBy(actual, space) {
 			space.Status.MarkAuditorRoleNotOwned(desired.Name)
 			return fmt.Errorf("space: %q does not own role: %q", space.Name, desired.Name)
-		} else if actual, err = r.reconcileGenericRole(desired, actual); err != nil {
+		} else if actual, err = r.reconcileGenericRole(ctx, desired, actual); err != nil {
 			return err
 		}
 
@@ -209,7 +209,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 		} else if !metav1.IsControlledBy(actual, space) {
 			space.Status.MarkResourceQuotaNotOwned(desired.Name)
 			return fmt.Errorf("space: %q does not own resourcequota: %q", space.Name, desired.Name)
-		} else if actual, err = r.reconcileResourceQuota(desired, actual); err != nil {
+		} else if actual, err = r.reconcileResourceQuota(ctx, desired, actual); err != nil {
 			return err
 		}
 
@@ -235,7 +235,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 		} else if !metav1.IsControlledBy(actual, space) {
 			space.Status.MarkLimitRangeNotOwned(desired.Name)
 			return fmt.Errorf("space: %q does not own limit range: %q", space.Name, desired.Name)
-		} else if actual, err = r.reconcileLimitRange(desired, actual); err != nil {
+		} else if actual, err = r.reconcileLimitRange(ctx, desired, actual); err != nil {
 			return err
 		}
 
@@ -265,7 +265,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 		} else if !metav1.IsControlledBy(actual, space) {
 			space.Status.MarkBuildServiceAccountNotOwned(desired.Name)
 			return fmt.Errorf("space: %q does not own ServiceAccount: %q", space.Name, desired.Name)
-		} else if actual, err = r.reconcileServiceAccount(desired, actual); err != nil {
+		} else if actual, err = r.reconcileServiceAccount(ctx, desired, actual); err != nil {
 			return err
 		}
 
@@ -275,7 +275,13 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 	return nil
 }
 
-func (r *Reconciler) reconcileNs(desired, actual *v1.Namespace) (*v1.Namespace, error) {
+func (r *Reconciler) reconcileNs(
+	ctx context.Context,
+	desired *v1.Namespace,
+	actual *v1.Namespace,
+) (*v1.Namespace, error) {
+	logger := logging.FromContext(ctx)
+
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
 	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
@@ -284,9 +290,11 @@ func (r *Reconciler) reconcileNs(desired, actual *v1.Namespace) (*v1.Namespace, 
 		return actual, nil
 	}
 
-	if _, err := kmp.SafeDiff(desired.Spec, actual.Spec); err != nil {
+	diff, err := kmp.SafeDiff(desired.Spec, actual.Spec)
+	if err != nil {
 		return nil, fmt.Errorf("failed to diff Namespace: %v", err)
 	}
+	logger.Debug("Namespace.Spec diff:", diff)
 
 	// Don't modify the informers copy.
 	existing := actual.DeepCopy()
@@ -297,7 +305,13 @@ func (r *Reconciler) reconcileNs(desired, actual *v1.Namespace) (*v1.Namespace, 
 	return r.KubeClientSet.CoreV1().Namespaces().Update(existing)
 }
 
-func (r *Reconciler) reconcileGenericRole(desired, actual *rv1.Role) (*rv1.Role, error) {
+func (r *Reconciler) reconcileGenericRole(
+	ctx context.Context,
+	desired *rv1.Role,
+	actual *rv1.Role,
+) (*rv1.Role, error) {
+	logger := logging.FromContext(ctx)
+
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
 	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Rules, actual.Rules)
@@ -306,9 +320,11 @@ func (r *Reconciler) reconcileGenericRole(desired, actual *rv1.Role) (*rv1.Role,
 		return actual, nil
 	}
 
-	if _, err := kmp.SafeDiff(desired.Rules, actual.Rules); err != nil {
+	diff, err := kmp.SafeDiff(desired.Rules, actual.Rules)
+	if err != nil {
 		return nil, fmt.Errorf("failed to diff Rules: %v", err)
 	}
+	logger.Debug("Role.Rules diff:", diff)
 
 	// Don't modify the informers copy.
 	existing := actual.DeepCopy()
@@ -319,7 +335,13 @@ func (r *Reconciler) reconcileGenericRole(desired, actual *rv1.Role) (*rv1.Role,
 	return r.KubeClientSet.RbacV1().Roles(existing.Namespace).Update(existing)
 }
 
-func (r *Reconciler) reconcileResourceQuota(desired, actual *v1.ResourceQuota) (*v1.ResourceQuota, error) {
+func (r *Reconciler) reconcileResourceQuota(
+	ctx context.Context,
+	desired *v1.ResourceQuota,
+	actual *v1.ResourceQuota,
+) (*v1.ResourceQuota, error) {
+	logger := logging.FromContext(ctx)
+
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
 	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
@@ -328,9 +350,11 @@ func (r *Reconciler) reconcileResourceQuota(desired, actual *v1.ResourceQuota) (
 		return actual, nil
 	}
 
-	if _, err := kmp.SafeDiff(desired.Spec, actual.Spec); err != nil {
+	diff, err := kmp.SafeDiff(desired.Spec, actual.Spec)
+	if err != nil {
 		return nil, fmt.Errorf("failed to diff Spec (ResourceList): %v", err)
 	}
+	logger.Debug("ResourceQuota.Spec diff:", diff)
 
 	// Don't modify the informers copy.
 	existing := actual.DeepCopy()
@@ -341,7 +365,13 @@ func (r *Reconciler) reconcileResourceQuota(desired, actual *v1.ResourceQuota) (
 	return r.KubeClientSet.CoreV1().ResourceQuotas(existing.Namespace).Update(existing)
 }
 
-func (r *Reconciler) reconcileLimitRange(desired, actual *v1.LimitRange) (*v1.LimitRange, error) {
+func (r *Reconciler) reconcileLimitRange(
+	ctx context.Context,
+	desired *v1.LimitRange,
+	actual *v1.LimitRange,
+) (*v1.LimitRange, error) {
+	logger := logging.FromContext(ctx)
+
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
 	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
@@ -350,9 +380,11 @@ func (r *Reconciler) reconcileLimitRange(desired, actual *v1.LimitRange) (*v1.Li
 		return actual, nil
 	}
 
-	if _, err := kmp.SafeDiff(desired.Spec, actual.Spec); err != nil {
+	diff, err := kmp.SafeDiff(desired.Spec, actual.Spec)
+	if err != nil {
 		return nil, fmt.Errorf("failed to diff Spec (LimitRange): %v", err)
 	}
+	logger.Debug("LimitRange.Spec diff:", diff)
 
 	// Don't modify the informers copy.
 	existing := actual.DeepCopy()
@@ -363,7 +395,13 @@ func (r *Reconciler) reconcileLimitRange(desired, actual *v1.LimitRange) (*v1.Li
 	return r.KubeClientSet.CoreV1().LimitRanges(existing.Namespace).Update(existing)
 }
 
-func (r *Reconciler) reconcileServiceAccount(desired, actual *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+func (r *Reconciler) reconcileServiceAccount(
+	ctx context.Context,
+	desired *corev1.ServiceAccount,
+	actual *corev1.ServiceAccount,
+) (*corev1.ServiceAccount, error) {
+	logger := logging.FromContext(ctx)
+
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
 	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Secrets, actual.Secrets)
@@ -372,17 +410,23 @@ func (r *Reconciler) reconcileServiceAccount(desired, actual *corev1.ServiceAcco
 		return actual, nil
 	}
 
-	if _, err := kmp.SafeDiff(desired.Labels, actual.Labels); err != nil {
+	diff, err := kmp.SafeDiff(desired.Labels, actual.Labels)
+	if err != nil {
 		return nil, fmt.Errorf("failed to diff ServiceAccounts Labels: %v", err)
 	}
+	logger.Debug("ServiceAccounts.Labels diff:", diff)
 
-	if _, err := kmp.SafeDiff(desired.Secrets, actual.Secrets); err != nil {
+	diff, err = kmp.SafeDiff(desired.Secrets, actual.Secrets)
+	if err != nil {
 		return nil, fmt.Errorf("failed to diff ServiceAccounts Secrets: %v", err)
 	}
+	logger.Debug("ServiceAccount.Secrets diff:", diff)
 
-	if _, err := kmp.SafeDiff(desired.ImagePullSecrets, actual.ImagePullSecrets); err != nil {
+	diff, err = kmp.SafeDiff(desired.ImagePullSecrets, actual.ImagePullSecrets)
+	if err != nil {
 		return nil, fmt.Errorf("failed to diff ServiceAccounts ImagePullSecrets: %v", err)
 	}
+	logger.Debug("ServiceAccounts.ImagePullSecrets diff:", diff)
 
 	// Don't modify the informers copy.
 	existing := actual.DeepCopy()
