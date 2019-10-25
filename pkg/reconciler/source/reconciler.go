@@ -20,11 +20,11 @@ import (
 	"reflect"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	buildclient "github.com/google/kf/pkg/client/build/clientset/versioned/typed/build/v1alpha1"
-	buildlisters "github.com/google/kf/pkg/client/build/listers/build/v1alpha1"
 	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
 	"github.com/google/kf/pkg/reconciler"
 	"github.com/google/kf/pkg/reconciler/source/resources"
+	buildclient "github.com/google/kf/third_party/knative-build/pkg/client/clientset/versioned/typed/build/v1alpha1"
+	buildlisters "github.com/google/kf/third_party/knative-build/pkg/client/listers/build/v1alpha1"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"

@@ -12,13 +12,16 @@ Get the environment variables for buildpack builds in a space.
 Get the environment variables for buildpack builds in a space.
 
 ```
-kf configure-space get-buildpack-env SPACE_NAME [flags]
+kf configure-space get-buildpack-env [SPACE_NAME] [flags]
 ```
 
 ### Examples
 
 ```
+  # Configure the space "my-space"
   kf configure-space get-buildpack-env my-space
+  # Configure the targeted space
+  kf configure-space get-buildpack-env
 ```
 
 ### Options

@@ -34,6 +34,8 @@ type pushConfig struct {
 	ContainerImage string
 	// DefaultRouteDomain is Domain for a defaultroute. Only used if a route doesn't already exist
 	DefaultRouteDomain string
+	// DockerfilePath is the path to a Dockerfile to build
+	DockerfilePath string
 	// Namespace is the Kubernetes namespace to use
 	Namespace string
 	// Output is the io.Writer to write output such as build logs
@@ -104,6 +106,12 @@ func (opts PushOptions) ContainerImage() string {
 // if not set.
 func (opts PushOptions) DefaultRouteDomain() string {
 	return opts.toConfig().DefaultRouteDomain
+}
+
+// DockerfilePath returns the last set value for DockerfilePath or the empty value
+// if not set.
+func (opts PushOptions) DockerfilePath() string {
+	return opts.toConfig().DockerfilePath
 }
 
 // Namespace returns the last set value for Namespace or the empty value
@@ -180,6 +188,13 @@ func WithPushContainerImage(val string) PushOption {
 func WithPushDefaultRouteDomain(val string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.DefaultRouteDomain = val
+	}
+}
+
+// WithPushDockerfilePath creates an Option that sets the path to a Dockerfile to build
+func WithPushDockerfilePath(val string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.DockerfilePath = val
 	}
 }
 

@@ -82,6 +82,8 @@ type KfApplicationExtension struct {
 
 	Entrypoint string   `json:"entrypoint,omitempty"`
 	Args       []string `json:"args,omitempty"`
+
+	Dockerfile Dockerfile `json:"dockerfile,omitempty"`
 }
 
 // AppDockerImage is the struct for docker configuration.
@@ -97,6 +99,11 @@ type Route struct {
 // Manifest is an application's configuration.
 type Manifest struct {
 	Applications []Application `json:"applications"`
+}
+
+// Dockerfile contains the path to a Dockerfile to build.
+type Dockerfile struct {
+	Path string `json:"path,omitempty"`
 }
 
 // NewFromFile creates a Manifest from a manifest file.

@@ -31,6 +31,7 @@ import (
 	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/manifest"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
+	ignore "github.com/sabhiram/go-gitignore"
 	"github.com/spf13/cobra"
 	"knative.dev/pkg/ptr"
 )
@@ -38,14 +39,18 @@ import (
 // SrcImageBuilder creates and uploads a container image that contains the
 // contents of the argument 'dir'.
 type SrcImageBuilder interface {
-	BuildSrcImage(dir, srcImage string) error
+	BuildSrcImage(dir, srcImage string, filter KontextFilter) error
 }
 
+// KontextFilter is used to select which files should be packaged into the
+// Kontext container.
+type KontextFilter = func(path string) (bool, error)
+
 // SrcImageBuilderFunc converts a func into a SrcImageBuilder.
-type SrcImageBuilderFunc func(dir, srcImage string, rebase bool) error
+type SrcImageBuilderFunc func(dir, srcImage string, rebase bool, filter KontextFilter) error
 
 // BuildSrcImage implements SrcImageBuilder.
-func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string) error {
+func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string, filter KontextFilter) error {
 	oldPrefix := log.Prefix()
 	oldFlags := log.Flags()
 
@@ -54,7 +59,7 @@ func (f SrcImageBuilderFunc) BuildSrcImage(dir, srcImage string) error {
 	log.SetOutput(os.Stdout)
 
 	log.Printf("Uploading %s to image %s", dir, srcImage)
-	err := f(dir, srcImage, false)
+	err := f(dir, srcImage, false, filter)
 
 	log.SetPrefix(oldPrefix)
 	log.SetFlags(oldFlags)
@@ -75,6 +80,7 @@ func NewPushCommand(
 		containerRegistry   string
 		sourceImage         string
 		containerImage      string
+		dockerfilePath      string
 		manifestFile        string
 		instances           int
 		minScale            int
@@ -105,7 +111,7 @@ func NewPushCommand(
   kf push myapp
   kf push myapp --buildpack my.special.buildpack # Discover via kf buildpacks
   kf push myapp --env FOO=bar --env BAZ=foo
-	kf push myapp --stack cloudfoundry/cflinuxfs3 # Use a cflinuxfs3 runtime
+  kf push myapp --stack cloudfoundry/cflinuxfs3 # Use a cflinuxfs3 runtime
   `,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -165,6 +171,7 @@ func NewPushCommand(
 				overrides.Command = startupCommand
 				overrides.Args = containerArgs
 				overrides.Entrypoint = containerEntrypoint
+				overrides.Dockerfile.Path = dockerfilePath
 
 				// Read environment variables from cli args
 				envVars, err := envutil.ParseCLIEnvVars(envs)
@@ -276,7 +283,7 @@ func NewPushCommand(
 				}
 
 				if app.Docker.Image == "" {
-					// buildpack app
+					// buildpack or Dockerfile app
 					registry := containerRegistry
 					switch {
 					case registry != "":
@@ -298,7 +305,17 @@ func NewPushCommand(
 						if err != nil {
 							return err
 						}
-						if err := b.BuildSrcImage(srcPath, imageName); err != nil {
+
+						// Sanity check that the Dockerfile is in the source
+						if app.Dockerfile.Path != "" {
+							absDockerPath := filepath.Join(srcPath, filepath.FromSlash(app.Dockerfile.Path))
+							if _, err := os.Stat(absDockerPath); os.IsNotExist(err) {
+								fmt.Fprintln(cmd.OutOrStdout(), "app root:", srcPath)
+								return fmt.Errorf("the Dockerfile %s couldn't be found under the app root", app.Dockerfile.Path)
+							}
+						}
+
+						if err := b.BuildSrcImage(srcPath, imageName, buildIgnoreFilter(srcPath)); err != nil {
 							return err
 						}
 					}
@@ -306,6 +323,7 @@ func NewPushCommand(
 						apps.WithPushSourceImage(imageName),
 						apps.WithPushBuildpack(app.Buildpack()),
 						apps.WithPushStack(app.Stack),
+						apps.WithPushDockerfilePath(app.Dockerfile.Path),
 					)
 				} else {
 					if containerRegistry != "" {
@@ -412,6 +430,13 @@ func NewPushCommand(
 		"docker-image",
 		"",
 		"Docker image to deploy.",
+	)
+
+	pushCmd.Flags().StringVar(
+		&dockerfilePath,
+		"dockerfile",
+		"",
+		"Path to the Dockerfile to build. Relative to the source root.",
 	)
 
 	pushCmd.Flags().StringVarP(
@@ -595,4 +620,52 @@ func setupRoutes(space *v1alpha1.Space, app manifest.Application) (routes []v1al
 	}
 
 	return routes, nil
+}
+
+func buildIgnoreFilter(srcPath string) KontextFilter {
+	ignoreFiles := []string{
+		".kfignore",
+		".cfignore",
+	}
+
+	var defaultIgnoreLines = []string{
+		".cfignore",
+		"/manifest.yml",
+		".gitignore",
+		".git",
+		".hg",
+		".svn",
+		"_darcs",
+		".DS_Store",
+	}
+
+	var (
+		gitignore *ignore.GitIgnore
+		err       error
+	)
+	for _, ignoreFile := range ignoreFiles {
+		gitignore, err = ignore.CompileIgnoreFileAndLines(
+			filepath.Join(srcPath, ignoreFile),
+			defaultIgnoreLines...,
+		)
+		if err != nil {
+			// Just move on.
+			continue
+		}
+
+		break
+	}
+
+	if gitignore == nil {
+		gitignore, err = ignore.CompileIgnoreLines(defaultIgnoreLines...)
+		if err != nil {
+			return func(string) (bool, error) {
+				return false, err
+			}
+		}
+	}
+
+	return func(path string) (bool, error) {
+		return !gitignore.MatchesPath(path), nil
+	}
 }

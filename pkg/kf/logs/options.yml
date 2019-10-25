@@ -1,6 +1,7 @@
 # This file contains options for option-builder.go
 ---
 package: logs
+imports: {"time":"time"}
 common:
 - name: Namespace
   type: string
@@ -16,3 +17,7 @@ configs:
   - name: Follow
     type: bool
     description: stream the logs
+  - name: Timeout
+    type: time.Duration
+    description: How much time to wait before giving up when not following.
+    default: time.Second

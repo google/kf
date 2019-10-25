@@ -100,7 +100,7 @@ func TestPushCommand(t *testing.T) {
 				"--args", "b",
 			},
 			wantImagePrefix: "some-reg.io/src-some-namespace-example-app",
-			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
+			srcImageBuilder: func(dir, srcImage string, rebase bool, filter func(path string) (bool, error)) error {
 				testutil.AssertEqual(t, "path", true, strings.Contains(dir, "example-app"))
 				testutil.AssertEqual(t, "path is abs", true, filepath.IsAbs(dir))
 				return nil
@@ -132,7 +132,7 @@ func TestPushCommand(t *testing.T) {
 			args: []string{
 				"app-name",
 			},
-			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
+			srcImageBuilder: func(dir, srcImage string, rebase bool, filter func(path string) (bool, error)) error {
 				cwd, err := os.Getwd()
 				testutil.AssertNil(t, "cwd err", err)
 				testutil.AssertEqual(t, "path", cwd, dir)
@@ -219,7 +219,7 @@ func TestPushCommand(t *testing.T) {
 				"app-name",
 				"--manifest", "testdata/manifest-services.yaml",
 			},
-			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
+			srcImageBuilder: func(dir, srcImage string, rebase bool, filter func(path string) (bool, error)) error {
 				cwd, err := os.Getwd()
 				testutil.AssertNil(t, "cwd err", err)
 				testutil.AssertEqual(t, "path", cwd, dir)
@@ -275,7 +275,7 @@ func TestPushCommand(t *testing.T) {
 			namespace: "some-namespace",
 			args:      []string{"app-name"},
 			wantErr:   errors.New("some error"),
-			srcImageBuilder: func(dir, srcImage string, rebase bool) error {
+			srcImageBuilder: func(dir, srcImage string, rebase bool, filter func(path string) (bool, error)) error {
 				return errors.New("some error")
 			},
 		},
@@ -535,10 +535,40 @@ func TestPushCommand(t *testing.T) {
 				}),
 			),
 		},
+		"bad dockerfile": {
+			namespace: "some-namespace",
+			args: []string{
+				"bad-dockerfile-app",
+				"--manifest", "testdata/manifest.yml",
+			},
+			wantErr: errors.New("the Dockerfile does-not-exist couldn't be found under the app root"),
+		},
+		"good dockerfile": {
+			namespace: "some-namespace",
+			args: []string{
+				"dockerfile-app",
+				"--path", "testdata",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushDockerfilePath("Dockerfile"),
+			),
+		},
+		"provided dockerfile": {
+			namespace: "some-namespace",
+			args: []string{
+				"dockerfile-app",
+				"--dockerfile", "testdata/dockerfile-app/Dockerfile",
+			},
+			wantOpts: append(defaultOptions,
+				apps.WithPushNamespace("some-namespace"),
+				apps.WithPushDockerfilePath("testdata/dockerfile-app/Dockerfile"),
+			),
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			if tc.srcImageBuilder == nil {
-				tc.srcImageBuilder = func(dir, srcImage string, rebase bool) error { return nil }
+				tc.srcImageBuilder = func(dir, srcImage string, rebase bool, filter func(path string) (bool, error)) error { return nil }
 			}
 
 			ctrl := gomock.NewController(t)

@@ -12,13 +12,16 @@ Get the space-wide environment variables.
 Get the space-wide environment variables.
 
 ```
-kf configure-space get-execution-env SPACE_NAME [flags]
+kf configure-space get-execution-env [SPACE_NAME] [flags]
 ```
 
 ### Examples
 
 ```
+  # Configure the space "my-space"
   kf configure-space get-execution-env my-space
+  # Configure the targeted space
+  kf configure-space get-execution-env
 ```
 
 ### Options

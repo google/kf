@@ -29,11 +29,11 @@ while getopts "v" opt; do
   esac
 done
 
-HACK_DIR="${0%/*}"
 KF_PACKAGE="github.com/google/kf"
 KF_PACKAGE_LOCATION="./"
 KF_RESOURCE="kf:v1alpha1"
 BUILD_RESOURCE="build:v1alpha1"
+SERVING_RESOURCE="serving:v1alpha1"
 HEADER_FILE=${KF_PACKAGE_LOCATION}/pkg/kf/internal/tools/option-builder/LICENSE_HEADER.go.txt
 
 GENS=$1
@@ -119,17 +119,33 @@ kf-knative-gen() {
 kbuild-code-gen() {
   code-generator-gen \
     "deepcopy,client,informer,lister" \
-    "$KF_PACKAGE/pkg/client/build" \
-    "github.com/knative/build/pkg/apis" \
+    "github.com/google/kf/third_party/knative-build/pkg/client" \
+    "github.com/google/kf/third_party/knative-build/pkg/apis" \
     "$BUILD_RESOURCE"
 }
 
 kbuild-knative-gen() {
   knative-injection-gen \
     "injection" \
-    "github.com/google/kf/pkg/client/build" \
-    "github.com/knative/build/pkg/apis" \
-    "build:v1alpha1"
+    "github.com/google/kf/third_party/knative-build/pkg/client" \
+    "github.com/google/kf/third_party/knative-build/pkg/apis" \
+    "$BUILD_RESOURCE"
+}
+
+kserving-code-gen() {
+  code-generator-gen \
+    "deepcopy,client,informer,lister" \
+    "github.com/google/kf/third_party/knative-serving/pkg/client" \
+    "github.com/google/kf/third_party/knative-serving/pkg/apis" \
+    "$SERVING_RESOURCE"
+}
+
+kserving-knative-gen() {
+  knative-injection-gen \
+    "injection" \
+    "github.com/google/kf/third_party/knative-serving/pkg/client" \
+    "github.com/google/kf/third_party/knative-serving/pkg/apis" \
+    "$SERVING_RESOURCE"
 }
 
 svccat-codegen() {
@@ -148,7 +164,30 @@ svccat-knative-gen() {
     "servicecatalog:v1beta1"
 }
 
+REPO_ROOT="${REPO_ROOT:-$(git rev-parse --show-toplevel)}"
+if [[ "$REPO_ROOT" = "" ]]; then
+  echo could not find REPO_ROOT 1>&2
+  exit 1
+fi
+cd "${REPO_ROOT}"
+
+# enable modules and the proxy cache
+export GO111MODULE="on"
+GOPROXY="${GOPROXY:-https://proxy.golang.org}"
+export GOPROXY
+
 go mod vendor
+export GO111MODULE="off"
+
+# fake being in a gopath
+FAKE_GOPATH="$(mktemp -d)"
+trap 'rm -rf ${FAKE_GOPATH}' EXIT
+
+FAKE_REPOPATH="${FAKE_GOPATH}/src/github.com/google/kf"
+mkdir -p "$(dirname "${FAKE_REPOPATH}")" && ln -s "${REPO_ROOT}" "${FAKE_REPOPATH}"
+export GOPATH="${FAKE_GOPATH}"
+cd "${FAKE_REPOPATH}"
+
 download-scripts
 
 case $GENS in
@@ -160,6 +199,7 @@ case $GENS in
   knative)
     kf-knative-gen
     kbuild-knative-gen
+    kserving-knative-gen
     svccat-knative-gen
     ;;
   kf)
@@ -170,15 +210,22 @@ case $GENS in
     kbuild-code-gen
     kbuild-knative-gen
     ;;
+  kserving)
+    kserving-code-gen
+    kserving-knative-gen
+    ;;
   svccat)
     svccat-codegen
     svccat-knative-gen
     ;;
   all)
+    rm -fr "${REPO_ROOT}/pkg/client"
     kf-code-gen
     kf-knative-gen
     kbuild-code-gen
     kbuild-knative-gen
+    kserving-code-gen
+    kserving-knative-gen
     svccat-codegen
     svccat-knative-gen
     ;;

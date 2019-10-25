@@ -40,3 +40,10 @@ applications:
   memory: 2G
   disk_quota: 2G
   cpu: "2"
+- name: bad-dockerfile-app
+  dockerfile:
+    path: does-not-exist
+- name: dockerfile-app
+  path: dockerfile-app
+  dockerfile:
+    path: Dockerfile

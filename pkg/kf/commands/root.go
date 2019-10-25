@@ -167,6 +167,7 @@ func NewKfCommand() *cobra.Command {
 			Commands: []*cobra.Command{
 				InjectBuilds(p),
 				InjectBuildLogs(p),
+				InjectBuild(p),
 			},
 		},
 		{
@@ -186,7 +187,7 @@ func NewKfCommand() *cobra.Command {
 				install.NewInstallCommand(),
 				NewTargetCommand(p),
 				NewVersionCommand(Version, runtime.GOOS),
-				NewDebugCommand(p),
+				NewDebugCommand(p, config.GetKubernetes(p)),
 				InjectNamesCommand(p),
 			},
 		},

@@ -15,7 +15,9 @@
 package services
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/kf/pkg/kf/commands/config"
 	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
@@ -25,6 +27,8 @@ import (
 
 // NewDeleteServiceCommand allows users to delete service instances.
 func NewDeleteServiceCommand(p *config.KfParams, client services.Client) *cobra.Command {
+	var async utils.AsyncFlags
+
 	deleteCmd := &cobra.Command{
 		Use:     "delete-service SERVICE_INSTANCE",
 		Aliases: []string{"ds"},
@@ -39,10 +43,20 @@ func NewDeleteServiceCommand(p *config.KfParams, client services.Client) *cobra.
 			if err := utils.ValidateNamespace(p); err != nil {
 				return err
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleting service instance %q %s", instanceName, utils.AsyncLogSuffix)
-			return client.Delete(p.Namespace, instanceName)
+
+			if err := client.Delete(p.Namespace, instanceName); err != nil {
+				return err
+			}
+
+			action := fmt.Sprintf("Deleting service instance %q in space %q", instanceName, p.Namespace)
+			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
+				_, err := client.WaitForDeletion(context.Background(), p.Namespace, instanceName, 1*time.Second)
+				return err
+			})
 		},
 	}
+
+	async.Add(deleteCmd)
 
 	return deleteCmd
 }

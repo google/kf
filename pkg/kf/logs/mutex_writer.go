@@ -1,6 +1,7 @@
 package logs
 
 import (
+	"fmt"
 	"io"
 	"sync"
 )
@@ -11,11 +12,17 @@ type MutexWriter struct {
 	sync.Mutex
 }
 
-// Write writes string to Writer
-func (mw *MutexWriter) Write(s string) error {
+// Write implements io.Writer
+func (mw *MutexWriter) Write(data []byte) (int, error) {
 	mw.Lock()
 	defer mw.Unlock()
-	if _, err := io.WriteString(mw.Writer, s); err != nil {
+	return mw.Writer.Write(data)
+}
+
+// WriteStringf writes a string to the underlying Writer. It has the same
+// symantics as fmt.Sprintf.
+func (mw *MutexWriter) WriteStringf(s string, args ...interface{}) error {
+	if _, err := io.WriteString(mw, fmt.Sprintf(s, args...)); err != nil {
 		return err
 	}
 

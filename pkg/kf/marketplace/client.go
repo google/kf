@@ -15,8 +15,11 @@
 package marketplace
 
 import (
+	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // KfMarketplace contains information to describe the
@@ -34,6 +37,12 @@ type ClientInterface interface {
 
 	// BrokerName fetches the service broker name for a service.
 	BrokerName(service v1beta1.ServiceInstance) (string, error)
+
+	// ListClusterPlans gets cluster-wide plans matching the given filter.
+	ListClusterPlans(filter ListPlanOptions) ([]servicecatalogv1beta1.ClusterServicePlan, error)
+
+	// ListNamespacedPlans gets namespaced plans matching the given filter.
+	ListNamespacedPlans(namespace string, filter ListPlanOptions) ([]servicecatalogv1beta1.ServicePlan, error)
 }
 
 // SClientFactory creates a Service Catalog client.
@@ -41,15 +50,17 @@ type SClientFactory func(namespace string) servicecatalog.SvcatClient
 
 // NewClient creates a new client capable of interacting siwht service catalog
 // services.
-func NewClient(sclient SClientFactory) ClientInterface {
+func NewClient(sclient SClientFactory, kclient servicecatalogclient.Interface) ClientInterface {
 	return &Client{
 		createSvcatClient: sclient,
+		kclient:           kclient,
 	}
 }
 
 // Client is an implementation of ClientInterface that works with the Service Catalog.
 type Client struct {
 	createSvcatClient SClientFactory
+	kclient           servicecatalogclient.Interface
 }
 
 // Marketplace lists available services and plans in the marketplace.
@@ -102,4 +113,89 @@ func (c *Client) BrokerName(service v1beta1.ServiceInstance) (string, error) {
 	}
 
 	return class.GetServiceBrokerName(), nil
+}
+
+// ListPlanOptions holds additional filtering options used when listing plans.
+type ListPlanOptions struct {
+	PlanName    string
+	ServiceName string
+	BrokerName  string
+}
+
+// ListClusterPlans gets cluster-wide plans matching the given filter.
+func (c *Client) ListClusterPlans(filter ListPlanOptions) ([]servicecatalogv1beta1.ClusterServicePlan, error) {
+	var matchingPlans []servicecatalogv1beta1.ClusterServicePlan
+
+	plans, err := c.kclient.ServicecatalogV1beta1().
+		ClusterServicePlans().
+		List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, plan := range plans.Items {
+		if filter.PlanName != "" && filter.PlanName != plan.GetExternalName() {
+			continue
+		}
+
+		if filter.BrokerName != "" && filter.BrokerName != plan.Spec.ClusterServiceBrokerName {
+			continue
+		}
+
+		if filter.ServiceName != "" {
+			class, err := c.kclient.ServicecatalogV1beta1().
+				ClusterServiceClasses().
+				Get(plan.Spec.ClusterServiceClassRef.Name, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+
+			if filter.ServiceName != class.Spec.ExternalName {
+				continue
+			}
+		}
+
+		matchingPlans = append(matchingPlans, plan)
+	}
+
+	return matchingPlans, nil
+}
+
+// ListNamespacedPlans gets namespaced plans matching the given filter.
+func (c *Client) ListNamespacedPlans(namespace string, filter ListPlanOptions) ([]servicecatalogv1beta1.ServicePlan, error) {
+	var matchingPlans []servicecatalogv1beta1.ServicePlan
+
+	plans, err := c.kclient.ServicecatalogV1beta1().
+		ServicePlans(namespace).
+		List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, plan := range plans.Items {
+		if filter.PlanName != "" && filter.PlanName != plan.GetExternalName() {
+			continue
+		}
+
+		if filter.BrokerName != "" && filter.BrokerName != plan.Spec.ServiceBrokerName {
+			continue
+		}
+
+		if filter.ServiceName != "" {
+			class, err := c.kclient.ServicecatalogV1beta1().
+				ServiceClasses(namespace).
+				Get(plan.Spec.ServiceClassRef.Name, metav1.GetOptions{})
+			if err != nil {
+				return nil, err
+			}
+
+			if filter.ServiceName != class.Spec.ExternalName {
+				continue
+			}
+		}
+
+		matchingPlans = append(matchingPlans, plan)
+	}
+
+	return matchingPlans, nil
 }

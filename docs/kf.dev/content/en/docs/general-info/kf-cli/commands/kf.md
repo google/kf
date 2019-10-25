@@ -35,6 +35,7 @@ kf [flags]
 * [kf apps](/docs/general-info/kf-cli/commands/kf-apps/)	 - List pushed apps
 * [kf bind-service](/docs/general-info/kf-cli/commands/kf-bind-service/)	 - Bind a service instance to an app
 * [kf bindings](/docs/general-info/kf-cli/commands/kf-bindings/)	 - List bindings
+* [kf build](/docs/general-info/kf-cli/commands/kf-build/)	 - Print information about the given Build
 * [kf build-logs](/docs/general-info/kf-cli/commands/kf-build-logs/)	 - Get the logs of the given build
 * [kf buildpacks](/docs/general-info/kf-cli/commands/kf-buildpacks/)	 - List buildpacks in current builder
 * [kf builds](/docs/general-info/kf-cli/commands/kf-builds/)	 - List the builds in the current space

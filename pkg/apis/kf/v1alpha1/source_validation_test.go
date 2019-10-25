@@ -74,7 +74,7 @@ func TestSource_Validate(t *testing.T) {
 					BuildpackBuild: goodBuildpackBuild,
 				},
 			},
-			want: apis.ErrMultipleOneOf("spec.buildpackBuild", "spec.containerImage"),
+			want: apis.ErrMultipleOneOf("spec.buildpackBuild", "spec.containerImage", "spec.dockerfile"),
 		},
 		"invalid neither": {
 			spec: Source{
@@ -83,7 +83,7 @@ func TestSource_Validate(t *testing.T) {
 				},
 				Spec: SourceSpec{},
 			},
-			want: apis.ErrMissingOneOf("spec.buildpackBuild", "spec.containerImage"),
+			want: apis.ErrMissingOneOf("spec.buildpackBuild", "spec.containerImage", "spec.dockerfile"),
 		},
 		"invalid buildpackBuild": {
 			spec: Source{
@@ -155,6 +155,50 @@ func TestSourceSpecBuildpackBuild_Validate(t *testing.T) {
 				Stack:            "some-stack",
 				Buildpack:        "some-buildpack",
 				BuildpackBuilder: "buildpackBuilder",
+			},
+			want: apis.ErrMissingField("image"),
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			got := tc.spec.Validate(context.Background())
+
+			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())
+		})
+	}
+}
+
+func TestSourceSpecDockerfile_Valdiate(t *testing.T) {
+	cases := map[string]struct {
+		spec SourceSpecDockerfile
+		want *apis.FieldError
+	}{
+		"valid": {
+			spec: SourceSpecDockerfile{
+				Image:  "some-image",
+				Path:   "some-path",
+				Source: "some-source",
+			},
+		},
+		"missing source": {
+			spec: SourceSpecDockerfile{
+				Image: "some-image",
+				Path:  "some-path",
+			},
+			want: apis.ErrMissingField("source"),
+		},
+		"missing path": {
+			spec: SourceSpecDockerfile{
+				Image:  "some-image",
+				Source: "some-source",
+			},
+			want: apis.ErrMissingField("path"),
+		},
+		"missing image": {
+			spec: SourceSpecDockerfile{
+				Path:   "some-path",
+				Source: "some-source",
 			},
 			want: apis.ErrMissingField("image"),
 		},

@@ -30,9 +30,9 @@ import (
 	"github.com/google/kf/pkg/kf/cfutil"
 	"github.com/google/kf/pkg/reconciler"
 	"github.com/google/kf/pkg/reconciler/app/resources"
-	"github.com/knative/serving/pkg/apis/autoscaling"
-	serving "github.com/knative/serving/pkg/apis/serving/v1alpha1"
-	servinglisters "github.com/knative/serving/pkg/client/listers/serving/v1alpha1"
+	"github.com/google/kf/third_party/knative-serving/pkg/apis/autoscaling"
+	serving "github.com/google/kf/third_party/knative-serving/pkg/apis/serving/v1alpha1"
+	servinglisters "github.com/google/kf/third_party/knative-serving/pkg/client/listers/serving/v1alpha1"
 	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"go.uber.org/zap"
 	v1 "k8s.io/api/core/v1"
@@ -311,7 +311,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			// knative will bring back a single pod, even if when we set
 			// scaling to 0:
 			// TODO: Reevaluate once
-			// https://github.com/knative/serving/issues/4098 is resolved.
+			// https://github.com/knative/serving/issues/4098
 			if err := r.ServingClientSet.
 				ServingV1alpha1().
 				Services(desired.Namespace).
@@ -408,6 +408,9 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			}
 		}
 	}
+
+	// If there are no errors reconciling Routes and RouteClaims, mark RouteReady as true
+	app.Status.PropagateRouteStatus()
 
 	return r.gcRevisions(ctx, app)
 }
@@ -561,7 +564,7 @@ func (r *Reconciler) updateStatus(ctx context.Context, desired *v1alpha1.App) (*
 // that have a `minScale` greater than 0. Therefore we are going to delete the
 // older revisions. The revisions are keeping pods around when app has been
 // scaled up. Therefore, if we don't GC the revisions, we leak pods.
-// TODO: Reevaluate once https://github.com/knative/serving/issues/4183 is
+// TODO: Reevaluate once https://github.com/google/kf/third_party/knative-serving//issues/4183 is
 // resolved.
 func (r *Reconciler) gcRevisions(ctx context.Context, app *v1alpha1.App) error {
 	logger := logging.FromContext(ctx)

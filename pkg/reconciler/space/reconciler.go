@@ -24,6 +24,7 @@ import (
 	"github.com/google/kf/pkg/reconciler"
 	"github.com/google/kf/pkg/reconciler/space/resources"
 	"go.uber.org/zap"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	rv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -43,11 +44,12 @@ type Reconciler struct {
 	*reconciler.Base
 
 	// listers index properties about resources
-	spaceLister         kflisters.SpaceLister
-	namespaceLister     v1listers.NamespaceLister
-	roleLister          rbacv1listers.RoleLister
-	resourceQuotaLister v1listers.ResourceQuotaLister
-	limitRangeLister    v1listers.LimitRangeLister
+	spaceLister          kflisters.SpaceLister
+	namespaceLister      v1listers.NamespaceLister
+	roleLister           rbacv1listers.RoleLister
+	resourceQuotaLister  v1listers.ResourceQuotaLister
+	limitRangeLister     v1listers.LimitRangeLister
+	serviceAccountLister v1listers.ServiceAccountLister
 }
 
 // Check that our Reconciler implements controller.Reconciler
@@ -240,6 +242,36 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 		space.Status.PropagateLimitRangeStatus(actual)
 	}
 
+	// Sync build service account
+	{
+		logger.Debug("reconciling build service account")
+		desired, err := resources.MakeBuildServiceAccount(space)
+		if err != nil {
+			return err
+		}
+
+		actual, err := r.serviceAccountLister.
+			ServiceAccounts(desired.Namespace).
+			Get(desired.Name)
+		if errors.IsNotFound(err) {
+			actual, err = r.KubeClientSet.
+				CoreV1().ServiceAccounts(desired.Namespace).
+				Create(desired)
+			if err != nil {
+				return err
+			}
+		} else if err != nil {
+			return err
+		} else if !metav1.IsControlledBy(actual, space) {
+			space.Status.MarkBuildServiceAccountNotOwned(desired.Name)
+			return fmt.Errorf("space: %q does not own ServiceAccount: %q", space.Name, desired.Name)
+		} else if actual, err = r.reconcileServiceAccount(desired, actual); err != nil {
+			return err
+		}
+
+		space.Status.PropagateBuildServiceAccountStatus(actual)
+	}
+
 	return nil
 }
 
@@ -329,6 +361,40 @@ func (r *Reconciler) reconcileLimitRange(desired, actual *v1.LimitRange) (*v1.Li
 	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
 	existing.Spec = desired.Spec
 	return r.KubeClientSet.CoreV1().LimitRanges(existing.Namespace).Update(existing)
+}
+
+func (r *Reconciler) reconcileServiceAccount(desired, actual *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
+	// Check for differences, if none we don't need to reconcile.
+	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
+	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Secrets, actual.Secrets)
+
+	if semanticEqual {
+		return actual, nil
+	}
+
+	if _, err := kmp.SafeDiff(desired.Labels, actual.Labels); err != nil {
+		return nil, fmt.Errorf("failed to diff ServiceAccounts Labels: %v", err)
+	}
+
+	if _, err := kmp.SafeDiff(desired.Secrets, actual.Secrets); err != nil {
+		return nil, fmt.Errorf("failed to diff ServiceAccounts Secrets: %v", err)
+	}
+
+	if _, err := kmp.SafeDiff(desired.ImagePullSecrets, actual.ImagePullSecrets); err != nil {
+		return nil, fmt.Errorf("failed to diff ServiceAccounts ImagePullSecrets: %v", err)
+	}
+
+	// Don't modify the informers copy.
+	existing := actual.DeepCopy()
+
+	// Preserve the rest of the object (e.g. ObjectMeta except for labels).
+	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
+	existing.Secrets = desired.Secrets
+	existing.ImagePullSecrets = desired.ImagePullSecrets
+	return r.KubeClientSet.
+		CoreV1().
+		ServiceAccounts(existing.Namespace).
+		Update(existing)
 }
 
 func (r *Reconciler) updateStatus(desired *v1alpha1.Space) (*v1alpha1.Space, error) {

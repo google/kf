@@ -18,8 +18,7 @@ import (
 	"testing"
 
 	"github.com/google/kf/pkg/kf/testutil"
-	build "github.com/knative/build/pkg/apis/build/v1alpha1"
-	duckv1alpha1 "github.com/knative/pkg/apis/duck/v1alpha1"
+	build "github.com/google/kf/third_party/knative-build/pkg/apis/build/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
@@ -184,10 +183,10 @@ func happyBuild() *build.Build {
 			},
 		},
 		Status: build.BuildStatus{
-			Status: duckv1alpha1.Status{
-				Conditions: duckv1alpha1.Conditions{
+			Status: duckv1beta1.Status{
+				Conditions: duckv1beta1.Conditions{
 					{
-						Type:   duckv1alpha1.ConditionType("Succeeded"),
+						Type:   apis.ConditionSucceeded,
 						Status: corev1.ConditionTrue,
 					},
 				},
@@ -212,10 +211,10 @@ func pendingBuild() *build.Build {
 			},
 		},
 		Status: build.BuildStatus{
-			Status: duckv1alpha1.Status{
-				Conditions: duckv1alpha1.Conditions{
+			Status: duckv1beta1.Status{
+				Conditions: duckv1beta1.Conditions{
 					{
-						Type:   duckv1alpha1.ConditionType("Succeeded"),
+						Type:   apis.ConditionSucceeded,
 						Status: corev1.ConditionUnknown,
 					},
 				},

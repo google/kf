@@ -84,10 +84,10 @@ func (r *Reconciler) ApplyChanges(
 	// Sync VirtualService
 	logger.Debug("reconciling VirtualService")
 
-	// Fetch Claims with the same Hostname+Domain+Path.
+	// Fetch Claims with the same Hostname+Domain.
 	claims, err := r.routeClaimLister.
 		RouteClaims(namespace).
-		List(appresources.MakeRouteSelector(fields))
+		List(appresources.MakeRouteSelectorNoPath(fields))
 	if err != nil {
 		return err
 	}
@@ -124,10 +124,10 @@ func (r *Reconciler) ApplyChanges(
 		return nil
 	}
 
-	// Fetch routes with the same Hostname+Domain+Path.
+	// Fetch routes with the same Hostname+Domain.
 	routes, err := r.routeLister.
 		Routes(namespace).
-		List(appresources.MakeRouteSelector(fields))
+		List(appresources.MakeRouteSelectorNoPath(fields))
 	if err != nil {
 		return err
 	}

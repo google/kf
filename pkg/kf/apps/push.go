@@ -47,14 +47,24 @@ func NewPusher(appsClient Client) Pusher {
 }
 
 func newApp(appName string, opts ...PushOption) (*v1alpha1.App, error) {
+
 	cfg := PushOptionDefaults().Extend(opts).toConfig()
 
 	src := sources.NewKfSource()
-	src.SetBuildpackBuildSource(cfg.SourceImage)
-	src.SetContainerImageSource(cfg.ContainerImage)
-	src.SetBuildpackBuildEnv(cfg.Container.Env)
-	src.SetBuildpackBuildBuildpack(cfg.Buildpack)
-	src.SetBuildpackBuildStack(cfg.Stack)
+	switch {
+	case cfg.ContainerImage != "":
+		src.SetContainerImageSource(cfg.ContainerImage)
+
+	case cfg.DockerfilePath != "":
+		src.SetDockerfilePath(cfg.DockerfilePath)
+		src.SetDockerfileSource(cfg.SourceImage)
+
+	default: // default to buildpack build
+		src.SetBuildpackBuildEnv(cfg.Container.Env)
+		src.SetBuildpackBuildBuildpack(cfg.Buildpack)
+		src.SetBuildpackBuildSource(cfg.SourceImage)
+		src.SetBuildpackBuildStack(cfg.Stack)
+	}
 
 	app := NewKfApp()
 	app.SetName(appName)
@@ -148,6 +158,7 @@ func noScaling(instances v1alpha1.AppSpecInstances) bool {
 func mergeApps(cfg pushConfig, hasDefaultRoutes bool) func(newapp, oldapp *v1alpha1.App) *v1alpha1.App {
 	return func(newapp, oldapp *v1alpha1.App) *v1alpha1.App {
 
+		// Routes
 		if len(oldapp.Spec.Routes) > 0 && hasDefaultRoutes {
 			newapp.Spec.Routes = oldapp.Spec.Routes
 		}
@@ -170,9 +181,19 @@ func mergeApps(cfg pushConfig, hasDefaultRoutes bool) func(newapp, oldapp *v1alp
 		}
 
 		newapp.ResourceVersion = oldapp.ResourceVersion
+
+		// Envs
 		newEnvs := envutil.GetAppEnvVars(newapp)
 		oldEnvs := envutil.GetAppEnvVars(oldapp)
-		envutil.SetAppEnvVars(newapp, envutil.DeduplicateEnvVars(append(oldEnvs, newEnvs...)))
+		envutil.SetAppEnvVars(
+			newapp,
+			envutil.DeduplicateEnvVars(append(oldEnvs, newEnvs...)),
+		)
+
+		// Service Bindings
+		if len(newapp.Spec.ServiceBindings) == 0 {
+			newapp.Spec.ServiceBindings = oldapp.Spec.ServiceBindings
+		}
 
 		return newapp
 	}

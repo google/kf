@@ -34,17 +34,36 @@ func (source *Source) Validate(ctx context.Context) (errs *apis.FieldError) {
 // Validate makes sure that a SourceSpec is properly configured.
 func (spec *SourceSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
 
-	if spec.IsContainerBuild() && spec.IsBuildpackBuild() {
-		errs = errs.Also(apis.ErrMultipleOneOf("buildpackBuild", "containerImage"))
-	} else if spec.IsContainerBuild() {
+	numDefined := countTrue(
+		spec.IsContainerBuild(),
+		spec.IsBuildpackBuild(),
+		spec.IsDockerfileBuild(),
+	)
+
+	switch {
+	case numDefined > 1:
+		errs = errs.Also(apis.ErrMultipleOneOf("buildpackBuild", "containerImage", "dockerfile"))
+	case numDefined == 0:
+		errs = errs.Also(apis.ErrMissingOneOf("buildpackBuild", "containerImage", "dockerfile"))
+	case spec.IsContainerBuild():
 		errs = errs.Also(spec.ContainerImage.Validate(ctx))
-	} else if spec.IsBuildpackBuild() {
+	case spec.IsBuildpackBuild():
 		errs = errs.Also(spec.BuildpackBuild.Validate(ctx))
-	} else {
-		errs = errs.Also(apis.ErrMissingOneOf("buildpackBuild", "containerImage"))
+	case spec.IsDockerfileBuild():
+		errs = errs.Also(spec.Dockerfile.Validate(ctx))
 	}
 
 	return errs
+}
+
+func countTrue(vals ...bool) (count int) {
+	for _, v := range vals {
+		if v {
+			count++
+		}
+	}
+
+	return
 }
 
 // Validate makes sure that an SourceSpecContainerImage is properly configured.
@@ -74,6 +93,23 @@ func (buildpackBuild *SourceSpecBuildpackBuild) Validate(ctx context.Context) (e
 
 	if buildpackBuild.Image == "" {
 		errs = errs.Also(apis.ErrMissingField("image"))
+	}
+
+	return errs
+}
+
+// Validate makes sure that a SourceSpecDockerfile is properly configured.
+func (dockerfile *SourceSpecDockerfile) Validate(ctx context.Context) (errs *apis.FieldError) {
+	if dockerfile.Image == "" {
+		errs = errs.Also(apis.ErrMissingField("image"))
+	}
+
+	if dockerfile.Path == "" {
+		errs = errs.Also(apis.ErrMissingField("path"))
+	}
+
+	if dockerfile.Source == "" {
+		errs = errs.Also(apis.ErrMissingField("source"))
 	}
 
 	return errs

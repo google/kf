@@ -26,7 +26,7 @@ import (
 	"github.com/google/kf/pkg/kf/apps"
 	sourcesfake "github.com/google/kf/pkg/kf/sources/fake"
 	"github.com/google/kf/pkg/kf/testutil"
-	build "github.com/knative/build/pkg/apis/build/v1alpha1"
+	build "github.com/google/kf/third_party/knative-build/pkg/apis/build/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	ktesting "k8s.io/client-go/testing"
@@ -85,6 +85,35 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 				},
 			},
 			),
+			wantedMsgs:   []string{"msg-1"},
+			unwantedMsgs: []string{"msg-2"},
+		},
+		"logs metav1.Status errors": {
+			appName:         "some-app",
+			namespace:       "default",
+			resourceVersion: "some-version",
+			noStart:         true,
+			events: append([]watch.Event{
+				{
+					Object: &metav1.Status{
+						ListMeta: metav1.ListMeta{
+							ResourceVersion: "some-version",
+						},
+						Status: metav1.StatusFailure,
+					},
+				},
+			}, createMsgEvents("some-app", duckv1beta1.Conditions{
+				{
+					Type:    "SourceReady",
+					Status:  "True",
+					Message: "msg-1",
+				},
+				{
+					Type:    "Ready",
+					Status:  "True",
+					Message: "msg-2",
+				},
+			})...),
 			wantedMsgs:   []string{"msg-1"},
 			unwantedMsgs: []string{"msg-2"},
 		},
@@ -217,12 +246,14 @@ func buildLogWatchFakes(
 	serviceErr, buildErr error,
 ) (*gomock.Controller, *v1alpha1fake.FakeKfV1alpha1) {
 	ctrl := gomock.NewController(t)
+
+	events := createEvents(serviceEvents)
 	fakeWatcher := NewFakeWatcher(ctrl)
 	fakeWatcher.
 		EXPECT().
 		ResultChan().
 		DoAndReturn(func() <-chan watch.Event {
-			return createEvents(serviceEvents)
+			return events
 		}).
 		AnyTimes()
 

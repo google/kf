@@ -43,15 +43,14 @@ import (
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/google/kf/pkg/kf/sources"
 	"github.com/google/kf/pkg/kf/spaces"
+	"github.com/google/kf/third_party/knative-build/pkg/logs"
 	"github.com/google/wire"
-	"github.com/knative/build/pkg/logs"
 	"github.com/poy/kontext"
 	"github.com/spf13/cobra"
-	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
 func provideSrcImageBuilder() capps.SrcImageBuilder {
-	return capps.SrcImageBuilderFunc(kontext.BuildImage)
+	return capps.SrcImageBuilderFunc(kontext.BuildImageWithFilter)
 }
 
 ///////////////////
@@ -137,13 +136,9 @@ func InjectLogs(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		capps.NewLogsCommand,
 		kflogs.NewTailer,
-		provideCoreV1,
+		config.GetKubernetes,
 	)
 	return nil
-}
-
-func provideCoreV1(p *config.KfParams) corev1.CoreV1Interface {
-	return config.GetKubernetes(p).CoreV1()
 }
 
 /////////////////////////////////////
@@ -446,6 +441,12 @@ func provideSourcesBuildTailer() sources.BuildTailer {
 
 func InjectBuilds(p *config.KfParams) *cobra.Command {
 	wire.Build(cbuilds.NewListBuildsCommand, SourcesSet)
+
+	return nil
+}
+
+func InjectBuild(p *config.KfParams) *cobra.Command {
+	wire.Build(cbuilds.NewGetBuildCommand, config.GetDynamicClient)
 
 	return nil
 }

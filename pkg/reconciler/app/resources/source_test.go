@@ -155,6 +155,43 @@ func TestMakeSource(t *testing.T) {
 				},
 			},
 		},
+		"dockerfile": {
+			app: v1alpha1.App{
+				ObjectMeta: appObjectMeta,
+				Spec: v1alpha1.AppSpec{
+					Source: v1alpha1.SourceSpec{
+						UpdateRequests: 0xfacade,
+						Dockerfile: v1alpha1.SourceSpecDockerfile{
+							Source: "gcr.io/my-source-image:latest",
+							Path:   "path/to/Dockerfile",
+						},
+					},
+				},
+			},
+			space: space,
+
+			expected: v1alpha1.Source{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "mybuildpackapp-facade",
+					Namespace: "myspace",
+					Labels: map[string]string{
+						"app.kubernetes.io/component":  "build",
+						"app.kubernetes.io/managed-by": "kf",
+						"app.kubernetes.io/name":       "mybuildpackapp",
+					},
+					OwnerReferences: appOwnerRef,
+				},
+				Spec: v1alpha1.SourceSpec{
+					UpdateRequests: 0xfacade,
+					ServiceAccount: "build-service-account",
+					Dockerfile: v1alpha1.SourceSpecDockerfile{
+						Source: "gcr.io/my-source-image:latest",
+						Path:   "path/to/Dockerfile",
+						Image:  "gcr.io/dest/app_myspace_mybuildpackapp:facade",
+					},
+				},
+			},
+		},
 	}
 
 	for tn, tc := range cases {

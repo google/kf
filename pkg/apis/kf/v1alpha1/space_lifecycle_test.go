@@ -170,6 +170,7 @@ func initTestStatus(t *testing.T) *SpaceStatus {
 	apitesting.CheckConditionOngoing(status.duck(), SpaceConditionDeveloperRoleReady, t)
 	apitesting.CheckConditionOngoing(status.duck(), SpaceConditionResourceQuotaReady, t)
 	apitesting.CheckConditionOngoing(status.duck(), SpaceConditionLimitRangeReady, t)
+	apitesting.CheckConditionOngoing(status.duck(), SpaceConditionBuildServiceAccountReady, t)
 
 	return status
 }
@@ -184,6 +185,7 @@ func TestSpaceHappyPath(t *testing.T) {
 		Status: corev1.ResourceQuotaStatus{},
 	})
 	status.PropagateLimitRangeStatus(nil)
+	status.PropagateBuildServiceAccountStatus(nil)
 
 	apitesting.CheckConditionSucceeded(status.duck(), SpaceConditionReady, t)
 	apitesting.CheckConditionSucceeded(status.duck(), SpaceConditionNamespaceReady, t)
@@ -191,6 +193,7 @@ func TestSpaceHappyPath(t *testing.T) {
 	apitesting.CheckConditionSucceeded(status.duck(), SpaceConditionDeveloperRoleReady, t)
 	apitesting.CheckConditionSucceeded(status.duck(), SpaceConditionResourceQuotaReady, t)
 	apitesting.CheckConditionSucceeded(status.duck(), SpaceConditionLimitRangeReady, t)
+	apitesting.CheckConditionSucceeded(status.duck(), SpaceConditionBuildServiceAccountReady, t)
 }
 
 func TestPropagateNamespaceStatus_terminating(t *testing.T) {
@@ -248,6 +251,7 @@ func TestSpaceStatus_lifecycle(t *testing.T) {
 					Status: corev1.ResourceQuotaStatus{},
 				})
 				status.PropagateLimitRangeStatus(nil)
+				status.PropagateBuildServiceAccountStatus(nil)
 			},
 			ExpectSucceeded: []apis.ConditionType{
 				SpaceConditionReady,
@@ -256,6 +260,7 @@ func TestSpaceStatus_lifecycle(t *testing.T) {
 				SpaceConditionDeveloperRoleReady,
 				SpaceConditionResourceQuotaReady,
 				SpaceConditionLimitRangeReady,
+				SpaceConditionBuildServiceAccountReady,
 			},
 		},
 		"terminating namespace": {
@@ -343,6 +348,18 @@ func TestSpaceStatus_lifecycle(t *testing.T) {
 			ExpectFailed: []apis.ConditionType{
 				SpaceConditionReady,
 				SpaceConditionLimitRangeReady,
+			},
+		},
+		"Build ServiceAccount not owned": {
+			Init: func(status *SpaceStatus) {
+				status.MarkBuildServiceAccountNotOwned("build-service-account")
+			},
+			ExpectOngoing: []apis.ConditionType{
+				SpaceConditionNamespaceReady,
+			},
+			ExpectFailed: []apis.ConditionType{
+				SpaceConditionReady,
+				SpaceConditionBuildServiceAccountReady,
 			},
 		},
 	}

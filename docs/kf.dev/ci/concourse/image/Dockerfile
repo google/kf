@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:stretch
+FROM google/cloud-sdk
 
 RUN apt update -y
 RUN apt-get install -y curl software-properties-common git
@@ -22,6 +22,5 @@ RUN apt-get install -y nodejs
 # Docsy deps
 RUN npm install -g --no-save autoprefixer
 RUN npm install -g --no-save postcss-cli
-RUN npm install -g --no-save firebase-tools
 RUN curl -LO https://github.com/gohugoio/hugo/releases/download/v0.56.3/hugo_extended_0.56.3_Linux-64bit.deb \
   && dpkg -i hugo*.deb

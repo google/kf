@@ -37,9 +37,11 @@ import (
 	"time"
 
 	"knative.dev/pkg/kmp"
-	{{ if .SupportsConditions }}"knative.dev/pkg/apis"{{ end }}
+	{{ if .SupportsConditions }}"knative.dev/pkg/apis"
+	corev1 "k8s.io/api/core/v1"{{ end }}
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 

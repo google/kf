@@ -19,8 +19,6 @@ import (
 	"hash/crc64"
 	"path"
 	"strconv"
-
-	"github.com/knative/serving/pkg/resources"
 )
 
 const (
@@ -52,7 +50,7 @@ func GenerateRouteNameFromSpec(spec RouteSpecFields, appName string) string {
 // SetDefaults implements apis.Defaultable
 func (k *Route) SetDefaults(ctx context.Context) {
 	k.Spec.SetDefaults(ctx)
-	k.Labels = resources.UnionMaps(k.Labels, k.Spec.RouteSpecFields.labels())
+	k.Labels = UnionMaps(k.Labels, k.Spec.RouteSpecFields.labels())
 }
 
 // SetDefaults implements apis.Defaultable
@@ -67,9 +65,11 @@ func (k *RouteSpecFields) SetDefaults(ctx context.Context) {
 
 func (k *RouteSpecFields) labels() map[string]string {
 	return map[string]string{
-		RouteHostname: k.Hostname,
-		RouteDomain:   k.Domain,
-		RoutePath:     ToBase36(k.Path),
+		ManagedByLabel: "kf",
+		ComponentLabel: "route",
+		RouteHostname:  k.Hostname,
+		RouteDomain:    k.Domain,
+		RoutePath:      ToBase36(k.Path),
 	}
 }
 
@@ -103,7 +103,7 @@ func (k *RouteSpecFields) SetSpaceDefaults(space *Space) {
 // SetDefaults sets the defaults for a RouteClaim.
 func (k *RouteClaim) SetDefaults(ctx context.Context) {
 	k.Spec.SetDefaults(ctx)
-	k.Labels = resources.UnionMaps(k.Labels, k.Spec.RouteSpecFields.labels())
+	k.Labels = UnionMaps(k.Labels, k.Spec.RouteSpecFields.labels())
 }
 
 // SetDefaults implements apis.Defaultable
