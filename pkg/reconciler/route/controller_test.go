@@ -31,7 +31,6 @@ import (
 //go:generate mockgen --package=route --copyright_file ../../kf/internal/tools/option-builder/LICENSE_HEADER --destination=fake_reconciler.go --mock_names=Reconciler=FakeReconciler knative.dev/pkg/controller Reconciler
 
 func TestBuildEnqueuer(t *testing.T) {
-	t.Skip()
 	t.Parallel()
 
 	testCases := map[string]struct {
@@ -85,7 +84,6 @@ func TestBuildEnqueuer(t *testing.T) {
 }
 
 func TestFilterVSWithNamespace(t *testing.T) {
-	t.Skip()
 	t.Parallel()
 
 	buildVS := func(namespace string) *networking.VirtualService {
@@ -112,7 +110,6 @@ func TestFilterVSWithNamespace(t *testing.T) {
 }
 
 func TestEnqueueRoutesOfVirtualService(t *testing.T) {
-	t.Skip()
 	t.Parallel()
 
 	buildVS := func() *networking.VirtualService {
