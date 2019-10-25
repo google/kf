@@ -43,35 +43,36 @@ type RoutingConfig struct {
 
 	// Name of ingress gateway in knative-serving namespace
 	KnativeIngressGateway string
-
-	// Name of gateway set as route destination host in the kf virtualservice
-	// (usually back to the ingress gateway or cluster local gateway)
-	GatewayHost string
 }
 
 // NewRoutingConfigFromConfigMap creates a RoutingConfig from the supplied ConfigMap
 func NewRoutingConfigFromConfigMap(configMap *corev1.ConfigMap) (*RoutingConfig, error) {
-	nc := &RoutingConfig{}
+	rc := &RoutingConfig{}
 
 	if ingressServiceName, ok := configMap.Data[IngressServiceNameKey]; !ok {
-		nc.IngressServiceName = DefaultIngressServiceName
+		rc.IngressServiceName = DefaultIngressServiceName
 	} else {
-		nc.IngressServiceName = ingressServiceName
+		rc.IngressServiceName = ingressServiceName
 	}
 
 	if ingressNamespace, ok := configMap.Data[IngressNamespaceKey]; !ok {
-		nc.IngressNamespace = DefaultIngressNamespace
+		rc.IngressNamespace = DefaultIngressNamespace
 	} else {
-		nc.IngressNamespace = ingressNamespace
+		rc.IngressNamespace = ingressNamespace
 	}
 
 	if knativeIngressGateway, ok := configMap.Data[KnativeIngressGatewayKey]; !ok {
-		nc.KnativeIngressGateway = DefaultKnativeIngressGateway + ".knative-serving.svc.cluster.local"
+		rc.KnativeIngressGateway = DefaultKnativeIngressGateway
 	} else {
-		nc.KnativeIngressGateway = knativeIngressGateway + ".knative-serving.svc.cluster.local"
+		rc.KnativeIngressGateway = knativeIngressGateway
 	}
 
-	nc.GatewayHost = fmt.Sprintf("%s.%s.svc.cluster.local", nc.IngressServiceName, nc.IngressNamespace)
+	rc.KnativeIngressGateway += ".knative-serving.svc.cluster.local"
+	return rc, nil
+}
 
-	return nc, nil
+// GatewayHost is the name of gateway set as route destination host in the kf virtualservice
+// (usually back to the ingress gateway or cluster local gateway)
+func (rc *RoutingConfig) GatewayHost() string {
+	return fmt.Sprintf("%s.%s.svc.cluster.local", rc.IngressServiceName, rc.IngressNamespace)
 }

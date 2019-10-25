@@ -148,7 +148,7 @@ func buildRouteDestinations(ctx context.Context, appNames []string, namespace st
 	for i, app := range appNames {
 		routeDestination := networking.HTTPRouteDestination{
 			Destination: networking.Destination{
-				Host: config.FromContext(ctx).Routing.GatewayHost,
+				Host: config.FromContext(ctx).Routing.GatewayHost(),
 			},
 			Headers: buildHostHeader(app, namespace),
 			Weight:  routeWeights[i],
@@ -165,7 +165,7 @@ func buildDefaultRouteDestination(ctx context.Context) []networking.HTTPRouteDes
 	return []networking.HTTPRouteDestination{
 		{
 			Destination: networking.Destination{
-				Host: config.FromContext(ctx).Routing.GatewayHost,
+				Host: config.FromContext(ctx).Routing.GatewayHost(),
 			},
 			Weight: 100,
 		},

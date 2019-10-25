@@ -40,6 +40,6 @@ func TestStoreLoadWithContext(t *testing.T) {
 		testutil.AssertEqual(t, "ingress name", "test-ingress-svc", expected.IngressServiceName)
 		testutil.AssertEqual(t, "ingress ns", "test-ingress-ns", expected.IngressNamespace)
 		testutil.AssertEqual(t, "knative ingress", "test-knative-ingress.knative-serving.svc.cluster.local", expected.KnativeIngressGateway)
-		testutil.AssertEqual(t, "ingress name", "test-ingress-svc.test-ingress-ns.svc.cluster.local", expected.GatewayHost)
+		testutil.AssertEqual(t, "ingress name", "test-ingress-svc.test-ingress-ns.svc.cluster.local", expected.GatewayHost())
 	})
 }

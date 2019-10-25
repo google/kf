@@ -16,6 +16,7 @@ package config
 
 import (
 	"context"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/configmap"
@@ -23,7 +24,6 @@ import (
 
 type cfgKey struct{}
 
-// +k8s:deepcopy-gen=false
 type Config struct {
 	Routing *RoutingConfig
 }
@@ -68,6 +68,8 @@ func NewStore(logger configmap.Logger, onAfterStore ...func(name string, value i
 	return store
 }
 
+// NewDefaultConfigStore creates a routing config store populated
+// with default keys and values.
 func NewDefaultConfigStore(logger configmap.Logger) *Store {
 	store := NewStore(logger)
 	routingConfig := &corev1.ConfigMap{
