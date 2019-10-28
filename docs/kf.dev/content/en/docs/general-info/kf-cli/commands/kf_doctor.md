@@ -13,7 +13,7 @@ Doctor runs tests one or more components to validate them.
 
  If no arguments are supplied, then all tests are run. If one or more arguments are suplied then only those components are run.
 
- Possible components are: buildpacks, cluster
+ Possible components are: buildpacks, cluster, istio
 
 ```
 kf doctor [COMPONENT...] [flags]
