@@ -88,7 +88,7 @@ func NewDoctorCommand(p *config.KfParams, tests []DoctorTest) *cobra.Command {
 	}
 
 	doctorCmd.Flags().DurationVar(&delay, "delay", 5*time.Second, "Set the delay between executions")
-	doctorCmd.Flags().IntVar(&retries, "retries", 1, "Numberr of times to retry doctor if it isn't successful")
+	doctorCmd.Flags().IntVar(&retries, "retries", 1, "Number of times to retry doctor if it isn't successful")
 
 	return doctorCmd
 }

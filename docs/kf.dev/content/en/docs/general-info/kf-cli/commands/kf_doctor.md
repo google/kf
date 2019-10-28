@@ -28,7 +28,9 @@ kf doctor [COMPONENT...] [flags]
 ### Options
 
 ```
-  -h, --help   help for doctor
+      --delay duration   Set the delay between executions (default 5s)
+  -h, --help             help for doctor
+      --retries int      Number of times to retry doctor if it isn't successful (default 1)
 ```
 
 ### Options inherited from parent commands
