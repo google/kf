@@ -17,6 +17,7 @@ package istio
 import (
 	"errors"
 
+	"github.com/google/kf/pkg/kf/doctor"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kubernetes "k8s.io/client-go/kubernetes"
@@ -26,6 +27,8 @@ import (
 
 // IngressLister gets Istio ingresses points for clusters.
 type IngressLister interface {
+	doctor.Diagnosable
+
 	ListIngresses(opts ...ListIngressesOption) ([]corev1.LoadBalancerIngress, error)
 }
 
@@ -54,6 +57,21 @@ func (c *istioClient) ListIngresses(opts ...ListIngressesOption) ([]corev1.LoadB
 	}
 
 	return svc.Status.LoadBalancer.Ingress, nil
+}
+
+// Diagnose implements doctor.Diagnosable
+func (c *istioClient) Diagnose(d *doctor.Diagnostic) {
+	d.Run("Istio Ingress", func(d *doctor.Diagnostic) {
+		ingresses, err := c.ListIngresses()
+		if err != nil {
+			d.Fatalf("couldn't find cluster ingress: %s", err)
+			return
+		}
+
+		if len(ingresses) == 0 {
+			d.Errorf("no public ingresses found")
+		}
+	})
 }
 
 // ExtractIngressFromList is a utility function to wrap IngressLister.ListIngresses
