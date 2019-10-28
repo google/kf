@@ -20,7 +20,13 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/google/kf/pkg/kf/testutil"
+)
+
+var (
+	failColor = color.New(color.FgHiRed, color.Bold)
+	passColor = color.New(color.FgHiGreen, color.Bold)
 )
 
 // Assert Diagnostic can be used with our internal testing framework.
@@ -163,9 +169,9 @@ func (d *Diagnostic) Report() {
 func (d *Diagnostic) reportIndent(indent int) {
 	prefix := strings.Repeat("    ", indent)
 
-	passfail := "PASS"
+	passfail := passColor.Sprint("PASS")
 	if d.Failed() {
-		passfail = "FAIL"
+		passfail = failColor.Sprint("FAIL")
 	}
 
 	fmt.Fprintf(d.w, "%s--- %s: %s", prefix, passfail, d.name)

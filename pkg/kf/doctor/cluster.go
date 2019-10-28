@@ -131,7 +131,7 @@ func diagnoseControllers(d *Diagnostic, kubernetes kubernetes.Interface) {
 
 					actual, err := kubernetes.AppsV1().Deployments(tc.Namespace).Get(deploymentName, metav1.GetOptions{})
 					if err != nil {
-						d.Errorf("couldn't fetch deployment %s: %v", actual, err)
+						d.Errorf("couldn't fetch deployment %s: %v", deploymentName, err)
 						return
 					}
 

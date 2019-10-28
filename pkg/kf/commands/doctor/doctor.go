@@ -16,14 +16,22 @@ package doctor
 
 import (
 	"errors"
-	"fmt"
+	"io"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/doctor"
 
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+	"k8s.io/apimachinery/pkg/util/sets"
+)
+
+var (
+	failColor = color.New(color.FgHiRed, color.Bold)
+	passColor = color.New(color.FgHiGreen, color.Bold)
 )
 
 // DoctorTest represents a single high-level test. These should be roughly at
@@ -42,6 +50,11 @@ func NewDoctorCommand(p *config.KfParams, tests []DoctorTest) *cobra.Command {
 		knownTestNames = append(knownTestNames, t.Name)
 	}
 	sort.Strings(knownTestNames)
+
+	var (
+		retries int
+		delay   time.Duration
+	)
 
 	doctorCmd := &cobra.Command{
 		Use:     "doctor [COMPONENT...]",
@@ -66,30 +79,63 @@ func NewDoctorCommand(p *config.KfParams, tests []DoctorTest) *cobra.Command {
 				args = knownTestNames
 			}
 
-			toTest := make(map[string]bool)
-			for _, arg := range args {
-				toTest[arg] = true
-			}
+			matchingTests := testsMatching(args, tests)
 
-			d := doctor.NewDiagnostic("doctor", cmd.OutOrStdout())
-			for _, dt := range tests {
-				if _, ok := toTest[dt.Name]; !ok {
-					continue
-				}
-
-				d.GatedRun(dt.Name, dt.Test.Diagnose)
-			}
-
-			// Report
-			if d.Failed() {
-				fmt.Fprintln(cmd.OutOrStdout(), "FAIL")
-				return errors.New("environment failed checks")
-			}
-
-			fmt.Fprintln(cmd.OutOrStdout(), "PASS")
-			return nil
+			return retry(retries, delay, func() error {
+				return runDoctor(cmd.OutOrStdout(), matchingTests)
+			})
 		},
 	}
 
+	doctorCmd.Flags().DurationVar(&delay, "delay", 5*time.Second, "Set the delay between executions")
+	doctorCmd.Flags().IntVar(&retries, "retries", 1, "Numberr of times to retry doctor if it isn't successful")
+
 	return doctorCmd
+}
+
+// testsMatching returns all tests with names in the given set.
+// if no tests are specified as desired, all get run.
+func testsMatching(desired []string, knownTests []DoctorTest) []DoctorTest {
+	if len(desired) == 0 {
+		return knownTests
+	}
+
+	desiredSet := sets.NewString(desired...)
+
+	var out []DoctorTest
+	for _, dt := range knownTests {
+		if desiredSet.Has(dt.Name) {
+			out = append(out, dt)
+		}
+	}
+
+	return out
+}
+
+func retry(times int, delay time.Duration, callback func() error) error {
+	for i := 1; i < times; i++ {
+		if err := callback(); err == nil {
+			return nil
+		}
+
+		time.Sleep(delay)
+	}
+
+	return callback()
+}
+
+func runDoctor(w io.Writer, desiredTests []DoctorTest) error {
+	d := doctor.NewDiagnostic("doctor", w)
+	for _, dt := range desiredTests {
+		d.GatedRun(dt.Name, dt.Test.Diagnose)
+	}
+
+	// Report
+	if d.Failed() {
+		failColor.Fprintln(w, "FAIL")
+		return errors.New("environment failed checks")
+	}
+
+	passColor.Fprintln(w, "PASS")
+	return nil
 }
