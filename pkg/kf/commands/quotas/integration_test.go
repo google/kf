@@ -152,15 +152,15 @@ var checkOnce sync.Once
 
 func checkClusterStatus(t *testing.T) {
 	checkOnce.Do(func() {
-		testIntegration_Doctor(t)
+		testIntegration_WaitForCluster(t)
 	})
 }
 
-// testIntegration_Doctor runs the doctor command. It ensures the cluster the
-// tests are running against is in good shape.
-func testIntegration_Doctor(t *testing.T) {
+// testIntegration_WaitForCluster runs the doctor command. It ensures the
+// cluster the tests are running against is in good shape.
+func testIntegration_WaitForCluster(t *testing.T) {
 	t.Skip("#442")
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
-		kf.Doctor(ctx)
+		kf.WaitForCluster(ctx)
 	})
 }

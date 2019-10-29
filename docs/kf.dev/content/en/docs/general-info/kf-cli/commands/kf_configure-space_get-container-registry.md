@@ -12,13 +12,16 @@ Get the container registry used for builds.
 Get the container registry used for builds.
 
 ```
-kf configure-space get-container-registry SPACE_NAME [flags]
+kf configure-space get-container-registry [SPACE_NAME] [flags]
 ```
 
 ### Examples
 
 ```
+  # Configure the space "my-space"
   kf configure-space get-container-registry my-space
+  # Configure the targeted space
+  kf configure-space get-container-registry
 ```
 
 ### Options

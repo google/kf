@@ -19,13 +19,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
-	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 // Tailer reads the logs for a KF application. It should be created via
@@ -37,11 +36,11 @@ type Tailer interface {
 }
 
 type tailer struct {
-	client corev1client.CoreV1Interface
+	client kubernetes.Interface
 }
 
 // NewTailer creates a new Tailer.
-func NewTailer(client corev1client.CoreV1Interface) Tailer {
+func NewTailer(client kubernetes.Interface) Tailer {
 	return &tailer{
 		client: client,
 	}
@@ -76,14 +75,14 @@ func (t *tailer) Tail(ctx context.Context, appName string, out io.Writer, opts .
 		Writer: out,
 	}
 
-	if err := t.watchForPods(ctx, namespace, appName, writer, logOpts); err != nil {
+	if err := t.watchForPods(ctx, namespace, appName, writer, logOpts, cfg.Timeout); err != nil {
 		return fmt.Errorf("failed to watch pods: %s", err)
 	}
 	return nil
 }
 
-func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, writer *MutexWriter, opts corev1.PodLogOptions) error {
-	w, err := t.client.Pods(namespace).Watch(metav1.ListOptions{
+func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, writer *MutexWriter, opts corev1.PodLogOptions, timeout time.Duration) error {
+	w, err := t.client.CoreV1().Pods(namespace).Watch(metav1.ListOptions{
 		LabelSelector: "serving.knative.dev/service=" + appName,
 	})
 	if err != nil {
@@ -94,7 +93,7 @@ func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, wr
 
 	// We will only wait a second for the first log. If nothing happens after
 	// that period of time and we're not following, then stop.
-	initTimer := time.NewTimer(time.Second)
+	initTimer := time.NewTimer(timeout)
 	if opts.Follow {
 		initTimer.Stop()
 	}
@@ -116,16 +115,17 @@ func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, wr
 
 			pod, ok := e.Object.(*corev1.Pod)
 			if !ok {
-				log.Print("[WARN] watched object is not pod")
+				writer.WriteStringf("[WARN] watched object is not pod\n")
+				continue
 			}
 
 			switch e.Type {
 			case watch.Added:
 				go func(e watch.Event) {
-					t.readLogs(ctx, pod.Name, namespace, writer, opts)
+					t.readLogs(ctx, namespace, pod.Name, writer, opts)
 				}(e)
 			case watch.Deleted:
-				err = writer.Write(fmt.Sprintf("[INFO] Pod '%s/%s' is deleted\n", namespace, pod.Name))
+				err = writer.WriteStringf("[INFO] Pod '%s/%s' is deleted\n", namespace, pod.Name)
 				if err != nil {
 					return err
 				}
@@ -134,13 +134,19 @@ func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, wr
 	}
 }
 
-func (t *tailer) readLogs(ctx context.Context, name, namespace string, out *MutexWriter, opts corev1.PodLogOptions) {
+func (t *tailer) readLogs(
+	ctx context.Context,
+	namespace string,
+	name string,
+	out *MutexWriter,
+	opts corev1.PodLogOptions,
+) {
 	var err error
 	var stop bool
 
 	for ctx.Err() == nil && !stop {
 		if stop, err = t.readStream(ctx, name, namespace, out, opts); err != nil {
-			log.Printf("[WARN] %s", err)
+			out.WriteStringf("[WARN] %s", err)
 		}
 
 		if !opts.Follow {
@@ -152,13 +158,13 @@ func (t *tailer) readLogs(ctx context.Context, name, namespace string, out *Mute
 }
 
 func (t *tailer) readStream(ctx context.Context, name, namespace string, mw *MutexWriter, opts corev1.PodLogOptions) (bool, error) {
-	pod, err := t.client.Pods(namespace).Get(name, metav1.GetOptions{})
+	pod, err := t.client.CoreV1().Pods(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return true, fmt.Errorf("failed to get Pod '%s': %s", name, err)
 	}
 
 	if !pod.DeletionTimestamp.IsZero() {
-		err = mw.Write(fmt.Sprintf("[INFO] Pod '%s/%s' is terminated\n", namespace, name))
+		err = mw.WriteStringf("[INFO] Pod '%s/%s' is terminated\n", namespace, name)
 		if err != nil {
 			return false, err
 		}
@@ -167,7 +173,7 @@ func (t *tailer) readStream(ctx context.Context, name, namespace string, mw *Mut
 	}
 
 	if pod.Status.Phase != corev1.PodRunning {
-		err = mw.Write(fmt.Sprintf("[INFO] Pod '%s/%s' is not running\n", namespace, name))
+		err = mw.WriteStringf("[INFO] Pod '%s/%s' is not running\n", namespace, name)
 		if err != nil {
 			return false, err
 		}
@@ -175,7 +181,7 @@ func (t *tailer) readStream(ctx context.Context, name, namespace string, mw *Mut
 		return false, nil
 	}
 
-	err = mw.Write(fmt.Sprintf("[INFO] Pod '%s/%s' is running\n", namespace, pod.Name))
+	err = mw.WriteStringf("[INFO] Pod '%s/%s' is running\n", namespace, pod.Name)
 	if err != nil {
 		return false, err
 	}
@@ -183,6 +189,7 @@ func (t *tailer) readStream(ctx context.Context, name, namespace string, mw *Mut
 	// XXX: This is not tested at a unit level and instead defers to
 	// integration tests.
 	req := t.client.
+		CoreV1().
 		Pods(namespace).
 		GetLogs(name, &opts).
 		Context(ctx)

@@ -173,6 +173,8 @@ func (r *Reconciler) update(
 	desired *networking.VirtualService,
 	actual *networking.VirtualService,
 ) (*networking.VirtualService, error) {
+	logger := logging.FromContext(ctx)
+
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
 	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
@@ -181,9 +183,11 @@ func (r *Reconciler) update(
 		return actual, nil
 	}
 
-	if _, err := kmp.SafeDiff(desired.Spec, actual.Spec); err != nil {
+	diff, err := kmp.SafeDiff(desired.Spec, actual.Spec)
+	if err != nil {
 		return nil, fmt.Errorf("failed to diff VirtualService: %v", err)
 	}
+	logger.Debug("VirtualService.Spec diff:", diff)
 
 	// Don't modify the informers copy.
 	existing := actual.DeepCopy()

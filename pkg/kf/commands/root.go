@@ -26,6 +26,7 @@ import (
 	"github.com/google/kf/pkg/kf/commands/group"
 	"github.com/google/kf/pkg/kf/commands/install"
 	pkgdoctor "github.com/google/kf/pkg/kf/doctor"
+	"github.com/google/kf/pkg/kf/istio"
 	templates "github.com/google/kf/third_party/kubectl-templates"
 	"github.com/imdario/mergo"
 	"github.com/spf13/cobra"
@@ -181,6 +182,7 @@ func NewKfCommand() *cobra.Command {
 				doctor.NewDoctorCommand(p, []doctor.DoctorTest{
 					{Name: "cluster", Test: pkgdoctor.NewClusterDiagnostic(config.GetKubernetes(p))},
 					{Name: "buildpacks", Test: InjectBuildpacksClient(p)},
+					{Name: "istio", Test: istio.NewIstioClient(config.GetKubernetes(p))},
 				}),
 
 				completionCommand(rootCmd),
