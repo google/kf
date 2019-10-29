@@ -54,7 +54,7 @@ func (dt *DefaultTest) GetGVR() schema.GroupVersionResource {
 		Group:   gvk.Group,
 		Version: gvk.Version,
 
-		// We can autosidscover this in the future from the API Server like
+		// We can autodiscover this in the future from the API Server like
 		// Kubernetes does, but in the meantime all resources we deal with follow
 		// this formula.
 		Resource: strings.ToLower(gvk.Kind) + "s",

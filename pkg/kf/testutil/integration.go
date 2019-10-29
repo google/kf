@@ -79,6 +79,8 @@ func shouldSkipIntegration(t *testing.T) bool {
 		t.Skipf("%s is required for integration tests... Skipping...", EnvDockerRegistry)
 	}
 
+	// Failed() should never happen here because the test should have bailed out
+	// but include here for completeness.
 	return t.Skipped() || t.Failed()
 }
 
