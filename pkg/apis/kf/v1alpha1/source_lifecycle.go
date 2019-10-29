@@ -15,8 +15,6 @@
 package v1alpha1
 
 import (
-	"fmt"
-
 	build "github.com/google/kf/third_party/knative-build/pkg/apis/build/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -67,12 +65,6 @@ func (status *SourceStatus) InitializeConditions() {
 	status.manage().InitializeConditions()
 }
 
-// MarkBuildNotOwned marks the Build as not being owned by the Source.
-func (status *SourceStatus) MarkBuildNotOwned(name string) {
-	status.manage().MarkFalse(SourceConditionBuildSucceeded, "NotOwned",
-		fmt.Sprintf("There is an existing Build %q that we do not own.", name))
-}
-
 // PropagateBuildStatus copies fields from the Build status to Source and
 // updates the readiness based on the current phase.
 func (status *SourceStatus) PropagateBuildStatus(build *build.Build) {
@@ -94,6 +86,15 @@ func (status *SourceStatus) PropagateBuildStatus(build *build.Build) {
 // and updates the readiness based on the current phase.
 func (status *SourceStatus) PropagateBuildSecretStatus(secret *corev1.Secret) {
 	status.manage().MarkTrue(SourceConditionBuildSecretReady)
+}
+
+// BuildCondition gets a manager for the state of the build.
+func (status *SourceStatus) BuildCondition() SingleConditionManager {
+	return NewSingleConditionManager(
+		status.manage(),
+		SourceConditionBuildSucceeded,
+		"Build",
+	)
 }
 
 // BuildSecretCondition gets a manager for the state of the env var secret.

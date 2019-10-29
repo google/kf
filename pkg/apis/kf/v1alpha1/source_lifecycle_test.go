@@ -163,6 +163,7 @@ func initTestSourceStatus(t *testing.T) *SourceStatus {
 	// sanity check
 	apitesting.CheckConditionOngoing(status.duck(), SourceConditionSucceeded, t)
 	apitesting.CheckConditionOngoing(status.duck(), SourceConditionBuildSucceeded, t)
+	apitesting.CheckConditionOngoing(status.duck(), SourceConditionBuildSecretReady, t)
 
 	return status
 }
@@ -191,6 +192,14 @@ func happyBuild() *build.Build {
 					},
 				},
 			},
+		},
+	}
+}
+
+func happySecret() *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "some-secret-name",
 		},
 	}
 }
@@ -231,12 +240,15 @@ func TestSourceHappyPath(t *testing.T) {
 
 	apitesting.CheckConditionOngoing(status.duck(), SourceConditionSucceeded, t)
 	apitesting.CheckConditionOngoing(status.duck(), SourceConditionBuildSucceeded, t)
+	apitesting.CheckConditionOngoing(status.duck(), SourceConditionBuildSecretReady, t)
 	testutil.AssertEqual(t, "BuildName", "some-build-name", status.BuildName)
 	testutil.AssertEqual(t, "Image", "", status.Image) // Image not populated until build succeeds
 
 	// Build succeeds
 	status.PropagateBuildStatus(happyBuild())
+	status.PropagateBuildSecretStatus(happySecret())
 
+	apitesting.CheckConditionSucceeded(status.duck(), SourceConditionSucceeded, t)
 	apitesting.CheckConditionSucceeded(status.duck(), SourceConditionSucceeded, t)
 	apitesting.CheckConditionSucceeded(status.duck(), SourceConditionBuildSucceeded, t)
 	testutil.AssertEqual(t, "BuildName", "some-build-name", status.BuildName)
@@ -254,20 +266,34 @@ func TestSourceStatus_lifecycle(t *testing.T) {
 		"happy path": {
 			Init: func(status *SourceStatus) {
 				status.PropagateBuildStatus(happyBuild())
+				status.PropagateBuildSecretStatus(happySecret())
 			},
 			ExpectSucceeded: []apis.ConditionType{
 				SourceConditionSucceeded,
 				SourceConditionBuildSucceeded,
+				SourceConditionBuildSecretReady,
 			},
 		},
 		"build not owned": {
 			Init: func(status *SourceStatus) {
-				status.MarkBuildNotOwned("my-build")
+				condition := status.BuildCondition()
+				condition.MarkChildNotOwned("my-build")
 			},
 			ExpectOngoing: []apis.ConditionType{},
 			ExpectFailed: []apis.ConditionType{
 				SourceConditionSucceeded,
 				SourceConditionBuildSucceeded,
+			},
+		},
+		"secret not owned": {
+			Init: func(status *SourceStatus) {
+				condition := status.BuildSecretCondition()
+				condition.MarkChildNotOwned("my-secret")
+			},
+			ExpectOngoing: []apis.ConditionType{},
+			ExpectFailed: []apis.ConditionType{
+				SourceConditionSucceeded,
+				SourceConditionBuildSecretReady,
 			},
 		},
 	}

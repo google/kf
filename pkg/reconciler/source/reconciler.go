@@ -16,7 +16,6 @@ package source
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -121,6 +120,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, source *v1alpha1.Source) 
 	}
 
 	secretCondition := source.Status.BuildSecretCondition()
+	buildCondtion := source.Status.BuildCondition()
 
 	desiredBuild, desiredSecret, err := resources.MakeBuild(source)
 	if err != nil {
@@ -172,8 +172,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, source *v1alpha1.Source) 
 				return err
 			}
 		} else if !metav1.IsControlledBy(actual, source) {
-			source.Status.MarkBuildNotOwned(desiredBuild.Name)
-			return fmt.Errorf("source: %q does not own build: %q", source.Name, desiredBuild.Name)
+			return buildCondtion.MarkChildNotOwned(desiredBuild.Name)
 		}
 
 		source.Status.PropagateBuildStatus(actual)
