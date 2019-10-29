@@ -937,7 +937,7 @@ func (k *Kf) Env(ctx context.Context, appName string) map[string]string {
 // operation times out.
 func (k *Kf) WaitForCluster(ctx context.Context) {
 	k.t.Helper()
-	k.Doctor(ctx, "--delay", "5s", "--retry", "12")
+	k.Doctor(ctx, "--delay", "5s", "--retries", "12")
 }
 
 // Doctor runs the doctor command.
