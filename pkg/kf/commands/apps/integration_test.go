@@ -28,6 +28,7 @@ import (
 	"testing"
 	"time"
 
+	"k8s.io/apimachinery/pkg/util/sets"
 	"sigs.k8s.io/yaml"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -586,24 +587,21 @@ func checkCfignoreApp(
 		files := []string{}
 		AssertNil(t, "err", json.NewDecoder(resp.Body).Decode(&files))
 
-		expectedFiles := []string{".", "go.mod", "go.sum", "main.go", "app.out"}
+		actualFiles := sets.NewString(files...)
 
-		if len(expectedFiles) != len(files) {
-			t.Fatalf("expected %#v to consist of %#v. (wrong len %d)", files, expectedFiles, len(files))
+		// Some additional files may be added by the build process, we want to
+		// ignore them here so we have a set of known good and bad files.
+
+		// These files should have been uploaded
+		expectedFiles := []string{"go.mod", "go.sum", "main.go", "app.out"}
+		if !actualFiles.HasAll(expectedFiles...) {
+			t.Fatalf("Expected all of %#v to be in %#v", expectedFiles, actualFiles.List())
 		}
 
-		for _, expectedFile := range expectedFiles {
-			var found bool
-			for _, actualFile := range files {
-				if expectedFile == actualFile {
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				t.Fatalf("expected %#v to consist of %#v. (unable to find %s)", files, expectedFiles, expectedFile)
-			}
+		// These files should be filtered out
+		unexpectedFiles := []string{"garbage.o"}
+		if actualFiles.HasAny(unexpectedFiles...) {
+			t.Fatalf("Expected none of %#v to be in %#v", unexpectedFiles, actualFiles.List())
 		}
 
 		Logf(t, "done hitting cfignore app to ensure its working.")
