@@ -87,11 +87,11 @@ func TestNewDoctorCommand(t *testing.T) {
 			wantErr:        errors.New(`environment failed checks`),
 		},
 		"retries flag": {
-			args: []string{"failer", "--retries", "3", "--delay", "10ms"},
+			args: []string{"retrier", "--retries", "3", "--delay", "10ms"},
 			diagnostics: []DoctorTest{
-				{Name: "failer", Test: &countingDiagnostic{}},
+				{Name: "retrier", Test: &countingDiagnostic{}},
 			},
-			expectedOutput: []string{"doctor/failer", "FAIL", "count: 3"},
+			expectedOutput: []string{"doctor/retrier", "FAIL", "count: 3"},
 			wantErr:        errors.New(`environment failed checks`),
 		},
 	}

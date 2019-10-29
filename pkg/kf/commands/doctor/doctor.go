@@ -113,6 +113,7 @@ func testsMatching(desired []string, knownTests []DoctorTest) []DoctorTest {
 }
 
 func retry(times int, delay time.Duration, callback func() error) error {
+	// Retries n-1 times and ignores failures. Only return early on success.
 	for i := 1; i < times; i++ {
 		if err := callback(); err == nil {
 			return nil
@@ -121,6 +122,7 @@ func retry(times int, delay time.Duration, callback func() error) error {
 		time.Sleep(delay)
 	}
 
+	// The last error (if any) is the one to keep.
 	return callback()
 }
 
