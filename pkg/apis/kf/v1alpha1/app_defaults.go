@@ -117,9 +117,14 @@ func (k *AppSpecTemplate) SetDefaults(ctx context.Context) {
 // SetKfAppContainerDefaults sets the defaults for an application container.
 // This function MAY be context sensitive in the future.
 func SetKfAppContainerDefaults(_ context.Context, container *corev1.Container) {
+	if container.Name == "" {
+		container.Name = "user-container"
+	}
+
 	// Default the probe to a TCP connection if unspecified
 	if container.ReadinessProbe == nil {
 		container.ReadinessProbe = &corev1.Probe{
+			SuccessThreshold: 1,
 			Handler: corev1.Handler{
 				TCPSocket: &corev1.TCPSocketAction{},
 			},
