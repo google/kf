@@ -26,6 +26,7 @@ import (
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
+	informerscorev1 "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	v1listers "k8s.io/client-go/listers/core/v1"
@@ -63,6 +64,9 @@ type Base struct {
 
 	// SecretLister allows us to list Secrets.
 	SecretLister v1listers.SecretLister
+
+	// SecretInformer allows us to AddEventHandlers for Secrets.
+	SecretInformer informerscorev1.SecretInformer
 }
 
 // NewBase instantiates a new instance of Base implementing
@@ -79,6 +83,7 @@ func NewBase(ctx context.Context, cmw configmap.Watcher) *Base {
 		ServingClientSet: knativeclient.Get(ctx),
 		ConfigMapWatcher: cmw,
 		SecretLister:     secretInformer.Lister(),
+		SecretInformer:   secretInformer,
 
 		NamespaceLister: nsInformer.Lister(),
 	}

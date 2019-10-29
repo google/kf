@@ -137,7 +137,7 @@ func makeBuildpackBuild(source *v1alpha1.Source) (*build.Build, *corev1.Secret, 
 func makeSecret(source *v1alpha1.Source) *corev1.Secret {
 	m := map[string][]byte{}
 
-	// TODO: Support source.Env.ValueFrom
+	// TODO(#821): Support source.Env.ValueFrom
 	for _, e := range source.Spec.BuildpackBuild.Env {
 		m[e.Name] = []byte(e.Value)
 	}
