@@ -12,13 +12,16 @@ Append a domain for a space
 Append a domain for a space
 
 ```
-kf configure-space append-domain SPACE_NAME DOMAIN [flags]
+kf configure-space append-domain [SPACE_NAME] DOMAIN [flags]
 ```
 
 ### Examples
 
 ```
+  # Configure the space "my-space"
   kf configure-space append-domain my-space myspace.mycompany.com
+  # Configure the targeted space
+  kf configure-space append-domain myspace.mycompany.com
 ```
 
 ### Options

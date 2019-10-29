@@ -12,13 +12,16 @@ Set a default domain for a space
 Set a default domain for a space
 
 ```
-kf configure-space set-default-domain SPACE_NAME DOMAIN [flags]
+kf configure-space set-default-domain [SPACE_NAME] DOMAIN [flags]
 ```
 
 ### Examples
 
 ```
+  # Configure the space "my-space"
   kf configure-space set-default-domain my-space myspace.mycompany.com
+  # Configure the targeted space
+  kf configure-space set-default-domain myspace.mycompany.com
 ```
 
 ### Options

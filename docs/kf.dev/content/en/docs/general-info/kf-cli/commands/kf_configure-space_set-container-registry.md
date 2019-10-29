@@ -12,13 +12,16 @@ Set the container registry used for builds.
 Set the container registry used for builds.
 
 ```
-kf configure-space set-container-registry SPACE_NAME REGISTRY [flags]
+kf configure-space set-container-registry [SPACE_NAME] REGISTRY [flags]
 ```
 
 ### Examples
 
 ```
+  # Configure the space "my-space"
   kf configure-space set-container-registry my-space gcr.io/my-project
+  # Configure the targeted space
+  kf configure-space set-container-registry gcr.io/my-project
 ```
 
 ### Options
