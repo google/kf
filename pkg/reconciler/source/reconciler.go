@@ -150,6 +150,11 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, source *v1alpha1.Source) 
 			return secretCondition.MarkReconciliationError("updating existing", err)
 		}
 		source.Status.PropagateBuildSecretStatus(actual)
+
+		if secretCondition.IsPending() {
+			logger.Info("Waiting for Secret; exiting early")
+			return nil
+		}
 	}
 
 	// Sync Build
