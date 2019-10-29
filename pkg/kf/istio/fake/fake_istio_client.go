@@ -21,6 +21,7 @@ package fake
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	doctor "github.com/google/kf/pkg/kf/doctor"
 	istio "github.com/google/kf/pkg/kf/istio"
 	v1 "k8s.io/api/core/v1"
 	reflect "reflect"
@@ -47,6 +48,18 @@ func NewFakeIstioClient(ctrl *gomock.Controller) *FakeIstioClient {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *FakeIstioClient) EXPECT() *FakeIstioClientMockRecorder {
 	return m.recorder
+}
+
+// Diagnose mocks base method
+func (m *FakeIstioClient) Diagnose(arg0 *doctor.Diagnostic) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Diagnose", arg0)
+}
+
+// Diagnose indicates an expected call of Diagnose
+func (mr *FakeIstioClientMockRecorder) Diagnose(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Diagnose", reflect.TypeOf((*FakeIstioClient)(nil).Diagnose), arg0)
 }
 
 // ListIngresses mocks base method

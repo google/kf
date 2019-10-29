@@ -17,6 +17,7 @@ package doctor
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/google/kf/pkg/kf/commands/config"
@@ -33,6 +34,15 @@ func (fd failDiagnostic) Diagnose(d *doctor.Diagnostic) {
 type okayDiagnostic struct{}
 
 func (fd okayDiagnostic) Diagnose(d *doctor.Diagnostic) {
+}
+
+type countingDiagnostic struct {
+	count int
+}
+
+func (cd *countingDiagnostic) Diagnose(d *doctor.Diagnostic) {
+	cd.count++
+	d.Error(fmt.Sprintf("count: %d", cd.count))
 }
 
 func TestNewDoctorCommand(t *testing.T) {
@@ -74,6 +84,14 @@ func TestNewDoctorCommand(t *testing.T) {
 				{Name: "failer", Test: failDiagnostic{}},
 			},
 			expectedOutput: []string{"doctor/failer", "FAIL"},
+			wantErr:        errors.New(`environment failed checks`),
+		},
+		"retries flag": {
+			args: []string{"retrier", "--retries", "3", "--delay", "10ms"},
+			diagnostics: []DoctorTest{
+				{Name: "retrier", Test: &countingDiagnostic{}},
+			},
+			expectedOutput: []string{"doctor/retrier", "FAIL", "count: 3"},
 			wantErr:        errors.New(`environment failed checks`),
 		},
 	}
