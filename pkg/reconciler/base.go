@@ -16,6 +16,7 @@ package reconciler
 
 import (
 	"context"
+	"fmt"
 
 	kfclientset "github.com/google/kf/pkg/client/clientset/versioned"
 	kfscheme "github.com/google/kf/pkg/client/clientset/versioned/scheme"
@@ -24,6 +25,7 @@ import (
 	knativeclient "github.com/google/kf/third_party/knative-serving/pkg/client/injection/client"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	v1listers "k8s.io/client-go/listers/core/v1"
@@ -32,6 +34,8 @@ import (
 	"knative.dev/pkg/configmap"
 	"knative.dev/pkg/injection/clients/kubeclient"
 	namespaceinformer "knative.dev/pkg/injection/informers/kubeinformers/corev1/namespace"
+	secretinformer "knative.dev/pkg/injection/informers/kubeinformers/corev1/secret"
+	"knative.dev/pkg/kmp"
 	"knative.dev/pkg/logging"
 	"knative.dev/pkg/logging/logkey"
 )
@@ -56,6 +60,9 @@ type Base struct {
 	// NamespaceLister allows us to list Namespaces. We use this to check for
 	// terminating namespaces.
 	NamespaceLister v1listers.NamespaceLister
+
+	// SecretLister allows us to list Secrets.
+	SecretLister v1listers.SecretLister
 }
 
 // NewBase instantiates a new instance of Base implementing
@@ -63,6 +70,7 @@ type Base struct {
 func NewBase(ctx context.Context, cmw configmap.Watcher) *Base {
 	kubeClient := kubeclient.Get(ctx)
 	nsInformer := namespaceinformer.Get(ctx)
+	secretInformer := secretinformer.Get(ctx)
 
 	base := &Base{
 		KubeClientSet:    kubeClient,
@@ -70,6 +78,7 @@ func NewBase(ctx context.Context, cmw configmap.Watcher) *Base {
 		KfClientSet:      kfclient.Get(ctx),
 		ServingClientSet: knativeclient.Get(ctx),
 		ConfigMapWatcher: cmw,
+		SecretLister:     secretInformer.Lister(),
 
 		NamespaceLister: nsInformer.Lister(),
 	}
@@ -92,6 +101,39 @@ func (base *Base) IsNamespaceTerminating(namespace string) bool {
 	}
 
 	return ns.Status.Phase == corev1.NamespaceTerminating
+}
+
+func (b *Base) ReconcileSecret(
+	ctx context.Context,
+	desired *corev1.Secret,
+	actual *corev1.Secret,
+) (*corev1.Secret, error) {
+	logger := logging.FromContext(ctx)
+
+	// Check for differences, if none we don't need to reconcile.
+	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
+	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Data, actual.Data)
+
+	if semanticEqual {
+		return actual, nil
+	}
+
+	diff, err := kmp.SafeDiff(desired.Data, actual.Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to diff secret: %v", err)
+	}
+	logger.Debug("Secret.Data diff:", diff)
+
+	// Don't modify the informers copy.
+	existing := actual.DeepCopy()
+
+	// Preserve the rest of the object (e.g. ObjectMeta except for labels).
+	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
+	existing.Data = desired.Data
+	return b.KubeClientSet.
+		CoreV1().
+		Secrets(existing.Namespace).
+		Update(existing)
 }
 
 func init() {

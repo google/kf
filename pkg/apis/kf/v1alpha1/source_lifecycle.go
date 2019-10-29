@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	build "github.com/google/kf/third_party/knative-build/pkg/apis/build/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
@@ -31,8 +32,11 @@ func (r *Source) GetGroupVersionKind() schema.GroupVersionKind {
 const (
 	// SourceConditionSucceeded is set when the source is configured
 	// and is usable by developers.
-	SourceConditionSucceeded                         = apis.ConditionSucceeded
+	SourceConditionSucceeded = apis.ConditionSucceeded
+	// SourceConditionBuildSucceeded is set when Build has succeeded.
 	SourceConditionBuildSucceeded apis.ConditionType = "BuildSucceeded"
+	// SourceConditionBuildSecretReady is set when the build Secret is ready.
+	SourceConditionBuildSecretReady apis.ConditionType = "BuildSecretReady"
 
 	BuildArgImage             = "IMAGE"
 	BuildArgBuildpack         = "BUILDPACK"
@@ -42,7 +46,10 @@ const (
 )
 
 func (status *SourceStatus) manage() apis.ConditionManager {
-	return apis.NewBatchConditionSet(SourceConditionBuildSucceeded).Manage(status)
+	return apis.NewBatchConditionSet(
+		SourceConditionBuildSucceeded,
+		SourceConditionBuildSecretReady,
+	).Manage(status)
 }
 
 // Succeeded returns if the space is ready to be used.
@@ -66,8 +73,8 @@ func (status *SourceStatus) MarkBuildNotOwned(name string) {
 		fmt.Sprintf("There is an existing Build %q that we do not own.", name))
 }
 
-// PropagateBuildStatus copies fields from the Build status to Space
-// and updates the readiness based on the current phase.
+// PropagateBuildStatus copies fields from the Build status to Source and
+// updates the readiness based on the current phase.
 func (status *SourceStatus) PropagateBuildStatus(build *build.Build) {
 
 	if build == nil {
@@ -81,6 +88,21 @@ func (status *SourceStatus) PropagateBuildStatus(build *build.Build) {
 	if PropagateCondition(status.manage(), SourceConditionBuildSucceeded, cond) {
 		status.Image = GetBuildArg(build, BuildArgImage)
 	}
+}
+
+// PropagateBuildSecretStatus copies fields from the Secret status to Source
+// and updates the readiness based on the current phase.
+func (status *SourceStatus) PropagateBuildSecretStatus(secret *corev1.Secret) {
+	status.manage().MarkTrue(SourceConditionBuildSecretReady)
+}
+
+// BuildSecretCondition gets a manager for the state of the env var secret.
+func (status *SourceStatus) BuildSecretCondition() SingleConditionManager {
+	return NewSingleConditionManager(
+		status.manage(),
+		SourceConditionBuildSecretReady,
+		"Build Secret",
+	)
 }
 
 func GetBuildArg(b *build.Build, key string) string {

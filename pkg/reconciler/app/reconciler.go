@@ -35,12 +35,10 @@ import (
 	servinglisters "github.com/google/kf/third_party/knative-serving/pkg/client/listers/serving/v1alpha1"
 	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	"go.uber.org/zap"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	v1listers "k8s.io/client-go/listers/core/v1"
 	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/controller"
 	"knative.dev/pkg/kmp"
@@ -61,7 +59,6 @@ type Reconciler struct {
 	appLister             kflisters.AppLister
 	spaceLister           kflisters.SpaceLister
 	routeLister           kflisters.RouteLister
-	secretLister          v1listers.SecretLister
 	routeClaimLister      kflisters.RouteClaimLister
 	serviceBindingLister  servicecataloglisters.ServiceBindingLister
 	serviceInstanceLister servicecataloglisters.ServiceInstanceLister
@@ -263,7 +260,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			return condition.MarkTemplateError(err)
 		}
 
-		actual, err := r.secretLister.Secrets(desired.GetNamespace()).Get(desired.Name)
+		actual, err := r.SecretLister.Secrets(desired.GetNamespace()).Get(desired.Name)
 		if apierrs.IsNotFound(err) {
 			actual, err = r.KubeClientSet.CoreV1().Secrets(desired.GetNamespace()).Create(desired)
 			if err != nil {
@@ -273,7 +270,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			return condition.MarkReconciliationError("getting latest", err)
 		} else if !metav1.IsControlledBy(actual, app) {
 			return condition.MarkChildNotOwned(desired.Name)
-		} else if actual, err = r.reconcileSecret(ctx, desired, actual); err != nil {
+		} else if actual, err = r.ReconcileSecret(ctx, desired, actual); err != nil {
 			return condition.MarkReconciliationError("updating existing", err)
 		}
 		app.Status.PropagateEnvVarSecretStatus(actual)
@@ -516,36 +513,6 @@ func (r *Reconciler) reconcileRouteClaim(
 		KfV1alpha1().
 		RouteClaims(existing.Namespace).
 		Update(existing)
-}
-
-func (r *Reconciler) reconcileSecret(
-	ctx context.Context,
-	desired *v1.Secret,
-	actual *v1.Secret,
-) (*v1.Secret, error) {
-	logger := logging.FromContext(ctx)
-
-	// Check for differences, if none we don't need to reconcile.
-	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
-	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Data, actual.Data)
-
-	if semanticEqual {
-		return actual, nil
-	}
-
-	diff, err := kmp.SafeDiff(desired.Data, actual.Data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to diff secret: %v", err)
-	}
-	logger.Debug("Secret.Data diff:", diff)
-
-	// Don't modify the informers copy.
-	existing := actual.DeepCopy()
-
-	// Preserve the rest of the object (e.g. ObjectMeta except for labels).
-	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
-	existing.Data = desired.Data
-	return r.KubeClientSet.CoreV1().Secrets(existing.Namespace).Update(existing)
 }
 
 func (r *Reconciler) reconcileServiceBinding(
