@@ -113,7 +113,7 @@ func (ci *conditionImpl) MarkReconciliationError(action string, err error) error
 		ci.manager.MarkUnknown(ci.destination, "CacheOutdated", msg)
 
 		// In the future, additional retryable errors can be added here if
-		// Kubernetes starts returnning other failures.
+		// Kubernetes starts returning other failures.
 
 	default:
 		ci.manager.MarkFalse(ci.destination, "ReconciliationError", msg)
