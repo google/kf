@@ -116,6 +116,9 @@ func (t *pushLogTailer) handleWatch() (bool, error) {
 	for e := range ws.ResultChan() {
 		switch obj := e.Object.(type) {
 		case *v1alpha1.App:
+			if obj.ResourceVersion != "" {
+				t.resourceVersion = obj.ResourceVersion
+			}
 			// skip out of date apps
 			if obj.Generation != obj.Status.ObservedGeneration {
 				continue
@@ -129,7 +132,9 @@ func (t *pushLogTailer) handleWatch() (bool, error) {
 				return true, nil
 			}
 		case *k8smeta.Status:
-			t.resourceVersion = obj.ResourceVersion
+			if obj.ResourceVersion != "" {
+				t.resourceVersion = obj.ResourceVersion
+			}
 			if obj.Status != k8smeta.StatusFailure {
 				// TODO: I'm not sure when/if we would get this.
 				continue
@@ -150,7 +155,6 @@ func (t *pushLogTailer) handleWatch() (bool, error) {
 func (t *pushLogTailer) handleUpdate(
 	app *v1alpha1.App,
 ) (bool, error) {
-
 	sourceReady := app.Status.GetCondition(v1alpha1.AppConditionSourceReady)
 	if sourceReady == nil {
 		// source might still be creating
