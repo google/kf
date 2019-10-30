@@ -527,7 +527,7 @@ func targetCluster(
 	ctx = SetLogPrefix(ctx, "Target Cluster")
 	Logf(ctx, "targeting cluster")
 
-	_, selection, err := SelectPrompt(ctx, "Public or internal GKE server ip", "public", "internal")
+	_, selection, err := SelectPrompt(ctx, "GKE Master Server IP", "public", "internal")
 	if err != nil {
 		return err
 	}
