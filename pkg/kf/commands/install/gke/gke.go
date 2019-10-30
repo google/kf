@@ -35,7 +35,7 @@ const (
 	numNodes              = "3"
 	defaultMaxPodsPerNode = "110"
 	addons                = "HorizontalPodAutoscaling,HttpLoadBalancing,Istio,CloudRun"
-	defaultGKEVersion     = "1.13.7-gke.24"
+	defaultGKEVersion     = "1.13.11-gke.9"
 )
 
 // NewGKECommand creates a command that can install kf to GKE+Cloud Run.
