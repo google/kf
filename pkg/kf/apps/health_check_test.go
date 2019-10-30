@@ -48,7 +48,8 @@ func TestNewHealthCheck(t *testing.T) {
 			endpoint:  "/healthz",
 			timeout:   180,
 			expectProbe: &corev1.Probe{
-				TimeoutSeconds: int32(180),
+				TimeoutSeconds:   int32(180),
+				SuccessThreshold: 1,
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Path: "/healthz",
@@ -59,6 +60,7 @@ func TestNewHealthCheck(t *testing.T) {
 		"http default": {
 			checkType: "http",
 			expectProbe: &corev1.Probe{
+				SuccessThreshold: 1,
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{},
 				},
@@ -66,6 +68,7 @@ func TestNewHealthCheck(t *testing.T) {
 		},
 		"blank type uses port": {
 			expectProbe: &corev1.Probe{
+				SuccessThreshold: 1,
 				Handler: corev1.Handler{
 					TCPSocket: &corev1.TCPSocketAction{},
 				},
@@ -79,7 +82,8 @@ func TestNewHealthCheck(t *testing.T) {
 			checkType: "port",
 			timeout:   180,
 			expectProbe: &corev1.Probe{
-				TimeoutSeconds: int32(180),
+				SuccessThreshold: 1,
+				TimeoutSeconds:   int32(180),
 				Handler: corev1.Handler{
 					TCPSocket: &corev1.TCPSocketAction{},
 				},
@@ -88,6 +92,7 @@ func TestNewHealthCheck(t *testing.T) {
 		"port default": {
 			checkType: "port",
 			expectProbe: &corev1.Probe{
+				SuccessThreshold: 1,
 				Handler: corev1.Handler{
 					TCPSocket: &corev1.TCPSocketAction{},
 				},

@@ -51,6 +51,7 @@ func TestPushCommand(t *testing.T) {
 	wantCPU := resource.MustParse("2")
 
 	defaultTCPHealthCheck := &corev1.Probe{
+		SuccessThreshold: 1,
 		Handler: corev1.Handler{
 			TCPSocket: &corev1.TCPSocketAction{},
 		},
@@ -116,7 +117,8 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushArgs([]string{"a", "b"}),
 				apps.WithPushCommand([]string{"start-web.sh"}),
 				apps.WithPushHealthCheck(&corev1.Probe{
-					TimeoutSeconds: 28,
+					TimeoutSeconds:   28,
+					SuccessThreshold: 1,
 					Handler: corev1.Handler{
 						HTTPGet: &corev1.HTTPGetAction{},
 					},
@@ -472,7 +474,8 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushContainerImage("gcr.io/http-health-check-app"),
 				apps.WithPushHealthCheck(&corev1.Probe{
-					TimeoutSeconds: 42,
+					SuccessThreshold: 1,
+					TimeoutSeconds:   42,
 					Handler: corev1.Handler{
 						HTTPGet: &corev1.HTTPGetAction{Path: "/healthz"},
 					},
@@ -489,7 +492,8 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushContainerImage("gcr.io/tcp-health-check-app"),
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushHealthCheck(&corev1.Probe{
-					TimeoutSeconds: 33,
+					SuccessThreshold: 1,
+					TimeoutSeconds:   33,
 					Handler: corev1.Handler{
 						TCPSocket: &corev1.TCPSocketAction{},
 					},

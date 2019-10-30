@@ -30,7 +30,16 @@ func ExampleBuildName() {
 	// Output: my-source
 }
 
-func ExampleMakeBuild() {
+func ExampleBuildSecretName() {
+	source := &v1alpha1.Source{}
+	source.Name = "my-source"
+
+	fmt.Println(BuildSecretName(source))
+
+	// Output: my-source
+}
+
+func exampleSource() *v1alpha1.Source {
 	source := &v1alpha1.Source{}
 	source.Name = "my-source"
 	source.Namespace = "my-namespace"
@@ -41,31 +50,71 @@ func ExampleMakeBuild() {
 	source.Spec.BuildpackBuild.BuildpackBuilder = "some-buildpack-builder"
 	source.Spec.BuildpackBuild.Env = []corev1.EnvVar{
 		{
-			Name:  "some",
-			Value: "variable",
+			Name:  "FOO",
+			Value: "bar",
+		},
+		{
+			Name:  "BAR",
+			Value: "baz",
 		},
 	}
+	return source
+}
 
-	build, err := MakeBuild(source)
+func ExampleMakeBuild_build() {
+	source := exampleSource()
+
+	build, _, err := MakeBuild(source)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("Name:", BuildName(source))
+	fmt.Println("Name:", build.Name)
 	fmt.Println("Label Count:", len(build.Labels))
 	fmt.Println("Managed By:", build.Labels[managedByLabel])
 	fmt.Println("Service Account:", build.Spec.ServiceAccountName)
+	fmt.Println("OwnerReferences Count:", len(build.OwnerReferences))
 	fmt.Println("Arg Count:", len(build.Spec.Template.Arguments))
 	fmt.Println("Output Image:", v1alpha1.GetBuildArg(build, v1alpha1.BuildArgImage))
-	fmt.Println("Env:", build.Spec.Template.Env[0].Name, "=", build.Spec.Template.Env[0].Value)
 	fmt.Println("Stack:", v1alpha1.GetBuildArg(build, v1alpha1.BuildArgBuildpackRunImage))
+	fmt.Println("Env Count:", len(build.Spec.Template.Env))
+	fmt.Println("Env.Name:", build.Spec.Template.Env[0].Name)
+	fmt.Println("Env.ValueFrom.SecretKeyRef.LocalObjectReference.Name:", build.Spec.Template.Env[0].ValueFrom.SecretKeyRef.LocalObjectReference.Name)
+	fmt.Println("Env.ValueFrom.SecretKeyRef.Key:", build.Spec.Template.Env[0].ValueFrom.SecretKeyRef.Key)
 
 	// Output: Name: my-source
 	// Label Count: 1
 	// Managed By: kf
 	// Service Account: some-account
+	// OwnerReferences Count: 1
 	// Arg Count: 4
 	// Output Image: gcr.io/image:123
-	// Env: some = variable
 	// Stack: gcr.io/kf-releases/run:latest
+	// Env Count: 2
+	// Env.Name: FOO
+	// Env.ValueFrom.SecretKeyRef.LocalObjectReference.Name: my-source
+	// Env.ValueFrom.SecretKeyRef.Key: FOO
+}
+
+func ExampleMakeBuild_secret() {
+	source := exampleSource()
+
+	_, secret, err := MakeBuild(source)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Name:", secret.Name)
+	fmt.Println("Label Count:", len(secret.Labels))
+	fmt.Println("Managed By:", secret.Labels[managedByLabel])
+	fmt.Println("OwnerReferences Count:", len(secret.OwnerReferences))
+	fmt.Println("Data['BAR']:", string(secret.Data["BAR"]))
+	fmt.Println("Data['FOO']:", string(secret.Data["FOO"]))
+
+	// Output: Name: my-source
+	// Label Count: 1
+	// Managed By: kf
+	// OwnerReferences Count: 1
+	// Data['BAR']: baz
+	// Data['FOO']: bar
 }
