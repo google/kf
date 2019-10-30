@@ -76,28 +76,28 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		&config.RoutingConfig{},
 	}
 	resync := configmap.TypeFilter(configsToResync...)(func(string, interface{}) {
-		routes := routeInformer.Informer().GetStore().List()
-		routeClaims := routeClaimInformer.Informer().GetStore().List()
-		nrf := namespacedRouteSpecFields{}
-		for _, rc := range routeClaims {
-			nrf = namespacedRouteSpecFields{
-				Namespace:       rc.(*v1alpha1.RouteClaim).GetNamespace(),
-				RouteSpecFields: rc.(v1alpha1.RouteClaim).Spec.RouteSpecFields,
-			}
-			data, _ := json.Marshal(nrf)
-			enqueue(cache.ExplicitKey(data))
-		}
+		// routes := routeInformer.Informer().GetStore().List()
+		// routeClaims := routeClaimInformer.Informer().GetStore().List()
+		// nrf := namespacedRouteSpecFields{}
+		// for _, rc := range routeClaims {
+		// 	nrf = namespacedRouteSpecFields{
+		// 		Namespace:       rc.(*v1alpha1.RouteClaim).GetNamespace(),
+		// 		RouteSpecFields: rc.(v1alpha1.RouteClaim).Spec.RouteSpecFields,
+		// 	}
+		// 	data, _ := json.Marshal(nrf)
+		// 	enqueue(cache.ExplicitKey(data))
+		// }
 
-		for _, r := range routes {
-			nrf = namespacedRouteSpecFields{
-				Namespace:       r.(*v1alpha1.Route).GetNamespace(),
-				RouteSpecFields: r.(v1alpha1.Route).Spec.RouteSpecFields,
-			}
-			data, _ := json.Marshal(nrf)
-			enqueue(cache.ExplicitKey(data))
-		}
+		// for _, r := range routes {
+		// 	nrf = namespacedRouteSpecFields{
+		// 		Namespace:       r.(*v1alpha1.Route).GetNamespace(),
+		// 		RouteSpecFields: r.(v1alpha1.Route).Spec.RouteSpecFields,
+		// 	}
+		// 	data, _ := json.Marshal(nrf)
+		// 	enqueue(cache.ExplicitKey(data))
+		// }
 		// BuildEnqueuer(impl.Enqueue)
-		// impl.GlobalResync(routeInformer.Informer())
+		impl.GlobalResync(routeInformer.Informer())
 	})
 	configStore := config.NewStore(logger.Named("routing-config-store"), resync)
 	configStore.WatchConfigs(cmw)
