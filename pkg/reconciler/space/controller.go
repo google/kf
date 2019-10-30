@@ -93,7 +93,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		&config.SecretsConfig{},
 	}
 	resync := configmap.TypeFilter(configsToResync...)(func(string, interface{}) {
-		impl.GlobalResync(c.SecretInformer.Informer())
+		impl.GlobalResync(spaceInformer.Informer())
 	})
 	configStore := config.NewStore(logger.Named("secrets-config-store"), resync)
 	configStore.WatchConfigs(cmw)
