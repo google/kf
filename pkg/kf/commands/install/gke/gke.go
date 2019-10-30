@@ -227,7 +227,7 @@ func createProject(ctx context.Context) (string, error) {
 			ctx,
 			"projects",
 			"list",
-			"--filter", fmt.Sprintf("name:%q", name),
+			"--filter", fmt.Sprintf("name~^%s$", name),
 			"--format", "value(projectId)",
 		)
 
@@ -278,7 +278,7 @@ func clusterZone(ctx context.Context, projID, clusterName string) (string, error
 		"clusters",
 		"list",
 		"--format", "value(location)",
-		"--filter", fmt.Sprintf("name:%q", clusterName),
+		"--filter", fmt.Sprintf("name~^%s$", clusterName),
 	)
 	if err != nil {
 		return "", err
@@ -546,7 +546,7 @@ func enableServiceAPI(ctx context.Context, projID, serviceName string) error {
 		"services",
 		"list",
 		"--project", projID,
-		"--filter", "name:"+serviceName,
+		"--filter", fmt.Sprintf("name~^%s$", serviceName),
 		"--format", "value(name)",
 	)
 	if err != nil {
