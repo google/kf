@@ -53,7 +53,7 @@ templates:
   repository: *ci_image_uri
   username: _json_key
   password: *service_account_json
-  
+
 # ---- end templates ----
 
 resource_types:
@@ -83,7 +83,7 @@ resources:
     vars:
       project: *gcp_project_id
       k8s_network_selflink: *k8s_network_selflink
-      gke_version: 1.13.7-gke.24
+      gke_version: 1.13.11-gke.9
     env:
       GOOGLE_CREDENTIALS: *service_account_json
 - name: nightly-build-trigger
@@ -251,7 +251,7 @@ jobs:
           # Install Kf
           kubectl apply --filename artifacts/release.yaml
 
-          pushd kf-dev 
+          pushd kf-dev
             # Run unit tests
             ../ci-pipelines-src/hack/integration-test.sh
           popd
