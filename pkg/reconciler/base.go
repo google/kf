@@ -69,6 +69,11 @@ type Base struct {
 	SecretInformer informerscorev1.SecretInformer
 }
 
+// ConfigStore is a minimal interface to the config stores used by our controllers.
+type ConfigStore interface {
+	ToContext(ctx context.Context) context.Context
+}
+
 // NewBase instantiates a new instance of Base implementing
 // the common & boilerplate code between our reconcilers.
 func NewBase(ctx context.Context, cmw configmap.Watcher) *Base {

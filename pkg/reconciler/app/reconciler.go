@@ -165,7 +165,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			return condition.MarkReconciliationError("getting latest", err)
 		} else if !metav1.IsControlledBy(actual, app) {
 			return condition.MarkChildNotOwned(desired.Name)
-		} else if !r.sourcesAreSemanticallyEqual(desired, actual) {
+		} else if !r.sourcesAreSemanticallyEqual(ctx, desired, actual) {
 			// This condition happens if properties the operator configures changes
 			// after an app is deployed. For example, the builder image or container
 			// registry.
@@ -412,11 +412,28 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 	return r.gcRevisions(ctx, app)
 }
 
-func (*Reconciler) sourcesAreSemanticallyEqual(desired, actual *v1alpha1.Source) bool {
+func (*Reconciler) sourcesAreSemanticallyEqual(
+	ctx context.Context,
+	desired *v1alpha1.Source,
+	actual *v1alpha1.Source,
+) bool {
+	logger := logging.FromContext(ctx)
+
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
 	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Spec, actual.Spec)
 
-	return semanticEqual
+	if semanticEqual {
+		return true
+	}
+
+	diff, err := kmp.SafeDiff(desired.Spec, actual.Spec)
+	if err != nil {
+		logger.Warnf("failed to diff Source: %v", err)
+		return false
+	}
+	logger.Debug("Source.Spec diff:", diff)
+
+	return false
 }
 
 func (r *Reconciler) reconcileKnativeService(

@@ -19,6 +19,7 @@ import (
 
 	"github.com/google/kf/pkg/kf/algorithms"
 	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis/istio/v1alpha3"
 )
@@ -277,5 +278,83 @@ func (d RouteSpecFieldsSlice) Less(i int, j int) bool {
 
 // Swap implements Interface.
 func (d RouteSpecFieldsSlice) Swap(i int, j int) {
+	d[i], d[j] = d[j], d[i]
+}
+
+// ObjectReferences implements the necessary interfaces for the algorithms
+// package.
+type ObjectReferences []corev1.ObjectReference
+
+// Set implements Interface.
+func (d ObjectReferences) Set(i int, a algorithms.Interface, j int, b algorithms.Interface) {
+	a.(ObjectReferences)[i] = b.(ObjectReferences)[j]
+}
+
+// Append implements Interface.
+func (d ObjectReferences) Append(a algorithms.Interface) algorithms.Interface {
+	return append(d, a.(ObjectReferences)...)
+}
+
+// Clone implements Interface.
+func (d ObjectReferences) Clone() algorithms.Interface {
+	return append(ObjectReferences{}, d...)
+}
+
+// Slice implements Interface.
+func (d ObjectReferences) Slice(i int, j int) algorithms.Interface {
+	return d[i:j]
+}
+
+// Len implements Interface.
+func (d ObjectReferences) Len() int {
+	return len(d)
+}
+
+// Less implements Interface.
+func (d ObjectReferences) Less(i int, j int) bool {
+	return d[i].Name < d[j].Name
+}
+
+// Swap implements Interface.
+func (d ObjectReferences) Swap(i int, j int) {
+	d[i], d[j] = d[j], d[i]
+}
+
+// LocalObjectReferences implements the necessary interfaces for the algorithms
+// package.
+type LocalObjectReferences []corev1.LocalObjectReference
+
+// Set implements Interface.
+func (d LocalObjectReferences) Set(i int, a algorithms.Interface, j int, b algorithms.Interface) {
+	a.(LocalObjectReferences)[i] = b.(LocalObjectReferences)[j]
+}
+
+// Append implements Interface.
+func (d LocalObjectReferences) Append(a algorithms.Interface) algorithms.Interface {
+	return append(d, a.(LocalObjectReferences)...)
+}
+
+// Clone implements Interface.
+func (d LocalObjectReferences) Clone() algorithms.Interface {
+	return append(LocalObjectReferences{}, d...)
+}
+
+// Slice implements Interface.
+func (d LocalObjectReferences) Slice(i int, j int) algorithms.Interface {
+	return d[i:j]
+}
+
+// Len implements Interface.
+func (d LocalObjectReferences) Len() int {
+	return len(d)
+}
+
+// Less implements Interface.
+func (d LocalObjectReferences) Less(i int, j int) bool {
+	return d[i].Name < d[j].Name
+}
+
+// Swap implements Interface.
+func (d LocalObjectReferences) Swap(i int, j int) {
 	d[i], d[j] = d[j], d[i]
 }

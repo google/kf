@@ -24,22 +24,54 @@ import (
 // BuildServiceAccountName gets the name of the service account for given the
 // space.
 func BuildServiceAccountName(space *v1alpha1.Space) string {
-	return "kf-build-service-account"
+	return space.Spec.Security.BuildServiceAccount
+}
+
+// BuildSecretName gets the name of the secret for given the space.
+func BuildSecretName(space *v1alpha1.Space) string {
+	// We'll just use the same name as the service account
+	return BuildServiceAccountName(space)
 }
 
 // MakeBuildServiceAccount creates a ServiceAccount for build pipelines to
 // use.
-func MakeBuildServiceAccount(space *v1alpha1.Space) (*corev1.ServiceAccount, error) {
+func MakeBuildServiceAccount(
+	space *v1alpha1.Space,
+	kfSecret *corev1.Secret,
+) (*corev1.ServiceAccount, *corev1.Secret, error) {
+	// We'll make a copy of the Data to ensure nothing gets altered anywhere.
+	dataCopy := map[string][]byte{}
+	for k, v := range kfSecret.Data {
+		d := make([]byte, len(v))
+		copy(d, v)
+		dataCopy[k] = d
+	}
+
 	return &corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      BuildServiceAccountName(space),
-			Namespace: NamespaceName(space),
-			OwnerReferences: []metav1.OwnerReference{
-				*kmeta.NewControllerRef(space),
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BuildServiceAccountName(space),
+				Namespace: NamespaceName(space),
+				OwnerReferences: []metav1.OwnerReference{
+					*kmeta.NewControllerRef(space),
+				},
+				Labels: v1alpha1.UnionMaps(space.GetLabels(), map[string]string{
+					v1alpha1.ManagedByLabel: "kf",
+				}),
 			},
-			Labels: v1alpha1.UnionMaps(space.GetLabels(), map[string]string{
-				v1alpha1.ManagedByLabel: "kf",
-			}),
-		},
-	}, nil
+			Secrets: []corev1.ObjectReference{
+				{Name: BuildSecretName(space)},
+			},
+		}, &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      BuildSecretName(space),
+				Namespace: NamespaceName(space),
+				OwnerReferences: []metav1.OwnerReference{
+					*kmeta.NewControllerRef(space),
+				},
+				Labels: v1alpha1.UnionMaps(space.GetLabels(), map[string]string{
+					v1alpha1.ManagedByLabel: "kf",
+				}),
+			},
+			Data: dataCopy,
+		}, nil
 }

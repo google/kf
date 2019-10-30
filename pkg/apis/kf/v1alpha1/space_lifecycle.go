@@ -51,6 +51,8 @@ const (
 	// SpaceConditionBuildServiceAccountReady is set when the
 	// BuildServiceAccount is ready.
 	SpaceConditionBuildServiceAccountReady apis.ConditionType = "BuildServiceAccountReady"
+	// SpaceConditionBuildSecretReady is set when the build Secret is ready.
+	SpaceConditionBuildSecretReady apis.ConditionType = "BuildSecretReady"
 )
 
 func (status *SpaceStatus) manage() apis.ConditionManager {
@@ -61,6 +63,7 @@ func (status *SpaceStatus) manage() apis.ConditionManager {
 		SpaceConditionResourceQuotaReady,
 		SpaceConditionLimitRangeReady,
 		SpaceConditionBuildServiceAccountReady,
+		SpaceConditionBuildSecretReady,
 	).Manage(status)
 }
 
@@ -162,6 +165,21 @@ func (status *SpaceStatus) PropagateLimitRangeStatus(limitRange *v1.LimitRange) 
 // on if a BuildServiceAccount exists.
 func (status *SpaceStatus) PropagateBuildServiceAccountStatus(sa *v1.ServiceAccount) {
 	status.manage().MarkTrue(SpaceConditionBuildServiceAccountReady)
+}
+
+// PropagateBuildSecretStatus updates the readiness of the space based
+// on if a BuildSecret exists.
+func (status *SpaceStatus) PropagateBuildSecretStatus(secret *v1.Secret) {
+	status.manage().MarkTrue(SpaceConditionBuildSecretReady)
+}
+
+// BuildSecretCondition gets a manager for the state of the build secret.
+func (status *SpaceStatus) BuildSecretCondition() SingleConditionManager {
+	return NewSingleConditionManager(
+		status.manage(),
+		SpaceConditionBuildSecretReady,
+		"Build Secret",
+	)
 }
 
 func (status *SpaceStatus) duck() *duckv1beta1.Status {
