@@ -31,8 +31,8 @@ import (
 
 const (
 	ManagedByLabel        = "app.kubernetes.io/managed-by"
-	KnativeIngressGateway = "knative-ingress-gateway.knative-serving.svc.cluster.local"
-	GatewayHost           = "istio-ingressgateway.istio-system.svc.cluster.local"
+	KnativeIngressGateway = "knative-serving/gke-system-gateway"
+	GatewayHost           = "cluster-local-gateway.gke-system.svc.cluster.local"
 )
 
 // MakeVirtualServiceLabels creates Labels that can be used to tie a
