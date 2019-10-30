@@ -274,6 +274,17 @@ func TestSourceStatus_lifecycle(t *testing.T) {
 				SourceConditionBuildSecretReady,
 			},
 		},
+		"happy path with nil secret": {
+			Init: func(status *SourceStatus) {
+				status.PropagateBuildStatus(happyBuild())
+				status.PropagateBuildSecretStatus(nil)
+			},
+			ExpectSucceeded: []apis.ConditionType{
+				SourceConditionSucceeded,
+				SourceConditionBuildSucceeded,
+				SourceConditionBuildSecretReady,
+			},
+		},
 		"build not owned": {
 			Init: func(status *SourceStatus) {
 				condition := status.BuildCondition()

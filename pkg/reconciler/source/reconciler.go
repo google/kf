@@ -155,6 +155,10 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, source *v1alpha1.Source) 
 			logger.Info("Waiting for Secret; exiting early")
 			return nil
 		}
+	} else {
+		// We still need to update the status even when we don't have a
+		// secret. Otherwise the Source's status will always be not ready.
+		source.Status.PropagateBuildSecretStatus(nil)
 	}
 
 	// Sync Build
