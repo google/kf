@@ -78,7 +78,7 @@ func WithListIngressesService(val string) ListIngressesOption {
 // ListIngressesOptionDefaults gets the default values for ListIngresses.
 func ListIngressesOptionDefaults() ListIngressesOptions {
 	return ListIngressesOptions{
-		WithListIngressesNamespace("istio-system"),
-		WithListIngressesService("istio-ingressgateway"),
+		WithListIngressesNamespace("gke-system"),
+		WithListIngressesService("istio-ingress"),
 	}
 }

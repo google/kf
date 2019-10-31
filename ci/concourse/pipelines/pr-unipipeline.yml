@@ -8,7 +8,7 @@ vars:
 
 # pull request vars
 - &github_repo google/kf
-- &github_access_token ((github_access_token)) 
+- &github_access_token ((github_access_token))
 
 # Terraform vars
 - &tf_state_bucket ((tf_state_bucket))
@@ -66,13 +66,13 @@ templates:
       path: pr
       status: FAILURE
   - *terraform-destroy
-  - *terraform-create 
+  - *terraform-create
   - *release-lock
 
 - &on-success
   do:
   - *terraform-destroy
-  - *terraform-create 
+  - *terraform-create
   - *release-lock
 
 resource_types:
@@ -101,7 +101,7 @@ resources:
     uri: *ci_git_uri
 - name: pr
   type: pull-request
-  check_every: 10s 
+  check_every: 10s
   source:
     repository: *github_repo
     access_token: *github_access_token
@@ -116,7 +116,7 @@ resources:
     vars:
       project: *gcp_project_id
       k8s_network_selflink: *k8s_network_selflink
-      gke_version: 1.13.7-gke.24
+      gke_version: 1.13.11-gke.9
     env:
       GOOGLE_CREDENTIALS: *service_account_json
 
@@ -143,7 +143,7 @@ jobs:
     # here. In the worst case, we've manually added an environment to the pool that hasn't been
     # initialized, and the initialization happens here. This has the benefit of not requiring
     # a separate process for resource management.
-    - *terraform-create 
+    - *terraform-create
     - task: check-linters
       timeout: 10m
       config:
