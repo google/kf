@@ -16,6 +16,7 @@ package doctor
 
 import (
 	"github.com/google/kf/pkg/kf/testutil"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
 )
@@ -33,6 +34,10 @@ var _ Diagnosable = (*ClusterDiagnostic)(nil)
 func (c *ClusterDiagnostic) Diagnose(d *Diagnostic) {
 	d.Run("Version", func(d *Diagnostic) {
 		diagnoseKubernetesVersion(d, c.kubeClient.Discovery())
+	})
+
+	d.Run("Controllers", func(d *Diagnostic) {
+		diagnoseControllers(d, c.kubeClient)
 	})
 
 	d.Run("Components", func(d *Diagnostic) {
@@ -96,6 +101,45 @@ func diagnoseComponents(d *Diagnostic, vc discovery.ServerResourcesInterface) {
 				d.Run(resource, func(d *Diagnostic) {
 					if !foundResources[resource] {
 						d.Errorf("Expected to find resource %s", resource)
+					}
+				})
+			}
+		})
+	}
+}
+
+func diagnoseControllers(d *Diagnostic, kubernetes kubernetes.Interface) {
+	expectedDeployments := []struct {
+		Namespace   string
+		Deployments []string
+	}{
+		{
+			Namespace:   "kf",
+			Deployments: []string{"webhook", "controller"},
+		},
+		{
+			Namespace:   "knative-serving",
+			Deployments: []string{"webhook", "controller", "activator", "autoscaler"},
+		},
+	}
+
+	for _, tc := range expectedDeployments {
+		d.Run(tc.Namespace, func(d *Diagnostic) {
+
+			for _, deploymentName := range tc.Deployments {
+				d.Run(deploymentName, func(d *Diagnostic) {
+
+					actual, err := kubernetes.AppsV1().Deployments(tc.Namespace).Get(deploymentName, metav1.GetOptions{})
+					if err != nil {
+						d.Errorf("couldn't fetch deployment %s: %v", deploymentName, err)
+						return
+					}
+
+					ready := actual.Status.ReadyReplicas
+					desired := actual.Status.Replicas
+
+					if ready != desired {
+						d.Errorf("ready: %d/%d", ready, desired)
 					}
 				})
 			}

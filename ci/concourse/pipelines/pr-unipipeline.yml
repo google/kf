@@ -2,13 +2,13 @@ vars:
 # ci config vars
 - &ci_image_uri ((ci_image_uri))
 - &ci_pool_git_key ((ci_pool_git_key))
-- &ci_git_uri https://github.com/evandbrown/kf.git
-- &ci_git_branch feature/ci-pr-unification
+- &ci_git_uri https://github.com/google/kf.git
+- &ci_git_branch develop
 - &service_account_json ((service_account_json))
 
 # pull request vars
 - &github_repo google/kf
-- &github_access_token ((github_access_token)) 
+- &github_access_token ((github_access_token))
 
 # Terraform vars
 - &tf_state_bucket ((tf_state_bucket))
@@ -25,7 +25,7 @@ vars:
 # build vars
 - &release_service_account_json ((release_service_account_json))
 - &release_project ((release_project))
-- &ko_docker_release_repo ((ko_docker_release_repo))
+- &ko_docker_repo ((ko_docker_repo))
 
 templates:
 - &terraform-create
@@ -65,16 +65,14 @@ templates:
     params:
       path: pr
       status: FAILURE
-      description: Concourse integration pipeline failed
-      comment: Concourse integration pipeline failed
   - *terraform-destroy
-  - *terraform-create 
+  - *terraform-create
   - *release-lock
 
 - &on-success
   do:
   - *terraform-destroy
-  - *terraform-create 
+  - *terraform-create
   - *release-lock
 
 resource_types:
@@ -103,7 +101,7 @@ resources:
     uri: *ci_git_uri
 - name: pr
   type: pull-request
-  check_every: 10s 
+  check_every: 10s
   source:
     repository: *github_repo
     access_token: *github_access_token
@@ -118,7 +116,7 @@ resources:
     vars:
       project: *gcp_project_id
       k8s_network_selflink: *k8s_network_selflink
-      gke_version: 1.13.7-gke.24
+      gke_version: 1.13.11-gke.9
     env:
       GOOGLE_CREDENTIALS: *service_account_json
 
@@ -145,7 +143,7 @@ jobs:
     # here. In the worst case, we've manually added an environment to the pool that hasn't been
     # initialized, and the initialization happens here. This has the benefit of not requiring
     # a separate process for resource management.
-    - *terraform-create 
+    - *terraform-create
     - task: check-linters
       timeout: 10m
       config:
@@ -288,12 +286,9 @@ jobs:
         params:
           SERVICE_ACCOUNT_JSON: *release_service_account_json
           GCP_PROJECT_ID: *release_project
-          KO_DOCKER_REPO: *ko_docker_release_repo
         inputs:
         - name: pr
         - name: ci-pipelines-src
-        outputs:
-        - name: artifacts
         run:
           path: bash
           args:
@@ -301,11 +296,8 @@ jobs:
           - |
             artifacts=`pwd`/artifacts
             pushd pr
-              # Generate license
-              ../ci-pipelines-src/hack/update-vendor-license.sh $artifacts
-              cp third_party/VENDOR-LICENSE $artifacts
               # Build CLI and controllers
-              ../ci-pipelines-src/hack/build-release.sh $artifacts
+              ../ci-pipelines-src/hack/build.sh
             popd
   - task: integration
     timeout: 1h30m
@@ -317,7 +309,6 @@ jobs:
       inputs:
       - name: pr
       - name: ci-pipelines-src
-      - name: artifacts
       - name: terraform
       run:
         path: bash
@@ -342,12 +333,17 @@ jobs:
 
           # Install SC
           kubectl apply --recursive --filename pr/third_party/service-catalog/manifests/catalog/templates/
+
           # Install Knative Build
           kubectl apply --filename https://github.com/knative/build/releases/download/v0.6.0/build.yaml
-          # Install Kf
-          kubectl apply --filename artifacts/release.yaml
+
+          # Let SC and Build simmer for 30s
+          sleep 30
 
           pushd pr
+            # Install Kf server-side components
+            ../ci-pipelines-src/hack/ko-apply.sh
+
             # Run unit tests
             ../ci-pipelines-src/hack/integration-test.sh
           popd
@@ -355,9 +351,8 @@ jobs:
         GOPROXY: *go_proxy
         GOSUMDB: *go_sum_db
         SERVICE_ACCOUNT_JSON: *service_account_json
+        KO_DOCKER_REPO: *ko_docker_repo
   - put: pr
     params:
       path: pr
       status: SUCCESS
-      description: Concourse integration pipeline succeeded
-      comment: Concourse integration pipeline succeeded

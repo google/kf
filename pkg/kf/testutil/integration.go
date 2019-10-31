@@ -933,15 +933,21 @@ func (k *Kf) Env(ctx context.Context, appName string) map[string]string {
 	return results
 }
 
+// WaitForCluster runs doctor repeatedly until the cluster is ready or the
+// operation times out.
+func (k *Kf) WaitForCluster(ctx context.Context) {
+	k.t.Helper()
+	k.Doctor(ctx, "--delay", "5s", "--retries", "12")
+}
+
 // Doctor runs the doctor command.
-func (k *Kf) Doctor(ctx context.Context) {
+func (k *Kf) Doctor(ctx context.Context, extraArgs ...string) {
 	k.t.Helper()
 	Logf(k.t, "running doctor...")
 	defer Logf(k.t, "done running doctor.")
+	args := []string{"doctor"}
 	output, errs := k.kf(ctx, k.t, KfTestConfig{
-		Args: []string{
-			"doctor",
-		},
+		Args: append(args, extraArgs...),
 	})
 	PanicOnError(ctx, k.t, "doctor", errs)
 	StreamOutput(ctx, k.t, output)

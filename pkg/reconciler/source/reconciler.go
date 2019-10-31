@@ -16,7 +16,6 @@ package source
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
@@ -28,6 +27,7 @@ import (
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/controller"
@@ -119,24 +119,64 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, source *v1alpha1.Source) 
 		return nil
 	}
 
-	// Sync build
+	secretCondition := source.Status.BuildSecretCondition()
+	buildCondtion := source.Status.BuildCondition()
+
+	desiredBuild, desiredSecret, err := resources.MakeBuild(source)
+	if err != nil {
+		return secretCondition.MarkTemplateError(err)
+	}
+
+	// Sync Build Secret
+	if desiredSecret != nil {
+		logger.Debug("reconciling build secret")
+
+		actual, err := r.SecretLister.
+			Secrets(desiredSecret.Namespace).
+			Get(desiredSecret.Name)
+		if apierrs.IsNotFound(err) {
+			actual, err = r.KubeClientSet.
+				CoreV1().
+				Secrets(desiredSecret.Namespace).
+				Create(desiredSecret)
+			if err != nil {
+				return secretCondition.MarkReconciliationError("creating", err)
+			}
+		} else if err != nil {
+			return secretCondition.MarkReconciliationError("getting latest", err)
+		} else if !metav1.IsControlledBy(actual, source) {
+			return secretCondition.MarkChildNotOwned(desiredSecret.Name)
+		} else if actual, err = r.ReconcileSecret(ctx, desiredSecret, actual); err != nil {
+			return secretCondition.MarkReconciliationError("updating existing", err)
+		}
+		source.Status.PropagateBuildSecretStatus(actual)
+
+		if secretCondition.IsPending() {
+			logger.Info("Waiting for Secret; exiting early")
+			return nil
+		}
+	} else {
+		// We still need to update the status even when we don't have a
+		// secret. Otherwise the Source's status will always be not ready.
+		source.Status.PropagateBuildSecretStatus(nil)
+	}
+
+	// Sync Build
 	{
 		logger.Debug("reconciling Build")
 
-		desired, err := resources.MakeBuild(source)
-		if err != nil {
-			return err
-		}
-
-		actual, err := r.buildLister.Builds(source.Namespace).Get(desired.Name)
+		actual, err := r.buildLister.
+			Builds(source.Namespace).
+			Get(desiredBuild.Name)
 		if errors.IsNotFound(err) {
-			actual, err = r.buildClient.Builds(desired.Namespace).Create(desired)
+			actual, err = r.buildClient.
+				Builds(desiredBuild.Namespace).
+				Create(desiredBuild)
 			if err != nil {
 				return err
 			}
 		} else if !metav1.IsControlledBy(actual, source) {
-			source.Status.MarkBuildNotOwned(desired.Name)
-			return fmt.Errorf("source: %q does not own build: %q", source.Name, desired.Name)
+			return buildCondtion.MarkChildNotOwned(desiredBuild.Name)
 		}
 
 		source.Status.PropagateBuildStatus(actual)

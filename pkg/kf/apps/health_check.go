@@ -28,7 +28,10 @@ func NewHealthCheck(healthCheckType string, endpoint string, timeoutSeconds int)
 		return nil, errors.New("health check timeouts can't be negative")
 	}
 
-	probe := &corev1.Probe{TimeoutSeconds: int32(timeoutSeconds)}
+	probe := &corev1.Probe{
+		TimeoutSeconds:   int32(timeoutSeconds),
+		SuccessThreshold: 1,
+	}
 
 	switch healthCheckType {
 	case "http":

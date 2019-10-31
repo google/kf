@@ -23,8 +23,8 @@ configs:
   - name: Service
     type: string
     description: the name of the ingress service
-    default: '"istio-ingressgateway"'
+    default: '"istio-ingress"'
   - name: Namespace
     type: string
     description: the Kubernetes namespace to search for Ingresses
-    default: '"istio-system"'
+    default: '"gke-system"'
