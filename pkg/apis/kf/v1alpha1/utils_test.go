@@ -24,6 +24,8 @@ import (
 
 	"github.com/google/kf/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
@@ -137,6 +139,32 @@ func ExampleSingleConditionManager_MarkReconciliationError() {
 	// Message: Error occurred while updating Dummy: update err
 	// Reason: ReconciliationError
 	// Error: Error occurred while updating Dummy: update err
+}
+
+func ExampleSingleConditionManager_MarkReconciliationError_conflict() {
+	manager := apis.NewLivingConditionSet("DummyReady").Manage(&duckv1beta1.Status{})
+	scm := NewSingleConditionManager(manager, "DummyReady", "Dummy")
+
+	conflict := apierrs.NewConflict(
+		schema.GroupResource{
+			Group:    "serving.knative.dev",
+			Resource: "services",
+		},
+		"MyService",
+		errors.New("the object has been modified; please apply your changes to the latest version and try again"),
+	)
+	err := scm.MarkReconciliationError("updating", conflict)
+
+	result := manager.GetCondition("DummyReady")
+	fmt.Println("Status:", result.Status)
+	fmt.Println("Message:", result.Message)
+	fmt.Println("Reason:", result.Reason)
+	fmt.Println("Error:", err)
+
+	// Output: Status: Unknown
+	// Message: Error occurred while updating Dummy: Operation cannot be fulfilled on services.serving.knative.dev "MyService": the object has been modified; please apply your changes to the latest version and try again
+	// Reason: CacheOutdated
+	// Error: Error occurred while updating Dummy: Operation cannot be fulfilled on services.serving.knative.dev "MyService": the object has been modified; please apply your changes to the latest version and try again
 }
 
 func TestGenerateName_Deterministic(t *testing.T) {
