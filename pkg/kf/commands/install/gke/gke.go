@@ -526,15 +526,25 @@ func targetCluster(
 ) error {
 	ctx = SetLogPrefix(ctx, "Target Cluster")
 	Logf(ctx, "targeting cluster")
-	_, err := gcloud(
-		ctx,
+
+	_, selection, err := SelectPrompt(ctx, "GKE Master Server IP", "public", "internal")
+	if err != nil {
+		return err
+	}
+
+	args := []string{
 		"container",
 		"clusters",
 		"get-credentials",
 		clusterName,
 		"--zone", zone,
 		"--project", projID,
-	)
+	}
+
+	if selection == "internal" {
+		args = append(args, "--internal-ip")
+	}
+	_, err = gcloud(ctx, args...)
 
 	return err
 }
