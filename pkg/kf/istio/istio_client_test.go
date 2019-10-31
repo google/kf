@@ -47,8 +47,8 @@ func TestIstioClient_ListIngresses(t *testing.T) {
 		"default values": {
 			setup: func(mockK8s kubernetes.Interface) {
 				svc := &corev1.Service{}
-				svc.Name = "istio-ingressgateway"
-				mockK8s.CoreV1().Services("istio-system").Create(svc)
+				svc.Name = "istio-ingress"
+				mockK8s.CoreV1().Services("gke-system").Create(svc)
 			},
 		},
 		"custom values": {

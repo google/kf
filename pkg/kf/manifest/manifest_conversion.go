@@ -97,7 +97,10 @@ func (source *Application) ToHealthCheck() (*corev1.Probe, error) {
 		return nil, errors.New("health check timeouts can't be negative")
 	}
 
-	probe := &corev1.Probe{TimeoutSeconds: int32(source.HealthCheckTimeout)}
+	probe := &corev1.Probe{
+		TimeoutSeconds:   int32(source.HealthCheckTimeout),
+		SuccessThreshold: 1,
+	}
 
 	switch source.HealthCheckType {
 	case "http":

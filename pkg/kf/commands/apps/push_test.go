@@ -119,7 +119,8 @@ func TestPushCommand(t *testing.T) {
 					Env:     envutil.MapToEnvVars(map[string]string{"env1": "val1", "env2": "val2"}),
 					Ports:   manifest.HTTP2ContainerPort(),
 					ReadinessProbe: &corev1.Probe{
-						TimeoutSeconds: 28,
+						TimeoutSeconds:   28,
+						SuccessThreshold: 1,
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{},
 						},
@@ -480,7 +481,8 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushContainerImage("gcr.io/http-health-check-app"),
 				apps.WithPushContainer(corev1.Container{
 					ReadinessProbe: &corev1.Probe{
-						TimeoutSeconds: 42,
+						SuccessThreshold: 1,
+						TimeoutSeconds:   42,
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{Path: "/healthz"},
 						},
@@ -499,7 +501,8 @@ func TestPushCommand(t *testing.T) {
 				apps.WithPushNamespace("some-namespace"),
 				apps.WithPushContainer(corev1.Container{
 					ReadinessProbe: &corev1.Probe{
-						TimeoutSeconds: 33,
+						SuccessThreshold: 1,
+						TimeoutSeconds:   33,
 						Handler: corev1.Handler{
 							TCPSocket: &corev1.TCPSocketAction{},
 						},

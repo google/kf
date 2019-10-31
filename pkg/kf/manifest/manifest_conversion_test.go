@@ -148,7 +148,8 @@ func TestApplication_ToHealthCheck(t *testing.T) {
 			endpoint:  "/healthz",
 			timeout:   180,
 			expectProbe: &corev1.Probe{
-				TimeoutSeconds: int32(180),
+				TimeoutSeconds:   int32(180),
+				SuccessThreshold: 1,
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Path: "/healthz",
@@ -159,6 +160,7 @@ func TestApplication_ToHealthCheck(t *testing.T) {
 		"http default": {
 			checkType: "http",
 			expectProbe: &corev1.Probe{
+				SuccessThreshold: 1,
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{},
 				},
@@ -166,6 +168,7 @@ func TestApplication_ToHealthCheck(t *testing.T) {
 		},
 		"blank type uses port": {
 			expectProbe: &corev1.Probe{
+				SuccessThreshold: 1,
 				Handler: corev1.Handler{
 					TCPSocket: &corev1.TCPSocketAction{},
 				},
@@ -179,7 +182,8 @@ func TestApplication_ToHealthCheck(t *testing.T) {
 			checkType: "port",
 			timeout:   180,
 			expectProbe: &corev1.Probe{
-				TimeoutSeconds: int32(180),
+				TimeoutSeconds:   int32(180),
+				SuccessThreshold: 1,
 				Handler: corev1.Handler{
 					TCPSocket: &corev1.TCPSocketAction{},
 				},
@@ -188,6 +192,7 @@ func TestApplication_ToHealthCheck(t *testing.T) {
 		"port default": {
 			checkType: "port",
 			expectProbe: &corev1.Probe{
+				SuccessThreshold: 1,
 				Handler: corev1.Handler{
 					TCPSocket: &corev1.TCPSocketAction{},
 				},
@@ -218,6 +223,7 @@ func TestApplication_ToHealthCheck(t *testing.T) {
 
 func TestApplication_ToContainer(t *testing.T) {
 	defaultHealthCheck := &corev1.Probe{
+		SuccessThreshold: 1,
 		Handler: corev1.Handler{
 			TCPSocket: &corev1.TCPSocketAction{},
 		},
@@ -262,6 +268,7 @@ func TestApplication_ToContainer(t *testing.T) {
 				Args:    []string{"foo", "bar"},
 				Command: []string{"bash"},
 				ReadinessProbe: &corev1.Probe{
+					SuccessThreshold: 1,
 					Handler: corev1.Handler{
 						HTTPGet: &corev1.HTTPGetAction{},
 					},
