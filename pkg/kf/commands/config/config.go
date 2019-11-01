@@ -27,6 +27,7 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	kf "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
 	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
+	"github.com/google/kf/pkg/kf/internal/tableclient"
 	"github.com/google/kf/pkg/kf/marketplace"
 	build "github.com/google/kf/third_party/knative-build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	serving "github.com/google/kf/third_party/knative-serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
@@ -200,6 +201,7 @@ func GetKubernetes(p *KfParams) k8sclient.Interface {
 	if err != nil {
 		log.Fatalf("failed to create a K8s client: %s", err)
 	}
+
 	return c
 }
 
@@ -263,6 +265,16 @@ func GetSvcatApp(p *KfParams) marketplace.SClientFactory {
 		}
 		return c
 	}
+}
+
+// GetTableClient creates a generic client for fetching server-side rendered
+// tables.
+func GetTableClient(p *KfParams) tableclient.Interface {
+	c, err := tableclient.New(getRestConfig(p))
+	if err != nil {
+		log.Fatalf("failed to create a table client: %s", err)
+	}
+	return c
 }
 
 func getRestConfig(p *KfParams) *rest.Config {

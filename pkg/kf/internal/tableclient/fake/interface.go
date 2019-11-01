@@ -12,19 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package spaces
+package fake
 
-import (
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/internal/genericcli"
-	"github.com/google/kf/pkg/kf/internal/tableclient"
-	"github.com/google/kf/pkg/kf/spaces"
-	"k8s.io/client-go/dynamic"
+import "github.com/google/kf/pkg/kf/internal/tableclient"
 
-	"github.com/spf13/cobra"
-)
+//go:generate mockgen --package=fake --copyright_file ../../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_client.go --mock_names=Interface=FakeInterface github.com/google/kf/pkg/kf/internal/tableclient/fake Interface
 
-// NewListSpacesCommand allows users to list spaces.
-func NewListSpacesCommand(p *config.KfParams, client dynamic.Interface, tc tableclient.Interface) *cobra.Command {
-	return genericcli.NewListCommand(spaces.NewResourceInfo(), p, client, tc)
+// Interface is the client for tables.
+type Interface interface {
+	tableclient.Interface
 }
