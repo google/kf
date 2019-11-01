@@ -15,21 +15,22 @@
 package config
 
 import (
+	"strings"
+
 	corev1 "k8s.io/api/core/v1"
 )
 
 const (
 	SecretsConfigName       = "config-secrets"
-	BuildImagePushSecretKey = "build.imagePushSecret"
-	DefaultImagePushSecret  = "kf-image-push-secret"
+	BuildImagePushSecretKey = "build.imagePushSecrets"
 )
 
 // SecretsConfig contains the configuration defined in the build secrets
 // config map.
 type SecretsConfig struct {
-	// BuildImagePushSecret is the name of the Secret that should be used in
-	// each space to push images via the build pipeline.
-	BuildImagePushSecret corev1.ObjectReference
+	// BuildImagePushSecrets are the names of the Secrets that should be used
+	// in each space to push images via the build pipeline.
+	BuildImagePushSecrets []corev1.ObjectReference
 }
 
 // NewSecretsConfigFromConfigMap creates a SecretConfig from the supplied
@@ -39,10 +40,10 @@ func NewSecretsConfigFromConfigMap(
 ) (*SecretsConfig, error) {
 	sc := &SecretsConfig{}
 
-	if buildImagePushSecret := configMap.Data[BuildImagePushSecretKey]; buildImagePushSecret == "" {
-		sc.BuildImagePushSecret.Name = DefaultImagePushSecret
-	} else {
-		sc.BuildImagePushSecret.Name = buildImagePushSecret
+	for _, secret := range strings.Split(configMap.Data[BuildImagePushSecretKey], ",") {
+		sc.BuildImagePushSecrets = append(sc.BuildImagePushSecrets, corev1.ObjectReference{
+			Name: strings.TrimSpace(secret),
+		})
 	}
 
 	return sc, nil

@@ -24,7 +24,7 @@ import (
 // BuildServiceAccountName gets the name of the service account for given the
 // space.
 func BuildServiceAccountName(space *v1alpha1.Space) string {
-	return space.Spec.Security.BuildServiceAccount
+	return v1alpha1.DefaultBuildServiceAccountName
 }
 
 // BuildSecretName gets the name of the secret for given the space.
@@ -37,31 +37,35 @@ func BuildSecretName(space *v1alpha1.Space) string {
 // use.
 func MakeBuildServiceAccount(
 	space *v1alpha1.Space,
-	kfSecret *corev1.Secret,
-) (*corev1.ServiceAccount, *corev1.Secret, error) {
-	// We'll make a copy of the Data to ensure nothing gets altered anywhere.
-	dataCopy := map[string][]byte{}
-	for k, v := range kfSecret.Data {
-		d := make([]byte, len(v))
-		copy(d, v)
-		dataCopy[k] = d
+	kfSecrets []*corev1.Secret,
+) (*corev1.ServiceAccount, []*corev1.Secret, error) {
+	sa := &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      BuildServiceAccountName(space),
+			Namespace: NamespaceName(space),
+			OwnerReferences: []metav1.OwnerReference{
+				*kmeta.NewControllerRef(space),
+			},
+			Labels: v1alpha1.UnionMaps(space.GetLabels(), map[string]string{
+				v1alpha1.ManagedByLabel: "kf",
+			}),
+		},
+		Secrets: []corev1.ObjectReference{
+			{Name: BuildSecretName(space)},
+		},
 	}
 
-	return &corev1.ServiceAccount{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildServiceAccountName(space),
-				Namespace: NamespaceName(space),
-				OwnerReferences: []metav1.OwnerReference{
-					*kmeta.NewControllerRef(space),
-				},
-				Labels: v1alpha1.UnionMaps(space.GetLabels(), map[string]string{
-					v1alpha1.ManagedByLabel: "kf",
-				}),
-			},
-			Secrets: []corev1.ObjectReference{
-				{Name: BuildSecretName(space)},
-			},
-		}, &corev1.Secret{
+	var desiredSecrets []*corev1.Secret
+	for _, kfs := range kfSecrets {
+		// We'll make a copy of the Data to ensure nothing gets altered anywhere.
+		dataCopy := map[string][]byte{}
+		for k, v := range kfs.Data {
+			d := make([]byte, len(v))
+			copy(d, v)
+			dataCopy[k] = d
+		}
+
+		desiredSecret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      BuildSecretName(space),
 				Namespace: NamespaceName(space),
@@ -74,5 +78,13 @@ func MakeBuildServiceAccount(
 			},
 			Type: corev1.SecretTypeDockerConfigJson,
 			Data: dataCopy,
-		}, nil
+		}
+
+		desiredSecrets = append(desiredSecrets, desiredSecret)
+		sa.Secrets = append(sa.Secrets, corev1.ObjectReference{
+			Name: desiredSecret.Name,
+		})
+	}
+
+	return sa, desiredSecrets, nil
 }

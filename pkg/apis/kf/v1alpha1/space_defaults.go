@@ -45,7 +45,7 @@ func (k *SpaceSpec) SetDefaults(ctx context.Context, name string) {
 	k.ResourceLimits.SetDefaults(ctx)
 }
 
-const DefaultBuildServiceAccountName = "kf-build-creds"
+const DefaultBuildServiceAccountName = "kf-builder"
 
 // SetDefaults implements apis.Defaultable
 func (k *SpaceSpecSecurity) SetDefaults(ctx context.Context) {

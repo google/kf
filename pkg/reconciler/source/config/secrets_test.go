@@ -25,19 +25,13 @@ import (
 func TestNewSecretsConfigFromConfigMap(t *testing.T) {
 	t.Parallel()
 
-	t.Run("with value", func(t *testing.T) {
-		sc, err := config.NewSecretsConfigFromConfigMap(&corev1.ConfigMap{
-			Data: map[string]string{
-				config.BuildImagePushSecretKey: "some-value",
-			},
-		})
-		testutil.AssertNil(t, "err", err)
-		testutil.AssertEqual(t, "BuildImagePushSecret", "some-value", sc.BuildImagePushSecret.Name)
+	sc, err := config.NewSecretsConfigFromConfigMap(&corev1.ConfigMap{
+		Data: map[string]string{
+			config.BuildImagePushSecretKey: "some-value-0, some-value-1",
+		},
 	})
-
-	t.Run("without value", func(t *testing.T) {
-		sc, err := config.NewSecretsConfigFromConfigMap(&corev1.ConfigMap{})
-		testutil.AssertNil(t, "err", err)
-		testutil.AssertEqual(t, "BuildImagePushSecret", config.DefaultImagePushSecret, sc.BuildImagePushSecret.Name)
-	})
+	testutil.AssertNil(t, "err", err)
+	testutil.AssertEqual(t, "BuildImagePushSecret Count", 2, len(sc.BuildImagePushSecrets))
+	testutil.AssertEqual(t, "BuildImagePushSecrets[0]", "some-value-0", sc.BuildImagePushSecrets[0].Name)
+	testutil.AssertEqual(t, "BuildImagePushSecrets[1]", "some-value-1", sc.BuildImagePushSecrets[1].Name)
 }

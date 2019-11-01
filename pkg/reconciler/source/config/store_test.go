@@ -25,12 +25,6 @@ import (
 	logtesting "knative.dev/pkg/logging/testing"
 )
 
-func TestStoreLoadDefault(t *testing.T) {
-	store := config.NewDefaultConfigStore(logtesting.TestLogger(t))
-	secretsConfig := config.FromContext(store.ToContext(context.Background())).Secrets
-	testutil.AssertEqual(t, "BuildImagePushSecret", config.DefaultImagePushSecret, secretsConfig.BuildImagePushSecret.Name)
-}
-
 func TestStoreLoadWithContext(t *testing.T) {
 	store := config.NewDefaultConfigStore(logtesting.TestLogger(t))
 	_, secretsConfig := kntesting.ConfigMapsFromTestFile(t, config.SecretsConfigName)
@@ -42,5 +36,5 @@ func TestStoreLoadWithContext(t *testing.T) {
 		t.Errorf("Unexpected secrets config (-want, +got): %v", diff)
 	}
 
-	testutil.AssertEqual(t, "BuildImagePushSecret", "test-build-image-push-secret", expected.BuildImagePushSecret.Name)
+	testutil.AssertEqual(t, "BuildImagePushSecrets", "test-build-image-push-secret", expected.BuildImagePushSecrets[0].Name)
 }

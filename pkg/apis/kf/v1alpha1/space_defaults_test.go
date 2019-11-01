@@ -93,7 +93,7 @@ func ExampleSpaceSpecSecurity_SetDefaults() {
 	fmt.Println("BuildServiceAccount:", space.Spec.Security.BuildServiceAccount)
 
 	// Output: EnableDeveloperLogsAccess: true
-	// BuildServiceAccount: kf-build-creds
+	// BuildServiceAccount: kf-builder
 }
 
 func ExampleSpaceSpecSecurity_SetDefaults_preserves() {

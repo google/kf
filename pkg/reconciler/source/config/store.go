@@ -37,7 +37,7 @@ func ToContext(ctx context.Context, c *Config) context.Context {
 }
 
 // Store is based on configmap.UntypedStore and is used to store and watch for
-// updates to configuration related to routes.
+// updates to configuration related to Secrets.
 type Store struct {
 	*configmap.UntypedStore
 }
