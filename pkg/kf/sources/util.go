@@ -19,9 +19,11 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/fatih/color"
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	tektoncli "github.com/google/kf/third_party/tektoncd-cli/pkg/cli"
 	"github.com/google/kf/third_party/tektoncd-cli/pkg/cmd/taskrun"
+	"github.com/google/kf/third_party/tektoncd-cli/pkg/helper/pods"
 	tekton "github.com/google/kf/third_party/tektoncd-pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -68,14 +70,35 @@ func TektonLoggingShim(ti tekton.Interface, ki kubernetes.Interface) BuildTailer
 	return BuildTailerFunc(func(ctx context.Context, out io.Writer, buildName, namespace string) error {
 		reader := taskrun.LogReader{
 			Ns:       namespace,
-			Task:     buildName,
+			Run:      buildName,
 			AllSteps: true,
 			Follow:   true,
+			Streamer: pods.NewStream,
 			Clients: &tektoncli.Clients{
 				Tekton: ti,
 				Kube:   ki,
 			},
 		}
-		panic(reader)
+		logs, errs, err := reader.Read()
+		if err != nil {
+			return err
+		}
+
+		fgGreen := color.New(color.FgGreen)
+
+		for {
+			select {
+			case err := <-errs:
+				return err
+			case log, ok := <-logs:
+				if !ok {
+					return nil
+				}
+				prefix := fgGreen.Sprintf("[%s/%s]", log.Task, log.Step)
+				fmt.Fprintln(out, prefix, log.Log)
+			}
+		}
+
+		return nil
 	})
 }
