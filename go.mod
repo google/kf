@@ -26,7 +26,8 @@ require (
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
 	github.com/pborman/uuid v1.2.0 // indirect
-	github.com/poy/kontext v0.0.0-20190801225340-1f98414f4e12
+	github.com/pkg/errors v0.8.0
+	github.com/poy/kontext v0.0.0-20190912033603-631f8aafd494
 	github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c
 	github.com/rogpeppe/go-internal v1.3.0 // indirect
 	github.com/russross/blackfriday v1.5.2
@@ -35,6 +36,7 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
 	github.com/stretchr/testify v1.3.0 // indirect
+	github.com/tektoncd/pipeline v0.8.0
 	go.opencensus.io v0.22.0 // indirect
 	go.uber.org/zap v1.10.0
 	golang.org/x/crypto v0.0.0-20190611184440-5c40567a22f8 // indirect
@@ -43,6 +45,7 @@ require (
 	golang.org/x/sys v0.0.0-20190616124812-15dcb6c0061f // indirect
 	golang.org/x/text v0.3.2 // indirect
 	golang.org/x/tools v0.0.0-20190614205625-5aca471b1d59 // indirect
+	golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898
 	google.golang.org/appengine v1.5.0 // indirect
 	gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20191105091915-95d230a53780 // indirect
 	gopkg.in/yaml.v2 v2.2.4 // indirect

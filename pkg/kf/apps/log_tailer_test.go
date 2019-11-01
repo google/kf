@@ -26,7 +26,6 @@ import (
 	"github.com/google/kf/pkg/kf/apps"
 	sourcesfake "github.com/google/kf/pkg/kf/sources/fake"
 	"github.com/google/kf/pkg/kf/testutil"
-	build "github.com/google/kf/third_party/knative-build/pkg/apis/build/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	ktesting "k8s.io/client-go/testing"
@@ -223,22 +222,6 @@ func createMsgEvents(appName string, conditions duckv1beta1.Conditions) []watch.
 		},
 	})
 	return es
-}
-
-func createBuildAddedEvent(appName, buildName string) []watch.Event {
-	b := &build.Build{}
-	b.Name = buildName
-	b.ObjectMeta.OwnerReferences = []metav1.OwnerReference{
-		{
-			Name: appName,
-		},
-	}
-	return []watch.Event{
-		{
-			Type:   watch.Added,
-			Object: b,
-		},
-	}
 }
 
 func buildLogWatchFakes(

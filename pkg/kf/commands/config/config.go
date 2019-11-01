@@ -29,8 +29,8 @@ import (
 	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
 	"github.com/google/kf/pkg/kf/internal/tableclient"
 	"github.com/google/kf/pkg/kf/marketplace"
-	build "github.com/google/kf/third_party/knative-build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	serving "github.com/google/kf/third_party/knative-serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
+	tektonclient "github.com/google/kf/third_party/tektoncd-pipeline/pkg/client/clientset/versioned"
 	"github.com/imdario/mergo"
 	svcatclient "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/poy/service-catalog/pkg/svcat"
@@ -184,16 +184,6 @@ func GetServingClient(p *KfParams) serving.ServingV1alpha1Interface {
 	return client
 }
 
-// GetBuildClient returns a Build interface.
-func GetBuildClient(p *KfParams) build.BuildV1alpha1Interface {
-	config := getRestConfig(p)
-	client, err := build.NewForConfig(config)
-	if err != nil {
-		log.Fatalf("failed to create a Build client: %s", err)
-	}
-	return client
-}
-
 // GetKubernetes returns a K8s client.
 func GetKubernetes(p *KfParams) k8sclient.Interface {
 	config := getRestConfig(p)
@@ -225,6 +215,17 @@ func GetServiceCatalogClient(p *KfParams) servicecatalogclient.Interface {
 	}
 
 	return cs
+}
+
+// GetTektonClient returns a Tekton Client.
+func GetTektonClient(p *KfParams) tektonclient.Interface {
+	config := getRestConfig(p)
+	c, err := tektonclient.NewForConfig(config)
+	if err != nil {
+		log.Fatalf("failed to create a Tekton client: %v", err)
+	}
+
+	return c
 }
 
 // GetDynamicClient gets a dynamic Kubernetes client. Dynamic clients can work

@@ -65,6 +65,7 @@ KF_PACKAGE="github.com/google/kf"
 KF_PACKAGE_LOCATION="./"
 KF_RESOURCE="kf:v1alpha1"
 BUILD_RESOURCE="build:v1alpha1"
+TEKTONCD_PIPELINE_RESOURCE="pipeline:v1alpha1"
 SERVING_RESOURCE="serving:v1alpha1"
 HEADER_FILE=${KF_PACKAGE_LOCATION}/pkg/kf/internal/tools/option-builder/LICENSE_HEADER.go.txt
 
@@ -146,6 +147,22 @@ kf-knative-gen() {
     "github.com/google/kf/pkg/client" \
     "github.com/google/kf/pkg/apis" \
     "kf:v1alpha1"
+}
+
+tekton-pipeline-code-gen() {
+  code-generator-gen \
+    "deepcopy,client,informer,lister" \
+    "github.com/google/kf/third_party/tektoncd-pipeline/pkg/client" \
+    "github.com/google/kf/third_party/tektoncd-pipeline/pkg/apis" \
+    "$TEKTONCD_PIPELINE_RESOURCE"
+}
+
+tekton-pipeline-knative-gen() {
+  knative-injection-gen \
+    "injection" \
+    "github.com/google/kf/third_party/tektoncd-pipeline/pkg/client" \
+    "github.com/google/kf/third_party/tektoncd-pipeline/pkg/apis" \
+    "$TEKTONCD_PIPELINE_RESOURCE"
 }
 
 kbuild-code-gen() {
@@ -237,6 +254,10 @@ case $GENS in
   kf)
     kf-code-gen
     kf-knative-gen
+    ;;
+  tekton-pipeline)
+    tekton-pipeline-code-gen
+    tekton-pipeline-knative-gen
     ;;
   kbuild)
     kbuild-code-gen

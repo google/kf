@@ -20,7 +20,11 @@ import (
 	"io"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	tektoncli "github.com/google/kf/third_party/tektoncd-cli/pkg/cli"
+	"github.com/google/kf/third_party/tektoncd-cli/pkg/cmd/taskrun"
+	tekton "github.com/google/kf/third_party/tektoncd-pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 // SourceStatus gets the status of the given source.
@@ -52,4 +56,26 @@ type BuildTailerFunc func(ctx context.Context, out io.Writer, buildName, namespa
 // Tail implements BuildTailer.
 func (f BuildTailerFunc) Tail(ctx context.Context, out io.Writer, buildName, namespace string) error {
 	return f(ctx, out, buildName, namespace)
+}
+
+// TektonLoggingShim implements BuildTailer for taskrun.LogReader
+// (https://godoc.org/github.com/tektoncd/cli/pkg/cmd/taskrun#LogReader).
+//
+// TODO: To keep the transition to Tekton small, we'll implement a function
+// here that implements the interface that knative-build expected. We should
+// obviously move away from this at some point.
+func TektonLoggingShim(ti tekton.Interface, ki kubernetes.Interface) BuildTailer {
+	return BuildTailerFunc(func(ctx context.Context, out io.Writer, buildName, namespace string) error {
+		reader := taskrun.LogReader{
+			Ns:       namespace,
+			Task:     buildName,
+			AllSteps: true,
+			Follow:   true,
+			Clients: &tektoncli.Clients{
+				Tekton: ti,
+				Kube:   ki,
+			},
+		}
+		panic(reader)
+	})
 }

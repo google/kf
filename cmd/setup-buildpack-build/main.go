@@ -62,6 +62,11 @@ func main() {
 	}
 
 	describe.SectionWriter(w, "Changing permissions", func(w io.Writer) {
+		fmt.Fprintf(w, "chmod -R %d:%d %s\n", 0755, *workspace)
+		if err := chmod(*workspace, 0755); err != nil {
+			log.Fatal(err)
+		}
+
 		for _, dir := range []string{"/builder/home", "/layers", "/cache", *workspace} {
 			fmt.Fprintf(w, "chown -R %d:%d %s\n", uid, gid, dir)
 
@@ -132,6 +137,16 @@ func getBuildUser(builderImage string) (uid, gid int, err error) {
 	}
 
 	return uid, gid, nil
+}
+
+func chmod(path string, mode os.FileMode) error {
+	return filepath.Walk(path, func(name string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		return os.Chmod(name, mode)
+	})
 }
 
 func chown(path string, uid, gid int) error {

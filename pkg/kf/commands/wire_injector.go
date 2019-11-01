@@ -45,7 +45,6 @@ import (
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/google/kf/pkg/kf/sources"
 	"github.com/google/kf/pkg/kf/spaces"
-	"github.com/google/kf/third_party/knative-build/pkg/logs"
 	"github.com/google/wire"
 	"github.com/poy/kontext"
 	"github.com/spf13/cobra"
@@ -129,7 +128,6 @@ func InjectProxy(p *config.KfParams) *cobra.Command {
 		capps.NewProxyCommand,
 		AppsSet,
 		istio.NewIstioClient,
-		config.GetKubernetes,
 	)
 	return nil
 }
@@ -448,14 +446,17 @@ func InjectProxyRoute(p *config.KfParams) *cobra.Command {
 // Builds Command //
 ////////////////////
 
-var SourcesSet = wire.NewSet(config.GetKfClient, provideSourcesBuildTailer, provideKfSources, sources.NewClient)
+var SourcesSet = wire.NewSet(
+	config.GetKfClient,
+	sources.TektonLoggingShim,
+	provideKfSources,
+	sources.NewClient,
+	config.GetTektonClient,
+	config.GetKubernetes,
+)
 
 func provideKfSources(ki kfv1alpha1.KfV1alpha1Interface) kfv1alpha1.SourcesGetter {
 	return ki
-}
-
-func provideSourcesBuildTailer() sources.BuildTailer {
-	return sources.BuildTailerFunc(logs.Tail)
 }
 
 func InjectBuilds(p *config.KfParams) *cobra.Command {

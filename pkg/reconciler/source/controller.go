@@ -20,8 +20,8 @@ import (
 	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	sourceinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/source"
 	"github.com/google/kf/pkg/reconciler"
-	buildclient "github.com/google/kf/third_party/knative-build/pkg/client/injection/client"
-	buildinformer "github.com/google/kf/third_party/knative-build/pkg/client/injection/informers/build/v1alpha1/build"
+	taskrunclient "github.com/tektoncd/pipeline/pkg/client/injection/client"
+	taskruninformer "github.com/tektoncd/pipeline/pkg/client/injection/informers/pipeline/v1alpha1/taskrun"
 	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/configmap"
 	controller "knative.dev/pkg/controller"
@@ -33,15 +33,15 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 
 	// Get informers off context
 	sourceInformer := sourceinformer.Get(ctx)
-	buildInformer := buildinformer.Get(ctx)
-	buildClient := buildclient.Get(ctx)
+	taskRunInformer := taskruninformer.Get(ctx)
+	taskRunClient := taskrunclient.Get(ctx)
 
 	// Create reconciler
 	c := &Reconciler{
-		Base:         reconciler.NewBase(ctx, cmw),
-		sourceLister: sourceInformer.Lister(),
-		buildLister:  buildInformer.Lister(),
-		buildClient:  buildClient.BuildV1alpha1(),
+		Base:          reconciler.NewBase(ctx, cmw),
+		sourceLister:  sourceInformer.Lister(),
+		taskRunLister: taskRunInformer.Lister(),
+		taskRunClient: taskRunClient.TektonV1alpha1(),
 	}
 
 	impl := controller.NewImpl(c, logger, "sources")
@@ -51,7 +51,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	// Watch for changes in sub-resources so we can sync accordingly
 	sourceInformer.Informer().AddEventHandler(controller.HandleAll(impl.Enqueue))
 
-	buildInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+	taskRunInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: controller.Filter(kfv1alpha1.SchemeGroupVersion.WithKind("Source")),
 		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
 	})

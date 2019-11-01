@@ -56,8 +56,8 @@ rules:
   resources: ["roles"]
   verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
 # the controller MUST hold the roles it will grant within the namespaces
-- apiGroups: ["build.knative.dev"]
-  resources: ["*"]
+- apiGroups: ["tekton.dev"]
+  resources: ["taskruns"]
   verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
 - apiGroups: ["servicecatalog.k8s.io"]
   resources: ["*"]

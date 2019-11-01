@@ -15,7 +15,7 @@
 package v1alpha1
 
 import (
-	build "github.com/google/kf/third_party/knative-build/pkg/apis/build/v1alpha1"
+	build "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"knative.dev/pkg/apis"
@@ -36,6 +36,19 @@ const (
 	// SourceConditionBuildSecretReady is set when the build Secret is ready.
 	SourceConditionBuildSecretReady apis.ConditionType = "BuildSecretReady"
 
+	// Inputs
+	TaskRunParamBuildpack         = "BUILDPACK"
+	TaskRunParamBuildpackBuilder  = "BUILDER_IMAGE"
+	TaskRunParamBuildpackRunImage = "RUN_IMAGE"
+	TaskRunParamDockerfile        = "DOCKERFILE"
+	TaskRunParamSourceContainer   = "KONTEXT_SRC_IMAGE"
+	TaskRunParamEnvSecret         = "ENVIRON_SECRET"
+
+	// Outputs
+	TaskRunResourceNameImage = "IMAGE"
+	TaskRunResourceURL       = "url"
+
+	// TODO: Delete
 	BuildArgImage             = "IMAGE"
 	BuildArgBuildpack         = "BUILDPACK"
 	BuildArgBuildpackBuilder  = "BUILDER_IMAGE"
@@ -67,7 +80,7 @@ func (status *SourceStatus) InitializeConditions() {
 
 // PropagateBuildStatus copies fields from the Build status to Source and
 // updates the readiness based on the current phase.
-func (status *SourceStatus) PropagateBuildStatus(build *build.Build) {
+func (status *SourceStatus) PropagateBuildStatus(build *build.TaskRun) {
 
 	if build == nil {
 		return
@@ -78,7 +91,7 @@ func (status *SourceStatus) PropagateBuildStatus(build *build.Build) {
 
 	cond := build.Status.GetCondition(apis.ConditionSucceeded)
 	if PropagateCondition(status.manage(), SourceConditionBuildSucceeded, cond) {
-		status.Image = GetBuildArg(build, BuildArgImage)
+		status.Image = GetTaskRunOutputResource(build, TaskRunResourceNameImage, TaskRunResourceURL)
 	}
 }
 
@@ -106,12 +119,28 @@ func (status *SourceStatus) BuildSecretCondition() SingleConditionManager {
 	)
 }
 
-func GetBuildArg(b *build.Build, key string) string {
-	for _, arg := range b.Spec.Template.Arguments {
-		if arg.Name == key {
-			return arg.Value
+func GetTaskRunInputParam(b *build.TaskRun, key string) string {
+	for _, param := range b.Spec.Inputs.Params {
+		if param.Name == key {
+			return param.Value.StringVal
 		}
 	}
+	return ""
+}
+
+func GetTaskRunOutputResource(b *build.TaskRun, resourceName, paramName string) string {
+	for _, resource := range b.Spec.Outputs.Resources {
+		if resource.PipelineResourceBinding.Name != resourceName {
+			continue
+		}
+
+		for _, param := range resource.PipelineResourceBinding.ResourceSpec.Params {
+			if param.Name == paramName {
+				return param.Value
+			}
+		}
+	}
+
 	return ""
 }
 
