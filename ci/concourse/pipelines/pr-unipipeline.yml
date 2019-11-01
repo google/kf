@@ -344,6 +344,9 @@ jobs:
             # Install Kf server-side components
             ../ci-pipelines-src/hack/ko-apply.sh
 
+            # Setup Kf Secret and ConifgMap
+            ../ci-pipelines-src/hack/create-gke-secret.sh
+
             # Run unit tests
             ../ci-pipelines-src/hack/integration-test.sh
           popd
