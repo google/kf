@@ -11,11 +11,6 @@ publicly accessible. VPC networks are used.
 
 ## 1. Build a Container Image from UAA
 
-Jib is a Google utility to easily creating container images from Java projects.
-It is available as a Maven/Gradle plugin. There is a [open pull request][uaa-pr]
-to add jib functionality. Until that PR is merged, [this fork][uaa-fork] can be
-used instead.
-
 1. Download the UAA source:
 
     ```sh
@@ -77,6 +72,7 @@ The Kf manifest file will be an output from the Terraform.
 Change to the `./kf/docs/apps/uaa` directory
 
 1. Create a service account for applying Terraform
+
 Terraform requires a service account json for authenticating to Google Cloud. The service account will need adequate permissions for creating the resources in the Terraform configuration, which consists of networking resources and CloudSQL resources.
 
 The configuration for this tutorial assumes such a file exists and is named `account.json`.
@@ -143,7 +139,7 @@ Update the values in `terraform.tfvars`.
 
 All keys and certificates were gereneted by thr Terraofrm configuration. However, the service provider certificate is self-signed. For a production system, you may want to replace this with a sertificate pair which is signed by a trusted certificate authority. This requires careful configuration of your Kf domains alongside your configuration with your domain name provider.
 
-One solution is to use the lets encrypt Google Cloud DNS Challenge Provider Terraform resource:
+One solution is to use the LetsEncrypt Google Cloud DNS Challenge Provider Terraform resource:
 https://www.terraform.io/docs/providers/acme/dns_providers/gcloud.html
 
 [uaa]: https://github.com/cloudfoundry/uaa
