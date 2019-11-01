@@ -88,6 +88,11 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
 	})
 
+	c.SecretInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+		FilterFunc: controller.Filter(v1alpha1.SchemeGroupVersion.WithKind("Space")),
+		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
+	})
+
 	logger.Info("Setting up ConfigMap receivers")
 	configsToResync := []interface{}{
 		&config.SecretsConfig{},

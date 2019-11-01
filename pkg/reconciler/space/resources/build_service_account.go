@@ -72,6 +72,7 @@ func MakeBuildServiceAccount(
 					v1alpha1.ManagedByLabel: "kf",
 				}),
 			},
+			Type: corev1.SecretTypeDockerConfigJson,
 			Data: dataCopy,
 		}, nil
 }

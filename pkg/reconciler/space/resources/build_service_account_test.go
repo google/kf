@@ -67,6 +67,7 @@ func ExampleMakeBuildServiceAccount() {
 	fmt.Println("ServiceAccount Managed Label:", sa.Labels[v1alpha1.ManagedByLabel])
 	fmt.Println("ServiceAccount Secret:", sa.Secrets[0].Name)
 	fmt.Println("Secret Name:", secret.Name)
+	fmt.Println("Secret Type:", secret.Type)
 	fmt.Println("Secret Namespace:", secret.Namespace)
 	fmt.Println("Secret Managed Label:", secret.Labels[v1alpha1.ManagedByLabel])
 	fmt.Println("Secret Data[key-1]:", string(secret.Data["key-1"]))
@@ -77,6 +78,7 @@ func ExampleMakeBuildServiceAccount() {
 	// ServiceAccount Managed Label: kf
 	// ServiceAccount Secret: build-creds
 	// Secret Name: build-creds
+	// Secret Type: kubernetes.io/dockerconfigjson
 	// Secret Namespace: some-space
 	// Secret Managed Label: kf
 	// Secret Data[key-1]: value-1
