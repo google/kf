@@ -64,7 +64,6 @@ done
 KF_PACKAGE="github.com/google/kf"
 KF_PACKAGE_LOCATION="./"
 KF_RESOURCE="kf:v1alpha1"
-BUILD_RESOURCE="build:v1alpha1"
 TEKTONCD_PIPELINE_RESOURCE="pipeline:v1alpha1"
 SERVING_RESOURCE="serving:v1alpha1"
 HEADER_FILE=${KF_PACKAGE_LOCATION}/pkg/kf/internal/tools/option-builder/LICENSE_HEADER.go.txt
@@ -165,22 +164,6 @@ tekton-pipeline-knative-gen() {
     "$TEKTONCD_PIPELINE_RESOURCE"
 }
 
-kbuild-code-gen() {
-  code-generator-gen \
-    "deepcopy,client,informer,lister" \
-    "github.com/google/kf/third_party/knative-build/pkg/client" \
-    "github.com/google/kf/third_party/knative-build/pkg/apis" \
-    "$BUILD_RESOURCE"
-}
-
-kbuild-knative-gen() {
-  knative-injection-gen \
-    "injection" \
-    "github.com/google/kf/third_party/knative-build/pkg/client" \
-    "github.com/google/kf/third_party/knative-build/pkg/apis" \
-    "$BUILD_RESOURCE"
-}
-
 kserving-code-gen() {
   code-generator-gen \
     "deepcopy,client,informer,lister" \
@@ -242,12 +225,12 @@ download-scripts
 case $GENS in
   k8s)
     kf-code-gen
-    kbuild-code-gen
+    tekton-pipeline-code-gen
     svccat-code-gen
     ;;
   knative)
     kf-knative-gen
-    kbuild-knative-gen
+    tekton-pipeline-knative-gen
     kserving-knative-gen
     svccat-knative-gen
     ;;
@@ -258,10 +241,6 @@ case $GENS in
   tekton-pipeline)
     tekton-pipeline-code-gen
     tekton-pipeline-knative-gen
-    ;;
-  kbuild)
-    kbuild-code-gen
-    kbuild-knative-gen
     ;;
   kserving)
     kserving-code-gen
@@ -275,8 +254,8 @@ case $GENS in
     rm -fr "${REPO_ROOT}/pkg/client"
     kf-code-gen
     kf-knative-gen
-    kbuild-code-gen
-    kbuild-knative-gen
+    tekton-pipeline-code-gen
+    tekton-pipeline-knative-gen
     kserving-code-gen
     kserving-knative-gen
     svccat-codegen
