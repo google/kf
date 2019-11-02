@@ -35,12 +35,6 @@ spec:
     - name: CACHE
       description: The name of the persistent app cache volume
       default: empty-dir
-    - name: USER_ID
-      description: The user ID of the builder image user
-      default: "1000"
-    - name: GROUP_ID
-      description: The group ID of the builder image user
-      default: "1000"
 
   outputs:
     resources:
@@ -59,8 +53,6 @@ spec:
     image: github.com/google/kf/cmd/setup-buildpack-build
     imagePullPolicy: Always
     args:
-    - "--uid=$(inputs.params.USER_ID)"
-    - "--gid=$(inputs.params.GROUP_ID)"
     - "--app=/workspace/source"
     - "--image=$(outputs.resources.IMAGE.url)"
     - "--run-image=$(inputs.params.RUN_IMAGE)"
