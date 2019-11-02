@@ -31,12 +31,7 @@ type ClientExtension interface {
 
 // BuildTailer tails the Build logs.
 type BuildTailer interface {
-	Tail(
-		ctx context.Context,
-		out io.Writer,
-		buildName string,
-		namespace string,
-	) error
+	Tail(ctx context.Context, out io.Writer, buildName, namespace string) error
 }
 
 type sourcesClient struct {
