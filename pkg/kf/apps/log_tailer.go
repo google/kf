@@ -16,14 +16,20 @@ package apps
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
 	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/watch"
+	"knative.dev/pkg/apis/duck/v1beta1"
 
+	"github.com/fatih/color"
 	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -63,7 +69,9 @@ func newPushLogTailer(
 		noStart:         noStart,
 	}
 
-	t.logger = log.New(out, "\033[32m[build]\033[0m ", 0)
+	logColor := color.New(color.FgGreen)
+
+	t.logger = log.New(out, logColor.Sprintf("[deploy] "), 0)
 	t.logger.Printf("Starting app: %s\n", appName)
 	t.buildStartTime = time.Now()
 	t.ctx, t.ctxCancel = context.WithCancel(context.Background())
@@ -97,6 +105,12 @@ func (a *appsClient) DeployLogs(
 		if done {
 			return nil
 		}
+
+		// ResourceVersion is set on list, update it before trying to tail again.
+		// If we get an error, it's not really worth reporting.
+		if apps, err := t.client.kclient.Apps(t.namespace).List(k8smeta.ListOptions{}); err == nil {
+			t.resourceVersion = apps.ResourceVersion
+		}
 	}
 }
 
@@ -114,42 +128,48 @@ func (t *pushLogTailer) handleWatch() (bool, error) {
 	defer ws.Stop()
 
 	for e := range ws.ResultChan() {
-		switch obj := e.Object.(type) {
-		case *v1alpha1.App:
-			// skip out of date apps
-			if obj.Generation != obj.Status.ObservedGeneration {
-				continue
+		switch e.Type {
+		case watch.Error:
+			if obj, ok := e.Object.(*k8smeta.Status); ok {
+				t.logger.Printf("status error: %s:%s\n", obj.Reason, obj.Message)
 			}
-
-			done, err := t.handleUpdate(obj)
-			if err != nil {
-				return true, err
-			}
-			if done {
-				return true, nil
-			}
-		case *k8smeta.Status:
-			t.resourceVersion = obj.ResourceVersion
-			if obj.Status != k8smeta.StatusFailure {
-				// TODO: I'm not sure when/if we would get this.
-				continue
-			}
-
-			t.logger.Printf("status error: %s:%s\n", obj.Reason, obj.Message)
 
 			return false, nil
+
+		case watch.Deleted:
+			return true, errors.New("App was deleted")
+
+		case watch.Added, watch.Modified:
+			switch obj := e.Object.(type) {
+			case *v1alpha1.App:
+				// skip out of date apps
+				if !ObservedGenerationMatchesGeneration(obj) {
+					continue
+				}
+
+				done, err := t.handleUpdate(obj)
+				if err != nil {
+					return true, err
+				}
+				if done {
+					return true, nil
+				}
+			default:
+				t.logger.Printf("Unexpected type in watch stream: %T\n", e.Object)
+				continue
+			}
 		default:
-			t.logger.Printf("Unexpected type in watch stream: %T\n", e.Object)
-			continue
+			// NOTE: later versions of apimachinery have added the type BOOKMARK to
+			// dynamically update resourceVersion as lists happen.
+			t.logger.Printf("got unknown watch event: %v\n", e.Type)
 		}
 	}
 
 	return false, nil
 }
 
-func (t *pushLogTailer) handleUpdate(
-	app *v1alpha1.App,
-) (bool, error) {
+func (t *pushLogTailer) handleUpdate(app *v1alpha1.App) (bool, error) {
+
 	sourceReady := app.Status.GetCondition(v1alpha1.AppConditionSourceReady)
 	if sourceReady == nil {
 		// source might still be creating
@@ -158,6 +178,7 @@ func (t *pushLogTailer) handleUpdate(
 	if sourceReady.Message != "" {
 		t.logger.Printf("Updated state to: %s\n", sourceReady.Message)
 	}
+	printConditions(t.logger, app.Status.Conditions)
 
 	switch sourceReady.Status {
 	case corev1.ConditionTrue:
@@ -165,12 +186,10 @@ func (t *pushLogTailer) handleUpdate(
 		t.checkSourceReadyOnce.Do(func() {
 			duration := time.Now().Sub(t.buildStartTime)
 			t.logger.Printf("Built in %0.2f seconds\n", duration.Seconds())
-			t.ctxCancel()
 			t.deployStartTime = time.Now()
 		})
 	case corev1.ConditionFalse:
 		t.logger.Printf("Failed to build: %s\n", sourceReady.Message)
-		t.ctxCancel()
 		return true, fmt.Errorf("build failed: %s", sourceReady.Message)
 	default:
 
@@ -212,4 +231,23 @@ func (t *pushLogTailer) handleUpdate(
 	}
 
 	return false, nil
+}
+
+func printConditions(logger *log.Logger, conditions v1beta1.Conditions) {
+	conds := []string{}
+
+	for _, cond := range conditions {
+		if cond.Status == corev1.ConditionTrue {
+			continue
+		}
+		text := fmt.Sprintf("%s: %s", cond.Type, cond.Status)
+		conds = append(conds, text)
+	}
+
+	if len(conds) == 0 {
+		return
+	}
+
+	sort.Strings(conds)
+	logger.Println("Pending Conditions:", strings.Join(conds, ", "))
 }

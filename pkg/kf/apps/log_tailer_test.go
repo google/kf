@@ -49,9 +49,8 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 		wantErr                  error
 	}{
 		"displays deployment messages": {
-			appName:         "some-app",
-			namespace:       "default",
-			resourceVersion: "some-version",
+			appName:   "some-app",
+			namespace: "default",
 			events: createMsgEvents("some-app", duckv1beta1.Conditions{
 				{
 					Type:    "SourceReady",
@@ -68,10 +67,9 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			wantedMsgs: []string{"msg-1", "msg-2"},
 		},
 		"NoStart don't display deployment messages": {
-			appName:         "some-app",
-			namespace:       "default",
-			resourceVersion: "some-version",
-			noStart:         true,
+			appName:   "some-app",
+			namespace: "default",
+			noStart:   true,
 			events: createMsgEvents("some-app", duckv1beta1.Conditions{
 				{
 					Type:    "SourceReady",
@@ -89,10 +87,9 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			unwantedMsgs: []string{"msg-2"},
 		},
 		"logs metav1.Status errors": {
-			appName:         "some-app",
-			namespace:       "default",
-			resourceVersion: "some-version",
-			noStart:         true,
+			appName:   "some-app",
+			namespace: "default",
+			noStart:   true,
 			events: append([]watch.Event{
 				{
 					Object: &metav1.Status{
@@ -191,6 +188,7 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 func testWatch(t *testing.T, action ktesting.Action, resource, namespace, resourceVersion string) {
 	t.Helper()
 	testutil.AssertEqual(t, "namespace", namespace, action.GetNamespace())
+	t.Log(action.(ktesting.WatchActionImpl))
 	testutil.AssertEqual(t, "resourceVersion", resourceVersion, action.(ktesting.WatchActionImpl).WatchRestrictions.ResourceVersion)
 
 	if !action.Matches("watch", resource) {
@@ -210,6 +208,7 @@ func createEvents(es []watch.Event) <-chan watch.Event {
 func createMsgEvents(appName string, conditions duckv1beta1.Conditions) []watch.Event {
 	var es []watch.Event
 	es = append(es, watch.Event{
+		Type: watch.Modified,
 		Object: &v1alpha1.App{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: appName,
