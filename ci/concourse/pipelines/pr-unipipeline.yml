@@ -301,6 +301,7 @@ jobs:
             popd
   - task: integration
     timeout: 1h30m
+    attempts: 3
     config:
       platform: linux
       image_resource:
