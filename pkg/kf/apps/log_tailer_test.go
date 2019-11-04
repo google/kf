@@ -49,8 +49,9 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 		wantErr                  error
 	}{
 		"displays deployment messages": {
-			appName:   "some-app",
-			namespace: "default",
+			appName:         "some-app",
+			namespace:       "default",
+			resourceVersion: "some-version",
 			events: createMsgEvents("some-app", duckv1beta1.Conditions{
 				{
 					Type:    "SourceReady",
@@ -67,9 +68,10 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			wantedMsgs: []string{"msg-1", "msg-2"},
 		},
 		"NoStart don't display deployment messages": {
-			appName:   "some-app",
-			namespace: "default",
-			noStart:   true,
+			appName:         "some-app",
+			namespace:       "default",
+			resourceVersion: "some-version",
+			noStart:         true,
 			events: createMsgEvents("some-app", duckv1beta1.Conditions{
 				{
 					Type:    "SourceReady",
@@ -87,9 +89,10 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			unwantedMsgs: []string{"msg-2"},
 		},
 		"logs metav1.Status errors": {
-			appName:   "some-app",
-			namespace: "default",
-			noStart:   true,
+			appName:         "some-app",
+			namespace:       "default",
+			resourceVersion: "some-version",
+			noStart:         true,
 			events: append([]watch.Event{
 				{
 					Object: &metav1.Status{
@@ -188,7 +191,6 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 func testWatch(t *testing.T, action ktesting.Action, resource, namespace, resourceVersion string) {
 	t.Helper()
 	testutil.AssertEqual(t, "namespace", namespace, action.GetNamespace())
-	t.Log(action.(ktesting.WatchActionImpl))
 	testutil.AssertEqual(t, "resourceVersion", resourceVersion, action.(ktesting.WatchActionImpl).WatchRestrictions.ResourceVersion)
 
 	if !action.Matches("watch", resource) {
