@@ -15,7 +15,7 @@
 package cli
 
 import (
-	"github.com/google/kf/third_party/tektoncd-pipeline/pkg/client/clientset/versioned"
+	"github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	k8s "k8s.io/client-go/kubernetes"
 )
 

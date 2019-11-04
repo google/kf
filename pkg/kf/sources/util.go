@@ -24,7 +24,7 @@ import (
 	tektoncli "github.com/google/kf/third_party/tektoncd-cli/pkg/cli"
 	"github.com/google/kf/third_party/tektoncd-cli/pkg/cmd/taskrun"
 	"github.com/google/kf/third_party/tektoncd-cli/pkg/helper/pods"
-	tekton "github.com/google/kf/third_party/tektoncd-pipeline/pkg/client/clientset/versioned"
+	tekton "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
