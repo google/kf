@@ -55,5 +55,5 @@ metadata:
   name: config-secrets
   namespace: kf
 data:
-  build.imagePushSecret: "${secret_name}"
+  build.imagePushSecrets: "${secret_name}"
 EOF
