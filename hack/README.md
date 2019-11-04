@@ -11,6 +11,8 @@ kf.
 - `check-linters.sh` Runs the linters and checks to see if anything is wrong.
 - `clean-integration-tests.sh` Deletes apps that might have been left over
   from running the integration tests.
+- `create-gke-secret.sh` Creates a GCP ServiceAccount, K8s Secret and updates
+  the config-secrets ConfigMap to point at the new secret.
 - `test.sh` Run all the tests including the integration tests.
 - `update-codegen.sh` Updates auto-generated client libraries.
 - `upload-release.sh` Builds and uploads the release YAML and CLI artifacts
