@@ -19,9 +19,9 @@ metadata:
 spec:
   inputs:
     params:
-    - name: KONTEXT_SRC_IMAGE
+    - name: SOURCE_IMAGE
       description: The image built via Kontext that contains the app's source code.
-    - name: ENVIRON_SECRET
+    - name: ENV_SECRET
       description: The Secret that stores the environment variables used for each step
     - name: BUILDPACK
       description: When set, skip the detect step and use the given buildpack.
@@ -32,7 +32,7 @@ spec:
     - name: BUILDER_IMAGE
       description: The image on which builds will run (must include v3 lifecycle and compatible buildpacks).
       default: gcr.io/kf-releases/buildpack-builder:latest
-    - name: CACHE
+    - name: CACHE_VOLUME
       description: The name of the persistent app cache volume
       default: empty-dir
 
@@ -42,8 +42,8 @@ spec:
       type: image
 
   steps:
-  - name: kontext
-    image: "$(inputs.params.KONTEXT_SRC_IMAGE)"
+  - name: source-extraction
+    image: "$(inputs.params.SOURCE_IMAGE)"
     imagePullPolicy: Always
     command: ["/ko-app/extractor"]
     args:
@@ -57,16 +57,16 @@ spec:
     - "--image=$(outputs.resources.IMAGE.url)"
     - "--run-image=$(inputs.params.RUN_IMAGE)"
     - "--builder-image=$(inputs.params.BUILDER_IMAGE)"
-    - "--cache=$(inputs.params.CACHE)"
+    - "--cache=$(inputs.params.CACHE_VOLUME)"
     - "--buildpack=$(inputs.params.BUILDPACK)"
     volumeMounts:
     - name: "layers-dir"
       mountPath: /layers
-    - name: "$(inputs.params.CACHE)"
+    - name: "$(inputs.params.CACHE_VOLUME)"
       mountPath: /cache
     envFrom:
     - secretRef:
-        name: "$(inputs.params.ENVIRON_SECRET)"
+        name: "$(inputs.params.ENV_SECRET)"
 
   - name: detect
     image: $(inputs.params.BUILDER_IMAGE)
@@ -85,13 +85,13 @@ spec:
         echo -e "[[buildpacks]]\nid = \"$(inputs.params.BUILDPACK)\"\nversion = \"latest\"\n" > /layers/group.toml
       fi
     volumeMounts:
-    - name: "$(inputs.params.CACHE)"
+    - name: "$(inputs.params.CACHE_VOLUME)"
       mountPath: /cache
     - name: "layers-dir"
       mountPath: /layers
     envFrom:
     - secretRef:
-        name: "$(inputs.params.ENVIRON_SECRET)"
+        name: "$(inputs.params.ENV_SECRET)"
 
   - name: restore
     image: $(inputs.params.BUILDER_IMAGE)
@@ -102,13 +102,13 @@ spec:
     - "-layers=/layers"
     - "-path=/cache"
     volumeMounts:
-    - name: "$(inputs.params.CACHE)"
+    - name: "$(inputs.params.CACHE_VOLUME)"
       mountPath: /cache
     - name: "layers-dir"
       mountPath: /layers
     envFrom:
     - secretRef:
-        name: "$(inputs.params.ENVIRON_SECRET)"
+        name: "$(inputs.params.ENV_SECRET)"
 
   - name: analyze
     image: $(inputs.params.BUILDER_IMAGE)
@@ -119,13 +119,13 @@ spec:
     - "-group=/layers/group.toml"
     - "$(outputs.resources.IMAGE.url)"
     volumeMounts:
-    - name: "$(inputs.params.CACHE)"
+    - name: "$(inputs.params.CACHE_VOLUME)"
       mountPath: /cache
     - name: "layers-dir"
       mountPath: /layers
     envFrom:
     - secretRef:
-        name: "$(inputs.params.ENVIRON_SECRET)"
+        name: "$(inputs.params.ENV_SECRET)"
 
   - name: build
     image: $(inputs.params.BUILDER_IMAGE)
@@ -137,13 +137,13 @@ spec:
     - "-group=/layers/group.toml"
     - "-plan=/layers/plan.toml"
     volumeMounts:
-    - name: "$(inputs.params.CACHE)"
+    - name: "$(inputs.params.CACHE_VOLUME)"
       mountPath: /cache
     - name: "layers-dir"
       mountPath: /layers
     envFrom:
     - secretRef:
-        name: "$(inputs.params.ENVIRON_SECRET)"
+        name: "$(inputs.params.ENV_SECRET)"
 
   - name: export
     image: $(inputs.params.BUILDER_IMAGE)
@@ -156,13 +156,13 @@ spec:
     - "-image=$(inputs.params.RUN_IMAGE)"
     - "$(outputs.resources.IMAGE.url)"
     volumeMounts:
-    - name: "$(inputs.params.CACHE)"
+    - name: "$(inputs.params.CACHE_VOLUME)"
       mountPath: /cache
     - name: "layers-dir"
       mountPath: /layers
     envFrom:
     - secretRef:
-        name: "$(inputs.params.ENVIRON_SECRET)"
+        name: "$(inputs.params.ENV_SECRET)"
 
   - name: cache
     image: $(inputs.params.BUILDER_IMAGE)
@@ -173,13 +173,13 @@ spec:
     - "-group=/layers/group.toml"
     - "-path=/cache"
     volumeMounts:
-    - name: "$(inputs.params.CACHE)"
+    - name: "$(inputs.params.CACHE_VOLUME)"
       mountPath: /cache
     - name: "layers-dir"
       mountPath: /layers
     envFrom:
     - secretRef:
-        name: "$(inputs.params.ENVIRON_SECRET)"
+        name: "$(inputs.params.ENV_SECRET)"
 
   volumes:
   - name: empty-dir

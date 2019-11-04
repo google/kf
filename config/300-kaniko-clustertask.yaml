@@ -19,7 +19,7 @@ metadata:
 spec:
   inputs:
     params:
-    - name: KONTEXT_SRC_IMAGE
+    - name: SOURCE_IMAGE
       description: The image built via Kontext that contains the app's source code.
     - name: DOCKERFILE
       description: Path to the Dockerfile to build.
@@ -33,8 +33,8 @@ spec:
     - name: DOCKER_CONFIG
       value: /builder/home/.docker
   steps:
-  - name: kontext
-    image: "$(inputs.params.KONTEXT_SRC_IMAGE)"
+  - name: source-extraction
+    image: "$(inputs.params.SOURCE_IMAGE)"
     imagePullPolicy: Always
     command: ["/ko-app/extractor"]
     args:

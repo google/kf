@@ -41,8 +41,8 @@ const (
 	TaskRunParamBuildpackBuilder  = "BUILDER_IMAGE"
 	TaskRunParamBuildpackRunImage = "RUN_IMAGE"
 	TaskRunParamDockerfile        = "DOCKERFILE"
-	TaskRunParamSourceContainer   = "KONTEXT_SRC_IMAGE"
-	TaskRunParamEnvSecret         = "ENVIRON_SECRET"
+	TaskRunParamSourceContainer   = "SOURCE_IMAGE"
+	TaskRunParamEnvSecret         = "ENV_SECRET"
 
 	// Outputs
 	TaskRunResourceNameImage = "IMAGE"
