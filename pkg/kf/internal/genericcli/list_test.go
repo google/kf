@@ -124,6 +124,32 @@ some-object-name
 space.kf.dev/some-object-name
 `,
 		},
+		"GVK get set": {
+			t:    clusterType,
+			args: []string{"-o", "json"},
+			setup: func(t *testing.T, mocks *mocks) {
+				obj := clusterType.NewUnstructured("", "some-object-name")
+				mocks.client = fakedynamic.NewSimpleDynamicClient(runtime.NewScheme(), obj)
+			},
+			wantOut: `Listing Spaces
+{
+    "apiVersion": "kf.dev/v1alpha1",
+    "items": [
+        {
+            "apiVersion": "kf.dev/v1alpha1",
+            "kind": "Space",
+            "metadata": {
+                "name": "some-object-name"
+            }
+        }
+    ],
+    "kind": "Space",
+    "metadata": {
+        "resourceVersion": ""
+    }
+}
+`,
+		},
 	}
 
 	for tn, tc := range cases {

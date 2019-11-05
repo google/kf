@@ -96,6 +96,8 @@ func NewListCommand(t Type, p *config.KfParams, client dynamic.Interface, tableC
 	printFlags.AddFlags(cmd)
 
 	// Override output format to be sorted so our generated documents are deterministic
+	// The following block can be deleted if https://github.com/kubernetes/kubernetes/pull/82836
+	// gets merged.
 	{
 		allowedFormats := printFlags.AllowedFormats()
 		sort.Strings(allowedFormats)

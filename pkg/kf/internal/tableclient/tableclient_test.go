@@ -15,8 +15,9 @@
 package tableclient
 
 import (
-	"errors"
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -59,7 +60,12 @@ type MockRoundTripper struct{}
 func (m *MockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	fmt.Println("URL:", req.URL.String())
 	fmt.Println("Accepts:", req.Header.Get("Accept"))
-	return nil, errors.New("server-error")
+
+	// Return a mock response
+	return &http.Response{
+		StatusCode: http.StatusNotFound,
+		Body:       ioutil.NopCloser(&bytes.Buffer{}),
+	}, nil
 }
 
 func ExampleNewTableRoundTripper() {
