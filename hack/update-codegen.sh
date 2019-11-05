@@ -234,8 +234,6 @@ case $GENS in
     exit 1
 esac
 
-go mod tidy
-
 gofmt -s -w .
 [ $? -ne 0 ] && echo Error running gofmt 1>&2 && exit 1
 exit 0
