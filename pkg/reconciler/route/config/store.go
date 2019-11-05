@@ -38,8 +38,6 @@ func ToContext(ctx context.Context, c *Config) context.Context {
 
 // Store is based on configmap.UntypedStore and is used to store and watch for
 // updates to configuration related to routes.
-//
-// +k8s:deepcopy-gen=false
 type Store struct {
 	*configmap.UntypedStore
 }

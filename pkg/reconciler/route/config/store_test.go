@@ -23,36 +23,32 @@ import (
 	"github.com/google/kf/pkg/kf/testutil"
 	logtesting "knative.dev/pkg/logging/testing"
 
-	. "knative.dev/pkg/configmap/testing"
+	cmtesting "knative.dev/pkg/configmap/testing"
 )
 
 func TestStoreLoadDefault(t *testing.T) {
 	store := NewDefaultConfigStore(logtesting.TestLogger(t))
 	routingConfig := FromContext(store.ToContext(context.Background())).Routing
 
-	t.Run("routing config defaults", func(t *testing.T) {
-		testutil.AssertEqual(t, "ingress name", DefaultIngressServiceName, routingConfig.IngressServiceName)
-		testutil.AssertEqual(t, "ingress ns", DefaultIngressNamespace, routingConfig.IngressNamespace)
-		testutil.AssertEqual(t, "knative ingress", fmt.Sprintf("%s/%s", KnativeServingNamespace, DefaultKnativeIngressGateway), routingConfig.KnativeIngressGateway)
-		testutil.AssertEqual(t, "gateway host ", fmt.Sprintf("%s.%s.svc.cluster.local", DefaultIngressServiceName, DefaultIngressNamespace), routingConfig.GatewayHost())
-	})
+	testutil.AssertEqual(t, "ingress name", DefaultIngressServiceName, routingConfig.IngressServiceName)
+	testutil.AssertEqual(t, "ingress ns", DefaultIngressNamespace, routingConfig.IngressNamespace)
+	testutil.AssertEqual(t, "knative ingress", fmt.Sprintf("%s/%s", KnativeServingNamespace, DefaultKnativeIngressGateway), routingConfig.KnativeIngressGateway)
+	testutil.AssertEqual(t, "gateway host ", fmt.Sprintf("%s.%s.svc.cluster.local", DefaultIngressServiceName, DefaultIngressNamespace), routingConfig.GatewayHost())
 }
 
 func TestStoreLoadWithContext(t *testing.T) {
 	store := NewDefaultConfigStore(logtesting.TestLogger(t))
-	_, routingConfig := ConfigMapsFromTestFile(t, RoutingConfigName)
+	_, routingConfig := cmtesting.ConfigMapsFromTestFile(t, RoutingConfigName)
 	store.OnConfigChanged(routingConfig)
 	config := FromContext(store.ToContext(context.Background()))
 
-	t.Run("routing config changed", func(t *testing.T) {
-		expected, _ := NewRoutingConfigFromConfigMap(routingConfig)
-		if diff := cmp.Diff(expected, config.Routing); diff != "" {
-			t.Errorf("Unexpected routing config (-want, +got): %v", diff)
-		}
+	expected, _ := NewRoutingConfigFromConfigMap(routingConfig)
+	if diff := cmp.Diff(expected, config.Routing); diff != "" {
+		t.Errorf("Unexpected routing config (-want, +got): %v", diff)
+	}
 
-		testutil.AssertEqual(t, "ingress name", "test-ingress-svc", expected.IngressServiceName)
-		testutil.AssertEqual(t, "ingress ns", "test-ingress-ns", expected.IngressNamespace)
-		testutil.AssertEqual(t, "knative ingress", "knative-serving/test-knative-ingress", expected.KnativeIngressGateway)
-		testutil.AssertEqual(t, "gateway host", "test-ingress-svc.test-ingress-ns.svc.cluster.local", expected.GatewayHost())
-	})
+	testutil.AssertEqual(t, "ingress name", "test-ingress-svc", expected.IngressServiceName)
+	testutil.AssertEqual(t, "ingress ns", "test-ingress-ns", expected.IngressNamespace)
+	testutil.AssertEqual(t, "knative ingress", "knative-serving/test-knative-ingress", expected.KnativeIngressGateway)
+	testutil.AssertEqual(t, "gateway host", "test-ingress-svc.test-ingress-ns.svc.cluster.local", expected.GatewayHost())
 }

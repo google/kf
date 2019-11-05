@@ -36,13 +36,13 @@ const (
 // RoutingConfig contains the networking configuration defined in the
 // network config map.
 type RoutingConfig struct {
-	// Name of the Istio Ingress svc
+	// IngressServiceName is the name of the Istio Ingress svc
 	IngressServiceName string
 
-	// K8s namespace to search for Ingresses
+	// IngresNamespace is the K8s namespace to search for Ingresses
 	IngressNamespace string
 
-	// Name of ingress gateway in knative-serving namespace
+	// KnativeIngressGateway is the name of ingress gateway in knative-serving namespace
 	KnativeIngressGateway string
 }
 
