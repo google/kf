@@ -15,22 +15,22 @@
  */
 
 resource "tls_private_key" "uaa_jwt_signing_key" {
-  algorithm   = "RSA"
+  algorithm = "RSA"
 }
 
 resource "random_password" "uaa_admin_password" {
-  length = 16
-  special = true
+  length           = 16
+  special          = true
   override_special = "_%@"
 }
 
 resource "random_password" "uaa_encryption_key_1" {
-  length = 16
+  length  = 16
   special = false
 }
 
 resource "random_password" "uaa_encryption_key_2" {
-  length = 16
+  length  = 16
   special = false
 }
 

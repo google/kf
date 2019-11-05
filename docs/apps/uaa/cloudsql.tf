@@ -19,7 +19,7 @@ resource "google_compute_global_address" "uaa_db_instance_ip" {
 
   name          = "${var.uaa_db_instance_name}-ip"
   purpose       = "VPC_PEERING"
-  address_type = "INTERNAL"
+  address_type  = "INTERNAL"
   prefix_length = 16
   network       = "${data.google_compute_network.default.self_link}"
 }
@@ -27,14 +27,18 @@ resource "google_compute_global_address" "uaa_db_instance_ip" {
 resource "google_service_networking_connection" "uaa_db_instance_private_vpc_connection" {
   provider = "google-beta"
 
-  network       = "${data.google_compute_network.default.self_link}"
-  service       = "servicenetworking.googleapis.com"
+  network                 = "${data.google_compute_network.default.self_link}"
+  service                 = "servicenetworking.googleapis.com"
   reserved_peering_ranges = ["${google_compute_global_address.uaa_db_instance_ip.name}"]
+}
+
+resource "random_id" "db_name_suffix" {
+  byte_length = 4
 }
 
 resource "google_sql_database_instance" "uaa" {
 
-  name = "${var.uaa_db_instance_name}"
+  name   = "uaa-${random_id.db_name_suffix.hex}"
   region = "${data.google_compute_subnetwork.default.region}"
 
   database_version = "MYSQL_5_7"
@@ -46,18 +50,26 @@ resource "google_sql_database_instance" "uaa" {
   settings {
     # Second-generation instance tiers are based on the machine
     # type. See argument reference below.
-    tier = "db-f1-micro"
+    tier              = "db-n1-standard-2"
+    availability_type = "REGIONAL"
+
     ip_configuration {
-      require_ssl = false
+      require_ssl  = false
       ipv4_enabled = false
+
       private_network = "${data.google_compute_network.default.self_link}"
+    }
+
+    backup_configuration {
+      binary_log_enabled = true
+      enabled            = true
     }
   }
 }
 
 resource "google_sql_database" "uaa" {
-    name = "uaa"
-    instance = "${google_sql_database_instance.uaa.name}"
+  name     = "uaa"
+  instance = "${google_sql_database_instance.uaa.name}"
 }
 
 resource "google_sql_user" "uaa" {

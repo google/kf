@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-provider "google-beta"{
+provider "google-beta" {
   credentials = "${file("account.json")}"
-  project = "kf-source"
+  project     = "kf-source"
 }
 
 provider "google" {
@@ -29,6 +29,6 @@ data "google_compute_network" "default" {
 }
 
 data "google_compute_subnetwork" "default" {
-  name = "${var.vpc_subnet_name}"
+  name   = "${var.vpc_subnet_name}"
   region = "${var.region}"
 }
