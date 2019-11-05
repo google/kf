@@ -21,15 +21,16 @@ import (
 )
 
 const (
-	RoutingConfigName = "config-routing"
+	RoutingConfigName       = "config-routing"
+	KnativeServingNamespace = "knative-serving"
 
 	IngressServiceNameKey    = "ingress.servicename"
 	IngressNamespaceKey      = "ingress.namespace"
 	KnativeIngressGatewayKey = "knative.ingress.gateway"
 
-	DefaultIngressServiceName    = "istio-ingressgateway"
-	DefaultIngressNamespace      = "istio-system"
-	DefaultKnativeIngressGateway = "knative-ingress-gateway"
+	DefaultIngressServiceName    = "cluster-local-gateway"
+	DefaultIngressNamespace      = "gke-system"
+	DefaultKnativeIngressGateway = "gke-system-gateway"
 )
 
 // RoutingConfig contains the networking configuration defined in the
@@ -67,7 +68,7 @@ func NewRoutingConfigFromConfigMap(configMap *corev1.ConfigMap) (*RoutingConfig,
 		rc.KnativeIngressGateway = knativeIngressGateway
 	}
 
-	rc.KnativeIngressGateway += ".knative-serving.svc.cluster.local"
+	rc.KnativeIngressGateway = fmt.Sprintf("%s/%s", KnativeServingNamespace, rc.KnativeIngressGateway)
 	return rc, nil
 }
 
