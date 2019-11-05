@@ -44,7 +44,7 @@ applications:
             passphrase: ${random_password.uaa_encryption_key_1.result}
           - label: key-2
             passphrase: ${random_password.uaa_encryption_key_2.result}
-      spring_profiles: default
+      spring_profiles: mysql
       jwt:
         token:
           signing-key: |
@@ -69,11 +69,11 @@ applications:
             authorized-grant-types: client_credentials
             scope: none
             authorities: uaa.admin,clients.admin,clients.read,clients.write,clients.secret
-      # database:
-      #   driverClassName: org.mariadb.jdbc.Driver
-      #   url: jdbc:mysql://google_sql_database_instance.uaa.first_ip_address:3306/uaa
-      #   username: uaa
-      #   password: uaa
+      database:
+        driverClassName: org.mariadb.jdbc.Driver
+        url: jdbc:mysql://${google_sql_database_instance.uaa.first_ip_address}:3306/uaa
+        username: uaa
+        password: uaa
 EOF
 
 }
