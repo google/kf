@@ -153,9 +153,6 @@ which is signed by a trusted certificate authority.
 This requires careful configuration of your Kf domains alongside your
 configuration with your domain name provider.
 
-One solution is to use the LetsEncrypt Google Cloud DNS Challenge Provider Terraform resource:
-https://www.terraform.io/docs/providers/acme/dns_providers/gcloud.html
-
 [uaa]: https://github.com/cloudfoundry/uaa
 [uaac-install]: https://github.com/cloudfoundry/cf-uaac#installation
 [create-space]: /docs/install.md#create-and-target-a-space
