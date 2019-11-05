@@ -273,7 +273,6 @@ jobs:
           GOPROXY: *go_proxy
           GOSUMDB: *go_sum_db
     - task: build
-      attempts: 3
       config:
         platform: linux
         image_resource:
