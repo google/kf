@@ -6,8 +6,10 @@ A [CloudSQL][cloudsql] MySQL database will be used.
 ## Assumptions
 
 This guide assumes the UAA instance and the CloudSQL database will not be
-publicly accessible. VPC networks are used.
-
+publicly accessible. VPC networks are required, and the GKE cluster used needs
+to be deployed to a VPC subnet. The master node can have a private IP address,
+but if it does not, do not forget to add the `--internal-ip` flag when running
+`gcloud container cluster get-credentials`.
 
 ## 1. Build a Container Image from UAA
 
@@ -52,10 +54,9 @@ publicly accessible. VPC networks are used.
     ```sh
     cat >Dockerfile <<EOF
     FROM tomcat:9.0.27-jdk11-openjdk-slim
-    ADD uaa/build/libs/cloudfoundry-identity-uaa-0.0.0.war
-    /usr/local/tomcat/webapps/ROOT/uaa.war
+    RUN rm -fr /usr/local/tomcat/webapps
+    ADD uaa/build/libs/cloudfoundry-identity-uaa-0.0.0.war /usr/local/tomcat/webapps/ROOT/uaa.war
     RUN cd /usr/local/tomcat/webapps/ROOT && jar -xvf uaa.war && rm uaa.war
-    RUN rm -fr /usr/local/tomcat/webapps/examples
     EOF
 
     docker build -t gcr.io/[your-project]/uaa .
@@ -94,13 +95,19 @@ Update the values in `terraform.tfvars`.
     terraform apply
     ```
 
+1. Save the kf manifest file from the Terraform output
+
+    ```sh
+    terraform output uaa_manifest > manifest.yml
+    ```
+
 ## 3. Kf push UAA
 
 1. Deploy (this assumes you've already `kf target`'d a space; see [these
    docs][create-space] for more detail):
 
     ```sh
-    kf push uaa
+    kf push
     ```
 
 1. Use the proxy feature to access the deployed app:
@@ -108,6 +115,8 @@ Update the values in `terraform.tfvars`.
     ```sh
     kf proxy uaa
     ```
+
+## 4. Validate installation
 
 1. Download and install `uaac` via [these instructions](uaac-install)
 
