@@ -35,7 +35,7 @@ const (
 	numNodes              = "3"
 	defaultMaxPodsPerNode = "110"
 	addons                = "HorizontalPodAutoscaling,HttpLoadBalancing,Istio,CloudRun"
-	defaultGKEVersion     = "1.13.7-gke.24"
+	defaultGKEVersion     = "1.13.11-gke.9"
 )
 
 // NewGKECommand creates a command that can install kf to GKE+Cloud Run.
@@ -227,7 +227,7 @@ func createProject(ctx context.Context) (string, error) {
 			ctx,
 			"projects",
 			"list",
-			"--filter", fmt.Sprintf("name:%q", name),
+			"--filter", fmt.Sprintf("name~^%s$", name),
 			"--format", "value(projectId)",
 		)
 
@@ -278,7 +278,7 @@ func clusterZone(ctx context.Context, projID, clusterName string) (string, error
 		"clusters",
 		"list",
 		"--format", "value(location)",
-		"--filter", fmt.Sprintf("name:%q", clusterName),
+		"--filter", fmt.Sprintf("name~^%s$", clusterName),
 	)
 	if err != nil {
 		return "", err
@@ -526,15 +526,25 @@ func targetCluster(
 ) error {
 	ctx = SetLogPrefix(ctx, "Target Cluster")
 	Logf(ctx, "targeting cluster")
-	_, err := gcloud(
-		ctx,
+
+	_, selection, err := SelectPrompt(ctx, "GKE Master Server IP", "public", "internal")
+	if err != nil {
+		return err
+	}
+
+	args := []string{
 		"container",
 		"clusters",
 		"get-credentials",
 		clusterName,
 		"--zone", zone,
 		"--project", projID,
-	)
+	}
+
+	if selection == "internal" {
+		args = append(args, "--internal-ip")
+	}
+	_, err = gcloud(ctx, args...)
 
 	return err
 }
@@ -546,7 +556,7 @@ func enableServiceAPI(ctx context.Context, projID, serviceName string) error {
 		"services",
 		"list",
 		"--project", projID,
-		"--filter", "name:"+serviceName,
+		"--filter", fmt.Sprintf("name~^%s$", serviceName),
 		"--format", "value(name)",
 	)
 	if err != nil {

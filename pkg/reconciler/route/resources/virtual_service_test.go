@@ -190,7 +190,7 @@ func TestMakeVirtualService(t *testing.T) {
 						},
 						Route: []networking.HTTPRouteDestination{
 							{
-								Destination: networking.Destination{Host: "istio-ingressgateway.istio-system.svc.cluster.local"},
+								Destination: networking.Destination{Host: "cluster-local-gateway.gke-system.svc.cluster.local"},
 								Weight:      100,
 								Headers: &networking.Headers{
 									Request: &networking.HeaderOperations{
@@ -233,7 +233,7 @@ func TestMakeVirtualService(t *testing.T) {
 						},
 						Route: []networking.HTTPRouteDestination{
 							{
-								Destination: networking.Destination{Host: "istio-ingressgateway.istio-system.svc.cluster.local"},
+								Destination: networking.Destination{Host: "cluster-local-gateway.gke-system.svc.cluster.local"},
 								Weight:      34,
 								Headers: &networking.Headers{
 									Request: &networking.HeaderOperations{
@@ -244,7 +244,7 @@ func TestMakeVirtualService(t *testing.T) {
 								},
 							},
 							{
-								Destination: networking.Destination{Host: "istio-ingressgateway.istio-system.svc.cluster.local"},
+								Destination: networking.Destination{Host: "cluster-local-gateway.gke-system.svc.cluster.local"},
 								Weight:      33,
 								Headers: &networking.Headers{
 									Request: &networking.HeaderOperations{
@@ -255,7 +255,7 @@ func TestMakeVirtualService(t *testing.T) {
 								},
 							},
 							{
-								Destination: networking.Destination{Host: "istio-ingressgateway.istio-system.svc.cluster.local"},
+								Destination: networking.Destination{Host: "cluster-local-gateway.gke-system.svc.cluster.local"},
 								Weight:      33,
 								Headers: &networking.Headers{
 									Request: &networking.HeaderOperations{

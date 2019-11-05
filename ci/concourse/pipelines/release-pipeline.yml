@@ -18,7 +18,7 @@ vars:
 
 # pull request vars
 - &github_repo google/kf
-- &github_access_token ((github_access_token)) 
+- &github_access_token ((github_access_token))
 
 # ci config vars
 - &ci_git_uri ((git_uri))
@@ -53,7 +53,7 @@ templates:
   repository: *ci_image_uri
   username: _json_key
   password: *service_account_json
-  
+
 - &on_failure
   put: release-pr
   params:
@@ -75,7 +75,7 @@ resource_types:
 resources:
 - name: release-pr
   type: pull-request
-  check_every: 10s 
+  check_every: 10s
   source:
     repository: *github_repo
     access_token: *github_access_token
@@ -95,7 +95,7 @@ resources:
     vars:
       project: *gcp_project_id
       k8s_network_selflink: *k8s_network_selflink
-      gke_version: 1.13.7-gke.24
+      gke_version: 1.13.11-gke.9
     env:
       GOOGLE_CREDENTIALS: *service_account_json
 jobs:
