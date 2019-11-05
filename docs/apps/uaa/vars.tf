@@ -52,3 +52,9 @@ variable "uaa_cert_organization" {
   type = string
 }
 
+variable "kf_domain_name" {
+  type = string
+}
+variable "kf_space_name" {
+  type = string
+}

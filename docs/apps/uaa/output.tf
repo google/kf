@@ -29,14 +29,23 @@ applications:
   docker:
     image: ${var.uaa_image}
   minScale: 1
+  routes:
+  - route: http://uaa.${var.kf_domain_name}/uaa
   env:
-    UAA_URL: http://localhost:8080
-    LOGIN_URL: http://localhost:8080
+    UAA_URL: http://uaa.${var.kf_domain_name}/uaa
+    LOGIN_URL: http://uaa.${var.kf_domain_name}/juaa
     UAA_CONFIG_YAML: |
+      zones:
+        internal:
+          hostnames:
+          - uaa.${var.kf_domain_name}
+          - uaa.${var.kf_space_name}.svc.cluster.local
       uaa:
-        url: http://localhost:8080/uaa
+        url: http://uaa.${var.kf_domain_name}/uaa
+        login:
+          url: http://uaa.${var.kf_domain_name}/uaa/login
       issuer:
-        uri: http://localhost:8080/uaa
+        uri: http://uaa.${var.kf_domain_name}/uaa
       encryption:
         active_key_label: key-1
         encryption_keys:
