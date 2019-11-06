@@ -75,5 +75,7 @@ resource "google_sql_database" "uaa" {
 resource "google_sql_user" "uaa" {
   name     = "uaa"
   instance = "${google_sql_database_instance.uaa.name}"
-  password = "uaa"
+  password = "${random_password.uaa_db_user_password.result}"
+  host     = "%"
+
 }

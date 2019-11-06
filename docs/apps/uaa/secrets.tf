@@ -18,6 +18,11 @@ resource "tls_private_key" "uaa_jwt_signing_key" {
   algorithm = "RSA"
 }
 
+resource "random_password" "uaa_db_user_password" {
+  length  = 16
+  special = false
+}
+
 resource "random_password" "uaa_admin_password" {
   length           = 16
   special          = true

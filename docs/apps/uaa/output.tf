@@ -83,7 +83,8 @@ applications:
         driverClassName: org.mariadb.jdbc.Driver
         url: jdbc:mysql://${google_sql_database_instance.uaa.first_ip_address}:3306/uaa
         username: uaa
-        password: uaa
+        password: ${random_password.uaa_db_user_password.result}
+
 EOF
 
 }
