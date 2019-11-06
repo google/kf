@@ -40,6 +40,7 @@ applications:
           hostnames:
           - uaa.${var.kf_domain_name}
           - uaa.${var.kf_space_name}.svc.cluster.local
+          - localhost
       uaa:
         url: http://uaa.${var.kf_domain_name}/uaa
         login:
