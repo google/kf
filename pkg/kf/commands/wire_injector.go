@@ -317,7 +317,7 @@ func provideKfSpaces(ki kfv1alpha1.KfV1alpha1Interface) kfv1alpha1.SpacesGetter 
 }
 
 func InjectSpaces(p *config.KfParams) *cobra.Command {
-	wire.Build(cspaces.NewListSpacesCommand, SpacesSet)
+	wire.Build(cspaces.NewListSpacesCommand, config.GetDynamicClient, config.GetTableClient)
 
 	return nil
 }
@@ -440,7 +440,7 @@ func provideSourcesBuildTailer() sources.BuildTailer {
 }
 
 func InjectBuilds(p *config.KfParams) *cobra.Command {
-	wire.Build(cbuilds.NewListBuildsCommand, SourcesSet)
+	wire.Build(cbuilds.NewBuildsCommand, config.GetDynamicClient, config.GetTableClient)
 
 	return nil
 }

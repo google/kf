@@ -19,12 +19,14 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 
 	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 	"sigs.k8s.io/yaml"
@@ -361,4 +363,26 @@ func RouteSpecFieldsList(w io.Writer, routes []kfv1alpha1.RouteSpecFields) {
 			}
 		})
 	})
+}
+
+// MetaV1Beta1Table can print Kubernetes server-side rendered tables.
+func MetaV1Beta1Table(w io.Writer, table *metav1beta1.Table) error {
+	TabbedWriter(w, func(w io.Writer) {
+		cols := []string{}
+		for _, col := range table.ColumnDefinitions {
+			cols = append(cols, col.Name)
+		}
+
+		fmt.Fprintln(w, strings.Join(cols, "\t"))
+
+		for _, row := range table.Rows {
+			cells := []string{}
+			for _, cell := range row.Cells {
+				cells = append(cells, fmt.Sprintf("%v", cell))
+			}
+			fmt.Fprintln(w, strings.Join(cells, "\t"))
+		}
+	})
+
+	return nil
 }

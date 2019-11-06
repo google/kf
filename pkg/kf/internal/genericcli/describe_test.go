@@ -22,6 +22,7 @@ import (
 	"github.com/google/kf/pkg/kf/commands/config"
 	"github.com/google/kf/pkg/kf/testutil"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	fakedynamic "k8s.io/client-go/dynamic/fake"
@@ -71,6 +72,17 @@ func (g *genericType) NewUnstructured(ns, name string) *unstructured.Unstructure
 				"namespace": ns,
 				"name":      name,
 			},
+		},
+	}
+}
+
+func (g *genericType) NewTable(name string) *metav1beta1.Table {
+	return &metav1beta1.Table{
+		ColumnDefinitions: []metav1beta1.TableColumnDefinition{
+			{Name: "Name"},
+		},
+		Rows: []metav1beta1.TableRow{
+			{Cells: []interface{}{name}},
 		},
 	}
 }
