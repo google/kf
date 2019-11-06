@@ -35,16 +35,17 @@ templates:
     env_name_file: gke-prs/name
     delete_on_failure: true
 
-- &terraform-destroy
-  put: terraform
-  params:
-    terraform_source: ci-pipelines-src/ci/concourse/terraform
-    env_name_file: gke-prs/name
-    action: destroy
-  get_params:
-    terraform_source: ci-pipelines-src/ci/concourse/terraform
-    env_name_file: gke-prs/name
-    action: destroy
+- &try-terraform-destroy
+  try:
+    put: terraform
+    params:
+      terraform_source: ci-pipelines-src/ci/concourse/terraform
+      env_name_file: gke-prs/name
+      action: destroy
+    get_params:
+      terraform_source: ci-pipelines-src/ci/concourse/terraform
+      env_name_file: gke-prs/name
+      action: destroy
 
 - &acquire-lock
    put: gke-prs
@@ -139,7 +140,7 @@ jobs:
     # here. In the worst case, we've manually added an environment to the pool that hasn't been
     # initialized, and the initialization happens here. This has the benefit of not requiring
     # a separate process for resource management.
-    - *terraform-destroy
+    - *try-terraform-destroy
     - task: check-linters
       timeout: 10m
       config:
