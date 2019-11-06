@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/kf/pkg/kf/cli"
 	"github.com/google/kf/pkg/kf/commands/config"
-	installutil "github.com/google/kf/pkg/kf/commands/install/util"
 	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/service-brokers/cluster"
 	"github.com/google/kf/pkg/kf/service-brokers/namespaced"
@@ -46,7 +46,8 @@ func NewDeleteServiceBrokerCommand(p *config.KfParams, clusterClient cluster.Cli
 			cmd.SilenceUsage = true
 
 			if !force {
-				shouldDelete, err := installutil.SelectYesNo(context.Background(), fmt.Sprintf("Really delete service-broker %s?", serviceBrokerName))
+				ctx := cli.SetInteractiveMode(context.Background(), true)
+				shouldDelete, err := cli.SelectYesNo(ctx, fmt.Sprintf("Really delete service-broker %s?", serviceBrokerName))
 				if err != nil || shouldDelete == false {
 					fmt.Fprintln(cmd.OutOrStdout(), "Skipping deletion, use --force to delete without validation")
 					return err
