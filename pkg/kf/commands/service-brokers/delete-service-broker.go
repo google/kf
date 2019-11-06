@@ -17,20 +17,22 @@ package servicebrokers
 import (
 	"context"
 	"fmt"
+	"time"
 
-	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
 	"github.com/google/kf/pkg/kf/commands/config"
 	installutil "github.com/google/kf/pkg/kf/commands/install/util"
 	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/pkg/kf/service-brokers/cluster"
+	"github.com/google/kf/pkg/kf/service-brokers/namespaced"
 	"github.com/spf13/cobra"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // NewDeleteServiceBrokerCommand deletes a service broker (either cluster or namespaced) from the service catalog.
-func NewDeleteServiceBrokerCommand(p *config.KfParams, client servicecatalogclient.Interface) *cobra.Command {
+func NewDeleteServiceBrokerCommand(p *config.KfParams, clusterClient cluster.Client, namespacedClient namespaced.Client) *cobra.Command {
 	var (
 		spaceScoped bool
 		force       bool
+		async       utils.AsyncFlags
 	)
 	deleteCmd := &cobra.Command{
 		Use:     "delete-service-broker BROKER_NAME",
@@ -43,10 +45,6 @@ func NewDeleteServiceBrokerCommand(p *config.KfParams, client servicecatalogclie
 
 			cmd.SilenceUsage = true
 
-			if err := utils.ValidateNamespace(p); err != nil {
-				return err
-			}
-
 			if !force {
 				shouldDelete, err := installutil.SelectYesNo(context.Background(), fmt.Sprintf("Really delete service-broker %s?", serviceBrokerName))
 				if err != nil || shouldDelete == false {
@@ -55,15 +53,35 @@ func NewDeleteServiceBrokerCommand(p *config.KfParams, client servicecatalogclie
 				}
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleting service broker %q %s", serviceBrokerName, utils.AsyncLogSuffix)
-
 			if spaceScoped {
-				return client.ServicecatalogV1beta1().ServiceBrokers(p.Namespace).Delete(serviceBrokerName, &metav1.DeleteOptions{})
+				if err := utils.ValidateNamespace(p); err != nil {
+					return err
+				}
+
+				if err := namespacedClient.Delete(p.Namespace, serviceBrokerName); err != nil {
+					return err
+				}
+
+				action := fmt.Sprintf("Deleting service broker %q in space %q", serviceBrokerName, p.Namespace)
+				return async.AwaitAndLog(cmd.OutOrStdout(), action, func() (err error) {
+					_, err = namespacedClient.WaitForDeletion(context.Background(), p.Namespace, serviceBrokerName, 1*time.Second)
+					return
+				})
 			}
 
-			return client.ServicecatalogV1beta1().ClusterServiceBrokers().Delete(serviceBrokerName, &metav1.DeleteOptions{})
+			if err := clusterClient.Delete(serviceBrokerName); err != nil {
+				return err
+			}
+
+			action := fmt.Sprintf("Deleting cluster service broker %q", serviceBrokerName)
+			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() (err error) {
+				_, err = clusterClient.WaitForDeletion(context.Background(), serviceBrokerName, 1*time.Second)
+				return
+			})
 		},
 	}
+
+	async.Add(deleteCmd)
 
 	deleteCmd.Flags().BoolVar(
 		&spaceScoped,
