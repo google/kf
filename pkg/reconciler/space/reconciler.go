@@ -21,7 +21,9 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
+	"github.com/google/kf/pkg/kf/algorithms"
 	"github.com/google/kf/pkg/reconciler"
+	"github.com/google/kf/pkg/reconciler/source/config"
 	"github.com/google/kf/pkg/reconciler/space/resources"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
@@ -50,6 +52,7 @@ type Reconciler struct {
 	resourceQuotaLister  v1listers.ResourceQuotaLister
 	limitRangeLister     v1listers.LimitRangeLister
 	serviceAccountLister v1listers.ServiceAccountLister
+	configStore          reconciler.ConfigStore
 }
 
 // Check that our Reconciler implements controller.Reconciler
@@ -62,6 +65,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 	if err != nil {
 		return err
 	}
+
+	ctx = r.configStore.ToContext(ctx)
 
 	original, err := r.spaceLister.Get(name)
 	switch {
@@ -242,30 +247,88 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 		space.Status.PropagateLimitRangeStatus(actual)
 	}
 
+	// Sync build service account and secret
+	secretCondition := space.Status.BuildSecretCondition()
+
+	// Fetch all the secrets from the Kf namespace. These will be copied to
+	// the space.
+	var kfSecrets []*corev1.Secret
+	for _, secret := range config.
+		FromContext(ctx).
+		Secrets.
+		BuildImagePushSecrets {
+
+		// Get name of kf secret that will be copied into the space.
+		kfSecret, err := r.SecretLister.
+			Secrets(v1alpha1.KfNamespace).
+			Get(secret.Name)
+		if err != nil {
+			return secretCondition.MarkTemplateError(err)
+		}
+		kfSecrets = append(kfSecrets, kfSecret)
+	}
+
+	desiredServiceAccount, desiredSecrets, err := resources.MakeBuildServiceAccount(space, kfSecrets)
+	if err != nil {
+		return secretCondition.MarkTemplateError(err)
+	}
+
+	// Sync build secrets
+	for _, desiredSecret := range desiredSecrets {
+		logger.Debug("reconciling build secret")
+
+		actual, err := r.SecretLister.
+			Secrets(desiredSecret.Namespace).
+			Get(desiredSecret.Name)
+		if apierrs.IsNotFound(err) {
+			actual, err = r.KubeClientSet.
+				CoreV1().
+				Secrets(desiredSecret.Namespace).
+				Create(desiredSecret)
+			if err != nil {
+				return secretCondition.MarkReconciliationError("creating", err)
+			}
+		} else if err != nil {
+			return secretCondition.MarkReconciliationError("getting latest", err)
+		} else if !metav1.IsControlledBy(actual, space) {
+			return secretCondition.MarkChildNotOwned(desiredSecret.Name)
+		} else if actual, err = r.ReconcileSecret(ctx, desiredSecret, actual); err != nil {
+			return secretCondition.MarkReconciliationError("updating existing", err)
+		}
+		space.Status.PropagateBuildSecretStatus(actual)
+
+		if secretCondition.IsPending() {
+			logger.Info("Waiting for Secret; exiting early")
+			return nil
+		}
+	}
+
+	if len(desiredSecrets) == 0 {
+		// We need to mark it successful so the Space's status isn't left
+		// unknown.
+		space.Status.PropagateBuildSecretStatus(nil)
+	}
+
 	// Sync build service account
 	{
 		logger.Debug("reconciling build service account")
-		desired, err := resources.MakeBuildServiceAccount(space)
-		if err != nil {
-			return err
-		}
 
 		actual, err := r.serviceAccountLister.
-			ServiceAccounts(desired.Namespace).
-			Get(desired.Name)
+			ServiceAccounts(desiredServiceAccount.Namespace).
+			Get(desiredServiceAccount.Name)
 		if errors.IsNotFound(err) {
 			actual, err = r.KubeClientSet.
-				CoreV1().ServiceAccounts(desired.Namespace).
-				Create(desired)
+				CoreV1().ServiceAccounts(desiredServiceAccount.Namespace).
+				Create(desiredServiceAccount)
 			if err != nil {
 				return err
 			}
 		} else if err != nil {
 			return err
 		} else if !metav1.IsControlledBy(actual, space) {
-			space.Status.MarkBuildServiceAccountNotOwned(desired.Name)
-			return fmt.Errorf("space: %q does not own ServiceAccount: %q", space.Name, desired.Name)
-		} else if actual, err = r.reconcileServiceAccount(ctx, desired, actual); err != nil {
+			space.Status.MarkBuildServiceAccountNotOwned(desiredServiceAccount.Name)
+			return fmt.Errorf("space: %q does not own ServiceAccount: %q", space.Name, desiredServiceAccount.Name)
+		} else if actual, err = r.reconcileServiceAccount(ctx, desiredServiceAccount, actual); err != nil {
 			return err
 		}
 
@@ -409,9 +472,21 @@ func (r *Reconciler) reconcileServiceAccount(
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
 
-	// TODO: We don't compare Secrets YET. Once we have a desired Secret for
-	// the ServiceAccount, we'll want to ensure its present while ignoring the
-	// existing ones.
+	// Check to ensure the desired secrets are present, while not failing if
+	// there are others.
+	beforeLenSecrets := len(desired.Secrets)
+	beforeLenImagePullSecrets := len(desired.ImagePullSecrets)
+
+	desired.Secrets = algorithms.Merge(
+		v1alpha1.ObjectReferences(desired.Secrets),
+		v1alpha1.ObjectReferences(actual.Secrets),
+	).(v1alpha1.ObjectReferences)
+	desired.ImagePullSecrets = algorithms.Merge(
+		v1alpha1.LocalObjectReferences(desired.ImagePullSecrets),
+		v1alpha1.LocalObjectReferences(actual.ImagePullSecrets),
+	).(v1alpha1.LocalObjectReferences)
+	semanticEqual = semanticEqual && beforeLenSecrets == len(desired.Secrets)
+	semanticEqual = semanticEqual && beforeLenImagePullSecrets == len(desired.ImagePullSecrets)
 
 	if semanticEqual {
 		return actual, nil
