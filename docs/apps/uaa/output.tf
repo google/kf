@@ -33,7 +33,7 @@ applications:
   - route: http://uaa.${var.kf_domain_name}/uaa
   env:
     UAA_URL: http://uaa.${var.kf_domain_name}/uaa
-    LOGIN_URL: http://uaa.${var.kf_domain_name}/juaa
+    LOGIN_URL: http://uaa.${var.kf_domain_name}/uaa
     UAA_CONFIG_YAML: |
       zones:
         internal:
