@@ -82,11 +82,11 @@ func SelectPrompt(
 }
 
 // SelectYesNo promts the user to select between yes and no. It will return
-// true if the user selects "yes", and false otherwise. It always returns yes
-// in non-interactive mode.
-func SelectYesNo(ctx context.Context, label string) (bool, error) {
+// true if the user selects "yes", and false otherwise. It always returns the
+// default in non-interactive mode.
+func SelectYesNo(ctx context.Context, label string, def bool) (bool, error) {
 	if !GetInteractiveMode(ctx) {
-		return true, nil
+		return def, nil
 	}
 
 	_, value, err := SelectPrompt(ctx, label, "yes", "no")

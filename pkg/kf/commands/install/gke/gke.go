@@ -457,6 +457,7 @@ func gkeClusterConfig(
 		ok, err := cli.SelectYesNo(
 			ctx,
 			fmt.Sprintf("Create service account %s?", cfg.serviceAccount),
+			true,
 		)
 		if err != nil {
 			return gkeConfig{}, err
@@ -638,7 +639,7 @@ func enableServiceAPI(ctx context.Context, projID, serviceName string) error {
 		return nil
 	}
 
-	ok, err := cli.SelectYesNo(ctx, fmt.Sprintf("Enable %s API?", serviceName))
+	ok, err := cli.SelectYesNo(ctx, fmt.Sprintf("Enable %s API?", serviceName), true)
 	if err != nil {
 		return err
 	}
@@ -708,7 +709,7 @@ func ensureBilling(ctx context.Context, projID string) error {
 	}
 
 	cli.Logf(ctx, "Looks like you need to enable billing for %s", projID)
-	ok, err := cli.SelectYesNo(ctx, fmt.Sprintf("Sync billing account for %s?", projID))
+	ok, err := cli.SelectYesNo(ctx, fmt.Sprintf("Sync billing account for %s?", projID), true)
 	if err != nil {
 		return err
 	}

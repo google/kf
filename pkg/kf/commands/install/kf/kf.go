@@ -366,7 +366,7 @@ func createKfSpace(
 	if !createSpace {
 		// This just implies the user already said they wanted to create a
 		// space... so skip this prompt.
-		ok, err := cli.SelectYesNo(ctx, "Setup kf space?")
+		ok, err := cli.SelectYesNo(ctx, "Setup kf space?", true)
 		if err != nil {
 			return "", err
 		}
