@@ -30,6 +30,27 @@ spec:
   subresources:
     status: {}
   additionalPrinterColumns:
-  - name: Age
-    type: date
-    JSONPath: .metadata.creationTimestamp
+  - name: Instances
+    type: string
+    JSONPath: .status.instances.representation
+  - name: Memory
+    type: string
+    JSONPath: .spec.template.spec.containers[?(@.name=="user-container")].resources.requests.memory
+  - name: Disk
+    type: string
+    JSONPath: .spec.template.spec.containers[?(@.name=="user-container")].resources.requests.ephemeral-storage
+  - name: CPU
+    type: string
+    JSONPath: .spec.template.spec.containers[?(@.name=="user-container")].resources.requests.cpu
+  - name: URLs
+    type: string
+    JSONPath: .status.routes
+  - name: Cluster URL
+    type: string
+    JSONPath: .status.address.url
+  - name: Ready
+    type: string
+    JSONPath: ".status.conditions[?(@.type=='Ready')].status"
+  - name: Reason
+    type: string
+    JSONPath: ".status.conditions[?(@.type=='Ready')].reason"
