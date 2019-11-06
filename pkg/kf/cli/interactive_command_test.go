@@ -35,8 +35,8 @@ func TestNewInteractiveCommand_info(t *testing.T) {
 	}, &cli.InteractiveNode{
 		Setup: func(flags *pflag.FlagSet) ([]*cli.InteractiveNode, cli.Runner) {
 			return nil,
-				func(ctx context.Context, cmd *cobra.Command, args []string) (*cli.InteractiveNode, error) {
-					return nil, nil
+				func(ctx context.Context, cmd *cobra.Command, args []string) (context.Context, *cli.InteractiveNode, error) {
+					return ctx, nil, nil
 				}
 		},
 	})
@@ -100,10 +100,10 @@ func TestNewInteractiveCommand_invalid_graph(t *testing.T) {
 		&cli.InteractiveNode{
 			Setup: func(flags *pflag.FlagSet) ([]*cli.InteractiveNode, cli.Runner) {
 				return nil,
-					func(ctx context.Context, cmd *cobra.Command, args []string) (*cli.InteractiveNode, error) {
+					func(ctx context.Context, cmd *cobra.Command, args []string) (context.Context, *cli.InteractiveNode, error) {
 						// Invalid because we didn't say had this node as a
 						// child.
-						return &cli.InteractiveNode{}, nil
+						return ctx, &cli.InteractiveNode{}, nil
 					}
 			},
 		})
@@ -125,30 +125,30 @@ func buildGraph(t *testing.T, err error) (*cli.InteractiveNode, func(t *testing.
 		flags.StringVar(&c, "C", "", "c flag")
 		// Link back to a to create a cycle
 		return []*cli.InteractiveNode{&ib, &ia},
-			func(ctx context.Context, cmd *cobra.Command, args []string) (*cli.InteractiveNode, error) {
+			func(ctx context.Context, cmd *cobra.Command, args []string) (context.Context, *cli.InteractiveNode, error) {
 				idx++
 				testutil.AssertEqual(t, "C", 3, idx)
-				return nil, nil
+				return ctx, nil, nil
 			}
 	}
 
 	setupB := func(flags *pflag.FlagSet) ([]*cli.InteractiveNode, cli.Runner) {
 		flags.StringVar(&b, "B", "", "b flag")
 		return []*cli.InteractiveNode{&ic},
-			func(ctx context.Context, cmd *cobra.Command, args []string) (*cli.InteractiveNode, error) {
+			func(ctx context.Context, cmd *cobra.Command, args []string) (context.Context, *cli.InteractiveNode, error) {
 				idx++
 				testutil.AssertEqual(t, "B", 2, idx)
-				return &ic, err
+				return ctx, &ic, err
 			}
 	}
 
 	setupA := func(flags *pflag.FlagSet) ([]*cli.InteractiveNode, cli.Runner) {
 		flags.StringVar(&a, "A", "", "a flag")
 		return []*cli.InteractiveNode{&ib, &ic},
-			func(ctx context.Context, cmd *cobra.Command, args []string) (*cli.InteractiveNode, error) {
+			func(ctx context.Context, cmd *cobra.Command, args []string) (context.Context, *cli.InteractiveNode, error) {
 				idx++
 				testutil.AssertEqual(t, "A", 1, idx)
-				return &ib, nil
+				return ctx, &ib, nil
 			}
 	}
 

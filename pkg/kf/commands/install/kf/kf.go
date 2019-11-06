@@ -80,7 +80,7 @@ func NewInstallGraph() *cli.InteractiveNode {
 				ctx context.Context,
 				cmd *cobra.Command,
 				args []string,
-			) (*cli.InteractiveNode, error) {
+			) (context.Context, *cli.InteractiveNode, error) {
 				ctx = cli.SetLogPrefix(ctx, "Kf Install")
 				if kfVersion == "" {
 					// KfVersion was not provided via a flag, fetch it from
@@ -88,7 +88,7 @@ func NewInstallGraph() *cli.InteractiveNode {
 					var err error
 					kfVersion, err = selectKfVersion(ctx)
 					if err != nil {
-						return nil, err
+						return nil, nil, err
 					}
 				} else if strings.ToLower(kfVersion) == "nightly" {
 					// We need the actual version is.
@@ -97,10 +97,10 @@ func NewInstallGraph() *cli.InteractiveNode {
 
 				// Install Kf server components
 				if err := installServerComponents(ctx, kfVersion); err != nil {
-					return nil, err
+					return nil, nil, err
 				}
 
-				return &spaceIN, nil
+				return ctx, &spaceIN, nil
 			}
 	}
 
@@ -118,7 +118,7 @@ func NewInstallGraph() *cli.InteractiveNode {
 				ctx context.Context,
 				cmd *cobra.Command,
 				args []string,
-			) (*cli.InteractiveNode, error) {
+			) (context.Context, *cli.InteractiveNode, error) {
 				ctx = cli.SetLogPrefix(ctx, "Setup Space")
 
 				// Lets see if the user said they didn't want to create a
@@ -126,21 +126,21 @@ func NewInstallGraph() *cli.InteractiveNode {
 				if cmd.Flags().Changed("create-space") && !createSpace {
 					// User specifically requested to NOT create a space. So
 					// skip all this.
-					return nil, nil
+					return ctx, nil, nil
 				}
 
 				// Setup kf space
 				var err error
 				if spaceName, err = createKfSpace(ctx, createSpace, spaceName, domain); err != nil {
-					return nil, err
+					return nil, nil, err
 				}
 
 				// Target the space
 				if _, err := util.Kf(ctx, "target", "-s", spaceName); err != nil {
-					return nil, err
+					return nil, nil, err
 				}
 
-				return nil, nil
+				return ctx, nil, nil
 			}
 	}
 

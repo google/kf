@@ -24,7 +24,7 @@ import (
 
 // Runner is invoked if the InteractiveNode comes up in the decision digraph.
 // What it returns guides the interactive experience.
-type Runner func(context.Context, *cobra.Command, []string) (*InteractiveNode, error)
+type Runner func(context.Context, *cobra.Command, []string) (context.Context, *InteractiveNode, error)
 
 // InteractiveNode is a node of the decision digraph.
 type InteractiveNode struct {
@@ -32,16 +32,6 @@ type InteractiveNode struct {
 	// if it comes up in the decision digraph. The returned InteractiveNodes
 	// are ALL the possible paths the interactive tutorial can go.
 	Setup func(*pflag.FlagSet) ([]*InteractiveNode, Runner)
-
-	// ctx gets set by InteractiveWithContext(). If it's not set, the normal
-	// context is used during execution.
-	ctx context.Context
-}
-
-// InteractiveWithContext sets a context for the node to use.
-func InteractiveWithContext(ctx context.Context, n *InteractiveNode) *InteractiveNode {
-	n.ctx = ctx
-	return n
 }
 
 // CommandInfo stores the information about a command.
@@ -171,11 +161,7 @@ func executeDigraph(
 		return errors.New("interactive error: unexpected next node")
 	}
 
-	if n.ctx != nil {
-		ctx = n.ctx
-	}
-
-	nextNode, err := r(ctx, cmd, args)
+	ctx, nextNode, err := r(ctx, cmd, args)
 	if err != nil {
 		return err
 	}

@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/kf/pkg/kf/cli"
 	"github.com/google/kf/pkg/kf/commands/config"
 	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/pkg/kf/service-brokers/cluster"
@@ -31,7 +30,6 @@ import (
 func NewDeleteServiceBrokerCommand(p *config.KfParams, clusterClient cluster.Client, namespacedClient namespaced.Client) *cobra.Command {
 	var (
 		spaceScoped bool
-		force       bool
 		async       utils.AsyncFlags
 	)
 	deleteCmd := &cobra.Command{
@@ -44,15 +42,6 @@ func NewDeleteServiceBrokerCommand(p *config.KfParams, clusterClient cluster.Cli
 			serviceBrokerName := args[0]
 
 			cmd.SilenceUsage = true
-
-			if !force {
-				ctx := cli.SetInteractiveMode(context.Background(), true)
-				shouldDelete, err := cli.SelectYesNo(ctx, fmt.Sprintf("Really delete service-broker %s?", serviceBrokerName))
-				if err != nil || shouldDelete == false {
-					fmt.Fprintln(cmd.OutOrStdout(), "Skipping deletion, use --force to delete without validation")
-					return err
-				}
-			}
 
 			if spaceScoped {
 				if err := utils.ValidateNamespace(p); err != nil {
@@ -89,12 +78,6 @@ func NewDeleteServiceBrokerCommand(p *config.KfParams, clusterClient cluster.Cli
 		"space-scoped",
 		false,
 		"Set to delete a space scoped service broker.")
-
-	deleteCmd.Flags().BoolVar(
-		&force,
-		"force",
-		false,
-		"Set to force deletion without a confirmation prompt.")
 
 	return deleteCmd
 }

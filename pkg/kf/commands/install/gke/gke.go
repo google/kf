@@ -80,21 +80,18 @@ func buildGraph() *cli.InteractiveNode {
 				ctx context.Context,
 				cmd *cobra.Command,
 				args []string,
-			) (*cli.InteractiveNode, error) {
+			) (context.Context, *cli.InteractiveNode, error) {
 				ctx = cli.SetLogPrefix(ctx, "Setup GCP Project")
 				if projectID != "" {
 					// ProjectID was provided via a flag.
-					return &clusterIN, nil
+					return setProjectID(ctx, projectID), &clusterIN, nil
 				}
 
 				// ProjectID was not provided via a flag, fetch it from the
 				// user.
 				var err error
 				projectID, err = selectProject(ctx)
-				return cli.InteractiveWithContext(
-					setProjectID(ctx, projectID),
-					&clusterIN,
-				), err
+				return setProjectID(ctx, projectID), &clusterIN, err
 			}
 	}
 
@@ -118,7 +115,7 @@ func buildGraph() *cli.InteractiveNode {
 				ctx context.Context,
 				cmd *cobra.Command,
 				args []string,
-			) (*cli.InteractiveNode, error) {
+			) (context.Context, *cli.InteractiveNode, error) {
 				cli.ClearDefaultsForInteractive(ctx, cmd.Flags())
 				ctx = cli.SetLogPrefix(ctx, "Setup GKE Cluster")
 				var err error
@@ -139,14 +136,11 @@ func buildGraph() *cli.InteractiveNode {
 
 				// Target the cluster
 				if err := targetCluster(ctx, projectID, masterIP, gkeCfg); err != nil {
-					return nil, err
+					return nil, nil, err
 				}
 
 				// NOTE: err might be nil
-				return cli.InteractiveWithContext(
-					kf.SetContainerRegistry(ctx, "gcr.io/"+projectID),
-					kfInstallGraph,
-				), err
+				return kf.SetContainerRegistry(ctx, "gcr.io/"+projectID), kfInstallGraph, err
 			}
 	}
 
