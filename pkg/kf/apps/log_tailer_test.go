@@ -210,6 +210,7 @@ func createEvents(es []watch.Event) <-chan watch.Event {
 func createMsgEvents(appName string, conditions duckv1beta1.Conditions) []watch.Event {
 	var es []watch.Event
 	es = append(es, watch.Event{
+		Type: watch.Modified,
 		Object: &v1alpha1.App{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: appName,

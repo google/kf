@@ -40,6 +40,7 @@ mkdir -p $GOPATH/src/github.com/google
 ln -s `pwd` $GOPATH/src/github.com/google/kf
 
 hack/update-codegen.sh
+go mod tidy
 
 if [ ! -z "$(git status --porcelain)" ]; then
     git status

@@ -65,14 +65,10 @@ templates:
     params:
       path: pr
       status: FAILURE
-  - *terraform-destroy
-  - *terraform-create
   - *release-lock
 
 - &on-success
   do:
-  - *terraform-destroy
-  - *terraform-create
   - *release-lock
 
 resource_types:
@@ -143,7 +139,7 @@ jobs:
     # here. In the worst case, we've manually added an environment to the pool that hasn't been
     # initialized, and the initialization happens here. This has the benefit of not requiring
     # a separate process for resource management.
-    - *terraform-create
+    - *terraform-destroy
     - task: check-linters
       timeout: 10m
       config:
@@ -299,6 +295,7 @@ jobs:
               # Build CLI and controllers
               ../ci-pipelines-src/hack/build.sh
             popd
+  - *terraform-create
   - task: integration
     timeout: 1h30m
     config:
@@ -343,6 +340,9 @@ jobs:
           pushd pr
             # Install Kf server-side components
             ../ci-pipelines-src/hack/ko-apply.sh
+
+            # Setup Kf Secret and ConifgMap
+            ../ci-pipelines-src/hack/create-gke-secret.sh
 
             # Run unit tests
             ../ci-pipelines-src/hack/integration-test.sh
