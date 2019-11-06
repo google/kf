@@ -43,7 +43,6 @@ func makeContainerImageBuild(source *v1alpha1.Source) (*build.Build, *corev1.Sec
 	return &build.Build{
 		ObjectMeta: makeObjectMeta(source),
 		Spec: build.BuildSpec{
-			ServiceAccountName: source.Spec.ServiceAccount,
 			Template: &build.TemplateInstantiationSpec{
 				Name: containerImageTemplate,
 				Kind: "ClusterBuildTemplate",
@@ -62,7 +61,6 @@ func makeDockerImageBuild(source *v1alpha1.Source) (*build.Build, *corev1.Secret
 	return &build.Build{
 		ObjectMeta: makeObjectMeta(source),
 		Spec: build.BuildSpec{
-			ServiceAccountName: source.Spec.ServiceAccount,
 			Source: &build.SourceSpec{
 				Custom: &corev1.Container{
 					Image: source.Spec.Dockerfile.Source,
@@ -106,7 +104,6 @@ func makeBuildpackBuild(source *v1alpha1.Source) (*build.Build, *corev1.Secret, 
 					Image: source.Spec.BuildpackBuild.Source,
 				},
 			},
-			ServiceAccountName: source.Spec.ServiceAccount,
 			Template: &build.TemplateInstantiationSpec{
 				Name: buildpackBuildTemplate,
 				Kind: "ClusterBuildTemplate",
