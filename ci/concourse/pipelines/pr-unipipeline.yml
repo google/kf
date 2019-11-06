@@ -332,7 +332,7 @@ jobs:
           kubectl apply --recursive --filename pr/third_party/service-catalog/manifests/catalog/templates/
 
           # Install Knative Build
-          kubectl apply --filename https://github.com/knative/build/releases/download/v0.6.0/build.yaml
+          kubectl apply --filename https://github.com/knative/build/releases/download/v0.7.0/build.yaml
 
           # Let SC and Build simmer for 30s
           sleep 30

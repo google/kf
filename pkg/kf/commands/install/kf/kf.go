@@ -35,7 +35,7 @@ import (
 
 const (
 	// KnativeBuildYAML holds the knative build yaml release URL
-	KnativeBuildYAML = "https://github.com/knative/build/releases/download/v0.6.0/build.yaml"
+	KnativeBuildYAML = "https://github.com/knative/build/releases/download/v0.7.0/build.yaml"
 	// KfNightlyBuildYAML holds the kf nightly build release URL
 	KfNightlyBuildYAML = "https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly/latest/release.yaml"
 )
