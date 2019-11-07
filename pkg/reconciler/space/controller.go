@@ -20,6 +20,7 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	spaceinformer "github.com/google/kf/pkg/client/injection/informers/kf/v1alpha1/space"
 	"github.com/google/kf/pkg/reconciler"
+	"github.com/google/kf/pkg/reconciler/source/config"
 	namespaceinformer "knative.dev/pkg/injection/informers/kubeinformers/corev1/namespace"
 	serviceaccountinformer "knative.dev/pkg/injection/informers/kubeinformers/corev1/serviceaccount"
 	roleinformer "knative.dev/pkg/injection/informers/kubeinformers/rbacv1/role"
@@ -86,6 +87,22 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		FilterFunc: controller.Filter(v1alpha1.SchemeGroupVersion.WithKind("Space")),
 		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
 	})
+
+	c.SecretInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+		FilterFunc: controller.Filter(v1alpha1.SchemeGroupVersion.WithKind("Space")),
+		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
+	})
+
+	logger.Info("Setting up ConfigMap receivers")
+	configsToResync := []interface{}{
+		&config.SecretsConfig{},
+	}
+	resync := configmap.TypeFilter(configsToResync...)(func(string, interface{}) {
+		impl.GlobalResync(spaceInformer.Informer())
+	})
+	configStore := config.NewStore(logger.Named("secrets-config-store"), resync)
+	configStore.WatchConfigs(cmw)
+	c.configStore = configStore
 
 	return impl
 }

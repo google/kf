@@ -116,7 +116,7 @@ func TestNewDeleteServiceBrokerCommand(t *testing.T) {
 			buf := new(bytes.Buffer)
 			cmd := NewDeleteServiceBrokerCommand(args.p, args.clusterClient, args.namespacedClient)
 			cmd.SetOutput(buf)
-			cmd.SetArgs(append(tc.args, "--force"))
+			cmd.SetArgs(tc.args)
 			_, actualErr := cmd.ExecuteC()
 			if tc.wantErr != nil || actualErr != nil {
 				testutil.AssertErrorsEqual(t, tc.wantErr, actualErr)

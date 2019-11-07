@@ -52,7 +52,7 @@ sudo mv kf /usr/local/bin
 ### Knative Build:
 
 ```.sh
-kubectl apply --filename https://github.com/knative/build/releases/download/v0.6.0/build.yaml
+kubectl apply --filename https://github.com/knative/build/releases/download/v0.7.0/build.yaml
 ```
 
 > If you want more information about installing Knative, see [their docs][knative].

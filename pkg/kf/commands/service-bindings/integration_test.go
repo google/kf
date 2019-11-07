@@ -185,7 +185,7 @@ func withServiceBroker(ctx context.Context, t *testing.T, kf *Kf, callback func(
 		// Register the mock service broker to service catalog, and then clean it up.
 		kf.CreateServiceBroker(ctx, brokerName, internalBrokerUrl(brokerAppName, SpaceFromContext(ctx)), "--space-scoped")
 
-		defer kf.DeleteServiceBroker(ctx, brokerName, "--space-scoped", "--force")
+		defer kf.DeleteServiceBroker(ctx, brokerName, "--space-scoped")
 
 		ctx = ContextWithBroker(ctx, brokerName)
 		callback(ctx)
