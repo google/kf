@@ -7,8 +7,19 @@ env:
   - SKIP_INTEGRATION=true GO111MODULE=on GOPROXY=https://proxy.golang.org GOSUMDB=sum.golang.org
 
 script:
-  - ./hack/check-go-sum.sh
+  - ./hack/check-clean-git-state.sh
+  - ./hack/tidy.sh
+  - ./hack/check-clean-git-state.sh
   - ./hack/check-linters.sh
-  - ./hack/check-go-generate.sh
-  - ./hack/check-vendor-license.sh
+  - ./hack/tidy.sh
+  - ./hack/check-clean-git-state.sh
+  - ./hack/go-generate.sh
+  - ./hack/tidy.sh
+  - ./hack/check-clean-git-state.sh
+  - ./hack/update-vendor-license.sh
+  - ./hack/tidy.sh
+  - ./hack/check-clean-git-state.sh
+  - ./hack/update-codegen.sh
+  - ./hack/tidy.sh
+  - ./hack/check-clean-git-state.sh
   - ./hack/test.sh

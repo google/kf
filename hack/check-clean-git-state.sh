@@ -17,6 +17,7 @@
 # This script is used by the CI to check if 'go generate ./...' is up to date.
 
 set -eux
+cd "${0%/*}"/..
 if [ ! -z "$(git status --porcelain)" ]; then
     git status
     echo

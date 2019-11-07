@@ -16,7 +16,8 @@
 
 # This script is used by the CI to check if the code is gofmt formatted.
 
-set -eu
+set -eux
+cd "${0%/*}"/..
 
 # gofmt -s -d
 GOFMT_DIFF=$(IFS=$'\n' gofmt -s -d $( find . -type f -name '*.go' | grep -v \./vendor/) )
