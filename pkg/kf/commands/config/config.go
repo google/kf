@@ -30,7 +30,7 @@ import (
 	"github.com/google/kf/pkg/kf/internal/tableclient"
 	"github.com/google/kf/pkg/kf/marketplace"
 	serving "github.com/google/kf/third_party/knative-serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
-	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
+	tektonclient "github.com/google/kf/third_party/tektoncd-pipeline/pkg/client/clientset/versioned"
 	"github.com/imdario/mergo"
 	svcatclient "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset"
 	"github.com/poy/service-catalog/pkg/svcat"

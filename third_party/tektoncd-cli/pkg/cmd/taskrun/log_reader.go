@@ -21,7 +21,7 @@ import (
 	"github.com/google/kf/third_party/tektoncd-cli/pkg/cli"
 	"github.com/google/kf/third_party/tektoncd-cli/pkg/helper/pods"
 	"github.com/google/kf/third_party/tektoncd-cli/pkg/helper/pods/stream"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	"github.com/google/kf/third_party/tektoncd-pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
