@@ -255,7 +255,4 @@ esac
 gofmt -s -w .
 [ $? -ne 0 ] && echo Error running gofmt 1>&2 && exit 1
 
-GO111MODULE=on go mod tidy
-[ $? -ne 0 ] && echo Error running go mod tidy 1>&2 && exit 1
-
 exit 0
