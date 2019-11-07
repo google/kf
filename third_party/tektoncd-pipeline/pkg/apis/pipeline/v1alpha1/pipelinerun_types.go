@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/tektoncd/pipeline/pkg/apis/config"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -263,20 +261,7 @@ func (pr *PipelineRun) GetRunKey() string {
 
 // IsTimedOut returns true if a pipelinerun has exceeded its spec.Timeout based on its status.Timeout
 func (pr *PipelineRun) IsTimedOut() bool {
-	pipelineTimeout := pr.Spec.Timeout
-	startTime := pr.Status.StartTime
-
-	if !startTime.IsZero() && pipelineTimeout != nil {
-		timeout := pipelineTimeout.Duration
-		if timeout == config.NoTimeoutDuration {
-			return false
-		}
-		runtime := time.Since(startTime.Time)
-		if runtime > timeout {
-			return true
-		}
-	}
-	return false
+	panic("this was not brought into third_party for dep reasons")
 }
 
 // GetServiceAccountName returns the service account name for a given

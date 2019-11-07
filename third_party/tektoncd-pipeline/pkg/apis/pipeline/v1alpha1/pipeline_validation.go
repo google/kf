@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/tektoncd/pipeline/pkg/list"
+	"github.com/google/kf/third_party/tektoncd-pipeline/pkg/list"
 	"golang.org/x/xerrors"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/util/validation"

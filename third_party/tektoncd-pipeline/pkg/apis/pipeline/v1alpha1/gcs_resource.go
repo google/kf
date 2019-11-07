@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/google/kf/third_party/tektoncd-pipeline/pkg/apis/pipeline"
-	"github.com/tektoncd/pipeline/pkg/names"
+	"github.com/google/kf/third_party/tektoncd-pipeline/pkg/names"
 	"golang.org/x/xerrors"
 	corev1 "k8s.io/api/core/v1"
 )

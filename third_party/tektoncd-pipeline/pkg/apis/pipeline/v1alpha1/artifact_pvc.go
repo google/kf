@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/tektoncd/pipeline/pkg/names"
+	"github.com/google/kf/third_party/tektoncd-pipeline/pkg/names"
 	corev1 "k8s.io/api/core/v1"
 )
 

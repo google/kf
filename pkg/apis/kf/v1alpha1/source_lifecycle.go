@@ -15,7 +15,7 @@
 package v1alpha1
 
 import (
-	build "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	build "github.com/google/kf/third_party/tektoncd-pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"knative.dev/pkg/apis"

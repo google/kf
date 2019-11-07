@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/google/kf/pkg/kf/testutil"
-	build "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	build "github.com/google/kf/third_party/tektoncd-pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"

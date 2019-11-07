@@ -19,7 +19,7 @@ package v1alpha1
 import (
 	"strings"
 
-	"github.com/tektoncd/pipeline/pkg/names"
+	"github.com/google/kf/third_party/tektoncd-pipeline/pkg/names"
 	"golang.org/x/xerrors"
 	corev1 "k8s.io/api/core/v1"
 )
