@@ -90,6 +90,9 @@ func main() {
 	dockerutil.DescribeDefaultConfig(w)
 }
 
+// getBuildUser returns the UID and GID as specified by the buildpack builder
+// image environment variables subject to the platform build image spec:
+// https://github.com/buildpack/spec/blob/master/platform.md#build-image
 func getBuildUser(builderImage string) (uid, gid int, err error) {
 	imageRef, err := name.ParseReference(builderImage, name.WeakValidation)
 	if err != nil {
