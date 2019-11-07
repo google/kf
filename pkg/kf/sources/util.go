@@ -99,7 +99,5 @@ func TektonLoggingShim(ti tekton.Interface, ki kubernetes.Interface) BuildTailer
 				fmt.Fprintln(out, prefix, log.Log)
 			}
 		}
-
-		return nil
 	})
 }
