@@ -76,28 +76,16 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		&config.RoutingConfig{},
 	}
 	resync := configmap.TypeFilter(configsToResync...)(func(string, interface{}) {
-		// routes := routeInformer.Informer().GetStore().List()
-		// routeClaims := routeClaimInformer.Informer().GetStore().List()
-		// nrf := namespacedRouteSpecFields{}
-		// for _, rc := range routeClaims {
-		// 	nrf = namespacedRouteSpecFields{
-		// 		Namespace:       rc.(*v1alpha1.RouteClaim).GetNamespace(),
-		// 		RouteSpecFields: rc.(v1alpha1.RouteClaim).Spec.RouteSpecFields,
-		// 	}
-		// 	data, _ := json.Marshal(nrf)
-		// 	enqueue(cache.ExplicitKey(data))
-		// }
+		// When configmap updates, queue all existing routes and routeclaims in the form of namespaced RouteSpecFields
+		routes := routeInformer.Informer().GetStore().List()
+		routeClaims := routeClaimInformer.Informer().GetStore().List()
+		for _, rc := range routeClaims {
+			enqueue(rc)
+		}
 
-		// for _, r := range routes {
-		// 	nrf = namespacedRouteSpecFields{
-		// 		Namespace:       r.(*v1alpha1.Route).GetNamespace(),
-		// 		RouteSpecFields: r.(v1alpha1.Route).Spec.RouteSpecFields,
-		// 	}
-		// 	data, _ := json.Marshal(nrf)
-		// 	enqueue(cache.ExplicitKey(data))
-		// }
-		// BuildEnqueuer(impl.Enqueue)
-		impl.GlobalResync(routeInformer.Informer())
+		for _, r := range routes {
+			enqueue(r)
+		}
 	})
 	configStore := config.NewStore(logger.Named("routing-config-store"), resync)
 	configStore.WatchConfigs(cmw)

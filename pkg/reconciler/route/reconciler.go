@@ -52,15 +52,13 @@ var _ controller.Reconciler = (*Reconciler)(nil)
 
 // Reconcile is called by Kubernetes.
 func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
-	logger := logging.FromContext(ctx)
-	logger.Infof("reconciling key %#v", key)
 	// Key is a JSON marshalled namespacedRouteSpecFields
 	var route namespacedRouteSpecFields
 	if err := json.Unmarshal([]byte(key), &route); err != nil {
 		return err
 	}
 
-	// logger := logging.FromContext(ctx).With("namespace", route.Namespace)
+	logger := logging.FromContext(ctx).With("namespace", route.Namespace)
 
 	ctx = r.configStore.ToContext(ctx)
 
