@@ -24,7 +24,7 @@ kf delete-service-broker BROKER_NAME [flags]
 ### Options
 
 ```
-      --force          Set to force deletion without a confirmation prompt.
+      --async          Don't wait for the action to complete on the server before returning
   -h, --help           help for delete-service-broker
       --space-scoped   Set to delete a space scoped service broker.
 ```

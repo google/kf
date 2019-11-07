@@ -15,62 +15,15 @@
 package builds
 
 import (
-	"fmt"
-	"io"
-
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/describe"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/pkg/kf/internal/genericcli"
+	"github.com/google/kf/pkg/kf/internal/tableclient"
 	"github.com/google/kf/pkg/kf/sources"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/api/meta/table"
+	"k8s.io/client-go/dynamic"
 )
 
-// NewListBuildsCommand allows users to list spaces.
-func NewListBuildsCommand(p *config.KfParams, client sources.Client) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:     "builds",
-		Short:   "List the builds in the current space",
-		Example: `kf builds`,
-		Args:    cobra.ExactArgs(0),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := utils.ValidateNamespace(p); err != nil {
-				return err
-			}
-
-			cmd.SilenceUsage = true
-
-			list, err := client.List(p.Namespace)
-			if err != nil {
-				return err
-			}
-
-			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
-				fmt.Fprintln(w, "Name\tAge\tReady\tReason\tImage")
-
-				for _, source := range list {
-					ready := ""
-					reason := ""
-					if cond := source.Status.GetCondition(v1alpha1.SourceConditionSucceeded); cond != nil {
-						ready = fmt.Sprintf("%v", cond.Status)
-						reason = cond.Reason
-					}
-
-					fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s",
-						source.Name,
-						table.ConvertToHumanReadableDateType(source.CreationTimestamp),
-						ready,
-						reason,
-						source.Status.Image,
-					)
-					fmt.Fprintln(w)
-				}
-			})
-
-			return nil
-		},
-	}
-
-	return cmd
+// NewBuildsCommand allows users to get builds.
+func NewBuildsCommand(p *config.KfParams, client dynamic.Interface, tc tableclient.Interface) *cobra.Command {
+	return genericcli.NewListCommand(sources.NewResourceInfo(), p, client, tc)
 }

@@ -29,7 +29,6 @@ import (
 )
 
 func TestIntegration_Marketplace(t *testing.T) {
-	t.Skip("#599")
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		withServiceBroker(ctx, t, kf, func(ctx context.Context) {
@@ -40,7 +39,6 @@ func TestIntegration_Marketplace(t *testing.T) {
 }
 
 func TestIntegration_Services(t *testing.T) {
-	t.Skip("#599")
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		withServiceBroker(ctx, t, kf, func(ctx context.Context) {
@@ -54,7 +52,6 @@ func TestIntegration_Services(t *testing.T) {
 }
 
 func TestIntegration_Bindings(t *testing.T) {
-	t.Skip("#599")
 	checkClusterStatus(t)
 	appName := fmt.Sprintf("integration-binding-app-%d", time.Now().UnixNano())
 	appPath := "./samples/apps/envs"
@@ -115,7 +112,6 @@ func TestIntegration_VcapServices(t *testing.T) {
 }
 
 func TestIntegration_VcapServices_customBindingName(t *testing.T) {
-	t.Skip("#654")
 	checkClusterStatus(t)
 	appName := fmt.Sprintf("integration-binding-app-%d", time.Now().UnixNano())
 	appPath := "./samples/apps/envs"
@@ -189,10 +185,7 @@ func withServiceBroker(ctx context.Context, t *testing.T, kf *Kf, callback func(
 		// Register the mock service broker to service catalog, and then clean it up.
 		kf.CreateServiceBroker(ctx, brokerName, internalBrokerUrl(brokerAppName, SpaceFromContext(ctx)), "--space-scoped")
 
-		// TODO: cut this out when create-service-broker is synchronous
-		time.Sleep(10 * time.Second)
-
-		defer kf.DeleteServiceBroker(ctx, brokerName, "--space-scoped", "--force")
+		defer kf.DeleteServiceBroker(ctx, brokerName, "--space-scoped")
 
 		ctx = ContextWithBroker(ctx, brokerName)
 		callback(ctx)
@@ -206,10 +199,6 @@ func withServiceInstance(ctx context.Context, kf *Kf, callback func(newCtx conte
 	brokerName := BrokerFromContext(ctx)
 
 	kf.CreateService(ctx, serviceClass, servicePlan, serviceInstanceName, "-b", brokerName)
-
-	// TODO: cut this out when create-service is synchronous
-	time.Sleep(5 * time.Second)
-
 	defer kf.DeleteService(ctx, serviceInstanceName)
 
 	ctx = ContextWithServiceClass(ctx, serviceClass)

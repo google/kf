@@ -15,65 +15,16 @@
 package spaces
 
 import (
-	"fmt"
-	"io"
-
 	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/describe"
+	"github.com/google/kf/pkg/kf/internal/genericcli"
+	"github.com/google/kf/pkg/kf/internal/tableclient"
 	"github.com/google/kf/pkg/kf/spaces"
-	"k8s.io/apimachinery/pkg/api/meta/table"
-
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"k8s.io/client-go/dynamic"
 
 	"github.com/spf13/cobra"
 )
 
 // NewListSpacesCommand allows users to list spaces.
-func NewListSpacesCommand(p *config.KfParams, client spaces.Client) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "spaces",
-		Short: "List all kf spaces",
-		Long: `List spaces and their statuses for the currently targeted cluster.
-
-		The output of this command is similar to what you'd get by running:
-
-		    kubectl get spaces.kf.dev
-
-		`,
-		Example: `kf spaces`,
-		Args:    cobra.ExactArgs(0),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cmd.SilenceUsage = true
-
-			list, err := client.List()
-			if err != nil {
-				return err
-			}
-
-			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
-				fmt.Fprintln(w, "Name\tAge\tReady\tReason")
-				for _, space := range list {
-					// Status is important here as spaces may be in a deleting status.
-					ready := ""
-					reason := ""
-					if cond := space.Status.GetCondition(v1alpha1.SpaceConditionReady); cond != nil {
-						ready = fmt.Sprintf("%v", cond.Status)
-						reason = cond.Reason
-					}
-
-					fmt.Fprintf(w, "%s\t%s\t%s\t%s",
-						space.Name,
-						table.ConvertToHumanReadableDateType(space.CreationTimestamp),
-						ready,
-						reason,
-					)
-					fmt.Fprintln(w)
-				}
-			})
-
-			return nil
-		},
-	}
-
-	return cmd
+func NewListSpacesCommand(p *config.KfParams, client dynamic.Interface, tc tableclient.Interface) *cobra.Command {
+	return genericcli.NewListCommand(spaces.NewResourceInfo(), p, client, tc)
 }

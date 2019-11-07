@@ -74,6 +74,11 @@ type Base struct {
 	SecretInformer informerscorev1.SecretInformer
 }
 
+// ConfigStore is a minimal interface to the config stores used by our controllers.
+type ConfigStore interface {
+	ToContext(ctx context.Context) context.Context
+}
+
 // NewBase instantiates a new instance of Base implementing
 // the common & boilerplate code between our reconcilers.
 func NewBase(ctx context.Context, cmw configmap.Watcher) *Base {
@@ -123,16 +128,29 @@ func (b *Base) ReconcileSecret(
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
 	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Data, actual.Data)
+	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Type, actual.Type)
 
 	if semanticEqual {
 		return actual, nil
 	}
 
-	diff, err := kmp.SafeDiff(desired.Data, actual.Data)
+	diff, err := kmp.SafeDiff(desired.Labels, actual.Labels)
+	if err != nil {
+		return nil, fmt.Errorf("failed to diff secret: %v", err)
+	}
+	logger.Debug("Secret.Labelsdiff:", diff)
+
+	diff, err = kmp.SafeDiff(desired.Data, actual.Data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to diff secret: %v", err)
 	}
 	logger.Debug("Secret.Data diff:", diff)
+
+	diff, err = kmp.SafeDiff(desired.Type, actual.Type)
+	if err != nil {
+		return nil, fmt.Errorf("failed to diff secret: %v", err)
+	}
+	logger.Debug("Secret.Type diff:", diff)
 
 	// Don't modify the informers copy.
 	existing := actual.DeepCopy()
@@ -140,6 +158,7 @@ func (b *Base) ReconcileSecret(
 	// Preserve the rest of the object (e.g. ObjectMeta except for labels).
 	existing.ObjectMeta.Labels = desired.ObjectMeta.Labels
 	existing.Data = desired.Data
+	existing.Type = desired.Type
 	return b.KubeClientSet.
 		CoreV1().
 		Secrets(existing.Namespace).
