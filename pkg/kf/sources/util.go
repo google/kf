@@ -69,11 +69,12 @@ func (f BuildTailerFunc) Tail(ctx context.Context, out io.Writer, buildName, nam
 func TektonLoggingShim(ti tekton.Interface, ki kubernetes.Interface) BuildTailer {
 	return BuildTailerFunc(func(ctx context.Context, out io.Writer, buildName, namespace string) error {
 		reader := taskrun.LogReader{
-			Ns:       namespace,
-			Run:      buildName,
-			AllSteps: true,
-			Follow:   true,
-			Streamer: pods.NewStream,
+			Ns:             namespace,
+			Run:            buildName,
+			AllSteps:       true,
+			BlacklistSteps: []string{"istio-proxy", "istio-init"},
+			Follow:         true,
+			Streamer:       pods.NewStream,
 			Clients: &tektoncli.Clients{
 				Tekton: ti,
 				Kube:   ki,

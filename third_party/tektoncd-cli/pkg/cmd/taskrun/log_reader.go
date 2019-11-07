@@ -53,6 +53,14 @@ type LogReader struct {
 	Streamer stream.NewStreamerFunc
 	Follow   bool
 	AllSteps bool
+
+	// BlacklistSteps prvents steps from being displated when AllSteps is
+	// enabled.
+	//
+	// NOTE: BlacklistSteps doesn't exist in the normal tektoncd code.
+	// However, istio is SOO chatty that it is distracting. So I want to be
+	// able to mute it.
+	BlacklistSteps []string
 }
 
 const (
@@ -108,7 +116,7 @@ func (lr *LogReader) readLiveLogs(tr *v1alpha1.TaskRun) (<-chan Log, <-chan erro
 		return nil, nil, errors.Wrap(err, fmt.Sprintf("task %s failed", lr.Task))
 	}
 
-	steps := filterSteps(pod, lr.AllSteps)
+	steps := filterSteps(pod, lr.AllSteps, lr.BlacklistSteps)
 	logC, errC := lr.readStepsLogs(steps, p, lr.Follow)
 	return logC, errC, err
 }
@@ -129,7 +137,7 @@ func (lr *LogReader) readAvailableLogs(tr *v1alpha1.TaskRun) (<-chan Log, <-chan
 		return nil, nil, errors.Wrap(err, fmt.Sprintf("task %s failed", lr.Task))
 	}
 
-	steps := filterSteps(pod, lr.AllSteps)
+	steps := filterSteps(pod, lr.AllSteps, lr.BlacklistSteps)
 	logC, errC := lr.readStepsLogs(steps, p, lr.Follow)
 	return logC, errC, nil
 }
@@ -184,7 +192,7 @@ func (lr *LogReader) readStepsLogs(steps []*step, pod *pods.Pod, follow bool) (<
 	return logC, errC
 }
 
-func filterSteps(pod *corev1.Pod, allSteps bool) []*step {
+func filterSteps(pod *corev1.Pod, allSteps bool, blacklistSteps []string) []*step {
 	steps := []*step{}
 
 	if allSteps {
@@ -193,7 +201,23 @@ func filterSteps(pod *corev1.Pod, allSteps bool) []*step {
 
 	steps = append(steps, getSteps(pod)...)
 
-	return steps
+	// Remove blacklisted steps
+	bs := map[string]bool{}
+	for _, s := range blacklistSteps {
+		bs[s] = true
+	}
+
+	var idx int
+	for i := range steps {
+		if bs[steps[i].name] {
+			// blacklisted
+			continue
+		}
+		steps[idx] = steps[i]
+		idx++
+	}
+
+	return steps[:idx]
 }
 
 func getInitSteps(pod *corev1.Pod) []*step {
