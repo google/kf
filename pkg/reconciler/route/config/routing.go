@@ -39,7 +39,7 @@ type RoutingConfig struct {
 	// IngressServiceName is the name of the Istio Ingress svc
 	IngressServiceName string
 
-	// IngresNamespace is the K8s namespace to search for Ingresses
+	// IngressNamespace is the K8s namespace to search for Ingresses
 	IngressNamespace string
 
 	// KnativeIngressGateway is the name of ingress gateway in knative-serving namespace
