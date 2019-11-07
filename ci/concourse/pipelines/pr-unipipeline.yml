@@ -118,7 +118,7 @@ jobs:
   plan:
   - get: pr
     trigger: true
-    - *acquire-lock
+  - *acquire-lock
   - put: pr
     params:
       path: pr
