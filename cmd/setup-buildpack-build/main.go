@@ -62,8 +62,8 @@ func main() {
 	}
 
 	describe.SectionWriter(w, "Changing permissions", func(w io.Writer) {
-		fmt.Fprintf(w, "chmod  %d %s\n", 0755, *workspace)
-		if err := os.Chmod(*workspace, 0755); err != nil {
+		fmt.Fprintf(w, "chmod %d %s\n", 0744, *workspace)
+		if err := os.Chmod(*workspace, 0744); err != nil {
 			log.Fatal(err)
 		}
 
