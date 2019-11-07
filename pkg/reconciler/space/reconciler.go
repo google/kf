@@ -472,11 +472,6 @@ func (r *Reconciler) reconcileServiceAccount(
 	// Check for differences, if none we don't need to reconcile.
 	semanticEqual := equality.Semantic.DeepEqual(desired.ObjectMeta.Labels, actual.ObjectMeta.Labels)
 
-	// Check to ensure the desired secrets are present, while not failing if
-	// there are others.
-	beforeLenSecrets := len(desired.Secrets)
-	beforeLenImagePullSecrets := len(desired.ImagePullSecrets)
-
 	desired.Secrets = algorithms.Merge(
 		v1alpha1.ObjectReferences(desired.Secrets),
 		v1alpha1.ObjectReferences(actual.Secrets),
@@ -485,8 +480,8 @@ func (r *Reconciler) reconcileServiceAccount(
 		v1alpha1.LocalObjectReferences(desired.ImagePullSecrets),
 		v1alpha1.LocalObjectReferences(actual.ImagePullSecrets),
 	).(v1alpha1.LocalObjectReferences)
-	semanticEqual = semanticEqual && beforeLenSecrets == len(desired.Secrets)
-	semanticEqual = semanticEqual && beforeLenImagePullSecrets == len(desired.ImagePullSecrets)
+	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.Secrets, actual.Secrets)
+	semanticEqual = semanticEqual && equality.Semantic.DeepEqual(desired.ImagePullSecrets, actual.ImagePullSecrets)
 
 	if semanticEqual {
 		return actual, nil
