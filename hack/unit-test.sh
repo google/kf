@@ -17,6 +17,6 @@
 set -eu
 
 # Go to root dir
-cd $(git rev-parse --show-toplevel)
+cd "${0%/*}"/..
 
 SKIP_INTEGRATION=true ./hack/test.sh $@

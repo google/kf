@@ -15,6 +15,7 @@
 # limitations under the License.
 
 set -eu
+
 cd "${0%/*}"/..
 
 output_dir=./docs/kf.dev/content/en/docs/general-info/kf-cli/commands

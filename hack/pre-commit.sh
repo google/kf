@@ -14,27 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cd $(dirname $(go env GOMOD))
+set -eux
 
-echo "Vetting"
-go vet ./...
+cd "${0%/*}"/..
 
-echo "Formatting"
-gofmt -s -w $( find . -type f -name '*.go' | grep -v \./vendor/)
-
-echo "Checking spelling"
-GO111MODULE=off go get -u github.com/client9/misspell/cmd/misspell
-find . -type f -name '*.go' | grep -v ./vendor/ | xargs -n1 -P 20 $(go env GOPATH)/bin/misspell -error
-
-echo "Generating updates"
-go generate ./...
-go mod tidy
-
-echo "Generating code-generator packages"
+./hack/tidy.sh
 ./hack/update-codegen.sh
-
-echo "Updating license"
-./hack/check-vendor-license.sh
-
-echo "Updating go.sum"
-go mod tidy
+./hack/tidy.sh
+./hack/go-generate.sh
+./hack/tidy.sh
+./hack/update-vendor-license.sh
+./hack/tidy.sh
+./hack/check-linters.sh
+./hack/tidy.sh
