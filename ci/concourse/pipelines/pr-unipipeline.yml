@@ -68,6 +68,8 @@ templates:
         pushd pr
           if [[ "$network" == "default" ]]; then
             echo "skipping cleanup: on default network"
+          elif [[ "$network" == "null" ]]; then
+            echo "skipping cleanup: on default network"
           else
             ./hack/terraform-pre-destroy.sh $network
           fi
@@ -178,6 +180,7 @@ jobs:
     params:
       path: pr
       status: PENDING
+  - *terraform-get
   - aggregate:
     # We always execute the terraform-create task as the first step. The final step of this
     # job - whether it fails or succeeds - is to delete and recreate the Terraform environment,
@@ -367,8 +370,7 @@ jobs:
               ./hack/tidy.sh
               ./hack/check-clean-git-state.sh
             popd
-  - *terraform-get
-  - *terraform-pre-destroy
+    - *terraform-pre-destroy
   - *terraform-destroy
   - *terraform-create
   - task: integration
