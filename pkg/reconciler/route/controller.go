@@ -66,7 +66,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	)
 
 	vsInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
-		FilterFunc: FilterVSWithNamespace(v1alpha1.KfNamespace),
+		FilterFunc: FilterVSManagedByKf(),
 		Handler:    controller.HandleAll(logError(logger, EnqueueRoutesOfVirtualService(enqueue, c.routeLister))),
 	})
 
@@ -122,13 +122,13 @@ func BuildEnqueuer(enqueue func(interface{})) func(interface{}) error {
 	}
 }
 
-// FilterVSWithNamespace makes it simple to create FilterFunc's for use with
-// cache.FilteringResourceEventHandler that filter based on a namespace and if
-// the type is a VirtualService.
-func FilterVSWithNamespace(namespace string) func(obj interface{}) bool {
+// FilterVSManagedByKf makes it simple to create FilterFunc's for use with
+// cache.FilteringResourceEventHandler that filter based on the
+// "app.kubernetes.io/managed-by": "kf" label and if the type is a VirtualService.
+func FilterVSManagedByKf() func(obj interface{}) bool {
 	return func(obj interface{}) bool {
 		if object, ok := obj.(metav1.Object); ok {
-			if namespace == object.GetNamespace() {
+			if "kf" == object.GetLabels()[v1alpha1.ManagedByLabel] {
 				_, ok := obj.(*networking.VirtualService)
 				return ok
 			}

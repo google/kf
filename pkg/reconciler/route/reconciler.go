@@ -100,7 +100,7 @@ func (r *Reconciler) ApplyChanges(
 	if len(claims) == 0 {
 		err := r.SharedClientSet.
 			Networking().
-			VirtualServices(v1alpha1.KfNamespace).
+			VirtualServices(namespace).
 			Delete(v1alpha1.GenerateName(
 				fields.Hostname,
 				fields.Domain,
@@ -138,13 +138,13 @@ func (r *Reconciler) ApplyChanges(
 	}
 
 	actual, err := r.virtualServiceLister.
-		VirtualServices(v1alpha1.KfNamespace).
+		VirtualServices(namespace).
 		Get(desired.Name)
 	if errors.IsNotFound(err) {
 		// VirtualService doesn't exist, make one.
 		if _, err := r.SharedClientSet.
 			Networking().
-			VirtualServices(v1alpha1.KfNamespace).
+			VirtualServices(namespace).
 			Create(desired); err != nil {
 			return err
 		}
