@@ -36,15 +36,16 @@ templates:
     delete_on_failure: true
 
 - &terraform-destroy
-  put: terraform
-  params:
-    terraform_source: pr/ci/concourse/terraform
-    env_name_file: gke-prs/name
-    action: destroy
-  get_params:
-    terraform_source: pr/ci/concourse/terraform
-    env_name_file: gke-prs/name
-    action: destroy
+  try:
+    put: terraform
+    params:
+      terraform_source: pr/ci/concourse/terraform
+      env_name_file: gke-prs/name
+      action: destroy
+    get_params:
+      terraform_source: pr/ci/concourse/terraform
+      env_name_file: gke-prs/name
+      action: destroy
 
 - &acquire-lock
    put: gke-prs
