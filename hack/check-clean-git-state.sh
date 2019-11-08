@@ -14,16 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script is used by the CI to check if go.sum is valid.
+set -eux
 
-cd $(dirname $(go env GOMOD))
-
-go mod tidy
+cd "${0%/*}"/..
 
 if [ ! -z "$(git status --porcelain)" ]; then
     git status
     echo
-    echo "go.sum isn't correct."
+    echo "The git state is dirty."
     git --no-pager diff
     exit 1
 fi
