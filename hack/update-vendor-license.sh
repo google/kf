@@ -16,7 +16,7 @@
 
 set -e
 
-cd $(dirname $(go env GOMOD))
+cd "${0%/*}"/..
 
 echo "Vendoring code"
 go mod vendor

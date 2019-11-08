@@ -132,6 +132,28 @@ jobs:
     # initialized, and the initialization happens here. This has the benefit of not requiring
     # a separate process for resource management.
     - *terraform-destroy
+    - task: check-go-tidy
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: pr
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *service_account_json
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            pushd pr
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
+            popd
     - task: check-linters
       timeout: 10m
       config:
@@ -152,6 +174,8 @@ jobs:
           - |
             pushd pr
               ./hack/check-linters.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
             popd
     - task: check-go-generate
       timeout: 10m
@@ -172,7 +196,9 @@ jobs:
           - -exc
           - |
             pushd pr
-              ./hack/check-go-generate.sh
+              ./hack/go-generate.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
             popd
     - task: check-code-generator
       timeout: 10m
@@ -193,28 +219,9 @@ jobs:
           - -exc
           - |
             pushd pr
-              ./hack/check-code-generator.sh
-            popd
-    - task: check-go-sum
-      timeout: 10m
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: *ci-image-source
-        inputs:
-        - name: pr
-        params:
-          GOPROXY: *go_proxy
-          GOSUMDB: *go_sum_db
-          SERVICE_ACCOUNT_JSON: *service_account_json
-        run:
-          path: bash
-          args:
-          - -exc
-          - |
-            pushd pr
-              ./hack/check-go-sum.sh
+              ./hack/update-codegen.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
             popd
     - task: check-vendor-license
       timeout: 10m
@@ -235,7 +242,32 @@ jobs:
           - -exc
           - |
             pushd pr
-              ./hack/check-vendor-license.sh
+              ./hack/update-vendor-license.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
+            popd
+    - task: check-go-build
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: pr
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *service_account_json
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            pushd pr
+              ./hack/go-build.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
             popd
     - task: unit
       timeout: 10m
@@ -252,13 +284,14 @@ jobs:
           - -exc
           - |
             pushd pr
-              # Run unit tests
               ./hack/unit-test.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
             popd
         params:
           GOPROXY: *go_proxy
           GOSUMDB: *go_sum_db
-    - task: build
+    - task: build-cli
       attempts: 3
       config:
         platform: linux
@@ -277,8 +310,9 @@ jobs:
           - |
             artifacts=`pwd`/artifacts
             pushd pr
-              # Build CLI and controllers
               ./hack/build.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
             popd
   - *terraform-create
   - task: integration
@@ -331,8 +365,12 @@ jobs:
             # Setup Kf Secret and ConifgMap
             ./hack/create-gke-secret.sh
 
-            # Run unit tests
+            # Run integration tests
             ./hack/integration-test.sh
+
+            # Clean up
+            ./hack/tidy.sh
+            ./hack/check-clean-git-state.sh
           popd
       params:
         GOPROXY: *go_proxy

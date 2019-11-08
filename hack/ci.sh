@@ -16,21 +16,30 @@
 
 set -eux
 
+# Change to the project root directory
 cd "${0%/*}"/..
 
-# gofmt -s -d
-GOFMT_DIFF=$(IFS=$'\n' gofmt -s -d $( find . -type f -name '*.go' | grep -v \./vendor/) )
-if [ -n "${GOFMT_DIFF}" ]; then
-    echo "${GOFMT_DIFF}"
-    echo
-    echo "The go source files aren't gofmt formatted."
-    exit 1
-fi
-
-go list ./... | grep -v ^github.com/google/kf/third_party | grep -v ^github.com/google/kf/vendor | xargs go vet
-
-# Checking for misspelled words
-GO111MODULE=off go get -u github.com/client9/misspell/cmd/misspell
-
-# ignore vendor directory
-find . -type f -name '*.go' | grep -v ./vendor/ | xargs -n1 -P 20 $(go env GOPATH)/bin/misspell -error
+./hack/check-clean-git-state.sh
+./hack/tidy.sh
+./hack/check-clean-git-state.sh
+./hack/check-linters.sh
+./hack/tidy.sh
+./hack/check-clean-git-state.sh
+./hack/go-generate.sh
+./hack/tidy.sh
+./hack/check-clean-git-state.sh
+./hack/update-vendor-license.sh
+./hack/tidy.sh
+./hack/check-clean-git-state.sh
+./hack/update-codegen.sh
+./hack/tidy.sh
+./hack/check-clean-git-state.sh
+./hack/go-build.sh
+./hack/tidy.sh
+./hack/check-clean-git-state.sh
+./hack/build.sh
+./hack/tidy.sh
+./hack/check-clean-git-state.sh
+./hack/unit-test.sh
+./hack/tidy.sh
+./hack/check-clean-git-state.sh
