@@ -32,7 +32,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/configmap"
 	"knative.dev/pkg/controller"
-	secretinformer "knative.dev/pkg/injection/informers/kubeinformers/corev1/secret"
 )
 
 // NewController creates a new controller capable of reconciling Kf Routes.
@@ -49,7 +48,6 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	routeClaimInformer := routeclaiminformer.Get(ctx)
 	serviceBindingInformer := servicebindinginformer.Get(ctx)
 	serviceInstanceInformer := serviceinstanceinformer.Get(ctx)
-	secretInformer := secretinformer.Get(ctx)
 
 	serviceCatalogClient := servicecatalogclient.Get(ctx)
 
@@ -61,7 +59,6 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		knativeRevisionLister: knativeRevisionInformer.Lister(),
 		sourceLister:          sourceInformer.Lister(),
 		appLister:             appInformer.Lister(),
-		secretLister:          secretInformer.Lister(),
 		spaceLister:           spaceInformer.Lister(),
 		routeLister:           routeInformer.Lister(),
 		routeClaimLister:      routeClaimInformer.Lister(),

@@ -26,32 +26,22 @@ import (
 type pushConfig struct {
 	// AppSpecInstances is Scaling information for the service
 	AppSpecInstances v1alpha1.AppSpecInstances
-	// Args is the app container arguments
-	Args []string
 	// Buildpack is skip the detect buildpack step and use the given name
 	Buildpack string
-	// Command is the app container entrypoint
-	Command []string
+	// Container is the app container template
+	Container corev1.Container
 	// ContainerImage is the container to deploy
 	ContainerImage string
 	// DefaultRouteDomain is Domain for a defaultroute. Only used if a route doesn't already exist
 	DefaultRouteDomain string
 	// DockerfilePath is the path to a Dockerfile to build
 	DockerfilePath string
-	// EnvironmentVariables is set environment variables
-	EnvironmentVariables map[string]string
-	// Grpc is setup the ports for the container to allow gRPC to work
-	Grpc bool
-	// HealthCheck is the health check to use on the app
-	HealthCheck *corev1.Probe
 	// Namespace is the Kubernetes namespace to use
 	Namespace string
 	// Output is the io.Writer to write output such as build logs
 	Output io.Writer
 	// RandomRouteDomain is Domain for a random route. Only used if a route doesn't already exist
 	RandomRouteDomain string
-	// ResourceRequests is Resource requests for the container
-	ResourceRequests corev1.ResourceList
 	// Routes is routes for the app
 	Routes []v1alpha1.RouteSpecFields
 	// ServiceBindings is a list of Services to bind to the app
@@ -94,22 +84,16 @@ func (opts PushOptions) AppSpecInstances() v1alpha1.AppSpecInstances {
 	return opts.toConfig().AppSpecInstances
 }
 
-// Args returns the last set value for Args or the empty value
-// if not set.
-func (opts PushOptions) Args() []string {
-	return opts.toConfig().Args
-}
-
 // Buildpack returns the last set value for Buildpack or the empty value
 // if not set.
 func (opts PushOptions) Buildpack() string {
 	return opts.toConfig().Buildpack
 }
 
-// Command returns the last set value for Command or the empty value
+// Container returns the last set value for Container or the empty value
 // if not set.
-func (opts PushOptions) Command() []string {
-	return opts.toConfig().Command
+func (opts PushOptions) Container() corev1.Container {
+	return opts.toConfig().Container
 }
 
 // ContainerImage returns the last set value for ContainerImage or the empty value
@@ -130,24 +114,6 @@ func (opts PushOptions) DockerfilePath() string {
 	return opts.toConfig().DockerfilePath
 }
 
-// EnvironmentVariables returns the last set value for EnvironmentVariables or the empty value
-// if not set.
-func (opts PushOptions) EnvironmentVariables() map[string]string {
-	return opts.toConfig().EnvironmentVariables
-}
-
-// Grpc returns the last set value for Grpc or the empty value
-// if not set.
-func (opts PushOptions) Grpc() bool {
-	return opts.toConfig().Grpc
-}
-
-// HealthCheck returns the last set value for HealthCheck or the empty value
-// if not set.
-func (opts PushOptions) HealthCheck() *corev1.Probe {
-	return opts.toConfig().HealthCheck
-}
-
 // Namespace returns the last set value for Namespace or the empty value
 // if not set.
 func (opts PushOptions) Namespace() string {
@@ -164,12 +130,6 @@ func (opts PushOptions) Output() io.Writer {
 // if not set.
 func (opts PushOptions) RandomRouteDomain() string {
 	return opts.toConfig().RandomRouteDomain
-}
-
-// ResourceRequests returns the last set value for ResourceRequests or the empty value
-// if not set.
-func (opts PushOptions) ResourceRequests() corev1.ResourceList {
-	return opts.toConfig().ResourceRequests
 }
 
 // Routes returns the last set value for Routes or the empty value
@@ -203,13 +163,6 @@ func WithPushAppSpecInstances(val v1alpha1.AppSpecInstances) PushOption {
 	}
 }
 
-// WithPushArgs creates an Option that sets the app container arguments
-func WithPushArgs(val []string) PushOption {
-	return func(cfg *pushConfig) {
-		cfg.Args = val
-	}
-}
-
 // WithPushBuildpack creates an Option that sets skip the detect buildpack step and use the given name
 func WithPushBuildpack(val string) PushOption {
 	return func(cfg *pushConfig) {
@@ -217,10 +170,10 @@ func WithPushBuildpack(val string) PushOption {
 	}
 }
 
-// WithPushCommand creates an Option that sets the app container entrypoint
-func WithPushCommand(val []string) PushOption {
+// WithPushContainer creates an Option that sets the app container template
+func WithPushContainer(val corev1.Container) PushOption {
 	return func(cfg *pushConfig) {
-		cfg.Command = val
+		cfg.Container = val
 	}
 }
 
@@ -245,27 +198,6 @@ func WithPushDockerfilePath(val string) PushOption {
 	}
 }
 
-// WithPushEnvironmentVariables creates an Option that sets set environment variables
-func WithPushEnvironmentVariables(val map[string]string) PushOption {
-	return func(cfg *pushConfig) {
-		cfg.EnvironmentVariables = val
-	}
-}
-
-// WithPushGrpc creates an Option that sets setup the ports for the container to allow gRPC to work
-func WithPushGrpc(val bool) PushOption {
-	return func(cfg *pushConfig) {
-		cfg.Grpc = val
-	}
-}
-
-// WithPushHealthCheck creates an Option that sets the health check to use on the app
-func WithPushHealthCheck(val *corev1.Probe) PushOption {
-	return func(cfg *pushConfig) {
-		cfg.HealthCheck = val
-	}
-}
-
 // WithPushNamespace creates an Option that sets the Kubernetes namespace to use
 func WithPushNamespace(val string) PushOption {
 	return func(cfg *pushConfig) {
@@ -284,13 +216,6 @@ func WithPushOutput(val io.Writer) PushOption {
 func WithPushRandomRouteDomain(val string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.RandomRouteDomain = val
-	}
-}
-
-// WithPushResourceRequests creates an Option that sets Resource requests for the container
-func WithPushResourceRequests(val corev1.ResourceList) PushOption {
-	return func(cfg *pushConfig) {
-		cfg.ResourceRequests = val
 	}
 }
 
@@ -327,56 +252,5 @@ func PushOptionDefaults() PushOptions {
 	return PushOptions{
 		WithPushNamespace("default"),
 		WithPushOutput(os.Stdout),
-	}
-}
-
-type deployConfig struct {
-	// Namespace is the Kubernetes namespace to use
-	Namespace string
-}
-
-// DeployOption is a single option for configuring a deployConfig
-type DeployOption func(*deployConfig)
-
-// DeployOptions is a configuration set defining a deployConfig
-type DeployOptions []DeployOption
-
-// toConfig applies all the options to a new deployConfig and returns it.
-func (opts DeployOptions) toConfig() deployConfig {
-	cfg := deployConfig{}
-
-	for _, v := range opts {
-		v(&cfg)
-	}
-
-	return cfg
-}
-
-// Extend creates a new DeployOptions with the contents of other overriding
-// the values set in this DeployOptions.
-func (opts DeployOptions) Extend(other DeployOptions) DeployOptions {
-	var out DeployOptions
-	out = append(out, opts...)
-	out = append(out, other...)
-	return out
-}
-
-// Namespace returns the last set value for Namespace or the empty value
-// if not set.
-func (opts DeployOptions) Namespace() string {
-	return opts.toConfig().Namespace
-}
-
-// WithDeployNamespace creates an Option that sets the Kubernetes namespace to use
-func WithDeployNamespace(val string) DeployOption {
-	return func(cfg *deployConfig) {
-		cfg.Namespace = val
-	}
-}
-
-// DeployOptionDefaults gets the default values for Deploy.
-func DeployOptionDefaults() DeployOptions {
-	return DeployOptions{
-		WithDeployNamespace("default"),
 	}
 }

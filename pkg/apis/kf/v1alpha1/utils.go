@@ -24,6 +24,7 @@ import (
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 	cv1alpha3 "knative.dev/pkg/client/clientset/versioned/typed/istio/v1alpha3"
@@ -107,7 +108,16 @@ func (ci *conditionImpl) MarkTemplateError(err error) error {
 func (ci *conditionImpl) MarkReconciliationError(action string, err error) error {
 	msg := fmt.Sprintf("Error occurred while %s %s: %s", action, ci.childType, err)
 
-	ci.manager.MarkFalse(ci.destination, "ReconciliationError", msg)
+	switch {
+	case apierrs.IsConflict(err):
+		ci.manager.MarkUnknown(ci.destination, "CacheOutdated", msg)
+
+		// In the future, additional retryable errors can be added here if
+		// Kubernetes starts returning other failures.
+
+	default:
+		ci.manager.MarkFalse(ci.destination, "ReconciliationError", msg)
+	}
 
 	return errors.New(msg)
 }

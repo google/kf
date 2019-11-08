@@ -40,6 +40,8 @@ import (
 	"github.com/google/kf/pkg/kf/routeclaims"
 	"github.com/google/kf/pkg/kf/routes"
 	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
+	clusterbrokerclient "github.com/google/kf/pkg/kf/service-brokers/cluster"
+	namespacedbrokerclient "github.com/google/kf/pkg/kf/service-brokers/namespaced"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/google/kf/pkg/kf/sources"
 	"github.com/google/kf/pkg/kf/spaces"
@@ -259,10 +261,27 @@ func InjectVcapServices(p *config.KfParams) *cobra.Command {
 ///////////////////////
 // Service Brokers  //
 /////////////////////
+
+func provideClusterServiceBrokerGetter(sc servicecatalogclient.Interface) scv1beta1.ClusterServiceBrokersGetter {
+	return sc.ServicecatalogV1beta1()
+}
+
+func provideServiceBrokerGetter(sc servicecatalogclient.Interface) scv1beta1.ServiceBrokersGetter {
+	return sc.ServicecatalogV1beta1()
+}
+
+var serviceBrokerSet = wire.NewSet(
+	config.GetServiceCatalogClient,
+	provideClusterServiceBrokerGetter,
+	provideServiceBrokerGetter,
+	clusterbrokerclient.NewClient,
+	namespacedbrokerclient.NewClient,
+)
+
 func InjectCreateServiceBroker(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		servicebrokerscmd.NewCreateServiceBrokerCommand,
-		config.GetServiceCatalogClient,
+		serviceBrokerSet,
 	)
 	return nil
 }
@@ -270,7 +289,7 @@ func InjectCreateServiceBroker(p *config.KfParams) *cobra.Command {
 func InjectDeleteServiceBroker(p *config.KfParams) *cobra.Command {
 	wire.Build(
 		servicebrokerscmd.NewDeleteServiceBrokerCommand,
-		config.GetServiceCatalogClient,
+		serviceBrokerSet,
 	)
 	return nil
 }
@@ -317,7 +336,7 @@ func provideKfSpaces(ki kfv1alpha1.KfV1alpha1Interface) kfv1alpha1.SpacesGetter 
 }
 
 func InjectSpaces(p *config.KfParams) *cobra.Command {
-	wire.Build(cspaces.NewListSpacesCommand, SpacesSet)
+	wire.Build(cspaces.NewListSpacesCommand, config.GetDynamicClient, config.GetTableClient)
 
 	return nil
 }
@@ -440,7 +459,7 @@ func provideSourcesBuildTailer() sources.BuildTailer {
 }
 
 func InjectBuilds(p *config.KfParams) *cobra.Command {
-	wire.Build(cbuilds.NewListBuildsCommand, SourcesSet)
+	wire.Build(cbuilds.NewBuildsCommand, config.GetDynamicClient, config.GetTableClient)
 
 	return nil
 }

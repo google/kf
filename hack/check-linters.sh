@@ -14,9 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script is used by the CI to check if the code is gofmt formatted.
+set -eux
 
-set -eu
+cd "${0%/*}"/..
 
 # gofmt -s -d
 GOFMT_DIFF=$(IFS=$'\n' gofmt -s -d $( find . -type f -name '*.go' | grep -v \./vendor/) )
@@ -27,7 +27,7 @@ if [ -n "${GOFMT_DIFF}" ]; then
     exit 1
 fi
 
-go vet ./...
+go list ./... | grep -v ^github.com/google/kf/third_party | grep -v ^github.com/google/kf/vendor | xargs go vet
 
 # Checking for misspelled words
 GO111MODULE=off go get -u github.com/client9/misspell/cmd/misspell

@@ -32,7 +32,7 @@ func TestAppSpec_SetDefaults_BlankContainer(t *testing.T) {
 	app.SetDefaults(context.Background())
 
 	testutil.AssertEqual(t, "len(spec.template.spec.containers)", 1, len(app.Spec.Template.Spec.Containers))
-	testutil.AssertEqual(t, "spec.template.spec.containers.name", "", app.Spec.Template.Spec.Containers[0].Name)
+	testutil.AssertEqual(t, "spec.template.spec.containers.name", "user-container", app.Spec.Template.Spec.Containers[0].Name)
 }
 
 func TestAppSpec_SetDefaults_ResourceLimits_AlreadySet(t *testing.T) {
@@ -79,10 +79,12 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 		"default everything": {
 			template: &corev1.Container{},
 			expected: &corev1.Container{
+				Name: "user-container",
 				ReadinessProbe: &corev1.Probe{
 					TimeoutSeconds:   DefaultHealthCheckProbeTimeout,
 					PeriodSeconds:    DefaultHealthCheckPeriodSeconds,
 					FailureThreshold: DefaultHealthCheckFailureThreshold,
+					SuccessThreshold: 1,
 					Handler: corev1.Handler{
 						TCPSocket: &corev1.TCPSocketAction{},
 					},
@@ -98,6 +100,7 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 		},
 		"http path gets defaulted": {
 			template: &corev1.Container{
+				Name: "some-name",
 				ReadinessProbe: &corev1.Probe{
 					TimeoutSeconds:   DefaultHealthCheckProbeTimeout,
 					PeriodSeconds:    DefaultHealthCheckPeriodSeconds,
@@ -108,6 +111,7 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 				},
 			},
 			expected: &corev1.Container{
+				Name: "some-name",
 				ReadinessProbe: &corev1.Probe{
 					TimeoutSeconds:   DefaultHealthCheckProbeTimeout,
 					PeriodSeconds:    DefaultHealthCheckPeriodSeconds,
@@ -121,6 +125,7 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 		},
 		"full http doesn't get overwritten": {
 			template: &corev1.Container{
+				Name: "some-name",
 				ReadinessProbe: &corev1.Probe{
 					TimeoutSeconds:   180,
 					PeriodSeconds:    180,
@@ -131,6 +136,7 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 				},
 			},
 			expected: &corev1.Container{
+				Name: "some-name",
 				ReadinessProbe: &corev1.Probe{
 					TimeoutSeconds:   180,
 					PeriodSeconds:    180,
@@ -144,6 +150,7 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 		},
 		"resources don't get overwritten": {
 			template: &corev1.Container{
+				Name: "some-name",
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
 						corev1.ResourceCPU:              resource.MustParse("2"),
@@ -153,6 +160,7 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 				},
 			},
 			expected: &corev1.Container{
+				Name:           "some-name",
 				ReadinessProbe: defaultContainer.ReadinessProbe,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{

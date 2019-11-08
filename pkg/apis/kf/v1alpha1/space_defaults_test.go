@@ -82,7 +82,7 @@ func ExampleSpaceSpecExecution_SetDefaults_dedupe() {
 
 }
 
-func ExampleSpaceSpecSecurity_SetDefaults_dedupe() {
+func ExampleSpaceSpecSecurity_SetDefaults() {
 	space := Space{}
 	space.Spec.Security = SpaceSpecSecurity{
 		EnableDeveloperLogsAccess: false,
@@ -90,11 +90,28 @@ func ExampleSpaceSpecSecurity_SetDefaults_dedupe() {
 	space.SetDefaults(dummyConfig())
 
 	fmt.Println("EnableDeveloperLogsAccess:", space.Spec.Security.EnableDeveloperLogsAccess)
+	fmt.Println("BuildServiceAccount:", space.Spec.Security.BuildServiceAccount)
 
 	// Output: EnableDeveloperLogsAccess: true
+	// BuildServiceAccount: kf-builder
 }
 
-func ExampleSpaceSpecSecurity_SetDefaults_badContextPanic() {
+func ExampleSpaceSpecSecurity_SetDefaults_preserves() {
+	space := Space{}
+	space.Spec.Security = SpaceSpecSecurity{
+		EnableDeveloperLogsAccess: false,
+		BuildServiceAccount:       "some-other-account",
+	}
+	space.SetDefaults(dummyConfig())
+
+	fmt.Println("EnableDeveloperLogsAccess:", space.Spec.Security.EnableDeveloperLogsAccess)
+	fmt.Println("BuildServiceAccount:", space.Spec.Security.BuildServiceAccount)
+
+	// Output: EnableDeveloperLogsAccess: true
+	// BuildServiceAccount: some-other-account
+}
+
+func ExampleSpaceSpecExecution_SetDefaults_badContextPanic() {
 	space := Space{}
 	space.Name = "mynamespace"
 	space.SetDefaults(context.Background())

@@ -22,16 +22,18 @@ import (
 	servicebindings2 "github.com/google/kf/pkg/kf/commands/service-bindings"
 	"github.com/google/kf/pkg/kf/commands/service-brokers"
 	services2 "github.com/google/kf/pkg/kf/commands/services"
-	spaces2 "github.com/google/kf/pkg/kf/commands/spaces"
+	"github.com/google/kf/pkg/kf/commands/spaces"
 	"github.com/google/kf/pkg/kf/istio"
 	"github.com/google/kf/pkg/kf/logs"
 	"github.com/google/kf/pkg/kf/marketplace"
 	"github.com/google/kf/pkg/kf/routeclaims"
 	"github.com/google/kf/pkg/kf/routes"
 	"github.com/google/kf/pkg/kf/service-bindings"
+	"github.com/google/kf/pkg/kf/service-brokers/cluster"
+	"github.com/google/kf/pkg/kf/service-brokers/namespaced"
 	"github.com/google/kf/pkg/kf/services"
 	"github.com/google/kf/pkg/kf/sources"
-	"github.com/google/kf/pkg/kf/spaces"
+	spaces2 "github.com/google/kf/pkg/kf/spaces"
 	logs2 "github.com/google/kf/third_party/knative-build/pkg/logs"
 	"github.com/google/wire"
 	"github.com/poy/kontext"
@@ -288,13 +290,21 @@ func InjectVcapServices(p *config.KfParams) *cobra.Command {
 
 func InjectCreateServiceBroker(p *config.KfParams) *cobra.Command {
 	versionedInterface := config.GetServiceCatalogClient(p)
-	command := servicebrokers.NewCreateServiceBrokerCommand(p, versionedInterface)
+	clusterServiceBrokersGetter := provideClusterServiceBrokerGetter(versionedInterface)
+	client := cluster.NewClient(clusterServiceBrokersGetter)
+	serviceBrokersGetter := provideServiceBrokerGetter(versionedInterface)
+	namespacedClient := namespaced.NewClient(serviceBrokersGetter)
+	command := servicebrokers.NewCreateServiceBrokerCommand(p, client, namespacedClient)
 	return command
 }
 
 func InjectDeleteServiceBroker(p *config.KfParams) *cobra.Command {
 	versionedInterface := config.GetServiceCatalogClient(p)
-	command := servicebrokers.NewDeleteServiceBrokerCommand(p, versionedInterface)
+	clusterServiceBrokersGetter := provideClusterServiceBrokerGetter(versionedInterface)
+	client := cluster.NewClient(clusterServiceBrokersGetter)
+	serviceBrokersGetter := provideServiceBrokerGetter(versionedInterface)
+	namespacedClient := namespaced.NewClient(serviceBrokersGetter)
+	command := servicebrokers.NewDeleteServiceBrokerCommand(p, client, namespacedClient)
 	return command
 }
 
@@ -317,49 +327,48 @@ func InjectStacks(p *config.KfParams) *cobra.Command {
 }
 
 func InjectSpaces(p *config.KfParams) *cobra.Command {
-	kfV1alpha1Interface := config.GetKfClient(p)
-	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
-	client := spaces.NewClient(spacesGetter)
-	command := spaces2.NewListSpacesCommand(p, client)
+	dynamicInterface := config.GetDynamicClient(p)
+	tableclientInterface := config.GetTableClient(p)
+	command := spaces.NewListSpacesCommand(p, dynamicInterface, tableclientInterface)
 	return command
 }
 
 func InjectSpace(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
-	client := spaces.NewClient(spacesGetter)
-	command := spaces2.NewGetSpaceCommand(p, client)
+	client := spaces2.NewClient(spacesGetter)
+	command := spaces.NewGetSpaceCommand(p, client)
 	return command
 }
 
 func InjectCreateSpace(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
-	client := spaces.NewClient(spacesGetter)
-	command := spaces2.NewCreateSpaceCommand(p, client)
+	client := spaces2.NewClient(spacesGetter)
+	command := spaces.NewCreateSpaceCommand(p, client)
 	return command
 }
 
 func InjectDeleteSpace(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
-	client := spaces.NewClient(spacesGetter)
-	command := spaces2.NewDeleteSpaceCommand(p, client)
+	client := spaces2.NewClient(spacesGetter)
+	command := spaces.NewDeleteSpaceCommand(p, client)
 	return command
 }
 
 func InjectConfigSpace(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
-	client := spaces.NewClient(spacesGetter)
-	command := spaces2.NewConfigSpaceCommand(p, client)
+	client := spaces2.NewClient(spacesGetter)
+	command := spaces.NewConfigSpaceCommand(p, client)
 	return command
 }
 
 func InjectUpdateQuota(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
-	client := spaces.NewClient(spacesGetter)
+	client := spaces2.NewClient(spacesGetter)
 	command := quotas.NewUpdateQuotaCommand(p, client)
 	return command
 }
@@ -367,7 +376,7 @@ func InjectUpdateQuota(p *config.KfParams) *cobra.Command {
 func InjectGetQuota(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
-	client := spaces.NewClient(spacesGetter)
+	client := spaces2.NewClient(spacesGetter)
 	command := quotas.NewGetQuotaCommand(p, client)
 	return command
 }
@@ -375,7 +384,7 @@ func InjectGetQuota(p *config.KfParams) *cobra.Command {
 func InjectDeleteQuota(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
-	client := spaces.NewClient(spacesGetter)
+	client := spaces2.NewClient(spacesGetter)
 	command := quotas.NewDeleteQuotaCommand(p, client)
 	return command
 }
@@ -442,11 +451,9 @@ func InjectProxyRoute(p *config.KfParams) *cobra.Command {
 }
 
 func InjectBuilds(p *config.KfParams) *cobra.Command {
-	kfV1alpha1Interface := config.GetKfClient(p)
-	sourcesGetter := provideKfSources(kfV1alpha1Interface)
-	buildTailer := provideSourcesBuildTailer()
-	client := sources.NewClient(sourcesGetter, buildTailer)
-	command := builds.NewListBuildsCommand(p, client)
+	dynamicInterface := config.GetDynamicClient(p)
+	tableclientInterface := config.GetTableClient(p)
+	command := builds.NewBuildsCommand(p, dynamicInterface, tableclientInterface)
 	return command
 }
 
@@ -494,6 +501,18 @@ var ServicesSet = wire.NewSet(
 	provideServiceInstancesGetter, config.GetServiceCatalogClient, config.GetSvcatApp, marketplace.NewClient, services.NewClient,
 )
 
+func provideClusterServiceBrokerGetter(sc versioned.Interface) v1beta1.ClusterServiceBrokersGetter {
+	return sc.ServicecatalogV1beta1()
+}
+
+func provideServiceBrokerGetter(sc versioned.Interface) v1beta1.ServiceBrokersGetter {
+	return sc.ServicecatalogV1beta1()
+}
+
+var serviceBrokerSet = wire.NewSet(config.GetServiceCatalogClient, provideClusterServiceBrokerGetter,
+	provideServiceBrokerGetter, cluster.NewClient, namespaced.NewClient,
+)
+
 /////////////////
 // Buildpacks //
 ///////////////
@@ -501,7 +520,7 @@ func provideRemoteImageFetcher() buildpacks.RemoteImageFetcher {
 	return remote.Image
 }
 
-var SpacesSet = wire.NewSet(config.GetKfClient, provideKfSpaces, spaces.NewClient)
+var SpacesSet = wire.NewSet(config.GetKfClient, provideKfSpaces, spaces2.NewClient)
 
 func provideKfSpaces(ki v1alpha1.KfV1alpha1Interface) v1alpha1.SpacesGetter {
 	return ki

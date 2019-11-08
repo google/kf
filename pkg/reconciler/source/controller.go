@@ -56,5 +56,10 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
 	})
 
+	c.SecretInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
+		FilterFunc: controller.Filter(kfv1alpha1.SchemeGroupVersion.WithKind("Source")),
+		Handler:    controller.HandleAll(impl.EnqueueControllerOf),
+	})
+
 	return impl
 }

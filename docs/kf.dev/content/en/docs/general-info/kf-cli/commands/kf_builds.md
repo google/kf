@@ -5,11 +5,11 @@ url: /docs/general-info/kf-cli/commands/kf-builds/
 ---
 ## kf builds
 
-List the builds in the current space
+List Builds in the target space
 
 ### Synopsis
 
-List the builds in the current space
+List Builds in the target space
 
 ```
 kf builds [flags]
@@ -24,7 +24,10 @@ kf builds [flags]
 ### Options
 
 ```
-  -h, --help   help for builds
+      --allow-missing-template-keys   If true, ignore any errors in templates when a field or map key is missing in the template. Only applies to golang and jsonpath output formats. (default true)
+  -h, --help                          help for builds
+  -o, --output string                 Output format. One of: go-template|go-template-file|json|jsonpath|jsonpath-file|name|template|templatefile|yaml.
+      --template string               Template string or path to template file to use when -o=go-template, -o=go-template-file. The template format is golang templates [http://golang.org/pkg/text/template/#pkg-overview].
 ```
 
 ### Options inherited from parent commands

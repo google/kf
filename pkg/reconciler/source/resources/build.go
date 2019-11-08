@@ -34,11 +34,15 @@ func BuildName(source *v1alpha1.Source) string {
 	return source.Name
 }
 
-func makeContainerImageBuild(source *v1alpha1.Source) (*build.Build, error) {
+// BuildSecretName gets the name of a Secret for a Source.
+func BuildSecretName(source *v1alpha1.Source) string {
+	return BuildName(source)
+}
+
+func makeContainerImageBuild(source *v1alpha1.Source) (*build.Build, *corev1.Secret, error) {
 	return &build.Build{
 		ObjectMeta: makeObjectMeta(source),
 		Spec: build.BuildSpec{
-			ServiceAccountName: source.Spec.ServiceAccount,
 			Template: &build.TemplateInstantiationSpec{
 				Name: containerImageTemplate,
 				Kind: "ClusterBuildTemplate",
@@ -50,14 +54,13 @@ func makeContainerImageBuild(source *v1alpha1.Source) (*build.Build, error) {
 				},
 			},
 		},
-	}, nil
+	}, nil, nil
 }
 
-func makeDockerImageBuild(source *v1alpha1.Source) (*build.Build, error) {
+func makeDockerImageBuild(source *v1alpha1.Source) (*build.Build, *corev1.Secret, error) {
 	return &build.Build{
 		ObjectMeta: makeObjectMeta(source),
 		Spec: build.BuildSpec{
-			ServiceAccountName: source.Spec.ServiceAccount,
 			Source: &build.SourceSpec{
 				Custom: &corev1.Container{
 					Image: source.Spec.Dockerfile.Source,
@@ -72,10 +75,27 @@ func makeDockerImageBuild(source *v1alpha1.Source) (*build.Build, error) {
 				},
 			},
 		},
-	}, nil
+	}, nil, nil
 }
 
-func makeBuildpackBuild(source *v1alpha1.Source) (*build.Build, error) {
+func makeBuildpackBuild(source *v1alpha1.Source) (*build.Build, *corev1.Secret, error) {
+	// We want to use a secret to store these, so we'll have to point at the
+	// secret.
+	env := []corev1.EnvVar{}
+	for _, e := range source.Spec.BuildpackBuild.Env {
+		env = append(env, corev1.EnvVar{
+			Name: e.Name,
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: BuildSecretName(source),
+					},
+					Key: e.Name,
+				},
+			},
+		})
+	}
+
 	return &build.Build{
 		ObjectMeta: makeObjectMeta(source),
 		Spec: build.BuildSpec{
@@ -84,7 +104,6 @@ func makeBuildpackBuild(source *v1alpha1.Source) (*build.Build, error) {
 					Image: source.Spec.BuildpackBuild.Source,
 				},
 			},
-			ServiceAccountName: source.Spec.ServiceAccount,
 			Template: &build.TemplateInstantiationSpec{
 				Name: buildpackBuildTemplate,
 				Kind: "ClusterBuildTemplate",
@@ -106,10 +125,24 @@ func makeBuildpackBuild(source *v1alpha1.Source) (*build.Build, error) {
 						Value: source.Spec.BuildpackBuild.Stack,
 					},
 				},
-				Env: source.Spec.BuildpackBuild.Env,
+				Env: env,
 			},
 		},
-	}, nil
+	}, makeSecret(source), nil
+}
+
+func makeSecret(source *v1alpha1.Source) *corev1.Secret {
+	m := map[string][]byte{}
+
+	// TODO(#821): Support source.Env.ValueFrom
+	for _, e := range source.Spec.BuildpackBuild.Env {
+		m[e.Name] = []byte(e.Value)
+	}
+
+	return &corev1.Secret{
+		ObjectMeta: makeObjectMeta(source),
+		Data:       m,
+	}
 }
 
 func makeObjectMeta(source *v1alpha1.Source) metav1.ObjectMeta {
@@ -127,8 +160,9 @@ func makeObjectMeta(source *v1alpha1.Source) metav1.ObjectMeta {
 	}
 }
 
-// MakeBuild creates a Build for a Source.
-func MakeBuild(source *v1alpha1.Source) (*build.Build, error) {
+// MakeBuild creates a Build and Secret for a Source. The Secret CAN be nil if
+// the Source does not require it.
+func MakeBuild(source *v1alpha1.Source) (*build.Build, *corev1.Secret, error) {
 	switch {
 	case source.Spec.IsContainerBuild():
 		return makeContainerImageBuild(source)

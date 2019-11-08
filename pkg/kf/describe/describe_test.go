@@ -28,6 +28,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
@@ -441,4 +442,25 @@ func ExampleServiceInstance() {
 	//   Parameters:
 	//     some: params
 	//   Status:  Ready
+}
+
+func ExampleMetaV1Beta1Table() {
+	describe.MetaV1Beta1Table(os.Stdout, &metav1beta1.Table{
+		ColumnDefinitions: []metav1beta1.TableColumnDefinition{
+			{Name: "Name"},
+			{Name: "Age"},
+			{Name: "Instances"},
+		},
+
+		Rows: []metav1beta1.TableRow{
+			{Cells: []interface{}{"First", "12d", 12}},
+			{Cells: []interface{}{"Second", "3h", 1}},
+			{Cells: []interface{}{"Third", "9s", 0}},
+		},
+	})
+
+	// Output: Name    Age  Instances
+	// First   12d  12
+	// Second  3h   1
+	// Third   9s   0
 }

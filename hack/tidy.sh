@@ -14,22 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script is used by the CI to check if the code is gofmt formatted.
 # This script is used by the CI to check if 'go generate ./...' is up to date.
 
-set -eu
+set -eux
 
-go install github.com/google/wire/cmd/wire
-go install github.com/golang/mock/mockgen
-export PATH="$PATH:$(go env GOPATH)/bin"
-go generate ./...
+# Change to the project root directory
+cd "${0%/*}"/..
+
+gofmt -s -w $( find . -type f -name '*.go' | grep -v \./vendor)
+
 go mod tidy
-
-if [ ! -z "$(git status --porcelain)" ]; then
-    git status
-    echo
-    echo "The generated files aren't up to date."
-    echo "Update them with the 'go generate ./...' command."
-    git --no-pager diff
-    exit 1
-fi

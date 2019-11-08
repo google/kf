@@ -38,7 +38,7 @@ kf [flags]
 * [kf build](/docs/general-info/kf-cli/commands/kf-build/)	 - Print information about the given Build
 * [kf build-logs](/docs/general-info/kf-cli/commands/kf-build-logs/)	 - Get the logs of the given build
 * [kf buildpacks](/docs/general-info/kf-cli/commands/kf-buildpacks/)	 - List buildpacks in current builder
-* [kf builds](/docs/general-info/kf-cli/commands/kf-builds/)	 - List the builds in the current space
+* [kf builds](/docs/general-info/kf-cli/commands/kf-builds/)	 - List Builds in the target space
 * [kf completion](/docs/general-info/kf-cli/commands/kf-completion/)	 - Generate auto-completion files for kf commands
 * [kf configure-space](/docs/general-info/kf-cli/commands/kf-configure-space/)	 - Set configuration for a space
 * [kf create-route](/docs/general-info/kf-cli/commands/kf-create-route/)	 - Create a route
@@ -70,7 +70,7 @@ kf [flags]
 * [kf services](/docs/general-info/kf-cli/commands/kf-services/)	 - List service instances
 * [kf set-env](/docs/general-info/kf-cli/commands/kf-set-env/)	 - Set an environment variable for an app
 * [kf space](/docs/general-info/kf-cli/commands/kf-space/)	 - Show space info
-* [kf spaces](/docs/general-info/kf-cli/commands/kf-spaces/)	 - List all kf spaces
+* [kf spaces](/docs/general-info/kf-cli/commands/kf-spaces/)	 - List Spaces in the cluster
 * [kf stacks](/docs/general-info/kf-cli/commands/kf-stacks/)	 - List stacks available in the space
 * [kf start](/docs/general-info/kf-cli/commands/kf-start/)	 - Start a staged application
 * [kf stop](/docs/general-info/kf-cli/commands/kf-stop/)	 - Stop a running application
