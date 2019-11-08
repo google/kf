@@ -20,6 +20,10 @@ cd "${0%/*}"/..
 
 ./hack/tidy.sh
 ./hack/update-codegen.sh
+./hack/tidy.sh
 ./hack/go-generate.sh
+./hack/tidy.sh
 ./hack/update-vendor-license.sh
+./hack/tidy.sh
 ./hack/check-linters.sh
+./hack/tidy.sh

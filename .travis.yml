@@ -8,19 +8,3 @@ env:
 
 script:
   - ./hack/ci.sh
-  - ./hack/check-clean-git-state.sh
-  - ./hack/tidy.sh
-  - ./hack/check-clean-git-state.sh
-  - ./hack/check-linters.sh
-  - ./hack/tidy.sh
-  - ./hack/check-clean-git-state.sh
-  - ./hack/go-generate.sh
-  - ./hack/tidy.sh
-  - ./hack/check-clean-git-state.sh
-  - ./hack/update-vendor-license.sh
-  - ./hack/tidy.sh
-  - ./hack/check-clean-git-state.sh
-  - ./hack/update-codegen.sh
-  - ./hack/tidy.sh
-  - ./hack/check-clean-git-state.sh
-  - ./hack/test.sh
