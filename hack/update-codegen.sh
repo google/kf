@@ -32,7 +32,7 @@ mkdir -p $GOPATH/src/github.com/google
 olddir=$(pwd)
 pushd $GOPATH/src/github.com/google
 
-  if [[ "$olddir" == "$(pwd)" ]]; then
+  if [[ "$olddir" == "$(pwd)/kf" ]]; then
     # already in gopath, no symlink needed
     echo
   elif [[ -L kf ]]; then
