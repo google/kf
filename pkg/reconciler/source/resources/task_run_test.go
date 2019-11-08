@@ -21,7 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-func ExampleBuildName() {
+func ExampleTaskRunName() {
 	source := &v1alpha1.Source{}
 	source.Name = "my-source"
 
@@ -30,7 +30,7 @@ func ExampleBuildName() {
 	// Output: my-source
 }
 
-func ExampleBuildSecretName() {
+func ExampleTaskRunSecretName() {
 	source := &v1alpha1.Source{}
 	source.Name = "my-source"
 

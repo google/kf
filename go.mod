@@ -31,6 +31,7 @@ require (
 	github.com/segmentio/textio v1.2.0
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.3
+	github.com/stretchr/testify v1.3.0 // indirect
 	go.opencensus.io v0.22.0 // indirect
 	go.uber.org/zap v1.10.0
 	golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898
