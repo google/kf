@@ -16,8 +16,7 @@
 
 set -e
 
-# Go to root dir
-cd $(git rev-parse --show-toplevel)
+cd "${0%/*}"/..
 
 echo "Executing integration tests from: `pwd`"
 if [ "${DOCKER_REGISTRY}" = "" ]; then

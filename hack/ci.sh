@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script is used by the CI to check if 'go generate ./...' is up to date.
-
 set -eux
 
 # Change to the project root directory
@@ -43,3 +41,5 @@ cd "${0%/*}"/..
 ./hack/tidy.sh
 ./hack/check-clean-git-state.sh
 ./hack/unit-test.sh
+./hack/tidy.sh
+./hack/check-clean-git-state.sh

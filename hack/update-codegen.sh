@@ -15,6 +15,7 @@
 # limitations under the License.
 
 set -e
+
 cd "${0%/*}"/..
 
 # https://github.com/kubernetes-sigs/kubebuilder/issues/359

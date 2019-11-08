@@ -16,6 +16,8 @@
 
 set -eux
 
+cd "${0%/*}"/..
+
 go install github.com/google/wire/cmd/wire
 go install github.com/golang/mock/mockgen
 export PATH="$PATH:$(go env GOPATH)/bin"
