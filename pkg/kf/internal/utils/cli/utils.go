@@ -162,21 +162,23 @@ func CreateProxy(w io.Writer, host, gateway string) *httputil.ReverseProxy {
 }
 
 // PrintCurlExamples lists example HTTP requests the user can send.
-func PrintCurlExamples(w io.Writer, listener net.Listener, host, gateway string, withProxy bool) {
-	if withProxy {
-		fmt.Fprintf(w, "Forwarding requests from %s to %s with host %s\n", listener.Addr(), gateway, host)
-		fmt.Fprintln(w, "Example GET:")
-		fmt.Fprintf(w, "  curl %s\n", listener.Addr())
-		fmt.Fprintln(w, "Example POST:")
-		fmt.Fprintf(w, "  curl --request POST %s --data \"POST data\"\n", listener.Addr())
-		fmt.Fprintln(w, "Browser link:")
-		fmt.Fprintf(w, "  http://%s\n", listener.Addr())
-	} else {
-		fmt.Fprintf(w, "Requests can be sent to %s with host %s\n", gateway, host)
-		fmt.Fprintln(w, "Example GET:")
-		fmt.Fprintf(w, "  curl -H \"Host: %s\" http://%s\n", host, gateway)
-		fmt.Fprintln(w, "Example POST:")
-		fmt.Fprintf(w, "  curl --request POST -H \"Host: %s\" http://%s --data \"POST data\"\n", host, gateway)
-	}
+func PrintCurlExamples(w io.Writer, listener net.Listener, host, gateway string) {
+	fmt.Fprintf(w, "Forwarding requests from %s to %s with host %s\n", listener.Addr(), gateway, host)
+	fmt.Fprintln(w, "Example GET:")
+	fmt.Fprintf(w, "  curl %s\n", listener.Addr())
+	fmt.Fprintln(w, "Example POST:")
+	fmt.Fprintf(w, "  curl --request POST %s --data \"POST data\"\n", listener.Addr())
+	fmt.Fprintln(w, "Browser link:")
+	fmt.Fprintf(w, "  http://%s\n", listener.Addr())
+	fmt.Fprintln(w)
+}
+
+// PrintCurlExamplesNoListener prints CURL examples against the real gateway.
+func PrintCurlExamplesNoListener(w io.Writer, host, gateway string) {
+	fmt.Fprintf(w, "Requests can be sent to %s with host %s\n", gateway, host)
+	fmt.Fprintln(w, "Example GET:")
+	fmt.Fprintf(w, "  curl -H \"Host: %s\" http://%s\n", host, gateway)
+	fmt.Fprintln(w, "Example POST:")
+	fmt.Fprintf(w, "  curl --request POST -H \"Host: %s\" http://%s --data \"POST data\"\n", host, gateway)
 	fmt.Fprintln(w)
 }
