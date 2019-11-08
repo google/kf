@@ -2,10 +2,6 @@ variable "project" {
   type = string
 }
 
-variable "k8s_network_selflink" {
-  type = string
-}
-
 variable "gke_version" {
   type = string
 }
@@ -23,8 +19,13 @@ provider "google-beta" {
 resource "random_pet" "kf_test" {
 }
 
+resource "google_compute_network" "k8s_network" {
+  name        = "kf-test-${random_pet.kf_test.id}"
+  description = "Managed by Terraform in Concourse"
+}
+
 resource "google_service_account" "kf_test" {
-  account_id   = "${random_pet.kf_test.id}"
+  account_id   = "kf-test-${random_pet.kf_test.id}"
   display_name = "Managed by Terraform in Concourse"
 }
 
@@ -82,7 +83,7 @@ resource "google_container_cluster" "kf_test" {
     ]
   }
 
-  network = var.k8s_network_selflink
+  network = google_compute_network.k8s_network.self_link
 }
 
 output "cluster_name" {
@@ -99,4 +100,8 @@ output "cluster_project" {
 
 output "cluster_version" {
   value = google_container_cluster.kf_test.master_version
+}
+
+output "cluster_network" {
+  value = google_compute_network.k8s_network.name
 }
