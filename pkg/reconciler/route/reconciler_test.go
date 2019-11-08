@@ -171,7 +171,7 @@ func TestReconciler_Reconcile_ApplyChanges(t *testing.T) {
 					Return(nil)
 			},
 		},
-		"no claims, deleting Rotues returns not found": {
+		"no claims, deleting Routes returns not found": {
 			ExpectedErr: nil, // No need to return an error
 			Setup: func(t *testing.T, f fakes) {
 				f.frcnl.EXPECT().
@@ -199,7 +199,7 @@ func TestReconciler_Reconcile_ApplyChanges(t *testing.T) {
 					Return(apierrors.NewNotFound(v1alpha3.Resource("Route"), "Route"))
 			},
 		},
-		"no claims, deletes Rotues and VirtualServices": {
+		"no claims, deletes Routes and VirtualServices": {
 			Namespace: "some-namespace",
 			RouteSpecFields: v1alpha1.RouteSpecFields{
 				Hostname: "some-hostname",
@@ -211,7 +211,7 @@ func TestReconciler_Reconcile_ApplyChanges(t *testing.T) {
 					Return(nil, nil)
 
 				f.fn.EXPECT().
-					VirtualServices(v1alpha1.KfNamespace).
+					VirtualServices("some-namespace").
 					Return(f.fvsi)
 
 				f.fvsi.EXPECT().
@@ -366,7 +366,7 @@ func TestReconciler_Reconcile_ApplyChanges(t *testing.T) {
 					Return(nil, apierrors.NewNotFound(v1alpha3.Resource("VirtualService"), "VirtualService"))
 
 				f.fn.EXPECT().
-					VirtualServices(v1alpha1.KfNamespace).
+					VirtualServices(gomock.Any()).
 					Return(f.fvsi)
 
 				f.fvsi.EXPECT().
