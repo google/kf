@@ -36,4 +36,10 @@ cd "${0%/*}"/..
 ./hack/update-codegen.sh
 ./hack/tidy.sh
 ./hack/check-clean-git-state.sh
-./hack/test.sh
+./hack/go-build.sh
+./hack/tidy.sh
+./hack/check-clean-git-state.sh
+./hack/build.sh
+./hack/tidy.sh
+./hack/check-clean-git-state.sh
+./hack/unit-test.sh
