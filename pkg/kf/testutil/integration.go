@@ -62,26 +62,33 @@ func DockerRegistry() string {
 	return os.Getenv(EnvDockerRegistry)
 }
 
-func shouldSkipIntegration(t *testing.T) bool {
+// ShouldSkipIntegration returns true if integration tests are being skipped.
+func ShouldSkipIntegration(t *testing.T) bool {
 	t.Helper()
+
+	if skipIntegration := os.Getenv("SKIP_INTEGRATION"); skipIntegration == "true" {
+		t.Skipf("Skipping %s because SKIP_INTEGRATION was true", t.Name())
+		return true
+	}
 
 	if !strings.HasPrefix(t.Name(), "TestIntegration_") {
 		// We want to enforce a convention so scripts can single out
 		// integration tests.
 		t.Fatalf("Integration tests must have the name format of 'TestIntegration_XXX`")
+		return true
 	}
 
 	if testing.Short() {
 		t.Skipf("Skipping %s because short tests were requested", t.Name())
+		return true
 	}
 
-	if _, ok := os.LookupEnv(EnvDockerRegistry); !ok {
+	if registry := DockerRegistry(); registry == "" {
 		t.Skipf("%s is required for integration tests... Skipping...", EnvDockerRegistry)
+		return true
 	}
 
-	// Failed() should never happen here because the test should have bailed out
-	// but include here for completeness.
-	return t.Skipped() || t.Failed()
+	return false
 }
 
 func logTestResults(t *testing.T, f func()) {
@@ -114,7 +121,7 @@ func withSignalCaptureCancel(t *testing.T, f func(ctx context.Context)) {
 func RunIntegrationTest(t *testing.T, test func(ctx context.Context, t *testing.T)) {
 	t.Helper()
 
-	if shouldSkipIntegration(t) {
+	if ShouldSkipIntegration(t) {
 		return
 	}
 
@@ -129,7 +136,7 @@ func RunIntegrationTest(t *testing.T, test func(ctx context.Context, t *testing.
 func RunKubeAPITest(t *testing.T, test func(ctx context.Context, t *testing.T)) {
 	t.Helper()
 
-	if shouldSkipIntegration(t) {
+	if ShouldSkipIntegration(t) {
 		return
 	}
 

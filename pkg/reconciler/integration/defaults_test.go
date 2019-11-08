@@ -95,9 +95,13 @@ func TestLoadTests(t *testing.T) {
 }
 
 func TestIntegration_ApplyDefaults(t *testing.T) {
+	if testutil.ShouldSkipIntegration(t) {
+		return
+	}
+
 	for _, tc := range loadTests(t) {
-		t.Run(tc.Path, func(t *testing.T) {
-			testutil.RunKubeAPITest(t, func(ctx context.Context, t *testing.T) {
+		testutil.RunKubeAPITest(t, func(ctx context.Context, t *testing.T) {
+			t.Run(tc.Path, func(t *testing.T) {
 				testutil.WithNamespace(ctx, t, func(namespace string) {
 					testutil.WithDynamicClient(ctx, t, func(client dynamic.Interface) {
 
