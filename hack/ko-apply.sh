@@ -16,8 +16,7 @@
 
 set -eu
 
-# Go to root dir
-cd $(git rev-parse --show-toplevel)
+cd "${0%/*}"/..
 
 # ko requires a proper go path and deps to be vendored
 # TODO remove this once https://github.com/google/ko/issues/7 is

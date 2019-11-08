@@ -15,6 +15,7 @@
 # limitations under the License.
 
 set -eux
+
 cd "${0%/*}"/..
 
 project=$(gcloud config get-value project)

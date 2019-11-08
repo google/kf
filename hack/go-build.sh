@@ -14,16 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script is used by the CI to check if go.sum is valid.
+set -eux
 
-cd $(dirname $(go env GOMOD))
+cd "${0%/*}"/..
 
-./hack/update-vendor-license.sh
-
-if [ ! -z "$(git status --porcelain vendor)" ]; then
-    git status vendor
-    echo
-    echo "vendor license isn't correct."
-    git --no-pager diff vendor
-    exit 1
-fi
+go build ./...
