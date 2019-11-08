@@ -38,6 +38,7 @@ templates:
   params:
     terraform_source: pr/ci/concourse/terraform
     env_name_file: gke-prs/name
+    action: refresh
 
 - &terraform-create
   put: terraform
