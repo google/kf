@@ -31,18 +31,18 @@ templates:
 - &terraform-create
   put: terraform
   params:
-    terraform_source: ci-pipelines-src/ci/concourse/terraform
+    terraform_source: pr/ci/concourse/terraform
     env_name_file: gke-prs/name
     delete_on_failure: true
 
 - &terraform-destroy
   put: terraform
   params:
-    terraform_source: ci-pipelines-src/ci/concourse/terraform
+    terraform_source: pr/ci/concourse/terraform
     env_name_file: gke-prs/name
     action: destroy
   get_params:
-    terraform_source: ci-pipelines-src/ci/concourse/terraform
+    terraform_source: pr/ci/concourse/terraform
     env_name_file: gke-prs/name
     action: destroy
 
@@ -90,11 +90,6 @@ resources:
     branch: master
     pool: pr
     private_key: *ci_pool_git_key
-- name: ci-pipelines-src
-  type: git
-  source:
-    branch: *ci_git_branch
-    uri: *ci_git_uri
 - name: pr
   type: pull-request
   check_every: 10s
@@ -123,15 +118,11 @@ jobs:
   plan:
   - get: pr
     trigger: true
+  - *acquire-lock
   - put: pr
     params:
       path: pr
       status: PENDING
-  - aggregate:
-    - get: ci-pipelines-src
-      trigger: false
-      params: {submodules: none}
-    - *acquire-lock
   - aggregate:
     # We always execute the terraform-create task as the first step. The final step of this
     # job - whether it fails or succeeds - is to delete and recreate the Terraform environment,
@@ -149,7 +140,6 @@ jobs:
           source: *ci-image-source
         inputs:
         - name: pr
-        - name: ci-pipelines-src
         params:
           GOPROXY: *go_proxy
           GOSUMDB: *go_sum_db
@@ -160,7 +150,7 @@ jobs:
           - -exc
           - |
             pushd pr
-              ../ci-pipelines-src/hack/check-linters.sh
+              ./hack/check-linters.sh
             popd
     - task: check-go-generate
       timeout: 10m
@@ -171,7 +161,6 @@ jobs:
           source: *ci-image-source
         inputs:
         - name: pr
-        - name: ci-pipelines-src
         params:
           GOPROXY: *go_proxy
           GOSUMDB: *go_sum_db
@@ -182,7 +171,7 @@ jobs:
           - -exc
           - |
             pushd pr
-              ../ci-pipelines-src/hack/check-go-generate.sh
+              ./hack/check-go-generate.sh
             popd
     - task: check-code-generator
       timeout: 10m
@@ -193,7 +182,6 @@ jobs:
           source: *ci-image-source
         inputs:
         - name: pr
-        - name: ci-pipelines-src
         params:
           GOPROXY: *go_proxy
           GOSUMDB: *go_sum_db
@@ -204,7 +192,7 @@ jobs:
           - -exc
           - |
             pushd pr
-              ../ci-pipelines-src/hack/check-code-generator.sh
+              ./hack/check-code-generator.sh
             popd
     - task: check-go-sum
       timeout: 10m
@@ -215,7 +203,6 @@ jobs:
           source: *ci-image-source
         inputs:
         - name: pr
-        - name: ci-pipelines-src
         params:
           GOPROXY: *go_proxy
           GOSUMDB: *go_sum_db
@@ -226,7 +213,7 @@ jobs:
           - -exc
           - |
             pushd pr
-              ../ci-pipelines-src/hack/check-go-sum.sh
+              ./hack/check-go-sum.sh
             popd
     - task: check-vendor-license
       timeout: 10m
@@ -237,7 +224,6 @@ jobs:
           source: *ci-image-source
         inputs:
         - name: pr
-        - name: ci-pipelines-src
         params:
           GOPROXY: *go_proxy
           GOSUMDB: *go_sum_db
@@ -248,7 +234,7 @@ jobs:
           - -exc
           - |
             pushd pr
-              ../ci-pipelines-src/hack/check-vendor-license.sh
+              ./hack/check-vendor-license.sh
             popd
     - task: unit
       timeout: 10m
@@ -259,7 +245,6 @@ jobs:
           source: *ci-image-source
         inputs:
         - name: pr
-        - name: ci-pipelines-src
         run:
           path: bash
           args:
@@ -267,7 +252,7 @@ jobs:
           - |
             pushd pr
               # Run unit tests
-              ../ci-pipelines-src/hack/unit-test.sh
+              ./hack/unit-test.sh
             popd
         params:
           GOPROXY: *go_proxy
@@ -284,7 +269,6 @@ jobs:
           GCP_PROJECT_ID: *release_project
         inputs:
         - name: pr
-        - name: ci-pipelines-src
         run:
           path: bash
           args:
@@ -293,7 +277,7 @@ jobs:
             artifacts=`pwd`/artifacts
             pushd pr
               # Build CLI and controllers
-              ../ci-pipelines-src/hack/build.sh
+              ./hack/build.sh
             popd
   - *terraform-create
   - task: integration
@@ -305,7 +289,6 @@ jobs:
         source: *ci-image-source
       inputs:
       - name: pr
-      - name: ci-pipelines-src
       - name: terraform
       run:
         path: bash
@@ -334,18 +317,21 @@ jobs:
           # Install Knative Build
           kubectl apply --filename https://github.com/knative/build/releases/download/v0.7.0/build.yaml
 
+          # Install Tekton Pipelines
+          kubectl apply --filename https://github.com/tektoncd/pipeline/releases/download/v0.8.0/release.yaml
+
           # Let SC and Build simmer for 30s
           sleep 30
 
           pushd pr
             # Install Kf server-side components
-            ../ci-pipelines-src/hack/ko-apply.sh
+            ./hack/ko-apply.sh
 
             # Setup Kf Secret and ConifgMap
-            ../ci-pipelines-src/hack/create-gke-secret.sh
+            ./hack/create-gke-secret.sh
 
             # Run unit tests
-            ../ci-pipelines-src/hack/integration-test.sh
+            ./hack/integration-test.sh
           popd
       params:
         GOPROXY: *go_proxy
