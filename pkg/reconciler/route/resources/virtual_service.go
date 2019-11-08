@@ -79,7 +79,7 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 				hostname,
 				domain,
 			),
-			Namespace: v1alpha1.KfNamespace,
+			Namespace: namespace,
 			Labels:    labels,
 			Annotations: map[string]string{
 				"domain":   domain,

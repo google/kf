@@ -93,7 +93,7 @@ func TestMakeVirtualService(t *testing.T) {
 
 				testutil.AssertEqual(t, "ObjectMeta", metav1.ObjectMeta{
 					Name:      v1alpha1.GenerateName(route.Spec.Hostname, route.Spec.Domain),
-					Namespace: v1alpha1.KfNamespace,
+					Namespace: "some-namespace",
 					Labels: map[string]string{
 						resources.ManagedByLabel: "kf",
 						v1alpha1.ComponentLabel:  "virtualservice",
