@@ -18,31 +18,73 @@ import (
 	"fmt"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func ExampleBuildServiceAccountName() {
-	fmt.Println(BuildServiceAccountName(&v1alpha1.Space{}))
+	space := &v1alpha1.Space{}
+	space.Spec.Security.BuildServiceAccount = "some-name"
+	fmt.Println(BuildServiceAccountName(space))
 
-	// Output: kf-build-service-account
+	// Output: kf-builder
+}
+
+func ExampleBuildSecretName() {
+	space := &v1alpha1.Space{}
+	space.Spec.Security.BuildServiceAccount = "some-name"
+	fmt.Println(BuildSecretName(space))
+
+	// Output: kf-builder
 }
 
 func ExampleMakeBuildServiceAccount() {
-	sa, err := MakeBuildServiceAccount(&v1alpha1.Space{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "some-space",
+	sa, secrets, err := MakeBuildServiceAccount(
+		&v1alpha1.Space{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "some-space",
+			},
+			Spec: v1alpha1.SpaceSpec{
+				Security: v1alpha1.SpaceSpecSecurity{
+					BuildServiceAccount: "build-creds",
+				},
+			},
 		},
-	})
+		[]*corev1.Secret{
+			{
+				Data: map[string][]byte{
+					"key-1": []byte("value-1"),
+					"key-2": []byte("value-2"),
+				},
+			},
+		},
+	)
 
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("Name:", sa.Name)
-	fmt.Println("Namespace:", sa.Namespace)
-	fmt.Println("Managed Label:", sa.Labels[v1alpha1.ManagedByLabel])
+	fmt.Println("ServiceAccount Name:", sa.Name)
+	fmt.Println("ServiceAccount Namespace:", sa.Namespace)
+	fmt.Println("ServiceAccount Managed Label:", sa.Labels[v1alpha1.ManagedByLabel])
+	fmt.Println("ServiceAccount Secret:", sa.Secrets[0].Name)
+	fmt.Println("Secrets Count:", len(secrets))
+	fmt.Println("Secret Name:", secrets[0].Name)
+	fmt.Println("Secret Type:", secrets[0].Type)
+	fmt.Println("Secret Namespace:", secrets[0].Namespace)
+	fmt.Println("Secret Managed Label:", secrets[0].Labels[v1alpha1.ManagedByLabel])
+	fmt.Println("Secret Data[key-1]:", string(secrets[0].Data["key-1"]))
+	fmt.Println("Secret Data[key-2]:", string(secrets[0].Data["key-2"]))
 
-	// Output: Name: kf-build-service-account
-	// Namespace: some-space
-	// Managed Label: kf
+	// Output: ServiceAccount Name: kf-builder
+	// ServiceAccount Namespace: some-space
+	// ServiceAccount Managed Label: kf
+	// ServiceAccount Secret: kf-builder
+	// Secrets Count: 1
+	// Secret Name: kf-builder
+	// Secret Type: kubernetes.io/dockerconfigjson
+	// Secret Namespace: some-space
+	// Secret Managed Label: kf
+	// Secret Data[key-1]: value-1
+	// Secret Data[key-2]: value-2
 }

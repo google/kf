@@ -248,7 +248,7 @@ jobs:
           # Install SC
           kubectl apply --recursive --filename release-pr/third_party/service-catalog/manifests/catalog/templates/
           # Install Knative Build
-          kubectl apply --filename https://github.com/knative/build/releases/download/v0.6.0/build.yaml
+          kubectl apply --filename https://github.com/knative/build/releases/download/v0.7.0/build.yaml
           # Install Kf
           kubectl apply --filename artifacts/release.yaml
 

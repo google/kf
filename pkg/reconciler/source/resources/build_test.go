@@ -72,7 +72,6 @@ func ExampleMakeBuild_build() {
 	fmt.Println("Name:", build.Name)
 	fmt.Println("Label Count:", len(build.Labels))
 	fmt.Println("Managed By:", build.Labels[managedByLabel])
-	fmt.Println("Service Account:", build.Spec.ServiceAccountName)
 	fmt.Println("OwnerReferences Count:", len(build.OwnerReferences))
 	fmt.Println("Arg Count:", len(build.Spec.Template.Arguments))
 	fmt.Println("Output Image:", v1alpha1.GetBuildArg(build, v1alpha1.BuildArgImage))
@@ -85,7 +84,6 @@ func ExampleMakeBuild_build() {
 	// Output: Name: my-source
 	// Label Count: 1
 	// Managed By: kf
-	// Service Account: some-account
 	// OwnerReferences Count: 1
 	// Arg Count: 4
 	// Output Image: gcr.io/image:123
