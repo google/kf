@@ -196,7 +196,7 @@ jobs:
           - -exc
           - |
             pushd pr
-              ./hack/check-go-generate.sh
+              ./hack/go-generate.sh
               ./hack/tidy.sh
               ./hack/check-clean-git-state.sh
             popd
