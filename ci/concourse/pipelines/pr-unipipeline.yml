@@ -10,6 +10,10 @@ vars:
 - &github_repo google/kf
 - &github_access_token ((github_access_token))
 
+# git config vars
+- &git_uri ((git_uri))
+- &nightly_branch develop
+
 # Terraform vars
 - &tf_state_bucket ((tf_state_bucket))
 - &tf_service_account ((service_account_json))
@@ -84,6 +88,11 @@ resource_types:
     tag: latest
 
 resources:
+- name: kf-dev
+  type: git
+  source:
+    uri: *git_uri
+    branch: *nightly_branch
 - name: gke-prs
   type: pool
   source:
@@ -113,6 +122,17 @@ resources:
       GOOGLE_CREDENTIALS: *service_account_json
 
 jobs:
+- name: reap
+  plan:
+  - *acquire-lock
+  - get: pr
+    resource: kf-dev
+  - *terraform-destroy
+  on_failure: *on-failure
+  on_success:
+    do:
+    - *release-lock
+
 - name: test
   on_failure: *on-failure
   on_success: *on-success
