@@ -47,6 +47,7 @@ templates:
     delete_on_failure: true
 
 - &terraform-pre-destroy
+  task: terraform-pre-destroy
   timeout: 30m
   config:
     platform: linux
@@ -65,7 +66,11 @@ templates:
           project=`cat terraform-output/metadata | jq -r '.cluster_project'`
           network=`cat terraform-output/metadata | jq -r '.cluster_network'`
           gcloud config set project "$project"
-          ./hack/terraform-pre-destroy.sh $network
+          if [[ "$network" == "default" ]]; then
+            echo "skipping cleanup: on default network"
+          else
+            ./hack/terraform-pre-destroy.sh $network
+          fi
         popd
 
 - &terraform-destroy
