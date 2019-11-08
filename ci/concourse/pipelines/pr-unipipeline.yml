@@ -62,10 +62,10 @@ templates:
       args:
       - -exc
       - |
+        project=`cat terraform-output/metadata | jq -r '.cluster_project'`
+        network=`cat terraform-output/metadata | jq -r '.cluster_network'`
+        gcloud config set project "$project"
         pushd pr
-          project=`cat terraform-output/metadata | jq -r '.cluster_project'`
-          network=`cat terraform-output/metadata | jq -r '.cluster_network'`
-          gcloud config set project "$project"
           if [[ "$network" == "default" ]]; then
             echo "skipping cleanup: on default network"
           else
