@@ -7,13 +7,13 @@ variable "gke_version" {
 }
 
 provider "google" {
-  project     = var.project
-  region      = "us-central1"
+  project = var.project
+  region  = "us-central1"
 }
 
 provider "google-beta" {
-  project     = var.project
-  region      = "us-central1"
+  project = var.project
+  region  = "us-central1"
 }
 
 resource "random_pet" "kf_test" {
@@ -30,7 +30,7 @@ resource "google_service_account" "kf_test" {
 }
 
 resource "google_project_iam_member" "kf_test" {
-  role    = "roles/storage.admin"
+  role   = "roles/storage.admin"
   member = "serviceAccount:${google_service_account.kf_test.email}"
 }
 
@@ -83,7 +83,7 @@ resource "google_container_cluster" "kf_test" {
     ]
   }
 
-  network = google_compute_network.k8s_network.self_link
+  network = "${google_compute_network.k8s_network.self_link}"
 }
 
 output "cluster_name" {
