@@ -33,7 +33,7 @@ vars:
 
 templates:
 - &terraform-get
-  get: terraform-output
+  put: terraform-output
   resource: terraform
   params:
     terraform_source: pr/ci/concourse/terraform
@@ -58,6 +58,8 @@ templates:
     inputs:
     - name: pr
     - name: terraform-output
+    params:
+      SERVICE_ACCOUNT_JSON: *service_account_json
     run:
       path: bash
       args:
@@ -65,7 +67,12 @@ templates:
       - |
         project=`cat terraform-output/metadata | jq -r '.cluster_project'`
         network=`cat terraform-output/metadata | jq -r '.cluster_network'`
+        set +x
+        echo "$SERVICE_ACCOUNT_JSON" > key.json
+        set -x
+        echo Authenticating to kubernetes...
         gcloud config set project "$project"
+        gcloud auth activate-service-account --key-file key.json
         pushd pr
           if [[ "$network" == "default" ]]; then
             echo "skipping cleanup: on default network"
