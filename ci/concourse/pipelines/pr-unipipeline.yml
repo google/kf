@@ -33,7 +33,7 @@ vars:
 
 templates:
 - &terraform-get
-  put: terraform-output
+  get: terraform-output
   resource: terraform
   params:
     terraform_source: pr/ci/concourse/terraform
