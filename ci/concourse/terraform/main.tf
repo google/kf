@@ -52,10 +52,6 @@ resource "google_container_cluster" "kf_test" {
     }
   }
 
-  ip_allocation_policy {
-    use_ip_aliases = true
-  }
-
   addons_config {
     istio_config {
       disabled = false
