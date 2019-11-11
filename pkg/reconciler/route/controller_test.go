@@ -83,30 +83,35 @@ func TestBuildEnqueuer(t *testing.T) {
 	}
 }
 
-func TestFilterVSWithNamespace(t *testing.T) {
+func TestFilterVSManagedByKf(t *testing.T) {
 	t.Parallel()
 
-	buildVS := func(namespace string) *networking.VirtualService {
+	buildVS := func(managedBy string) *networking.VirtualService {
 		return &networking.VirtualService{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace: namespace,
+				Labels: map[string]string{
+					v1alpha1.ManagedByLabel: managedBy,
+				},
 			},
 		}
 	}
 
-	buildPod := func(namespace string) *corev1.Pod {
+	buildPod := func(managedBy string) *corev1.Pod {
 		return &corev1.Pod{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace: namespace,
+				Labels: map[string]string{
+					v1alpha1.ManagedByLabel: managedBy,
+				},
 			},
 		}
 	}
 
-	f := FilterVSWithNamespace("some-namespace")
+	f := FilterVSManagedByKf()
 	testutil.AssertEqual(t, "non metav1.Object", false, f(99))
-	testutil.AssertEqual(t, "wrong namespace", false, f(buildVS("wrong-namespace")))
-	testutil.AssertEqual(t, "correct namespace, wrong type", false, f(buildPod("some-namespace")))
-	testutil.AssertEqual(t, "correct everything", true, f(buildVS("some-namespace")))
+	testutil.AssertEqual(t, "wrong managed-by label", false, f(buildVS("not-kf")))
+	testutil.AssertEqual(t, "no managed-by label", false, f(buildVS("")))
+	testutil.AssertEqual(t, "correct label, wrong type", false, f(buildPod("kf")))
+	testutil.AssertEqual(t, "correct everything", true, f(buildVS("kf")))
 }
 
 func TestEnqueueRoutesOfVirtualService(t *testing.T) {

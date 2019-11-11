@@ -81,7 +81,7 @@ func MakeVirtualService(ctx context.Context, claims []*v1alpha1.RouteClaim, rout
 				hostname,
 				domain,
 			),
-			Namespace: v1alpha1.KfNamespace,
+			Namespace: namespace,
 			Labels:    labels,
 			Annotations: map[string]string{
 				"domain":   domain,
