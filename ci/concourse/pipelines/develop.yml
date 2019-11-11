@@ -1,0 +1,237 @@
+# Copyright 2019 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the License);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an AS IS BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+vars:
+# ci config vars
+- &ci_image_uri ((ci_image_uri))
+- &service_account_json ((service_account_json))
+
+# git config vars
+- &git_uri ((git_uri))
+- &git_branch develop
+
+# k8s config
+- &gcp_project_id ((gcp_project_id))
+
+# go config
+- &go_proxy https://proxy.golang.org
+- &go_sum_db sum.golang.org
+
+# build vars
+- &release_service_account_json ((release_service_account_json))
+- &release_project ((release_project))
+- &ko_docker_repo ((ko_docker_repo))
+
+templates:
+- &ci-image-source
+  repository: *ci_image_uri
+  username: _json_key
+  password: *service_account_json
+
+resources:
+- name: kf
+  type: git
+  source:
+    uri: *git_uri
+    branch: *git_branch
+
+jobs:
+- name: test
+  plan:
+  - get: kf
+    trigger: true
+  - aggregate:
+    - task: check-go-tidy
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: kf
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *service_account_json
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            pushd kf
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
+            popd
+    - task: check-linters
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: kf
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *service_account_json
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            pushd kf
+              ./hack/check-linters.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
+            popd
+    - task: check-go-generate
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: kf
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *service_account_json
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            pushd kf
+              ./hack/go-generate.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
+            popd
+    - task: check-code-generator
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: kf
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *service_account_json
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            pushd kf
+              ./hack/update-codegen.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
+            popd
+    - task: check-vendor-license
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: kf
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *service_account_json
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            pushd kf
+              ./hack/update-vendor-license.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
+            popd
+    - task: check-go-build
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: kf
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *service_account_json
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            pushd kf
+              ./hack/go-build.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
+            popd
+    - task: unit
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: kf
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            pushd kf
+              ./hack/unit-test.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
+            popd
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+    - task: build-cli
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *release_service_account_json
+          GCP_PROJECT_ID: *release_project
+        inputs:
+        - name: kf
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            artifacts=`pwd`/artifacts
+            pushd kf
+              ./hack/build.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
+            popd
