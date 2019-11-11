@@ -25,6 +25,7 @@ import (
 	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
 	"github.com/google/kf/pkg/reconciler"
 	appresources "github.com/google/kf/pkg/reconciler/app/resources"
+	"github.com/google/kf/pkg/reconciler/route/config"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
@@ -69,6 +70,26 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		FilterFunc: FilterVSManagedByKf(),
 		Handler:    controller.HandleAll(logError(logger, EnqueueRoutesOfVirtualService(enqueue, c.routeLister))),
 	})
+
+	logger.Info("Setting up ConfigMap receivers")
+	configsToResync := []interface{}{
+		&config.RoutingConfig{},
+	}
+	resync := configmap.TypeFilter(configsToResync...)(func(string, interface{}) {
+		// When configmap updates, queue all existing routes and routeclaims in the form of namespaced RouteSpecFields
+		routes := routeInformer.Informer().GetStore().List()
+		routeClaims := routeClaimInformer.Informer().GetStore().List()
+		for _, rc := range routeClaims {
+			enqueue(rc)
+		}
+
+		for _, r := range routes {
+			enqueue(r)
+		}
+	})
+	configStore := config.NewStore(logger.Named("routing-config-store"), resync)
+	configStore.WatchConfigs(cmw)
+	c.configStore = configStore
 
 	return impl
 }

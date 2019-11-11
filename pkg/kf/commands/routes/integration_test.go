@@ -28,6 +28,8 @@ import (
 	. "github.com/google/kf/pkg/kf/testutil"
 )
 
+var currentPort int = 8082
+
 // TestIntegration_Routes creates a route via `create-route`, verifies it with
 // `routes`, deletes it via `delete-route` and then verifies again.
 func TestIntegration_Routes(t *testing.T) {
@@ -56,10 +58,12 @@ func TestIntegration_UnmappedRoute(t *testing.T) {
 		routeHost := fmt.Sprintf("%s.%s", hostname, domain)
 		findRoute(ctx, t, kf, hostname, domain, path, true)
 
-		go kf.ProxyRoute(ctx, routeHost, 8083)
+		port := getNextPort()
+		go kf.ProxyRoute(ctx, routeHost, port)
 
 		{
-			resp, respCancel := RetryGet(ctx, t, "http://localhost:8083/"+path, 90*time.Second, http.StatusServiceUnavailable)
+			url := fmt.Sprintf("http://localhost:%d/%s", port, path)
+			resp, respCancel := RetryGet(ctx, t, url, 90*time.Second, http.StatusServiceUnavailable)
 			defer resp.Body.Close()
 			defer respCancel()
 			Logf(t, "testing for 503")
@@ -91,10 +95,13 @@ func TestIntegration_MapRoute(t *testing.T) {
 		findRoute(ctx, t, kf, hostname, domain, path, true)
 
 		kf.MapRoute(ctx, appName, domain, "--hostname="+hostname, "--path="+path)
-		go kf.ProxyRoute(ctx, routeHost, 8083)
+
+		port := getNextPort()
+		go kf.ProxyRoute(ctx, routeHost, port)
 
 		{
-			resp, respCancel := RetryGet(ctx, t, "http://localhost:8083/"+path, 90*time.Second, http.StatusOK)
+			url := fmt.Sprintf("http://localhost:%d/%s", port, path)
+			resp, respCancel := RetryGet(ctx, t, url, 90*time.Second, http.StatusOK)
 			defer resp.Body.Close()
 			defer respCancel()
 			Logf(t, "testing for 200")
@@ -135,12 +142,14 @@ func TestIntegration_MultipleAppsPerRoute(t *testing.T) {
 		kf.MapRoute(ctx, helloWorldApp, domain, "--hostname="+hostname, "--path="+path)
 		kf.MapRoute(ctx, envsApp, domain, "--hostname="+hostname, "--path="+path)
 
-		go kf.ProxyRoute(ctx, routeHost, 8083)
+		port := getNextPort()
+		go kf.ProxyRoute(ctx, routeHost, port)
 
 		helloWorldCount := 0
 		envsCount := 0
+		url := fmt.Sprintf("http://localhost:%d/%s", port, path)
 		for i := 0; i < 100; i++ {
-			resp, respCancel := RetryGet(ctx, t, "http://localhost:8083/"+path, 90*time.Second, http.StatusOK)
+			resp, respCancel := RetryGet(ctx, t, url, 90*time.Second, http.StatusOK)
 			defer resp.Body.Close()
 			defer respCancel()
 			if resp.StatusCode == http.StatusOK {
@@ -191,4 +200,9 @@ func findRoute(ctx context.Context, t *testing.T, kf *Kf, hostname, domain, path
 			panic(fmt.Errorf("Wanted %v, got %v", shouldFind, found))
 		}
 	})
+}
+
+func getNextPort() int {
+	currentPort++
+	return currentPort
 }

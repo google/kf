@@ -44,6 +44,7 @@ type Reconciler struct {
 	routeLister          kflisters.RouteLister
 	routeClaimLister     kflisters.RouteClaimLister
 	virtualServiceLister istiolisters.VirtualServiceLister
+	configStore          reconciler.ConfigStore
 }
 
 // Check that our Reconciler implements controller.Reconciler
@@ -58,6 +59,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 	}
 
 	logger := logging.FromContext(ctx).With("namespace", route.Namespace)
+
+	ctx = r.configStore.ToContext(ctx)
 
 	if r.IsNamespaceTerminating(route.Namespace) {
 		logger.Errorf("skipping sync for route %#v", route)
@@ -132,7 +135,7 @@ func (r *Reconciler) ApplyChanges(
 		return err
 	}
 
-	desired, err := resources.MakeVirtualService(claims, routes)
+	desired, err := resources.MakeVirtualService(ctx, claims, routes)
 	if err != nil {
 		return err
 	}
