@@ -109,7 +109,9 @@ func (ci *conditionImpl) MarkReconciliationError(action string, err error) error
 	msg := fmt.Sprintf("Error occurred while %s %s: %s", action, ci.childType, err)
 
 	switch {
-	case apierrs.IsConflict(err):
+	case apierrs.IsConflict(err) || apierrs.IsAlreadyExists(err):
+		// Both of these are 409 errors returned by different implementations of
+		// Kubernetes controllers.
 		ci.manager.MarkUnknown(ci.destination, "CacheOutdated", msg)
 
 		// In the future, additional retryable errors can be added here if

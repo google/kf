@@ -214,7 +214,7 @@ func TestReconciler_Reconcile_ApplyChanges(t *testing.T) {
 					Return(nil, nil)
 
 				f.fn.EXPECT().
-					VirtualServices(v1alpha1.KfNamespace).
+					VirtualServices("some-namespace").
 					Return(f.fvsi)
 
 				f.fvsi.EXPECT().
@@ -369,7 +369,7 @@ func TestReconciler_Reconcile_ApplyChanges(t *testing.T) {
 					Return(nil, apierrors.NewNotFound(v1alpha3.Resource("VirtualService"), "VirtualService"))
 
 				f.fn.EXPECT().
-					VirtualServices(v1alpha1.KfNamespace).
+					VirtualServices(gomock.Any()).
 					Return(f.fvsi)
 
 				f.fvsi.EXPECT().
