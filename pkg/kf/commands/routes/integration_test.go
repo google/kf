@@ -122,7 +122,7 @@ func TestIntegration_MultipleAppsPerRoute(t *testing.T) {
 		kf.CachePush(ctx, helloWorldApp, filepath.Join(RootDir(ctx, t), "./samples/apps/helloworld"))
 		defer kf.Delete(ctx, helloWorldApp)
 
-		kf.CachePush(ctx, helloWorldApp, filepath.Join(RootDir(ctx, t), "./samples/apps/envs"))
+		kf.CachePush(ctx, envsApp, filepath.Join(RootDir(ctx, t), "./samples/apps/envs"))
 		defer kf.Delete(ctx, envsApp)
 
 		hostname := fmt.Sprintf("some-host-%d", time.Now().UnixNano())
