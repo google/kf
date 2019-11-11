@@ -114,6 +114,7 @@ func TestIntegration_VcapServices(t *testing.T) {
 func TestIntegration_VcapServices_customBindingName(t *testing.T) {
 	checkClusterStatus(t)
 	appName := fmt.Sprintf("integration-binding-app-%d", time.Now().UnixNano())
+	bindingName := fmt.Sprintf("bind-%x", time.Now().UnixNano())
 	appPath := "./samples/apps/envs"
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		withServiceBroker(ctx, t, kf, func(ctx context.Context) {
@@ -121,7 +122,7 @@ func TestIntegration_VcapServices_customBindingName(t *testing.T) {
 				withApp(ctx, t, kf, appName, appPath, false, func(ctx context.Context) {
 					serviceInstanceName := ServiceInstanceFromContext(ctx)
 					appName := AppFromContext(ctx)
-					kf.BindService(ctx, appName, serviceInstanceName, "--binding-name", "my-binding")
+					kf.BindService(ctx, appName, serviceInstanceName, "--binding-name", bindingName)
 					defer kf.UnbindService(ctx, appName, serviceInstanceName) // cleanup
 
 					vcs := extractVcapServices(ctx, t, kf)
@@ -129,9 +130,9 @@ func TestIntegration_VcapServices_customBindingName(t *testing.T) {
 					expected := cfutil.VcapServicesMap{
 						ServiceClassFromContext(ctx): []cfutil.VcapService{
 							{
-								BindingName:  "my-binding",
+								BindingName:  bindingName,
 								InstanceName: ServiceInstanceFromContext(ctx),
-								Name:         "my-binding",
+								Name:         bindingName,
 								Label:        ServiceClassFromContext(ctx),
 								Tags:         []string{"fake-tag"},
 								Plan:         ServicePlanFromContext(ctx),
