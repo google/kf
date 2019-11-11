@@ -12,4 +12,3 @@ delete(){
 }
 
 delete firewall-rules
-gcloud compute networks delete $network --quiet
