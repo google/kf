@@ -51,6 +51,7 @@ func TestIntegration_Push(t *testing.T) {
 
 		// Push an app and then clean it up. This pushes the echo app which
 		// replies with the same body that was posted.
+		// For the purposes of this test the results SHOULD NOT be cached.
 		kf.Push(ctx, appName,
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
 		)
@@ -70,15 +71,14 @@ func TestIntegration_Push_update(t *testing.T) {
 
 		// Push an app and then clean it up. This pushes the echo app which
 		// replies with the same body that was posted.
-		kf.Push(ctx, appName,
-			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
-		)
+		echoPath := filepath.Join(RootDir(ctx, t), "./samples/apps/echo")
+		kf.CachePush(ctx, appName, echoPath)
 		defer kf.Delete(ctx, appName)
 		checkEchoApp(ctx, t, kf, appName, 8087, ExpectedAddr(appName, ""))
 
-		kf.Push(ctx, appName,
-			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/helloworld"),
-		)
+		helloPath := filepath.Join(RootDir(ctx, t), "./samples/apps/helloworld")
+		kf.CachePush(ctx, appName, helloPath)
+
 		// BUG(730): it takes a moment after the app becomes ready to reconcile the
 		// routes, the app is accessible but still points to the old one.
 		time.Sleep(45 * time.Second)
@@ -97,9 +97,9 @@ func TestIntegration_Push_docker(t *testing.T) {
 
 		// Push an app and then clean it up. This pushes the echo app which
 		// replies with the same body that was posted.
-		kf.Push(ctx, appName,
-			"--docker-image=gcr.io/kf-releases/echo-app",
-		)
+		echoPath := filepath.Join(RootDir(ctx, t), "./samples/apps/echo")
+		kf.CachePush(ctx, appName, echoPath)
+
 		defer kf.Delete(ctx, appName)
 		checkEchoApp(ctx, t, kf, appName, 8086, ExpectedAddr(appName, ""))
 	})
@@ -134,9 +134,8 @@ func TestIntegration_StopStart(t *testing.T) {
 
 		// Push an app and then clean it up. This pushes the echo app which
 		// replies with the same body that was posted.
-		kf.Push(ctx, appName,
-			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
-		)
+		echoPath := filepath.Join(RootDir(ctx, t), "./samples/apps/echo")
+		kf.CachePush(ctx, appName, echoPath)
 		defer kf.Delete(ctx, appName)
 
 		// Hit the app via the proxy. This makes sure the app is handling
@@ -259,9 +258,7 @@ func TestIntegration_Delete(t *testing.T) {
 
 		// Push an app and then clean it up. This pushes the echo app which
 		// simplies replies with the same body that was posted.
-		kf.Push(ctx, appName,
-			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
-		)
+		kf.CachePush(ctx, appName, filepath.Join(RootDir(ctx, t), "./samples/apps/echo"))
 
 		// List the apps and make sure we can find the app.
 		Logf(t, "ensuring app is there...")
@@ -334,9 +331,7 @@ func TestIntegration_Logs(t *testing.T) {
 
 		// Push an app and then clean it up. This pushes the echo app which
 		// replies with the same body that was posted.
-		kf.Push(ctx, appName,
-			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
-		)
+		kf.CachePush(ctx, appName, filepath.Join(RootDir(ctx, t), "./samples/apps/echo"))
 		defer kf.Delete(ctx, appName)
 
 		logOutput := kf.Logs(ctx, appName, "-n=30")
@@ -416,9 +411,7 @@ func TestIntegration_CfIgnore(t *testing.T) {
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		appName := fmt.Sprintf("integration-cfignore-%d", time.Now().UnixNano())
 
-		kf.Push(ctx, appName,
-			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/cfignore"),
-		)
+		kf.CachePush(ctx, appName, filepath.Join(RootDir(ctx, t), "./samples/apps/cfignore"))
 		defer kf.Delete(ctx, appName)
 
 		checkCfignoreApp(ctx, t, kf, appName, 8084, ExpectedAddr(appName, ""))

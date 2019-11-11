@@ -33,6 +33,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 const (
@@ -657,6 +659,37 @@ func (k *Kf) Push(ctx context.Context, appName string, extraArgs ...string) {
 	})
 	PanicOnError(ctx, k.t, fmt.Sprintf("push %q", appName), errs)
 	StreamOutput(ctx, k.t, output)
+}
+
+var sourceCache = make(map[string]string)
+var mutex sync.Mutex
+
+// CachePush pushes an application and caches the source or uses a cached
+// version. This is incompatible with additional arguments that might change
+// the semantics of push.
+func (k *Kf) CachePush(ctx context.Context, appName string, source string) {
+	mutex.Lock()
+	container, ok := sourceCache[source]
+	if ok {
+		mutex.Unlock()
+		k.Push(ctx, appName, "--docker-image", container)
+		return
+	}
+
+	defer mutex.Unlock()
+	k.Push(ctx, appName, "--path", source)
+	appJSON := k.App(ctx, appName)
+
+	obj := map[string]interface{}{}
+	if err := json.Unmarshal([]byte(appJSON), &obj); err != nil {
+		k.t.Fatal("unmarshaling app:", err)
+	}
+
+	container, ok, _ = unstructured.NestedString(obj, "status", "image")
+	if ok {
+		k.t.Log("Caching source", source, " as ", container)
+		sourceCache[source] = container
+	}
 }
 
 // Logs displays the logs of an application.

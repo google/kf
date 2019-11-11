@@ -77,9 +77,7 @@ func TestIntegration_MapRoute(t *testing.T) {
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		appName := fmt.Sprintf("integration-routes-%d", time.Now().UnixNano())
 
-		kf.Push(ctx, appName,
-			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/helloworld"),
-		)
+		kf.CachePush(ctx, appName, filepath.Join(RootDir(ctx, t), "./samples/apps/helloworld"))
 		defer kf.Delete(ctx, appName)
 
 		hostname := fmt.Sprintf("some-host-%d", time.Now().UnixNano())
@@ -114,14 +112,10 @@ func TestIntegration_MultipleAppsPerRoute(t *testing.T) {
 		helloWorldApp := fmt.Sprintf("integration-hello-%d", time.Now().UnixNano())
 		envsApp := fmt.Sprintf("integration-envs-%d", time.Now().UnixNano())
 
-		kf.Push(ctx, helloWorldApp,
-			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/helloworld"),
-		)
+		kf.CachePush(ctx, helloWorldApp, filepath.Join(RootDir(ctx, t), "./samples/apps/helloworld"))
 		defer kf.Delete(ctx, helloWorldApp)
 
-		kf.Push(ctx, envsApp,
-			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/envs"),
-		)
+		kf.CachePush(ctx, helloWorldApp, filepath.Join(RootDir(ctx, t), "./samples/apps/envs"))
 		defer kf.Delete(ctx, envsApp)
 
 		hostname := fmt.Sprintf("some-host-%d", time.Now().UnixNano())
