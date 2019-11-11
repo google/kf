@@ -57,7 +57,7 @@ func TestIntegration_Push(t *testing.T) {
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
 		)
 		defer kf.Delete(ctx, appName)
-		checkEchoApp(ctx, t, kf, appName, 8080, ExpectedAddr(appName, ""))
+		checkEchoApp(ctx, t, kf, appName, getNextPort(), ExpectedAddr(appName, ""))
 	})
 }
 
@@ -76,7 +76,7 @@ func TestIntegration_Push_update(t *testing.T) {
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
 		)
 		defer kf.Delete(ctx, appName)
-		checkEchoApp(ctx, t, kf, appName, 8087, ExpectedAddr(appName, ""))
+		checkEchoApp(ctx, t, kf, appName, getNextPort(), ExpectedAddr(appName, ""))
 
 		kf.Push(ctx, appName,
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/helloworld"),
@@ -84,7 +84,7 @@ func TestIntegration_Push_update(t *testing.T) {
 		// BUG(730): it takes a moment after the app becomes ready to reconcile the
 		// routes, the app is accessible but still points to the old one.
 		time.Sleep(45 * time.Second)
-		checkHelloWorldApp(ctx, t, kf, appName, 8088, ExpectedAddr(appName, ""))
+		checkHelloWorldApp(ctx, t, kf, appName, getNextPort(), ExpectedAddr(appName, ""))
 	})
 }
 
@@ -103,7 +103,7 @@ func TestIntegration_Push_docker(t *testing.T) {
 			"--docker-image=gcr.io/kf-releases/echo-app",
 		)
 		defer kf.Delete(ctx, appName)
-		checkEchoApp(ctx, t, kf, appName, 8086, ExpectedAddr(appName, ""))
+		checkEchoApp(ctx, t, kf, appName, getNextPort(), ExpectedAddr(appName, ""))
 	})
 }
 
@@ -120,7 +120,7 @@ func TestIntegration_Push_dockerfile(t *testing.T) {
 		kf.Push(ctx, appName, "--path", appPath, "--dockerfile", "Dockerfile")
 		defer kf.Delete(ctx, appName)
 
-		checkHelloWorldApp(ctx, t, kf, appName, 8089, ExpectedAddr(appName, ""))
+		checkHelloWorldApp(ctx, t, kf, appName, getNextPort(), ExpectedAddr(appName, ""))
 	})
 }
 
@@ -211,7 +211,7 @@ func TestIntegration_Push_manifest(t *testing.T) {
 		)
 		defer kf.Delete(ctx, appName)
 
-		checkEnvApp(ctx, t, kf, appName, 8082, map[string]string{
+		checkEnvApp(ctx, t, kf, appName, getNextPort(), map[string]string{
 			"WHATNOW": "BROWNCOW",
 		}, ExpectedAddr(appName, ""))
 	})
@@ -429,8 +429,7 @@ func TestIntegration_CfIgnore(t *testing.T) {
 		)
 		defer kf.Delete(ctx, appName)
 
-		port := getNextPort()
-		checkCfignoreApp(ctx, t, kf, appName, port, ExpectedAddr(appName, ""))
+		checkCfignoreApp(ctx, t, kf, appName, getNextPort(), ExpectedAddr(appName, ""))
 	})
 }
 
