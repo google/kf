@@ -28,8 +28,10 @@ import (
 	"github.com/google/kf/pkg/kf/testutil"
 	"github.com/google/kf/pkg/reconciler"
 	appresources "github.com/google/kf/pkg/reconciler/app/resources"
+	"github.com/google/kf/pkg/reconciler/route/config"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	logtesting "knative.dev/pkg/logging/testing"
 )
 
 //go:generate mockgen --package=route --copyright_file ../../kf/internal/tools/option-builder/LICENSE_HEADER --destination=fake_listers.go --mock_names=RouteLister=FakeRouteLister,RouteNamespaceLister=FakeRouteNamespaceLister,RouteClaimLister=FakeRouteClaimLister,RouteClaimNamespaceLister=FakeRouteClaimNamespaceLister github.com/google/kf/pkg/client/listers/kf/v1alpha1 RouteLister,RouteClaimLister,RouteNamespaceLister,RouteClaimNamespaceLister
@@ -64,6 +66,7 @@ func TestReconciler_Reconcile_namespaceIsTerminating(t *testing.T) {
 		Base: &reconciler.Base{
 			NamespaceLister: fakeNamespaceLister,
 		},
+		configStore: config.NewDefaultConfigStore(logtesting.TestLogger(t)),
 	}
 
 	testutil.AssertNil(t, "err", r.Reconcile(context.Background(), `{"namespace":"some-namespace"}`))
@@ -171,7 +174,7 @@ func TestReconciler_Reconcile_ApplyChanges(t *testing.T) {
 					Return(nil)
 			},
 		},
-		"no claims, deleting Rotues returns not found": {
+		"no claims, deleting Routes returns not found": {
 			ExpectedErr: nil, // No need to return an error
 			Setup: func(t *testing.T, f fakes) {
 				f.frcnl.EXPECT().
@@ -199,7 +202,7 @@ func TestReconciler_Reconcile_ApplyChanges(t *testing.T) {
 					Return(apierrors.NewNotFound(v1alpha3.Resource("Route"), "Route"))
 			},
 		},
-		"no claims, deletes Rotues and VirtualServices": {
+		"no claims, deletes Routes and VirtualServices": {
 			Namespace: "some-namespace",
 			RouteSpecFields: v1alpha1.RouteSpecFields{
 				Hostname: "some-hostname",
@@ -528,10 +531,13 @@ func TestReconciler_Reconcile_ApplyChanges(t *testing.T) {
 				routeClaimLister:     fakeRouteClaimLister,
 				routeLister:          fakeRouteLister,
 				virtualServiceLister: fakeVirtualServiceLister,
+				configStore:          config.NewDefaultConfigStore(logtesting.TestLogger(t)),
 			}
 
+			ctx := r.configStore.ToContext(context.Background())
+
 			err := r.ApplyChanges(
-				context.Background(),
+				ctx,
 				tc.Namespace,
 				tc.RouteSpecFields,
 			)

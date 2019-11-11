@@ -15,6 +15,7 @@
 package resources
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -22,6 +23,7 @@ import (
 	"sort"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/pkg/reconciler/route/config"
 	"github.com/google/kf/third_party/knative-serving/pkg/network"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -47,7 +49,7 @@ func MakeVirtualServiceLabels(spec v1alpha1.RouteSpecFields) map[string]string {
 }
 
 // MakeVirtualService creates a VirtualService from a Route object.
-func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route) (*networking.VirtualService, error) {
+func MakeVirtualService(ctx context.Context, claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route) (*networking.VirtualService, error) {
 	if len(claims) == 0 {
 		return nil, errors.New("claims must not be empty")
 	}
@@ -64,7 +66,7 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 
 	// Build map of paths to set of bound apps
 	pathApps := buildPathApps(claims, routes)
-	httpRoutes, err := buildHTTPRoutes(hostDomain, pathApps, namespace)
+	httpRoutes, err := buildHTTPRoutes(ctx, hostDomain, pathApps, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +90,7 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 			},
 		},
 		Spec: networking.VirtualServiceSpec{
-			Gateways: []string{KnativeIngressGateway},
+			Gateways: []string{config.FromContext(ctx).Routing.KnativeIngressGateway},
 			Hosts:    []string{hostDomain},
 			HTTP:     httpRoutes,
 		},
@@ -97,7 +99,7 @@ func MakeVirtualService(claims []*v1alpha1.RouteClaim, routes []*v1alpha1.Route)
 
 // Create HTTP routes for all paths with the same host + domain.
 // Paths that do not have an app bound to them will return a 503 when a request is sent to that path.
-func buildHTTPRoutes(hostDomain string, pathApps map[string]sets.String, namespace string) ([]networking.HTTPRoute, error) {
+func buildHTTPRoutes(ctx context.Context, hostDomain string, pathApps map[string]sets.String, namespace string) ([]networking.HTTPRoute, error) {
 	var httpRoutes []networking.HTTPRoute
 
 	for path, apps := range pathApps {
@@ -118,13 +120,13 @@ func buildHTTPRoutes(hostDomain string, pathApps map[string]sets.String, namespa
 						HTTPStatus: http.StatusServiceUnavailable,
 					},
 				},
-				Route: buildDefaultRouteDestination(),
+				Route: buildDefaultRouteDestination(ctx),
 			}
 		} else {
 			// create HTTP route for path with app(s) bound
 			httpRoute = networking.HTTPRoute{
 				Match:   pathMatchers,
-				Route:   buildRouteDestinations(apps.List(), namespace),
+				Route:   buildRouteDestinations(ctx, apps.List(), namespace),
 				Headers: buildForwardingHeaders(hostDomain),
 			}
 		}
@@ -141,14 +143,14 @@ func buildHTTPRoutes(hostDomain string, pathApps map[string]sets.String, namespa
 // Hostname + domain + path combos with bound app(s) have a custom route destination for each path.
 // The request is sent back to the istio ingress gateway with the host set as the app's internal host name.
 // If there are multiple apps bound to a route, the traffic is split uniformly across the apps.
-func buildRouteDestinations(appNames []string, namespace string) []networking.HTTPRouteDestination {
+func buildRouteDestinations(ctx context.Context, appNames []string, namespace string) []networking.HTTPRouteDestination {
 	routeWeights := getRouteWeights(len(appNames))
 	routeDestinations := []networking.HTTPRouteDestination{}
 
 	for i, app := range appNames {
 		routeDestination := networking.HTTPRouteDestination{
 			Destination: networking.Destination{
-				Host: GatewayHost,
+				Host: config.FromContext(ctx).Routing.GatewayHost(),
 			},
 			Headers: buildHostHeader(app, namespace),
 			Weight:  routeWeights[i],
@@ -161,11 +163,11 @@ func buildRouteDestinations(appNames []string, namespace string) []networking.HT
 
 // Hostname + domain + path combos without an app are given the default route destination,
 // which simply redirects the request back to the istio ingress gateway
-func buildDefaultRouteDestination() []networking.HTTPRouteDestination {
+func buildDefaultRouteDestination(ctx context.Context) []networking.HTTPRouteDestination {
 	return []networking.HTTPRouteDestination{
 		{
 			Destination: networking.Destination{
-				Host: GatewayHost,
+				Host: config.FromContext(ctx).Routing.GatewayHost(),
 			},
 			Weight: 100,
 		},
