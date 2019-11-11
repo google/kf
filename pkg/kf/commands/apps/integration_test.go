@@ -40,6 +40,8 @@ const (
 	appTimeout = 90 * time.Second
 )
 
+var currentPort int = 8086
+
 // TestIntegration_Push pushes the echo app, lists it to ensure it can find a
 // domain, uses the proxy command and then posts to it. It finally deletes the
 // app.
@@ -55,7 +57,7 @@ func TestIntegration_Push(t *testing.T) {
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
 		)
 		defer kf.Delete(ctx, appName)
-		checkEchoApp(ctx, t, kf, appName, 8080, ExpectedAddr(appName, ""))
+		checkEchoApp(ctx, t, kf, appName, getNextPort(), ExpectedAddr(appName, ""))
 	})
 }
 
@@ -74,7 +76,7 @@ func TestIntegration_Push_update(t *testing.T) {
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
 		)
 		defer kf.Delete(ctx, appName)
-		checkEchoApp(ctx, t, kf, appName, 8087, ExpectedAddr(appName, ""))
+		checkEchoApp(ctx, t, kf, appName, getNextPort(), ExpectedAddr(appName, ""))
 
 		kf.Push(ctx, appName,
 			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/helloworld"),
@@ -82,7 +84,7 @@ func TestIntegration_Push_update(t *testing.T) {
 		// BUG(730): it takes a moment after the app becomes ready to reconcile the
 		// routes, the app is accessible but still points to the old one.
 		time.Sleep(45 * time.Second)
-		checkHelloWorldApp(ctx, t, kf, appName, 8088, ExpectedAddr(appName, ""))
+		checkHelloWorldApp(ctx, t, kf, appName, getNextPort(), ExpectedAddr(appName, ""))
 	})
 }
 
@@ -101,7 +103,7 @@ func TestIntegration_Push_docker(t *testing.T) {
 			"--docker-image=gcr.io/kf-releases/echo-app",
 		)
 		defer kf.Delete(ctx, appName)
-		checkEchoApp(ctx, t, kf, appName, 8086, ExpectedAddr(appName, ""))
+		checkEchoApp(ctx, t, kf, appName, getNextPort(), ExpectedAddr(appName, ""))
 	})
 }
 
@@ -118,7 +120,7 @@ func TestIntegration_Push_dockerfile(t *testing.T) {
 		kf.Push(ctx, appName, "--path", appPath, "--dockerfile", "Dockerfile")
 		defer kf.Delete(ctx, appName)
 
-		checkHelloWorldApp(ctx, t, kf, appName, 8089, ExpectedAddr(appName, ""))
+		checkHelloWorldApp(ctx, t, kf, appName, getNextPort(), ExpectedAddr(appName, ""))
 	})
 }
 
@@ -148,10 +150,13 @@ func TestIntegration_StopStart(t *testing.T) {
 
 		// TODO(#441): Use port 0 so that we don't have to worry about port
 		// collisions.
-		go kf.Proxy(ctx, appName, 8085)
+		port := getNextPort()
+		go kf.Proxy(ctx, appName, port)
+
+		url := fmt.Sprintf("http://localhost:%d", port)
 
 		{
-			resp, respCancel := RetryPost(ctx, t, "http://localhost:8085", appTimeout, http.StatusOK, "testing")
+			resp, respCancel := RetryPost(ctx, t, url, appTimeout, http.StatusOK, "testing")
 			defer resp.Body.Close()
 			defer respCancel()
 			Logf(t, "done hitting echo app to ensure it's working.")
@@ -163,7 +168,7 @@ func TestIntegration_StopStart(t *testing.T) {
 
 		{
 			Logf(t, "hitting echo app to ensure it's NOT working...")
-			resp, respCancel := RetryPost(ctx, t, "http://localhost:8085", appTimeout, http.StatusNotFound, "testing")
+			resp, respCancel := RetryPost(ctx, t, url, appTimeout, http.StatusNotFound, "testing")
 			defer resp.Body.Close()
 			defer respCancel()
 			Logf(t, "done hitting echo app to ensure it's NOT working.")
@@ -175,7 +180,7 @@ func TestIntegration_StopStart(t *testing.T) {
 
 		{
 			Logf(t, "hitting echo app to ensure it's working...")
-			resp, respCancel := RetryPost(ctx, t, "http://localhost:8085", 5*time.Minute, http.StatusOK, "testing")
+			resp, respCancel := RetryPost(ctx, t, url, 5*time.Minute, http.StatusOK, "testing")
 			defer resp.Body.Close()
 			defer respCancel()
 			Logf(t, "done hitting echo app to ensure it's working.")
@@ -206,7 +211,7 @@ func TestIntegration_Push_manifest(t *testing.T) {
 		)
 		defer kf.Delete(ctx, appName)
 
-		checkEnvApp(ctx, t, kf, appName, 8082, map[string]string{
+		checkEnvApp(ctx, t, kf, appName, getNextPort(), map[string]string{
 			"WHATNOW": "BROWNCOW",
 		}, ExpectedAddr(appName, ""))
 	})
@@ -302,7 +307,8 @@ func TestIntegration_Envs(t *testing.T) {
 		// This is only in place for cleanup if the test fails.
 		defer kf.Delete(ctx, appName)
 
-		checkEnvApp(ctx, t, kf, appName, 8081, map[string]string{
+		port := getNextPort()
+		checkEnvApp(ctx, t, kf, appName, port, map[string]string{
 			"ENV1": "VALUE1", // Set on push
 			"ENV2": "VALUE2", // Set on push
 		}, ExpectedAddr(appName, ""))
@@ -316,7 +322,7 @@ func TestIntegration_Envs(t *testing.T) {
 			// Overwrite ENV2 via set-env
 			RetryOnPanic(ctx, t, func() { kf.SetEnv(ctx, appName, "ENV2", "OVERWRITE2") })
 
-			assertVars(ctx, t, kf, appName, 8081, map[string]string{
+			assertVars(ctx, t, kf, appName, port, map[string]string{
 				"ENV2": "OVERWRITE2", // Set on push and overwritten via set-env
 			}, []string{"ENV1"})
 		})
@@ -349,13 +355,15 @@ func TestIntegration_Logs(t *testing.T) {
 
 		// TODO(#441): Use port 0 so that we don't have to worry about port
 		// collisions.
-		go kf.Proxy(ctx, appName, 8083)
+		port := getNextPort()
+		go kf.Proxy(ctx, appName, port)
 
 		// Write out an expected log line until the test dies. We do this more
 		// than once because we can't guarantee much about logs.
 		expectedLogLine := fmt.Sprintf("testing-%d", time.Now().UnixNano())
+		url := fmt.Sprintf("http://localhost:%d", port)
 		for i := 0; i < 10; i++ {
-			resp, respCancel := RetryPost(ctx, t, "http://localhost:8083", appTimeout, http.StatusOK, expectedLogLine)
+			resp, respCancel := RetryPost(ctx, t, url, appTimeout, http.StatusOK, expectedLogLine)
 			resp.Body.Close()
 			respCancel()
 		}
@@ -421,7 +429,7 @@ func TestIntegration_CfIgnore(t *testing.T) {
 		)
 		defer kf.Delete(ctx, appName)
 
-		checkCfignoreApp(ctx, t, kf, appName, 8084, ExpectedAddr(appName, ""))
+		checkCfignoreApp(ctx, t, kf, appName, getNextPort(), ExpectedAddr(appName, ""))
 	})
 }
 
@@ -664,4 +672,9 @@ func checkEnvApp(
 	checkApp(ctx, t, kf, appName, expectedRoutes, proxyPort, func(ctx context.Context, t *testing.T, addr string) {
 		assertVars(ctx, t, kf, appName, proxyPort, expectedVars, nil)
 	})
+}
+
+func getNextPort() int {
+	currentPort++
+	return currentPort
 }

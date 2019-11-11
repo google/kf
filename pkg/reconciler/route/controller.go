@@ -25,6 +25,7 @@ import (
 	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
 	"github.com/google/kf/pkg/reconciler"
 	appresources "github.com/google/kf/pkg/reconciler/app/resources"
+	"github.com/google/kf/pkg/reconciler/route/config"
 	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
@@ -66,9 +67,29 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	)
 
 	vsInformer.Informer().AddEventHandler(cache.FilteringResourceEventHandler{
-		FilterFunc: FilterVSWithNamespace(v1alpha1.KfNamespace),
+		FilterFunc: FilterVSManagedByKf(),
 		Handler:    controller.HandleAll(logError(logger, EnqueueRoutesOfVirtualService(enqueue, c.routeLister))),
 	})
+
+	logger.Info("Setting up ConfigMap receivers")
+	configsToResync := []interface{}{
+		&config.RoutingConfig{},
+	}
+	resync := configmap.TypeFilter(configsToResync...)(func(string, interface{}) {
+		// When configmap updates, queue all existing routes and routeclaims in the form of namespaced RouteSpecFields
+		routes := routeInformer.Informer().GetStore().List()
+		routeClaims := routeClaimInformer.Informer().GetStore().List()
+		for _, rc := range routeClaims {
+			enqueue(rc)
+		}
+
+		for _, r := range routes {
+			enqueue(r)
+		}
+	})
+	configStore := config.NewStore(logger.Named("routing-config-store"), resync)
+	configStore.WatchConfigs(cmw)
+	c.configStore = configStore
 
 	return impl
 }
@@ -122,13 +143,13 @@ func BuildEnqueuer(enqueue func(interface{})) func(interface{}) error {
 	}
 }
 
-// FilterVSWithNamespace makes it simple to create FilterFunc's for use with
-// cache.FilteringResourceEventHandler that filter based on a namespace and if
-// the type is a VirtualService.
-func FilterVSWithNamespace(namespace string) func(obj interface{}) bool {
+// FilterVSManagedByKf makes it simple to create FilterFunc's for use with
+// cache.FilteringResourceEventHandler that filter based on the
+// "app.kubernetes.io/managed-by": "kf" label and if the type is a VirtualService.
+func FilterVSManagedByKf() func(obj interface{}) bool {
 	return func(obj interface{}) bool {
 		if object, ok := obj.(metav1.Object); ok {
-			if namespace == object.GetNamespace() {
+			if "kf" == object.GetLabels()[v1alpha1.ManagedByLabel] {
 				_, ok := obj.(*networking.VirtualService)
 				return ok
 			}

@@ -35,10 +35,10 @@ spec:
         resources:
           limits:
             cpu: 100m
-            memory: 50Mi
+            memory: 128Mi
           requests:
             cpu: 100m
-            memory: 40Mi
+            memory: 64Mi
           
         args:
         - apiserver
@@ -87,10 +87,10 @@ spec:
         resources:
           limits:
             cpu: 100m
-            memory: 40Mi
+            memory: 128Mi
           requests:
             cpu: 100m
-            memory: 30Mi
+            memory: 64Mi
           
         env:
         - name: ETCD_DATA_DIR

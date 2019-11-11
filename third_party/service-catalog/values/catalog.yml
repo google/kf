@@ -98,10 +98,10 @@ apiserver:
       resources:
         requests:
           cpu: 100m
-          memory: 30Mi
+          memory: 64Mi
         limits:
           cpu: 100m
-          memory: 40Mi
+          memory: 128Mi
   # Log level; valid values are in the range 0 - 10
   verbosity: 10
   auth:
@@ -122,10 +122,10 @@ apiserver:
   resources:
     requests:
       cpu: 100m
-      memory: 40Mi
+      memory: 64Mi
     limits:
       cpu: 100m
-      memory: 50Mi
+      memory: 128Mi
 controllerManager:
   replicas: 1
   # updateStrategy for service-catalog; value values are "RollingUpdate" and "Recreate"

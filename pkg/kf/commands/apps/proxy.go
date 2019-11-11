@@ -75,21 +75,21 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister i
 				gateway = ingress
 			}
 
-			listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
-			if err != nil {
-				return err
-			}
-
 			appHost := url.Host
 			w := cmd.OutOrStdout()
 
 			if noStart {
 				fmt.Fprintln(w, "exiting because no-start flag was provided")
-				utils.PrintCurlExamples(w, listener, appHost, gateway, false)
+				utils.PrintCurlExamplesNoListener(w, appHost, gateway)
 				return nil
 			}
 
-			utils.PrintCurlExamples(w, listener, appHost, gateway, true)
+			listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+			if err != nil {
+				return err
+			}
+
+			utils.PrintCurlExamples(w, listener, appHost, gateway)
 			fmt.Fprintln(w, "\033[33mNOTE: the first request may take some time if the app is scaled to zero\033[0m")
 
 			return http.Serve(listener, utils.CreateProxy(cmd.OutOrStdout(), app.Status.URL.Host, gateway))

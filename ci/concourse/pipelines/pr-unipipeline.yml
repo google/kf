@@ -10,13 +10,16 @@ vars:
 - &github_repo google/kf
 - &github_access_token ((github_access_token))
 
+# git config vars
+- &git_uri ((git_uri))
+- &nightly_branch develop
+
 # Terraform vars
 - &tf_state_bucket ((tf_state_bucket))
 - &tf_service_account ((service_account_json))
 
 # k8s config
 - &gcp_project_id ((gcp_project_id))
-- &k8s_network_selflink ((k8s_network_selflink))
 
 # go config
 - &go_proxy https://proxy.golang.org
@@ -28,23 +31,67 @@ vars:
 - &ko_docker_repo ((ko_docker_repo))
 
 templates:
+- &terraform-get
+  get: terraform-output
+  resource: terraform
+  params:
+    terraform_source: pr/ci/concourse/terraform
+    env_name_file: gke-prs/name
+    action: refresh
+
 - &terraform-create
   put: terraform
   params:
-    terraform_source: ci-pipelines-src/ci/concourse/terraform
+    terraform_source: pr/ci/concourse/terraform
     env_name_file: gke-prs/name
     delete_on_failure: true
 
+- &terraform-pre-destroy
+  task: terraform-pre-destroy
+  timeout: 30m
+  config:
+    platform: linux
+    image_resource:
+      type: docker-image
+      source: *ci-image-source
+    inputs:
+    - name: pr
+    - name: terraform-output
+    params:
+      SERVICE_ACCOUNT_JSON: *service_account_json
+    run:
+      path: bash
+      args:
+      - -exc
+      - |
+        project=`cat terraform-output/metadata | jq -r '.cluster_project'`
+        network=`cat terraform-output/metadata | jq -r '.cluster_network'`
+        set +x
+        echo "$SERVICE_ACCOUNT_JSON" > key.json
+        set -x
+        gcloud config set project "$project"
+        gcloud auth activate-service-account --key-file key.json
+        pushd pr
+          if [[ "$network" == "default" ]]; then
+            echo "skipping cleanup: on default network"
+          elif [[ "$network" == "null" ]]; then
+            echo "skipping cleanup: on default network"
+          else
+            ./hack/terraform-pre-destroy.sh $network
+          fi
+        popd
+
 - &terraform-destroy
-  put: terraform
-  params:
-    terraform_source: ci-pipelines-src/ci/concourse/terraform
-    env_name_file: gke-prs/name
-    action: destroy
-  get_params:
-    terraform_source: ci-pipelines-src/ci/concourse/terraform
-    env_name_file: gke-prs/name
-    action: destroy
+  try:
+    put: terraform
+    params:
+      terraform_source: pr/ci/concourse/terraform
+      env_name_file: gke-prs/name
+      action: destroy
+    get_params:
+      terraform_source: pr/ci/concourse/terraform
+      env_name_file: gke-prs/name
+      action: destroy
 
 - &acquire-lock
    put: gke-prs
@@ -83,6 +130,11 @@ resource_types:
     tag: latest
 
 resources:
+- name: kf-dev
+  type: git
+  source:
+    uri: *git_uri
+    branch: *nightly_branch
 - name: gke-prs
   type: pool
   source:
@@ -90,11 +142,6 @@ resources:
     branch: master
     pool: pr
     private_key: *ci_pool_git_key
-- name: ci-pipelines-src
-  type: git
-  source:
-    branch: *ci_git_branch
-    uri: *ci_git_uri
 - name: pr
   type: pull-request
   check_every: 10s
@@ -111,27 +158,34 @@ resources:
       credentials: *service_account_json
     vars:
       project: *gcp_project_id
-      k8s_network_selflink: *k8s_network_selflink
-      gke_version: 1.13.11-gke.9
+      gke_version: 1.13.11-gke.11
     env:
       GOOGLE_CREDENTIALS: *service_account_json
 
 jobs:
+- name: reap
+  plan:
+  - *acquire-lock
+  - get: pr
+    resource: kf-dev
+  - *terraform-destroy
+  on_failure: *on-failure
+  on_success:
+    do:
+    - *release-lock
+
 - name: test
   on_failure: *on-failure
   on_success: *on-success
   plan:
   - get: pr
     trigger: true
+  - *acquire-lock
   - put: pr
     params:
       path: pr
       status: PENDING
-  - aggregate:
-    - get: ci-pipelines-src
-      trigger: false
-      params: {submodules: none}
-    - *acquire-lock
+  - *terraform-get
   - aggregate:
     # We always execute the terraform-create task as the first step. The final step of this
     # job - whether it fails or succeeds - is to delete and recreate the Terraform environment,
@@ -139,8 +193,7 @@ jobs:
     # here. In the worst case, we've manually added an environment to the pool that hasn't been
     # initialized, and the initialization happens here. This has the benefit of not requiring
     # a separate process for resource management.
-    - *terraform-destroy
-    - task: check-linters
+    - task: check-go-tidy
       timeout: 10m
       config:
         platform: linux
@@ -149,7 +202,6 @@ jobs:
           source: *ci-image-source
         inputs:
         - name: pr
-        - name: ci-pipelines-src
         params:
           GOPROXY: *go_proxy
           GOSUMDB: *go_sum_db
@@ -160,7 +212,31 @@ jobs:
           - -exc
           - |
             pushd pr
-              ../ci-pipelines-src/hack/check-linters.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
+            popd
+    - task: check-linters
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: pr
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *service_account_json
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            pushd pr
+              ./hack/check-linters.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
             popd
     - task: check-go-generate
       timeout: 10m
@@ -171,7 +247,6 @@ jobs:
           source: *ci-image-source
         inputs:
         - name: pr
-        - name: ci-pipelines-src
         params:
           GOPROXY: *go_proxy
           GOSUMDB: *go_sum_db
@@ -182,7 +257,9 @@ jobs:
           - -exc
           - |
             pushd pr
-              ../ci-pipelines-src/hack/check-go-generate.sh
+              ./hack/go-generate.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
             popd
     - task: check-code-generator
       timeout: 10m
@@ -193,7 +270,6 @@ jobs:
           source: *ci-image-source
         inputs:
         - name: pr
-        - name: ci-pipelines-src
         params:
           GOPROXY: *go_proxy
           GOSUMDB: *go_sum_db
@@ -204,29 +280,9 @@ jobs:
           - -exc
           - |
             pushd pr
-              ../ci-pipelines-src/hack/check-code-generator.sh
-            popd
-    - task: check-go-sum
-      timeout: 10m
-      config:
-        platform: linux
-        image_resource:
-          type: docker-image
-          source: *ci-image-source
-        inputs:
-        - name: pr
-        - name: ci-pipelines-src
-        params:
-          GOPROXY: *go_proxy
-          GOSUMDB: *go_sum_db
-          SERVICE_ACCOUNT_JSON: *service_account_json
-        run:
-          path: bash
-          args:
-          - -exc
-          - |
-            pushd pr
-              ../ci-pipelines-src/hack/check-go-sum.sh
+              ./hack/update-codegen.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
             popd
     - task: check-vendor-license
       timeout: 10m
@@ -237,7 +293,6 @@ jobs:
           source: *ci-image-source
         inputs:
         - name: pr
-        - name: ci-pipelines-src
         params:
           GOPROXY: *go_proxy
           GOSUMDB: *go_sum_db
@@ -248,7 +303,32 @@ jobs:
           - -exc
           - |
             pushd pr
-              ../ci-pipelines-src/hack/check-vendor-license.sh
+              ./hack/update-vendor-license.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
+            popd
+    - task: check-go-build
+      timeout: 10m
+      config:
+        platform: linux
+        image_resource:
+          type: docker-image
+          source: *ci-image-source
+        inputs:
+        - name: pr
+        params:
+          GOPROXY: *go_proxy
+          GOSUMDB: *go_sum_db
+          SERVICE_ACCOUNT_JSON: *service_account_json
+        run:
+          path: bash
+          args:
+          - -exc
+          - |
+            pushd pr
+              ./hack/go-build.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
             popd
     - task: unit
       timeout: 10m
@@ -259,20 +339,20 @@ jobs:
           source: *ci-image-source
         inputs:
         - name: pr
-        - name: ci-pipelines-src
         run:
           path: bash
           args:
           - -exc
           - |
             pushd pr
-              # Run unit tests
-              ../ci-pipelines-src/hack/unit-test.sh
+              ./hack/unit-test.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
             popd
         params:
           GOPROXY: *go_proxy
           GOSUMDB: *go_sum_db
-    - task: build
+    - task: build-cli
       attempts: 3
       config:
         platform: linux
@@ -284,7 +364,6 @@ jobs:
           GCP_PROJECT_ID: *release_project
         inputs:
         - name: pr
-        - name: ci-pipelines-src
         run:
           path: bash
           args:
@@ -292,9 +371,12 @@ jobs:
           - |
             artifacts=`pwd`/artifacts
             pushd pr
-              # Build CLI and controllers
-              ../ci-pipelines-src/hack/build.sh
+              ./hack/build.sh
+              ./hack/tidy.sh
+              ./hack/check-clean-git-state.sh
             popd
+    - *terraform-pre-destroy
+  - *terraform-destroy
   - *terraform-create
   - task: integration
     timeout: 1h30m
@@ -305,7 +387,6 @@ jobs:
         source: *ci-image-source
       inputs:
       - name: pr
-      - name: ci-pipelines-src
       - name: terraform
       run:
         path: bash
@@ -334,18 +415,25 @@ jobs:
           # Install Knative Build
           kubectl apply --filename https://github.com/knative/build/releases/download/v0.7.0/build.yaml
 
+          # Install Tekton Pipelines
+          kubectl apply --filename https://github.com/tektoncd/pipeline/releases/download/v0.8.0/release.yaml
+
           # Let SC and Build simmer for 30s
           sleep 30
 
           pushd pr
             # Install Kf server-side components
-            ../ci-pipelines-src/hack/ko-apply.sh
+            ./hack/ko-apply.sh
 
             # Setup Kf Secret and ConifgMap
-            ../ci-pipelines-src/hack/create-gke-secret.sh
+            ./hack/create-gke-secret.sh
 
-            # Run unit tests
-            ../ci-pipelines-src/hack/integration-test.sh
+            # Run integration tests
+            ./hack/integration-test.sh
+
+            # Clean up
+            ./hack/tidy.sh
+            ./hack/check-clean-git-state.sh
           popd
       params:
         GOPROXY: *go_proxy

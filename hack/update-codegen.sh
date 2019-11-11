@@ -16,6 +16,38 @@
 
 set -e
 
+cd "${0%/*}"/..
+
+# https://github.com/kubernetes-sigs/kubebuilder/issues/359
+# K8s code generation is broken when used in projects that use Go modules.
+# Until that is fixed, this script will symlink the project into your GOPATH
+# and remove the symlink when it is done. A GOPATH is required.
+if [[ -z "$GOPATH" ]]; then
+  echo "GOPATH must be set"
+  exit 1
+fi
+
+# Symlink the project into the GOPATH.
+# Required until https://github.com/kubernetes-sigs/kubebuilder/issues/359 is fixed
+mkdir -p $GOPATH/src/github.com/google
+olddir=$(pwd)
+pushd $GOPATH/src/github.com/google
+
+  if [[ "$olddir" == "$(pwd)/kf" ]]; then
+    # already in gopath, no symlink needed
+    echo
+  elif [[ -L kf ]]; then
+    if [[ "$(readlink kf)" != "$olddir" ]]; then
+      echo link points somewhere else, updating
+      rm kf
+      ln -s $olddir kf
+    fi
+  else
+    echo creating gopath symlink
+    ln -s $olddir kf
+  fi
+popd
+
 export GO111MODULE=on
 
 GENERATOR_FLAGS=""
