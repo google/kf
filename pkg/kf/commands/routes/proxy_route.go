@@ -63,20 +63,20 @@ func NewProxyRouteCommand(p *config.KfParams, ingressLister istio.IngressLister)
 				gateway = ingress
 			}
 
+			w := cmd.OutOrStdout()
+
+			if noStart {
+				fmt.Fprintln(w, "exiting proxy because no-start flag was provided")
+				utils.PrintCurlExamplesNoListener(w, routeHost, gateway)
+				return nil
+			}
+
 			listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 			if err != nil {
 				return err
 			}
 
-			w := cmd.OutOrStdout()
-
-			if noStart {
-				fmt.Fprintln(w, "exiting proxy because no-start flag was provided")
-				utils.PrintCurlExamples(w, listener, routeHost, gateway, false)
-				return nil
-			}
-
-			utils.PrintCurlExamples(w, listener, routeHost, gateway, true)
+			utils.PrintCurlExamples(w, listener, routeHost, gateway)
 			return http.Serve(listener, utils.CreateProxy(cmd.OutOrStdout(), routeHost, gateway))
 		},
 	}

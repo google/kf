@@ -10,6 +10,10 @@ vars:
 - &github_repo google/kf
 - &github_access_token ((github_access_token))
 
+# git config vars
+- &git_uri ((git_uri))
+- &nightly_branch develop
+
 # Terraform vars
 - &tf_state_bucket ((tf_state_bucket))
 - &tf_service_account ((service_account_json))
@@ -28,12 +32,55 @@ vars:
 - &ko_docker_repo ((ko_docker_repo))
 
 templates:
+- &terraform-get
+  get: terraform-output
+  resource: terraform
+  params:
+    terraform_source: pr/ci/concourse/terraform
+    env_name_file: gke-prs/name
+    action: refresh
+
 - &terraform-create
   put: terraform
   params:
     terraform_source: pr/ci/concourse/terraform
     env_name_file: gke-prs/name
     delete_on_failure: true
+
+- &terraform-pre-destroy
+  task: terraform-pre-destroy
+  timeout: 30m
+  config:
+    platform: linux
+    image_resource:
+      type: docker-image
+      source: *ci-image-source
+    inputs:
+    - name: pr
+    - name: terraform-output
+    params:
+      SERVICE_ACCOUNT_JSON: *service_account_json
+    run:
+      path: bash
+      args:
+      - -exc
+      - |
+        project=`cat terraform-output/metadata | jq -r '.cluster_project'`
+        network=`cat terraform-output/metadata | jq -r '.cluster_network'`
+        set +x
+        echo "$SERVICE_ACCOUNT_JSON" > key.json
+        set -x
+        gcloud config set project "$project"
+        gcloud auth activate-service-account --key-file key.json
+        pushd pr
+          if [[ "$network" == "default" ]]; then
+            echo "skipping cleanup: on default network"
+          elif [[ "$network" == "null" ]]; then
+            echo "skipping cleanup: on default network"
+          else
+            ./hack/terraform-pre-destroy.sh $network
+          fi
+        popd
 
 - &terraform-destroy
   try:
@@ -84,6 +131,11 @@ resource_types:
     tag: latest
 
 resources:
+- name: kf-dev
+  type: git
+  source:
+    uri: *git_uri
+    branch: *nightly_branch
 - name: gke-prs
   type: pool
   source:
@@ -108,11 +160,22 @@ resources:
     vars:
       project: *gcp_project_id
       k8s_network_selflink: *k8s_network_selflink
-      gke_version: 1.13.11-gke.9
+      gke_version: 1.13.11-gke.11
     env:
       GOOGLE_CREDENTIALS: *service_account_json
 
 jobs:
+- name: reap
+  plan:
+  - *acquire-lock
+  - get: pr
+    resource: kf-dev
+  - *terraform-destroy
+  on_failure: *on-failure
+  on_success:
+    do:
+    - *release-lock
+
 - name: test
   on_failure: *on-failure
   on_success: *on-success
@@ -124,6 +187,7 @@ jobs:
     params:
       path: pr
       status: PENDING
+  - *terraform-get
   - aggregate:
     # We always execute the terraform-create task as the first step. The final step of this
     # job - whether it fails or succeeds - is to delete and recreate the Terraform environment,
@@ -131,7 +195,6 @@ jobs:
     # here. In the worst case, we've manually added an environment to the pool that hasn't been
     # initialized, and the initialization happens here. This has the benefit of not requiring
     # a separate process for resource management.
-    - *terraform-destroy
     - task: check-go-tidy
       timeout: 10m
       config:
@@ -314,6 +377,8 @@ jobs:
               ./hack/tidy.sh
               ./hack/check-clean-git-state.sh
             popd
+    - *terraform-pre-destroy
+  - *terraform-destroy
   - *terraform-create
   - task: integration
     timeout: 1h30m
