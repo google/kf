@@ -8,11 +8,13 @@ kubectl apply --recursive --filename ./manifests/catalog
 ```
 
 ## About
-This directory contains the rendered Service Catalog Helm chart to eliminate the need run Helm and Tiller in your cluster. To regenerate the chart, edit `values/catalog.yml`, then run:
+This directory contains the rendered Service Catalog Helm chart to eliminate
+the need run Helm and Tiller in your cluster. To regenerate the chart, edit
+`values/catalog.yml`, then run:
 
 ```
 helm template \
-  --values ./values/prometheus.yaml \
+  --values ./values/catalog.yaml \
   --output-dir ./manifests \
-    ./charts/prometheus
+    ./charts/catalog
 ```
