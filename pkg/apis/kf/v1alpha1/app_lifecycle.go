@@ -16,6 +16,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	"sort"
 
 	serving "github.com/google/kf/third_party/knative-serving/pkg/apis/serving/v1alpha1"
 	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
@@ -110,6 +111,11 @@ func (status *AppStatus) PropagateSourceStatus(source *Source) {
 	}
 }
 
+// PropagageInstanceStatus updates the effective instance status from the app.
+func (status *AppStatus) PropagageInstanceStatus(is InstanceStatus) {
+	status.Instances = is
+}
+
 // PropagateKnativeServiceStatus updates the Knative service status to reflect
 // the underlying service.
 func (status *AppStatus) PropagateKnativeServiceStatus(service *serving.Service) {
@@ -137,7 +143,15 @@ func (status *AppStatus) PropagateEnvVarSecretStatus(secret *v1.Secret) {
 }
 
 // PropagateRouteStatus updates the route readiness status.
-func (status *AppStatus) PropagateRouteStatus() {
+func (status *AppStatus) PropagateRouteStatus(routes []Route) {
+	status.Routes = []string{}
+
+	for _, rt := range routes {
+		status.Routes = append(status.Routes, rt.Spec.RouteSpecFields.String())
+	}
+
+	sort.Strings(status.Routes)
+
 	status.manage().MarkTrue(AppConditionRouteReady)
 }
 
