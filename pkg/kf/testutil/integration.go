@@ -807,6 +807,12 @@ var mutex sync.Mutex
 // version. This is incompatible with additional arguments that might change
 // the semantics of push.
 func (k *Kf) CachePush(ctx context.Context, appName string, source string) {
+	// NOTE: lock/unlock is done around sourceCache which means multiple pushes/builds
+	// of the same source can occur at the same time. This allows inherently
+	// parallel tests to continue operating in the same way. The locks MUST NOT
+	// rely on defers because calls to App/Push can panic() and disrupt normal
+	// flow control which may lead to DEADLOCK!
+
 	mutex.Lock()
 	container, ok := sourceCache[source]
 	mutex.Unlock()
