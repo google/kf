@@ -35,7 +35,7 @@ kf [flags]
 ### SEE ALSO
 
 * [kf app](/docs/general-info/kf-cli/commands/kf-app/)	 - Print information about a deployed app
-* [kf apps](/docs/general-info/kf-cli/commands/kf-apps/)	 - List pushed apps
+* [kf apps](/docs/general-info/kf-cli/commands/kf-apps/)	 - List Apps in the target space
 * [kf bind-service](/docs/general-info/kf-cli/commands/kf-bind-service/)	 - Bind a service instance to an app
 * [kf bindings](/docs/general-info/kf-cli/commands/kf-bindings/)	 - List bindings
 * [kf build](/docs/general-info/kf-cli/commands/kf-build/)	 - Print information about the given Build
