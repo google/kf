@@ -177,7 +177,7 @@ func diagnoseMutatingWebhooks(d *Diagnostic, kubernetes kubernetes.Interface) {
 						MutatingWebhookConfigurations().
 						Get(name, metav1.GetOptions{})
 					if err != nil {
-						d.Errorf("couldn't fetch %s: %v", name, err)
+						d.Errorf("couldn't fetch mutatingWebhook %s: %v", name, err)
 						return
 					}
 				})
