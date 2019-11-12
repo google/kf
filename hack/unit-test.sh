@@ -19,4 +19,7 @@ set -eu
 # Go to root dir
 cd "${0%/*}"/..
 
+START_TIME=$(date +%s)
 SKIP_INTEGRATION=true ./hack/test.sh $@
+END_TIME=$(date +%s)
+echo "Unit tests took $(($END_TIME - $START_TIME)) seconds to complete."

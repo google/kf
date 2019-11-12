@@ -24,6 +24,7 @@ if [ "${DOCKER_REGISTRY}" = "" ]; then
   export DOCKER_REGISTRY="gcr.io/$(gcloud config get-value project)"
 fi
 
+START_TIME=$(date +%s)
 # When running integration tests, we would like two things that simply running
 # go test -v ./... doesn't provide:
 # 1. Don't run each package in parallel - This puts quite a bit of burden on
@@ -35,3 +36,6 @@ fi
 for f in $(find . | grep integration_test.go); do
   go test -v --timeout=30m $(dirname $f) --run TestIntegration_
 done
+
+END_TIME=$(date +%s)
+echo "Integration tests took $(($END_TIME - $START_TIME)) seconds to complete."
