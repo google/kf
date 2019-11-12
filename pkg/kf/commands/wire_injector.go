@@ -88,7 +88,7 @@ func InjectDelete(p *config.KfParams) *cobra.Command {
 }
 
 func InjectApps(p *config.KfParams) *cobra.Command {
-	wire.Build(capps.NewAppsCommand, AppsSet)
+	wire.Build(capps.NewAppsCommand, config.GetDynamicClient, config.GetTableClient)
 
 	return nil
 }

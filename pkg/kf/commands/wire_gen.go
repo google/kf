@@ -74,13 +74,9 @@ func InjectDelete(p *config.KfParams) *cobra.Command {
 }
 
 func InjectApps(p *config.KfParams) *cobra.Command {
-	kfV1alpha1Interface := config.GetKfClient(p)
-	appsGetter := provideAppsGetter(kfV1alpha1Interface)
-	sourcesGetter := provideKfSources(kfV1alpha1Interface)
-	buildTailer := provideSourcesBuildTailer()
-	client := sources.NewClient(sourcesGetter, buildTailer)
-	appsClient := apps.NewClient(appsGetter, client)
-	command := apps2.NewAppsCommand(p, appsClient)
+	dynamicInterface := config.GetDynamicClient(p)
+	tableclientInterface := config.GetTableClient(p)
+	command := apps2.NewAppsCommand(p, dynamicInterface, tableclientInterface)
 	return command
 }
 
