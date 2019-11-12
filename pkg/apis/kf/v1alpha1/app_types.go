@@ -186,6 +186,38 @@ func (instances *AppSpecInstances) ScalingAnnotations() map[string]string {
 	return out
 }
 
+// Status returns an InstanceStatus representing this AppSpecInstancces
+// indicating what the real scale factor was.
+func (instances *AppSpecInstances) Status() InstanceStatus {
+	out := InstanceStatus{
+		EffectiveMax: instances.MaxAnnotationValue(),
+		EffectiveMin: instances.MinAnnotationValue(),
+	}
+
+	if instances.Exactly != nil {
+		out.Representation = fmt.Sprintf("%d", *instances.Exactly)
+	} else {
+		min := "0"
+		if instances.Min != nil {
+			min = fmt.Sprintf("%d", *instances.Min)
+		}
+
+		max := "∞"
+		if instances.Max != nil {
+			max = fmt.Sprintf("%d", *instances.Max)
+		}
+
+		out.Representation = fmt.Sprintf("%s-%s", min, max)
+	}
+
+	// Stopped overrides all other representations.
+	if instances.Stopped {
+		out.Representation = "stopped"
+	}
+
+	return out
+}
+
 // AppStatus is the current configuration and running state for an App.
 type AppStatus struct {
 	// Pull in the fields from Knative's duckv1beta1 status field.
@@ -214,6 +246,27 @@ type AppStatus struct {
 
 	// ServiceBindingConditions are the conditions of the service bindings.
 	ServiceBindingConditions duckv1beta1.Conditions `json:"serviceBindingConditions"`
+
+	// Routes contains the full paths of the routes attached to the instance.
+	// It is intended for use by automated tooling and displays.
+	Routes []string `json:"routes,omitempty"`
+
+	// Instances are actual status of the instance counts.
+	Instances InstanceStatus `json:"instances,omitempty"`
+}
+
+// InstanceStatus contains the computed scaling.
+type InstanceStatus struct {
+	// EffectiveMin contains the effective minimum number of instances passed as
+	// an annotation value.
+	EffectiveMin string `json:"effectiveMin,omitempty"`
+	// EffectiveMax contains the effective maximum number of instances passed as
+	// an annotation.
+	EffectiveMax string `json:"effectiveMax,omitempty"`
+
+	// Representation contains a human readable description of the instance
+	// status.
+	Representation string `json:"representation,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

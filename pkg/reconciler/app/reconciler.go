@@ -325,6 +325,10 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		app.Status.PropagateKnativeServiceStatus(actual)
 	}
 
+	// Update the human-readable app instances after the backing service has been
+	// synchronized so we always display the current configuration.
+	app.Status.PropagageInstanceStatus(app.Spec.Instances.Status())
+
 	// Routes and RouteClaims
 	desiredRoutes, desiredRouteClaims, err := resources.MakeRoutes(app, space)
 	condition := app.Status.RouteCondition()
@@ -407,7 +411,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 	}
 
 	// If there are no errors reconciling Routes and RouteClaims, mark RouteReady as true
-	app.Status.PropagateRouteStatus()
+	app.Status.PropagateRouteStatus(desiredRoutes)
 
 	return r.gcRevisions(ctx, app)
 }

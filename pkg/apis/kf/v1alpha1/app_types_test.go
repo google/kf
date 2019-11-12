@@ -168,3 +168,69 @@ func ExampleApp_ComponentLabels() {
 	// managed-by: kf
 	// component: database
 }
+
+func TestAppSpecInstances_Status(t *testing.T) {
+	tests := map[string]struct {
+		instances AppSpecInstances
+		want      InstanceStatus
+	}{
+		"stopped": {
+			instances: AppSpecInstances{
+				Min:     intPtr(3),
+				Max:     intPtr(5),
+				Stopped: true,
+			},
+			want: InstanceStatus{
+				EffectiveMin:   "0",
+				EffectiveMax:   "0",
+				Representation: "stopped",
+			},
+		},
+		"ranged": {
+			instances: AppSpecInstances{
+				Min: intPtr(3),
+				Max: intPtr(5),
+			},
+			want: InstanceStatus{
+				EffectiveMin:   "3",
+				EffectiveMax:   "5",
+				Representation: "3-5",
+			},
+		},
+		"no min": {
+			instances: AppSpecInstances{
+				Max: intPtr(5),
+			},
+			want: InstanceStatus{
+				EffectiveMin:   "",
+				EffectiveMax:   "5",
+				Representation: "0-5",
+			},
+		},
+		"no max": {
+			instances: AppSpecInstances{
+				Min: intPtr(5),
+			},
+			want: InstanceStatus{
+				EffectiveMin:   "5",
+				EffectiveMax:   "",
+				Representation: "5-∞",
+			},
+		},
+		"exactly": {
+			instances: AppSpecInstances{
+				Exactly: intPtr(3),
+			},
+			want: InstanceStatus{
+				EffectiveMin:   "3",
+				EffectiveMax:   "3",
+				Representation: "3",
+			},
+		},
+	}
+	for tn, tc := range tests {
+		t.Run(tn, func(t *testing.T) {
+			testutil.AssertEqual(t, "status", tc.want, tc.instances.Status())
+		})
+	}
+}
