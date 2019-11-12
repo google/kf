@@ -82,6 +82,10 @@ func diagnoseComponents(d *Diagnostic, vc discovery.ServerResourcesInterface) {
 			groupVersion:      "v1",
 			expectedResources: []string{"configmaps", "secrets", "resourcequotas"},
 		},
+		"Tekton": {
+			groupVersion:      "tekton.dev/v1alpha1",
+			expectedResources: []string{"taskruns", "tasks"},
+		},
 	}
 
 	for tn, tc := range expectedComponents {
@@ -120,6 +124,10 @@ func diagnoseControllers(d *Diagnostic, kubernetes kubernetes.Interface) {
 		{
 			Namespace:   "knative-serving",
 			Deployments: []string{"webhook", "controller", "activator", "autoscaler"},
+		},
+		{
+			Namespace:   "tekton-pipelines",
+			Deployments: []string{"tekton-pipelines-controller", "tekton-pipelines-webhook"},
 		},
 	}
 
