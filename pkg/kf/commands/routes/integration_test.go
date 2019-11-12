@@ -148,9 +148,7 @@ func TestIntegration_MultipleAppsPerRoute(t *testing.T) {
 			defer respCancel()
 			if resp.StatusCode == http.StatusOK {
 				body, err := ioutil.ReadAll(resp.Body)
-				if err != nil {
-
-				}
+				AssertNil(t, "response body error", err)
 				bodyStr := string(body)
 				if strings.Contains(bodyStr, "hello") {
 					helloWorldCount++
