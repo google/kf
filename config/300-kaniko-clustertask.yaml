@@ -23,7 +23,7 @@ spec:
       description: The image built via Kontext that contains the app's source code.
     - name: DOCKERFILE
       description: Path to the Dockerfile to build.
-      default: /workspace/source/Dockerfile
+      default: ./Dockerfile
   outputs:
     resources:
     - name: IMAGE
@@ -39,9 +39,13 @@ spec:
     command: ["/ko-app/extractor"]
     args:
     - "--output_dir=/workspace/source"
-
   - name: build-and-push
-    image: gcr.io/kaniko-project/executor
+    workingdir: /workspace/source
+    image: gcr.io/kaniko-project/executor:v0.13.0
+    env:
+    - name: DOCKER_CONFIG
+      value: /builder/home/.docker
     args:
-    - --dockerfile="${inputs.params.DOCKERFILE}"
-    - --destination="${outputs.resources.IMAGE.url}"
+    - --dockerfile=$(inputs.params.DOCKERFILE)
+    - --context=/workspace/source/
+    - --destination=$(outputs.resources.IMAGE.url)
