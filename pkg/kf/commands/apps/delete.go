@@ -50,8 +50,7 @@ func NewDeleteCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 		* builds
 		* bindings
 
-		The delete occurs asynchronously. Apps are often deleted shortly after the
-		delete command is called, but may live on for a while if:
+		Apps may take a long time to delete if:
 
 		* there are still connections waiting to be served
 		* bindings fail to deprovision

@@ -46,9 +46,6 @@ func NewDeleteSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		* The backing Kubernetes namespace
 		* Anything else in that namespace
 
-		NOTE: Space deletion is asynchronous and may take a long time to complete
-		depending on the number of items in the space.
-
 		You will be unable to make changes to resources in the space once deletion
 		has begun.
 		`,

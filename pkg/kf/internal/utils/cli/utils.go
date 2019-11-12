@@ -37,10 +37,6 @@ const (
 	EmptyNamespaceError = "no space targeted, use 'kf target --space SPACE' to target a space"
 )
 
-const (
-	AsyncLogSuffix = "\n(This is an asynchronous operation. See https://github.com/google/kf/issues/599 for updates on work to support synchronous commands.)\n"
-)
-
 // ConfigErr is used to indicate that the returned error is due to a user's
 // invalid configuration.
 type ConfigErr struct {
