@@ -797,6 +797,9 @@ func (k *Kf) Push(ctx context.Context, appName string, extraArgs ...string) {
 	StreamOutput(ctx, k.t, output)
 }
 
+// sourceCache is a mapping between directories and built container images.
+// only vanilla buildpack built iamges should be cached e.g. no builds that
+// require specific environment variables or the like.
 var sourceCache = make(map[string]string)
 var mutex sync.Mutex
 
@@ -806,13 +809,18 @@ var mutex sync.Mutex
 func (k *Kf) CachePush(ctx context.Context, appName string, source string) {
 	mutex.Lock()
 	container, ok := sourceCache[source]
+	mutex.Unlock()
+
+	// If there's a cached image, re-use that cached built image rather than
+	// building.
 	if ok {
-		mutex.Unlock()
+		k.t.Log("Using cached image ", container, " instead of rebuilding ", source)
 		k.Push(ctx, appName, "--docker-image", container)
 		return
 	}
 
-	defer mutex.Unlock()
+	// Otherwise, push the app and wait for it to become ready. Once ready, pull
+	// the image off the app and store it in the cache.
 	k.Push(ctx, appName, "--path", source)
 	appJSON := k.App(ctx, appName)
 
@@ -821,10 +829,13 @@ func (k *Kf) CachePush(ctx context.Context, appName string, source string) {
 		k.t.Fatal("unmarshaling app:", err)
 	}
 
+	// NOTE: unstructured is used here to avoid an import cycle.
 	container, ok, _ = unstructured.NestedString(obj, "status", "image")
 	if ok {
 		k.t.Log("Caching source", source, " as ", container)
+		mutex.Lock()
 		sourceCache[source] = container
+		mutex.Unlock()
 	}
 }
 
