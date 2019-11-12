@@ -34,7 +34,6 @@ vars:
 
 # k8s config
 - &gcp_project_id ((gcp_project_id))
-- &k8s_network_selflink ((k8s_network_selflink))
 
 # go config
 - &go_proxy https://proxy.golang.org
@@ -82,8 +81,7 @@ resources:
       credentials: *service_account_json
     vars:
       project: *gcp_project_id
-      k8s_network_selflink: *k8s_network_selflink
-      gke_version: 1.13.11-gke.9
+      gke_version: 1.13.11-gke.11
     env:
       GOOGLE_CREDENTIALS: *service_account_json
 - name: nightly-build-trigger

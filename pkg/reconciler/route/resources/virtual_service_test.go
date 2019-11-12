@@ -15,18 +15,23 @@
 package resources_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/pkg/reconciler/route"
+	"github.com/google/kf/pkg/reconciler/route/config"
 	"github.com/google/kf/pkg/reconciler/route/resources"
 	"github.com/google/kf/third_party/knative-serving/pkg/network"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	istio "knative.dev/pkg/apis/istio/common/v1alpha1"
 	networking "knative.dev/pkg/apis/istio/v1alpha3"
+	logtesting "knative.dev/pkg/logging/testing"
 )
 
 func makeRouteSpecFields(host, domain, path string) v1alpha1.RouteSpecFields {
@@ -93,7 +98,7 @@ func TestMakeVirtualService(t *testing.T) {
 
 				testutil.AssertEqual(t, "ObjectMeta", metav1.ObjectMeta{
 					Name:      v1alpha1.GenerateName(route.Spec.Hostname, route.Spec.Domain),
-					Namespace: v1alpha1.KfNamespace,
+					Namespace: "some-namespace",
 					Labels: map[string]string{
 						resources.ManagedByLabel: "kf",
 						v1alpha1.ComponentLabel:  "virtualservice",
@@ -278,7 +283,9 @@ func TestMakeVirtualService(t *testing.T) {
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
-			s, err := resources.MakeVirtualService(tc.Claims, tc.Routes)
+			ctx := config.NewDefaultConfigStore(logtesting.TestLogger(t)).ToContext(context.Background())
+
+			s, err := resources.MakeVirtualService(ctx, tc.Claims, tc.Routes)
 			tc.Assert(t, s, err)
 		})
 	}
@@ -297,7 +304,8 @@ func ExampleMakeVirtualService_pathMatchers() {
 		makeRoute("some-host", "example.com/", "/some-path-2", "some-app-2"),
 	}
 
-	vs, err := resources.MakeVirtualService(claims, routes)
+	ctx := config.NewDefaultConfigStore(route.NewDefaultConfigLogger(os.Stdout)).ToContext(context.Background())
+	vs, err := resources.MakeVirtualService(ctx, claims, routes)
 	if err != nil {
 		panic(err)
 	}
@@ -330,7 +338,8 @@ func ExampleMakeVirtualService_weightedRoutes() {
 		makeRoute("some-host", "example.com/", "/path-b", "app-b-6"),
 	}
 
-	vs, err := resources.MakeVirtualService(claims, routes)
+	ctx := config.NewDefaultConfigStore(route.NewDefaultConfigLogger(os.Stdout)).ToContext(context.Background())
+	vs, err := resources.MakeVirtualService(ctx, claims, routes)
 	if err != nil {
 		panic(err)
 	}

@@ -2,34 +2,35 @@ variable "project" {
   type = string
 }
 
-variable "k8s_network_selflink" {
-  type = string
-}
-
 variable "gke_version" {
   type = string
 }
 
 provider "google" {
-  project     = var.project
-  region      = "us-central1"
+  project = var.project
+  region  = "us-central1"
 }
 
 provider "google-beta" {
-  project     = var.project
-  region      = "us-central1"
+  project = var.project
+  region  = "us-central1"
 }
 
 resource "random_pet" "kf_test" {
 }
 
+resource "google_compute_network" "k8s_network" {
+  name        = "kf-test-${random_pet.kf_test.id}"
+  description = "Managed by Terraform in Concourse"
+}
+
 resource "google_service_account" "kf_test" {
-  account_id   = "${random_pet.kf_test.id}"
+  account_id   = "kf-test-${random_pet.kf_test.id}"
   display_name = "Managed by Terraform in Concourse"
 }
 
 resource "google_project_iam_member" "kf_test" {
-  role    = "roles/storage.admin"
+  role   = "roles/storage.admin"
   member = "serviceAccount:${google_service_account.kf_test.email}"
 }
 
@@ -49,10 +50,6 @@ resource "google_container_cluster" "kf_test" {
     client_certificate_config {
       issue_client_certificate = false
     }
-  }
-
-  ip_allocation_policy {
-    use_ip_aliases = true
   }
 
   addons_config {
@@ -82,7 +79,7 @@ resource "google_container_cluster" "kf_test" {
     ]
   }
 
-  network = var.k8s_network_selflink
+  network = "${google_compute_network.k8s_network.self_link}"
 }
 
 output "cluster_name" {
@@ -99,4 +96,8 @@ output "cluster_project" {
 
 output "cluster_version" {
   value = google_container_cluster.kf_test.master_version
+}
+
+output "cluster_network" {
+  value = google_compute_network.k8s_network.name
 }
