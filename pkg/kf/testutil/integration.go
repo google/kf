@@ -36,6 +36,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -108,6 +109,7 @@ func withSignalCaptureCancel(t *testing.T, f func(ctx context.Context)) {
 	// Setup context that will allow us to cleanup if the user wants to
 	// cancel the tests.
 	ctx, cancel := context.WithCancel(context.Background())
+
 	// Give everything time to clean up.
 	defer time.Sleep(time.Second)
 	defer cancel()
@@ -793,6 +795,54 @@ func (k *Kf) Push(ctx context.Context, appName string, extraArgs ...string) {
 	})
 	PanicOnError(ctx, k.t, fmt.Sprintf("push %q", appName), errs)
 	StreamOutput(ctx, k.t, output)
+}
+
+// sourceCache is a mapping between directories and built container images.
+// only vanilla buildpack built iamges should be cached e.g. no builds that
+// require specific environment variables or the like.
+var sourceCache = make(map[string]string)
+var mutex sync.Mutex
+
+// CachePush pushes an application and caches the source or uses a cached
+// version. This is incompatible with additional arguments that might change
+// the semantics of push.
+func (k *Kf) CachePush(ctx context.Context, appName string, source string) {
+	// NOTE: lock/unlock is done around sourceCache which means multiple pushes/builds
+	// of the same source can occur at the same time. This allows inherently
+	// parallel tests to continue operating in the same way. The locks MUST NOT
+	// rely on defers because calls to App/Push can panic() and disrupt normal
+	// flow control which may lead to DEADLOCK!
+
+	mutex.Lock()
+	container, ok := sourceCache[source]
+	mutex.Unlock()
+
+	// If there's a cached image, re-use that cached built image rather than
+	// building.
+	if ok {
+		k.t.Log("Using cached image ", container, " instead of rebuilding ", source)
+		k.Push(ctx, appName, "--docker-image", container)
+		return
+	}
+
+	// Otherwise, push the app and wait for it to become ready. Once ready, pull
+	// the image off the app and store it in the cache.
+	k.Push(ctx, appName, "--path", source)
+	appJSON := k.App(ctx, appName)
+
+	obj := map[string]interface{}{}
+	if err := json.Unmarshal([]byte(appJSON), &obj); err != nil {
+		k.t.Fatal("unmarshaling app:", err)
+	}
+
+	// NOTE: unstructured is used here to avoid an import cycle.
+	container, ok, _ = unstructured.NestedString(obj, "status", "image")
+	if ok {
+		k.t.Log("Caching source", source, " as ", container)
+		mutex.Lock()
+		sourceCache[source] = container
+		mutex.Unlock()
+	}
 }
 
 // Logs displays the logs of an application.

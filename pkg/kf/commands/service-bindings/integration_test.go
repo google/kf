@@ -219,9 +219,7 @@ func withServiceBinding(ctx context.Context, t *testing.T, kf *Kf, callback func
 
 func withApp(ctx context.Context, t *testing.T, kf *Kf, appName string, path string, isBroker bool, callback func(newCtx context.Context)) {
 	// Push the app then clean it up.
-	kf.Push(ctx, appName,
-		"--path", filepath.Join(RootDir(ctx, t), path),
-	)
+	kf.CachePush(ctx, appName, filepath.Join(RootDir(ctx, t), path))
 	defer kf.Delete(ctx, appName)
 
 	if !isBroker {
