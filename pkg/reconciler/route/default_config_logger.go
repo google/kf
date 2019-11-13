@@ -28,7 +28,6 @@ type DefaultConfigLogger struct {
 
 // Infof does not print out to writer since doing so would modify the output in the Examples
 func (l *DefaultConfigLogger) Infof(format string, v ...interface{}) {
-	return
 }
 
 func (l *DefaultConfigLogger) Fatalf(format string, v ...interface{}) {

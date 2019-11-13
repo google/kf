@@ -51,7 +51,9 @@ func NewTargetCommand(p *config.KfParams) *cobra.Command {
 	}
 
 	command.Flags().StringVarP(&space, "space", "s", "", "Target the given space.")
-	completion.MarkFlagCompletionSupported(command.Flags(), "space", completion.SpaceCompletion)
+	if err := completion.MarkFlagCompletionSupported(command.Flags(), "space", completion.SpaceCompletion); err != nil {
+		panic(err)
+	}
 
 	return command
 }

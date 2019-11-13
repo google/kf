@@ -335,7 +335,9 @@ func ServiceInstance(w io.Writer, service *v1beta1.ServiceInstance) {
 				panic(err)
 			}
 			SectionWriter(w, "Parameters", func(w io.Writer) {
-				fmt.Fprintf(w, string(prettyParams))
+				if _, err := fmt.Fprint(w, string(prettyParams)); err != nil {
+					panic(err)
+				}
 			})
 		}
 

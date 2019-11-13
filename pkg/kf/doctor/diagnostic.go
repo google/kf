@@ -70,8 +70,13 @@ func (d *Diagnostic) Run(name string, f func(d *Diagnostic)) {
 		d.failed = true
 		// We notify of which parent we're printing a log for because they may occur
 		// out of order if a child failing causes a parent to dump their logs.
-		fmt.Fprintf(d.w, "=== LOG\t%s\n", child.name)
-		d.w.Write(child.output)
+		if _, err := fmt.Fprintf(d.w, "=== LOG\t%s\n", child.name); err != nil {
+			panic(err)
+		}
+
+		if _, err := d.w.Write(child.output); err != nil {
+			panic(err)
+		}
 	}
 
 	if d.parent == nil {

@@ -78,7 +78,9 @@ func main() {
 	fmt.Fprintln(w)
 
 	fmt.Fprintln(w, "Uploaded files:")
-	ls(w, *workspace)
+	if err := ls(w, *workspace); err != nil {
+		log.Fatalf("unable to ls workspace: %s", err)
+	}
 	fmt.Fprintln(w)
 	fmt.Fprintln(w)
 
@@ -149,22 +151,34 @@ func chown(path string, uid, gid int) error {
 	})
 }
 
-func ls(w io.Writer, path string) {
+func ls(w io.Writer, path string) error {
 	tree := textio.NewTreeWriter(w)
-	tree.WriteString(filepath.Base(path))
 	defer tree.Close()
 
-	files, _ := ioutil.ReadDir(path)
+	if _, err := tree.WriteString(filepath.Base(path)); err != nil {
+		return err
+	}
+
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return err
+	}
 
 	for _, f := range files {
 		if f.Mode().IsDir() {
-			ls(tree, filepath.Join(path, f.Name()))
+			if err := ls(tree, filepath.Join(path, f.Name())); err != nil {
+				return err
+			}
 		}
 	}
 
 	for _, f := range files {
 		if !f.Mode().IsDir() {
-			io.WriteString(textio.NewTreeWriter(tree), f.Name())
+			if _, err := io.WriteString(textio.NewTreeWriter(tree), f.Name()); err != nil {
+				return err
+			}
 		}
 	}
+
+	return nil
 }

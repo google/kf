@@ -71,7 +71,9 @@ func TestUpdateQuotaCommand(t *testing.T) {
 					Do(func(spaceName string, transformer spaces.Mutator) error {
 						kfspace, err := newDummyKfSpace("1024M", "4")
 						testutil.AssertNil(t, "Parse resource quantity err", err)
-						transformer(kfspace.ToSpace())
+						if err := transformer(kfspace.ToSpace()); err != nil {
+							return err
+						}
 
 						expectedMemory, memErr := resource.ParseQuantity("20Gi")
 						testutil.AssertNil(t, "Parse memory quantity err", memErr)
@@ -96,7 +98,9 @@ func TestUpdateQuotaCommand(t *testing.T) {
 					Do(func(spaceName string, transformer spaces.Mutator) error {
 						kfspace, err := newDummyKfSpace("1024M", "4")
 						testutil.AssertNil(t, "Parse resource quantity err", err)
-						transformer(kfspace.ToSpace())
+						if err := transformer(kfspace.ToSpace()); err != nil {
+							return err
+						}
 
 						expectedCPU, cpuErr := resource.ParseQuantity("4")
 						testutil.AssertNil(t, "Parse cpu quantity err", cpuErr)

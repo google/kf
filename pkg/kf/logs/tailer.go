@@ -115,7 +115,9 @@ func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, wr
 
 			pod, ok := e.Object.(*corev1.Pod)
 			if !ok {
-				writer.WriteStringf("[WARN] watched object is not pod\n")
+				if err := writer.WriteStringf("[WARN] watched object is not pod\n"); err != nil {
+					return err
+				}
 				continue
 			}
 
@@ -146,7 +148,9 @@ func (t *tailer) readLogs(
 
 	for ctx.Err() == nil && !stop {
 		if stop, err = t.readStream(ctx, name, namespace, out, opts); err != nil {
-			out.WriteStringf("[WARN] %s", err)
+			if err := out.WriteStringf("[WARN] %s", err); err != nil {
+				panic(err)
+			}
 		}
 
 		if !opts.Follow {

@@ -38,12 +38,15 @@ var licenseHeader = template.Must(template.New("").Parse(`// Copyright {{.year}}
 // limitations under the License.`))
 
 // GenLicense generates the license header.
-func GenLicense() string {
+func GenLicense() (string, error) {
 	buf := &bytes.Buffer{}
-	licenseHeader.Execute(buf, map[string]interface{}{
+	err := licenseHeader.Execute(buf, map[string]interface{}{
 		"year": time.Now().Year(),
 	})
-	return buf.String()
+	if err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
 
 // GenImports generates an import declaration from the given map of import:alias

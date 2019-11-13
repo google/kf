@@ -116,7 +116,9 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister i
 		false,
 		"Exit before starting the proxy",
 	)
-	cmd.Flags().MarkHidden("no-start")
+	if err := cmd.Flags().MarkHidden("no-start"); err != nil {
+		panic(err)
+	}
 
 	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 

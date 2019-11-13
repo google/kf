@@ -55,7 +55,7 @@ func IndentWriter(w io.Writer, f func(io.Writer)) {
 
 // SectionWriter writes a section heading with the given name then calls f with
 // a tab aligning indenting writer to format the contents of the section.
-func SectionWriter(w io.Writer, name string, f func(io.Writer)) {
+func SectionWriter(w io.Writer, name string, f func(io.Writer)) error {
 	buf := &bytes.Buffer{}
 
 	TabbedWriter(buf, func(w io.Writer) {
@@ -63,9 +63,15 @@ func SectionWriter(w io.Writer, name string, f func(io.Writer)) {
 	})
 
 	if len(buf.Bytes()) == 0 {
-		fmt.Fprintf(w, "%s: <empty>\n", name)
+		if _, err := fmt.Fprintf(w, "%s: <empty>\n", name); err != nil {
+			return err
+		}
 	} else {
-		fmt.Fprintf(w, "%s:\n", name)
-		w.Write(buf.Bytes())
+		if _, err := fmt.Fprintf(w, "%s:\n", name); err != nil {
+			return err
+		}
+		if _, err := w.Write(buf.Bytes()); err != nil {
+			return err
+		}
 	}
 }

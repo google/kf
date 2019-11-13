@@ -423,7 +423,9 @@ func NewPushCommand(
 		"",
 		"Kontext image containing the source code.",
 	)
-	pushCmd.Flags().MarkHidden("source-image")
+	if err := pushCmd.Flags().MarkHidden("source-image"); err != nil {
+		panic(err)
+	}
 
 	pushCmd.Flags().StringVar(
 		&containerImage,

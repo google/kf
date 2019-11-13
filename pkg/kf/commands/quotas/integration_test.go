@@ -36,7 +36,11 @@ func TestIntegration_Create(t *testing.T) {
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		spaceName := fmt.Sprintf("integration-quota-space-%d", time.Now().UnixNano())
-		defer kf.DeleteQuota(ctx, spaceName)
+		defer func() {
+			if _, err := kf.DeleteQuota(ctx, spaceName); err != nil {
+				panic(err)
+			}
+		}()
 
 		memQuantity := "55Gi"
 		cpuQuantity := "11"
@@ -72,11 +76,12 @@ func TestIntegration_Delete(t *testing.T) {
 		cpuQuantity := "11"
 		routesQuantity := "22"
 
-		kf.CreateQuota(ctx, spaceName,
+		_, err := kf.CreateQuota(ctx, spaceName,
 			"-m", memQuantity,
 			"-c", cpuQuantity,
 			"-r", routesQuantity,
 		)
+		AssertNil(t, "create quota", err)
 
 		getQuotaOutput, err := kf.GetQuota(ctx, spaceName)
 		AssertNil(t, "get quota error", err)
@@ -101,15 +106,18 @@ func TestIntegration_Update(t *testing.T) {
 	checkClusterStatus(t)
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		spaceName := fmt.Sprintf("integration-quota-%d", time.Now().UnixNano())
-		defer kf.DeleteQuota(ctx, spaceName)
-
 		memQuantity := "55Gi"
 		cpuQuantity := "11"
 
-		kf.CreateQuota(ctx, spaceName,
+		_, err := kf.CreateQuota(ctx, spaceName,
 			"-m", memQuantity,
 			"-c", cpuQuantity,
 		)
+		AssertNil(t, "create quota", err)
+		defer func() {
+			_, err := kf.DeleteQuota(ctx, spaceName)
+			AssertNil(t, "delete quota", err)
+		}()
 
 		getQuotaOutput, err := kf.GetQuota(ctx, spaceName)
 		AssertNil(t, "get quota error", err)

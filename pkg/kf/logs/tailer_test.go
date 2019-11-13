@@ -326,7 +326,8 @@ func whenAddEvent(f func(*testing.T, *fake.Clientset)) func(*testing.T, *fake.Cl
 
 func whenPodAdded(pod *corev1.Pod, f func(*testing.T, *fake.Clientset)) func(*testing.T, *fake.Clientset) {
 	return func(t *testing.T, cs *fake.Clientset) {
-		cs.CoreV1().Pods("default").Create(pod)
+		_, err := cs.CoreV1().Pods("default").Create(pod)
+		testutil.AssertNil(t, "pod create", err)
 		if f != nil {
 			f(t, cs)
 		}

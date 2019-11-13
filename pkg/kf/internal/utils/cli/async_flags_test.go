@@ -35,10 +35,14 @@ func ExampleAsyncFlags() {
 	async.Add(cmd)
 
 	cmd.SetArgs([]string{})
-	cmd.ExecuteC()
+	if _, err := cmd.ExecuteC(); err != nil {
+		panic(err)
+	}
 
 	cmd.SetArgs([]string{"--async"})
-	cmd.ExecuteC()
+	if _, err := cmd.ExecuteC(); err != nil {
+		panic(err)
+	}
 
 	// Output: Running async? false
 	// Running async? true
@@ -55,10 +59,14 @@ func ExampleAsyncFlags_IsSynchronous() {
 	async.Add(cmd)
 
 	cmd.SetArgs([]string{})
-	cmd.ExecuteC()
+	if _, err := cmd.ExecuteC(); err != nil {
+		panic(err)
+	}
 
 	cmd.SetArgs([]string{"--async"})
-	cmd.ExecuteC()
+	if _, err := cmd.ExecuteC(); err != nil {
+		panic(err)
+	}
 
 	// Output: Running sync? true
 	// Running sync? false

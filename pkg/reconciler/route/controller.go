@@ -116,7 +116,7 @@ func logError(logger *zap.SugaredLogger, f func(interface{}) error) func(interfa
 // namespacedRouteSpecFields from a Route or RouteClaim.
 func BuildEnqueuer(enqueue func(interface{})) func(interface{}) error {
 	return func(obj interface{}) error {
-		nrf := namespacedRouteSpecFields{}
+		var nrf namespacedRouteSpecFields
 		switch r := obj.(type) {
 		case *v1alpha1.Route:
 			nrf = namespacedRouteSpecFields{

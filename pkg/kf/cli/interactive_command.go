@@ -86,7 +86,9 @@ func ClearDefaultsForInteractive(ctx context.Context, flags *pflag.FlagSet, blac
 		}
 
 		// Clear the value
-		f.Value.Set("")
+		if err := f.Value.Set(""); err != nil {
+			panic(err)
+		}
 	})
 }
 
@@ -140,8 +142,6 @@ func traverseNodes(
 	for _, n := range childNodes {
 		traverseNodes(n, history, cmd)
 	}
-
-	return
 }
 
 func executeDigraph(

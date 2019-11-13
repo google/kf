@@ -171,13 +171,13 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			}
 
 			for _, msg := range tc.wantedMsgs {
-				if strings.Index(buffer.String(), msg) < 0 {
+				if !strings.Contains(buffer.String(), msg) {
 					t.Fatalf("wanted %q to contain %q", buffer.String(), msg)
 				}
 			}
 
 			for _, msg := range tc.unwantedMsgs {
-				if strings.Index(buffer.String(), msg) >= 0 {
+				if strings.Contains(buffer.String(), msg) {
 					t.Fatalf("wanted %q to not contain %q", buffer.String(), msg)
 				}
 			}

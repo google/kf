@@ -59,7 +59,11 @@ func main() {
 		log.Fatal("Error parsing logging configuration:", err)
 	}
 	logger, atomicLevel := logging.NewLoggerFromConfig(config, component)
-	defer logger.Sync()
+	defer func() {
+		if err := logger.Sync(); err != nil {
+			log.Fatal("Error syncing logger on shutdown:", err)
+		}
+	}()
 	logger = logger.With(zap.String(logkey.ControllerType, component))
 
 	logger.Info("Starting the Configuration Webhook")

@@ -167,9 +167,15 @@ func Load(cfgPath string, overrides *KfParams) (*KfParams, error) {
 	}
 
 	out := &KfParams{}
-	mergo.Merge(out, overrides)
-	mergo.Merge(out, params)
-	mergo.Merge(out, NewDefaultKfParams())
+	if err := mergo.Merge(out, overrides); err != nil {
+		return nil, err
+	}
+	if err := mergo.Merge(out, params); err != nil {
+		return nil, err
+	}
+	if err := mergo.Merge(out, NewDefaultKfParams()); err != nil {
+		return nil, err
+	}
 
 	return out, nil
 }

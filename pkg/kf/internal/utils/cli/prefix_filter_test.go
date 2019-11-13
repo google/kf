@@ -36,11 +36,19 @@ func TestPrefixFilter(t *testing.T) {
 	},
 		defaultWriter,
 	)
-	f.Write([]byte("[prefix-1] "))
-	f.Write([]byte("data-0\n"))
-	f.Write([]byte("[prefix-2] data-1\n"))
-	f.Write([]byte("[other-prefix] [prefix-2] data-2\n[prefix-1] data-3\n"))
-	f.Write([]byte("[other-prefix] data-4\n"))
+
+	if _, err := f.Write([]byte("[prefix-1] data-0\n")); err != nil {
+		panic(err)
+	}
+	if _, err := f.Write([]byte("[prefix-2] data-1\n")); err != nil {
+		panic(err)
+	}
+	if _, err := f.Write([]byte("[other-prefix] [prefix-2] data-2\n[prefix-1] data-3\n")); err != nil {
+		panic(err)
+	}
+	if _, err := f.Write([]byte("[other-prefix] data-4\n")); err != nil {
+		panic(err)
+	}
 
 	testutil.AssertEqual(t, "buf-1", "data-0\ndata-3\n", buf1.String())
 	testutil.AssertEqual(t, "buf-2", "data-1\ndata-2\n", buf2.String())

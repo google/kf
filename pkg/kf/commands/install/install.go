@@ -32,7 +32,9 @@ func NewInstallCommand() *cobra.Command {
 		of kf. This means that if you target a cluster with a later version of kf
 		then you can downgrade the system.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Help()
+			if err := cmd.Help(); err != nil {
+				panic(err)
+			}
 		},
 	}
 

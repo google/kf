@@ -107,7 +107,7 @@ func TestRoutes(t *testing.T) {
 				testutil.AssertContainsAll(t, buffer.String(), []string{"host-3", "example.com", "/path2"})
 
 				// Ensure it doesn't show deleted-app
-				if strings.Index(buffer.String(), "deleted-app") >= 0 {
+				if strings.Contains(buffer.String(), "deleted-app") {
 					t.Fatal("should not have 'deleted-app'")
 				}
 			},

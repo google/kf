@@ -45,7 +45,8 @@ func TestStart(t *testing.T) {
 					Transform("default", "my-app", gomock.Any()).
 					Do(func(_, _ string, mutator apps.Mutator) {
 						var app v1alpha1.App
-						mutator(&app)
+						err := mutator(&app)
+						testutil.AssertNil(t, "mutator result", err)
 						testutil.AssertEqual(t, "app.spec.instances.stopped", false, app.Spec.Instances.Stopped)
 					})
 				fake.EXPECT().WaitForConditionKnativeServiceReadyTrue(gomock.Any(), "default", "my-app", gomock.Any())

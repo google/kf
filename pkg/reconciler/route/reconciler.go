@@ -114,7 +114,7 @@ func (r *Reconciler) ApplyChanges(
 		}
 
 		err = r.KfClientSet.
-			Kf().
+			KfV1alpha1().
 			Routes(namespace).
 			DeleteCollection(&metav1.DeleteOptions{}, metav1.ListOptions{
 				LabelSelector: appresources.MakeRouteSelectorNoPath(fields).String(),
@@ -146,7 +146,7 @@ func (r *Reconciler) ApplyChanges(
 	if errors.IsNotFound(err) {
 		// VirtualService doesn't exist, make one.
 		if _, err := r.SharedClientSet.
-			Networking().
+			NetworkingV1alpha3().
 			VirtualServices(namespace).
 			Create(desired); err != nil {
 			return err
@@ -157,7 +157,7 @@ func (r *Reconciler) ApplyChanges(
 		return err
 	} else if actual.GetDeletionTimestamp() != nil {
 		return nil
-	} else if actual, err = r.update(
+	} else if _, err = r.update(
 		ctx,
 		desired,
 		actual,

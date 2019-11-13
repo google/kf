@@ -41,7 +41,7 @@ func NewListCommand(t Type, p *config.KfParams, client dynamic.Interface, tableC
 	}
 
 	cmd := &cobra.Command{
-		Use:     fmt.Sprintf("%s", commandName),
+		Use:     commandName,
 		Short:   fmt.Sprintf("List %s %s", friendlyType, scope),
 		Long:    fmt.Sprintf("List %s %s", friendlyType, scope),
 		Example: fmt.Sprintf("kf %s", commandName),
@@ -88,8 +88,7 @@ func NewListCommand(t Type, p *config.KfParams, client dynamic.Interface, tableC
 				return err
 			}
 
-			describe.MetaV1Beta1Table(w, table)
-			return nil
+			return describe.MetaV1Beta1Table(w, table)
 		},
 	}
 

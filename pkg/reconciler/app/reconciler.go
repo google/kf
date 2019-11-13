@@ -373,13 +373,13 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			actual, err := r.routeLister.Routes(desired.GetNamespace()).Get(desired.Name)
 			if apierrs.IsNotFound(err) {
 				// Route doesn't exist, make one.
-				actual, err = r.KfClientSet.KfV1alpha1().Routes(desired.GetNamespace()).Create(&desired)
+				_, err = r.KfClientSet.KfV1alpha1().Routes(desired.GetNamespace()).Create(&desired)
 				if err != nil {
 					return condition.MarkReconciliationError("creating", err)
 				}
 			} else if err != nil {
 				return condition.MarkReconciliationError("getting latest", err)
-			} else if actual, err = r.reconcileRoute(ctx, &desired, actual); err != nil {
+			} else if _, err = r.reconcileRoute(ctx, &desired, actual); err != nil {
 				return condition.MarkReconciliationError("updating existing", err)
 			}
 		}
@@ -395,7 +395,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 				Get(desired.Name)
 			if apierrs.IsNotFound(err) {
 				// RouteClaim doesn't exist, make one.
-				actual, err = r.KfClientSet.
+				_, err = r.KfClientSet.
 					KfV1alpha1().
 					RouteClaims(desired.GetNamespace()).
 					Create(&desired)
@@ -404,7 +404,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 				}
 			} else if err != nil {
 				return condition.MarkReconciliationError("getting latest", err)
-			} else if actual, err = r.reconcileRouteClaim(ctx, &desired, actual); err != nil {
+			} else if _, err = r.reconcileRouteClaim(ctx, &desired, actual); err != nil {
 				return condition.MarkReconciliationError("updating existing", err)
 			}
 		}

@@ -88,8 +88,10 @@ func TestLoggingRoundTripper_RoundTrip_normal(t *testing.T) {
 func TestLoggingRoundTripper_RoundTrip_error(t *testing.T) {
 	out := &bytes.Buffer{}
 	transport := NewLoggingRoundTripperWithStream(&KfParams{LogHTTP: true}, &errorTransport{}, out)
-	req, _ := http.NewRequest("GET", "http://example.com", nil)
-	transport.RoundTrip(req)
+	req, err := http.NewRequest("GET", "http://example.com", nil)
+	testutil.AssertNil(t, "http request", err)
+	_, err = transport.RoundTrip(req)
+	testutil.AssertNil(t, "round trip", err)
 	s := out.String()
 
 	testutil.AssertContainsAll(t, s, []string{
@@ -101,8 +103,10 @@ func TestLoggingRoundTripper_RoundTrip_error(t *testing.T) {
 func TestLoggingRoundTripper_RoundTrip_noLogging(t *testing.T) {
 	out := &bytes.Buffer{}
 	transport := NewLoggingRoundTripperWithStream(&KfParams{LogHTTP: false}, &dummyTransport{}, out)
-	req, _ := http.NewRequest("GET", "http://example.com", nil)
-	transport.RoundTrip(req)
+	req, err := http.NewRequest("GET", "http://example.com", nil)
+	testutil.AssertNil(t, "http request", err)
+	_, err = transport.RoundTrip(req)
+	testutil.AssertNil(t, "round trip", err)
 	s := out.String()
 
 	testutil.AssertEqual(t, "RoundTrip log", "", s)

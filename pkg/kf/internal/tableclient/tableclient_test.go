@@ -49,7 +49,9 @@ func ExampleNew() {
 
 	// This example won't hit a real endpoint, but the mock will show that the URL
 	// and selector work for getting namespaced tables.
-	client.Table(MockType{}, "demo", metav1.ListOptions{})
+	if _, err := client.Table(MockType{}, "demo", metav1.ListOptions{}); err != nil {
+		panic(err)
+	}
 
 	// Output: URL: http://localhost/apis/test.group/v1/namespaces/demo/tests
 	// Accepts: application/json;as=Table;v=v1beta1;g=meta.k8s.io, application/json
@@ -74,7 +76,9 @@ func ExampleNewTableRoundTripper() {
 	if err != nil {
 		panic(err)
 	}
-	rt.RoundTrip(req)
+	if _, err := rt.RoundTrip(req); err != nil {
+		panic(err)
+	}
 
 	// Output: URL: master.svc.cluster.local
 	// Accepts: application/json;as=Table;v=v1beta1;g=meta.k8s.io, application/json

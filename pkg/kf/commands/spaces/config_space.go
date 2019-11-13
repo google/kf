@@ -49,7 +49,9 @@ func NewConfigSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		to use kubectl.
 		`,
 		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Help()
+			if err := cmd.Help(); err != nil {
+				panic(err)
+			}
 		},
 	}
 

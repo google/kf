@@ -445,7 +445,7 @@ func ExampleServiceInstance() {
 }
 
 func ExampleMetaV1Beta1Table() {
-	describe.MetaV1Beta1Table(os.Stdout, &metav1beta1.Table{
+	err := describe.MetaV1Beta1Table(os.Stdout, &metav1beta1.Table{
 		ColumnDefinitions: []metav1beta1.TableColumnDefinition{
 			{Name: "Name"},
 			{Name: "Age"},
@@ -458,6 +458,9 @@ func ExampleMetaV1Beta1Table() {
 			{Cells: []interface{}{"Third", "9s", 0}},
 		},
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	// Output: Name    Age  Instances
 	// First   12d  12

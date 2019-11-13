@@ -163,5 +163,7 @@ func (b *Base) ReconcileSecret(
 func init() {
 	// Add serving types to the default Kubernetes Scheme so Events can be
 	// logged for serving types.
-	kfscheme.AddToScheme(scheme.Scheme)
+	if err := kfscheme.AddToScheme(scheme.Scheme); err != nil {
+		panic(err)
+	}
 }

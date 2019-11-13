@@ -256,47 +256,45 @@ func selectCluster(ctx context.Context, projID string, cfg gkeConfig) (gkeConfig
 func createProject(ctx context.Context) (string, error) {
 	ctx = cli.SetLogPrefix(ctx, "New Project")
 
-	for {
-		name, err := cli.NamePrompt(
-			ctx,
-			cli.LabelColor.Sprint("Project Name (not ID): "),
-			cli.RandName("kf-"),
-		)
-		if err != nil {
-			return "", err
-		}
-
-		cli.Logf(ctx, "creating new project %s", name)
-		_, err = gcloud(ctx, "-q", "projects", "create", "--name", name)
-		if err != nil {
-			return "", err
-		}
-
-		cli.Logf(ctx, "fetching project ID for %s", name)
-		projects, err := gcloud(
-			ctx,
-			"projects",
-			"list",
-			"--filter", fmt.Sprintf("name~^%s$", name),
-			"--format", "value(projectId)",
-		)
-
-		if err != nil {
-			return "", err
-		}
-
-		if len(projects) != 1 {
-			return "", fmt.Errorf(
-				"something went wrong while trying to fetch the project ID for %s: %s",
-				name,
-				strings.Join(projects, "\n"),
-			)
-		}
-
-		projID := projects[0]
-		cli.Logf(ctx, "Created project %s with a project ID %s", name, projID)
-		return projID, nil
+	name, err := cli.NamePrompt(
+		ctx,
+		cli.LabelColor.Sprint("Project Name (not ID): "),
+		cli.RandName("kf-"),
+	)
+	if err != nil {
+		return "", err
 	}
+
+	cli.Logf(ctx, "creating new project %s", name)
+	_, err = gcloud(ctx, "-q", "projects", "create", "--name", name)
+	if err != nil {
+		return "", err
+	}
+
+	cli.Logf(ctx, "fetching project ID for %s", name)
+	projects, err := gcloud(
+		ctx,
+		"projects",
+		"list",
+		"--filter", fmt.Sprintf("name~^%s$", name),
+		"--format", "value(projectId)",
+	)
+
+	if err != nil {
+		return "", err
+	}
+
+	if len(projects) != 1 {
+		return "", fmt.Errorf(
+			"something went wrong while trying to fetch the project ID for %s: %s",
+			name,
+			strings.Join(projects, "\n"),
+		)
+	}
+
+	projID := projects[0]
+	cli.Logf(ctx, "Created project %s with a project ID %s", name, projID)
+	return projID, nil
 }
 
 // projects uses gcloud to list all the available projects.

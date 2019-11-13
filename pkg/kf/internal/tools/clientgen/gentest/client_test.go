@@ -59,7 +59,9 @@ func ExampleLabelSetMutator() {
 	out := &v1.Pod{}
 	managedAdder := LabelSetMutator(map[string]string{"managed-by": "kf"})
 
-	managedAdder(out)
+	if err := managedAdder(out); err != nil {
+		panic(err)
+	}
 	fmt.Printf("Labels: %v", out.Labels)
 
 	// Output: Labels: map[managed-by:kf]
@@ -127,7 +129,8 @@ func TestClient_Delete(t *testing.T) {
 			Setup: func(mockK8s cv1.PodsGetter) {
 				obj := &v1.Pod{}
 				obj.Name = "some-object"
-				mockK8s.Pods("my-namespace").Create(obj)
+				_, err := mockK8s.Pods("my-namespace").Create(obj)
+				testutil.AssertNil(t, "pod", err)
 			},
 		},
 	}
@@ -252,7 +255,9 @@ func ExampleDiffWrapper_noDiff() {
 		return nil
 	})
 
-	wrapper(obj)
+	if err := wrapper(obj); err != nil {
+		panic(err)
+	}
 
 	// Output: No changes
 }

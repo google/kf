@@ -65,14 +65,18 @@ func NewKfCommand() *cobra.Command {
 			return mergo.Map(p, loadedConfig)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Help()
+			if err := cmd.Help(); err != nil {
+				panic(err)
+			}
 		},
 	}
 
 	rootCmd.PersistentFlags().StringVar(&p.Config, "config", "", "Config file (default is $HOME/.kf)")
 	rootCmd.PersistentFlags().StringVar(&p.KubeCfgFile, "kubeconfig", "", "Kubectl config file (default is $HOME/.kube/config)")
 	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "", "Kubernetes namespace to target")
-	completion.MarkFlagCompletionSupported(rootCmd.PersistentFlags(), "namespace", "spaces")
+	if err := completion.MarkFlagCompletionSupported(rootCmd.PersistentFlags(), "namespace", "spaces"); err != nil {
+		panic(err)
+	}
 
 	rootCmd.PersistentFlags().BoolVar(&p.LogHTTP, "log-http", false, "Log HTTP requests to stderr")
 

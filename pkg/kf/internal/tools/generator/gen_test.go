@@ -49,7 +49,10 @@ func ExampleGenNotice() {
 }
 
 func ExampleGenLicense() {
-	lic := GenLicense()
+	lic, err := GenLicense()
+	if err != nil {
+		panic(err)
+	}
 
 	currentYear := fmt.Sprintf("%d", time.Now().Year())
 

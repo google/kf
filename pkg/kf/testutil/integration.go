@@ -224,7 +224,11 @@ func WithNamespace(ctx context.Context, t *testing.T, callback func(namespace st
 		if _, err := k8s.CoreV1().Namespaces().Create(namespace); err != nil {
 			t.Fatalf("Creating namespace: %v", err)
 		}
-		defer k8s.CoreV1().Namespaces().Delete(name, &metav1.DeleteOptions{})
+		defer func() {
+			if err := k8s.CoreV1().Namespaces().Delete(name, &metav1.DeleteOptions{}); err != nil {
+				t.Logf("Error deleting namespace %s: %s", name, err)
+			}
+		}()
 
 		t.Logf("With Namespace: %s", name)
 		callback(name)
@@ -237,7 +241,7 @@ func WithNamespace(ctx context.Context, t *testing.T, callback func(namespace st
 func CancelOnSignal(ctx context.Context, cancel func(), log func(args ...interface{})) {
 	go func() {
 		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt, os.Kill)
+		signal.Notify(c, os.Interrupt)
 		select {
 		case <-c:
 			log("Signal received... Cleaning up... (Hit Ctrl-C again to quit immediately)")
