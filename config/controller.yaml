@@ -30,6 +30,12 @@ spec:
         app: controller
     spec:
       serviceAccountName: controller
+      initContainers:
+      - name: controller-init
+        image: github.com/google/kf/cmd/controller-init
+        volumeMounts:
+        - name: config-logging
+          mountPath: /etc/config-logging
       containers:
       - name: controller
         # This is the Go import path for the binary that is containerized

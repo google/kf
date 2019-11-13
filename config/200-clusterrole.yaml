@@ -67,4 +67,4 @@ rules:
   verbs: ["get", "list", "watch"]
 - apiGroups: ["networking.istio.io"]
   resources: ["virtualservices"]
-  verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
+  verbs: ["get", "list", "create", "update", "delete", "deletecollection", "patch", "watch"]
