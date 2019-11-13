@@ -62,6 +62,11 @@ func main() {
 	}
 
 	describe.SectionWriter(w, "Changing permissions", func(w io.Writer) {
+		fmt.Fprintf(w, "chmod %d %s\n", 0744, *workspace)
+		if err := os.Chmod(*workspace, 0744); err != nil {
+			log.Fatal(err)
+		}
+
 		for _, dir := range []string{"/builder/home", "/layers", "/cache", *workspace} {
 			fmt.Fprintf(w, "chown -R %d:%d %s\n", uid, gid, dir)
 

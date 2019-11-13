@@ -38,8 +38,8 @@ import (
 )
 
 const (
-	// KnativeBuildYAML holds the knative build yaml release URL
-	KnativeBuildYAML = "https://github.com/knative/build/releases/download/v0.7.0/build.yaml"
+	// TektonYAML holds the Tekton yaml release URL
+	TektonYAML = "https://github.com/tektoncd/pipeline/releases/download/v0.8.0/release.yaml"
 	// KfNightlyBuildYAML holds the kf nightly build release URL
 	KfNightlyBuildYAML = "https://storage.googleapis.com/artifacts.kf-releases.appspot.com/nightly/latest/release.yaml"
 )
@@ -179,7 +179,7 @@ func installServerComponents(ctx context.Context, kfVersion string) error {
 		name string
 		yaml string
 	}{
-		{name: "Knative Build", yaml: KnativeBuildYAML},
+		{name: "Tekton", yaml: TektonYAML},
 		{name: "kf", yaml: kfVersion},
 	} {
 		err := wait.ExponentialBackoff(

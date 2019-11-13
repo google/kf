@@ -19,8 +19,14 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/fatih/color"
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	tektoncli "github.com/google/kf/third_party/tektoncd-cli/pkg/cli"
+	"github.com/google/kf/third_party/tektoncd-cli/pkg/cmd/taskrun"
+	"github.com/google/kf/third_party/tektoncd-cli/pkg/helper/pods"
+	tekton "github.com/google/kf/third_party/tektoncd-pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 // SourceStatus gets the status of the given source.
@@ -52,4 +58,46 @@ type BuildTailerFunc func(ctx context.Context, out io.Writer, buildName, namespa
 // Tail implements BuildTailer.
 func (f BuildTailerFunc) Tail(ctx context.Context, out io.Writer, buildName, namespace string) error {
 	return f(ctx, out, buildName, namespace)
+}
+
+// TektonLoggingShim implements BuildTailer for taskrun.LogReader
+// (https://godoc.org/github.com/tektoncd/cli/pkg/cmd/taskrun#LogReader).
+//
+// TODO: To keep the transition to Tekton small, we'll implement a function
+// here that implements the interface that knative-build expected. We should
+// obviously move away from this at some point.
+func TektonLoggingShim(ti tekton.Interface, ki kubernetes.Interface) BuildTailer {
+	return BuildTailerFunc(func(ctx context.Context, out io.Writer, buildName, namespace string) error {
+		reader := taskrun.LogReader{
+			Ns:             namespace,
+			Run:            buildName,
+			AllSteps:       true,
+			BlacklistSteps: []string{"istio-proxy", "istio-init"},
+			Follow:         true,
+			Streamer:       pods.NewStream,
+			Clients: &tektoncli.Clients{
+				Tekton: ti,
+				Kube:   ki,
+			},
+		}
+		logs, errs, err := reader.Read()
+		if err != nil {
+			return err
+		}
+
+		fgGreen := color.New(color.FgGreen)
+
+		for {
+			select {
+			case err := <-errs:
+				return err
+			case log, ok := <-logs:
+				if !ok {
+					return nil
+				}
+				prefix := fgGreen.Sprintf("[%s/%s]", log.Task, log.Step)
+				fmt.Fprintln(out, prefix, log.Log)
+			}
+		}
+	})
 }
