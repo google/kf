@@ -99,7 +99,9 @@ Use the --namespace flag instead.`)
 				return fmt.Errorf("failed to create Route: %s", err)
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Creating route... %s", utils.AsyncLogSuffix)
+			// NOTE: RouteClaims don't have a status so there's nothing to wait on
+			// after creation.
+			fmt.Fprintln(cmd.OutOrStdout(), "Creating route...")
 			return nil
 		},
 	}

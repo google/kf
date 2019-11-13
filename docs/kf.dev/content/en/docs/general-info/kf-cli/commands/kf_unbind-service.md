@@ -26,7 +26,8 @@ kf unbind-service APP_NAME SERVICE_INSTANCE [flags]
 ### Options
 
 ```
-  -h, --help   help for unbind-service
+      --async   Don't wait for the action to complete on the server before returning
+  -h, --help    help for unbind-service
 ```
 
 ### Options inherited from parent commands

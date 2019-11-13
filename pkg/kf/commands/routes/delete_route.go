@@ -74,7 +74,10 @@ func NewDeleteRouteCommand(
 			if err != nil {
 				return fmt.Errorf("failed to list apps: %s", err)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Deleting route... %s", utils.AsyncLogSuffix)
+
+			// NOTE: RouteClaims don't have a status so there's nothing to wait on
+			// after deletion.
+			fmt.Fprintln(cmd.OutOrStdout(), "Deleting route...")
 
 			for _, app := range apps {
 				fmt.Fprintf(cmd.OutOrStderr(), "Unmapping route from %s...\n", app.Name)
