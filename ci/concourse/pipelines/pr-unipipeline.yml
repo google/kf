@@ -415,9 +415,6 @@ jobs:
           # Install Tekton Pipelines
           kubectl apply --filename https://github.com/tektoncd/pipeline/releases/download/v0.8.0/release.yaml
 
-          # Install Tekton Pipelines
-          kubectl apply --filename https://github.com/tektoncd/pipeline/releases/download/v0.8.0/release.yaml
-
           # Let SC and Build simmer for 30s
           sleep 30
 
