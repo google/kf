@@ -29,7 +29,7 @@ type ClientExtension interface {
 	Status(namespace, name string) (bool, error)
 }
 
-// BuildTailer is implemented by github.com/google/kf/third_party/knative-build/pkg/logs
+// BuildTailer tails the Build logs.
 type BuildTailer interface {
 	Tail(ctx context.Context, out io.Writer, buildName, namespace string) error
 }

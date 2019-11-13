@@ -43,6 +43,10 @@ func (c *ClusterDiagnostic) Diagnose(d *Diagnostic) {
 	d.Run("Components", func(d *Diagnostic) {
 		diagnoseComponents(d, c.kubeClient.Discovery())
 	})
+
+	d.Run("MutatingWebhooks", func(d *Diagnostic) {
+		diagnoseMutatingWebhooks(d, c.kubeClient)
+	})
 }
 
 // NewClusterDiagnostic creates a new ClusterDiagnostic to validate the
@@ -148,6 +152,41 @@ func diagnoseControllers(d *Diagnostic, kubernetes kubernetes.Interface) {
 
 					if ready != desired {
 						d.Errorf("ready: %d/%d", ready, desired)
+					}
+				})
+			}
+		})
+	}
+}
+
+func diagnoseMutatingWebhooks(d *Diagnostic, kubernetes kubernetes.Interface) {
+	expected := []struct {
+		Component string
+		Webhooks  []string
+	}{
+		{
+			Component: "kf",
+			Webhooks:  []string{"webhook.kf.dev"},
+		},
+		{
+			Component: "knative-serving",
+			Webhooks:  []string{"webhook.serving.knative.dev", "istio-sidecar-injector"},
+		},
+	}
+
+	for _, tc := range expected {
+		d.Run(tc.Component, func(d *Diagnostic) {
+
+			for _, name := range tc.Webhooks {
+				d.Run(name, func(d *Diagnostic) {
+
+					_, err := kubernetes.
+						AdmissionregistrationV1beta1().
+						MutatingWebhookConfigurations().
+						Get(name, metav1.GetOptions{})
+					if err != nil {
+						d.Errorf("couldn't fetch mutatingWebhook %s: %v", name, err)
+						return
 					}
 				})
 			}

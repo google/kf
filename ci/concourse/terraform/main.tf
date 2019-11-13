@@ -64,6 +64,11 @@ resource "google_container_cluster" "kf_test" {
     }
   }
 
+  # These services must be set for Cloud Run to work correctly.
+  logging_service = "logging.googleapis.com/kubernetes"
+  monitoring_service = "monitoring.googleapis.com/kubernetes"
+
+
   node_config {
     machine_type = "n1-standard-4"
 

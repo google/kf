@@ -22,15 +22,18 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/kf/pkg/dockerutil"
 	"github.com/google/kf/pkg/kf/describe"
 	"github.com/segmentio/textio"
 )
 
 func main() {
-	uid := flag.Int("uid", 1000, "the user id of the buildpack user")
-	gid := flag.Int("gid", 1000, "the group id of the buildpack user")
 	workspace := flag.String("app", "/workspace", "the workspace for the app")
 	image := flag.String("image", "", "the resulting image")
 	runImage := flag.String("run-image", "", "the image to use as a stack")
@@ -43,11 +46,31 @@ func main() {
 
 	w := os.Stdout
 
-	describe.SectionWriter(w, "Changing permissions", func(w io.Writer) {
-		for _, dir := range []string{"/builder/home", "/layers", "/cache", *workspace} {
-			fmt.Fprintf(w, "chown -R %d:%d %s\n", *uid, *gid, dir)
+	uid, gid, err := getBuildUser(*builderImage)
+	if err != nil {
+		fmt.Printf("couldn't fetch UID/GID from image: %v\n", err)
+	}
 
-			if err := chown(dir, *uid, *gid); err != nil {
+	if uid == 0 {
+		uid = 1000
+		fmt.Printf("UID was 0, defaulting to %d\n", uid)
+	}
+
+	if gid == 0 {
+		gid = 1000
+		fmt.Printf("GID was 0, defaulting to %d\n", gid)
+	}
+
+	describe.SectionWriter(w, "Changing permissions", func(w io.Writer) {
+		fmt.Fprintf(w, "chmod %d %s\n", 0744, *workspace)
+		if err := os.Chmod(*workspace, 0744); err != nil {
+			log.Fatal(err)
+		}
+
+		for _, dir := range []string{"/builder/home", "/layers", "/cache", *workspace} {
+			fmt.Fprintf(w, "chown -R %d:%d %s\n", uid, gid, dir)
+
+			if err := chown(dir, uid, gid); err != nil {
 				log.Fatal(err)
 			}
 		}
@@ -70,6 +93,50 @@ func main() {
 	fmt.Fprintln(w)
 
 	dockerutil.DescribeDefaultConfig(w)
+}
+
+// getBuildUser returns the UID and GID as specified by the buildpack builder
+// image environment variables subject to the platform build image spec:
+// https://github.com/buildpack/spec/blob/master/platform.md#build-image
+func getBuildUser(builderImage string) (uid, gid int, err error) {
+	imageRef, err := name.ParseReference(builderImage, name.WeakValidation)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	image, err := remote.Image(imageRef, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+	if err != nil {
+		return 0, 0, err
+	}
+
+	cfg, err := image.ConfigFile()
+	if err != nil {
+		return 0, 0, err
+	}
+
+	for _, val := range cfg.Config.Env {
+		parts := strings.Split(val, "=")
+		if len(parts) != 2 {
+			continue
+		}
+
+		key, value := parts[0], parts[1]
+		if key == "CNB_USER_ID" {
+			uid, err = strconv.Atoi(value)
+			if err != nil {
+				return
+			}
+		}
+
+		if key == "CNB_GROUP_ID" {
+			gid, err = strconv.Atoi(value)
+			if err != nil {
+				return
+			}
+		}
+	}
+
+	return uid, gid, nil
 }
 
 func chown(path string, uid, gid int) error {

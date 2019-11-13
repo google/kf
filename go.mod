@@ -5,17 +5,14 @@ require (
 	github.com/Azure/go-autorest v11.1.2+incompatible // indirect
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/docker/cli v0.0.0-20191007193719-3e07fa728a30
 	github.com/docker/docker-credential-helpers v0.6.3 // indirect
-	github.com/evanphx/json-patch v4.2.0+incompatible // indirect
 	github.com/fatih/color v1.7.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/golang/mock v1.3.1
-	github.com/google/go-cmp v0.2.0
+	github.com/google/go-cmp v0.3.0
 	github.com/google/go-containerregistry v0.0.0-20190306174256-678f6c51f585
 	github.com/google/go-github v17.0.0+incompatible
-	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/google/wire v0.2.2
 	github.com/gorilla/mux v1.7.0
@@ -25,10 +22,10 @@ require (
 	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
-	github.com/pborman/uuid v1.2.0 // indirect
-	github.com/poy/kontext v0.0.0-20190801225340-1f98414f4e12
+	github.com/pkg/errors v0.8.0
+	github.com/poy/kontext v0.0.0-20190912033603-631f8aafd494
 	github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c
-	github.com/rogpeppe/go-internal v1.3.0 // indirect
+	github.com/rogpeppe/go-internal v1.5.0 // indirect
 	github.com/russross/blackfriday v1.5.2
 	github.com/sabhiram/go-gitignore v0.0.0-20180611051255-d3107576ba94
 	github.com/segmentio/textio v1.2.0
@@ -37,15 +34,8 @@ require (
 	github.com/stretchr/testify v1.3.0 // indirect
 	go.opencensus.io v0.22.0 // indirect
 	go.uber.org/zap v1.10.0
-	golang.org/x/crypto v0.0.0-20190611184440-5c40567a22f8 // indirect
-	golang.org/x/net v0.0.0-20190613194153-d28f0bde5980 // indirect
-	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a // indirect
-	golang.org/x/sys v0.0.0-20190616124812-15dcb6c0061f // indirect
-	golang.org/x/text v0.3.2 // indirect
-	golang.org/x/tools v0.0.0-20190614205625-5aca471b1d59 // indirect
-	google.golang.org/appengine v1.5.0 // indirect
+	golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898
 	gopkg.in/alecthomas/kingpin.v3-unstable v3.0.0-20191105091915-95d230a53780 // indirect
-	gopkg.in/yaml.v2 v2.2.4 // indirect
 	gotest.tools v2.2.0+incompatible // indirect
 	k8s.io/api v0.0.0
 	k8s.io/apimachinery v0.0.0
@@ -53,7 +43,6 @@ require (
 	k8s.io/client-go v2.0.0-alpha.0.0.20190226174127-78295b709ec6+incompatible
 	k8s.io/code-generator v0.0.0
 	k8s.io/klog v1.0.0 // indirect
-	k8s.io/kube-openapi v0.0.0-20190816220812-743ec37842bf // indirect
 	knative.dev/pkg v0.0.0-20190703054432-db778775199d
 	sigs.k8s.io/yaml v1.1.0
 )
