@@ -60,7 +60,7 @@ func GetContainerRegistry(ctx context.Context) string {
 // NewInstallGraph returns an InteractiveNode to install Kf on an existing K8s
 // cluster. It expects the ContainerRegistry to be set via
 // SetContainerRegistry().
-func NewInstallGraph() *cli.InteractiveNode {
+func NewInstallGraph(createConfigMap func(*cli.InteractiveNode) *cli.InteractiveNode) *cli.InteractiveNode {
 	var (
 		kfVersionIN cli.InteractiveNode
 		spaceIN     cli.InteractiveNode
@@ -72,10 +72,12 @@ func NewInstallGraph() *cli.InteractiveNode {
 		spaceName string
 	)
 
+	configMapIN := createConfigMap(&spaceIN)
+
 	setupKf := func(flags *pflag.FlagSet) ([]*cli.InteractiveNode, cli.Runner) {
 		flags.StringVar(&kfVersion, "kf-version", "", "Kf release version to use")
 
-		return []*cli.InteractiveNode{&spaceIN},
+		return []*cli.InteractiveNode{configMapIN},
 			func(
 				ctx context.Context,
 				cmd *cobra.Command,
@@ -100,7 +102,7 @@ func NewInstallGraph() *cli.InteractiveNode {
 					return nil, nil, err
 				}
 
-				return ctx, &spaceIN, nil
+				return ctx, configMapIN, nil
 			}
 	}
 

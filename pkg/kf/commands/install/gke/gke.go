@@ -18,9 +18,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 
+	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/cli"
 	"github.com/google/kf/pkg/kf/commands/install/kf"
 	"github.com/google/kf/pkg/kf/commands/install/util"
@@ -71,6 +75,41 @@ func buildGraph() *cli.InteractiveNode {
 		clusterIN cli.InteractiveNode
 	)
 
+	createConfigMapIN := func(spaceIN *cli.InteractiveNode) *cli.InteractiveNode {
+		var configMapIN cli.InteractiveNode
+
+		setupConfigMap := func(flags *pflag.FlagSet) ([]*cli.InteractiveNode, cli.Runner) {
+			return []*cli.InteractiveNode{spaceIN},
+				func(
+					ctx context.Context,
+					cmd *cobra.Command,
+					args []string,
+				) (context.Context, *cli.InteractiveNode, error) {
+					ctx = cli.SetLogPrefix(ctx, "Setup GCP Secret")
+
+					serviceAccount := getServiceAccount(ctx)
+					if serviceAccount == "" {
+						// Create new service account
+						projID := getProjectID(ctx)
+						var err error
+						if serviceAccount, err = createServiceAccount(ctx, projID); err != nil {
+							return nil, nil, err
+						}
+					}
+
+					// Create the secret configmap
+					if err := createConfigMapSecret(ctx, serviceAccount); err != nil {
+						return nil, nil, err
+					}
+
+					return ctx, spaceIN, nil
+				}
+		}
+		configMapIN.Setup = setupConfigMap
+
+		return &configMapIN
+	}
+
 	setupProject := func(flags *pflag.FlagSet) ([]*cli.InteractiveNode, cli.Runner) {
 		var projectID string
 		flags.StringVar(&projectID, "project-id", "", "GCP project ID to use")
@@ -95,7 +134,7 @@ func buildGraph() *cli.InteractiveNode {
 			}
 	}
 
-	kfInstallGraph := kf.NewInstallGraph()
+	kfInstallGraph := kf.NewInstallGraph(createConfigMapIN)
 
 	setupCluster := func(flags *pflag.FlagSet) ([]*cli.InteractiveNode, cli.Runner) {
 		var (
@@ -144,6 +183,7 @@ func buildGraph() *cli.InteractiveNode {
 					return nil, nil, err
 				}
 
+				ctx = setServiceAccount(ctx, gkeCfg.serviceAccount)
 				return kf.SetContainerRegistry(ctx, "gcr.io/"+projectID), kfInstallGraph, nil
 			}
 	}
@@ -152,6 +192,17 @@ func buildGraph() *cli.InteractiveNode {
 	clusterIN.Setup = setupCluster
 
 	return &projectIN
+}
+
+type serviceAccountType struct{}
+
+func setServiceAccount(ctx context.Context, serviceAccount string) context.Context {
+	return context.WithValue(ctx, serviceAccountType{}, serviceAccount)
+}
+
+func getServiceAccount(ctx context.Context) string {
+	sa, _ := ctx.Value(serviceAccountType{}).(string)
+	return sa
 }
 
 func preRunE(cmd *cobra.Command, args []string) error {
@@ -306,20 +357,31 @@ func createProject(ctx context.Context) (string, error) {
 // projects uses gcloud to list all the available projects.
 func projects(ctx context.Context) ([]string, error) {
 	cli.Logf(ctx, "finding your projects...")
-	return gcloud(ctx, "projects", "list", "--format", "value(projectId)")
+	return sortStrings(gcloud(
+		ctx,
+		"projects",
+		"list",
+		"--format",
+		"value(projectId)",
+	))
+}
+
+func sortStrings(s []string, err error) ([]string, error) {
+	sort.Strings(s)
+	return s, err
 }
 
 // clusters uses gcloud to list all the available GKE clusters for a project.
 func clusters(ctx context.Context, projID string) ([]string, error) {
 	cli.Logf(ctx, "finding your GKE clusters...")
-	return gcloud(
+	return sortStrings(gcloud(
 		ctx,
 		"--project", projID,
 		"container",
 		"clusters",
 		"list",
 		"--format", "value(name)",
-	)
+	))
 }
 
 // clusterZone uses gcloud to figure out a GKE cluster's zone.
@@ -348,33 +410,33 @@ func clusterZone(ctx context.Context, projID string, cfg gkeConfig) (gkeConfig, 
 // zones uses gcloud to list all the available zones for a project ID.
 func zones(ctx context.Context, projID string) ([]string, error) {
 	cli.Logf(ctx, "Finding your zones...")
-	return gcloud(
+	return sortStrings(gcloud(
 		ctx,
 		"compute",
 		"zones",
 		"list",
 		"--project", projID,
 		"--format", "value(name)",
-	)
+	))
 }
 
 // networks uses gcloud to list all the available networks for a project ID.
 func networks(ctx context.Context, projID string) ([]string, error) {
 	cli.Logf(ctx, "Finding your networks...")
-	return gcloud(
+	return sortStrings(gcloud(
 		ctx,
 		"compute",
 		"networks",
 		"list",
 		"--project", projID,
 		"--format", "value(name)",
-	)
+	))
 }
 
 // machineTypes uses gcloud to list all the available machine for a project ID and zone.
 func machineTypes(ctx context.Context, projID, zone string) ([]string, error) {
 	cli.Logf(ctx, "Finding your machine types...")
-	return gcloud(
+	return sortStrings(gcloud(
 		ctx,
 		"compute",
 		"machine-types",
@@ -382,7 +444,7 @@ func machineTypes(ctx context.Context, projID, zone string) ([]string, error) {
 		"--project", projID,
 		"--zones", zone,
 		"--format", "value(name)",
-	)
+	))
 }
 
 func createNewCluster(ctx context.Context, projID string, cfg gkeConfig) (gkeConfig, error) {
@@ -452,32 +514,8 @@ func gkeClusterConfig(
 	}
 
 	// Service Account
-	{
-		serviceAccountName := cli.RandName("kf-")
-		cfg.serviceAccount = fmt.Sprintf(
-			"%s@%s.iam.gserviceaccount.com",
-			serviceAccountName,
-			projID,
-		)
-		ok, err := cli.SelectYesNo(
-			ctx,
-			fmt.Sprintf("Create service account %s?", cfg.serviceAccount),
-			true,
-		)
-		if err != nil {
-			return gkeConfig{}, err
-		}
-		if !ok {
-			return gkeConfig{}, errors.New("chose to not create service account")
-		}
-		if err = createServiceAccount(
-			ctx,
-			serviceAccountName,
-			cfg.serviceAccount,
-			projID,
-		); err != nil {
-			return gkeConfig{}, err
-		}
+	if cfg.serviceAccount, err = createServiceAccount(ctx, projID); err != nil {
+		return gkeConfig{}, err
 	}
 
 	// Zone
@@ -684,11 +722,28 @@ func enableServiceAPI(ctx context.Context, projID, serviceName string) error {
 
 func createServiceAccount(
 	ctx context.Context,
-	serviceAccountName string,
-	serviceAccount string,
 	projID string,
-) error {
+) (string, error) {
 	ctx = cli.SetLogPrefix(ctx, "Create Service Account")
+
+	serviceAccountName := cli.RandName("kf-")
+	serviceAccount := fmt.Sprintf(
+		"%s@%s.iam.gserviceaccount.com",
+		serviceAccountName,
+		projID,
+	)
+	ok, err := cli.SelectYesNo(
+		ctx,
+		fmt.Sprintf("Create service account %s?", serviceAccount),
+		true,
+	)
+	if err != nil {
+		return "", err
+	}
+	if !ok {
+		return "", errors.New("chose to not create service account")
+	}
+
 	cli.Logf(ctx, "Creating service account %s", serviceAccount)
 	if _, err := gcloud(
 		ctx,
@@ -698,7 +753,7 @@ func createServiceAccount(
 		serviceAccountName,
 		"--project", projID,
 	); err != nil {
-		return err
+		return "", err
 	}
 	if _, err := gcloud(
 		ctx,
@@ -708,7 +763,72 @@ func createServiceAccount(
 		"--member", "serviceAccount:"+serviceAccount,
 		"--role", "roles/storage.admin",
 	); err != nil {
-		return err
+		return "", err
+	}
+
+	return serviceAccount, nil
+}
+
+func createConfigMapSecret(
+	ctx context.Context,
+	serviceAccount string,
+) error {
+	tempDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		return fmt.Errorf("failed to make temp directory for key: %s", err)
+	}
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			cli.Logf(ctx, "failed to remove service account key's temp dir (%s): %v", tempDir, err)
+		}
+	}()
+
+	// Download Key
+	keyPath := filepath.Join(tempDir, "key.json")
+	if _, err := gcloud(
+		ctx,
+		"iam",
+		"service-accounts",
+		"keys",
+		"create",
+		"--iam-account",
+		serviceAccount,
+		keyPath,
+	); err != nil {
+		return fmt.Errorf("failed to create key: %v", err)
+	}
+
+	keyBytes, err := ioutil.ReadFile(keyPath)
+	if err != nil {
+		return fmt.Errorf("failed to read key data: %v", err)
+	}
+
+	// Create K8s Secret
+	secretName := cli.RandName("kf-gcr-key")
+	if _, err := util.Kubectl(
+		ctx,
+		"--namespace="+v1alpha1.KfNamespace,
+		"create",
+		"secret",
+		"docker-registry",
+		secretName,
+		"--docker-username=_json_key",
+		"--docker-server=https://gcr.io",
+		fmt.Sprintf("--docker-password=%q", string(keyBytes)),
+	); err != nil {
+		return fmt.Errorf("failed to create Kubernetes Secret %s: %v", secretName, err)
+	}
+
+	// Create K8s ConfigMap
+	if _, err := util.Kubectl(
+		ctx,
+		"--namespace="+v1alpha1.KfNamespace,
+		"create",
+		"configmap",
+		"config-secrets",
+		"--from-literal=build.imagePushSecrets="+secretName,
+	); err != nil {
+		return fmt.Errorf("failed to create Kubernetes ConfigMap config-secrets: %v", err)
 	}
 
 	return nil
