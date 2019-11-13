@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/google/kf/pkg/kf/testutil"
-	build "github.com/google/kf/third_party/knative-build/pkg/apis/build/v1alpha1"
+	build "github.com/google/kf/third_party/tektoncd-pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
@@ -168,22 +168,32 @@ func initTestSourceStatus(t *testing.T) *SourceStatus {
 	return status
 }
 
-func happyBuild() *build.Build {
-	return &build.Build{
+func happyBuild() *build.TaskRun {
+	return &build.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "some-build-name",
 		},
-		Spec: build.BuildSpec{
-			Template: &build.TemplateInstantiationSpec{
-				Arguments: []build.ArgumentSpec{
+		Spec: build.TaskRunSpec{
+			Outputs: build.TaskRunOutputs{
+				Resources: []build.TaskResourceBinding{
 					{
-						Name:  "IMAGE",
-						Value: "some-container-image",
+						PipelineResourceBinding: build.PipelineResourceBinding{
+							Name: TaskRunResourceNameImage,
+							ResourceSpec: &build.PipelineResourceSpec{
+								Type: "image",
+								Params: []build.ResourceParam{
+									{
+										Name:  TaskRunResourceURL,
+										Value: "some-container-image",
+									},
+								},
+							},
+						},
 					},
 				},
 			},
 		},
-		Status: build.BuildStatus{
+		Status: build.TaskRunStatus{
 			Status: duckv1beta1.Status{
 				Conditions: duckv1beta1.Conditions{
 					{
@@ -204,22 +214,12 @@ func happySecret() *corev1.Secret {
 	}
 }
 
-func pendingBuild() *build.Build {
-	return &build.Build{
+func pendingBuild() *build.TaskRun {
+	return &build.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "some-build-name",
 		},
-		Spec: build.BuildSpec{
-			Template: &build.TemplateInstantiationSpec{
-				Arguments: []build.ArgumentSpec{
-					{
-						Name:  "IMAGE",
-						Value: "some-container-image",
-					},
-				},
-			},
-		},
-		Status: build.BuildStatus{
+		Status: build.TaskRunStatus{
 			Status: duckv1beta1.Status{
 				Conditions: duckv1beta1.Conditions{
 					{

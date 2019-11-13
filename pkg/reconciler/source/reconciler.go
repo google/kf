@@ -22,8 +22,8 @@ import (
 	kflisters "github.com/google/kf/pkg/client/listers/kf/v1alpha1"
 	"github.com/google/kf/pkg/reconciler"
 	"github.com/google/kf/pkg/reconciler/source/resources"
-	buildclient "github.com/google/kf/third_party/knative-build/pkg/client/clientset/versioned/typed/build/v1alpha1"
-	buildlisters "github.com/google/kf/third_party/knative-build/pkg/client/listers/build/v1alpha1"
+	taskrunclient "github.com/google/kf/third_party/tektoncd-pipeline/pkg/client/clientset/versioned/typed/pipeline/v1alpha1"
+	taskrunlisters "github.com/google/kf/third_party/tektoncd-pipeline/pkg/client/listers/pipeline/v1alpha1"
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -38,11 +38,11 @@ import (
 type Reconciler struct {
 	*reconciler.Base
 
-	buildClient buildclient.BuildV1alpha1Interface
+	taskRunClient taskrunclient.TektonV1alpha1Interface
 
 	// listers index properties about resources
-	sourceLister kflisters.SourceLister
-	buildLister  buildlisters.BuildLister
+	sourceLister  kflisters.SourceLister
+	taskRunLister taskrunlisters.TaskRunLister
 }
 
 // Check that our Reconciler implements controller.Reconciler
@@ -122,12 +122,12 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, source *v1alpha1.Source) 
 	secretCondition := source.Status.BuildSecretCondition()
 	buildCondtion := source.Status.BuildCondition()
 
-	desiredBuild, desiredSecret, err := resources.MakeBuild(source)
+	desiredTaskRun, desiredSecret, err := resources.MakeTaskRun(source)
 	if err != nil {
 		return secretCondition.MarkTemplateError(err)
 	}
 
-	// Sync Build Secret
+	// Sync TaskRun Secret
 	if desiredSecret != nil {
 		logger.Debug("reconciling build secret")
 
@@ -163,20 +163,20 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, source *v1alpha1.Source) 
 
 	// Sync Build
 	{
-		logger.Debug("reconciling Build")
+		logger.Debug("reconciling TaskRun")
 
-		actual, err := r.buildLister.
-			Builds(source.Namespace).
-			Get(desiredBuild.Name)
+		actual, err := r.taskRunLister.
+			TaskRuns(source.Namespace).
+			Get(desiredTaskRun.Name)
 		if errors.IsNotFound(err) {
-			actual, err = r.buildClient.
-				Builds(desiredBuild.Namespace).
-				Create(desiredBuild)
+			actual, err = r.taskRunClient.
+				TaskRuns(desiredTaskRun.Namespace).
+				Create(desiredTaskRun)
 			if err != nil {
 				return err
 			}
 		} else if !metav1.IsControlledBy(actual, source) {
-			return buildCondtion.MarkChildNotOwned(desiredBuild.Name)
+			return buildCondtion.MarkChildNotOwned(desiredTaskRun.Name)
 		}
 
 		source.Status.PropagateBuildStatus(actual)

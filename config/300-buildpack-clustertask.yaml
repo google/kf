@@ -1,0 +1,188 @@
+# Copyright 2019 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the License);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an AS IS BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: tekton.dev/v1alpha1
+kind: ClusterTask
+metadata:
+  name: buildpack
+spec:
+  inputs:
+    params:
+    - name: SOURCE_IMAGE
+      description: The image built via Kontext that contains the app's source code.
+    - name: ENV_SECRET
+      description: The Secret that stores the environment variables used for each step
+    - name: BUILDPACK
+      description: When set, skip the detect step and use the given buildpack.
+      default: ''
+    - name: RUN_IMAGE
+      description: The run image buildpacks will use as the base for IMAGE (output).
+      default: packs/run:v3alpha2
+    - name: BUILDER_IMAGE
+      description: The image on which builds will run (must include v3 lifecycle and compatible buildpacks).
+      default: gcr.io/kf-releases/buildpack-builder:latest
+    - name: CACHE_VOLUME
+      description: The name of the persistent app cache volume
+      default: empty-dir
+
+  outputs:
+    resources:
+    - name: IMAGE
+      type: image
+
+  steps:
+  - name: source-extraction
+    image: "$(inputs.params.SOURCE_IMAGE)"
+    imagePullPolicy: Always
+    command: ["/ko-app/extractor"]
+    args:
+    - "--output_dir=/workspace/source"
+
+  - name: info
+    image: github.com/google/kf/cmd/setup-buildpack-build
+    imagePullPolicy: Always
+    args:
+    - "--app=/workspace/source"
+    - "--image=$(outputs.resources.IMAGE.url)"
+    - "--run-image=$(inputs.params.RUN_IMAGE)"
+    - "--builder-image=$(inputs.params.BUILDER_IMAGE)"
+    - "--cache=$(inputs.params.CACHE_VOLUME)"
+    - "--buildpack=$(inputs.params.BUILDPACK)"
+    volumeMounts:
+    - name: "layers-dir"
+      mountPath: /layers
+    - name: "$(inputs.params.CACHE_VOLUME)"
+      mountPath: /cache
+    envFrom:
+    - secretRef:
+        name: "$(inputs.params.ENV_SECRET)"
+
+  - name: detect
+    image: $(inputs.params.BUILDER_IMAGE)
+    imagePullPolicy: Always
+    command: ["/bin/bash"]
+    args:
+    - -c
+    - |
+      if [[ -z "$(inputs.params.BUILDPACK)" ]]; then
+        /lifecycle/detector \
+          -app=/workspace/source \
+          -group=/layers/group.toml \
+          -plan=/layers/plan.toml
+      else
+        touch /layers/plan.toml
+        echo -e "[[buildpacks]]\nid = \"$(inputs.params.BUILDPACK)\"\nversion = \"latest\"\n" > /layers/group.toml
+      fi
+    volumeMounts:
+    - name: "$(inputs.params.CACHE_VOLUME)"
+      mountPath: /cache
+    - name: "layers-dir"
+      mountPath: /layers
+    envFrom:
+    - secretRef:
+        name: "$(inputs.params.ENV_SECRET)"
+
+  - name: restore
+    image: $(inputs.params.BUILDER_IMAGE)
+    imagePullPolicy: Always
+    command: ["/lifecycle/restorer"]
+    args:
+    - "-group=/layers/group.toml"
+    - "-layers=/layers"
+    - "-path=/cache"
+    volumeMounts:
+    - name: "$(inputs.params.CACHE_VOLUME)"
+      mountPath: /cache
+    - name: "layers-dir"
+      mountPath: /layers
+    envFrom:
+    - secretRef:
+        name: "$(inputs.params.ENV_SECRET)"
+
+  - name: analyze
+    image: $(inputs.params.BUILDER_IMAGE)
+    imagePullPolicy: Always
+    command: ["/lifecycle/analyzer"]
+    args:
+    - "-layers=/layers"
+    - "-group=/layers/group.toml"
+    - "$(outputs.resources.IMAGE.url)"
+    volumeMounts:
+    - name: "$(inputs.params.CACHE_VOLUME)"
+      mountPath: /cache
+    - name: "layers-dir"
+      mountPath: /layers
+    envFrom:
+    - secretRef:
+        name: "$(inputs.params.ENV_SECRET)"
+
+  - name: build
+    image: $(inputs.params.BUILDER_IMAGE)
+    imagePullPolicy: Always
+    command: ["/lifecycle/builder"]
+    args:
+    - "-app=/workspace/source"
+    - "-layers=/layers"
+    - "-group=/layers/group.toml"
+    - "-plan=/layers/plan.toml"
+    volumeMounts:
+    - name: "$(inputs.params.CACHE_VOLUME)"
+      mountPath: /cache
+    - name: "layers-dir"
+      mountPath: /layers
+    envFrom:
+    - secretRef:
+        name: "$(inputs.params.ENV_SECRET)"
+
+  - name: export
+    image: $(inputs.params.BUILDER_IMAGE)
+    imagePullPolicy: Always
+    command: ["/lifecycle/exporter"]
+    args:
+    - "-app=/workspace/source"
+    - "-layers=/layers"
+    - "-group=/layers/group.toml"
+    - "-image=$(inputs.params.RUN_IMAGE)"
+    - "$(outputs.resources.IMAGE.url)"
+    volumeMounts:
+    - name: "$(inputs.params.CACHE_VOLUME)"
+      mountPath: /cache
+    - name: "layers-dir"
+      mountPath: /layers
+    envFrom:
+    - secretRef:
+        name: "$(inputs.params.ENV_SECRET)"
+
+  - name: cache
+    image: $(inputs.params.BUILDER_IMAGE)
+    imagePullPolicy: Always
+    command: ["/lifecycle/cacher"]
+    args:
+    - "-layers=/layers"
+    - "-group=/layers/group.toml"
+    - "-path=/cache"
+    volumeMounts:
+    - name: "$(inputs.params.CACHE_VOLUME)"
+      mountPath: /cache
+    - name: "layers-dir"
+      mountPath: /layers
+    envFrom:
+    - secretRef:
+        name: "$(inputs.params.ENV_SECRET)"
+
+  volumes:
+  - name: empty-dir
+    emptyDir: {}
+  - name: layers-dir
+    emptyDir: {}

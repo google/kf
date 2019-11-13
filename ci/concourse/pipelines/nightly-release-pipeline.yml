@@ -244,8 +244,8 @@ jobs:
 
           # Install SC
           kubectl apply --recursive --filename kf-dev/third_party/service-catalog/manifests/catalog/templates/
-          # Install Knative Build
-          kubectl apply --filename https://github.com/knative/build/releases/download/v0.7.0/build.yaml
+          # Install Tekton
+          kubectl apply --filename https://github.com/tektoncd/pipeline/releases/download/v0.8.0/release.yaml
           # Install Kf
           kubectl apply --filename artifacts/release.yaml
 

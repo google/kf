@@ -49,10 +49,10 @@ sudo mv kf /usr/local/bin
 
 ## Install dependencies
 
-### Knative Build:
+### Tekton:
 
 ```.sh
-kubectl apply --filename https://github.com/knative/build/releases/download/v0.7.0/build.yaml
+kubectl apply --filename https://github.com/tektoncd/pipeline/releases/download/v0.8.0/release.yaml
 ```
 
 > If you want more information about installing Knative, see [their docs][knative].

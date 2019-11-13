@@ -26,7 +26,6 @@ import (
 	"os"
 
 	"github.com/google/kf/pkg/kf/commands/config"
-	build "github.com/google/kf/third_party/knative-build/pkg/client/clientset/versioned/typed/build/v1alpha1"
 	cserving "github.com/google/kf/third_party/knative-serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	serving "github.com/google/kf/third_party/knative-serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
 	"github.com/segmentio/textio"
@@ -35,10 +34,6 @@ import (
 
 const (
 	EmptyNamespaceError = "no space targeted, use 'kf target --space SPACE' to target a space"
-)
-
-const (
-	AsyncLogSuffix = "\n(This is an asynchronous operation. See https://github.com/google/kf/issues/599 for updates on work to support synchronous commands.)\n"
 )
 
 // ConfigErr is used to indicate that the returned error is due to a user's
@@ -74,19 +69,6 @@ func GetServingConfig() cserving.ServingV1alpha1Interface {
 	client, err := serving.NewForConfig(config)
 	if err != nil {
 		log.Fatalf("failed to setup serving client: %s", err)
-	}
-	return client
-}
-
-// GetBuildConfig returns the build interface.
-func GetBuildConfig() build.BuildV1alpha1Interface {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		log.Fatalf("failed to get in cluster config: %s", err)
-	}
-	client, err := build.NewForConfig(config)
-	if err != nil {
-		log.Fatalf("failed to setup build client: %s", err)
 	}
 	return client
 }
