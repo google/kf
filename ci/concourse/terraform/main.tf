@@ -20,8 +20,18 @@ resource "random_pet" "kf_test" {
 }
 
 resource "google_compute_network" "k8s_network" {
-  name        = "kf-test-${random_pet.kf_test.id}"
-  description = "Managed by Terraform in Concourse"
+  name                    = "kf-test-${random_pet.kf_test.id}"
+  description             = "Managed by Terraform in Concourse"
+  auto_create_subnetworks = false
+}
+
+resource "google_compute_subnetwork" "kf_apps" {
+  name                     = "kf-apps-${random_pet.kf_test.id}"
+  description              = "Managed by Terraform in Concourse"
+  ip_cidr_range            = "10.0.0.0/16"
+  region                   = "us-central1"
+  private_ip_google_access = true
+  network                  = "${google_compute_network.k8s_network.self_link}"
 }
 
 resource "google_service_account" "kf_test" {
@@ -32,6 +42,10 @@ resource "google_service_account" "kf_test" {
 resource "google_project_iam_member" "kf_test" {
   role   = "roles/storage.admin"
   member = "serviceAccount:${google_service_account.kf_test.email}"
+}
+
+resource "google_service_account_key" "kf_test" {
+  service_account_id = "${google_service_account.kf_test.name}"
 }
 
 resource "google_container_cluster" "kf_test" {
@@ -65,7 +79,7 @@ resource "google_container_cluster" "kf_test" {
   }
 
   # These services must be set for Cloud Run to work correctly.
-  logging_service = "logging.googleapis.com/kubernetes"
+  logging_service    = "logging.googleapis.com/kubernetes"
   monitoring_service = "monitoring.googleapis.com/kubernetes"
 
 
@@ -84,7 +98,8 @@ resource "google_container_cluster" "kf_test" {
     ]
   }
 
-  network = "${google_compute_network.k8s_network.self_link}"
+  network    = "${google_compute_network.k8s_network.self_link}"
+  subnetwork = "${google_compute_subnetwork.kf_apps.self_link}"
 }
 
 output "cluster_name" {
@@ -105,4 +120,9 @@ output "cluster_version" {
 
 output "cluster_network" {
   value = google_compute_network.k8s_network.name
+}
+
+output "gcr_key" {
+  value     = "${base64decode(google_service_account_key.kf_test.private_key)}"
+  sensitive = true
 }

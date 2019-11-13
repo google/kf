@@ -397,6 +397,7 @@ jobs:
           project=`cat terraform/metadata | jq -r '.cluster_project'`
           cluster=`cat terraform/metadata | jq -r '.cluster_name'`
           region=`cat terraform/metadata | jq -r '.cluster_region'`
+          gcr_key=`cat terraform/metadata | jq -r '.gcr_key'`
           # Login to Kubernetes
           set +x
           echo "$SERVICE_ACCOUNT_JSON" > key.json
@@ -423,7 +424,7 @@ jobs:
             ./hack/ko-apply.sh
 
             # Setup Kf Secret and ConifgMap
-            ./hack/create-gke-secret.sh
+            ./hack/create-gke-secret.sh -k "$gcr_key"
 
             # Run integration tests
             ./hack/integration-test.sh
