@@ -112,11 +112,6 @@ templates:
     params:
       path: pr
       status: FAILURE
-  - *release-lock
-
-- &on-success
-  do:
-  - *release-lock
 
 resource_types:
 - name: pull-request
@@ -170,13 +165,13 @@ jobs:
     resource: kf-dev
   - *terraform-destroy
   on_failure: *on-failure
-  on_success:
-    do:
-    - *release-lock
+  ensure:
+  - *release-lock
 
 - name: test
   on_failure: *on-failure
-  on_success: *on-success
+  ensure:
+  - *release-lock
   plan:
   - get: pr
     trigger: true
@@ -375,7 +370,8 @@ jobs:
               ./hack/tidy.sh
               ./hack/check-clean-git-state.sh
             popd
-    - *terraform-pre-destroy
+  - *terraform-destroy
+  - *terraform-pre-destroy
   - *terraform-destroy
   - *terraform-create
   - task: integration

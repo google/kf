@@ -39,8 +39,21 @@ resource "google_service_account" "kf_test" {
   display_name = "Managed by Terraform in Concourse"
 }
 
-resource "google_project_iam_member" "kf_test" {
+# Necessary for GCR read/write
+resource "google_project_iam_member" "storageadmin" {
   role   = "roles/storage.admin"
+  member = "serviceAccount:${google_service_account.kf_test.email}"
+}
+
+# Necessary for Stackdriver logging
+resource "google_project_iam_member" "logwriter" {
+  role   = "roles/logging.logWriter"
+  member = "serviceAccount:${google_service_account.kf_test.email}"
+}
+
+# Necessary for Stackdriver metrics
+resource "google_project_iam_member" "metwicwriter" {
+  role   = "roles/monitoring.metricWriter"
   member = "serviceAccount:${google_service_account.kf_test.email}"
 }
 
@@ -95,11 +108,20 @@ resource "google_container_cluster" "kf_test" {
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform",
       "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/devstorage.read_only",
+      # logging.write and monitoring are necessary for the logging_service
+      # and monitoring_service setup.
+      "https://www.googleapis.com/auth/logging.write",
+      "https://www.googleapis.com/auth/monitoring",
     ]
   }
 
   network    = "${google_compute_network.k8s_network.self_link}"
   subnetwork = "${google_compute_subnetwork.kf_apps.self_link}"
+
+  ip_allocation_policy {
+    # this block must be defined to use VPC networking
+  }
 }
 
 output "cluster_name" {
