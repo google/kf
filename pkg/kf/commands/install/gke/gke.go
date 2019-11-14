@@ -134,13 +134,16 @@ func buildGraph() *cli.InteractiveNode {
 					gkeCfg, err = selectCluster(ctx, projectID, gkeCfg)
 				}
 
+				if err != nil {
+					return ctx, nil, err
+				}
+
 				// Target the cluster
 				if err := targetCluster(ctx, projectID, masterIP, gkeCfg); err != nil {
 					return nil, nil, err
 				}
 
-				// NOTE: err might be nil
-				return kf.SetContainerRegistry(ctx, "gcr.io/"+projectID), kfInstallGraph, err
+				return kf.SetContainerRegistry(ctx, "gcr.io/"+projectID), kfInstallGraph, nil
 			}
 	}
 
