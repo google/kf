@@ -289,7 +289,7 @@ func TestSourceStatus_lifecycle(t *testing.T) {
 			Init: func(status *SourceStatus) {
 				condition := status.BuildCondition()
 				err := condition.MarkChildNotOwned("my-build")
-				testutil.AssertNil(t, "mark not owned", err)
+				testutil.AssertEqual(t, "error", "There is an existing Build \"my-build\" that we do not own.", err.Error())
 			},
 			ExpectOngoing: []apis.ConditionType{},
 			ExpectFailed: []apis.ConditionType{
@@ -301,7 +301,7 @@ func TestSourceStatus_lifecycle(t *testing.T) {
 			Init: func(status *SourceStatus) {
 				condition := status.BuildSecretCondition()
 				err := condition.MarkChildNotOwned("my-secret")
-				testutil.AssertNil(t, "mark not owned", err)
+				testutil.AssertEqual(t, "error", "There is an existing Build Secret \"my-secret\" that we do not own.", err.Error())
 			},
 			ExpectOngoing: []apis.ConditionType{},
 			ExpectFailed: []apis.ConditionType{

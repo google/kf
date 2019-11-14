@@ -501,7 +501,7 @@ func TestReconciler_Reconcile_ApplyChanges(t *testing.T) {
 			fakeVirtualServiceNamespaceLister := NewFakeVirtualServiceNamespaceLister(ctrl)
 
 			fakeSharedClient.EXPECT().
-				Networking().
+				NetworkingV1alpha3().
 				Return(fakeNetworking)
 
 			fakeRouteClaimLister.EXPECT().

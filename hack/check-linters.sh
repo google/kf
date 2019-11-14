@@ -36,4 +36,4 @@ GO111MODULE=off go get -u github.com/client9/misspell/cmd/misspell
 find . -type f -name '*.go' | grep -v ./vendor/ grep -v ./third_party/ | xargs -n1 -P 20 $(go env GOPATH)/bin/misspell -error
 
 GO111MODULE=off go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
-$(go env GOPATH)/bin/golangci-lint run --exclude unused
+$(go env GOPATH)/bin/golangci-lint run

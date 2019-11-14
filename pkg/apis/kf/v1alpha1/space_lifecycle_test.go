@@ -370,7 +370,7 @@ func TestSpaceStatus_lifecycle(t *testing.T) {
 		"Build Secret not owned": {
 			Init: func(status *SpaceStatus) {
 				err := status.BuildSecretCondition().MarkChildNotOwned("build-secret")
-				testutil.AssertNil(t, "mark not owned", err)
+				testutil.AssertEqual(t, "error", "There is an existing Build Secret \"build-secret\" that we do not own.", err.Error())
 			},
 			ExpectOngoing: []apis.ConditionType{
 				SpaceConditionNamespaceReady,
