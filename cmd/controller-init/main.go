@@ -16,16 +16,17 @@ package main
 
 import (
 	"flag"
-	"log"
-	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
-	"go.uber.org/zap"
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"go.uber.org/zap"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/tools/clientcmd"
 	cv1alpha3 "knative.dev/pkg/client/clientset/versioned/typed/istio/v1alpha3"
 	"knative.dev/pkg/configmap"
 	"knative.dev/pkg/logging"
 	"knative.dev/pkg/logging/logkey"
+	"log"
 )
+
 const (
 	component = "controller-init"
 )
