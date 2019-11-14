@@ -36,6 +36,8 @@ func TestNewUnbindServiceCommand(t *testing.T) {
 			Namespace: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClient) {
 				f.EXPECT().UnbindService("custom-ns", "APP_NAME", "SERVICE_INSTANCE")
+
+				f.EXPECT().WaitForConditionServiceBindingsReadyTrue(gomock.Any(), "custom-ns", "APP_NAME", gomock.Any())
 			},
 		},
 		"empty namespace": {
@@ -49,6 +51,13 @@ func TestNewUnbindServiceCommand(t *testing.T) {
 				f.EXPECT().UnbindService(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api-error"))
 			},
 			ExpectedErr: errors.New("api-error"),
+		},
+		"async": {
+			Args:      []string{"--async", "APP_NAME", "SERVICE_INSTANCE"},
+			Namespace: "default",
+			Setup: func(t *testing.T, f *fake.FakeClient) {
+				f.EXPECT().UnbindService(gomock.Any(), gomock.Any(), gomock.Any())
+			},
 		},
 	}
 

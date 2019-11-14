@@ -1,6 +1,6 @@
 
 ===========================================================
-Module: k8s.io/gengo v0.0.0-20190128074634-0689ccc1d7d6
+Module: k8s.io/gengo v0.0.0-20181106084056-51747d6e00da
 
 
 
@@ -423,10 +423,10 @@ Module: github.com/aws/aws-sdk-go v1.17.5
 Module: github.com/census-instrumentation/opencensus-proto v0.2.0
 Module: github.com/golang/mock v1.3.1
 Module: github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c
-Module: github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf
+Module: github.com/google/gofuzz v0.0.0-20161122191042-44d81051d367
 Module: github.com/google/shlex v0.0.0-20181106134648-c34317bd91bf
 Module: github.com/google/wire v0.2.2
-Module: google.golang.org/appengine v1.5.0
+Module: google.golang.org/appengine v1.4.0
 Module: google.golang.org/genproto v0.0.0-20190307195333-5fe7a883aa19
 Module: google.golang.org/grpc v1.19.0
 Module: k8s.io/api v0.0.0-20190528110122-9ad12a4af326 (imported as k8s.io/api v0.0.0)
@@ -434,7 +434,7 @@ Module: k8s.io/apimachinery v0.0.0-20190221084156-01f179d85dbc (imported as k8s.
 Module: k8s.io/cli-runtime v0.0.0-20190528110732-ad79ea2fbc0f (imported as k8s.io/cli-runtime v0.0.0)
 Module: k8s.io/client-go v0.0.0-20190226174127-78295b709ec6 (imported as k8s.io/client-go v2.0.0-alpha.0.0.20190226174127-78295b709ec6+incompatible)
 Module: k8s.io/code-generator v0.0.0-20181128191024-b1289fc74931 (imported as k8s.io/code-generator v0.0.0)
-Module: k8s.io/kube-openapi v0.0.0-20190816220812-743ec37842bf
+Module: k8s.io/kube-openapi v0.0.0-20181109181836-c59034cc13d5
 
 
 
@@ -1247,7 +1247,7 @@ Module: github.com/docker/cli v0.0.0-20191007193719-3e07fa728a30
 ===========================================================
 Module: github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
 Module: github.com/modern-go/reflect2 v1.0.1
-Module: github.com/poy/kontext v0.0.0-20190801225340-1f98414f4e12
+Module: github.com/poy/kontext v0.0.0-20190912033603-631f8aafd494
 Module: github.com/prometheus/client_golang v0.9.3-0.20190127221311-3c4408c8b829
 Module: github.com/prometheus/client_model v0.0.0-20190115171406-56726106282f
 Module: github.com/prometheus/common v0.2.0
@@ -1461,7 +1461,7 @@ Module: knative.dev/pkg v0.0.0-20190703054432-db778775199d
 ===========================================================
 Module: github.com/matttproud/golang_protobuf_extensions v1.0.1
 Module: github.com/poy/service-catalog v0.0.0-20190305064623-db385b1d332c
-Module: gopkg.in/yaml.v2 v2.2.4
+Module: gopkg.in/yaml.v2 v2.2.2
 
 
                                  Apache License
@@ -2599,14 +2599,14 @@ SOFTWARE.
 
 
 ===========================================================
-Module: golang.org/x/crypto v0.0.0-20190611184440-5c40567a22f8
-Module: golang.org/x/net v0.0.0-20190613194153-d28f0bde5980
-Module: golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a
+Module: golang.org/x/crypto v0.0.0-20190422183909-d864b10871cd
+Module: golang.org/x/net v0.0.0-20190420063019-afa5a82059c6
+Module: golang.org/x/oauth2 v0.0.0-20190226205417-e64efc72b421
 Module: golang.org/x/sync v0.0.0-20190423024810-112230192c58
-Module: golang.org/x/sys v0.0.0-20190616124812-15dcb6c0061f
-Module: golang.org/x/text v0.3.2
+Module: golang.org/x/sys v0.0.0-20190422165155-953cdadca894
+Module: golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2
 Module: golang.org/x/time v0.0.0-20181108054448-85acf8d2951c
-Module: golang.org/x/tools v0.0.0-20190614205625-5aca471b1d59
+Module: golang.org/x/tools v0.0.0-20190425150028-36563e24a262
 
 
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -2777,7 +2777,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 ===========================================================
-Module: github.com/dgrijalva/jwt-go v3.2.0+incompatible
+Module: github.com/dgrijalva/jwt-go v0.0.0-20160705203006-01aeca54ebda
 
 
 Copyright (c) 2012 Dave Grijalva
@@ -3095,7 +3095,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 ===========================================================
-Module: github.com/evanphx/json-patch v4.2.0+incompatible
+Module: github.com/evanphx/json-patch v0.0.0-20180908160633-36442dbdb585
 
 
 Copyright (c) 2014, Evan Phoenix
@@ -3256,7 +3256,7 @@ THE SOFTWARE.
 
 
 ===========================================================
-Module: github.com/google/go-cmp v0.3.0 (imported as github.com/google/go-cmp v0.2.0)
+Module: github.com/google/go-cmp v0.3.0 (imported as github.com/google/go-cmp v0.3.0)
 
 
 Copyright (c) 2017 The Go Authors. All rights reserved.
@@ -3314,10 +3314,43 @@ THE SOFTWARE.
 
 
 ===========================================================
-Module: github.com/rogpeppe/go-internal v1.3.0
+Module: github.com/rogpeppe/go-internal v1.5.0
 
 
 Copyright (c) 2018 The Go Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+===========================================================
+Module: golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898
+
+
+Copyright (c) 2019 The Go Authors. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are

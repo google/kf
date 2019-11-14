@@ -1,0 +1,53 @@
+# Copyright 2019 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the License);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an AS IS BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: tekton.dev/v1alpha1
+kind: ClusterTask
+metadata:
+  name: kaniko
+spec:
+  inputs:
+    params:
+    - name: SOURCE_IMAGE
+      description: The image built via Kontext that contains the app's source code.
+      type: string
+    - name: DOCKERFILE
+      description: Path to the Dockerfile to build.
+      type: string
+      default: ./Dockerfile
+  outputs:
+    resources:
+    - name: IMAGE
+      type: image
+  stepTemplate:
+    env:
+    - name: DOCKER_CONFIG
+      value: /builder/home/.docker
+  steps:
+  - name: source-extraction
+    image: "$(inputs.params.SOURCE_IMAGE)"
+    imagePullPolicy: Always
+    command: ["/ko-app/extractor"]
+    args:
+    - "--output_dir=/workspace/source"
+  - name: build-and-push
+    workingdir: /workspace/source
+    image: gcr.io/kaniko-project/executor:v0.13.0
+    env:
+    - name: DOCKER_CONFIG
+      value: /builder/home/.docker
+    args:
+    - --dockerfile=$(inputs.params.DOCKERFILE)
+    - --context=/workspace/source/
+    - --destination=$(outputs.resources.IMAGE.url)

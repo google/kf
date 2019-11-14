@@ -31,6 +31,7 @@ vars:
 - &release_project ((release_project))
 - &release_bucket ((release_bucket))
 - &ko_docker_release_repo ((ko_docker_release_repo))
+- &ko_docker_repo ((ko_docker_repo))
 
 # k8s config
 - &gcp_project_id ((gcp_project_id))
@@ -67,11 +68,6 @@ resources:
   source:
     uri: *git_uri
     branch: *nightly_branch
-- name: ci-pipelines-src
-  type: git
-  source:
-    branch: *ci_git_branch
-    uri: *ci_git_uri
 - name: terraform
   type: terraform
   source:
@@ -99,9 +95,6 @@ jobs:
     - get: kf-dev
       trigger: false
       params: {submodules: none}
-    - get: ci-pipelines-src
-      trigger: false
-      params: {submodules: none}
   - task: unit
     timeout: 10m
     config:
@@ -111,7 +104,6 @@ jobs:
         source: *ci-image-source
       inputs:
       - name: kf-dev
-      - name: ci-pipelines-src
       run:
         path: bash
         args:
@@ -119,7 +111,7 @@ jobs:
         - |
           pushd kf-dev
             # Run unit tests
-            ../ci-pipelines-src/hack/unit-test.sh
+            ./hack/unit-test.sh
           popd
       params:
         GOPROXY: *go_proxy
@@ -132,9 +124,6 @@ jobs:
     - get: kf-dev
       trigger: false
       params: {submodules: none}
-    - get: ci-pipelines-src
-      trigger: false
-      params: {submodules: none}
   - task: check
     config:
       platform: linux
@@ -143,7 +132,6 @@ jobs:
         source: *ci-image-source
       inputs:
       - name: kf-dev
-      - name: ci-pipelines-src
       params:
         GOPROXY: *go_proxy
         GOSUMDB: *go_sum_db
@@ -153,10 +141,36 @@ jobs:
         - -exc
         - |
           pushd kf-dev
-            ../ci-pipelines-src/hack/check-vendor-license.sh
-            ../ci-pipelines-src/hack/check-linters.sh
-            ../ci-pipelines-src/hack/check-go-generate.sh
-            ../ci-pipelines-src/hack/check-code-generator.sh
+            ./hack/tidy.sh
+            ./hack/check-clean-git-state.sh
+
+            ./hack/check-linters.sh
+            ./hack/tidy.sh
+            ./hack/check-clean-git-state.sh
+
+            ./hack/go-generate.sh
+            ./hack/tidy.sh
+            ./hack/check-clean-git-state.sh
+
+            ./hack/update-codegen.sh
+            ./hack/tidy.sh
+            ./hack/check-clean-git-state.sh
+
+            ./hack/update-vendor-license.sh
+            ./hack/tidy.sh
+            ./hack/check-clean-git-state.sh
+
+            ./hack/go-build.sh
+            ./hack/tidy.sh
+            ./hack/check-clean-git-state.sh
+
+            ./hack/unit-test.sh
+            ./hack/tidy.sh
+            ./hack/check-clean-git-state.sh
+
+            ./hack/build.sh
+            ./hack/tidy.sh
+            ./hack/check-clean-git-state.sh
           popd
 
 - name: build-and-integrate
@@ -170,13 +184,10 @@ jobs:
     - get: nightly-build-trigger
       trigger: true
       passed: [unit-test, check]
-    - get: ci-pipelines-src
-      trigger: false
-      params: {submodules: none}
   - aggregate:
     - put: terraform
       params:
-        terraform_source: ci-pipelines-src/ci/concourse/terraform
+        terraform_source: kf-dev/ci/concourse/terraform
         env_name: nightly
         delete_on_failure: true
     - task: build
@@ -193,7 +204,6 @@ jobs:
           NIGHTLY: true
         inputs:
         - name: kf-dev
-        - name: ci-pipelines-src
         outputs:
         - name: artifacts
         run:
@@ -204,10 +214,10 @@ jobs:
             artifacts=`pwd`/artifacts
             pushd kf-dev
               # Generate license
-              ../ci-pipelines-src/hack/update-vendor-license.sh $artifacts
+              ./hack/update-vendor-license.sh $artifacts
               cp third_party/VENDOR-LICENSE $artifacts
               # Build CLI and controllers
-              ../ci-pipelines-src/hack/build-release.sh $artifacts
+              ./hack/build-release.sh $artifacts
             popd
   - task: integration
     timeout: 1h30m
@@ -218,7 +228,6 @@ jobs:
         source: *ci-image-source
       inputs:
       - name: kf-dev
-      - name: ci-pipelines-src
       - name: artifacts
       - name: terraform
       run:
@@ -244,19 +253,32 @@ jobs:
 
           # Install SC
           kubectl apply --recursive --filename kf-dev/third_party/service-catalog/manifests/catalog/templates/
-          # Install Knative Build
-          kubectl apply --filename https://github.com/knative/build/releases/download/v0.7.0/build.yaml
-          # Install Kf
-          kubectl apply --filename artifacts/release.yaml
+
+          # Install Tekton Pipelines
+          kubectl apply --filename https://github.com/tektoncd/pipeline/releases/download/v0.8.0/release.yaml
+
+          # Let SC and Build simmer for 30s
+          sleep 30
 
           pushd kf-dev
-            # Run unit tests
-            ../ci-pipelines-src/hack/integration-test.sh
+            # Install Kf server-side components
+            ./hack/ko-apply.sh
+
+            # Setup Kf Secret and ConifgMap
+            ./hack/create-gke-secret.sh
+
+            # Run integration tests
+            ./hack/integration-test.sh
+
+            # Clean up
+            ./hack/tidy.sh
+            ./hack/check-clean-git-state.sh
           popd
       params:
         GOPROXY: *go_proxy
         GOSUMDB: *go_sum_db
         SERVICE_ACCOUNT_JSON: *service_account_json
+        KO_DOCKER_REPO: *ko_docker_repo
   - task: publish
     config:
       platform: linux
@@ -269,20 +291,21 @@ jobs:
         RELEASE_BUCKET: *release_bucket
       inputs:
       - name: artifacts
-      - name: ci-pipelines-src
+      - name: kf-dev
       run:
         path: bash
         args:
         - -exc
         - |
           artifacts=`pwd`/artifacts
-          ./ci-pipelines-src/hack/upload-release.sh $artifacts
-  - put: terraform
-    params:
-      terraform_source: ci-pipelines-src/ci/concourse/terraform
-      env_name: nightly
-      action: destroy
-    get_params:
-      terraform_source: ci-pipelines-src/ci/concourse/terraform
-      env_name: nightly
-      action: destroy
+          ./kf-dev/hack/upload-release.sh $artifacts
+  - try:
+      put: terraform
+      params:
+        terraform_source: kf-dev/ci/concourse/terraform
+        env_name: nightly
+        action: destroy
+      get_params:
+        terraform_source: kf-dev/ci/concourse/terraform
+        env_name: nightly
+        action: destroy

@@ -15,7 +15,9 @@
 package servicebindings
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/kf/pkg/kf/apps"
 	"github.com/google/kf/pkg/kf/commands/config"
@@ -25,6 +27,8 @@ import (
 
 // NewUnbindServiceCommand allows users to unbind apps from service instances.
 func NewUnbindServiceCommand(p *config.KfParams, client apps.Client) *cobra.Command {
+	var async utils.AsyncFlags
+
 	cmd := &cobra.Command{
 		Use:     "unbind-service APP_NAME SERVICE_INSTANCE",
 		Aliases: []string{"us"},
@@ -51,10 +55,20 @@ func NewUnbindServiceCommand(p *config.KfParams, client apps.Client) *cobra.Comm
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Unbinding service instance %q from app %q %s", instanceName, appName, utils.AsyncLogSuffix)
+			if async.IsSynchronous() {
+				fmt.Fprintf(cmd.OutOrStderr(), "Waiting for bindings to become ready on %s...\n", appName)
+				if _, err := client.WaitForConditionServiceBindingsReadyTrue(context.Background(), p.Namespace, appName, 2*time.Second); err != nil {
+					return fmt.Errorf("imbind failed: %s", err)
+				}
+			}
+
+			fmt.Fprintf(cmd.OutOrStderr(), "Use 'kf restart %s' to ensure your changes take effect\n", appName)
+
 			return nil
 		},
 	}
+
+	async.Add(cmd)
 
 	return cmd
 }

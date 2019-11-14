@@ -56,8 +56,12 @@ rules:
   resources: ["roles"]
   verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
 # the controller MUST hold the roles it will grant within the namespaces
+# TODO(#839): When can we remove this without breaking existing clusters?
 - apiGroups: ["build.knative.dev"]
   resources: ["*"]
+  verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
+- apiGroups: ["tekton.dev"]
+  resources: ["taskruns"]
   verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
 - apiGroups: ["servicecatalog.k8s.io"]
   resources: ["*"]
