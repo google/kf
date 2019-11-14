@@ -66,7 +66,9 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister i
 			}
 
 			if gateway == "" {
-				fmt.Fprintln(cmd.OutOrStdout(), "Autodetecting app gateway. Specify a custom gateway using the --gateway flag.")
+				if _, err := fmt.Fprintln(cmd.OutOrStdout(), "Autodetecting app gateway. Specify a custom gateway using the --gateway flag."); err != nil {
+					return err
+				}
 
 				ingress, err := istio.ExtractIngressFromList(ingressLister.ListIngresses())
 				if err != nil {
@@ -79,8 +81,12 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister i
 			w := cmd.OutOrStdout()
 
 			if noStart {
-				fmt.Fprintln(w, "exiting because no-start flag was provided")
-				utils.PrintCurlExamplesNoListener(w, appHost, gateway)
+				if _, err := fmt.Fprintln(w, "exiting because no-start flag was provided"); err != nil {
+					return err
+				}
+				if err := utils.PrintCurlExamplesNoListener(w, appHost, gateway); err != nil {
+					return err
+				}
 				return nil
 			}
 
@@ -89,8 +95,12 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister i
 				return err
 			}
 
-			utils.PrintCurlExamples(w, listener, appHost, gateway)
-			fmt.Fprintln(w, "\033[33mNOTE: the first request may take some time if the app is scaled to zero\033[0m")
+			if err := utils.PrintCurlExamples(w, listener, appHost, gateway); err != nil {
+				return err
+			}
+			if _, err := fmt.Fprintln(w, "\033[33mNOTE: the first request may take some time if the app is scaled to zero\033[0m"); err != nil {
+				return err
+			}
 
 			return http.Serve(listener, utils.CreateProxy(cmd.OutOrStdout(), app.Status.URL.Host, gateway))
 		},

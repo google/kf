@@ -42,11 +42,21 @@ func ExampleMakeLimitRange() {
 		panic(err)
 	}
 
-	fmt.Println("Name:", LimitRangeName(space))
-	fmt.Println("Managed by:", limitRange.Labels[managedByLabel])
-	fmt.Println("Limit type:", limitRange.Spec.Limits[0].Type)
-	fmt.Println("Default memory request:", limitRange.Spec.Limits[0].DefaultRequest.Memory())
-	fmt.Println("Default cpu request:", limitRange.Spec.Limits[0].DefaultRequest.Cpu())
+	if _, err := fmt.Println("Name:", LimitRangeName(space)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Managed by:", limitRange.Labels[managedByLabel]); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Limit type:", limitRange.Spec.Limits[0].Type); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Default memory request:", limitRange.Spec.Limits[0].DefaultRequest.Memory()); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Default cpu request:", limitRange.Spec.Limits[0].DefaultRequest.Cpu()); err != nil {
+		panic(err)
+	}
 
 	// Output: Name: space-limit-range
 	// Managed by: kf

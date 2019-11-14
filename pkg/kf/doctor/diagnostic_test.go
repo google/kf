@@ -123,8 +123,12 @@ func ExampleDiagnostic_Report() {
 		})
 	})
 
-	fmt.Println("Final Report:")
-	d.Report()
+	if _, err := fmt.Println("Final Report:"); err != nil {
+		panic(err)
+	}
+	if err := d.Report(); err != nil {
+		panic(err)
+	}
 
 	// Output: === RUN	doctor/good
 	// --- PASS: doctor/good

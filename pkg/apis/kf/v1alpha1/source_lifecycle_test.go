@@ -288,7 +288,8 @@ func TestSourceStatus_lifecycle(t *testing.T) {
 		"build not owned": {
 			Init: func(status *SourceStatus) {
 				condition := status.BuildCondition()
-				condition.MarkChildNotOwned("my-build")
+				err := condition.MarkChildNotOwned("my-build")
+				testutil.AssertNil(t, "mark not owned", err)
 			},
 			ExpectOngoing: []apis.ConditionType{},
 			ExpectFailed: []apis.ConditionType{
@@ -299,7 +300,8 @@ func TestSourceStatus_lifecycle(t *testing.T) {
 		"secret not owned": {
 			Init: func(status *SourceStatus) {
 				condition := status.BuildSecretCondition()
-				condition.MarkChildNotOwned("my-secret")
+				err := condition.MarkChildNotOwned("my-secret")
+				testutil.AssertNil(t, "mark not owned", err)
 			},
 			ExpectOngoing: []apis.ConditionType{},
 			ExpectFailed: []apis.ConditionType{

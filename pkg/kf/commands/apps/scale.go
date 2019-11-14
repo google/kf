@@ -71,7 +71,9 @@ func NewScaleCommand(
 				if err != nil {
 					return fmt.Errorf("failed to get app: %s", err)
 				}
-				describe.AppSpecInstances(cmd.OutOrStderr(), app.Spec.Instances)
+				if err := describe.AppSpecInstances(cmd.OutOrStderr(), app.Spec.Instances); err != nil {
+					return err
+				}
 
 				return nil
 			}
@@ -102,7 +104,9 @@ func NewScaleCommand(
 					return err
 				}
 
-				describe.AppSpecInstances(cmd.OutOrStderr(), app.Spec.Instances)
+				if err := describe.AppSpecInstances(cmd.OutOrStderr(), app.Spec.Instances); err != nil {
+					return err
+				}
 
 				return nil
 			}

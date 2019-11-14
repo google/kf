@@ -31,9 +31,15 @@ func ExampleKfSpace() {
 	space.SetBuildServiceAccount("some-service-account")
 
 	// Values
-	fmt.Println("Name:", space.GetName())
-	fmt.Println("Registry:", space.GetContainerRegistry())
-	fmt.Println("Build Service Account:", space.GetBuildServiceAccount())
+	if _, err := fmt.Println("Name:", space.GetName()); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Registry:", space.GetContainerRegistry()); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Build Service Account:", space.GetBuildServiceAccount()); err != nil {
+		panic(err)
+	}
 
 	// Output: Name: nsname
 	// Registry: gcr.io/my-registry
@@ -62,7 +68,9 @@ func ExampleKfSpace_AppendDomains() {
 	for _, domain := range space.Spec.Execution.Domains {
 		domainNames = append(domainNames, domain.Domain)
 	}
-	fmt.Println("Domains:", strings.Join(domainNames, ", "))
+	if _, err := fmt.Println("Domains:", strings.Join(domainNames, ", ")); err != nil {
+		panic(err)
+	}
 
 	// Output: Domains: example.com, other-example.com
 }

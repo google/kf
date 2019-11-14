@@ -134,10 +134,14 @@ func runDoctor(w io.Writer, desiredTests []DoctorTest) error {
 
 	// Report
 	if d.Failed() {
-		failColor.Fprintln(w, "FAIL")
+		if _, err := failColor.Fprintln(w, "FAIL"); err != nil {
+			return err
+		}
 		return errors.New("environment failed checks")
 	}
 
-	passColor.Fprintln(w, "PASS")
+	if _, err := passColor.Fprintln(w, "PASS"); err != nil {
+		return err
+	}
 	return nil
 }

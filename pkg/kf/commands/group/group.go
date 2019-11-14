@@ -84,54 +84,79 @@ func (groups CommandGroups) CalculateMinWidth() int {
 }
 
 // PrintTrimmedMultilineString does just that.
-func PrintTrimmedMultilineString(str string, out io.Writer) {
+func PrintTrimmedMultilineString(str string, out io.Writer) error {
 	if str == "" {
-		return
+		return nil
 	}
 
 	for _, line := range strings.Split(str, "\n") {
-		fmt.Fprintln(out, strings.TrimSpace(line))
+		if _, err := fmt.Fprintln(out, strings.TrimSpace(line)); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 // CommandGroupUsageFunc returns a UsageFunc a root level command can use.
 func CommandGroupUsageFunc(groups CommandGroups, templateFuncs *template.FuncMap) func(*cobra.Command) error {
 	return func(command *cobra.Command) error {
 		out := command.OutOrStdout()
-		fmt.Fprintln(out)
+		if _, err := fmt.Fprintln(out); err != nil {
+			return err
+		}
 		return PrintTemplate(out, command.UsageTemplate(), command, templateFuncs)
 	}
 }
 
 // CommandGroupHelpFunc returns a HelpFunc a root level command can use.
-func CommandGroupHelpFunc(rootCommand *cobra.Command, groups CommandGroups, templateFuncs *template.FuncMap) func(*cobra.Command, []string) {
-	return func(command *cobra.Command, args []string) {
+func CommandGroupHelpFunc(rootCommand *cobra.Command, groups CommandGroups, templateFuncs *template.FuncMap) func(*cobra.Command, []string) error {
+	return func(command *cobra.Command, args []string) error {
 		out := command.OutOrStdout()
 
 		// not the root level, use the default template
 		if rootCommand != command {
 			err := PrintTemplate(out, command.HelpTemplate(), command, templateFuncs)
 			if err != nil {
-				panic(fmt.Sprintf("Error printing help: %v", err))
+				return err
 			}
-			return
+			return nil
 		}
 
-		PrintTrimmedMultilineString(command.Long, out)
-		fmt.Fprintln(out)
+		if err := PrintTrimmedMultilineString(command.Long, out); err != nil {
+			return err
+		}
+
+		if _, err := fmt.Fprintln(out, "Usage:"); err != nil {
+			return err
+		}
 
 		minWidth := groups.CalculateMinWidth()
 		for _, group := range groups {
-			fmt.Fprintln(out, group.Name)
-			for _, c := range group.Commands {
-				fmt.Fprintf(out, "  %s %s\n", rpad(c.Name(), minWidth), c.Short)
+			if _, err := fmt.Fprintln(out, group.Name); err != nil {
+				return err
 			}
-			fmt.Fprintln(out)
+			for _, c := range group.Commands {
+				if _, err := fmt.Fprintf(out, "  %s %s\n", rpad(c.Name(), minWidth), c.Short); err != nil {
+					return err
+				}
+			}
+			if _, err := fmt.Fprintln(out); err != nil {
+				return err
+			}
 		}
 
-		fmt.Fprintln(out, "Usage:")
-		fmt.Fprintf(out, "  %s [flags] COMMAND\n\n", command.CommandPath())
-		fmt.Fprintf(out, "Use \"%s COMMAND --help\" for more information about a given command.\n", command.CommandPath())
+		if _, err := fmt.Fprintln(out, "Usage:"); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(out, "  %s [flags] COMMAND\n\n", command.CommandPath()); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(out, "Use \"%s COMMAND --help\" for more information about a given command.\n", command.CommandPath()); err != nil {
+			return err
+		}
+
+		return nil
 	}
 }
 
@@ -144,10 +169,18 @@ func AddCommandGroups(rootCommand *cobra.Command, groups CommandGroups) *cobra.C
 	}
 
 	rootCommand.SetUsageFunc(CommandGroupUsageFunc(groups, nil))
-	rootCommand.SetHelpFunc(CommandGroupHelpFunc(rootCommand, groups, nil))
+	rootCommand.SetHelpFunc(panicOnError(CommandGroupHelpFunc(rootCommand, groups, nil)))
 
 	for _, group := range groups {
 		rootCommand.AddCommand(group.Commands...)
 	}
 	return rootCommand
+}
+
+func panicOnError(f func(command *cobra.Command, args []string) error) func(command *cobra.Command, args []string) {
+	return func(command *cobra.Command, args []string) {
+		if err := f(command, args); err != nil {
+			panic(err)
+		}
+	}
 }

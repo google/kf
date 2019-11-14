@@ -96,7 +96,9 @@ func TektonLoggingShim(ti tekton.Interface, ki kubernetes.Interface) BuildTailer
 					return nil
 				}
 				prefix := fgGreen.Sprintf("[%s/%s]", log.Task, log.Step)
-				fmt.Fprintln(out, prefix, log.Log)
+				if _, err := fmt.Fprintln(out, prefix, log.Log); err != nil {
+					return err
+				}
 			}
 		}
 	})

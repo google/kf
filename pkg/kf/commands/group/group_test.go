@@ -169,7 +169,8 @@ func TestPrintTrimmedMultilineString(t *testing.T) {
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
 			var b bytes.Buffer
-			group.PrintTrimmedMultilineString(tc.str, &b)
+			err := group.PrintTrimmedMultilineString(tc.str, &b)
+			testutil.AssertNil(t, "print error", err)
 
 			actual := b.String()
 			testutil.AssertEqual(t, "output", tc.expected, actual)

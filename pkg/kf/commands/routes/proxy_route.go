@@ -54,7 +54,9 @@ func NewProxyRouteCommand(p *config.KfParams, ingressLister istio.IngressLister)
 			cmd.SilenceUsage = true
 
 			if gateway == "" {
-				fmt.Fprintln(cmd.OutOrStdout(), "Autodetecting app gateway. Specify a custom gateway using the --gateway flag.")
+				if _, err := fmt.Fprintln(cmd.OutOrStdout(), "Autodetecting app gateway. Specify a custom gateway using the --gateway flag."); err != nil {
+					return err
+				}
 
 				ingress, err := istio.ExtractIngressFromList(ingressLister.ListIngresses())
 				if err != nil {
@@ -66,8 +68,12 @@ func NewProxyRouteCommand(p *config.KfParams, ingressLister istio.IngressLister)
 			w := cmd.OutOrStdout()
 
 			if noStart {
-				fmt.Fprintln(w, "exiting proxy because no-start flag was provided")
-				utils.PrintCurlExamplesNoListener(w, routeHost, gateway)
+				if _, err := fmt.Fprintln(w, "exiting proxy because no-start flag was provided"); err != nil {
+					return err
+				}
+				if err := utils.PrintCurlExamplesNoListener(w, routeHost, gateway); err != nil {
+					return err
+				}
 				return nil
 			}
 
@@ -76,7 +82,10 @@ func NewProxyRouteCommand(p *config.KfParams, ingressLister istio.IngressLister)
 				return err
 			}
 
-			utils.PrintCurlExamples(w, listener, routeHost, gateway)
+			if err := utils.PrintCurlExamples(w, listener, routeHost, gateway); err != nil {
+				return err
+			}
+
 			return http.Serve(listener, utils.CreateProxy(cmd.OutOrStdout(), routeHost, gateway))
 		},
 	}

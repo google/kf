@@ -12,7 +12,9 @@ func ExampleReadConfig() {
 		panic(err)
 	}
 
-	fmt.Println(cfg.CredentialHelpers)
+	if _, err := fmt.Println(cfg.CredentialHelpers); err != nil {
+		panic(err)
+	}
 
 	// Output: map[asia.gcr.io:gcloud eu.gcr.io:gcloud gcr.io:gcloud us.gcr.io:gcloud]
 }
@@ -23,7 +25,9 @@ func ExampleDescribeConfig_credHelpers() {
 		panic(err)
 	}
 
-	DescribeConfig(os.Stdout, cfg)
+	if err := DescribeConfig(os.Stdout, cfg); err != nil {
+		panic(err)
+	}
 
 	// Output: Docker config:
 	//   Auth:
@@ -42,7 +46,9 @@ func ExampleDescribeConfig_customAuth() {
 		panic(err)
 	}
 
-	DescribeConfig(os.Stdout, cfg)
+	if err := DescribeConfig(os.Stdout, cfg); err != nil {
+		panic(err)
+	}
 
 	// Output: Docker config:
 	//   Auth:

@@ -82,7 +82,9 @@ func (t *LoggingRoundTripper) RoundTrip(r *http.Request) (*http.Response, error)
 
 	reqCopy := sanitizeRequest(r)
 	reqBytes, _ := httputil.DumpRequestOut(reqCopy, true)
-	fmt.Fprintln(textio.NewPrefixWriter(w, "Request  > "), string(reqBytes))
+	if _, err := fmt.Fprintln(textio.NewPrefixWriter(w, "Request  > "), string(reqBytes)); err != nil {
+		return nil, err
+	}
 
 	// Copy the body from the copy back over to the main request. The body is
 	// consumed as part of httputil.DumpRequestOut but is replaced with an
@@ -92,10 +94,14 @@ func (t *LoggingRoundTripper) RoundTrip(r *http.Request) (*http.Response, error)
 	// Make request & report output
 	resp, err := t.inner.RoundTrip(r)
 	if err != nil {
-		fmt.Fprintln(textio.NewPrefixWriter(w, "ERROR    = "), err)
+		if _, err := fmt.Fprintln(textio.NewPrefixWriter(w, "ERROR    = "), err); err != nil {
+			return nil, err
+		}
 	} else {
 		respBytes, _ := httputil.DumpResponse(resp, true)
-		fmt.Fprintln(textio.NewPrefixWriter(w, "Response < "), string(respBytes))
+		if _, err := fmt.Fprintln(textio.NewPrefixWriter(w, "Response < "), string(respBytes)); err != nil {
+			return nil, err
+		}
 	}
 
 	return resp, err

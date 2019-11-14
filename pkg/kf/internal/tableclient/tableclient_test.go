@@ -60,8 +60,12 @@ func ExampleNew() {
 type MockRoundTripper struct{}
 
 func (m *MockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	fmt.Println("URL:", req.URL.String())
-	fmt.Println("Accepts:", req.Header.Get("Accept"))
+	if _, err := fmt.Println("URL:", req.URL.String()); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Accepts:", req.Header.Get("Accept")); err != nil {
+		panic(err)
+	}
 
 	// Return a mock response
 	return &http.Response{

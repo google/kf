@@ -16,17 +16,12 @@ package resources
 
 import (
 	"path"
-	"regexp"
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	"knative.dev/pkg/kmeta"
-)
-
-var (
-	regexpRouteLabels = regexp.MustCompile(`[a-zA-Z-0-9._-]`)
 )
 
 // MakeRouteLabels creates Labels that can be used to tie a Route to a

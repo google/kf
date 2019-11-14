@@ -94,7 +94,9 @@ func ExampleUnstructured() {
 		},
 	}
 
-	Unstructured(os.Stdout, resource)
+	if err := Unstructured(os.Stdout, resource); err != nil {
+		panic(err)
+	}
 
 	// Output: API Version:        v1
 	// dummy-dummy:        present

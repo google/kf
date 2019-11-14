@@ -36,7 +36,9 @@ func ExampleMakeServiceBindingLabels() {
 	app.Spec.ServiceBindings = []v1alpha1.AppSpecServiceBinding{*binding}
 
 	labels := MakeServiceBindingLabels(app, binding)
-	describe.Labels(os.Stdout, labels)
+	if err := describe.Labels(os.Stdout, labels); err != nil {
+		panic(err)
+	}
 
 	// Output: app.kubernetes.io/component=cool-binding
 	// app.kubernetes.io/managed-by=kf
@@ -52,7 +54,9 @@ func ExampleMakeServiceBindingName() {
 	}
 	app.Spec.ServiceBindings = []v1alpha1.AppSpecServiceBinding{*binding}
 
-	fmt.Println(MakeServiceBindingName(app, binding))
+	if _, err := fmt.Println(MakeServiceBindingName(app, binding)); err != nil {
+		panic(err)
+	}
 
 	// Output: kf-binding-my-app-a-cool-binding
 }

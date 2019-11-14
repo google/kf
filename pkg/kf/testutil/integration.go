@@ -578,7 +578,9 @@ func Logf(t *testing.T, format string, i ...interface{}) {
 	lineWithPrefix := fmt.Sprintf("[%s] %s", t.Name(), line)
 
 	if testing.Verbose() {
-		fmt.Fprintln(os.Stderr, lineWithPrefix)
+		if _, err := fmt.Fprintln(os.Stderr, lineWithPrefix); err != nil {
+			panic(err)
+		}
 		return
 	}
 

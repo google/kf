@@ -31,7 +31,9 @@ func ExampleCreateVcapApplication() {
 		panic(err)
 	}
 
-	fmt.Println("Name:", env.Name, "Value:", env.Value)
+	if _, err := fmt.Println("Name:", env.Name, "Value:", env.Value); err != nil {
+		panic(err)
+	}
 
 	// Output: Name: VCAP_APPLICATION Value: {"application_name":"my-app","name":"my-app","space_name":"my-ns"}
 }

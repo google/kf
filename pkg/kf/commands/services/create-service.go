@@ -133,7 +133,10 @@ func NewCreateServiceCommand(p *config.KfParams, client services.Client, marketp
 				return err
 			}
 
-			describe.ServiceInstance(cmd.OutOrStdout(), created)
+			if err := describe.ServiceInstance(cmd.OutOrStdout(), created); err != nil {
+				return err
+			}
+
 			return nil
 		},
 	}

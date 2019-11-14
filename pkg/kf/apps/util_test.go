@@ -42,7 +42,9 @@ func ExampleBindService() {
 	apps.UnbindService(myApp, "third")
 
 	for _, b := range myApp.Spec.ServiceBindings {
-		fmt.Println("Instance", b.Instance, "BindingName", b.BindingName)
+		if _, err := fmt.Println("Instance", b.Instance, "BindingName", b.BindingName); err != nil {
+			panic(err)
+		}
 	}
 
 	// Output: Instance another-service BindingName some-binding-name

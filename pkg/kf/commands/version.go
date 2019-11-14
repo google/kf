@@ -28,7 +28,10 @@ func NewVersionCommand(version, goos string) *cobra.Command {
 		Example: `  kf version`,
 		Args:    cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Fprintln(cmd.OutOrStdout(), "kf version", version, goos)
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), "kf version", version, goos); err != nil {
+				return err
+			}
+
 			return nil
 		},
 	}

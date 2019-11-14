@@ -184,7 +184,7 @@ func (t *pushLogTailer) handleUpdate(app *v1alpha1.App) (bool, error) {
 	case corev1.ConditionTrue:
 		// Only handle source success case once
 		t.checkSourceReadyOnce.Do(func() {
-			duration := time.Now().Sub(t.buildStartTime)
+			duration := time.Since(t.buildStartTime)
 			t.logger.Printf("Built in %0.2f seconds\n", duration.Seconds())
 			t.deployStartTime = time.Now()
 		})
@@ -198,14 +198,15 @@ func (t *pushLogTailer) handleUpdate(app *v1alpha1.App) (bool, error) {
 		go t.tailBuildLogsOnce.Do(
 			func() {
 				// ignoring tail errs because they are spurious
-				t.client.sourcesClient.Tail(t.ctx, t.namespace, app.Status.LatestCreatedSourceName, t.out)
+				err := t.client.sourcesClient.Tail(t.ctx, t.namespace, app.Status.LatestCreatedSourceName, t.out)
+				t.logger.Printf("log error: %s", err)
 			},
 		)
 		return false, nil
 	}
 
 	if t.noStart {
-		t.logger.Printf("Total deploy time %0.2f seconds\n", time.Now().Sub(t.deployStartTime).Seconds())
+		t.logger.Printf("Total deploy time %0.2f seconds\n", time.Since(t.deployStartTime).Seconds())
 		return true, nil
 	}
 

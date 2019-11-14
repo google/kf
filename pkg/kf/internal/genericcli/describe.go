@@ -55,9 +55,13 @@ func NewDescribeCommand(t Type, p *config.KfParams, client dynamic.Interface) *c
 			// Print status messages to stderr so stdout is syntatically valid output
 			// if the user wanted JSON, YAML, etc.
 			if t.Namespaced() {
-				fmt.Fprintf(cmd.ErrOrStderr(), "Getting %s %s in namespace: %s\n", friendlyType, resourceName, p.Namespace)
+				if _, err := fmt.Fprintf(cmd.ErrOrStderr(), "Getting %s %s in namespace: %s\n", friendlyType, resourceName, p.Namespace); err != nil {
+					return err
+				}
 			} else {
-				fmt.Fprintf(cmd.ErrOrStderr(), "Getting %s %s\n", friendlyType, resourceName)
+				if _, err := fmt.Fprintf(cmd.ErrOrStderr(), "Getting %s %s\n", friendlyType, resourceName); err != nil {
+					return err
+				}
 			}
 
 			client := getResourceInterface(t, client, p.Namespace)
@@ -79,7 +83,10 @@ func NewDescribeCommand(t Type, p *config.KfParams, client dynamic.Interface) *c
 				return printer.PrintObj(resource, w)
 			}
 
-			describe.Unstructured(w, resource)
+			if err := describe.Unstructured(w, resource); err != nil {
+				return err
+			}
+
 			return nil
 		},
 	}

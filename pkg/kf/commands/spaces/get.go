@@ -52,47 +52,100 @@ func NewGetSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Command
 
 			w := cmd.OutOrStdout()
 
-			describe.ObjectMeta(w, space.ObjectMeta)
-			fmt.Fprintln(w)
+			if err := describe.ObjectMeta(w, space.ObjectMeta); err != nil {
+				return err
+			}
+			if _, err := fmt.Fprintln(w); err != nil {
+				return err
+			}
 
-			describe.DuckStatus(w, space.Status.Status)
-			fmt.Fprintln(w)
+			if err := describe.DuckStatus(w, space.Status.Status); err != nil {
+				return err
+			}
+			if _, err := fmt.Fprintln(w); err != nil {
+				return err
+			}
 
-			describe.SectionWriter(w, "Security", func(w io.Writer) {
+			if err := describe.SectionWriter(w, "Security", func(w io.Writer) error {
 				security := space.Spec.Security
-				fmt.Fprintf(w, "Developers can read logs?\t%v\n", security.EnableDeveloperLogsAccess)
-				fmt.Fprintf(w, "Build Service Account:\t%s\n", security.BuildServiceAccount)
-			})
-			fmt.Fprintln(w)
+				if _, err := fmt.Fprintf(w, "Developers can read logs?\t%v\n", security.EnableDeveloperLogsAccess); err != nil {
+					return err
+				}
+				if _, err := fmt.Fprintf(w, "Build Service Account:\t%s\n", security.BuildServiceAccount); err != nil {
+					return err
+				}
 
-			describe.SectionWriter(w, "Build", func(w io.Writer) {
+				return nil
+			}); err != nil {
+				return err
+			}
+			if _, err := fmt.Fprintln(w); err != nil {
+				return err
+			}
+
+			if err := describe.SectionWriter(w, "Build", func(w io.Writer) error {
 				buildpackBuild := space.Spec.BuildpackBuild
-				fmt.Fprintf(w, "Builder Image:\t%q\n", buildpackBuild.BuilderImage)
-				fmt.Fprintf(w, "Container Registry:\t%q\n", buildpackBuild.ContainerRegistry)
-				describe.EnvVars(w, buildpackBuild.Env)
-			})
-			fmt.Fprintln(w)
+				if _, err := fmt.Fprintf(w, "Builder Image:\t%q\n", buildpackBuild.BuilderImage); err != nil {
+					return err
+				}
+				if _, err := fmt.Fprintf(w, "Container Registry:\t%q\n", buildpackBuild.ContainerRegistry); err != nil {
+					return err
+				}
+				if err := describe.EnvVars(w, buildpackBuild.Env); err != nil {
+					return err
+				}
 
-			describe.SectionWriter(w, "Execution", func(w io.Writer) {
+				return nil
+			}); err != nil {
+				return err
+			}
+
+			if _, err := fmt.Fprintln(w); err != nil {
+				return err
+			}
+
+			if err := describe.SectionWriter(w, "Execution", func(w io.Writer) error {
 				execution := space.Spec.Execution
-				describe.EnvVars(w, execution.Env)
+				if err := describe.EnvVars(w, execution.Env); err != nil {
+					return err
+				}
 
-				describe.SectionWriter(w, "Domains", func(w io.Writer) {
+				if err := describe.SectionWriter(w, "Domains", func(w io.Writer) error {
 					if len(execution.Domains) == 0 {
-						return
+						return nil
 					}
 
-					describe.TabbedWriter(w, func(w io.Writer) {
-						fmt.Fprintln(w, "Name\tDefault?")
-						for _, domain := range execution.Domains {
-							fmt.Fprintf(w, "%s\t%t\n", domain.Domain, domain.Default)
+					if err := describe.TabbedWriter(w, func(w io.Writer) error {
+						if _, err := fmt.Fprintln(w, "Name\tDefault?"); err != nil {
+							return err
 						}
-					})
-				})
-			})
-			fmt.Fprintln(w)
+						for _, domain := range execution.Domains {
+							if _, err := fmt.Fprintf(w, "%s\t%t\n", domain.Domain, domain.Default); err != nil {
+								return err
+							}
+						}
 
-			printAdditionalCommands(w, space.Name)
+						return nil
+					}); err != nil {
+						return err
+					}
+
+					return nil
+				}); err != nil {
+					return err
+				}
+
+				return nil
+			}); err != nil {
+				return err
+			}
+			if _, err := fmt.Fprintln(w); err != nil {
+				return err
+			}
+
+			if err := printAdditionalCommands(w, space.Name); err != nil {
+				return err
+			}
 
 			return nil
 		},
@@ -103,8 +156,16 @@ func NewGetSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Command
 	return cmd
 }
 
-func printAdditionalCommands(w io.Writer, spaceName string) {
-	fmt.Fprintf(w, "Use 'kf space %s' to get the current state of the space.\n", spaceName)
-	fmt.Fprintf(w, "Use 'kf target -s %s' to set the default space kf works with.\n", spaceName)
-	fmt.Fprintln(w, "Use 'kf configure-space' to manage the space.")
+func printAdditionalCommands(w io.Writer, spaceName string) error {
+	if _, err := fmt.Fprintf(w, "Use 'kf space %s' to get the current state of the space.\n", spaceName); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintf(w, "Use 'kf target -s %s' to set the default space kf works with.\n", spaceName); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(w, "Use 'kf configure-space' to manage the space."); err != nil {
+		return err
+	}
+
+	return nil
 }

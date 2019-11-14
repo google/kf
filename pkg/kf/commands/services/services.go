@@ -61,8 +61,10 @@ func NewListServicesCommand(
 			}
 			ma := mapAppToServices(apps)
 
-			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
-				fmt.Fprintln(w, "Name\tService\tPlan\tBound Apps\tLast Operation\tBroker")
+			if err := describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) error {
+				if _, err := fmt.Fprintln(w, "Name\tService\tPlan\tBound Apps\tLast Operation\tBroker"); err != nil {
+					return err
+				}
 				for _, instance := range instances {
 					lastCond := services.LastStatusCondition(instance)
 					var brokerInfo string
@@ -79,7 +81,7 @@ func NewListServicesCommand(
 						planName = instance.Spec.ServicePlanExternalName
 					}
 
-					fmt.Fprintf(
+					if _, err := fmt.Fprintf(
 						w,
 						"%s\t%s\t%s\t%s\t%s\t%s\n",
 						instance.Name,                         // Name
@@ -88,11 +90,17 @@ func NewListServicesCommand(
 						strings.Join(ma[instance.Name], ", "), // Bound Apps
 						lastCond.Reason,                       // Last Operation
 						brokerInfo,                            // Broker
-					)
+					); err != nil {
+						return err
+					}
 				}
-			})
 
-			return err
+				return nil
+			}); err != nil {
+				return err
+			}
+
+			return nil
 		},
 	}
 

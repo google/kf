@@ -37,10 +37,18 @@ func ExampleMakeResourceQuota() {
 		panic(err)
 	}
 
-	fmt.Println("Name:", ResourceQuotaName(space))
-	fmt.Println("Managed by:", quota.Labels[managedByLabel])
-	fmt.Println("Memory quota:", quota.Spec.Hard.Memory())
-	fmt.Println("CPU quota:", quota.Spec.Hard.Cpu())
+	if _, err := fmt.Println("Name:", ResourceQuotaName(space)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Managed by:", quota.Labels[managedByLabel]); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Memory quota:", quota.Spec.Hard.Memory()); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("CPU quota:", quota.Spec.Hard.Cpu()); err != nil {
+		panic(err)
+	}
 
 	// Output: Name: space-quota
 	// Managed by: kf

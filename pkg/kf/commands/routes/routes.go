@@ -52,8 +52,12 @@ func NewRoutesCommand(
 
 			cmd.SilenceUsage = true
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Getting routes in space: %s\n", p.Namespace)
-			fmt.Fprintln(cmd.OutOrStdout())
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Getting routes in space: %s\n", p.Namespace); err != nil {
+				return err
+			}
+			if _, err := fmt.Fprintln(cmd.OutOrStdout()); err != nil {
+				return err
+			}
 
 			routes, err := r.List(p.Namespace)
 			if err != nil {
@@ -70,20 +74,28 @@ func NewRoutesCommand(
 				return fmt.Errorf("failed to fetch Apps: %s", err)
 			}
 
-			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
-				fmt.Fprintln(w, "Host\tDomain\tPath\tApps")
+			if err := describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) error {
+				if _, err := fmt.Fprintln(w, "Host\tDomain\tPath\tApps"); err != nil {
+					return err
+				}
 				for _, route := range groupRoutes(routes, routeClaims) {
 					names := strings.Join(appNames(apps, route), ", ")
-					fmt.Fprintf(
+					if _, err := fmt.Fprintf(
 						w,
 						"%s\t%s\t%s\t%s\n",
 						route.Hostname,
 						route.Domain,
 						route.Path,
 						names,
-					)
+					); err != nil {
+						return err
+					}
 				}
-			})
+
+				return nil
+			}); err != nil {
+				return err
+			}
 
 			return nil
 		},
@@ -129,16 +141,4 @@ func appNames(apps []v1alpha1.App, route v1alpha1.RouteSpecFields) []string {
 		names = append(names, app.Name)
 	}
 	return names
-}
-
-func splitHost(h string) (subDomain, domain string) {
-	// A subdomain implies there are at least 2 periods. If parts has a length
-	// less than 3, then we don't have a subdomain.
-	parts := strings.SplitN(h, ".", 3)
-
-	if len(parts) != 3 {
-		return "", h
-	}
-
-	return parts[0], strings.Join(parts[1:], ".")
 }

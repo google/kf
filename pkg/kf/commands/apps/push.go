@@ -310,7 +310,9 @@ func NewPushCommand(
 						if app.Dockerfile.Path != "" {
 							absDockerPath := filepath.Join(srcPath, filepath.FromSlash(app.Dockerfile.Path))
 							if _, err := os.Stat(absDockerPath); os.IsNotExist(err) {
-								fmt.Fprintln(cmd.OutOrStdout(), "app root:", srcPath)
+								if _, err := fmt.Fprintln(cmd.OutOrStdout(), "app root:", srcPath); err != nil {
+									return err
+								}
 								return fmt.Errorf("the Dockerfile %s couldn't be found under the app root", app.Dockerfile.Path)
 							}
 						}

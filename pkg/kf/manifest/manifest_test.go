@@ -271,13 +271,19 @@ func TestOverride(t *testing.T) {
 func ExampleApplication_Buildpack() {
 	app := manifest.Application{}
 	app.LegacyBuildpack = "hidden-legacy-buildpack"
-	fmt.Println("Legacy:", app.Buildpack())
+	if _, err := fmt.Println("Legacy:", app.Buildpack()); err != nil {
+		panic(err)
+	}
 
 	app.Buildpacks = []string{"java"}
-	fmt.Println("One:", app.Buildpack())
+	if _, err := fmt.Println("One:", app.Buildpack()); err != nil {
+		panic(err)
+	}
 
 	app.Buildpacks = []string{"maven", "java"}
-	fmt.Println("Two:", app.Buildpack())
+	if _, err := fmt.Println("Two:", app.Buildpack()); err != nil {
+		panic(err)
+	}
 
 	// Output: Legacy: hidden-legacy-buildpack
 	// One: java
@@ -286,19 +292,25 @@ func ExampleApplication_Buildpack() {
 
 func ExampleApplication_CommandArgs() {
 	app := manifest.Application{}
-	fmt.Printf("Blank: %v\n", app.CommandArgs())
+	if _, err := fmt.Printf("Blank: %v\n", app.CommandArgs()); err != nil {
+		panic(err)
+	}
 
 	app = manifest.Application{
 		Command: "start.sh && exit 1",
 	}
-	fmt.Printf("Command: %v\n", app.CommandArgs())
+	if _, err := fmt.Printf("Command: %v\n", app.CommandArgs()); err != nil {
+		panic(err)
+	}
 
 	app = manifest.Application{
 		KfApplicationExtension: manifest.KfApplicationExtension{
 			Args: []string{"-m", "SimpleHTTPServer"},
 		},
 	}
-	fmt.Printf("Args: %v\n", app.CommandArgs())
+	if _, err := fmt.Printf("Args: %v\n", app.CommandArgs()); err != nil {
+		panic(err)
+	}
 
 	// Output: Blank: []
 	// Command: [start.sh && exit 1]
@@ -307,14 +319,18 @@ func ExampleApplication_CommandArgs() {
 
 func ExampleApplication_CommandEntrypoint() {
 	app := manifest.Application{}
-	fmt.Printf("Blank: %v\n", app.CommandEntrypoint())
+	if _, err := fmt.Printf("Blank: %v\n", app.CommandEntrypoint()); err != nil {
+		panic(err)
+	}
 
 	app = manifest.Application{
 		KfApplicationExtension: manifest.KfApplicationExtension{
 			Entrypoint: "python",
 		},
 	}
-	fmt.Printf("Entrypoint: %v\n", app.CommandEntrypoint())
+	if _, err := fmt.Printf("Entrypoint: %v\n", app.CommandEntrypoint()); err != nil {
+		panic(err)
+	}
 
 	// Output: Blank: []
 	// Entrypoint: [python]
@@ -328,7 +344,9 @@ func ExampleApplication_WarnUnofficialFields() {
 		},
 	}
 
-	app.WarnUnofficialFields(os.Stdout)
+	if err := app.WarnUnofficialFields(os.Stdout); err != nil {
+		panic(err)
+	}
 
 	// Output:
 	// WARNING! The field(s) [enable-http2 no-start] are Kf-specific manifest extensions and may change.

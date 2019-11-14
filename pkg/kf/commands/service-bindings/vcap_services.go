@@ -59,7 +59,10 @@ func NewVcapServicesCommand(
 				return errors.New("VCAP_SERVICES does not exist")
 			}
 
-			fmt.Fprintln(cmd.OutOrStdout(), string(vcapServices))
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), string(vcapServices)); err != nil {
+				return err
+			}
+
 			return nil
 		},
 	}

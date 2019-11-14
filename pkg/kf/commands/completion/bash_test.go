@@ -36,7 +36,9 @@ func TestAddBashCompletion(t *testing.T) {
 	// Sanity check
 	testutil.AssertEqual(t, "bash completion", "", root.BashCompletionFunction)
 
-	AddBashCompletion(root)
+	if err := AddBashCompletion(root); err != nil {
+		panic(err)
+	}
 
 	testutil.AssertNotBlank(t, "bash completion", root.BashCompletionFunction)
 	testutil.AssertContainsAll(t, root.BashCompletionFunction, []string{

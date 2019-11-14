@@ -18,7 +18,9 @@ import "fmt"
 
 func ExampleKnownGenericTypes() {
 	for _, v := range KnownGenericTypes() {
-		fmt.Println(v)
+		if _, err := fmt.Println(v); err != nil {
+			panic(err)
+		}
 	}
 
 	// Output: apps

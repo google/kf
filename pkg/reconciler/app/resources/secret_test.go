@@ -33,7 +33,9 @@ func ExampleKfInjectedEnvSecretName() {
 	space := &v1alpha1.Space{}
 	space.Name = "my-space"
 
-	fmt.Println(KfInjectedEnvSecretName(app))
+	if _, err := fmt.Println(KfInjectedEnvSecretName(app)); err != nil {
+		panic(err)
+	}
 
 	// Output: kf-injected-envs-my-app
 }

@@ -44,7 +44,9 @@ func NewTargetCommand(p *config.KfParams) *cobra.Command {
 				}
 			}
 
-			fmt.Println("Current space is:", p.Namespace)
+			if _, err := fmt.Println("Current space is:", p.Namespace); err != nil {
+				return err
+			}
 
 			return nil
 		},

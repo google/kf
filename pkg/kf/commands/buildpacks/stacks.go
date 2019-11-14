@@ -56,13 +56,21 @@ func NewStacksCommand(p *config.KfParams, l buildpacks.Client) *cobra.Command {
 				return err
 			}
 
-			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
-				fmt.Fprintln(w, "Name")
+			if err := describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) error {
+				if _, err := fmt.Fprintln(w, "Name"); err != nil {
+					return err
+				}
 
 				for _, s := range stacks {
-					fmt.Fprintf(w, "%s\n", s)
+					if _, err := fmt.Fprintf(w, "%s\n", s); err != nil {
+						return err
+					}
 				}
-			})
+
+				return nil
+			}); err != nil {
+				return err
+			}
 
 			return nil
 		},

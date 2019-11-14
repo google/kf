@@ -65,7 +65,8 @@ func TestNewBuildLogsCommand(t *testing.T) {
 					EXPECT().
 					Tail(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Do(func(_ context.Context, ns, name string, out io.Writer) {
-						fmt.Fprintln(out, "LOG STREAM")
+						_, err := fmt.Fprintln(out, "LOG STREAM")
+						testutil.AssertNil(t, "err", err)
 					}).
 					Return(nil)
 			},

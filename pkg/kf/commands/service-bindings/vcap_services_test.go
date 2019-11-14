@@ -59,7 +59,9 @@ func TestNewVcapServicesCommand(t *testing.T) {
 
 	var secret *corev1.Secret
 	err := json.Unmarshal([]byte(secretSerialized), &secret)
-	fmt.Println(secret.Name)
+	if _, err := fmt.Println(secret.Name); err != nil {
+		panic(err)
+	}
 	testutil.AssertNil(t, "err", err)
 	k8sclient := k8sfake.NewSimpleClientset(secret)
 

@@ -31,15 +31,29 @@ func ExampleKfSource_buildpack() {
 	source.SetBuildpackBuildImage("gcr.io/some-registry/my-image:latest")
 	source.SetBuildpackBuildStack("cflinuxfs3")
 
-	fmt.Println("Name:", source.GetName())
-	fmt.Println("Namespace:", source.GetNamespace())
-	fmt.Println("Source:", source.GetBuildpackBuildSource())
-	fmt.Println("Buildpack:", source.GetBuildpackBuildBuildpack())
-	fmt.Println("Image:", source.GetBuildpackBuildImage())
-	fmt.Println("Stack:", source.GetBuildpackBuildStack())
+	if _, err := fmt.Println("Name:", source.GetName()); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Namespace:", source.GetNamespace()); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Source:", source.GetBuildpackBuildSource()); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Buildpack:", source.GetBuildpackBuildBuildpack()); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Image:", source.GetBuildpackBuildImage()); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Stack:", source.GetBuildpackBuildStack()); err != nil {
+		panic(err)
+	}
 
 	for _, env := range source.GetBuildpackBuildEnv() {
-		fmt.Println("Env:", env.Name, "=", env.Value)
+		if _, err := fmt.Println("Env:", env.Name, "=", env.Value); err != nil {
+			panic(err)
+		}
 	}
 
 	// Output: Name: my-buildpack-build
@@ -58,9 +72,15 @@ func ExampleKfSource_docker() {
 	source.SetNamespace("my-namespace")
 	source.SetContainerImageSource("mysql/mysql")
 
-	fmt.Println("Name:", source.GetName())
-	fmt.Println("Namespace:", source.GetNamespace())
-	fmt.Println("Source:", source.GetContainerImageSource())
+	if _, err := fmt.Println("Name:", source.GetName()); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Namespace:", source.GetNamespace()); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Source:", source.GetContainerImageSource()); err != nil {
+		panic(err)
+	}
 
 	// Output: Name: my-docker-build
 	// Namespace: my-namespace

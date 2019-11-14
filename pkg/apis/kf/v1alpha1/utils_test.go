@@ -94,10 +94,18 @@ func ExampleSingleConditionManager_MarkChildNotOwned() {
 	err := scm.MarkChildNotOwned("dummy-123")
 
 	result := manager.GetCondition("DummyReady")
-	fmt.Println("Status:", result.Status)
-	fmt.Println("Message:", result.Message)
-	fmt.Println("Reason:", result.Reason)
-	fmt.Println("Error:", err)
+	if _, err := fmt.Println("Status:", result.Status); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Message:", result.Message); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Reason:", result.Reason); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Error:", err); err != nil {
+		panic(err)
+	}
 
 	// Output: Status: False
 	// Message: There is an existing Dummy "dummy-123" that we do not own.
@@ -112,10 +120,18 @@ func ExampleSingleConditionManager_MarkTemplateError() {
 	err := scm.MarkTemplateError(errors.New("tmpl-err"))
 
 	result := manager.GetCondition("DummyReady")
-	fmt.Println("Status:", result.Status)
-	fmt.Println("Message:", result.Message)
-	fmt.Println("Reason:", result.Reason)
-	fmt.Println("Error:", err)
+	if _, err := fmt.Println("Status:", result.Status); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Message:", result.Message); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Reason:", result.Reason); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Error:", err); err != nil {
+		panic(err)
+	}
 
 	// Output: Status: False
 	// Message: Couldn't populate the Dummy template: tmpl-err
@@ -130,10 +146,18 @@ func ExampleSingleConditionManager_MarkReconciliationError() {
 	err := scm.MarkReconciliationError("updating", errors.New("update err"))
 
 	result := manager.GetCondition("DummyReady")
-	fmt.Println("Status:", result.Status)
-	fmt.Println("Message:", result.Message)
-	fmt.Println("Reason:", result.Reason)
-	fmt.Println("Error:", err)
+	if _, err := fmt.Println("Status:", result.Status); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Message:", result.Message); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Reason:", result.Reason); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Error:", err); err != nil {
+		panic(err)
+	}
 
 	// Output: Status: False
 	// Message: Error occurred while updating Dummy: update err
@@ -156,10 +180,18 @@ func ExampleSingleConditionManager_MarkReconciliationError_conflict() {
 	err := scm.MarkReconciliationError("updating", conflict)
 
 	result := manager.GetCondition("DummyReady")
-	fmt.Println("Status:", result.Status)
-	fmt.Println("Message:", result.Message)
-	fmt.Println("Reason:", result.Reason)
-	fmt.Println("Error:", err)
+	if _, err := fmt.Println("Status:", result.Status); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Message:", result.Message); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Reason:", result.Reason); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Error:", err); err != nil {
+		panic(err)
+	}
 
 	// Output: Status: Unknown
 	// Message: Error occurred while updating Dummy: Operation cannot be fulfilled on services.serving.knative.dev "MyService": the object has been modified; please apply your changes to the latest version and try again

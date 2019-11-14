@@ -61,40 +61,80 @@ func main() {
 		fmt.Printf("GID was 0, defaulting to %d\n", gid)
 	}
 
-	describe.SectionWriter(w, "Changing permissions", func(w io.Writer) {
-		fmt.Fprintf(w, "chmod %d %s\n", 0744, *workspace)
+	if err := describe.SectionWriter(w, "Changing permissions", func(w io.Writer) error {
+		if _, err := fmt.Fprintf(w, "chmod %d %s\n", 0744, *workspace); err != nil {
+			return err
+		}
 		if err := os.Chmod(*workspace, 0744); err != nil {
-			log.Fatal(err)
+			return err
 		}
 
 		for _, dir := range []string{"/builder/home", "/layers", "/cache", *workspace} {
-			fmt.Fprintf(w, "chown -R %d:%d %s\n", uid, gid, dir)
+			if _, err := fmt.Fprintf(w, "chown -R %d:%d %s\n", uid, gid, dir); err != nil {
+				return err
+			}
 
 			if err := chown(dir, uid, gid); err != nil {
-				log.Fatal(err)
+				return err
 			}
 		}
-	})
-	fmt.Fprintln(w)
 
-	fmt.Fprintln(w, "Uploaded files:")
+		return nil
+	}); err != nil {
+		log.Fatalf("unable to secribe permission changes: %s", err)
+	}
+
+	if _, err := fmt.Fprintln(w); err != nil {
+		log.Fatal("cannot write")
+	}
+
+	if _, err := fmt.Fprintln(w, "Uploaded files:"); err != nil {
+		log.Fatal("cannot write")
+	}
+
 	if err := ls(w, *workspace); err != nil {
 		log.Fatalf("unable to ls workspace: %s", err)
 	}
-	fmt.Fprintln(w)
-	fmt.Fprintln(w)
 
-	describe.SectionWriter(w, "Build info", func(w io.Writer) {
-		fmt.Fprintf(w, "Destination image:\t%s\n", *image)
-		fmt.Fprintf(w, "Stack:\t%s\n", *runImage)
-		fmt.Fprintf(w, "Builder image:\t%s\n", *builderImage)
-		fmt.Fprintf(w, "Use cred helpers:\t%s\n", *useCredHelpers)
-		fmt.Fprintf(w, "Cache volume:\t%s\n", *cacheVolume)
-		fmt.Fprintf(w, "Buildpack overrides:\t%q\n", *buildpackOverrides)
-	})
-	fmt.Fprintln(w)
+	if _, err := fmt.Fprintln(w); err != nil {
+		log.Fatal("cannot write")
+	}
+	if _, err := fmt.Fprintln(w); err != nil {
+		log.Fatal("cannot write")
+	}
 
-	dockerutil.DescribeDefaultConfig(w)
+	if err := describe.SectionWriter(w, "Build info", func(w io.Writer) error {
+		if _, err := fmt.Fprintf(w, "Destination image:\t%s\n", *image); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(w, "Stack:\t%s\n", *runImage); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(w, "Builder image:\t%s\n", *builderImage); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(w, "Use cred helpers:\t%s\n", *useCredHelpers); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(w, "Cache volume:\t%s\n", *cacheVolume); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(w, "Buildpack overrides:\t%q\n", *buildpackOverrides); err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		log.Fatalf("unable to describe build info: %s", err)
+	}
+
+	if _, err := fmt.Fprintln(w); err != nil {
+		log.Fatal("cannot write")
+	}
+
+	if err := dockerutil.DescribeDefaultConfig(w); err != nil {
+		log.Fatalf("unable to describe docker config: %s", err)
+	}
 }
 
 // getBuildUser returns the UID and GID as specified by the buildpack builder

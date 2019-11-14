@@ -48,8 +48,12 @@ func ExampleSpace_SetDefaults() {
 		domainNames = append(domainNames, domain.Domain)
 	}
 
-	fmt.Println("Builder:", space.Spec.BuildpackBuild.BuilderImage)
-	fmt.Println("Domains:", strings.Join(domainNames, ", "))
+	if _, err := fmt.Println("Builder:", space.Spec.BuildpackBuild.BuilderImage); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Domains:", strings.Join(domainNames, ", ")); err != nil {
+		panic(err)
+	}
 
 	// Output: Builder: gcr.io/kf-releases/buildpack-builder:latest
 	// Domains: *mynamespace.custom.example.com
@@ -76,7 +80,9 @@ func ExampleSpaceSpecExecution_SetDefaults_dedupe() {
 		domainNames = append(domainNames, domain.Domain)
 	}
 
-	fmt.Println(strings.Join(domainNames, ", "))
+	if _, err := fmt.Println(strings.Join(domainNames, ", ")); err != nil {
+		panic(err)
+	}
 
 	// Output: *example.com, other-example.com
 
@@ -89,8 +95,12 @@ func ExampleSpaceSpecSecurity_SetDefaults() {
 	}
 	space.SetDefaults(dummyConfig())
 
-	fmt.Println("EnableDeveloperLogsAccess:", space.Spec.Security.EnableDeveloperLogsAccess)
-	fmt.Println("BuildServiceAccount:", space.Spec.Security.BuildServiceAccount)
+	if _, err := fmt.Println("EnableDeveloperLogsAccess:", space.Spec.Security.EnableDeveloperLogsAccess); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("BuildServiceAccount:", space.Spec.Security.BuildServiceAccount); err != nil {
+		panic(err)
+	}
 
 	// Output: EnableDeveloperLogsAccess: true
 	// BuildServiceAccount: kf-builder
@@ -104,8 +114,12 @@ func ExampleSpaceSpecSecurity_SetDefaults_preserves() {
 	}
 	space.SetDefaults(dummyConfig())
 
-	fmt.Println("EnableDeveloperLogsAccess:", space.Spec.Security.EnableDeveloperLogsAccess)
-	fmt.Println("BuildServiceAccount:", space.Spec.Security.BuildServiceAccount)
+	if _, err := fmt.Println("EnableDeveloperLogsAccess:", space.Spec.Security.EnableDeveloperLogsAccess); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("BuildServiceAccount:", space.Spec.Security.BuildServiceAccount); err != nil {
+		panic(err)
+	}
 
 	// Output: EnableDeveloperLogsAccess: true
 	// BuildServiceAccount: some-other-account
@@ -125,13 +139,17 @@ func ExampleSpaceSpecExecution_SetDefaults_badContextPanic() {
 		domainNames = append(domainNames, domain.Domain)
 	}
 
-	fmt.Println("Domains:", strings.Join(domainNames, ", "))
+	if _, err := fmt.Println("Domains:", strings.Join(domainNames, ", ")); err != nil {
+		panic(err)
+	}
 
 	// Output: Domains: *mynamespace.example.com
 }
 
 func ExampleDefaultDomain() {
-	fmt.Println(DefaultDomain(context.Background()))
+	if _, err := fmt.Println(DefaultDomain(context.Background())); err != nil {
+		panic(err)
+	}
 
 	// Output: example.com
 }

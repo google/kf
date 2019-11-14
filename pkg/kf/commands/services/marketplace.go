@@ -54,14 +54,22 @@ func NewMarketplaceCommand(p *config.KfParams, client marketplace.ClientInterfac
 				return err
 			}
 
-			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
+			if err := describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) error {
 				if serviceName == "" {
-					fmt.Fprintf(w, "%d services can be used in namespace %q, use the --service flag to list the plans for a service\n", len(marketplace.Services), p.Namespace)
-					fmt.Fprintln(w)
+					if _, err := fmt.Fprintf(w, "%d services can be used in namespace %q, use the --service flag to list the plans for a service\n", len(marketplace.Services), p.Namespace); err != nil {
+						return err
+					}
+					if _, err := fmt.Fprintln(w); err != nil {
+						return err
+					}
 
-					fmt.Fprintln(w, "Broker\tName\tNamespace\tStatus\tDescription")
+					if _, err := fmt.Fprintln(w, "Broker\tName\tNamespace\tStatus\tDescription"); err != nil {
+						return err
+					}
 					for _, s := range marketplace.Services {
-						fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%.100s\n", s.GetServiceBrokerName(), s.GetExternalName(), s.GetNamespace(), s.GetStatusText(), s.GetDescription())
+						if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%.100s\n", s.GetServiceBrokerName(), s.GetExternalName(), s.GetNamespace(), s.GetStatusText(), s.GetDescription()); err != nil {
+							return err
+						}
 					}
 				} else {
 					// If the user wants to show service plans by a service name, then
@@ -83,12 +91,20 @@ func NewMarketplaceCommand(p *config.KfParams, client marketplace.ClientInterfac
 						}
 					}
 
-					fmt.Fprintln(w, "Name\tFree\tStatus\tDescription")
+					if _, err := fmt.Fprintln(w, "Name\tFree\tStatus\tDescription"); err != nil {
+						return err
+					}
 					for _, p := range filteredPlans {
-						fmt.Fprintf(w, "%s\t%t\t%s\t%.100s\n", p.GetExternalName(), p.GetFree(), p.GetShortStatus(), p.GetDescription())
+						if _, err := fmt.Fprintf(w, "%s\t%t\t%s\t%.100s\n", p.GetExternalName(), p.GetFree(), p.GetShortStatus(), p.GetDescription()); err != nil {
+							return err
+						}
 					}
 				}
-			})
+
+				return nil
+			}); err != nil {
+				return err
+			}
 
 			return nil
 		},

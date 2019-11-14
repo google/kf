@@ -131,9 +131,15 @@ func TestNewCreateServiceBrokerCommand(t *testing.T) {
 
 func ExamplePopulateSpaceBrokerTemplate() {
 	template := PopulateSpaceBrokerTemplate("some-ns", "some-name", "some-url")
-	fmt.Println("Name:", template.Name)
-	fmt.Println("Namespace:", template.Namespace)
-	fmt.Println("URL:", template.Spec.URL)
+	if _, err := fmt.Println("Name:", template.Name); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Namespace:", template.Namespace); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("URL:", template.Spec.URL); err != nil {
+		panic(err)
+	}
 
 	// Output: Name: some-name
 	// Namespace: some-ns
@@ -142,8 +148,12 @@ func ExamplePopulateSpaceBrokerTemplate() {
 
 func ExamplePopulateClusterBrokerTemplate() {
 	template := PopulateClusterBrokerTemplate("some-name", "some-url")
-	fmt.Println("Name:", template.Name)
-	fmt.Println("URL:", template.Spec.URL)
+	if _, err := fmt.Println("Name:", template.Name); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("URL:", template.Spec.URL); err != nil {
+		panic(err)
+	}
 
 	// Output: Name: some-name
 	// URL: some-url

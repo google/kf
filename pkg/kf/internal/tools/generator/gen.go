@@ -51,9 +51,9 @@ func GenLicense() (string, error) {
 
 // GenImports generates an import declaration from the given map of import:alias
 // pairs. If an alias is blank, then the path is imported directly.
-func GenImports(pathAlias map[string]string) string {
+func GenImports(pathAlias map[string]string) (string, error) {
 	if len(pathAlias) == 0 {
-		return ""
+		return "", nil
 	}
 
 	imports := []string{}
@@ -68,13 +68,19 @@ func GenImports(pathAlias map[string]string) string {
 	sort.Strings(imports)
 
 	out := &bytes.Buffer{}
-	fmt.Fprintln(out, "import (")
-	for _, i := range imports {
-		fmt.Fprintln(out, i)
+	if _, err := fmt.Fprintln(out, "import ("); err != nil {
+		return "", err
 	}
-	fmt.Fprintln(out, ")")
+	for _, i := range imports {
+		if _, err := fmt.Fprintln(out, i); err != nil {
+			return "", err
+		}
+	}
+	if _, err := fmt.Fprintln(out, ")"); err != nil {
+		return "", err
+	}
 
-	return out.String()
+	return out.String(), nil
 }
 
 // GenNotice generates a notice that the file was auto-generated.

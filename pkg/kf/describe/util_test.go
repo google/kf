@@ -21,12 +21,24 @@ import (
 )
 
 func ExampleTabbedWriter() {
-	TabbedWriter(os.Stdout, func(w io.Writer) {
-		fmt.Fprintln(w, "OS\tAGE")
-		fmt.Fprintln(w, "Linux\t20y")
-		fmt.Fprintln(w, "DOS\t40y")
-		fmt.Fprintln(w, "BeOS\t20y")
-	})
+	if err := TabbedWriter(os.Stdout, func(w io.Writer) error {
+		if _, err := fmt.Fprintln(w, "OS\tAGE"); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, "Linux\t20y"); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, "DOS\t40y"); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, "BeOS\t20y"); err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		panic(err)
+	}
 
 	// Output: OS     AGE
 	// Linux  20y
@@ -36,13 +48,27 @@ func ExampleTabbedWriter() {
 
 func ExampleIndentWriter() {
 	w := os.Stdout
-	fmt.Fprintln(w, "Level0")
-	IndentWriter(w, func(w io.Writer) {
-		fmt.Fprintln(w, "Level1")
-		IndentWriter(w, func(w io.Writer) {
-			fmt.Fprintln(w, "Level2")
-		})
-	})
+	if _, err := fmt.Fprintln(w, "Level0"); err != nil {
+		panic(err)
+	}
+	if err := IndentWriter(w, func(w io.Writer) error {
+		if _, err := fmt.Fprintln(w, "Level1"); err != nil {
+			return err
+		}
+		if err := IndentWriter(w, func(w io.Writer) error {
+			if _, err := fmt.Fprintln(w, "Level2"); err != nil {
+				return err
+			}
+
+			return nil
+		}); err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		panic(err)
+	}
 
 	// Output: Level0
 	//   Level1
@@ -50,19 +76,32 @@ func ExampleIndentWriter() {
 }
 
 func ExampleSectionWriter_empty() {
-	SectionWriter(os.Stdout, "SectionName", func(_ io.Writer) {
+	if err := SectionWriter(os.Stdout, "SectionName", func(_ io.Writer) error {
 		// No output
-	})
+		return nil
+	}); err != nil {
+		panic(err)
+	}
 
 	// Output: SectionName: <empty>
 }
 
 func ExampleSectionWriter_populated() {
-	SectionWriter(os.Stdout, "OperatingSystems", func(w io.Writer) {
-		fmt.Fprintln(w, "Linux:\tOSS")
-		fmt.Fprintln(w, "DOS:\tPaid")
-		fmt.Fprintln(w, "BeOS:\tDead")
-	})
+	if err := SectionWriter(os.Stdout, "OperatingSystems", func(w io.Writer) error {
+		if _, err := fmt.Fprintln(w, "Linux:\tOSS"); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, "DOS:\tPaid"); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, "BeOS:\tDead"); err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
+		panic(err)
+	}
 
 	// Output: OperatingSystems:
 	//   Linux:  OSS

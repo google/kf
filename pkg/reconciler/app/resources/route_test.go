@@ -158,12 +158,24 @@ func ExampleMakeRouteLabels() {
 		Path:     "/some/path",
 	})
 
-	fmt.Println("Managed by:", l[v1alpha1.ManagedByLabel])
-	fmt.Println("Component Label:", l[v1alpha1.ComponentLabel])
-	fmt.Println("Route Hostname:", l[v1alpha1.RouteHostname])
-	fmt.Println("Route Domain:", l[v1alpha1.RouteDomain])
-	fmt.Println("Route Path (base-36):", l[v1alpha1.RoutePath])
-	fmt.Printf("Number of Keys: %d\n", len(l))
+	if _, err := fmt.Println("Managed by:", l[v1alpha1.ManagedByLabel]); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Component Label:", l[v1alpha1.ComponentLabel]); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Route Hostname:", l[v1alpha1.RouteHostname]); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Route Domain:", l[v1alpha1.RouteDomain]); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Route Path (base-36):", l[v1alpha1.RoutePath]); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Printf("Number of Keys: %d\n", len(l)); err != nil {
+		panic(err)
+	}
 
 	// Output: Managed by: kf
 	// Component Label: route

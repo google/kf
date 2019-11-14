@@ -29,7 +29,9 @@ func ExampleAsyncFlags() {
 
 	cmd := &cobra.Command{
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Running async?", async.IsAsync())
+			if _, err := fmt.Println("Running async?", async.IsAsync()); err != nil {
+				panic(err)
+			}
 		},
 	}
 	async.Add(cmd)
@@ -53,7 +55,9 @@ func ExampleAsyncFlags_IsSynchronous() {
 
 	cmd := &cobra.Command{
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Running sync?", async.IsSynchronous())
+			if _, err := fmt.Println("Running sync?", async.IsSynchronous()); err != nil {
+				panic(err)
+			}
 		},
 	}
 	async.Add(cmd)

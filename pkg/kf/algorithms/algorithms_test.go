@@ -52,7 +52,9 @@ func ExampleDedupe() {
 	s := []string{"a", "b", "a", "d", "b", "d", "c"}
 	s = []string(algorithms.Dedupe(algorithms.Strings(s)).(algorithms.Strings))
 
-	fmt.Println(strings.Join(s, ", "))
+	if _, err := fmt.Println(strings.Join(s, ", ")); err != nil {
+		panic(err)
+	}
 
 	// Outputs: a, b, c, d
 }
@@ -98,7 +100,9 @@ func ExampleSearch() {
 	needles := algorithms.Strings{"x", "y", "z", "c"}
 
 	for needleIdx := range needles {
-		fmt.Println(algorithms.Search(needleIdx, needles, haystack))
+		if _, err := fmt.Println(algorithms.Search(needleIdx, needles, haystack)); err != nil {
+			panic(err)
+		}
 	}
 
 	// Output: true
@@ -133,7 +137,9 @@ func ExampleDelete() {
 	// Sort for readability
 	sort.Sort(algorithms.Strings(a))
 
-	fmt.Println(strings.Join(a, ", "))
+	if _, err := fmt.Println(strings.Join(a, ", ")); err != nil {
+		panic(err)
+	}
 
 	// Outputs: a, b
 }
@@ -160,7 +166,9 @@ func ExampleMerge() {
 	sort.Sort(r)
 
 	for _, x := range r.(algorithms.Strings) {
-		fmt.Println(x)
+		if _, err := fmt.Println(x); err != nil {
+			panic(err)
+		}
 	}
 
 	// Output: a

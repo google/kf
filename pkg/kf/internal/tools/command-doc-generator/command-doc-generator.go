@@ -73,7 +73,9 @@ func main() {
 
 	if *kfOnly {
 		buf := &bytes.Buffer{}
-		fmt.Fprintln(buf, indexTemplate)
+		if _, err := fmt.Fprintln(buf, indexTemplate); err != nil {
+			log.Fatal(err)
+		}
 
 		if err := doc.GenMarkdownCustom(kf, buf, linkHandler); err != nil {
 			log.Fatal(err)

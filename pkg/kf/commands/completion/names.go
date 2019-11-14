@@ -58,7 +58,9 @@ func NewNamesCommand(p *config.KfParams, client dynamic.Interface) *cobra.Comman
 				return err
 			}
 
-			PrintNames(cmd.OutOrStdout(), ul)
+			if err := PrintNames(cmd.OutOrStdout(), ul); err != nil {
+				return err
+			}
 
 			return nil
 		},
@@ -67,7 +69,7 @@ func NewNamesCommand(p *config.KfParams, client dynamic.Interface) *cobra.Comman
 
 // PrintNames prints the names of objects in the given list in alphabetical
 // order.
-func PrintNames(w io.Writer, ul *unstructured.UnstructuredList) {
+func PrintNames(w io.Writer, ul *unstructured.UnstructuredList) error {
 	var names []string
 	for _, li := range ul.Items {
 		names = append(names, li.GetName())
@@ -75,5 +77,9 @@ func PrintNames(w io.Writer, ul *unstructured.UnstructuredList) {
 
 	sort.Strings(names)
 
-	fmt.Fprintln(w, strings.Join(names, " "))
+	if _, err := fmt.Fprintln(w, strings.Join(names, " ")); err != nil {
+		return err
+	}
+
+	return nil
 }

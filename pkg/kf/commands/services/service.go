@@ -43,7 +43,9 @@ func NewGetServiceCommand(p *config.KfParams, client services.Client) *cobra.Com
 				return err
 			}
 
-			describe.ServiceInstance(cmd.OutOrStdout(), instance)
+			if err := describe.ServiceInstance(cmd.OutOrStdout(), instance); err != nil {
+				return err
+			}
 
 			return nil
 		},

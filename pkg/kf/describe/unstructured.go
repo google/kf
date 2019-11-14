@@ -26,14 +26,14 @@ import (
 
 // Unstructured prints information about an unstructured Kubernetes
 // object.
-func Unstructured(w io.Writer, resource *unstructured.Unstructured) {
-	UnstructuredMap(w, resource.UnstructuredContent())
+func Unstructured(w io.Writer, resource *unstructured.Unstructured) error {
+	return UnstructuredMap(w, resource.UnstructuredContent())
 }
 
 // UnstructuredMap writes information about a JSON style unstructured
 // object.
-func UnstructuredMap(w io.Writer, obj map[string]interface{}) {
-	TabbedWriter(w, func(w io.Writer) {
+func UnstructuredMap(w io.Writer, obj map[string]interface{}) error {
+	return TabbedWriter(w, func(w io.Writer) error {
 		var keys []string
 		for k := range obj {
 			keys = append(keys, k)
@@ -46,32 +46,48 @@ func UnstructuredMap(w io.Writer, obj map[string]interface{}) {
 
 			switch val := rawVal.(type) {
 			case map[string]interface{}:
-				SectionWriter(w, key, func(w io.Writer) {
-					UnstructuredMap(w, val)
-				})
+				if err := SectionWriter(w, key, func(w io.Writer) error {
+					return UnstructuredMap(w, val)
+				}); err != nil {
+					return err
+				}
 			case []interface{}:
-				SectionWriter(w, key, func(w io.Writer) {
-					UnstructuredArray(w, val)
-				})
+				if err := SectionWriter(w, key, func(w io.Writer) error {
+					return UnstructuredArray(w, val)
+				}); err != nil {
+					return err
+				}
 			default:
-				fmt.Fprintf(w, "%s:\t%v\n", key, val)
+				if _, err := fmt.Fprintf(w, "%s:\t%v\n", key, val); err != nil {
+					return err
+				}
 			}
 		}
+
+		return nil
 	})
 }
 
 // UnstructuredArray formats and writes an array to the output.
-func UnstructuredArray(w io.Writer, anArray []interface{}) {
+func UnstructuredArray(w io.Writer, anArray []interface{}) error {
 	for _, rawVal := range anArray {
 		switch val := rawVal.(type) {
 		case map[string]interface{}:
-			UnstructuredMap(w, val)
+			if err := UnstructuredMap(w, val); err != nil {
+				return err
+			}
 		case []interface{}:
-			UnstructuredArray(w, val)
+			if err := UnstructuredArray(w, val); err != nil {
+				return err
+			}
 		default:
-			fmt.Fprintf(w, "%v\n", val)
+			if _, err := fmt.Fprintf(w, "%v\n", val); err != nil {
+				return err
+			}
 		}
 	}
+
+	return nil
 }
 
 // JSONKeyToTitleCase converts a JSON key to a human friendly casing.

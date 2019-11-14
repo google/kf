@@ -57,9 +57,11 @@ func NewCreateRouteCommand(
 			if len(args) == 2 {
 				space = args[0]
 				domain = args[1]
-				fmt.Fprintln(cmd.OutOrStderr(), `
+				if _, err := fmt.Fprintln(cmd.OutOrStderr(), `
 [WARN]: passing the SPACE as an argument is deprecated.
-Use the --namespace flag instead.`)
+Use the --namespace flag instead.`); err != nil {
+					return err
+				}
 			}
 
 			if p.Namespace != "" && p.Namespace != "default" && p.Namespace != space {
@@ -101,7 +103,10 @@ Use the --namespace flag instead.`)
 
 			// NOTE: RouteClaims don't have a status so there's nothing to wait on
 			// after creation.
-			fmt.Fprintln(cmd.OutOrStdout(), "Creating route...")
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), "Creating route..."); err != nil {
+				return err
+			}
+
 			return nil
 		},
 	}

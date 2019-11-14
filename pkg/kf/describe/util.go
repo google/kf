@@ -27,11 +27,11 @@ import (
 )
 
 // TabbedWriter indents all tabbed output to be aligned.
-func TabbedWriter(w io.Writer, f func(io.Writer)) {
+func TabbedWriter(w io.Writer, f func(io.Writer) error) error {
 	out := tabwriter.NewWriter(w, 0, 8, 2, ' ', 0)
 	defer out.Flush()
 
-	f(out)
+	return f(out)
 }
 
 // translateTimestampSince returns the elapsed time since timestamp in
@@ -46,21 +46,23 @@ func translateTimestampSince(timestamp metav1.Time) string {
 
 // IndentWriter creates a new writer that indents all lines passing through it
 // by two spaces.
-func IndentWriter(w io.Writer, f func(io.Writer)) {
+func IndentWriter(w io.Writer, f func(io.Writer) error) error {
 	iw := textio.NewPrefixWriter(w, "  ")
 	defer iw.Flush()
 
-	f(iw)
+	return f(iw)
 }
 
 // SectionWriter writes a section heading with the given name then calls f with
 // a tab aligning indenting writer to format the contents of the section.
-func SectionWriter(w io.Writer, name string, f func(io.Writer)) error {
+func SectionWriter(w io.Writer, name string, f func(io.Writer) error) error {
 	buf := &bytes.Buffer{}
 
-	TabbedWriter(buf, func(w io.Writer) {
-		IndentWriter(w, f)
-	})
+	if err := TabbedWriter(buf, func(w io.Writer) error {
+		return IndentWriter(w, f)
+	}); err != nil {
+		return err
+	}
 
 	if len(buf.Bytes()) == 0 {
 		if _, err := fmt.Fprintf(w, "%s: <empty>\n", name); err != nil {
@@ -74,4 +76,5 @@ func SectionWriter(w io.Writer, name string, f func(io.Writer)) error {
 			return err
 		}
 	}
+	return nil
 }

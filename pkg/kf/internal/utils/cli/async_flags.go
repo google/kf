@@ -56,14 +56,20 @@ func (flags *AsyncFlags) IsSynchronous() bool {
 // otherwise the error will be nil.
 func (flags *AsyncFlags) AwaitAndLog(w io.Writer, action string, callback func() error) error {
 	if flags.IsSynchronous() {
-		fmt.Fprintf(w, "%s...\n", action)
+		if _, err := fmt.Fprintf(w, "%s...\n", action); err != nil {
+			return err
+		}
 		if err := callback(); err != nil {
 			return err
 		}
 
-		fmt.Fprintln(w, "Success")
+		if _, err := fmt.Fprintln(w, "Success"); err != nil {
+			return err
+		}
 	} else {
-		fmt.Fprintf(w, "%s asynchronously\n", action)
+		if _, err := fmt.Fprintf(w, "%s asynchronously\n", action); err != nil {
+			return err
+		}
 	}
 
 	return nil

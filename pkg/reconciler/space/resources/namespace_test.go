@@ -24,7 +24,9 @@ func ExampleNamespaceName() {
 	space := &v1alpha1.Space{}
 	space.Name = "my-space"
 
-	fmt.Println(NamespaceName(space))
+	if _, err := fmt.Println(NamespaceName(space)); err != nil {
+		panic(err)
+	}
 
 	// Output: my-space
 }
@@ -38,10 +40,18 @@ func ExampleMakeNamespace() {
 		panic(err)
 	}
 
-	fmt.Println("Name:", NamespaceName(space))
-	fmt.Println("Label Count:", len(ns.Labels))
-	fmt.Println("Managed By:", ns.Labels[managedByLabel])
-	fmt.Println("Istio Injection:", ns.Labels[istioInjectionLabel])
+	if _, err := fmt.Println("Name:", NamespaceName(space)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Label Count:", len(ns.Labels)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Managed By:", ns.Labels[managedByLabel]); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Istio Injection:", ns.Labels[istioInjectionLabel]); err != nil {
+		panic(err)
+	}
 
 	// Output: Name: my-space
 	// Label Count: 2

@@ -27,9 +27,11 @@ func ExamplePrintNames() {
 	z := unstructured.Unstructured{}
 	z.SetName("app-z")
 
-	PrintNames(os.Stdout, &unstructured.UnstructuredList{
+	if err := PrintNames(os.Stdout, &unstructured.UnstructuredList{
 		Items: []unstructured.Unstructured{z, a},
-	})
+	}); err != nil {
+		panic(err)
+	}
 
 	// Output: app-a app-z
 }

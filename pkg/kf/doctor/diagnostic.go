@@ -80,7 +80,9 @@ func (d *Diagnostic) Run(name string, f func(d *Diagnostic)) {
 	}
 
 	if d.parent == nil {
-		child.Report()
+		if err := child.Report(); err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -167,11 +169,11 @@ func (d *Diagnostic) log(s string) {
 }
 
 // Report creates a detailed testing style report for the execution.
-func (d *Diagnostic) Report() {
-	d.reportIndent(0)
+func (d *Diagnostic) Report() error {
+	return d.reportIndent(0)
 }
 
-func (d *Diagnostic) reportIndent(indent int) {
+func (d *Diagnostic) reportIndent(indent int) error {
 	prefix := strings.Repeat("    ", indent)
 
 	passfail := passColor.Sprint("PASS")
@@ -179,12 +181,20 @@ func (d *Diagnostic) reportIndent(indent int) {
 		passfail = failColor.Sprint("FAIL")
 	}
 
-	fmt.Fprintf(d.w, "%s--- %s: %s", prefix, passfail, d.name)
-	fmt.Fprintln(d.w)
+	if _, err := fmt.Fprintf(d.w, "%s--- %s: %s", prefix, passfail, d.name); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(d.w); err != nil {
+		return err
+	}
 
 	for _, child := range d.children {
-		child.reportIndent(indent + 1)
+		if err := child.reportIndent(indent + 1); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 // Failed reports whether the function has failed.

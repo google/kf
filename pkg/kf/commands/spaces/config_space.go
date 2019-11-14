@@ -105,11 +105,22 @@ type spaceMutator struct {
 func (sm spaceMutator) exampleCommands() string {
 	joinedArgs := strings.Join(sm.ExampleArgs, " ")
 	buffer := &bytes.Buffer{}
-	fmt.Fprintln(buffer)
-	fmt.Fprintf(buffer, "  # Configure the space \"my-space\"\n")
-	fmt.Fprintf(buffer, "  kf configure-space %s my-space %s\n", sm.Name, joinedArgs)
-	fmt.Fprintf(buffer, "  # Configure the targeted space\n")
-	fmt.Fprintf(buffer, "  kf configure-space %s %s\n", sm.Name, joinedArgs)
+	if _, err := fmt.Fprintln(buffer); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Fprintf(buffer, "  # Configure the space \"my-space\"\n"); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Fprintf(buffer, "  kf configure-space %s my-space %s\n", sm.Name, joinedArgs); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Fprintf(buffer, "  # Configure the targeted space\n"); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Fprintf(buffer, "  kf configure-space %s %s\n", sm.Name, joinedArgs); err != nil {
+		panic(err)
+	}
+
 	return buffer.String()
 }
 
@@ -358,11 +369,22 @@ type spaceAccessor struct {
 
 func (sm spaceAccessor) exampleCommands() string {
 	buffer := &bytes.Buffer{}
-	fmt.Fprintln(buffer)
-	fmt.Fprintf(buffer, "  # Configure the space \"my-space\"\n")
-	fmt.Fprintf(buffer, "  kf configure-space %s my-space\n", sm.Name)
-	fmt.Fprintf(buffer, "  # Configure the targeted space\n")
-	fmt.Fprintf(buffer, "  kf configure-space %s\n", sm.Name)
+	if _, err := fmt.Fprintln(buffer); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Fprintf(buffer, "  # Configure the space \"my-space\"\n"); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Fprintf(buffer, "  kf configure-space %s my-space\n", sm.Name); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Fprintf(buffer, "  # Configure the targeted space\n"); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Fprintf(buffer, "  kf configure-space %s\n", sm.Name); err != nil {
+		panic(err)
+	}
+
 	return buffer.String()
 }
 

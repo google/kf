@@ -77,10 +77,14 @@ func NewDeleteRouteCommand(
 
 			// NOTE: RouteClaims don't have a status so there's nothing to wait on
 			// after deletion.
-			fmt.Fprintln(cmd.OutOrStdout(), "Deleting route...")
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), "Deleting route..."); err != nil {
+				return err
+			}
 
 			for _, app := range apps {
-				fmt.Fprintf(cmd.OutOrStderr(), "Unmapping route from %s...\n", app.Name)
+				if _, err := fmt.Fprintf(cmd.OutOrStderr(), "Unmapping route from %s...\n", app.Name); err != nil {
+					return err
+				}
 				if err := unmapApp(
 					p.Namespace,
 					app.Name,
@@ -92,7 +96,9 @@ func NewDeleteRouteCommand(
 				}
 			}
 
-			fmt.Fprintf(cmd.OutOrStderr(), "Deleting route claim...\n")
+			if _, err := fmt.Fprintf(cmd.OutOrStderr(), "Deleting route claim...\n"); err != nil {
+				return err
+			}
 			if err := c.Delete(
 				p.Namespace,
 				v1alpha1.GenerateRouteClaimName(

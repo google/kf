@@ -32,7 +32,9 @@ func ExampleBuildpackBuildImageDestination() {
 	space := &v1alpha1.Space{}
 	space.Spec.BuildpackBuild.ContainerRegistry = "gcr.io/my-project"
 
-	fmt.Println(BuildpackBuildImageDestination(app, space))
+	if _, err := fmt.Println(BuildpackBuildImageDestination(app, space)); err != nil {
+		panic(err)
+	}
 
 	// Output: gcr.io/my-project/app_myspace_myapp:facade
 }
@@ -43,7 +45,9 @@ func ExampleBuildpackBuildImageDestination_noRegistry() {
 	app.Namespace = "myspace"
 	app.Spec.Source.UpdateRequests = 0xfacade
 
-	fmt.Println(BuildpackBuildImageDestination(app, &v1alpha1.Space{}))
+	if _, err := fmt.Println(BuildpackBuildImageDestination(app, &v1alpha1.Space{})); err != nil {
+		panic(err)
+	}
 
 	// Output: app_myspace_myapp:facade
 }

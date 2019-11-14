@@ -25,7 +25,9 @@ func ExampleTaskRunName() {
 	source := &v1alpha1.Source{}
 	source.Name = "my-source"
 
-	fmt.Println(TaskRunName(source))
+	if _, err := fmt.Println(TaskRunName(source)); err != nil {
+		panic(err)
+	}
 
 	// Output: my-source
 }
@@ -34,7 +36,9 @@ func ExampleTaskRunSecretName() {
 	source := &v1alpha1.Source{}
 	source.Name = "my-source"
 
-	fmt.Println(TaskRunSecretName(source))
+	if _, err := fmt.Println(TaskRunSecretName(source)); err != nil {
+		panic(err)
+	}
 
 	// Output: my-source
 }
@@ -88,17 +92,39 @@ func ExampleMakeTaskRun_buildpack_taskRun() {
 		panic(err)
 	}
 
-	fmt.Println("Name:", taskRun.Name)
-	fmt.Println("Label Count:", len(taskRun.Labels))
-	fmt.Println("Managed By:", taskRun.Labels[managedByLabel])
-	fmt.Println("Service Account:", taskRun.Spec.ServiceAccountName)
-	fmt.Println("OwnerReferences Count:", len(taskRun.OwnerReferences))
-	fmt.Println("Input Count:", len(taskRun.Spec.Inputs.Params))
-	fmt.Println("Input Image:", v1alpha1.GetTaskRunInputParam(taskRun, v1alpha1.TaskRunParamSourceContainer))
-	fmt.Println("Output Count:", len(taskRun.Spec.Outputs.Resources))
-	fmt.Println("Output Image:", v1alpha1.GetTaskRunOutputResource(taskRun, v1alpha1.TaskRunResourceNameImage, v1alpha1.TaskRunResourceURL))
-	fmt.Println("Stack:", v1alpha1.GetTaskRunInputParam(taskRun, v1alpha1.TaskRunParamBuildpackRunImage))
-	fmt.Println("Env Name:", v1alpha1.GetTaskRunInputParam(taskRun, v1alpha1.TaskRunParamEnvSecret))
+	if _, err := fmt.Println("Name:", taskRun.Name); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Label Count:", len(taskRun.Labels)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Managed By:", taskRun.Labels[managedByLabel]); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Service Account:", taskRun.Spec.ServiceAccountName); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("OwnerReferences Count:", len(taskRun.OwnerReferences)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Input Count:", len(taskRun.Spec.Inputs.Params)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Input Image:", v1alpha1.GetTaskRunInputParam(taskRun, v1alpha1.TaskRunParamSourceContainer)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Output Count:", len(taskRun.Spec.Outputs.Resources)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Output Image:", v1alpha1.GetTaskRunOutputResource(taskRun, v1alpha1.TaskRunResourceNameImage, v1alpha1.TaskRunResourceURL)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Stack:", v1alpha1.GetTaskRunInputParam(taskRun, v1alpha1.TaskRunParamBuildpackRunImage)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Env Name:", v1alpha1.GetTaskRunInputParam(taskRun, v1alpha1.TaskRunParamEnvSecret)); err != nil {
+		panic(err)
+	}
 
 	// Output: Name: my-source
 	// Label Count: 1
@@ -121,12 +147,24 @@ func ExampleMakeTaskRun_buildpack_secret() {
 		panic(err)
 	}
 
-	fmt.Println("Name:", secret.Name)
-	fmt.Println("Label Count:", len(secret.Labels))
-	fmt.Println("Managed By:", secret.Labels[managedByLabel])
-	fmt.Println("OwnerReferences Count:", len(secret.OwnerReferences))
-	fmt.Println("Data['BAR']:", string(secret.Data["BAR"]))
-	fmt.Println("Data['FOO']:", string(secret.Data["FOO"]))
+	if _, err := fmt.Println("Name:", secret.Name); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Label Count:", len(secret.Labels)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Managed By:", secret.Labels[managedByLabel]); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("OwnerReferences Count:", len(secret.OwnerReferences)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Data['BAR']:", string(secret.Data["BAR"])); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Data['FOO']:", string(secret.Data["FOO"])); err != nil {
+		panic(err)
+	}
 
 	// Output: Name: my-source
 	// Label Count: 1
@@ -144,14 +182,30 @@ func ExampleMakeTaskRun_container_taskRun() {
 		panic(err)
 	}
 
-	fmt.Println("Name:", taskRun.Name)
-	fmt.Println("Label Count:", len(taskRun.Labels))
-	fmt.Println("Managed By:", taskRun.Labels[managedByLabel])
-	fmt.Println("Service Account:", taskRun.Spec.ServiceAccountName)
-	fmt.Println("OwnerReferences Count:", len(taskRun.OwnerReferences))
-	fmt.Println("Input Count:", len(taskRun.Spec.Inputs.Params))
-	fmt.Println("Output Count:", len(taskRun.Spec.Outputs.Resources))
-	fmt.Println("Output Image:", v1alpha1.GetTaskRunOutputResource(taskRun, v1alpha1.TaskRunResourceNameImage, v1alpha1.TaskRunResourceURL))
+	if _, err := fmt.Println("Name:", taskRun.Name); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Label Count:", len(taskRun.Labels)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Managed By:", taskRun.Labels[managedByLabel]); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Service Account:", taskRun.Spec.ServiceAccountName); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("OwnerReferences Count:", len(taskRun.OwnerReferences)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Input Count:", len(taskRun.Spec.Inputs.Params)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Output Count:", len(taskRun.Spec.Outputs.Resources)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Output Image:", v1alpha1.GetTaskRunOutputResource(taskRun, v1alpha1.TaskRunResourceNameImage, v1alpha1.TaskRunResourceURL)); err != nil {
+		panic(err)
+	}
 
 	// Output: Name: my-source
 	// Label Count: 1
@@ -171,7 +225,9 @@ func ExampleMakeTaskRun_container_secret() {
 		panic(err)
 	}
 
-	fmt.Println("Is nil:", secret == nil)
+	if _, err := fmt.Println("Is nil:", secret == nil); err != nil {
+		panic(err)
+	}
 
 	// Output: Is nil: true
 }
@@ -184,15 +240,33 @@ func ExampleMakeTaskRun_docker_taskRun() {
 		panic(err)
 	}
 
-	fmt.Println("Name:", taskRun.Name)
-	fmt.Println("Label Count:", len(taskRun.Labels))
-	fmt.Println("Managed By:", taskRun.Labels[managedByLabel])
-	fmt.Println("Service Account:", taskRun.Spec.ServiceAccountName)
-	fmt.Println("OwnerReferences Count:", len(taskRun.OwnerReferences))
-	fmt.Println("Input Count:", len(taskRun.Spec.Inputs.Params))
-	fmt.Println("Input Image:", v1alpha1.GetTaskRunInputParam(taskRun, v1alpha1.TaskRunParamSourceContainer))
-	fmt.Println("Output Count:", len(taskRun.Spec.Outputs.Resources))
-	fmt.Println("Output Image:", v1alpha1.GetTaskRunOutputResource(taskRun, v1alpha1.TaskRunResourceNameImage, v1alpha1.TaskRunResourceURL))
+	if _, err := fmt.Println("Name:", taskRun.Name); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Label Count:", len(taskRun.Labels)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Managed By:", taskRun.Labels[managedByLabel]); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Service Account:", taskRun.Spec.ServiceAccountName); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("OwnerReferences Count:", len(taskRun.OwnerReferences)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Input Count:", len(taskRun.Spec.Inputs.Params)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Input Image:", v1alpha1.GetTaskRunInputParam(taskRun, v1alpha1.TaskRunParamSourceContainer)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Output Count:", len(taskRun.Spec.Outputs.Resources)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Output Image:", v1alpha1.GetTaskRunOutputResource(taskRun, v1alpha1.TaskRunResourceNameImage, v1alpha1.TaskRunResourceURL)); err != nil {
+		panic(err)
+	}
 
 	// Output: Name: my-source
 	// Label Count: 1
@@ -213,7 +287,9 @@ func ExampleMakeTaskRun_docker_secret() {
 		panic(err)
 	}
 
-	fmt.Println("Is nil:", secret == nil)
+	if _, err := fmt.Println("Is nil:", secret == nil); err != nil {
+		panic(err)
+	}
 
 	// Output: Is nil: true
 }

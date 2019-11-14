@@ -40,7 +40,9 @@ func ExampleEnvVars_populated() {
 		{Name: "SECOND", Value: "second-value"},
 	}
 
-	describe.EnvVars(os.Stdout, env)
+	if err := describe.EnvVars(os.Stdout, env); err != nil {
+		panic(err)
+	}
 
 	// Output: Environment:
 	//   FIRST:   first-value
@@ -48,7 +50,9 @@ func ExampleEnvVars_populated() {
 }
 
 func ExampleEnvVars_empty() {
-	describe.EnvVars(os.Stdout, nil)
+	if err := describe.EnvVars(os.Stdout, nil); err != nil {
+		panic(err)
+	}
 
 	// Output: Environment: <empty>
 }
@@ -58,7 +62,9 @@ func ExampleTypeMeta() {
 	s.Kind = "Secret"
 	s.APIVersion = "v1"
 
-	describe.TypeMeta(os.Stdout, s.TypeMeta)
+	if err := describe.TypeMeta(os.Stdout, s.TypeMeta); err != nil {
+		panic(err)
+	}
 
 	// Output: API Version:  v1
 	// Kind:         Secret
@@ -109,8 +115,8 @@ func TestObjectMeta(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 			b := &bytes.Buffer{}
 
-			describe.ObjectMeta(b, tc.obj)
-
+			err := describe.ObjectMeta(b, tc.obj)
+			testutil.AssertNil(t, "describe object meta error", err)
 			testutil.AssertContainsAll(t, b.String(), tc.expectedStrings)
 		})
 	}
@@ -151,7 +157,8 @@ func TestLabels(t *testing.T) {
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
 			b := &bytes.Buffer{}
-			describe.Labels(b, tc.labels)
+			err := describe.Labels(b, tc.labels)
+			testutil.AssertNil(t, "describe labels error", err)
 			testutil.AssertContainsAll(t, b.String(), tc.expectedStrings)
 		})
 	}
@@ -194,8 +201,8 @@ func TestDuckStatus(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 			b := &bytes.Buffer{}
 
-			describe.DuckStatus(b, tc.status)
-
+			err := describe.DuckStatus(b, tc.status)
+			testutil.AssertNil(t, "describe duck status error", err)
 			testutil.AssertContainsAll(t, b.String(), tc.expectedStrings)
 		})
 	}
@@ -210,7 +217,9 @@ func ExampleDuckStatus_ready() {
 		},
 	}
 
-	describe.DuckStatus(os.Stdout, status)
+	if err := describe.DuckStatus(os.Stdout, status); err != nil {
+		panic(err)
+	}
 
 	// Output: Status:
 	//   Ready:
@@ -231,7 +240,9 @@ func ExampleDuckStatus_succeeded() {
 		},
 	}
 
-	describe.DuckStatus(os.Stdout, status)
+	if err := describe.DuckStatus(os.Stdout, status); err != nil {
+		panic(err)
+	}
 
 	// Output: Status:
 	//   Succeeded:
@@ -249,7 +260,9 @@ func ExampleAppSpecInstances_exactly() {
 	instances.Stopped = true
 	instances.Exactly = &exactly
 
-	describe.AppSpecInstances(os.Stdout, instances)
+	if err := describe.AppSpecInstances(os.Stdout, instances); err != nil {
+		panic(err)
+	}
 
 	// Output: Scale:
 	//   Stopped?:  true
@@ -261,7 +274,9 @@ func ExampleAppSpecInstances_minOnly() {
 	instances := kfv1alpha1.AppSpecInstances{}
 	instances.Min = &min
 
-	describe.AppSpecInstances(os.Stdout, instances)
+	if err := describe.AppSpecInstances(os.Stdout, instances); err != nil {
+		panic(err)
+	}
 
 	// Output: Scale:
 	//   Stopped?:  false
@@ -276,7 +291,9 @@ func ExampleAppSpecInstances_minMax() {
 	instances.Min = &min
 	instances.Max = &max
 
-	describe.AppSpecInstances(os.Stdout, instances)
+	if err := describe.AppSpecInstances(os.Stdout, instances); err != nil {
+		panic(err)
+	}
 
 	// Output: Scale:
 	//   Stopped?:  false
@@ -295,7 +312,9 @@ func ExampleSourceSpec_buildpack() {
 		},
 	}
 
-	describe.SourceSpec(os.Stdout, spec)
+	if err := describe.SourceSpec(os.Stdout, spec); err != nil {
+		panic(err)
+	}
 
 	// Output: Source:
 	//   Build Type:       buildpack
@@ -316,7 +335,9 @@ func ExampleSourceSpec_docker() {
 		},
 	}
 
-	describe.SourceSpec(os.Stdout, spec)
+	if err := describe.SourceSpec(os.Stdout, spec); err != nil {
+		panic(err)
+	}
 
 	// Output: Source:
 	//   Build Type:       container
@@ -335,7 +356,9 @@ func ExampleSourceSpec_dockerfile() {
 		},
 	}
 
-	describe.SourceSpec(os.Stdout, spec)
+	if err := describe.SourceSpec(os.Stdout, spec); err != nil {
+		panic(err)
+	}
 
 	// Output: Source:
 	//   Build Type:       dockerfile
@@ -347,18 +370,22 @@ func ExampleSourceSpec_dockerfile() {
 }
 
 func ExampleHealthCheck_nil() {
-	describe.HealthCheck(os.Stdout, nil)
+	if err := describe.HealthCheck(os.Stdout, nil); err != nil {
+		panic(err)
+	}
 
 	// Output: Health Check: <empty>
 }
 
 func ExampleHealthCheck_http() {
-	describe.HealthCheck(os.Stdout, &corev1.Probe{
+	if err := describe.HealthCheck(os.Stdout, &corev1.Probe{
 		TimeoutSeconds: 42,
 		Handler: corev1.Handler{
 			HTTPGet: &corev1.HTTPGetAction{Path: "/healthz"},
 		},
-	})
+	}); err != nil {
+		panic(err)
+	}
 
 	// Output: Health Check:
 	//   Timeout:   42s
@@ -367,12 +394,14 @@ func ExampleHealthCheck_http() {
 }
 
 func ExampleHealthCheck_tcp() {
-	describe.HealthCheck(os.Stdout, &corev1.Probe{
+	if err := describe.HealthCheck(os.Stdout, &corev1.Probe{
 		TimeoutSeconds: 42,
 		Handler: corev1.Handler{
 			TCPSocket: &corev1.TCPSocketAction{},
 		},
-	})
+	}); err != nil {
+		panic(err)
+	}
 
 	// Output: Health Check:
 	//   Timeout:  42s
@@ -399,7 +428,9 @@ func ExampleAppSpecTemplate_resourceRequests() {
 		},
 	}
 
-	describe.AppSpecTemplate(os.Stdout, spec)
+	if err := describe.AppSpecTemplate(os.Stdout, spec); err != nil {
+		panic(err)
+	}
 
 	// Output: Resource requests:
 	//   Memory:   2Gi
@@ -408,13 +439,15 @@ func ExampleAppSpecTemplate_resourceRequests() {
 }
 
 func ExampleServiceInstance_nil() {
-	describe.ServiceInstance(os.Stdout, nil)
+	if err := describe.ServiceInstance(os.Stdout, nil); err != nil {
+		panic(err)
+	}
 
 	// Output: Service Instance: <empty>
 }
 
 func ExampleServiceInstance() {
-	describe.ServiceInstance(os.Stdout, &v1beta1.ServiceInstance{
+	if err := describe.ServiceInstance(os.Stdout, &v1beta1.ServiceInstance{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "myservice-instance",
 		},
@@ -433,7 +466,9 @@ func ExampleServiceInstance() {
 				{LastTransitionTime: metav1.Time{Time: time.Now()}, Reason: "Ready"},
 			},
 		},
-	})
+	}); err != nil {
+		panic(err)
+	}
 
 	// Output: Service Instance:
 	//   Name:     myservice-instance

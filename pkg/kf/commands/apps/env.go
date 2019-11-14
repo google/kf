@@ -49,7 +49,9 @@ func NewEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command {
 			}
 
 			kfapp := (*apps.KfApp)(app)
-			describe.EnvVars(cmd.OutOrStdout(), kfapp.GetEnvVars())
+			if err := describe.EnvVars(cmd.OutOrStdout(), kfapp.GetEnvVars()); err != nil {
+				return err
+			}
 
 			return nil
 		},

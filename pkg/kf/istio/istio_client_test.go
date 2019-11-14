@@ -25,10 +25,6 @@ import (
 	testclient "k8s.io/client-go/kubernetes/fake"
 )
 
-type fakeDependencies struct {
-	apiserver *testutil.FakeApiServer
-}
-
 func TestIstioClient_ListIngresses(t *testing.T) {
 	t.Parallel()
 

@@ -62,8 +62,10 @@ func NewListBindingsCommand(p *config.KfParams, client servicebindings.ClientInt
 				return err
 			}
 
-			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
-				fmt.Fprintln(w, "Name\tApp\tBinding Name\tService\tSecret\tReady\tReason")
+			if err := describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) error {
+				if _, err := fmt.Fprintln(w, "Name\tApp\tBinding Name\tService\tSecret\tReady\tReason"); err != nil {
+					return err
+				}
 				for _, b := range bindings {
 					status := ""
 					reason := ""
@@ -73,13 +75,29 @@ func NewListBindingsCommand(p *config.KfParams, client servicebindings.ClientInt
 							reason = cond.Reason
 						}
 					}
-					app := b.Labels[kfv1alpha1.NameLabel]
-					bindingName := b.Labels[kfv1alpha1.ComponentLabel]
+					app, ok := b.Labels[kfv1alpha1.NameLabel]
+					if !ok {
+						app = "<none>"
+					}
 
-					fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s", b.Name, app, bindingName, b.Spec.InstanceRef.Name, b.Spec.SecretName, status, reason)
-					fmt.Fprintln(w)
+					bindingName, ok := b.Labels[kfv1alpha1.ComponentLabel]
+					if !ok {
+						bindingName = "<none>"
+					}
+
+					if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s", b.Name, app, bindingName, b.Spec.InstanceRef.Name, b.Spec.SecretName, status, reason); err != nil {
+						return err
+					}
+
+					if _, err := fmt.Fprintln(w); err != nil {
+						return err
+					}
 				}
-			})
+
+				return nil
+			}); err != nil {
+				return nil
+			}
 
 			return nil
 		},

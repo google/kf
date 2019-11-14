@@ -18,12 +18,15 @@ func ReadConfig(configPath string) (*configfile.ConfigFile, error) {
 
 // DescribeConfig creates a function that can write information about a
 // configuration file.
-func DescribeConfig(w io.Writer, cfg *configfile.ConfigFile) {
-	describe.SectionWriter(w, "Docker config", func(w io.Writer) {
-		describe.SectionWriter(w, "Auth", func(w io.Writer) {
+func DescribeConfig(w io.Writer, cfg *configfile.ConfigFile) error {
+	return describe.SectionWriter(w, "Docker config", func(w io.Writer) error {
+		if err := describe.SectionWriter(w, "Auth", func(w io.Writer) error {
 			if len(cfg.AuthConfigs) == 0 {
-				fmt.Fprintln(w, "<none>")
-				return
+				if _, err := fmt.Fprintln(w, "<none>"); err != nil {
+					return err
+				}
+
+				return nil
 			}
 
 			var registries []string
@@ -32,22 +35,37 @@ func DescribeConfig(w io.Writer, cfg *configfile.ConfigFile) {
 			}
 			sort.Strings(registries)
 
-			fmt.Fprintln(w, "Registry\tUsername\tEmail")
-			for _, registry := range registries {
-				authConfig := cfg.AuthConfigs[registry]
-
-				fmt.Fprintf(w, "%s\t%s\t%s\n",
-					registry,
-					authConfig.Username,
-					authConfig.Email,
-				)
+			if _, err := fmt.Fprintln(w, "Registry\tUsername\tEmail"); err != nil {
+				return err
 			}
-		})
+			for _, registry := range registries {
+				authConfig, ok := cfg.AuthConfigs[registry]
+				if !ok {
+					if _, err := fmt.Fprintf(w, "%s\t<none>\n", registry); err != nil {
+						return err
+					}
+				} else {
+					if _, err := fmt.Fprintf(w, "%s\t%s\t%s\n",
+						registry,
+						authConfig.Username,
+						authConfig.Email,
+					); err != nil {
+						return err
+					}
+				}
+			}
 
-		describe.SectionWriter(w, "Credential helpers", func(w io.Writer) {
+			return nil
+		}); err != nil {
+			return err
+		}
+
+		if err := describe.SectionWriter(w, "Credential helpers", func(w io.Writer) error {
 			if len(cfg.CredentialHelpers) == 0 {
-				fmt.Fprintln(w, "<none>")
-				return
+				if _, err := fmt.Fprintln(w, "<none>"); err != nil {
+					return err
+				}
+				return nil
 			}
 
 			var registries []string
@@ -56,21 +74,35 @@ func DescribeConfig(w io.Writer, cfg *configfile.ConfigFile) {
 			}
 			sort.Strings(registries)
 
-			fmt.Fprintln(w, "Registry\tHelper")
-			for _, registry := range registries {
-				fmt.Fprintf(w, "%s\t%s\n", registry, cfg.CredentialHelpers[registry])
+			if _, err := fmt.Fprintln(w, "Registry\tHelper"); err != nil {
+				return err
 			}
-		})
+			for _, registry := range registries {
+				credentialHelper, ok := cfg.CredentialHelpers[registry]
+				if !ok {
+					credentialHelper = "<none>"
+				}
+				if _, err := fmt.Fprintf(w, "%s\t%s\n", registry, credentialHelper); err != nil {
+					return err
+				}
+			}
+
+			return nil
+		}); err != nil {
+			return err
+		}
+
+		return nil
 	})
 }
 
 // DescribeDefaultConfig writes debug info about the default docker
 // configuration to the given writer.
-func DescribeDefaultConfig(w io.Writer) {
+func DescribeDefaultConfig(w io.Writer) error {
 	cfg, err := ReadConfig("")
 	if err != nil {
-		fmt.Fprintf(w, "couldn't read default docker config: %v\n", err)
+		return err
 	} else {
-		DescribeConfig(w, cfg)
+		return DescribeConfig(w, cfg)
 	}
 }

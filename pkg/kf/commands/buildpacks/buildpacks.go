@@ -48,7 +48,9 @@ func NewBuildpacksCommand(p *config.KfParams, l buildpacks.Client) *cobra.Comman
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Getting buildpacks in space: %s\n", p.Namespace)
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Getting buildpacks in space: %s\n", p.Namespace); err != nil {
+				return err
+			}
 
 			bps, err := l.List(space.Spec.BuildpackBuild.BuilderImage)
 			if err != nil {
@@ -56,13 +58,21 @@ func NewBuildpacksCommand(p *config.KfParams, l buildpacks.Client) *cobra.Comman
 				return err
 			}
 
-			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
-				fmt.Fprintln(w, "Name\tPosition\tVersion\tLatest")
+			if err := describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) error {
+				if _, err := fmt.Fprintln(w, "Name\tPosition\tVersion\tLatest"); err != nil {
+					return err
+				}
 
 				for i, bp := range bps {
-					fmt.Fprintf(w, "%s\t%d\t%s\t%v\n", bp.ID, i, bp.Version, bp.Latest)
+					if _, err := fmt.Fprintf(w, "%s\t%d\t%s\t%v\n", bp.ID, i, bp.Version, bp.Latest); err != nil {
+						return err
+					}
 				}
-			})
+
+				return nil
+			}); err != nil {
+				return err
+			}
 
 			return nil
 		},

@@ -82,30 +82,60 @@ func customCompletions(cmd *cobra.Command) map[string]string {
 }
 
 // AddBashCompletion adds bash completion to the given Cobra command.
-func AddBashCompletion(rootCommand *cobra.Command) {
+func AddBashCompletion(rootCommand *cobra.Command) error {
 	out := &bytes.Buffer{}
 
 	for _, k8sType := range KnownGenericTypes() {
-		fmt.Fprintln(out, bashCompletionFunc(k8sType))
+		if _, err := fmt.Fprintln(out, bashCompletionFunc(k8sType)); err != nil {
+			return err
+		}
 	}
 
-	fmt.Fprintln(out)
-	fmt.Fprintln(out, "__kf_custom_func() {")
-	fmt.Fprintln(out, "    case ${last_command} in")
+	if _, err := fmt.Fprintln(out); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(out, "__kf_custom_func() {"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(out, "    case ${last_command} in"); err != nil {
+		return err
+	}
 
 	for commandName, completionFunc := range customCompletions(rootCommand) {
-		fmt.Fprintf(out, "    %s)\n", commandName)
-		fmt.Fprintf(out, "        %s\n", completionFunc)
-		fmt.Fprintln(out, "        return")
-		fmt.Fprintln(out, "        ;;")
-		fmt.Fprintln(out)
+		if _, err := fmt.Fprintf(out, "    %s)\n", commandName); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(out, "        %s\n", completionFunc); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(out, "        return"); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(out, "        ;;"); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(out); err != nil {
+			return err
+		}
 	}
 
-	fmt.Fprintln(out, "    *)")
-	fmt.Fprintln(out, "        ;;")
-	fmt.Fprintln(out, "    esac")
-	fmt.Fprintln(out, "}")
-	fmt.Fprintln(out)
+	if _, err := fmt.Fprintln(out, "    *)"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(out, "        ;;"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(out, "    esac"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(out, "}"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(out); err != nil {
+		return err
+	}
 
 	rootCommand.BashCompletionFunction = out.String()
+
+	return nil
 }

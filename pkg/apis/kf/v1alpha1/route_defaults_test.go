@@ -24,7 +24,9 @@ func ExampleRoute_SetDefaults_prefixRoutes() {
 	r.Spec.Path = "some-path"
 	r.SetDefaults(context.Background())
 
-	fmt.Println("Route:", r.Spec.Path)
+	if _, err := fmt.Println("Route:", r.Spec.Path); err != nil {
+		panic(err)
+	}
 
 	// Output: Route: /some-path
 }
@@ -35,9 +37,15 @@ func ExampleRoute_SetDefaults_labels() {
 	r.Spec.Domain = "example.com"
 	r.SetDefaults(context.Background())
 
-	fmt.Println("Hostname:", r.Labels[RouteHostname])
-	fmt.Println("Domain:", r.Labels[RouteDomain])
-	fmt.Println("Path:", r.Labels[RoutePath])
+	if _, err := fmt.Println("Hostname:", r.Labels[RouteHostname]); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Domain:", r.Labels[RouteDomain]); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Path:", r.Labels[RoutePath]); err != nil {
+		panic(err)
+	}
 
 	// Output: Hostname: some-hostname
 	// Domain: example.com
@@ -50,9 +58,15 @@ func ExampleRouteClaim_SetDefaults_labels() {
 	r.Spec.Domain = "example.com"
 	r.SetDefaults(context.Background())
 
-	fmt.Println("Hostname:", r.Labels[RouteHostname])
-	fmt.Println("Domain:", r.Labels[RouteDomain])
-	fmt.Println("Path:", r.Labels[RoutePath])
+	if _, err := fmt.Println("Hostname:", r.Labels[RouteHostname]); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Domain:", r.Labels[RouteDomain]); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Path:", r.Labels[RoutePath]); err != nil {
+		panic(err)
+	}
 
 	// Output: Hostname: some-hostname
 	// Domain: example.com

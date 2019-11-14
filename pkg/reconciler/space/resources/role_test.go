@@ -27,7 +27,9 @@ func ExampleAuditorRoleName() {
 	space := &v1alpha1.Space{}
 	space.Name = "my-space"
 
-	fmt.Println(AuditorRoleName(space))
+	if _, err := fmt.Println(AuditorRoleName(space)); err != nil {
+		panic(err)
+	}
 
 	// Output: space-auditor
 }
@@ -36,7 +38,9 @@ func ExampleDeveloperRoleName() {
 	space := &v1alpha1.Space{}
 	space.Name = "my-space"
 
-	fmt.Println(DeveloperRoleName(space))
+	if _, err := fmt.Println(DeveloperRoleName(space)); err != nil {
+		panic(err)
+	}
 
 	// Output: space-developer
 }

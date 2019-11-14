@@ -23,13 +23,17 @@ import (
 )
 
 func ExampleNamespace() {
-	fmt.Println(system.Namespace())
+	if _, err := fmt.Println(system.Namespace()); err != nil {
+		panic(err)
+	}
 
 	// Output: kf-testing
 }
 
 func ExampleKnativeServingNamespace() {
-	fmt.Println(system.KnativeServingNamespace())
+	if _, err := fmt.Println(system.KnativeServingNamespace()); err != nil {
+		panic(err)
+	}
 
 	// Output: knative-serving-testing
 }

@@ -33,17 +33,9 @@ import (
 	"github.com/google/kf/pkg/kf/manifest"
 	svbFake "github.com/google/kf/pkg/kf/service-bindings/fake"
 	"github.com/google/kf/pkg/kf/testutil"
-	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
-
-func dummyBindingInstance(appName, instanceName string) *v1beta1.ServiceBinding {
-	instance := v1beta1.ServiceBinding{}
-	instance.Name = fmt.Sprintf("kf-binding-%s-%s", appName, instanceName)
-
-	return &instance
-}
 
 func TestPushCommand(t *testing.T) {
 	t.Parallel()

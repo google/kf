@@ -143,7 +143,9 @@ func ExampleLastStatusCondition() {
 	}
 
 	c := LastStatusCondition(si)
-	fmt.Println(c.Status)
+	if _, err := fmt.Println(c.Status); err != nil {
+		panic(err)
+	}
 
 	// Output: Ready
 }

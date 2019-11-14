@@ -199,7 +199,9 @@ func NewKfCommand() *cobra.Command {
 		},
 	})
 
-	completion.AddBashCompletion(rootCmd)
+	if err := completion.AddBashCompletion(rootCmd); err != nil {
+		panic(fmt.Errorf("error adding bash completion: %s", err))
+	}
 
 	// We don't want the AutoGenTag as it makes the doc generation
 	// non-deterministic. We would rather allow the CI to ensure the docs were

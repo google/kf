@@ -23,7 +23,9 @@ func ExampleRouteSpecFields_String() {
 		Path:     "bar",
 	}
 
-	fmt.Println(r.String())
+	if _, err := fmt.Println(r.String()); err != nil {
+		panic(err)
+	}
 
 	// Output: foo.example.com/bar
 }
@@ -34,7 +36,9 @@ func ExampleRouteSpecFields_String_without_hostname() {
 		Path:   "bar",
 	}
 
-	fmt.Println(r.String())
+	if _, err := fmt.Println(r.String()); err != nil {
+		panic(err)
+	}
 
 	// Output: example.com/bar
 }
@@ -45,7 +49,9 @@ func ExampleRouteSpecFields_String_without_path() {
 		Domain:   "example.com",
 	}
 
-	fmt.Println(r.String())
+	if _, err := fmt.Println(r.String()); err != nil {
+		panic(err)
+	}
 
 	// Output: foo.example.com/
 }

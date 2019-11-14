@@ -49,7 +49,9 @@ func NewGetAppCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 
 			// Print status messages to stderr so stdout is syntatically valid output
 			// if the user wanted JSON, YAML, etc.
-			fmt.Fprintf(cmd.ErrOrStderr(), "Getting app %s in namespace: %s\n", appName, p.Namespace)
+			if _, err := fmt.Fprintf(cmd.ErrOrStderr(), "Getting app %s in namespace: %s\n", appName, p.Namespace); err != nil {
+				return err
+			}
 
 			app, err := appsClient.Get(p.Namespace, appName)
 			if err != nil {
@@ -68,34 +70,76 @@ func NewGetAppCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command
 				return printer.PrintObj(app, w)
 			}
 
-			describe.ObjectMeta(w, app.ObjectMeta)
-			fmt.Fprintln(w)
+			if err := describe.ObjectMeta(w, app.ObjectMeta); err != nil {
+				return err
+			}
 
-			describe.DuckStatus(w, app.Status.Status)
-			fmt.Fprintln(w)
+			if _, err := fmt.Fprintln(w); err != nil {
+				return err
+			}
 
-			describe.AppSpecInstances(w, app.Spec.Instances)
-			fmt.Fprintln(w)
+			if err := describe.DuckStatus(w, app.Status.Status); err != nil {
+				return err
+			}
 
-			describe.AppSpecTemplate(w, app.Spec.Template)
-			fmt.Fprintln(w)
+			if _, err := fmt.Fprintln(w); err != nil {
+				return err
+			}
 
-			describe.SourceSpec(w, app.Spec.Source)
-			fmt.Fprintln(w)
+			if err := describe.AppSpecInstances(w, app.Spec.Instances); err != nil {
+				return err
+			}
 
-			describe.SectionWriter(w, "Runtime", func(w io.Writer) {
+			if _, err := fmt.Fprintln(w); err != nil {
+				return err
+			}
+
+			if err := describe.AppSpecTemplate(w, app.Spec.Template); err != nil {
+				return err
+			}
+
+			if _, err := fmt.Fprintln(w); err != nil {
+				return err
+			}
+
+			if err := describe.SourceSpec(w, app.Spec.Source); err != nil {
+				return err
+			}
+
+			if _, err := fmt.Fprintln(w); err != nil {
+				return err
+			}
+
+			if err := describe.SectionWriter(w, "Runtime", func(w io.Writer) error {
 				status := app.Status
 
-				fmt.Fprintf(w, "Image:\t%s\n", status.Image)
+				if _, err := fmt.Fprintf(w, "Image:\t%s\n", status.Image); err != nil {
+					return err
+				}
 
 				kfApp := apps.NewFromApp(app)
-				fmt.Fprintf(w, "Cluster URL\t%s\n", kfApp.GetClusterURL())
+				if _, err := fmt.Fprintf(w, "Cluster URL\t%s\n", kfApp.GetClusterURL()); err != nil {
+					return err
+				}
 
-				describe.HealthCheck(w, kfApp.GetHealthCheck())
-				describe.EnvVars(w, kfApp.GetEnvVars())
-				describe.RouteSpecFieldsList(w, app.Spec.Routes)
-			})
-			fmt.Fprintln(w)
+				if err := describe.HealthCheck(w, kfApp.GetHealthCheck()); err != nil {
+					return err
+				}
+				if err := describe.EnvVars(w, kfApp.GetEnvVars()); err != nil {
+					return err
+				}
+				if err := describe.RouteSpecFieldsList(w, app.Spec.Routes); err != nil {
+					return err
+				}
+
+				return nil
+			}); err != nil {
+				return err
+			}
+
+			if _, err := fmt.Fprintln(w); err != nil {
+				return err
+			}
 
 			return nil
 		},

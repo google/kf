@@ -104,7 +104,9 @@ func ExampleRemoveEnvVars() {
 
 	out := envutil.RemoveEnvVars([]string{"MISSING", "BAZZ"}, envs)
 	for _, e := range out {
-		fmt.Println("Key", e.Name, "Value", e.Value)
+		if _, err := fmt.Println("Key", e.Name, "Value", e.Value); err != nil {
+			panic(err)
+		}
 	}
 
 	// Output: Key BAR Value 0
@@ -166,7 +168,9 @@ func ExampleDeduplicateEnvVars() {
 
 	out := envutil.DeduplicateEnvVars(envs)
 	for _, e := range out {
-		fmt.Println("Key", e.Name, "Value", e.Value)
+		if _, err := fmt.Println("Key", e.Name, "Value", e.Value); err != nil {
+			panic(err)
+		}
 	}
 
 	// Output: Key BAR Value 0
@@ -183,7 +187,9 @@ func ExampleNewJSONEnvVar() {
 		panic(err)
 	}
 
-	fmt.Println(env.Name, env.Value)
+	if _, err := fmt.Println(env.Name, env.Value); err != nil {
+		panic(err)
+	}
 
 	// Output: INVENTORY {"Apples":true,"Bread":false}
 }
@@ -198,7 +204,9 @@ func ExampleGetAppEnvVars() {
 	env := envutil.GetAppEnvVars(&app)
 
 	for _, e := range env {
-		fmt.Println("Key", e.Name, "Value", e.Value)
+		if _, err := fmt.Println("Key", e.Name, "Value", e.Value); err != nil {
+			panic(err)
+		}
 	}
 
 	// Output: Key FOO Value 2
@@ -208,7 +216,9 @@ func ExampleGetAppEnvVars() {
 func ExampleGetAppEnvVars_emptyApp() {
 	env := envutil.GetAppEnvVars(nil)
 
-	fmt.Println(env)
+	if _, err := fmt.Println(env); err != nil {
+		panic(err)
+	}
 
 	// Output: []
 }

@@ -46,9 +46,13 @@ func ExampleList_Filter() {
 		return len(s.Name) < 8
 	})
 
-	fmt.Println("Results")
+	if _, err := fmt.Println("Results"); err != nil {
+		panic(err)
+	}
 	for _, v := range filtered {
-		fmt.Println("-", v.Name)
+		if _, err := fmt.Println("-", v.Name); err != nil {
+			panic(err)
+		}
 	}
 
 	// Output: Results
@@ -62,7 +66,9 @@ func ExampleLabelSetMutator() {
 	if err := managedAdder(out); err != nil {
 		panic(err)
 	}
-	fmt.Printf("Labels: %v", out.Labels)
+	if _, err := fmt.Printf("Labels: %v", out.Labels); err != nil {
+		panic(err)
+	}
 
 	// Output: Labels: map[managed-by:kf]
 }
@@ -272,9 +278,13 @@ func ExampleDiffWrapper_changes() {
 		return nil
 	})
 
-	fmt.Println("Error:", wrapper(obj))
+	if _, err := fmt.Println("Error:", wrapper(obj)); err != nil {
+		panic(err)
+	}
 	firstLine := strings.Split(contents.String(), "\n")[0]
-	fmt.Println("First line:", firstLine)
+	if _, err := fmt.Println("First line:", firstLine); err != nil {
+		panic(err)
+	}
 
 	// Output: Error: <nil>
 	// First line: OperatorConfig Diff (-old +new):
@@ -287,7 +297,9 @@ func ExampleDiffWrapper_err() {
 		return errors.New("some-error")
 	})
 
-	fmt.Println(wrapper(obj))
+	if _, err := fmt.Println(wrapper(obj)); err != nil {
+		panic(err)
+	}
 
 	// Output: some-error
 }
@@ -329,8 +341,12 @@ func ExampleClient_WaitForE_conditionDeleted() {
 	client := NewExampleClient(mockK8s)
 
 	instance, err := client.WaitForE(context.Background(), "default", "obj-name", 1*time.Second, ConditionDeleted)
-	fmt.Println("Instance:", instance)
-	fmt.Println("Error:", err)
+	if _, err := fmt.Println("Instance:", instance); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Error:", err); err != nil {
+		panic(err)
+	}
 
 	// Output: Instance: nil
 	// Error: <nil>
@@ -348,9 +364,15 @@ func ExampleClient_WaitForE_timeout() {
 		called++
 		return false, nil
 	})
-	fmt.Println("Instance:", instance)
-	fmt.Println("Error:", err)
-	fmt.Println("Called?:", called) // 3 calls, immediately, 100ms later then 100ms after
+	if _, err := fmt.Println("Instance:", instance); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Error:", err); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Called?:", called); err != nil { // 3 calls, immediately, 100ms later then 100ms after
+		panic(err)
+	}
 
 	// Output: Instance: nil
 	// Error: waiting for OperatorConfig timed out

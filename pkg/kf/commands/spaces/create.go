@@ -60,16 +60,31 @@ func NewCreateSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 
 			w := cmd.OutOrStdout()
 
-			fmt.Fprintln(w, "Space requested, waiting for subcomponents to be created")
+			if _, err := fmt.Fprintln(w, "Space requested, waiting for subcomponents to be created"); err != nil {
+				return err
+			}
+
 			space, err := client.WaitFor(context.Background(), name, 1*time.Second, spaces.IsStatusFinal)
 			if err != nil {
 				return err
 			}
-			fmt.Fprintln(w, "Space created")
-			describe.DuckStatus(w, space.Status.Status)
-			fmt.Fprintln(w)
 
-			printAdditionalCommands(cmd.OutOrStdout(), name)
+			if _, err := fmt.Fprintln(w, "Space created"); err != nil {
+				return err
+			}
+
+			if err := describe.DuckStatus(w, space.Status.Status); err != nil {
+				return err
+			}
+
+			if _, err := fmt.Fprintln(w); err != nil {
+				return err
+			}
+
+			if err := printAdditionalCommands(cmd.OutOrStdout(), name); err != nil {
+				return err
+			}
+
 			return nil
 		},
 	}

@@ -33,7 +33,9 @@ func ExampleKfApp() {
 	space.SetName("nsname")
 
 	// Values
-	fmt.Println(space.GetName())
+	if _, err := fmt.Println(space.GetName()); err != nil {
+		panic(err)
+	}
 
 	// Output: nsname
 }
@@ -71,7 +73,9 @@ func ExampleKfApp_GetEnvVars() {
 	env := myApp.GetEnvVars()
 
 	for _, e := range env {
-		fmt.Println("Key", e.Name, "Value", e.Value)
+		if _, err := fmt.Println("Key", e.Name, "Value", e.Value); err != nil {
+			panic(err)
+		}
 	}
 
 	// Output: Key FOO Value 2
@@ -83,7 +87,9 @@ func ExampleKfApp_GetEnvVars_emptyApp() {
 
 	env := myApp.GetEnvVars()
 
-	fmt.Println(env)
+	if _, err := fmt.Println(env); err != nil {
+		panic(err)
+	}
 
 	// Output: []
 }
@@ -103,7 +109,9 @@ func ExampleKfApp_MergeEnvVars() {
 	env := myApp.GetEnvVars()
 
 	for _, e := range env {
-		fmt.Println("Key", e.Name, "Value", e.Value)
+		if _, err := fmt.Println("Key", e.Name, "Value", e.Value); err != nil {
+			panic(err)
+		}
 	}
 
 	// Output: Key BAR Value 0
@@ -121,7 +129,9 @@ func ExampleKfApp_DeleteEnvVars() {
 	myApp.DeleteEnvVars([]string{"FOO", "DOES_NOT_EXIST"})
 
 	for _, e := range myApp.GetEnvVars() {
-		fmt.Println("Key", e.Name, "Value", e.Value)
+		if _, err := fmt.Println("Key", e.Name, "Value", e.Value); err != nil {
+			panic(err)
+		}
 	}
 
 	// Output: Key BAR Value 0
@@ -131,7 +141,9 @@ func ExampleKfApp_GetNamespace() {
 	myApp := NewKfApp()
 	myApp.SetNamespace("my-ns")
 
-	fmt.Println(myApp.GetNamespace())
+	if _, err := fmt.Println(myApp.GetNamespace()); err != nil {
+		panic(err)
+	}
 
 	// Output: my-ns
 }
@@ -144,7 +156,9 @@ func ExampleKfApp_GetHealthCheck() {
 		},
 	})
 
-	fmt.Println("Timeout:", app.GetHealthCheck().TimeoutSeconds)
+	if _, err := fmt.Println("Timeout:", app.GetHealthCheck().TimeoutSeconds); err != nil {
+		panic(err)
+	}
 
 	// Output: Timeout: 34
 }
@@ -160,7 +174,9 @@ func ExampleKfApp_GetClusterURL() {
 		},
 	}
 
-	fmt.Println(app.GetClusterURL())
+	if _, err := fmt.Println(app.GetClusterURL()); err != nil {
+		panic(err)
+	}
 
 	// Output: http://app-a.some-namespace.svc.cluster.local
 }

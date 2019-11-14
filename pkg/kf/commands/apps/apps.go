@@ -49,8 +49,11 @@ func NewAppsCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 				return err
 			}
 
-			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
-				fmt.Fprintln(w, "Name\tRequested State\tInstances\tMemory\tDisk\tURLs\tCluster URL")
+			if err := describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) error {
+				if _, err := fmt.Fprintln(w, "Name\tRequested State\tInstances\tMemory\tDisk\tURLs\tCluster URL"); err != nil {
+					return err
+				}
+
 				for _, app := range applist {
 
 					// Requested State
@@ -116,7 +119,7 @@ func NewAppsCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 
 					kfApp := apps.NewFromApp(&app)
 
-					fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+					if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 						app.Name,
 						requestedState,
 						instances,
@@ -124,9 +127,15 @@ func NewAppsCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 						disk,
 						strings.Join(urls, ", "),
 						kfApp.GetClusterURL(),
-					)
+					); err != nil {
+						return err
+					}
 				}
-			})
+
+				return nil
+			}); err != nil {
+				return err
+			}
 
 			return nil
 		},

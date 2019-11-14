@@ -37,57 +37,104 @@ func NewDebugCommand(p *config.KfParams, kubernetes k8sclient.Interface) *cobra.
 		RunE: func(cmd *cobra.Command, args []string) error {
 			w := cmd.OutOrStdout()
 
-			debugRuntime(w)
-			debugKfParams(w, p)
-			debugVersion(w, kubernetes)
-			dockerutil.DescribeDefaultConfig(w)
+			if err := debugRuntime(w); err != nil {
+				return err
+			}
+			if err := debugKfParams(w, p); err != nil {
+				return err
+			}
+			if err := debugVersion(w, kubernetes); err != nil {
+				return err
+			}
+			if err := dockerutil.DescribeDefaultConfig(w); err != nil {
+				return err
+			}
 
 			return nil
 		},
 	}
 }
 
-func debugKfParams(w io.Writer, p *config.KfParams) {
-	describe.SectionWriter(w, "KfParams", func(w io.Writer) {
+func debugKfParams(w io.Writer, p *config.KfParams) error {
+	return describe.SectionWriter(w, "KfParams", func(w io.Writer) error {
 		if p == nil {
-			fmt.Fprintln(w, "Params are nil")
-			return
+			if _, err := fmt.Fprintln(w, "Params are nil"); err != nil {
+				return err
+			}
+
+			return nil
 		}
 
-		fmt.Fprintf(w, "Config Path:\t%s\n", p.Config)
-		fmt.Fprintf(w, "Target Space:\t%s\n", p.Namespace)
-		fmt.Fprintf(w, "Kubeconfig:\t%s\n", p.KubeCfgFile)
+		if _, err := fmt.Fprintf(w, "Config Path:\t%s\n", p.Config); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(w, "Target Space:\t%s\n", p.Namespace); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(w, "Kubeconfig:\t%s\n", p.KubeCfgFile); err != nil {
+			return err
+		}
+
+		return nil
 	})
 }
 
-func debugRuntime(w io.Writer) {
-	describe.SectionWriter(w, "Runtime", func(w io.Writer) {
-		fmt.Fprintf(w, "Go Version:\t%s\n", runtime.Version())
-		fmt.Fprintf(w, "Compiler:\t%s\n", runtime.Compiler)
-		fmt.Fprintf(w, "Arch:\t%s\n", runtime.GOARCH)
-		fmt.Fprintf(w, "OS:\t%s\n", runtime.GOOS)
+func debugRuntime(w io.Writer) error {
+	return describe.SectionWriter(w, "Runtime", func(w io.Writer) error {
+		if _, err := fmt.Fprintf(w, "Go Version:\t%s\n", runtime.Version()); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(w, "Compiler:\t%s\n", runtime.Compiler); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(w, "Arch:\t%s\n", runtime.GOARCH); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(w, "OS:\t%s\n", runtime.GOOS); err != nil {
+			return err
+		}
+
+		return nil
 	})
 }
 
-func debugVersion(w io.Writer, kubernetes k8sclient.Interface) {
-	describe.SectionWriter(w, "Version", func(w io.Writer) {
-		fmt.Fprintf(w, "Kf Client:\t%s\n", Version)
+func debugVersion(w io.Writer, kubernetes k8sclient.Interface) error {
+	return describe.SectionWriter(w, "Version", func(w io.Writer) error {
+		if _, err := fmt.Fprintf(w, "Kf Client:\t%s\n", Version); err != nil {
+			return err
+		}
 
 		if version, err := kubernetes.Discovery().ServerVersion(); err != nil {
-			fmt.Fprintf(w, "Server version error:\t%s\n", err)
+			if _, err := fmt.Fprintf(w, "Server version error:\t%s\n", err); err != nil {
+				return err
+			}
 		} else {
-			fmt.Fprintf(w, "Server version:\t%v\n", version)
+			if _, err := fmt.Fprintf(w, "Server version:\t%v\n", version); err != nil {
+				return err
+			}
 		}
 
-		namespaceLabel(w, kubernetes, "kf", "app.kubernetes.io/version")
-		namespaceLabel(w, kubernetes, "knative-serving", "serving.knative.dev/release")
+		if err := namespaceLabel(w, kubernetes, "kf", "app.kubernetes.io/version"); err != nil {
+			return err
+		}
+		if err := namespaceLabel(w, kubernetes, "knative-serving", "serving.knative.dev/release"); err != nil {
+			return err
+		}
+
+		return nil
 	})
 }
 
-func namespaceLabel(w io.Writer, kubernetes k8sclient.Interface, namespace, label string) {
+func namespaceLabel(w io.Writer, kubernetes k8sclient.Interface, namespace, label string) error {
 	if ns, err := kubernetes.CoreV1().Namespaces().Get(namespace, metav1.GetOptions{}); err != nil {
-		fmt.Fprintf(w, "%s[%q]:\terror: %s\n", namespace, label, err)
+		if _, err := fmt.Fprintf(w, "%s[%q]:\terror: %s\n", namespace, label, err); err != nil {
+			return err
+		}
 	} else {
-		fmt.Fprintf(w, "%s[%q]:\t%v\n", namespace, label, ns.Labels[label])
+		if _, err := fmt.Fprintf(w, "%s[%q]:\t%v\n", namespace, label, ns.Labels[label]); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }

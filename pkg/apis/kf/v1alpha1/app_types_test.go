@@ -158,10 +158,18 @@ func ExampleApp_ComponentLabels() {
 
 	labels := app.ComponentLabels("database")
 
-	fmt.Println("label count:", len(labels))
-	fmt.Println("name:", labels[NameLabel])
-	fmt.Println("managed-by:", labels[ManagedByLabel])
-	fmt.Println("component:", labels[ComponentLabel])
+	if _, err := fmt.Println("label count:", len(labels)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("name:", labels[NameLabel]); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("managed-by:", labels[ManagedByLabel]); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("component:", labels[ComponentLabel]); err != nil {
+		panic(err)
+	}
 
 	// Output: label count: 3
 	// name: my-app

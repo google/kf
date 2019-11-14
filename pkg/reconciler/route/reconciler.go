@@ -211,7 +211,7 @@ func (r *Reconciler) update(
 	sort.Sort(sort.Reverse(v1alpha1.HTTPRoutes(existing.Spec.HTTP)))
 
 	return r.SharedClientSet.
-		Networking().
+		NetworkingV1alpha3().
 		VirtualServices(existing.GetNamespace()).
 		Update(existing)
 }

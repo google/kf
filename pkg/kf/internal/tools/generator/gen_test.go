@@ -21,12 +21,17 @@ import (
 )
 
 func ExampleGenImports() {
-	imports := GenImports(map[string]string{
+	imports, err := GenImports(map[string]string{
 		"os":                 "",
 		"some/custom/import": "alias",
 	})
+	if err != nil {
+		panic(err)
+	}
 
-	fmt.Println(imports)
+	if _, err := fmt.Println(imports); err != nil {
+		panic(err)
+	}
 
 	// Output: import (
 	// 	"os"
@@ -35,15 +40,22 @@ func ExampleGenImports() {
 }
 
 func ExampleGenImports_empty() {
-	imports := GenImports(map[string]string{})
+	imports, err := GenImports(map[string]string{})
+	if err != nil {
+		panic(err)
+	}
 
-	fmt.Println(imports)
+	if _, err := fmt.Println(imports); err != nil {
+		panic(err)
+	}
 
 	// Output:
 }
 
 func ExampleGenNotice() {
-	fmt.Println(GenNotice("some-file.go"))
+	if _, err := fmt.Println(GenNotice("some-file.go")); err != nil {
+		panic(err)
+	}
 
 	// Output: // This file was generated with some-file.go, DO NOT EDIT IT.
 }
@@ -56,8 +68,12 @@ func ExampleGenLicense() {
 
 	currentYear := fmt.Sprintf("%d", time.Now().Year())
 
-	fmt.Println("license contains year?", strings.Contains(lic, currentYear))
-	fmt.Println("license contains apache text?", strings.Contains(lic, "Licensed under the Apache License, Version 2.0"))
+	if _, err := fmt.Println("license contains year?", strings.Contains(lic, currentYear)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("license contains apache text?", strings.Contains(lic, "Licensed under the Apache License, Version 2.0")); err != nil {
+		panic(err)
+	}
 
 	// Output: license contains year? true
 	// license contains apache text? true

@@ -81,7 +81,9 @@ func ExampleWrite() {
 			panic(err)
 		}
 
-		fmt.Println("Read namespace:", toRead.Namespace)
+		if _, err := fmt.Println("Read namespace:", toRead.Namespace); err != nil {
+			panic(err)
+		}
 	}
 
 	// Output: Read namespace: my-namespace
@@ -182,8 +184,12 @@ func ExampleKfParams_GetTargetSpaceOrDefault() {
 	}
 
 	space, err := p.GetTargetSpaceOrDefault()
-	fmt.Println("Space:", space.Name)
-	fmt.Println("Error:", err)
+	if _, err := fmt.Println("Space:", space.Name); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Error:", err); err != nil {
+		panic(err)
+	}
 
 	// Output: Space: cached-target
 	// Error: <nil>
@@ -196,7 +202,9 @@ func ExampleKfParams_SetTargetSpaceToDefault() {
 	p := &KfParams{}
 	p.SetTargetSpaceToDefault()
 
-	fmt.Printf("Set to default: %v\n", reflect.DeepEqual(p.TargetSpace, defaultSpace))
+	if _, err := fmt.Printf("Set to default: %v\n", reflect.DeepEqual(p.TargetSpace, defaultSpace)); err != nil {
+		panic(err)
+	}
 
 	// Output: Set to default: true
 }

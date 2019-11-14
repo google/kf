@@ -34,25 +34,36 @@ func NewGetQuotaCommand(p *config.KfParams, client spaces.Client) *cobra.Command
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			spaceName := args[0]
-			fmt.Fprintf(cmd.OutOrStdout(), "Getting info for quota in space: %s\n\n", spaceName)
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "Getting info for quota in space: %s\n\n", spaceName); err != nil {
+				return err
+			}
 
 			space, err := client.Get(spaceName)
 			if err != nil {
 				return err
 			}
 
-			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
-				fmt.Fprintln(w, "Memory\tCPU\tRoutes")
+			if err := describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) error {
+				if _, err := fmt.Fprintln(w, "Memory\tCPU\tRoutes"); err != nil {
+					return err
+				}
 
 				kfspace := spaces.NewFromSpace(space)
 				mem, _ := kfspace.GetMemory()
 				cpu, _ := kfspace.GetCPU()
 				routes, _ := kfspace.GetServices()
-				fmt.Fprintf(w, "%v\t%v\t%v\n",
+				if _, err := fmt.Fprintf(w, "%v\t%v\t%v\n",
 					mem.String(),
 					cpu.String(),
-					routes.String())
-			})
+					routes.String()); err != nil {
+					return err
+				}
+
+				return nil
+			}); err != nil {
+				return err
+			}
+
 			return nil
 		},
 	}

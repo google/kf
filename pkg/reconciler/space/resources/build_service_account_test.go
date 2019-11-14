@@ -25,7 +25,9 @@ import (
 func ExampleBuildServiceAccountName() {
 	space := &v1alpha1.Space{}
 	space.Spec.Security.BuildServiceAccount = "some-name"
-	fmt.Println(BuildServiceAccountName(space))
+	if _, err := fmt.Println(BuildServiceAccountName(space)); err != nil {
+		panic(err)
+	}
 
 	// Output: kf-builder
 }
@@ -33,7 +35,9 @@ func ExampleBuildServiceAccountName() {
 func ExampleBuildSecretName() {
 	space := &v1alpha1.Space{}
 	space.Spec.Security.BuildServiceAccount = "some-name"
-	fmt.Println(BuildSecretName(space))
+	if _, err := fmt.Println(BuildSecretName(space)); err != nil {
+		panic(err)
+	}
 
 	// Output: kf-builder
 }
@@ -64,17 +68,39 @@ func ExampleMakeBuildServiceAccount() {
 		panic(err)
 	}
 
-	fmt.Println("ServiceAccount Name:", sa.Name)
-	fmt.Println("ServiceAccount Namespace:", sa.Namespace)
-	fmt.Println("ServiceAccount Managed Label:", sa.Labels[v1alpha1.ManagedByLabel])
-	fmt.Println("ServiceAccount Secret:", sa.Secrets[0].Name)
-	fmt.Println("Secrets Count:", len(secrets))
-	fmt.Println("Secret Name:", secrets[0].Name)
-	fmt.Println("Secret Type:", secrets[0].Type)
-	fmt.Println("Secret Namespace:", secrets[0].Namespace)
-	fmt.Println("Secret Managed Label:", secrets[0].Labels[v1alpha1.ManagedByLabel])
-	fmt.Println("Secret Data[key-1]:", string(secrets[0].Data["key-1"]))
-	fmt.Println("Secret Data[key-2]:", string(secrets[0].Data["key-2"]))
+	if _, err := fmt.Println("ServiceAccount Name:", sa.Name); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("ServiceAccount Namespace:", sa.Namespace); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("ServiceAccount Managed Label:", sa.Labels[v1alpha1.ManagedByLabel]); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("ServiceAccount Secret:", sa.Secrets[0].Name); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Secrets Count:", len(secrets)); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Secret Name:", secrets[0].Name); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Secret Type:", secrets[0].Type); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Secret Namespace:", secrets[0].Namespace); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Secret Managed Label:", secrets[0].Labels[v1alpha1.ManagedByLabel]); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Secret Data[key-1]:", string(secrets[0].Data["key-1"])); err != nil {
+		panic(err)
+	}
+	if _, err := fmt.Println("Secret Data[key-2]:", string(secrets[0].Data["key-2"])); err != nil {
+		panic(err)
+	}
 
 	// Output: ServiceAccount Name: kf-builder
 	// ServiceAccount Namespace: some-space
