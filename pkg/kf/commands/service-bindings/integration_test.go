@@ -155,13 +155,13 @@ var checkOnce sync.Once
 
 func checkClusterStatus(t *testing.T) {
 	checkOnce.Do(func() {
-		testIntegration_WaitForCluster(t)
+		testIntegrationWaitForCluster(t)
 	})
 }
 
-// testIntegration_WaitForCluster runs the doctor command. It ensures the
+// testIntegrationWaitForCluster runs the doctor command. It ensures the
 // cluster the tests are running against is in good shape.
-func testIntegration_WaitForCluster(t *testing.T) {
+func testIntegrationWaitForCluster(t *testing.T) {
 	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
 		kf.WaitForCluster(ctx)
 	})
@@ -184,7 +184,7 @@ func withServiceBroker(ctx context.Context, t *testing.T, kf *Kf, callback func(
 
 	withApp(ctx, t, kf, brokerAppName, brokerPath, true, func(ctx context.Context) {
 		// Register the mock service broker to service catalog, and then clean it up.
-		kf.CreateServiceBroker(ctx, brokerName, internalBrokerUrl(brokerAppName, SpaceFromContext(ctx)), "--space-scoped")
+		kf.CreateServiceBroker(ctx, brokerName, internalBrokerURL(brokerAppName, SpaceFromContext(ctx)), "--space-scoped")
 
 		defer kf.DeleteServiceBroker(ctx, brokerName, "--space-scoped")
 
@@ -229,6 +229,6 @@ func withApp(ctx context.Context, t *testing.T, kf *Kf, appName string, path str
 	callback(ctx)
 }
 
-func internalBrokerUrl(brokerName string, namespace string) string {
+func internalBrokerURL(brokerName string, namespace string) string {
 	return fmt.Sprintf("http://%s.%s.svc.cluster.local", brokerName, namespace)
 }

@@ -52,26 +52,26 @@ func TestNewDoctorCommand(t *testing.T) {
 		namespace      string
 		wantErr        error
 		args           []string
-		diagnostics    []DoctorTest
+		diagnostics    []Test
 		expectedOutput []string
 	}{
 		"bad diagnostic": {
 			args: []string{"invalid2"},
-			diagnostics: []DoctorTest{
+			diagnostics: []Test{
 				{Name: "failer", Test: failDiagnostic{}},
 			},
 			wantErr: errors.New(`invalid argument "invalid2" for "doctor"`),
 		},
 		"runs only chosen tests": {
 			args: []string{"passer"},
-			diagnostics: []DoctorTest{
+			diagnostics: []Test{
 				{Name: "failer", Test: failDiagnostic{}},
 				{Name: "passer", Test: okayDiagnostic{}},
 			},
 		},
 		"runs all tests for no args": {
 			args: []string{},
-			diagnostics: []DoctorTest{
+			diagnostics: []Test{
 				{Name: "first", Test: okayDiagnostic{}},
 				{Name: "second", Test: okayDiagnostic{}},
 				{Name: "third", Test: okayDiagnostic{}},
@@ -80,7 +80,7 @@ func TestNewDoctorCommand(t *testing.T) {
 		},
 		"failure state": {
 			args: []string{},
-			diagnostics: []DoctorTest{
+			diagnostics: []Test{
 				{Name: "failer", Test: failDiagnostic{}},
 			},
 			expectedOutput: []string{"doctor/failer", "FAIL"},
@@ -88,7 +88,7 @@ func TestNewDoctorCommand(t *testing.T) {
 		},
 		"retries flag": {
 			args: []string{"retrier", "--retries", "3", "--delay", "10ms"},
-			diagnostics: []DoctorTest{
+			diagnostics: []Test{
 				{Name: "retrier", Test: &countingDiagnostic{}},
 			},
 			expectedOutput: []string{"doctor/retrier", "FAIL", "count: 3"},

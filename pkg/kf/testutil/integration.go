@@ -39,11 +39,15 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"knative.dev/pkg/injection"
+
+	// register auth provider plugin for gcp
+	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+
+	// register auth provider plugin for oidc
+	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
 
 const (
@@ -514,9 +518,8 @@ func PanicOnError(ctx context.Context, t *testing.T, messagePrefix string, errs 
 				if t.Failed() {
 					Logf(t, "%s: %s", messagePrefix, err)
 					return
-				} else {
-					panic(fmt.Sprintf("%s->%s: %s", t.Name(), messagePrefix, err))
 				}
+				panic(fmt.Sprintf("%s->%s: %s", t.Name(), messagePrefix, err))
 			}
 		}
 	}()

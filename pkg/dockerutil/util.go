@@ -102,7 +102,7 @@ func DescribeDefaultConfig(w io.Writer) error {
 	cfg, err := ReadConfig("")
 	if err != nil {
 		return err
-	} else {
-		return DescribeConfig(w, cfg)
 	}
+
+	return DescribeConfig(w, cfg)
 }

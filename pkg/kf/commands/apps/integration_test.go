@@ -33,7 +33,7 @@ import (
 
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/manifest"
-	. "github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/pkg/kf/testutil"
 )
 
 const (
@@ -48,17 +48,17 @@ var currentPort int = 8086
 func TestIntegration_Push(t *testing.T) {
 	t.Parallel()
 	checkClusterStatus(t)
-	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+	testutil.RunKfTest(t, func(ctx context.Context, t *testing.T, kf *testutil.Kf) {
 		appName := fmt.Sprintf("integration-push-%d", time.Now().UnixNano())
 
 		// Push an app and then clean it up. This pushes the echo app which
 		// replies with the same body that was posted.
 		// For the purposes of this test the results SHOULD NOT be cached.
 		kf.Push(ctx, appName,
-			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/echo"),
+			"--path", filepath.Join(testutil.RootDir(ctx, t), "./samples/apps/echo"),
 		)
 		defer kf.Delete(ctx, appName)
-		checkEchoApp(ctx, t, kf, appName, getNextPort(), ExpectedAddr(appName, ""))
+		checkEchoApp(ctx, t, kf, appName, getNextPort(), testutil.ExpectedAddr(appName, ""))
 	})
 }
 
@@ -68,23 +68,23 @@ func TestIntegration_Push(t *testing.T) {
 func TestIntegration_Push_update(t *testing.T) {
 	t.Parallel()
 	checkClusterStatus(t)
-	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+	testutil.RunKfTest(t, func(ctx context.Context, t *testing.T, kf *testutil.Kf) {
 		appName := fmt.Sprintf("integration-push-%d", time.Now().UnixNano())
 
 		// Push an app and then clean it up. This pushes the echo app which
 		// replies with the same body that was posted.
-		echoPath := filepath.Join(RootDir(ctx, t), "./samples/apps/echo")
+		echoPath := filepath.Join(testutil.RootDir(ctx, t), "./samples/apps/echo")
 		kf.CachePush(ctx, appName, echoPath)
 		defer kf.Delete(ctx, appName)
-		checkEchoApp(ctx, t, kf, appName, getNextPort(), ExpectedAddr(appName, ""))
+		checkEchoApp(ctx, t, kf, appName, getNextPort(), testutil.ExpectedAddr(appName, ""))
 
-		helloPath := filepath.Join(RootDir(ctx, t), "./samples/apps/helloworld")
+		helloPath := filepath.Join(testutil.RootDir(ctx, t), "./samples/apps/helloworld")
 		kf.CachePush(ctx, appName, helloPath)
 
 		// BUG(730): it takes a moment after the app becomes ready to reconcile the
 		// routes, the app is accessible but still points to the old one.
 		time.Sleep(45 * time.Second)
-		checkHelloWorldApp(ctx, t, kf, appName, getNextPort(), ExpectedAddr(appName, ""))
+		checkHelloWorldApp(ctx, t, kf, appName, getNextPort(), testutil.ExpectedAddr(appName, ""))
 	})
 }
 
@@ -94,16 +94,16 @@ func TestIntegration_Push_update(t *testing.T) {
 func TestIntegration_Push_docker(t *testing.T) {
 	checkClusterStatus(t)
 	t.Parallel()
-	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+	testutil.RunKfTest(t, func(ctx context.Context, t *testing.T, kf *testutil.Kf) {
 		appName := fmt.Sprintf("integration-push-%d", time.Now().UnixNano())
 
 		// Push an app and then clean it up. This pushes the echo app which
 		// replies with the same body that was posted.
-		echoPath := filepath.Join(RootDir(ctx, t), "./samples/apps/echo")
+		echoPath := filepath.Join(testutil.RootDir(ctx, t), "./samples/apps/echo")
 		kf.CachePush(ctx, appName, echoPath)
 
 		defer kf.Delete(ctx, appName)
-		checkEchoApp(ctx, t, kf, appName, getNextPort(), ExpectedAddr(appName, ""))
+		checkEchoApp(ctx, t, kf, appName, getNextPort(), testutil.ExpectedAddr(appName, ""))
 	})
 }
 
@@ -112,15 +112,15 @@ func TestIntegration_Push_docker(t *testing.T) {
 func TestIntegration_Push_dockerfile(t *testing.T) {
 	t.Parallel()
 	checkClusterStatus(t)
-	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+	testutil.RunKfTest(t, func(ctx context.Context, t *testing.T, kf *testutil.Kf) {
 		currentTime := time.Now().UnixNano()
 		appName := fmt.Sprintf("integration-dockerfile-%d", currentTime)
-		appPath := filepath.Join(RootDir(ctx, t), "samples", "apps", "helloworld")
+		appPath := filepath.Join(testutil.RootDir(ctx, t), "samples", "apps", "helloworld")
 
 		kf.Push(ctx, appName, "--path", appPath, "--dockerfile", "Dockerfile")
 		defer kf.Delete(ctx, appName)
 
-		checkHelloWorldApp(ctx, t, kf, appName, getNextPort(), ExpectedAddr(appName, ""))
+		checkHelloWorldApp(ctx, t, kf, appName, getNextPort(), testutil.ExpectedAddr(appName, ""))
 	})
 }
 
@@ -131,12 +131,12 @@ func TestIntegration_Push_dockerfile(t *testing.T) {
 func TestIntegration_StopStart(t *testing.T) {
 	t.Parallel()
 	checkClusterStatus(t)
-	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+	testutil.RunKfTest(t, func(ctx context.Context, t *testing.T, kf *testutil.Kf) {
 		appName := fmt.Sprintf("integration-push-%d", time.Now().UnixNano())
 
 		// Push an app and then clean it up. This pushes the echo app which
 		// replies with the same body that was posted.
-		echoPath := filepath.Join(RootDir(ctx, t), "./samples/apps/echo")
+		echoPath := filepath.Join(testutil.RootDir(ctx, t), "./samples/apps/echo")
 		kf.CachePush(ctx, appName, echoPath)
 		defer kf.Delete(ctx, appName)
 
@@ -145,7 +145,7 @@ func TestIntegration_StopStart(t *testing.T) {
 		// for two reasons:
 		// 1. Test the proxy.
 		// 2. Tests work even if a domain isn't setup.
-		Logf(t, "hitting echo app to ensure it's working...")
+		testutil.Logf(t, "hitting echo app to ensure it's working...")
 
 		// TODO(#441): Use port 0 so that we don't have to worry about port
 		// collisions.
@@ -155,34 +155,34 @@ func TestIntegration_StopStart(t *testing.T) {
 		url := fmt.Sprintf("http://localhost:%d", port)
 
 		{
-			resp, respCancel := RetryPost(ctx, t, url, appTimeout, http.StatusOK, "testing")
+			resp, respCancel := testutil.RetryPost(ctx, t, url, appTimeout, http.StatusOK, "testing")
 			defer resp.Body.Close()
 			defer respCancel()
-			Logf(t, "done hitting echo app to ensure it's working.")
+			testutil.Logf(t, "done hitting echo app to ensure it's working.")
 		}
 
-		Logf(t, "stoping echo app...")
+		testutil.Logf(t, "stoping echo app...")
 		kf.Stop(ctx, appName)
-		Logf(t, "done stopping echo app.")
+		testutil.Logf(t, "done stopping echo app.")
 
 		{
-			Logf(t, "hitting echo app to ensure it's NOT working...")
-			resp, respCancel := RetryPost(ctx, t, url, appTimeout, http.StatusNotFound, "testing")
+			testutil.Logf(t, "hitting echo app to ensure it's NOT working...")
+			resp, respCancel := testutil.RetryPost(ctx, t, url, appTimeout, http.StatusNotFound, "testing")
 			defer resp.Body.Close()
 			defer respCancel()
-			Logf(t, "done hitting echo app to ensure it's NOT working.")
+			testutil.Logf(t, "done hitting echo app to ensure it's NOT working.")
 		}
 
-		Logf(t, "starting echo app...")
+		testutil.Logf(t, "starting echo app...")
 		kf.Start(ctx, appName)
-		Logf(t, "done starting echo app.")
+		testutil.Logf(t, "done starting echo app.")
 
 		{
-			Logf(t, "hitting echo app to ensure it's working...")
-			resp, respCancel := RetryPost(ctx, t, url, 5*time.Minute, http.StatusOK, "testing")
+			testutil.Logf(t, "hitting echo app to ensure it's working...")
+			resp, respCancel := testutil.RetryPost(ctx, t, url, 5*time.Minute, http.StatusOK, "testing")
 			defer resp.Body.Close()
 			defer respCancel()
-			Logf(t, "done hitting echo app to ensure it's working.")
+			testutil.Logf(t, "done hitting echo app to ensure it's working.")
 		}
 	})
 }
@@ -193,14 +193,14 @@ func TestIntegration_StopStart(t *testing.T) {
 func TestIntegration_Push_manifest(t *testing.T) {
 	t.Parallel()
 	checkClusterStatus(t)
-	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+	testutil.RunKfTest(t, func(ctx context.Context, t *testing.T, kf *testutil.Kf) {
 		currentTime := time.Now().UnixNano()
 		appName := fmt.Sprintf("integration-manifest-%d", currentTime)
-		appPath := filepath.Join(RootDir(ctx, t), "samples", "apps", "manifest")
+		appPath := filepath.Join(testutil.RootDir(ctx, t), "samples", "apps", "manifest")
 
 		// Create a custom manifest file for this test.
 		newManifestFile, manifestCleanup, err := copyManifest(appName, appPath, currentTime)
-		AssertNil(t, "app manifest copy error", err)
+		testutil.AssertNil(t, "app manifest copy error", err)
 		defer manifestCleanup()
 
 		// Push an app with a manifest file.
@@ -212,7 +212,7 @@ func TestIntegration_Push_manifest(t *testing.T) {
 
 		checkEnvApp(ctx, t, kf, appName, getNextPort(), map[string]string{
 			"WHATNOW": "BROWNCOW",
-		}, ExpectedAddr(appName, ""))
+		}, testutil.ExpectedAddr(appName, ""))
 	})
 }
 
@@ -258,28 +258,28 @@ func copyManifest(appName, appPath string, currentTime int64) (string, func(), e
 func TestIntegration_Delete(t *testing.T) {
 	t.Parallel()
 	checkClusterStatus(t)
-	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+	testutil.RunKfTest(t, func(ctx context.Context, t *testing.T, kf *testutil.Kf) {
 		appName := fmt.Sprintf("integration-delete-%d", time.Now().UnixNano())
 
 		// Push an app and then clean it up. This pushes the echo app which
 		// simplies replies with the same body that was posted.
-		kf.CachePush(ctx, appName, filepath.Join(RootDir(ctx, t), "./samples/apps/echo"))
+		kf.CachePush(ctx, appName, filepath.Join(testutil.RootDir(ctx, t), "./samples/apps/echo"))
 
 		// List the apps and make sure we can find the app.
-		Logf(t, "ensuring app is there...")
+		testutil.Logf(t, "ensuring app is there...")
 		_, ok := kf.Apps(ctx)[appName]
-		AssertEqual(t, "app presence", true, ok)
-		Logf(t, "done ensuring app is there.")
+		testutil.AssertEqual(t, "app presence", true, ok)
+		testutil.Logf(t, "done ensuring app is there.")
 
 		// Delete the app.
 		kf.Delete(ctx, appName)
 
 		// Make sure the app is gone
 		// List the apps and make sure we can find the app.
-		Logf(t, "ensuring app is gone from list...")
+		testutil.Logf(t, "ensuring app is gone from list...")
 		_, ok = kf.Apps(ctx)[appName]
-		AssertEqual(t, "app exists", false, ok)
-		Logf(t, "done ensuring app is gone.")
+		testutil.AssertEqual(t, "app exists", false, ok)
+		testutil.Logf(t, "done ensuring app is gone.")
 	})
 }
 
@@ -289,14 +289,14 @@ func TestIntegration_Delete(t *testing.T) {
 func TestIntegration_Envs(t *testing.T) {
 	t.Parallel()
 	checkClusterStatus(t)
-	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+	testutil.RunKfTest(t, func(ctx context.Context, t *testing.T, kf *testutil.Kf) {
 		appName := fmt.Sprintf("integration-envs-%d", time.Now().UnixNano())
 
 		// Push an app and then clean it up. This pushes the envs app which
 		// returns the set environment variables via JSON. Set two environment
 		// variables (ENV1 and ENV2).
 		kf.Push(ctx, appName,
-			"--path", filepath.Join(RootDir(ctx, t), "./samples/apps/envs"),
+			"--path", filepath.Join(testutil.RootDir(ctx, t), "./samples/apps/envs"),
 			"--env", "ENV1=VALUE1",
 			"--env=ENV2=VALUE2",
 		)
@@ -308,16 +308,16 @@ func TestIntegration_Envs(t *testing.T) {
 		checkEnvApp(ctx, t, kf, appName, port, map[string]string{
 			"ENV1": "VALUE1", // Set on push
 			"ENV2": "VALUE2", // Set on push
-		}, ExpectedAddr(appName, ""))
+		}, testutil.ExpectedAddr(appName, ""))
 
 		t.Run("overwrite envs", func(t *testing.T) {
 			t.Skip("this is flaky as knative isn't fast at updating the env values")
 			// TODO (#699): Stop using panics for flow control
 			// Unset the environment variables ENV1.
-			RetryOnPanic(ctx, t, func() { kf.UnsetEnv(ctx, appName, "ENV1") })
+			testutil.RetryOnPanic(ctx, t, func() { kf.UnsetEnv(ctx, appName, "ENV1") })
 
 			// Overwrite ENV2 via set-env
-			RetryOnPanic(ctx, t, func() { kf.SetEnv(ctx, appName, "ENV2", "OVERWRITE2") })
+			testutil.RetryOnPanic(ctx, t, func() { kf.SetEnv(ctx, appName, "ENV2", "OVERWRITE2") })
 
 			assertVars(ctx, t, kf, appName, port, map[string]string{
 				"ENV2": "OVERWRITE2", // Set on push and overwritten via set-env
@@ -332,12 +332,12 @@ func TestIntegration_Envs(t *testing.T) {
 func TestIntegration_Logs(t *testing.T) {
 	t.Parallel()
 	checkClusterStatus(t)
-	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+	testutil.RunKfTest(t, func(ctx context.Context, t *testing.T, kf *testutil.Kf) {
 		appName := fmt.Sprintf("integration-logs-%d", time.Now().UnixNano())
 
 		// Push an app and then clean it up. This pushes the echo app which
 		// replies with the same body that was posted.
-		kf.CachePush(ctx, appName, filepath.Join(RootDir(ctx, t), "./samples/apps/echo"))
+		kf.CachePush(ctx, appName, filepath.Join(testutil.RootDir(ctx, t), "./samples/apps/echo"))
 		defer kf.Delete(ctx, appName)
 
 		logOutput := kf.Logs(ctx, appName, "-n=30")
@@ -358,7 +358,7 @@ func TestIntegration_Logs(t *testing.T) {
 		expectedLogLine := fmt.Sprintf("testing-%d", time.Now().UnixNano())
 		url := fmt.Sprintf("http://localhost:%d", port)
 		for i := 0; i < 10; i++ {
-			resp, respCancel := RetryPost(ctx, t, url, appTimeout, http.StatusOK, expectedLogLine)
+			resp, respCancel := testutil.RetryPost(ctx, t, url, appTimeout, http.StatusOK, expectedLogLine)
 			resp.Body.Close()
 			respCancel()
 		}
@@ -387,7 +387,7 @@ func TestIntegration_Logs(t *testing.T) {
 func TestIntegration_LogsNoContainer(t *testing.T) {
 	t.Parallel()
 	checkClusterStatus(t)
-	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+	testutil.RunKfTest(t, func(ctx context.Context, t *testing.T, kf *testutil.Kf) {
 		appName := fmt.Sprintf("integration-logs-noc-%d", time.Now().UnixNano())
 
 		output := kf.Logs(ctx, appName, "--recent")
@@ -416,13 +416,13 @@ func TestIntegration_LogsNoContainer(t *testing.T) {
 func TestIntegration_CfIgnore(t *testing.T) {
 	t.Parallel()
 	checkClusterStatus(t)
-	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+	testutil.RunKfTest(t, func(ctx context.Context, t *testing.T, kf *testutil.Kf) {
 		appName := fmt.Sprintf("integration-cfignore-%d", time.Now().UnixNano())
 
-		kf.CachePush(ctx, appName, filepath.Join(RootDir(ctx, t), "./samples/apps/cfignore"))
+		kf.CachePush(ctx, appName, filepath.Join(testutil.RootDir(ctx, t), "./samples/apps/cfignore"))
 		defer kf.Delete(ctx, appName)
 
-		checkCfignoreApp(ctx, t, kf, appName, getNextPort(), ExpectedAddr(appName, ""))
+		checkCfignoreApp(ctx, t, kf, appName, getNextPort(), testutil.ExpectedAddr(appName, ""))
 	})
 }
 
@@ -433,7 +433,7 @@ func TestIntegration_CfIgnore(t *testing.T) {
 func assertVars(
 	ctx context.Context,
 	t *testing.T,
-	kf *Kf,
+	kf *testutil.Kf,
 	appName string,
 	proxyPort int,
 	expectedVars map[string]string,
@@ -457,34 +457,34 @@ func assertVars(
 		// The envs app will return all its environment variables as
 		// JSON. This checks to make sure everything is ACTUALLY being
 		// set from the app's perspective.
-		Logf(t, "hitting app %s to check the envs...", appName)
-		resp, respCancel := RetryPost(ctx, t, fmt.Sprintf("http://localhost:%d", proxyPort), appTimeout, http.StatusOK, "")
+		testutil.Logf(t, "hitting app %s to check the envs...", appName)
+		resp, respCancel := testutil.RetryPost(ctx, t, fmt.Sprintf("http://localhost:%d", proxyPort), appTimeout, http.StatusOK, "")
 		defer resp.Body.Close()
 		defer respCancel()
 		if resp.StatusCode != http.StatusOK {
-			Logf(t, "status code %d", resp.StatusCode)
+			testutil.Logf(t, "status code %d", resp.StatusCode)
 			time.Sleep(100 * time.Millisecond)
 			continue
 		}
 		var appEnvs map[string]string
 		if err := json.NewDecoder(resp.Body).Decode(&appEnvs); err != nil {
-			Logf(t, "err serializing envs: %s", err)
-			Logf(t, "%s", appEnvs)
+			testutil.Logf(t, "err serializing envs: %s", err)
+			testutil.Logf(t, "%s", appEnvs)
 			time.Sleep(100 * time.Millisecond)
 			continue
 		}
-		Logf(t, "done hitting %s app to check the envs.", appName)
+		testutil.Logf(t, "done hitting %s app to check the envs.", appName)
 
 		// Check all the environment variables.
 		success = true
 		for k, v := range expectedVars {
 			if envs[k] != v {
-				Logf(t, "(kf env) wrong: %s != %s", envs[k], v)
+				testutil.Logf(t, "(kf env) wrong: %s != %s", envs[k], v)
 				success = false
 				break
 			}
 			if appEnvs[k] != v {
-				Logf(t, "(response) wrong: %s != %s", appEnvs[k], v)
+				testutil.Logf(t, "(response) wrong: %s != %s", appEnvs[k], v)
 				success = false
 				break
 			}
@@ -494,12 +494,12 @@ func assertVars(
 		// unset-env).
 		for _, k := range absentVars {
 			if _, ok := envs[k]; ok {
-				Logf(t, "(kf env) wrong: %s still is present", k)
+				testutil.Logf(t, "(kf env) wrong: %s still is present", k)
 				success = false
 				break
 			}
 			if _, ok := appEnvs[k]; ok {
-				Logf(t, "(response) wrong: %s still is present", k)
+				testutil.Logf(t, "(response) wrong: %s still is present", k)
 				success = false
 				break
 			}
@@ -520,14 +520,14 @@ var checkOnce sync.Once
 
 func checkClusterStatus(t *testing.T) {
 	checkOnce.Do(func() {
-		testIntegration_WaitForCluster(t)
+		testIntegrationWaitForCluster(t)
 	})
 }
 
-// testIntegration_WaitForCluster runs the doctor command. It ensures the
+// testIntegrationWaitForCluster runs the doctor command. It ensures the
 // cluster the tests are running against is in good shape.
-func testIntegration_WaitForCluster(t *testing.T) {
-	RunKfTest(t, func(ctx context.Context, t *testing.T, kf *Kf) {
+func testIntegrationWaitForCluster(t *testing.T) {
+	testutil.RunKfTest(t, func(ctx context.Context, t *testing.T, kf *testutil.Kf) {
 		kf.WaitForCluster(ctx)
 	})
 }
@@ -535,14 +535,14 @@ func testIntegration_WaitForCluster(t *testing.T) {
 func checkApp(
 	ctx context.Context,
 	t *testing.T,
-	kf *Kf,
+	kf *testutil.Kf,
 	appName string,
 	expectedRoutes []string,
 	proxyPort int,
 	assert func(ctx context.Context, t *testing.T, addr string),
 ) {
 	// Get the app and make sure we have the correct route(s).
-	Logf(t, "ensuring app's route...")
+	testutil.Logf(t, "ensuring app's route...")
 	appJSON := kf.App(ctx, appName)
 
 	app := &v1alpha1.App{}
@@ -556,15 +556,15 @@ func checkApp(
 	}
 
 	sort.Strings(urls)
-	AssertEqual(t, "routes", expectedRoutes, urls)
-	Logf(t, "done ensuring app's route.")
+	testutil.AssertEqual(t, "routes", expectedRoutes, urls)
+	testutil.Logf(t, "done ensuring app's route.")
 
 	// Hit the app via the proxy. This makes sure the app is handling
 	// traffic as expected and ensures the proxy works. We use the proxy
 	// for two reasons:
 	// 1. Test the proxy.
 	// 2. Tests work even if a domain isn't setup.
-	Logf(t, "hitting %s app to ensure its working...", appName)
+	testutil.Logf(t, "hitting %s app to ensure its working...", appName)
 
 	// TODO(#46): Use port 0 so that we don't have to worry about port
 	// collisions.
@@ -575,18 +575,18 @@ func checkApp(
 func checkCfignoreApp(
 	ctx context.Context,
 	t *testing.T,
-	kf *Kf,
+	kf *testutil.Kf,
 	appName string,
 	proxyPort int,
 	expectedRoutes ...string,
 ) {
 	checkApp(ctx, t, kf, appName, expectedRoutes, proxyPort, func(ctx context.Context, t *testing.T, addr string) {
-		resp, respCancel := RetryPost(ctx, t, addr, appTimeout, http.StatusOK, "testing")
+		resp, respCancel := testutil.RetryPost(ctx, t, addr, appTimeout, http.StatusOK, "testing")
 		defer resp.Body.Close()
 		defer respCancel()
 
 		files := []string{}
-		AssertNil(t, "err", json.NewDecoder(resp.Body).Decode(&files))
+		testutil.AssertNil(t, "err", json.NewDecoder(resp.Body).Decode(&files))
 
 		actualFiles := sets.NewString(files...)
 
@@ -605,58 +605,58 @@ func checkCfignoreApp(
 			t.Fatalf("Expected none of %#v to be in %#v", unexpectedFiles, actualFiles.List())
 		}
 
-		Logf(t, "done hitting cfignore app to ensure its working.")
+		testutil.Logf(t, "done hitting cfignore app to ensure its working.")
 	})
 }
 
 func checkEchoApp(
 	ctx context.Context,
 	t *testing.T,
-	kf *Kf,
+	kf *testutil.Kf,
 	appName string,
 	proxyPort int,
 	expectedRoutes ...string,
 ) {
 	checkApp(ctx, t, kf, appName, expectedRoutes, proxyPort, func(ctx context.Context, t *testing.T, addr string) {
-		resp, respCancel := RetryPost(ctx, t, addr, appTimeout, http.StatusOK, "testing")
+		resp, respCancel := testutil.RetryPost(ctx, t, addr, appTimeout, http.StatusOK, "testing")
 		defer resp.Body.Close()
 		defer respCancel()
 		data, err := ioutil.ReadAll(resp.Body)
-		AssertNil(t, "body error", err)
-		AssertEqual(t, "body", "testing", string(data))
-		Logf(t, "done hitting echo app to ensure its working.")
+		testutil.AssertNil(t, "body error", err)
+		testutil.AssertEqual(t, "body", "testing", string(data))
+		testutil.Logf(t, "done hitting echo app to ensure its working.")
 	})
 }
 
 func checkHelloWorldApp(
 	ctx context.Context,
 	t *testing.T,
-	kf *Kf,
+	kf *testutil.Kf,
 	appName string,
 	proxyPort int,
 	expectedRoutes ...string,
 ) {
 	checkApp(ctx, t, kf, appName, expectedRoutes, proxyPort, func(ctx context.Context, t *testing.T, addr string) {
 		// The helloworld app doesn't care if what verb you use (e.g., POST vs
-		// GET), so we'll just use the RetryPost method so we can get the
+		// GET), so we'll just use the testutil.RetryPost method so we can get the
 		// retry logic.
-		resp, respCancel := RetryPost(ctx, t, addr, appTimeout, http.StatusOK, "testing")
+		resp, respCancel := testutil.RetryPost(ctx, t, addr, appTimeout, http.StatusOK, "testing")
 		defer resp.Body.Close()
 		defer respCancel()
 
 		data, err := ioutil.ReadAll(resp.Body)
-		AssertNil(t, "body error", err)
+		testutil.AssertNil(t, "body error", err)
 
 		expectedBody := fmt.Sprintf("hello from %s!", appName)
-		AssertEqual(t, "body", expectedBody, strings.TrimSpace(string(data)))
-		Logf(t, "done hitting helloworld app to ensure its working.")
+		testutil.AssertEqual(t, "body", expectedBody, strings.TrimSpace(string(data)))
+		testutil.Logf(t, "done hitting helloworld app to ensure its working.")
 	})
 }
 
 func checkEnvApp(
 	ctx context.Context,
 	t *testing.T,
-	kf *Kf,
+	kf *testutil.Kf,
 	appName string,
 	proxyPort int,
 	expectedVars map[string]string,

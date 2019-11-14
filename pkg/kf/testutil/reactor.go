@@ -37,7 +37,7 @@ func AddFakeReactor(fake Reactable, ctrl *gomock.Controller) *FakeApiServer {
 	return server
 }
 
-func apiServerReaction(server TestApiServer) testing.ReactionFunc {
+func apiServerReaction(server TestAPIServer) testing.ReactionFunc {
 	return func(action testing.Action) (bool, runtime.Object, error) {
 		ns := action.GetNamespace()
 		gvr := action.GetResource()
@@ -74,7 +74,7 @@ func apiServerReaction(server TestApiServer) testing.ReactionFunc {
 	}
 }
 
-type TestApiServer interface {
+type TestAPIServer interface {
 	// Get retrieves the object by its kind, namespace and name.
 	Get(gvr schema.GroupVersionResource, ns, name string) (runtime.Object, error)
 

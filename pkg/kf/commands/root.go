@@ -30,7 +30,11 @@ import (
 	templates "github.com/google/kf/third_party/kubectl-templates"
 	"github.com/imdario/mergo"
 	"github.com/spf13/cobra"
+
+	// register auth provider plugin for gcp
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+
+	// register auth provider plugin for oidc
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
 
@@ -183,7 +187,7 @@ func NewKfCommand() *cobra.Command {
 				// should be ordered in a logical way e.g. testing apps should come after
 				// testing the cluster because if the cluster isn't working then all the
 				// app tests will fail.
-				doctor.NewDoctorCommand(p, []doctor.DoctorTest{
+				doctor.NewDoctorCommand(p, []doctor.Test{
 					{Name: "cluster", Test: pkgdoctor.NewClusterDiagnostic(config.GetKubernetes(p))},
 					{Name: "buildpacks", Test: InjectBuildpacksClient(p)},
 					{Name: "istio", Test: istio.NewIstioClient(config.GetKubernetes(p))},

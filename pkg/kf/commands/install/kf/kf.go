@@ -29,7 +29,6 @@ import (
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/pkg/kf/cli"
 	"github.com/google/kf/pkg/kf/commands/install/util"
-	. "github.com/google/kf/pkg/kf/commands/install/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	appsv1 "k8s.io/api/apps/v1"
@@ -189,7 +188,7 @@ func installServerComponents(ctx context.Context, kfVersion string) error {
 				Factor:   1,
 			}, func() (bool, error) {
 				cli.Logf(ctx, "install "+yaml.name)
-				if _, err := Kubectl(
+				if _, err := util.Kubectl(
 					ctx,
 					"apply",
 					"--filename",
@@ -229,7 +228,7 @@ func waitForKfDeployments(ctx context.Context) error {
 				Steps:    10,
 				Factor:   1.5,
 			}, func() (bool, error) {
-				output, err := Kubectl(
+				output, err := util.Kubectl(
 					ctx,
 					"get",
 					"deployments",
@@ -277,7 +276,7 @@ func installServiceCatalog(ctx context.Context) error {
 
 	tmpKfPath := path.Join(tempDir, "kf")
 
-	if _, err := Git(
+	if _, err := util.Git(
 		ctx,
 		"clone",
 		"https://github.com/google/kf",
@@ -287,7 +286,7 @@ func installServiceCatalog(ctx context.Context) error {
 	}
 
 	cli.Logf(ctx, "applying templates")
-	if _, err := Kubectl(
+	if _, err := util.Kubectl(
 		ctx,
 		"apply",
 		"-R",

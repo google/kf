@@ -102,7 +102,7 @@ func (r *Reconciler) ApplyChanges(
 	// virtualservice, it won't be cleaned up.
 	if len(claims) == 0 {
 		err := r.SharedClientSet.
-			Networking().
+			NetworkingV1alpha3().
 			VirtualServices(namespace).
 			Delete(v1alpha1.GenerateName(
 				fields.Hostname,

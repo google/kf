@@ -104,8 +104,8 @@ func NewControllerLogger(ctx context.Context, resource string) *zap.SugaredLogge
 
 // IsNamespaceTerminating returns true if the namespace is marked as terminating
 // and false if the state is unknown or not terminating.
-func (base *Base) IsNamespaceTerminating(namespace string) bool {
-	ns, err := base.NamespaceLister.Get(namespace)
+func (b *Base) IsNamespaceTerminating(namespace string) bool {
+	ns, err := b.NamespaceLister.Get(namespace)
 	if err != nil || ns == nil {
 		return false
 	}

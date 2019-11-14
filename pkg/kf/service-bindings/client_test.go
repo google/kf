@@ -30,26 +30,26 @@ type fakeDependencies struct {
 	apiserver *testutil.FakeApiServer
 }
 
-type ServiceBindingApiTestCase struct {
+type ServiceBindingAPITestCase struct {
 	Run func(t *testing.T, fakes fakeDependencies, client servicebindings.ClientInterface)
 }
 
-func (tc *ServiceBindingApiTestCase) ExecuteTest(t *testing.T) {
+func (tc *ServiceBindingAPITestCase) ExecuteTest(t *testing.T) {
 	controller := gomock.NewController(t)
 	defer controller.Finish()
 
 	cs := &testclient.Clientset{}
-	fakeApiServer := testutil.AddFakeReactor(cs, controller)
+	fakeAPIServer := testutil.AddFakeReactor(cs, controller)
 
 	appsController := gomock.NewController(t)
 	defer appsController.Finish()
 
 	client := servicebindings.NewClient(cs)
-	tc.Run(t, fakeDependencies{apiserver: fakeApiServer}, client)
+	tc.Run(t, fakeDependencies{apiserver: fakeAPIServer}, client)
 }
 
 func TestClient_List(t *testing.T) {
-	cases := map[string]ServiceBindingApiTestCase{
+	cases := map[string]ServiceBindingAPITestCase{
 		"default options": {
 			Run: func(t *testing.T, deps fakeDependencies, client servicebindings.ClientInterface) {
 				deps.apiserver.EXPECT().

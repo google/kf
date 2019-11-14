@@ -46,7 +46,7 @@ import (
 )
 
 var (
-	restageNeededErr = errors.New("a restage is needed to reflect the latest build settings")
+	errRestageNeeded = errors.New("a restage is needed to reflect the latest build settings")
 )
 
 type Reconciler struct {
@@ -173,7 +173,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			// We don't want all the apps to automatically rebuild because the update
 			// might be partial or breaking. Instead it should be the job of a person
 			// or process to update all the apps after something like that.
-			return condition.MarkReconciliationError("synchronizing", restageNeededErr)
+			return condition.MarkReconciliationError("synchronizing", errRestageNeeded)
 		}
 
 		app.Status.PropagateSourceStatus(actual)

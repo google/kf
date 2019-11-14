@@ -34,9 +34,9 @@ var (
 	passColor = color.New(color.FgHiGreen, color.Bold)
 )
 
-// DoctorTest represents a single high-level test. These should be roughly at
+// Test represents a single high-level doctor test. These should be roughly at
 // the granularity of objects e.g. Apps, Service Brokers, Namespaces, and Clusters.
-type DoctorTest struct {
+type Test struct {
 	Name string
 	Test doctor.Diagnosable
 }
@@ -44,7 +44,7 @@ type DoctorTest struct {
 // NewDoctorCommand creates a new doctor command for the given tests.
 // The tests will be executed in the order they appear in the list as long as
 // they're requested by the user.
-func NewDoctorCommand(p *config.KfParams, tests []DoctorTest) *cobra.Command {
+func NewDoctorCommand(p *config.KfParams, tests []Test) *cobra.Command {
 	var knownTestNames []string
 	for _, t := range tests {
 		knownTestNames = append(knownTestNames, t.Name)
@@ -95,14 +95,14 @@ func NewDoctorCommand(p *config.KfParams, tests []DoctorTest) *cobra.Command {
 
 // testsMatching returns all tests with names in the given set.
 // if no tests are specified as desired, all get run.
-func testsMatching(desired []string, knownTests []DoctorTest) []DoctorTest {
+func testsMatching(desired []string, knownTests []Test) []Test {
 	if len(desired) == 0 {
 		return knownTests
 	}
 
 	desiredSet := sets.NewString(desired...)
 
-	var out []DoctorTest
+	var out []Test
 	for _, dt := range knownTests {
 		if desiredSet.Has(dt.Name) {
 			out = append(out, dt)
@@ -126,7 +126,7 @@ func retry(times int, delay time.Duration, callback func() error) error {
 	return callback()
 }
 
-func runDoctor(w io.Writer, desiredTests []DoctorTest) error {
+func runDoctor(w io.Writer, desiredTests []Test) error {
 	d := doctor.NewDiagnostic("doctor", w)
 	for _, dt := range desiredTests {
 		d.GatedRun(dt.Name, dt.Test.Diagnose)

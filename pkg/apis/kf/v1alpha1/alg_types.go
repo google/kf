@@ -164,13 +164,13 @@ func (d SpaceDomains) Swap(i int, j int) {
 type ServiceBindings []servicecatalogv1beta1.ServiceBinding
 
 // Set implements Interface.
-func (d ServiceBindings) Set(i int, a algorithms.Interface, j int, b algorithms.Interface) {
+func (s ServiceBindings) Set(i int, a algorithms.Interface, j int, b algorithms.Interface) {
 	a.(ServiceBindings)[i] = b.(ServiceBindings)[j]
 }
 
 // Append implements Interface.
-func (d ServiceBindings) Append(a algorithms.Interface) algorithms.Interface {
-	return append(d, a.(ServiceBindings)...)
+func (s ServiceBindings) Append(a algorithms.Interface) algorithms.Interface {
+	return append(s, a.(ServiceBindings)...)
 }
 
 // Clone implements Interface.
