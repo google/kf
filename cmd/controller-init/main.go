@@ -16,15 +16,21 @@ package main
 
 import (
 	"flag"
+	"log"
+
 	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	sourceconfig "github.com/google/kf/pkg/reconciler/source/config"
 	"go.uber.org/zap"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clientcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/tools/clientcmd"
 	cv1alpha3 "knative.dev/pkg/client/clientset/versioned/typed/istio/v1alpha3"
 	"knative.dev/pkg/configmap"
 	"knative.dev/pkg/logging"
 	"knative.dev/pkg/logging/logkey"
-	"log"
 )
 
 const (
@@ -57,15 +63,62 @@ func main() {
 		logger.Fatalw("Failed to get cluster config", zap.Error(err))
 	}
 
+	// Check into the config-secrets. Its *possible* that the ConfigMap
+	// doesn't exist. This is because the ConfigMap has to point at a secret
+	// that an operator HAS to create. Therefore, we need to create a
+	// placeholder ConfigMap if one doesn't exist.
+	corev1Client, err := clientcorev1.NewForConfig(clusterConfig)
+	if err != nil {
+		logger.Fatalw("Failed to get the corev1 client set", zap.Error(err))
+	}
+	secretsCM, err := corev1Client.
+		ConfigMaps(v1alpha1.KfNamespace).
+		Get(sourceconfig.SecretsConfigName, metav1.GetOptions{})
+
+	switch {
+	case apierrs.IsNotFound(err):
+		// ConfigMap isn't found, so we should create one.
+		logger.Warnw("ConfigMap %q not found. Creating a placeholder ConfigMap...", sourceconfig.SecretsConfigName)
+		if err := createPlaceholderConfigMap(corev1Client); err != nil {
+			logger.Fatalw("Failed to create ConfigMap %q: %v", sourceconfig.SecretsConfigName, err)
+		}
+	case err != nil:
+		logger.Fatalw("Failed to fetch ConfigMap %q: %v", sourceconfig.SecretsConfigName, err)
+	case secretsCM.Data[sourceconfig.BuildImagePushSecretKey] != "":
+		// Ensure the expected key is present.
+		logger.Fatalw("Failed to find %q in ConfigMap %q: %v", sourceconfig.BuildImagePushSecretKey, sourceconfig.SecretsConfigName)
+	}
+
 	istioClient, err := cv1alpha3.NewForConfig(clusterConfig)
 	if err != nil {
 		logger.Fatalw("Failed to get the istio client set", zap.Error(err))
 	}
 
-	// Clean out virtualservices in the kf namespace. Virtualservices should be in the namespace they were created in
+	// Clean out virtualservices in the kf namespace. VirtualServices should
+	// be in the namespace they were created in.
+	//
+	// NOTE: Older versions of Kf stored VirtualServices in the Kf namespace
+	// to emulate a non-existent ClusterVirtualService. Newer versions of Kf
+	// have moved away from this pattern, but this could lead to some stale
+	// VirtualServices in the Kf namespace. Therefore this block of code
+	// should be revisted in later versions of Kf when the upgrade path from
+	// Kf 0.2 is no longer supported.
 	logger.Info("Deleting virtualservices in the `kf` namespace...")
 	err = istioClient.VirtualServices(v1alpha1.KfNamespace).DeleteCollection(nil, v1.ListOptions{})
 	if err != nil {
 		logger.Fatalw("Failed to delete virtualservices in the `kf` namespace", zap.Error(err))
 	}
+}
+
+func createPlaceholderConfigMap(corev1Client *clientcorev1.CoreV1Client) error {
+	cm := &corev1.ConfigMap{}
+	cm.Name = sourceconfig.SecretsConfigName
+	cm.Data = map[string]string{
+		sourceconfig.BuildImagePushSecretKey: "placeholder",
+	}
+
+	_, err := corev1Client.
+		ConfigMaps(v1alpha1.KfNamespace).
+		Create(cm)
+	return err
 }
