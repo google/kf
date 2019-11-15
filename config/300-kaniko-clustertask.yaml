@@ -21,8 +21,10 @@ spec:
     params:
     - name: SOURCE_IMAGE
       description: The image built via Kontext that contains the app's source code.
+      type: string
     - name: DOCKERFILE
       description: Path to the Dockerfile to build.
+      type: string
       default: ./Dockerfile
   outputs:
     resources:

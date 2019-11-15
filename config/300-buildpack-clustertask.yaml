@@ -21,19 +21,25 @@ spec:
     params:
     - name: SOURCE_IMAGE
       description: The image built via Kontext that contains the app's source code.
+      type: string
     - name: ENV_SECRET
       description: The Secret that stores the environment variables used for each step
+      type: string
     - name: BUILDPACK
       description: When set, skip the detect step and use the given buildpack.
+      type: string
       default: ''
     - name: RUN_IMAGE
       description: The run image buildpacks will use as the base for IMAGE (output).
+      type: string
       default: packs/run:v3alpha2
     - name: BUILDER_IMAGE
       description: The image on which builds will run (must include v3 lifecycle and compatible buildpacks).
+      type: string
       default: gcr.io/kf-releases/buildpack-builder:latest
     - name: CACHE_VOLUME
       description: The name of the persistent app cache volume
+      type: string
       default: empty-dir
 
   outputs:
