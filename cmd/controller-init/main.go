@@ -94,8 +94,8 @@ func main() {
 		logger.Fatalw("Failed to get the istio client set", zap.Error(err))
 	}
 
-	// Clean out virtualservices in the kf namespace. VirtualServices should
-	// be in the namespace they were created in.
+	// Clean out VirtualServices in the kf namespace. VirtualServices should
+	// be in the namespace as their associated RouteClaim.
 	//
 	// NOTE: Older versions of Kf stored VirtualServices in the Kf namespace
 	// to emulate a non-existent ClusterVirtualService. Newer versions of Kf
