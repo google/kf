@@ -37,6 +37,7 @@ kf install gke [subcommand] [flags]
       --interactive                   Make the command interactive
       --kf-version string             Kf release version to use
       --project-id string             GCP project ID to use
+      --release-channel string        Release channel the GKE cluster will be created with (default "standard")
       --space-domain string           Kf space's default domain
       --space-name string             Kf space name to create/target use
   -v, --verbose                       Make the operation more chatty
