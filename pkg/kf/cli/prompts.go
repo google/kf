@@ -68,6 +68,36 @@ func SelectPrompt(
 	label string,
 	items ...string,
 ) (int, string, error) {
+	opts := []Option{}
+	for _, item := range items {
+		opts = append(opts, Option{Value: item, Label: item})
+	}
+
+	return OptionPrompt(ctx, label, opts...)
+}
+
+// Option represents a single option of a list. It mimics HTML's option
+// type.
+type Option struct {
+	// Value contains the value of the option.
+	Value string
+	// Label contains the display text of the option.
+	Label string
+}
+
+// String implements stringer.
+func (o Option) String() string {
+	return o.Label
+}
+
+// OptionPrompt prompts the user to select from the given options. It uses
+// Searcher and properly colors the label. It fails if the context is not in
+// interactive mode. It returns the value of the selected option.
+func OptionPrompt(
+	ctx context.Context,
+	label string,
+	items ...Option,
+) (int, string, error) {
 	if !GetInteractiveMode(ctx) {
 		return 0, "", interactiveModeDisabledErr{message: label}
 	}
@@ -77,8 +107,15 @@ func SelectPrompt(
 		StartInSearchMode: true,
 		Searcher:          Searcher(items),
 		Items:             items,
+		Templates:         &promptui.SelectTemplates{},
 	}
-	return p.Run()
+
+	index, _, err := p.Run()
+	if err != nil {
+		return 0, "", err
+	}
+
+	return index, items[index].Value, nil
 }
 
 // SelectYesNo promts the user to select between yes and no. It will return
@@ -99,9 +136,9 @@ func SelectYesNo(ctx context.Context, label string, def bool) (bool, error) {
 
 // Searcher implements list.Searcher for promptui.Select. It is case
 // insensitive and returns true only if the input string is present.
-func Searcher(items []string) func(input string, index int) bool {
+func Searcher(items []Option) func(input string, index int) bool {
 	return func(input string, index int) bool {
-		item := strings.ToLower(items[index])
+		item := strings.ToLower(items[index].String())
 		input = strings.TrimSpace(strings.ToLower(input))
 
 		return strings.Contains(item, input)
