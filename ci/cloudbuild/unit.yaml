@@ -2,12 +2,18 @@ steps:
   # the git steps are required to initialize a clean repo since
   # Cloud Build does not include the .git directory our scripts
   # use to orient themselves.
+- name: golang:1.12  # reuse the golang:1.12 image so it's cached for later
+  entrypoint: /workspace/hack/setup-gitignore.sh
 - name: gcr.io/cloud-builders/git
   args: ['init']
 - name: gcr.io/cloud-builders/git
   args: ['add', '*']
 - name: gcr.io/cloud-builders/git
-  args: ['commit', '-m', "clean state", '--author', "Kf Builder <builder@kf.dev>"]
+  args: ['config', 'user.name', 'Kf Builder']
+- name: gcr.io/cloud-builders/git
+  args: ['config', 'user.email', 'builder@kf.dev']
+- name: gcr.io/cloud-builders/git
+  args: ['commit', '-m="clean state"']
   # Run unit tests against the source
 - name: golang:1.12
   entrypoint: /workspace/hack/ci.sh
