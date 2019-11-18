@@ -158,7 +158,7 @@ resources:
       credentials: *service_account_json
     vars:
       project: *gcp_project_id
-      gke_version: 1.13.11-gke.11
+      release_channel: REGULAR
     env:
       GOOGLE_CREDENTIALS: *service_account_json
 
