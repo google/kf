@@ -74,7 +74,7 @@ func main() {
 		if err != nil {
 			logger.Fatalw("Failed to get the corev1 client set", zap.Error(err))
 		}
-		_, err := corev1Client.
+		_, err = corev1Client.
 			ConfigMaps(v1alpha1.KfNamespace).
 			Get(sourceconfig.SecretsConfigName, metav1.GetOptions{})
 
