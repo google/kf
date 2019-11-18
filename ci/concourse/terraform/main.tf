@@ -2,8 +2,9 @@ variable "project" {
   type = string
 }
 
-variable "gke_version" {
-  type = string
+variable "release_channel" {
+  type    = string
+  default = "REGULAR"
 }
 
 provider "google" {
@@ -31,7 +32,7 @@ resource "google_compute_subnetwork" "kf_apps" {
   ip_cidr_range            = "10.0.0.0/16"
   region                   = "us-central1"
   private_ip_google_access = true
-  network                  = "${google_compute_network.k8s_network.self_link}"
+  network                  = google_compute_network.k8s_network.self_link
 }
 
 resource "google_service_account" "kf_test" {
@@ -58,15 +59,17 @@ resource "google_project_iam_member" "metwicwriter" {
 }
 
 resource "google_service_account_key" "kf_test" {
-  service_account_id = "${google_service_account.kf_test.name}"
+  service_account_id = google_service_account.kf_test.name
 }
 
 resource "google_container_cluster" "kf_test" {
-  provider = "google-beta"
+  provider = google-beta
   name     = "kf-test-${random_pet.kf_test.id}"
   location = "us-central1"
 
-  min_master_version = var.gke_version
+  release_channel {
+    channel = var.release_channel
+  }
 
   initial_node_count = 1
 
@@ -103,7 +106,7 @@ resource "google_container_cluster" "kf_test" {
       disable-legacy-endpoints = "true"
     }
 
-    service_account = "${google_service_account.kf_test.email}"
+    service_account = google_service_account.kf_test.email
 
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform",
@@ -116,8 +119,8 @@ resource "google_container_cluster" "kf_test" {
     ]
   }
 
-  network    = "${google_compute_network.k8s_network.self_link}"
-  subnetwork = "${google_compute_subnetwork.kf_apps.self_link}"
+  network    = google_compute_network.k8s_network.self_link
+  subnetwork = google_compute_subnetwork.kf_apps.self_link
 
   ip_allocation_policy {
     # this block must be defined to use VPC networking

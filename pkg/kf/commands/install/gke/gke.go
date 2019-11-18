@@ -37,7 +37,7 @@ const (
 	numNodes              = "3"
 	defaultMaxPodsPerNode = "110"
 	addons                = "HorizontalPodAutoscaling,HttpLoadBalancing,Istio,CloudRun"
-	defaultGKEVersion     = "1.13.11-gke.11"
+	defaultReleaseChannel = "STABLE"
 )
 
 // NewGKECommand creates a command that can install kf to GKE+Cloud Run.
@@ -107,6 +107,7 @@ func buildGraph() *cli.InteractiveNode {
 		flags.StringVar(&gkeCfg.zone, "cluster-zone", "us-central1-a", "Zone the GKE cluster is in or will be created in")
 		flags.StringVar(&gkeCfg.network, "cluster-network", "default", "Network the GKE cluster is in or will be created in")
 		flags.StringVar(&gkeCfg.machineType, "cluster-machine-type", "n1-standard-4", "Machine type the GKE cluster will be created with")
+		flags.StringVar(&gkeCfg.releaseChannel, "release-channel", "standard", "Release channel the GKE cluster will be created with")
 		flags.StringVar(&masterIP, "cluster-master-ip", "public", "GKE's master Server IP to target (public|internal)")
 		flags.BoolVar(&createCluster, "create-cluster", false, "Create a new GKE cluster")
 
@@ -134,13 +135,16 @@ func buildGraph() *cli.InteractiveNode {
 					gkeCfg, err = selectCluster(ctx, projectID, gkeCfg)
 				}
 
+				if err != nil {
+					return ctx, nil, err
+				}
+
 				// Target the cluster
 				if err := targetCluster(ctx, projectID, masterIP, gkeCfg); err != nil {
 					return nil, nil, err
 				}
 
-				// NOTE: err might be nil
-				return kf.SetContainerRegistry(ctx, "gcr.io/"+projectID), kfInstallGraph, err
+				return kf.SetContainerRegistry(ctx, "gcr.io/"+projectID), kfInstallGraph, nil
 			}
 	}
 
@@ -421,6 +425,7 @@ type gkeConfig struct {
 	zone           string
 	network        string
 	machineType    string
+	releaseChannel string
 }
 
 func gkeClusterConfig(
@@ -527,6 +532,21 @@ func gkeClusterConfig(
 		}
 	}
 
+	// Release Channel
+	_, wantSpecificVersion := os.LookupEnv(GKEVersionEnvVar)
+	if cfg.releaseChannel == "" && !wantSpecificVersion {
+		availableReleaseChannels := []cli.Option{
+			{Value: "rapid", Label: "Rapid - use for testing only, not covered by SLA"},
+			{Value: "regular", Label: "Regular - GA quality, updated every few weeks"},
+			{Value: "stable", Label: "Stable - stability above all else, updated every few months"},
+		}
+
+		_, cfg.releaseChannel, err = cli.OptionPrompt(ctx, "Release channel (recommended: 'Regular')", availableReleaseChannels...)
+		if err != nil {
+			return gkeConfig{}, err
+		}
+	}
+
 	return cfg, nil
 }
 
@@ -560,9 +580,7 @@ func buildGKECluster(
 	if gkeClusterVersion, ok := os.LookupEnv(GKEVersionEnvVar); ok {
 		args = append(args, "--cluster-version", gkeClusterVersion)
 	} else {
-		cli.Logf(ctx, "Setting the GKE version to be %q, override it by setting the environment variable %s", defaultGKEVersion, GKEVersionEnvVar)
-		args = append(args, "--cluster-version", defaultGKEVersion)
-
+		args = append(args, "--release-channel", gkeCfg.releaseChannel)
 	}
 
 	if gkeCfg.network != "" {

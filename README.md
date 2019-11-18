@@ -1,6 +1,5 @@
 # Kf
 
-[![Build Status](https://travis-ci.org/google/kf.svg?branch=master)](https://travis-ci.org/google/kf)
 [![knative.slack.com][slack-badge]][kf-slack]
 
 `kf` provides a `cf`-like experience on top of Knative.
