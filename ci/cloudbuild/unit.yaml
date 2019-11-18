@@ -7,7 +7,7 @@ steps:
 - name: gcr.io/cloud-builders/git
   args: ['add', '*']
 - name: gcr.io/cloud-builders/git
-  args: ['commit', '-m', "clean state"]
+  args: ['commit', '-m', "clean state", '--author', "Kf Builder <builder@kf.dev>"]
   # Run unit tests against the source
 - name: golang:1.12
   entrypoint: /workspace/hack/ci.sh
