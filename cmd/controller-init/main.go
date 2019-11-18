@@ -67,26 +67,27 @@ func main() {
 	// doesn't exist. This is because the ConfigMap has to point at a secret
 	// that an operator HAS to create. Therefore, we need to create a
 	// placeholder ConfigMap if one doesn't exist.
-	corev1Client, err := clientcorev1.NewForConfig(clusterConfig)
-	if err != nil {
-		logger.Fatalw("Failed to get the corev1 client set", zap.Error(err))
-	}
-	secretsCM, err := corev1Client.
-		ConfigMaps(v1alpha1.KfNamespace).
-		Get(sourceconfig.SecretsConfigName, metav1.GetOptions{})
-
-	switch {
-	case apierrs.IsNotFound(err):
-		// ConfigMap isn't found, so we should create one.
-		logger.Warnw("ConfigMap %q not found. Creating a placeholder ConfigMap...", sourceconfig.SecretsConfigName)
-		if err := createPlaceholderConfigMap(corev1Client); err != nil {
-			logger.Fatalw("Failed to create ConfigMap %q: %v", sourceconfig.SecretsConfigName, err)
+	//
+	// NOTE: This is necessary for kf v0.3 and beyond.
+	{
+		corev1Client, err := clientcorev1.NewForConfig(clusterConfig)
+		if err != nil {
+			logger.Fatalw("Failed to get the corev1 client set", zap.Error(err))
 		}
-	case err != nil:
-		logger.Fatalw("Failed to fetch ConfigMap %q: %v", sourceconfig.SecretsConfigName, err)
-	case secretsCM.Data[sourceconfig.BuildImagePushSecretKey] != "":
-		// Ensure the expected key is present.
-		logger.Fatalw("Failed to find %q in ConfigMap %q: %v", sourceconfig.BuildImagePushSecretKey, sourceconfig.SecretsConfigName)
+		_, err := corev1Client.
+			ConfigMaps(v1alpha1.KfNamespace).
+			Get(sourceconfig.SecretsConfigName, metav1.GetOptions{})
+
+		switch {
+		case apierrs.IsNotFound(err):
+			// ConfigMap isn't found, so we should create one.
+			logger.Warnw("ConfigMap %q not found. Creating a placeholder ConfigMap...", sourceconfig.SecretsConfigName)
+			if err := createPlaceholderConfigMap(corev1Client); err != nil {
+				logger.Fatalw("Failed to create ConfigMap %q: %v", sourceconfig.SecretsConfigName, err)
+			}
+		case err != nil:
+			logger.Fatalw("Failed to fetch ConfigMap %q: %v", sourceconfig.SecretsConfigName, err)
+		}
 	}
 
 	istioClient, err := cv1alpha3.NewForConfig(clusterConfig)
@@ -113,9 +114,6 @@ func main() {
 func createPlaceholderConfigMap(corev1Client *clientcorev1.CoreV1Client) error {
 	cm := &corev1.ConfigMap{}
 	cm.Name = sourceconfig.SecretsConfigName
-	cm.Data = map[string]string{
-		sourceconfig.BuildImagePushSecretKey: "placeholder",
-	}
 
 	_, err := corev1Client.
 		ConfigMaps(v1alpha1.KfNamespace).
