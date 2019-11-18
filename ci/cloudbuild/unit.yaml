@@ -1,0 +1,11 @@
+steps:
+- name: golang:1.12-buster
+  entrypoint: ./hack/ci.sh
+  env:
+  - SKIP_INTEGRATION=true
+  - GO111MODULE=on
+  - GOPROXY=https://proxy.golang.org
+  - GOSUMDB=sum.golang.org
+timeout: 600s
+options:
+  machineType: 'N1_HIGHCPU_8'
