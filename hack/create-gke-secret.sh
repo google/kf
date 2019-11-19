@@ -47,7 +47,7 @@ done
 
 # if the user provided a key, we don't need to create an SA
 if [ "${key_json}" = "" ]; then
-  if [ "${service_account}" = "" ]; then
+  if [ "${sa_name}" = "" ]; then
     if [ "${project}" = "" ]; then
       echo "Autodetecting project, use -p to override"
       project=$(gcloud config get-value project)
