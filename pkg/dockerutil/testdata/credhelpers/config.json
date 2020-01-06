@@ -1,8 +1,0 @@
-{
-  "credHelpers": {
-    "gcr.io": "gcloud",
-    "us.gcr.io": "gcloud",
-    "eu.gcr.io": "gcloud",
-    "asia.gcr.io": "gcloud"
-  }
-}

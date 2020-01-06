@@ -1,6 +1,0 @@
-terraform.tfstate
-terraform.tfstate.backup
-account.json
-.terraform
-manifest.yml
-terraform.tfvars.actual

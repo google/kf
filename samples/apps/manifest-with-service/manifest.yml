@@ -1,8 +1,0 @@
----
-applications:
-- name: manifest-app-with-service
-  path: app
-  env:
-    WHATNOW: BROWNCOW
-  services:
-  - my-redis
