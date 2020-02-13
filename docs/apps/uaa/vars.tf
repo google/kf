@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+variable "poject" {
+  type = string
+}
+
 variable "region" {
   type = string
 }
