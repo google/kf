@@ -53,10 +53,15 @@ but if it does not, do not forget to add the `--internal-ip` flag when running
 
     ```sh
     cat >Dockerfile <<EOF
+    FROM openjdk:11 AS builder
+    WORKDIR /app
+    ADD . /app
+    RUN ./gradlew war
+
     FROM tomcat:9.0.27-jdk11-openjdk-slim
     RUN rm -fr /usr/local/tomcat/webapps
-    ADD uaa/build/libs/cloudfoundry-identity-uaa-0.0.0.war /usr/local/tomcat/webapps/ROOT/uaa.war
-    RUN cd /usr/local/tomcat/webapps/ROOT && jar -xvf uaa.war && rm uaa.war
+    COPY --from=builder /app/uaa/build/libs/cloudfoundry-identity-uaa-0.0.0.war /usr/local/tomcat/webapps/ROOT/uaa.war
+    RUN cd /usr/local/tomcat/webapps/ROOT && jar -xvf uaa.war
     EOF
 
     docker build -t gcr.io/[your-project]/uaa .
