@@ -30,7 +30,7 @@ applications:
     image: ${var.uaa_image}
   minScale: 1
   routes:
-  - route: http://uaa.${var.kf_domain_name}/uaa
+  - route: http://uaa.${var.kf_domain_name}
   env:
     UAA_URL: http://uaa.${var.kf_domain_name}/uaa
     LOGIN_URL: http://uaa.${var.kf_domain_name}/uaa
