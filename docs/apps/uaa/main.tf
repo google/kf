@@ -16,12 +16,12 @@
 
 provider "google-beta" {
   credentials = "${file("account.json")}"
-  project     = "kf-source"
+  project     = "${var.project}"
 }
 
 provider "google" {
   credentials = "${file("account.json")}"
-  project     = "kf-source"
+  project     = "${var.project}"
 }
 
 data "google_compute_network" "default" {
