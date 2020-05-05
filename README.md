@@ -1,5 +1,5 @@
 # Kf
 
-Kf provides a `cf`-like experience on Kubernetes. It aims to be compatible with CF applications and lifecycle. It supports logs, buildpacks, app manifests, routing, service brokers, and injected services.
+This project is no longer supported by Google. The repo will be archived. 
 
-For more information, contact kf-eap@google.com.
+For assistance, please reach out to the [Google Open Source Programs Office](mailto:gcp-ospo@googlegroups.com).
