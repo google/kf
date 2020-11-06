@@ -1,5 +1,6 @@
 # Kf
 
-This project is no longer supported by Google. The repo will be archived. 
-
-For assistance, please reach out to the [Google Open Source Programs Office](mailto:gcp-ospo@googlegroups.com).
+Kf is now a fully supported Google Cloud tool, and has its own dedicated
+documentation. Please use [this
+site](https://cloud.google.com/migrate/kf/docs) for getting the latest updates
+on Kf.
