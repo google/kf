@@ -11,7 +11,7 @@ It takes the following three arguments:
 
 1. Dashboard name - The name of the dashboard that will be created.
 1. Cluster name - The name of the Kubernetes cluster the dashboard will target.
-1. Space - The name of the Kf space.
+1. Space - The name of the Kf Space the dashboard will target.
 
 Note: Running the script is not idempotent.
 
