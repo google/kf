@@ -7,6 +7,6 @@ on Kf.
 
 ## Dashboards
 
-If you are using GCP Cloud Logging, Kf has some pre-built templates. They can
+If you are using Google Cloud Logging, Kf has some pre-built templates. They can
 be found in the [dashboards](dashboards) directory. This includes a script
 that can be ran that will setup everything for you.
