@@ -28,6 +28,9 @@ def build_template(dashboard_name, cluster_name, space):
     dashboard_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dashboard-template.json")
 
     # Replace the sentinel values.
+    # NOTE: Each of these values (e.g., dashboard_name) are required to be
+    # valid DNS names and therefore won't have any speical charaters and
+    # therefore will not need any escaping.
     with open(dashboard_path) as f:
         return f \
             .read() \
