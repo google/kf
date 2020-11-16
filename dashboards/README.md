@@ -4,7 +4,7 @@
 
 The [create-dashboard.py](create-dashboard.py) script is a Python script that
 will use the [dashboard-template.json](dashboard-template.json) file to create
-a template. It uses the currently targeted GCP project (e.g., `gcloud config
+a template. It uses the currently targeted Google Cloud project (i.e., `gcloud config
 get-value project`).
 
 It takes the following 3 arguments:
