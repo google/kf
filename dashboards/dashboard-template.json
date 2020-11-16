@@ -223,7 +223,7 @@
           "timeshiftDuration": "0s",
           "thresholds": [
             {
-              "value": 0.800000011920929
+              "value": 0.8
             }
           ],
           "yAxis": {
