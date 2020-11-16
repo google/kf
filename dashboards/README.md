@@ -7,7 +7,7 @@ will use the [dashboard-template.json](dashboard-template.json) file to create
 a template. It uses the currently targeted Google Cloud project (i.e., `gcloud config
 get-value project`).
 
-It takes the following 3 arguments:
+It takes the following three arguments:
 
 1. Dashboard name - The name of the dashboard that will be created.
 1. Cluster name - The name of the Kubernetes cluster.
