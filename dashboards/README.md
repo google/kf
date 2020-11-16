@@ -9,7 +9,7 @@ get-value project`).
 
 It takes the following 3 arguments:
 
-1. Dashboard name - The name of the dashboard.
+1. Dashboard name - The name of the dashboard that will be created.
 1. Cluster name - The name of the Kubernetes cluster.
 1. Space - The name of the Kf space.
 
