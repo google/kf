@@ -1,0 +1,342 @@
+{
+  "displayName": "XXX-DASHBOARD-XXX",
+  "gridLayout": {
+    "columns": "2",
+    "widgets": [
+      {
+        "title": "Traffic - Requests/Sec",
+        "xyChart": {
+          "dataSets": [
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "metric.type=\"istio.io/service/server/request_count\" resource.type=\"k8s_container\" metric.label.\"destination_service_namespace\"=\"XXX-SPACE-XXX\" resource.label.\"cluster_name\"=\"XXX-CLUSTER-XXX\"",
+                  "aggregation": {
+                    "perSeriesAligner": "ALIGN_RATE",
+                    "crossSeriesReducer": "REDUCE_SUM",
+                    "groupByFields": [
+                      "metadata.user_labels.\"app.kubernetes.io/name\""
+                    ]
+                  }
+                }
+              },
+              "plotType": "STACKED_AREA",
+              "minAlignmentPeriod": "60s"
+            }
+          ],
+          "timeshiftDuration": "0s",
+          "yAxis": {
+            "label": "y1Axis",
+            "scale": "LINEAR"
+          },
+          "chartOptions": {
+            "mode": "COLOR"
+          }
+        }
+      },
+      {
+        "title": "Traffic - Rountrip Latencies 95th percentile (ms)",
+        "xyChart": {
+          "dataSets": [
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "metric.type=\"istio.io/service/server/response_latencies\" resource.type=\"k8s_container\" metric.label.\"destination_service_namespace\"=\"XXX-SPACE-XXX\" resource.label.\"cluster_name\"=\"XXX-CLUSTER-XXX\"",
+                  "aggregation": {
+                    "perSeriesAligner": "ALIGN_DELTA",
+                    "crossSeriesReducer": "REDUCE_PERCENTILE_95",
+                    "groupByFields": [
+                      "metadata.user_labels.\"app.kubernetes.io/name\""
+                    ]
+                  }
+                }
+              },
+              "plotType": "LINE",
+              "minAlignmentPeriod": "60s"
+            }
+          ],
+          "timeshiftDuration": "0s",
+          "yAxis": {
+            "label": "y1Axis",
+            "scale": "LINEAR"
+          },
+          "chartOptions": {
+            "mode": "COLOR"
+          }
+        }
+      },
+      {
+        "title": "Traffic - Rountrip Latencies 99th percentile (ms)",
+        "xyChart": {
+          "dataSets": [
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "metric.type=\"istio.io/service/server/response_latencies\" resource.type=\"k8s_container\" metric.label.\"destination_service_namespace\"=\"XXX-SPACE-XXX\" resource.label.\"cluster_name\"=\"XXX-CLUSTER-XXX\"",
+                  "aggregation": {
+                    "perSeriesAligner": "ALIGN_DELTA",
+                    "crossSeriesReducer": "REDUCE_PERCENTILE_99",
+                    "groupByFields": [
+                      "metadata.user_labels.\"app.kubernetes.io/name\""
+                    ]
+                  }
+                }
+              },
+              "plotType": "LINE",
+              "minAlignmentPeriod": "60s"
+            }
+          ],
+          "timeshiftDuration": "0s",
+          "yAxis": {
+            "label": "y1Axis",
+            "scale": "LINEAR"
+          },
+          "chartOptions": {
+            "mode": "COLOR"
+          }
+        }
+      },
+      {
+        "title": "Traffic - Http Error Codes",
+        "xyChart": {
+          "dataSets": [
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "metric.type=\"istio.io/service/client/request_count\" resource.type=\"k8s_pod\" metric.label.\"destination_service_namespace\"=\"XXX-SPACE-XXX\" resource.label.\"cluster_name\"=\"XXX-CLUSTER-XXX\"",
+                  "aggregation": {
+                    "perSeriesAligner": "ALIGN_RATE",
+                    "crossSeriesReducer": "REDUCE_SUM",
+                    "groupByFields": [
+                      "metric.label.\"destination_service_name\"",
+                      "metric.label.\"response_code\""
+                    ]
+                  }
+                }
+              },
+              "plotType": "STACKED_AREA",
+              "minAlignmentPeriod": "60s"
+            }
+          ],
+          "timeshiftDuration": "0s",
+          "yAxis": {
+            "label": "y1Axis",
+            "scale": "LINEAR"
+          },
+          "chartOptions": {
+            "mode": "COLOR"
+          }
+        }
+      },
+      {
+        "title": "K8 Pod - disk utilization",
+        "xyChart": {
+          "dataSets": [
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "metric.type=\"kubernetes.io/pod/volume/utilization\" resource.type=\"k8s_pod\" metadata.user_labels.\"app.kubernetes.io/managed-by\"=\"kf\" resource.label.\"namespace_name\"=\"XXX-SPACE-XXX\" resource.label.\"cluster_name\"=\"XXX-CLUSTER-XXX\"",
+                  "aggregation": {
+                    "perSeriesAligner": "ALIGN_MEAN"
+                  }
+                }
+              },
+              "plotType": "LINE",
+              "minAlignmentPeriod": "60s"
+            }
+          ],
+          "timeshiftDuration": "0s",
+          "thresholds": [
+            {
+              "value": 0.800000011920929
+            }
+          ],
+          "yAxis": {
+            "label": "y1Axis",
+            "scale": "LOG10"
+          },
+          "chartOptions": {
+            "mode": "COLOR"
+          }
+        }
+      },
+      {
+        "title": "k8 container - memory utilization limit per pod",
+        "xyChart": {
+          "dataSets": [
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "metric.type=\"kubernetes.io/container/cpu/limit_utilization\" resource.type=\"k8s_container\" metadata.user_labels.\"app.kubernetes.io/managed-by\"=\"kf\" resource.label.\"namespace_name\"=\"XXX-SPACE-XXX\" resource.label.\"cluster_name\"=\"XXX-CLUSTER-XXX\"",
+                  "aggregation": {
+                    "perSeriesAligner": "ALIGN_MEAN",
+                    "crossSeriesReducer": "REDUCE_MEAN",
+                    "groupByFields": [
+                      "metadata.user_labels.\"app.kubernetes.io/name\"",
+                      "resource.label.\"pod_name\""
+                    ]
+                  }
+                },
+                "unitOverride": "percent"
+              },
+              "plotType": "LINE",
+              "minAlignmentPeriod": "60s"
+            }
+          ],
+          "timeshiftDuration": "0s",
+          "thresholds": [
+            {
+              "value": 0.800000011920929
+            }
+          ],
+          "yAxis": {
+            "label": "y1Axis",
+            "scale": "LINEAR"
+          },
+          "chartOptions": {
+            "mode": "COLOR"
+          }
+        }
+      },
+      {
+        "title": "k8 container - cpu utilization limit per pod",
+        "xyChart": {
+          "dataSets": [
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "metric.type=\"kubernetes.io/container/cpu/limit_utilization\" resource.type=\"k8s_container\" metadata.user_labels.\"app.kubernetes.io/managed-by\"=\"kf\" resource.label.\"namespace_name\"=\"XXX-SPACE-XXX\" resource.label.\"cluster_name\"=\"XXX-CLUSTER-XXX\"",
+                  "aggregation": {
+                    "perSeriesAligner": "ALIGN_MEAN",
+                    "crossSeriesReducer": "REDUCE_SUM",
+                    "groupByFields": [
+                      "resource.label.\"pod_name\""
+                    ]
+                  }
+                },
+                "unitOverride": "percent"
+              },
+              "plotType": "LINE",
+              "minAlignmentPeriod": "60s"
+            }
+          ],
+          "timeshiftDuration": "0s",
+          "thresholds": [
+            {
+              "value": 0.800000011920929
+            }
+          ],
+          "yAxis": {
+            "label": "y1Axis",
+            "scale": "LINEAR"
+          },
+          "chartOptions": {
+            "mode": "COLOR"
+          }
+        }
+      },
+      {
+        "title": "Node - network tx/rx",
+        "xyChart": {
+          "dataSets": [
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "metric.type=\"kubernetes.io/node/network/sent_bytes_count\" resource.type=\"k8s_node\" resource.label.\"cluster_name\"=\"XXX-CLUSTER-XXX\"",
+                  "aggregation": {
+                    "perSeriesAligner": "ALIGN_RATE"
+                  }
+                },
+                "unitOverride": "By"
+              },
+              "plotType": "LINE",
+              "minAlignmentPeriod": "60s"
+            },
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "metric.type=\"kubernetes.io/node/network/received_bytes_count\" resource.type=\"k8s_node\" resource.label.\"cluster_name\"=\"XXX-CLUSTER-XXX\"",
+                  "aggregation": {
+                    "perSeriesAligner": "ALIGN_RATE"
+                  }
+                },
+                "unitOverride": "By"
+              },
+              "plotType": "LINE",
+              "minAlignmentPeriod": "60s"
+            }
+          ],
+          "timeshiftDuration": "0s",
+          "yAxis": {
+            "label": "y1Axis",
+            "scale": "LINEAR"
+          },
+          "chartOptions": {
+            "mode": "COLOR"
+          }
+        }
+      },
+      {
+        "title": "Node - Cpu usage",
+        "xyChart": {
+          "dataSets": [
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "metric.type=\"kubernetes.io/node/cpu/core_usage_time\" resource.type=\"k8s_node\" resource.label.\"cluster_name\"=\"XXX-CLUSTER-XXX\"",
+                  "aggregation": {
+                    "perSeriesAligner": "ALIGN_RATE"
+                  }
+                },
+                "unitOverride": "s{CPU}"
+              },
+              "plotType": "LINE",
+              "minAlignmentPeriod": "60s"
+            }
+          ],
+          "timeshiftDuration": "0s",
+          "yAxis": {
+            "label": "y1Axis",
+            "scale": "LINEAR"
+          },
+          "chartOptions": {
+            "mode": "COLOR"
+          }
+        }
+      },
+      {
+        "title": "Node - memory usage",
+        "xyChart": {
+          "dataSets": [
+            {
+              "timeSeriesQuery": {
+                "timeSeriesFilter": {
+                  "filter": "metric.type=\"kubernetes.io/node/memory/allocatable_utilization\" resource.type=\"k8s_node\" resource.label.\"cluster_name\"=\"XXX-CLUSTER-XXX\"",
+                  "aggregation": {
+                    "perSeriesAligner": "ALIGN_MEAN"
+                  }
+                },
+                "unitOverride": "1"
+              },
+              "plotType": "LINE",
+              "minAlignmentPeriod": "60s"
+            }
+          ],
+          "timeshiftDuration": "0s",
+          "thresholds": [
+            {
+              "value": 0.800000011920929
+            }
+          ],
+          "yAxis": {
+            "label": "y1Axis",
+            "scale": "LINEAR"
+          },
+          "chartOptions": {
+            "mode": "COLOR"
+          }
+        }
+      }
+    ]
+  }
+}
