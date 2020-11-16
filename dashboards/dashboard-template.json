@@ -277,7 +277,7 @@
         }
       },
       {
-        "title": "Node - Cpu usage",
+        "title": "Node - CPU usage",
         "xyChart": {
           "dataSets": [
             {
