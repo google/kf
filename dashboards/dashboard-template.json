@@ -236,7 +236,7 @@
         }
       },
       {
-        "title": "Node - network tx/rx",
+        "title": "Node - network bytes TX/RX",
         "xyChart": {
           "dataSets": [
             {
