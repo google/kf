@@ -13,9 +13,9 @@
                   "filter": "metric.type=\"istio.io/service/server/request_count\" resource.type=\"k8s_container\" metric.label.\"destination_service_namespace\"=\"XXX-SPACE-XXX\" resource.label.\"cluster_name\"=\"XXX-CLUSTER-XXX\"",
                   "aggregation": {
                     "perSeriesAligner": "ALIGN_RATE",
-                    "crossSeriesReducer": "REDUCE_SUM",
+                    "crossSeriesReducer": "REDUCE_MEAN",
                     "groupByFields": [
-                      "metadata.user_labels.\"app.kubernetes.io/name\""
+                      "metric.label.\"destination_workload_name\""
                     ]
                   }
                 }
@@ -46,7 +46,7 @@
                     "perSeriesAligner": "ALIGN_DELTA",
                     "crossSeriesReducer": "REDUCE_PERCENTILE_95",
                     "groupByFields": [
-                      "metadata.user_labels.\"app.kubernetes.io/name\""
+                      "metric.label.\"destination_workload_name\""
                     ]
                   }
                 }
@@ -77,7 +77,7 @@
                     "perSeriesAligner": "ALIGN_DELTA",
                     "crossSeriesReducer": "REDUCE_PERCENTILE_99",
                     "groupByFields": [
-                      "metadata.user_labels.\"app.kubernetes.io/name\""
+                      "metric.label.\"destination_workload_name\""
                     ]
                   }
                 }
@@ -106,10 +106,10 @@
                   "filter": "metric.type=\"istio.io/service/client/request_count\" resource.type=\"k8s_pod\" metric.label.\"destination_service_namespace\"=\"XXX-SPACE-XXX\" resource.label.\"cluster_name\"=\"XXX-CLUSTER-XXX\"",
                   "aggregation": {
                     "perSeriesAligner": "ALIGN_RATE",
-                    "crossSeriesReducer": "REDUCE_SUM",
+                    "crossSeriesReducer": "REDUCE_MEAN",
                     "groupByFields": [
-                      "metric.label.\"destination_service_name\"",
-                      "metric.label.\"response_code\""
+                      "metric.label.\"response_code\"",
+                      "metric.label.\"destination_workload_name\""
                     ]
                   }
                 }
@@ -137,7 +137,11 @@
                 "timeSeriesFilter": {
                   "filter": "metric.type=\"kubernetes.io/pod/volume/utilization\" resource.type=\"k8s_pod\" metadata.user_labels.\"app.kubernetes.io/managed-by\"=\"kf\" resource.label.\"namespace_name\"=\"XXX-SPACE-XXX\" resource.label.\"cluster_name\"=\"XXX-CLUSTER-XXX\"",
                   "aggregation": {
-                    "perSeriesAligner": "ALIGN_MEAN"
+                    "perSeriesAligner": "ALIGN_MEAN",
+                    "crossSeriesReducer": "REDUCE_MEAN",
+                    "groupByFields": [
+                      "resource.label.\"pod_name\""
+                    ]
                   }
                 }
               },
@@ -172,7 +176,6 @@
                     "perSeriesAligner": "ALIGN_MEAN",
                     "crossSeriesReducer": "REDUCE_MEAN",
                     "groupByFields": [
-                      "metadata.user_labels.\"app.kubernetes.io/name\"",
                       "resource.label.\"pod_name\""
                     ]
                   }
@@ -208,7 +211,7 @@
                   "filter": "metric.type=\"kubernetes.io/container/cpu/limit_utilization\" resource.type=\"k8s_container\" metadata.user_labels.\"app.kubernetes.io/managed-by\"=\"kf\" resource.label.\"namespace_name\"=\"XXX-SPACE-XXX\" resource.label.\"cluster_name\"=\"XXX-CLUSTER-XXX\"",
                   "aggregation": {
                     "perSeriesAligner": "ALIGN_MEAN",
-                    "crossSeriesReducer": "REDUCE_SUM",
+                    "crossSeriesReducer": "REDUCE_MEAN",
                     "groupByFields": [
                       "resource.label.\"pod_name\""
                     ]
@@ -244,7 +247,11 @@
                 "timeSeriesFilter": {
                   "filter": "metric.type=\"kubernetes.io/node/network/sent_bytes_count\" resource.type=\"k8s_node\" resource.label.\"cluster_name\"=\"XXX-CLUSTER-XXX\"",
                   "aggregation": {
-                    "perSeriesAligner": "ALIGN_RATE"
+                    "perSeriesAligner": "ALIGN_RATE",
+                    "crossSeriesReducer": "REDUCE_MEAN",
+                    "groupByFields": [
+                      "resource.label.\"node_name\""
+                    ]
                   }
                 },
                 "unitOverride": "By"
@@ -285,7 +292,11 @@
                 "timeSeriesFilter": {
                   "filter": "metric.type=\"kubernetes.io/node/cpu/core_usage_time\" resource.type=\"k8s_node\" resource.label.\"cluster_name\"=\"XXX-CLUSTER-XXX\"",
                   "aggregation": {
-                    "perSeriesAligner": "ALIGN_RATE"
+                    "perSeriesAligner": "ALIGN_RATE",
+                    "crossSeriesReducer": "REDUCE_MEAN",
+                    "groupByFields": [
+                      "resource.label.\"node_name\""
+                    ]
                   }
                 },
                 "unitOverride": "s{CPU}"
@@ -313,10 +324,15 @@
                 "timeSeriesFilter": {
                   "filter": "metric.type=\"kubernetes.io/node/memory/allocatable_utilization\" resource.type=\"k8s_node\" resource.label.\"cluster_name\"=\"XXX-CLUSTER-XXX\"",
                   "aggregation": {
-                    "perSeriesAligner": "ALIGN_MEAN"
-                  }
+                    "perSeriesAligner": "ALIGN_MEAN",
+                    "crossSeriesReducer": "REDUCE_SUM",
+                    "groupByFields": [
+                      "resource.label.\"node_name\""
+                    ]
+                  },
+                  "secondaryAggregation": {}
                 },
-                "unitOverride": "1"
+                "unitOverride": "percent"
               },
               "plotType": "LINE",
               "minAlignmentPeriod": "60s"
