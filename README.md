@@ -12,4 +12,4 @@ To get started with Kf checkout these resources:
 * Get an overview of KF by reading the [documentation](https://cloud.google.com/migrate/kf/docs)
 * Install Kf and deploy a sample applcation by following the [Kf quickstart](https://cloud.google.com/migrate/kf/docs/quickstart)
 * Set up [custom dashboards](dashboards) for [Google Cloud Operations](https://cloud.google.com/products/operations)
-* Deploy a Spring Cloud Config Server-based [example application](spring-cloud-config-server to Kf
+* Deploy a Spring Cloud Config Server-based [example application](spring-cloud-config-server) to Kf
