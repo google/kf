@@ -3,7 +3,7 @@ As your teams standardize on Kubernetes, migrating applications from existing pl
 
 Kf offers developers the Cloud Foundry experience while empowering operators to adopt declarative Kubernetes practice. It makes migrating Cloud Foundry workloads to Kubernetes straighforward, and most importantly, avoids major changes to developer workflows. You can also eliminate commercial Cloud Foundry licensing costs, and take advantage of the config and policy features of Anthos for governance.
 
-![](./images/kf.svg)
+![Developers use the Kf CLI and operators can use kubectl to interact with Kf's underlying components.](./images/kf.svg)
 
 
 # Additional resources
