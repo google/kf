@@ -1,12 +1,15 @@
-# Kf
+# Migrate Cloud Foundry applications to Kubernetes using Kf
+As your teams standardize on Kubernetes, migrating applications from existing platforms like Cloud Foundry is often one of the biggest challenges. Kf, which is now fully supported by [Google Cloud Platform](https://cloud.google.com), was designed to help your teams minimize any disruption to developer workflows during the migration to [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine) and [Anthos](https://cloud.google.com/anthos). 
 
-Kf is now a fully supported Google Cloud tool, and has its own dedicated
-documentation. Please use [this
-site](https://cloud.google.com/migrate/kf/docs) for getting the latest updates
-on Kf.
+Kf offers developers the Cloud Foundry experience while empowering operators to adopt declarative Kubernetes practice. It makes migrating Cloud Foundry workloads to Kubernetes straighforward, and most importantly, avoids major changes to developer workflows. You can also eliminate commercial Cloud Foundry licensing costs, and take advantage of the config and policy features of Anthos for governance.
 
-## Dashboards
+![Developers use the Kf CLI and operators can use kubectl to interact with Kf's underlying components.](./images/kf.svg)
 
-If you are using Google Cloud Logging, Kf has some pre-built templates. They can
-be found in the [dashboards](dashboards) directory. This includes a script
-that can be ran that will setup everything for you.
+
+# Additional resources
+To get started with Kf checkout these resources:
+
+* Get an overview of Kf by reading the [documentation](https://cloud.google.com/migrate/kf/docs)
+* Install Kf and deploy a sample applcation by following the [Kf quickstart](https://cloud.google.com/migrate/kf/docs/quickstart)
+* Set up [custom dashboards](dashboards) for [Google Cloud Operations](https://cloud.google.com/products/operations)
+* Deploy a Spring Cloud Config Server-based [example application](spring-cloud-config-server) to Kf
