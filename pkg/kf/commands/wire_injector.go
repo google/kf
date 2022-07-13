@@ -30,6 +30,7 @@ import (
 	ccluster "github.com/google/kf/v2/pkg/kf/commands/cluster"
 	"github.com/google/kf/v2/pkg/kf/commands/config"
 	dependencies "github.com/google/kf/v2/pkg/kf/commands/dependencies"
+	"github.com/google/kf/v2/pkg/kf/commands/exporttok8s"
 	clogs "github.com/google/kf/v2/pkg/kf/commands/logs"
 	cnetworkpolicies "github.com/google/kf/v2/pkg/kf/commands/networkpolicies"
 	croutes "github.com/google/kf/v2/pkg/kf/commands/routes"
@@ -680,6 +681,12 @@ func InjectDeleteJobSchedule(p *config.KfParams) *cobra.Command {
 
 func InjectDependencyCommand(p *config.KfParams) *cobra.Command {
 	wire.Build(dependencies.NewDependencyCommand)
+
+	return nil
+}
+
+func InjectExportToK8sCommand(p *config.KfParams) *cobra.Command {
+	wire.Build(exporttok8s.NewExportToK8s)
 
 	return nil
 }

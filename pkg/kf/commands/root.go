@@ -161,6 +161,12 @@ func NewRawKfCommand() *cobra.Command {
 			},
 		},
 		{
+			Name: "Export To K8s",
+			Commands: []*cobra.Command{
+				InjectExportToK8sCommand(p),
+			},
+		},
+		{
 			Name: "Buildpacks",
 			Commands: []*cobra.Command{
 				InjectBuildpacks(p),
