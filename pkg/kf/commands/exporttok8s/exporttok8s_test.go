@@ -1,31 +1,33 @@
 package exporttok8s
 
 import (
-	"bytes"
+	"fmt"
 	"testing"
 
-	"github.com/google/kf/v2/pkg/kf/commands/config"
 	"github.com/google/kf/v2/pkg/kf/testutil"
+	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 func TestExportsToK8sCommand_sanity(t *testing.T) {
-	cases := map[string]struct {
-		expectedString string
-	}{
-		"command output is correct": {
-			expectedString: "This is the new command export-to-k8s!!",
+
+	pipelinespec := getPipelineSpec("https://github.com/cloudfoundry-samples/test-app")
+	pipeline := tektonv1beta1.Pipeline{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Pipeline",
+			APIVersion: "tekton.dev/v1beta1",
 		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "build-and-publish",
+		},
+		Spec: *pipelinespec,
+	}
+	pipelineYaml, err := yaml.Marshal(&pipeline)
+
+	if err != nil {
+		fmt.Printf("Error while Marshaling pipelineYaml. %v", err)
 	}
 
-	for tn, tc := range cases {
-		t.Run(tn, func(t *testing.T) {
-			got := new(bytes.Buffer)
-			c := NewExportToK8s(&config.KfParams{})
-			c.SetOut(got)
-			c.SetErr(got)
-			c.Execute()
-
-			testutil.AssertEqual(t, "check command output", got.String(), tc.expectedString)
-		})
-	}
+	testutil.AssertGolden(t, "yaml is correct", pipelineYaml)
 }

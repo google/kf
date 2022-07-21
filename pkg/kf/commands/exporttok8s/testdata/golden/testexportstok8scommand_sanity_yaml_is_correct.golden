@@ -1,0 +1,22 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  creationTimestamp: null
+  name: build-and-publish
+spec:
+  params:
+  - description: The url of the source package.
+    name: GITHUB_URL
+    type: string
+  tasks:
+  - name: source-upload
+    params:
+    - name: url
+      value: https://github.com/cloudfoundry-samples/test-app
+    taskRef:
+      name: git-clone
+    workspaces:
+    - name: output
+      workspace: output
+  workspaces:
+  - name: output
