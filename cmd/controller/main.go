@@ -15,19 +15,45 @@
 package main
 
 import (
-	"github.com/google/kf/pkg/reconciler/app"
-	"github.com/google/kf/pkg/reconciler/route"
-	"github.com/google/kf/pkg/reconciler/source"
-	"github.com/google/kf/pkg/reconciler/space"
-	"knative.dev/pkg/injection/sharedmain"
+	"context"
+
+	"github.com/google/kf/v2/pkg/reconciler/apiservercerts"
+	"github.com/google/kf/v2/pkg/reconciler/app"
+	"github.com/google/kf/v2/pkg/reconciler/build"
+	"github.com/google/kf/v2/pkg/reconciler/clusterservicebroker"
+	"github.com/google/kf/v2/pkg/reconciler/featureflag"
+	"github.com/google/kf/v2/pkg/reconciler/reconcilerutil"
+	"github.com/google/kf/v2/pkg/reconciler/route"
+	"github.com/google/kf/v2/pkg/reconciler/servicebroker"
+	"github.com/google/kf/v2/pkg/reconciler/serviceinstance"
+	"github.com/google/kf/v2/pkg/reconciler/serviceinstancebinding"
+	"github.com/google/kf/v2/pkg/reconciler/space"
+	"github.com/google/kf/v2/pkg/reconciler/task"
+	"github.com/google/kf/v2/pkg/reconciler/taskschedule"
+	"knative.dev/pkg/webhook"
+	"knative.dev/pkg/webhook/certificates"
 )
 
 func main() {
-	sharedmain.Main("controller",
+	ctx := webhook.WithOptions(context.Background(), webhook.Options{
+		SecretName:  apiservercerts.SecretName,
+		ServiceName: "subresource-apiserver.kf.svc",
+	})
+
+	reconcilerutil.HealthCheckerMain(ctx, ":10000", "controller",
 		// Append all controllers here
 		space.NewController,
-		source.NewController,
+		build.NewController,
 		route.NewController,
 		app.NewController,
+		serviceinstance.NewController,
+		serviceinstancebinding.NewController,
+		servicebroker.NewController,
+		clusterservicebroker.NewController,
+		featureflag.NewController,
+		task.NewController,
+		taskschedule.NewController,
+		certificates.NewController,
+		apiservercerts.NewController,
 	)
 }

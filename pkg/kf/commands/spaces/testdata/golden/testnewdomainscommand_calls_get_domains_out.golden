@@ -1,0 +1,4 @@
+Listing domains in Space: default
+Domain            Gateway
+test.example.com  kf/external-gateway
+kf.internal       kf/internal-gateway

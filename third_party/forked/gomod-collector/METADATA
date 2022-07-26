@@ -1,0 +1,17 @@
+name: "Gomod Collector"
+description:
+  "A fork of Knative's dep-collector that works with vendored gomod directories"
+
+third_party: {
+  type: PACKAGE
+  url {
+    type: GIT
+    value: "https://github.com/knative/test-infra"
+  }
+  version: "master"
+  last_upgrade_date {
+    year: 2020
+    month: 02
+    day: 06
+  }
+}

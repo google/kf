@@ -21,8 +21,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/kf/pkg/kf/algorithms"
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/kf/algorithms"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 )
 
 func TestDedupe(t *testing.T) {

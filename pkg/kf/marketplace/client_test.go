@@ -15,227 +15,139 @@
 package marketplace
 
 import (
-	"errors"
-	"fmt"
+	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	fakescclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/fake"
-	"github.com/google/kf/pkg/kf/testutil"
-	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
-	servicecatalogfakes "github.com/poy/service-catalog/pkg/svcat/service-catalog/service-catalogfakes"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	clienttesting "k8s.io/client-go/testing"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	fakekfclient "github.com/google/kf/v2/pkg/client/kf/clientset/versioned/fake"
+	"github.com/google/kf/v2/pkg/kf/testutil"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func TestClient_Marketplace(t *testing.T) {
-	t.Parallel()
+	const namespace = "some-kf-ns"
 
-	cases := map[string]struct {
-		InstanceName  string
-		Namespace     string
-		GetClassesErr error
-		GetPlansErr   error
-
-		ExpectErr error
-	}{
-		"default values": {
-			InstanceName: "instance-name",
-			ExpectErr:    nil,
-		},
-		"custom values": {
-			InstanceName: "instance-name",
-			Namespace:    "custom-namespace",
-			ExpectErr:    nil,
-		},
-		"error in get classes": {
-			InstanceName:  "instance-name",
-			GetClassesErr: errors.New("server-err"),
-			ExpectErr:     errors.New("server-err"),
-		},
-		"error in get plans": {
-			InstanceName: "instance-name",
-			GetPlansErr:  errors.New("server-err"),
-			ExpectErr:    errors.New("server-err"),
-		},
-	}
-
-	for tn, tc := range cases {
-		t.Run(tn, func(t *testing.T) {
-			fakeClient := &servicecatalogfakes.FakeSvcatClient{}
-
-			fakeClient.RetrieveClassesStub = func(scope servicecatalog.ScopeOptions) ([]servicecatalog.Class, error) {
-				testutil.AssertEqual(t, "namespace", tc.Namespace, scope.Namespace)
-
-				return nil, tc.GetClassesErr
-			}
-
-			fakeClient.RetrievePlansStub = func(classFilter string, scope servicecatalog.ScopeOptions) ([]servicecatalog.Plan, error) {
-				testutil.AssertEqual(t, "namespace", tc.Namespace, scope.Namespace)
-				testutil.AssertEqual(t, "classFilter", "", classFilter)
-
-				return nil, tc.GetPlansErr
-			}
-
-			client := NewClient(func(ns string) servicecatalog.SvcatClient {
-				testutil.AssertEqual(t, "namespace", tc.Namespace, ns)
-
-				return fakeClient
-			}, nil)
-
-			_, actualErr := client.Marketplace(tc.Namespace)
-			if tc.ExpectErr != nil || actualErr != nil {
-				if fmt.Sprint(tc.ExpectErr) != fmt.Sprint(actualErr) {
-					t.Fatalf("wanted err: %v, got: %v", tc.ExpectErr, actualErr)
-				}
-
-				return
-			}
-
-			testutil.AssertEqual(t, "calls to RetrieveClasses", 1, fakeClient.RetrieveClassesCallCount())
-			testutil.AssertEqual(t, "calls to RetrievePlans", 1, fakeClient.RetrievePlansCallCount())
-		})
-	}
-}
-
-func TestClient_BrokerName(t *testing.T) {
-	t.Parallel()
-
-	cases := map[string]struct {
-		ExpectedName                   string
-		Namespace                      string
-		ExpectErr                      error
-		ExpectedRetrieveClassByNameErr error
-	}{
-		"returns broker name": {
-			ExpectedName: "some-broker-name",
-		},
-		"fetching class fails": {
-			ExpectedRetrieveClassByNameErr: errors.New("some-error"),
-			ExpectErr:                      errors.New("some-error"),
-		},
-	}
-
-	for tn, tc := range cases {
-		t.Run(tn, func(t *testing.T) {
-			fakeClient := &servicecatalogfakes.FakeSvcatClient{}
-			fakeClass := &fakeClass{brokerName: tc.ExpectedName}
-			expectedSvc := v1beta1.ServiceInstance{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: tc.Namespace,
+	nsBroker := &v1alpha1.ServiceBroker{}
+	nsBroker.Name = "ns-broker-a"
+	nsBroker.Namespace = namespace
+	nsBroker.Status = v1alpha1.CommonServiceBrokerStatus{
+		Services: []v1alpha1.ServiceOffering{
+			{
+				DisplayName: "db-service-ns",
+				Plans: []v1alpha1.ServicePlan{
+					{DisplayName: "free"},
 				},
-			}
-
-			fakeClient.RetrieveClassByNameStub = func(name string, opts servicecatalog.ScopeOptions) (servicecatalog.Class, error) {
-				return fakeClass, tc.ExpectedRetrieveClassByNameErr
-			}
-
-			client := NewClient(func(ns string) servicecatalog.SvcatClient {
-				testutil.AssertEqual(t, "namespace", tc.Namespace, ns)
-				return fakeClient
-			}, nil)
-
-			name, actualErr := client.BrokerName(expectedSvc)
-			if tc.ExpectErr != nil || actualErr != nil {
-				testutil.AssertErrorsEqual(t, tc.ExpectErr, actualErr)
-				return
-			}
-
-			testutil.AssertEqual(t, "broker name", tc.ExpectedName, name)
-		})
-	}
-}
-
-// fakeClass implements servicecatalog.Class. There isn't a fake provided.
-type fakeClass struct {
-	servicecatalog.Class
-	brokerName string
-}
-
-func (f *fakeClass) GetServiceBrokerName() string {
-	return f.brokerName
-}
-
-func TestClient_ListClusterPlans(t *testing.T) {
-	plan := servicecatalogv1beta1.ClusterServicePlan{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "db-service-free",
-		},
-		Spec: servicecatalogv1beta1.ClusterServicePlanSpec{
-			ClusterServiceBrokerName: "broker-a",
-			CommonServicePlanSpec: servicecatalogv1beta1.CommonServicePlanSpec{
-				ExternalName: "free",
-				Free:         true,
 			},
-			ClusterServiceClassRef: servicecatalogv1beta1.ClusterObjectReference{
-				Name: "db-service-id",
+			{
+				DisplayName: "some-ns-class",
+				Plans: []v1alpha1.ServicePlan{
+					{DisplayName: "some-ns-plan"},
+				},
 			},
 		},
 	}
 
-	class := &servicecatalogv1beta1.ClusterServiceClass{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "db-service-id",
+	clusterBroker := &v1alpha1.ClusterServiceBroker{}
+	clusterBroker.Name = "broker-a"
+	clusterBroker.Status = v1alpha1.CommonServiceBrokerStatus{
+		Services: []v1alpha1.ServiceOffering{
+			{
+				DisplayName: "db-service",
+				Plans: []v1alpha1.ServicePlan{
+					{DisplayName: "free"},
+				},
+			},
+			{
+				DisplayName: "some-cluster-class",
+				Plans: []v1alpha1.ServicePlan{
+					{DisplayName: "some-cluster-plan"},
+				},
+			},
 		},
-		Spec: servicecatalogv1beta1.ClusterServiceClassSpec{
-			ClusterServiceBrokerName: "broker-a",
-			CommonServiceClassSpec: servicecatalogv1beta1.CommonServiceClassSpec{
-				ExternalName: "db-service",
+	}
+	volumeBroker := &v1alpha1.ClusterServiceBroker{}
+	volumeBroker.Name = "volume-broker-a"
+	volumeBroker.Status = v1alpha1.CommonServiceBrokerStatus{
+		Services: []v1alpha1.ServiceOffering{
+			{
+				DisplayName: "volume-class",
+				Plans: []v1alpha1.ServicePlan{
+					{DisplayName: "volume-plan"},
+				},
+			},
+		},
+	}
+	kfClient := fakekfclient.NewSimpleClientset(
+		nsBroker,
+		clusterBroker,
+		volumeBroker,
+	).KfV1alpha1()
+
+	client := NewClient(kfClient)
+	marketplace, err := client.Marketplace(context.Background(), namespace)
+
+	testutil.AssertNil(t, "marketplace error", err)
+
+	classNames := sets.NewString()
+	planNames := sets.NewString()
+
+	marketplace.WalkServicePlans(func(l PlanLineage) {
+		planNames.Insert(l.String())
+		classNames.Insert(l.OfferingLineage.String())
+	})
+
+	testutil.AssertEqual(t, "plans", sets.NewString(
+		"/broker-a/db-service/free",
+		"/broker-a/some-cluster-class/some-cluster-plan",
+		"/volume-broker-a/volume-class/volume-plan",
+		"some-kf-ns/ns-broker-a/db-service-ns/free",
+		"some-kf-ns/ns-broker-a/some-ns-class/some-ns-plan",
+	), planNames)
+	testutil.AssertEqual(t, "classes", sets.NewString(
+		"/broker-a/db-service",
+		"/broker-a/some-cluster-class",
+		"/volume-broker-a/volume-class",
+		"some-kf-ns/ns-broker-a/db-service-ns",
+		"some-kf-ns/ns-broker-a/some-ns-class",
+	), classNames)
+}
+
+func TestMarketplace_ListClusterPlans(t *testing.T) {
+	t.Parallel()
+
+	broker := &v1alpha1.ClusterServiceBroker{}
+	broker.Name = "broker-a"
+	broker.Namespace = "" // cluster
+	broker.Status.Services = []v1alpha1.ServiceOffering{
+		{
+			DisplayName: "db-service",
+			Plans: []v1alpha1.ServicePlan{
+				{
+					DisplayName: "free",
+					Free:        true,
+				},
+				{
+					DisplayName: "some-cluster-plan",
+					Free:        true,
+				},
 			},
 		},
 	}
 
-	planList := &servicecatalogv1beta1.ClusterServicePlanList{
-		Items: []servicecatalogv1beta1.ClusterServicePlan{
-			plan,
-		},
-	}
+	fakeCatalog := &KfMarketplace{}
+	fakeCatalog.Brokers = append(fakeCatalog.Brokers, broker)
 
 	type args struct {
 		filter ListPlanOptions
 	}
 
 	cases := map[string]struct {
-		setup   func(t *testing.T) *fakescclient.Clientset
+		catalog *KfMarketplace
 		args    args
-		want    []servicecatalogv1beta1.ClusterServicePlan
-		wantErr error
+		want    []string
 	}{
-		"bad server call listing plans": {
-			setup: func(t *testing.T) *fakescclient.Clientset {
-				client := fakescclient.NewSimpleClientset(planList, class)
-				client.PrependReactor("list", "clusterserviceplans", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, nil, errors.New("server-call-error")
-				})
-				return client
-			},
-			args: args{
-				filter: ListPlanOptions{},
-			},
-			wantErr: errors.New("server-call-error"),
-		},
-		"class lookup error": {
-			setup: func(t *testing.T) *fakescclient.Clientset {
-				client := fakescclient.NewSimpleClientset(planList, class)
-				client.PrependReactor("get", "clusterserviceclasses", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, nil, errors.New("class-lookup-error")
-				})
-				return client
-			},
-			args: args{
-				filter: ListPlanOptions{
-					ServiceName: "force-lookup-to-match",
-				},
-			},
-			wantErr: errors.New("class-lookup-error"),
-		},
 		"broker mismatch": {
-			setup: func(t *testing.T) *fakescclient.Clientset {
-				return fakescclient.NewSimpleClientset(planList, class)
-			},
+			catalog: fakeCatalog,
 			args: args{
 				filter: ListPlanOptions{
 					BrokerName: "mismatch",
@@ -243,9 +155,7 @@ func TestClient_ListClusterPlans(t *testing.T) {
 			},
 		},
 		"plan mismatch": {
-			setup: func(t *testing.T) *fakescclient.Clientset {
-				return fakescclient.NewSimpleClientset(planList, class)
-			},
+			catalog: fakeCatalog,
 			args: args{
 				filter: ListPlanOptions{
 					PlanName: "mismatch",
@@ -253,9 +163,7 @@ func TestClient_ListClusterPlans(t *testing.T) {
 			},
 		},
 		"service mismatch": {
-			setup: func(t *testing.T) *fakescclient.Clientset {
-				return fakescclient.NewSimpleClientset(planList, class)
-			},
+			catalog: fakeCatalog,
 			args: args{
 				filter: ListPlanOptions{
 					ServiceName: "mismatch",
@@ -263,9 +171,7 @@ func TestClient_ListClusterPlans(t *testing.T) {
 			},
 		},
 		"matching": {
-			setup: func(t *testing.T) *fakescclient.Clientset {
-				return fakescclient.NewSimpleClientset(planList, class)
-			},
+			catalog: fakeCatalog,
 			args: args{
 				filter: ListPlanOptions{
 					PlanName:    "free",
@@ -273,64 +179,60 @@ func TestClient_ListClusterPlans(t *testing.T) {
 					BrokerName:  "broker-a",
 				},
 			},
-			want: []v1beta1.ClusterServicePlan{plan},
+			want: []string{
+				"/broker-a/db-service/free",
+			},
+		},
+		"multiple plans": {
+			catalog: fakeCatalog,
+			args: args{
+				filter: ListPlanOptions{},
+			},
+			want: []string{
+				"/broker-a/db-service/free",
+				"/broker-a/db-service/some-cluster-plan",
+			},
 		},
 	}
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			actualList := tc.catalog.ListClusterPlans(tc.args.filter)
+			names := sets.NewString()
+			for _, item := range actualList {
+				names.Insert(item.String())
+			}
 
-			kclient := fakescclient.NewSimpleClientset()
-			if tc.setup != nil {
-				kclient = tc.setup(t)
-			}
-			c := &Client{
-				kclient: kclient,
-			}
-			actualList, actualErr := c.ListClusterPlans(tc.args.filter)
-			testutil.AssertErrorsEqual(t, tc.wantErr, actualErr)
-			testutil.AssertEqual(t, "plans", tc.want, actualList)
+			testutil.AssertEqual(t, "plans", tc.want, names.List())
 		})
 	}
 }
 
-func TestClient_ListNamespacedPlans(t *testing.T) {
-	plan := servicecatalogv1beta1.ServicePlan{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "db-service-free",
-			Namespace: "test-ns",
-		},
-		Spec: servicecatalogv1beta1.ServicePlanSpec{
-			ServiceBrokerName: "broker-a",
-			CommonServicePlanSpec: servicecatalogv1beta1.CommonServicePlanSpec{
-				ExternalName: "free",
-				Free:         true,
-			},
-			ServiceClassRef: servicecatalogv1beta1.LocalObjectReference{
-				Name: "db-service-id",
+func TestMarketplace_ListNamespacedPlans(t *testing.T) {
+	t.Parallel()
+
+	const namespace = "test-ns"
+
+	broker := &v1alpha1.ServiceBroker{}
+	broker.Name = "ns-broker-a"
+	broker.Namespace = namespace
+	broker.Status.Services = []v1alpha1.ServiceOffering{
+		{
+			DisplayName: "db-service-ns",
+			Plans: []v1alpha1.ServicePlan{
+				{
+					DisplayName: "free",
+					Free:        true,
+				},
+				{
+					DisplayName: "some-plan",
+					Free:        true,
+				},
 			},
 		},
 	}
 
-	class := &servicecatalogv1beta1.ServiceClass{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "db-service-id",
-			Namespace: "test-ns",
-		},
-		Spec: servicecatalogv1beta1.ServiceClassSpec{
-			ServiceBrokerName: "broker-a",
-			CommonServiceClassSpec: servicecatalogv1beta1.CommonServiceClassSpec{
-				ExternalName: "db-service",
-			},
-		},
-	}
-
-	planList := &servicecatalogv1beta1.ServicePlanList{
-		Items: []servicecatalogv1beta1.ServicePlan{
-			plan,
-		},
-	}
+	fakeCatalog := &KfMarketplace{}
+	fakeCatalog.Brokers = append(fakeCatalog.Brokers, broker)
 
 	type args struct {
 		namespace string
@@ -338,98 +240,72 @@ func TestClient_ListNamespacedPlans(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		setup   func(t *testing.T) *fakescclient.Clientset
+		catalog *KfMarketplace
 		args    args
-		want    []servicecatalogv1beta1.ServicePlan
-		wantErr error
+		want    []string
 	}{
-		"bad server call listing plans": {
-			setup: func(t *testing.T) *fakescclient.Clientset {
-				client := fakescclient.NewSimpleClientset(planList, class)
-				client.PrependReactor("list", "serviceplans", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, nil, errors.New("server-call-error")
-				})
-				return client
-			},
-			args: args{
-				filter: ListPlanOptions{},
-			},
-			wantErr: errors.New("server-call-error"),
-		},
-		"class lookup error": {
-			setup: func(t *testing.T) *fakescclient.Clientset {
-				client := fakescclient.NewSimpleClientset(planList, class)
-				client.PrependReactor("get", "serviceclasses", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, nil, errors.New("class-lookup-error")
-				})
-				return client
-			},
-			args: args{
-				filter: ListPlanOptions{
-					ServiceName: "force-lookup-to-match",
-				},
-			},
-			wantErr: errors.New("class-lookup-error"),
-		},
 		"broker mismatch": {
-			setup: func(t *testing.T) *fakescclient.Clientset {
-				return fakescclient.NewSimpleClientset(planList, class)
-			},
+			catalog: fakeCatalog,
 			args: args{
+				namespace: namespace,
 				filter: ListPlanOptions{
 					BrokerName: "mismatch",
 				},
 			},
 		},
 		"plan mismatch": {
-			setup: func(t *testing.T) *fakescclient.Clientset {
-				return fakescclient.NewSimpleClientset(planList, class)
-			},
+			catalog: fakeCatalog,
 			args: args{
+				namespace: namespace,
 				filter: ListPlanOptions{
 					PlanName: "mismatch",
 				},
 			},
 		},
 		"service mismatch": {
-			setup: func(t *testing.T) *fakescclient.Clientset {
-				return fakescclient.NewSimpleClientset(planList, class)
-			},
+			catalog: fakeCatalog,
 			args: args{
+				namespace: namespace,
 				filter: ListPlanOptions{
 					ServiceName: "mismatch",
 				},
 			},
 		},
 		"matching": {
-			setup: func(t *testing.T) *fakescclient.Clientset {
-				return fakescclient.NewSimpleClientset(planList, class)
-			},
+			catalog: fakeCatalog,
 			args: args{
+				namespace: namespace,
 				filter: ListPlanOptions{
 					PlanName:    "free",
-					ServiceName: "db-service",
-					BrokerName:  "broker-a",
+					ServiceName: "db-service-ns",
+					BrokerName:  "ns-broker-a",
 				},
 			},
-			want: []v1beta1.ServicePlan{plan},
+			want: []string{
+				"test-ns/ns-broker-a/db-service-ns/free",
+			},
+		},
+		"multiple plans": {
+			catalog: fakeCatalog,
+			args: args{
+				namespace: namespace,
+				filter:    ListPlanOptions{},
+			},
+			want: []string{
+				"test-ns/ns-broker-a/db-service-ns/free",
+				"test-ns/ns-broker-a/db-service-ns/some-plan",
+			},
 		},
 	}
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+			actualList := tc.catalog.ListNamespacedPlans(tc.args.namespace, tc.args.filter)
+			names := sets.NewString()
+			for _, item := range actualList {
+				names.Insert(item.String())
+			}
 
-			kclient := fakescclient.NewSimpleClientset()
-			if tc.setup != nil {
-				kclient = tc.setup(t)
-			}
-			c := &Client{
-				kclient: kclient,
-			}
-			actualList, actualErr := c.ListNamespacedPlans(tc.args.namespace, tc.args.filter)
-			testutil.AssertErrorsEqual(t, tc.wantErr, actualErr)
-			testutil.AssertEqual(t, "plans", tc.want, actualList)
+			testutil.AssertEqual(t, "plans", tc.want, names.List())
 		})
 	}
 }

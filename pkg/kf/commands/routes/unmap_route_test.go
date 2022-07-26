@@ -16,24 +16,30 @@ package routes_test
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/apps"
-	"github.com/google/kf/pkg/kf/apps/fake"
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/routes"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/apps"
+	"github.com/google/kf/v2/pkg/kf/apps/fake"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/commands/routes"
+	"github.com/google/kf/v2/pkg/kf/testutil"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"knative.dev/pkg/ptr"
 )
 
 func TestUnmapRoute(t *testing.T) {
 	t.Parallel()
 
+	someSpace := &v1alpha1.Space{}
+
 	for tn, tc := range map[string]struct {
-		Namespace   string
+		Space       string
+		TargetSpace *v1alpha1.Space
+
 		Args        []string
 		Setup       func(t *testing.T, fake *fake.FakeClient)
 		ExpectedErr error
@@ -43,60 +49,53 @@ func TestUnmapRoute(t *testing.T) {
 			ExpectedErr: errors.New("accepts 2 arg(s), received 3"),
 		},
 		"transforming App fails": {
-			Args:      []string{"some-app", "example.com"},
-			Namespace: "some-space",
+			Args:        []string{"some-app", "example.com"},
+			Space:       "some-space",
+			TargetSpace: someSpace,
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().
-					Transform(gomock.Any(), gomock.Any(), gomock.Any()).
+					Transform(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil, errors.New("some-error"))
 			},
 			ExpectedErr: errors.New("failed to unmap Route: some-error"),
 		},
-		"namespace": {
-			Args:      []string{"some-app", "example.com"},
-			Namespace: "some-space",
+		"space": {
+			Args:        []string{"some-app", "example.com"},
+			Space:       "some-space",
+			TargetSpace: someSpace,
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform("some-space", gomock.Any(), gomock.Any())
+				fake.EXPECT().Transform(gomock.Any(), "some-space", gomock.Any(), gomock.Any())
 				fake.EXPECT().WaitForConditionRoutesReadyTrue(gomock.Any(), "some-space", gomock.Any(), gomock.Any())
 			},
 		},
-		"without namespace": {
+		"without space": {
 			Args:        []string{"some-app", "example.com"},
-			ExpectedErr: errors.New(utils.EmptyNamespaceError),
+			ExpectedErr: errors.New(config.EmptySpaceError),
 		},
 		"App name": {
-			Args:      []string{"some-app", "example.com", "--hostname=some-host", "--path=some-path"},
-			Namespace: "some-space",
+			Args:        []string{"some-app", "example.com", "--hostname=some-host", "--path=some-path"},
+			Space:       "some-space",
+			TargetSpace: someSpace,
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform(gomock.Any(), "some-app", gomock.Any())
+				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), "some-app", gomock.Any())
 				fake.EXPECT().WaitForConditionRoutesReadyTrue(gomock.Any(), gomock.Any(), "some-app", gomock.Any())
 			},
 		},
 		"async does not wait": {
-			Args:      []string{"some-app", "example.com", "--hostname=some-host", "--path=some-path", "--async"},
-			Namespace: "some-space",
+			Args:        []string{"some-app", "example.com", "--hostname=some-host", "--path=some-path", "--async"},
+			Space:       "some-space",
+			TargetSpace: someSpace,
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform(gomock.Any(), "some-app", gomock.Any())
+				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), "some-app", gomock.Any())
 			},
-		},
-		"remove non-existent app": {
-			Args:      []string{"some-app", "example.com", "--hostname=some-host", "--path=some-path"},
-			Namespace: "some-space",
-			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any()).
-					DoAndReturn(func(_, _ string, m apps.Mutator) (*v1alpha1.App, error) {
-						app := buildApp("some-app", "some-host", "example.com", "")
-						return nil, m(&app)
-					})
-			},
-			ExpectedErr: errors.New("failed to unmap Route: App some-app not found"),
 		},
 		"remove 1 of 1 routes": {
-			Args:      []string{"some-app", "example.com", "--hostname=some-host", "--path=some-path"},
-			Namespace: "some-space",
+			Args:        []string{"some-app", "example.com", "--hostname=some-host", "--path=some-path"},
+			Space:       "some-space",
+			TargetSpace: someSpace,
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any()).
-					Do(func(_, _ string, m apps.Mutator) {
+				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+					Do(func(_ context.Context, _, _ string, m apps.Mutator) {
 						app := buildApp("some-app", "some-host", "example.com", "some-path")
 						testutil.AssertNil(t, "err", m(&app))
 						testutil.AssertEqual(t, "len", 0, len(app.Spec.Routes))
@@ -105,18 +104,42 @@ func TestUnmapRoute(t *testing.T) {
 			},
 		},
 		"remove 1 of 2 routes": {
-			Args:      []string{"some-app", "example.com", "--hostname=some-host", "--path=some-path"},
-			Namespace: "some-space",
+			Args:        []string{"some-app", "example.com", "--hostname=some-host", "--path=some-path"},
+			Space:       "some-space",
+			TargetSpace: someSpace,
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any()).
-					Do(func(_, _ string, m apps.Mutator) {
+				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+					Do(func(_ context.Context, _, _ string, m apps.Mutator) {
 						app := v1alpha1.App{}
-						app.Spec.Routes = []v1alpha1.RouteSpecFields{
-							{Hostname: "some-host", Domain: "example.com", Path: "some-path"},
-							{Hostname: "some-other-host", Domain: "example.com", Path: "some-path"},
+						app.Spec.Routes = []v1alpha1.RouteWeightBinding{
+							{
+								Weight: ptr.Int32(1),
+								RouteSpecFields: v1alpha1.RouteSpecFields{
+									Hostname: "some-host",
+									Domain:   "example.com",
+									Path:     "some-path",
+								},
+							},
+							{
+								Weight: ptr.Int32(1),
+								RouteSpecFields: v1alpha1.RouteSpecFields{
+									Hostname: "some-other-host",
+									Domain:   "example.com",
+									Path:     "some-path",
+								},
+							},
+						}
+						for _, r := range app.Spec.Routes {
+							app.Status.Routes = append(
+								app.Status.Routes,
+								v1alpha1.AppRouteStatus{
+									QualifiedRouteBinding: r.Qualify("default.domain", app.Name),
+								},
+							)
 						}
 
 						testutil.AssertNil(t, "err", m(&app))
+						testutil.AssertEqual(t, "len", 1, len(app.Spec.Routes))
 						testutil.AssertEqual(t, "routes", "some-other-host", app.Spec.Routes[0].Hostname)
 					})
 				fake.EXPECT().WaitForConditionRoutesReadyTrue(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
@@ -125,7 +148,7 @@ func TestUnmapRoute(t *testing.T) {
 	} {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
+
 			fake := fake.NewFakeClient(ctrl)
 
 			if tc.Setup != nil {
@@ -135,7 +158,8 @@ func TestUnmapRoute(t *testing.T) {
 			var buffer bytes.Buffer
 			cmd := routes.NewUnmapRouteCommand(
 				&config.KfParams{
-					Namespace: tc.Namespace,
+					Space:       tc.Space,
+					TargetSpace: tc.TargetSpace,
 				},
 				fake,
 			)
@@ -147,5 +171,32 @@ func TestUnmapRoute(t *testing.T) {
 				testutil.AssertErrorsEqual(t, tc.ExpectedErr, gotErr)
 			}
 		})
+	}
+}
+
+func buildApp(name, hostname, domain, path string) v1alpha1.App {
+	route := v1alpha1.RouteWeightBinding{
+		Weight: ptr.Int32(1),
+		RouteSpecFields: v1alpha1.RouteSpecFields{
+			Hostname: hostname,
+			Domain:   domain,
+			Path:     path,
+		},
+	}
+
+	return v1alpha1.App{
+		ObjectMeta: metav1.ObjectMeta{Name: name},
+		Spec: v1alpha1.AppSpec{
+			Routes: []v1alpha1.RouteWeightBinding{
+				route,
+			},
+		},
+		Status: v1alpha1.AppStatus{
+			Routes: []v1alpha1.AppRouteStatus{
+				{
+					QualifiedRouteBinding: route.Qualify("default.domain", name),
+				},
+			},
+		},
 	}
 }

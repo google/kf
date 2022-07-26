@@ -15,66 +15,115 @@
 package commands
 
 import (
+	"context"
 	"fmt"
-	"os"
 	"runtime"
-	"strings"
+	"sync"
 
-	"github.com/google/kf/pkg/kf/commands/completion"
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/doctor"
-	"github.com/google/kf/pkg/kf/commands/group"
-	"github.com/google/kf/pkg/kf/commands/install"
-	pkgdoctor "github.com/google/kf/pkg/kf/doctor"
-	"github.com/google/kf/pkg/kf/istio"
-	templates "github.com/google/kf/third_party/kubectl-templates"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/commands/completion"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	configlogging "github.com/google/kf/v2/pkg/kf/commands/config/logging"
+	"github.com/google/kf/v2/pkg/kf/commands/doctor"
+	"github.com/google/kf/v2/pkg/kf/commands/group"
+	"github.com/google/kf/v2/pkg/kf/commands/stubs"
+	pkgdoctor "github.com/google/kf/v2/pkg/kf/doctor"
+	"github.com/google/kf/v2/pkg/kf/doctor/troubleshooter"
+	utils "github.com/google/kf/v2/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/v2/third_party/k8s.io/kubectl/pkg/util/templates"
 	"github.com/imdario/mergo"
 	"github.com/spf13/cobra"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	kninjection "knative.dev/pkg/injection"
+	"knative.dev/pkg/logging"
+
+	// The following imports provide authentication helpers for GCP and OIDC.
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
 )
 
-// NewKfCommand creates the root kf command.
+var k8sClientFactory = config.GetKubernetes
+
+const (
+	docsURL    = "https://cloud.google.com/migrate/kf"
+	versionURL = "https://cloud.google.com/migrate/kf/docs/downloads"
+)
+
+// NewKfCommand creates the root Kf command suitable for using in a CLI context.
 func NewKfCommand() *cobra.Command {
+	cmd := NewRawKfCommand()
+	return templates.NormalizeAll(cmd)
+}
+
+// NewRawKfCommand returns the root Kf command without Kubernetes style
+// formatting applied to the docs which permanently modifies them by changing
+// whitespace and running them through a custom markdown to text renderer.
+func NewRawKfCommand() *cobra.Command {
 	p := &config.KfParams{}
 
+	var postRunOnce sync.Once
 	var rootCmd = &cobra.Command{
-		Use:   "kf",
-		Short: "A MicroPaaS for Kubernetes with a Cloud Foundry style developer expeience",
-		Long: templates.LongDesc(`
-			Kf is a MicroPaaS for Kubernetes with a Cloud Foundry style developer
-			expeience.
-
-			Kf aims to be fully compatible with Cloud Foundry applications and
-			lifecycle. It supports logs, buildpacks, app manifests, routing, service
-			brokers, and injected services.
-
-			At the same time, it aims to improve the operational experience by
-			supporting git-ops, self-healing infrastructure, containers, a service
-			mesh, autoscaling, scale-to-zero, improved quota management and does it
-			all on Kubernetes using industry-standard OSS tools including Knative,
-			Istio, and Tekton.
-			`),
-		DisableAutoGenTag: false,
+		Use:                   "kf",
+		Short:                 "Kf CLI",
+		Long:                  fmt.Sprintf("Kf CLI Version: %s Documentation: %s .", Version, docsURL),
+		DisableAutoGenTag:     false,
+		TraverseChildrenHooks: true,
+		Annotations: map[string]string{
+			config.SkipVersionCheckAnnotation: "",
+		},
+		SilenceUsage: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			loadedConfig, err := config.Load(p.Config, p)
 			if err != nil {
 				return err
 			}
 
-			return mergo.Map(p, loadedConfig)
+			if err := mergo.Map(p, loadedConfig); err != nil {
+				return err
+			}
+
+			ctx := kninjection.WithNamespaceScope(cmd.Context(), p.Space)
+			ctx = config.SetupInjection(ctx, p)
+			ctx = configlogging.SetupLogger(ctx, cmd.ErrOrStderr())
+			cmd.SetContext(ctx)
+
+			_, skipVersion := cmd.Annotations[config.SkipVersionCheckAnnotation]
+			if !skipVersion {
+				ns := getKfNamespace(ctx, k8sClientFactory(p))
+				if ns == nil {
+					return nil
+				}
+
+				checkVersion(ctx, ns)
+			}
+
+			return nil
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			cmd.Help()
 		},
+		PersistentPostRun: func(cmd *cobra.Command, _ []string) {
+			// NOTE: this hook gets executed by Cobra and also main.go if the command
+			// fails because Cobra won't execute it if the main command returns an
+			// error. The second args param is unusable if Cobra didn't call us so
+			// it's assigned to _.
+			postRunOnce.Do(func() {
+				utils.PrintNextActions(cmd.ErrOrStderr())
+			})
+		},
 	}
 
-	rootCmd.PersistentFlags().StringVar(&p.Config, "config", "", "Config file (default is $HOME/.kf)")
-	rootCmd.PersistentFlags().StringVar(&p.KubeCfgFile, "kubeconfig", "", "Kubectl config file (default is $HOME/.kube/config)")
-	rootCmd.PersistentFlags().StringVar(&p.Namespace, "namespace", "", "Kubernetes namespace to target")
-	completion.MarkFlagCompletionSupported(rootCmd.PersistentFlags(), "namespace", "spaces")
+	rootCmd.PersistentFlags().StringVar(&p.Config, "config", "", "Path to the Kf config file to use for CLI requests.")
+	rootCmd.PersistentFlags().StringVar(&p.KubeCfgFile, "kubeconfig", "", "Path to the kubeconfig file to use for CLI requests.")
+	rootCmd.PersistentFlags().StringVar(&p.Space, "space", "", "Space to run the command against. This flag overrides the currently targeted Space.")
+	rootCmd.PersistentFlags().StringVar(&p.Impersonate.UserName, "as", "", "Username to impersonate for the operation.")
+	rootCmd.PersistentFlags().StringSliceVar(&p.Impersonate.Groups, "as-group", []string{}, "Group to impersonate for the operation. Include this flag multiple times to specify multiple groups.")
 
-	rootCmd.PersistentFlags().BoolVar(&p.LogHTTP, "log-http", false, "Log HTTP requests to stderr")
+	rootCmd.RegisterFlagCompletionFunc("space", completion.SpaceCompletionFn(p))
+
+	rootCmd.PersistentFlags().BoolVar(&p.LogHTTP, "log-http", false, "Log HTTP requests to standard error.")
 
 	rootCmd = group.AddCommandGroups(rootCmd, group.CommandGroups{
 		{
@@ -91,6 +140,16 @@ func NewKfCommand() *cobra.Command {
 				InjectScale(p),
 				InjectLogs(p),
 				InjectProxy(p),
+			},
+		},
+		{
+			Name: "Auto Scale",
+			Commands: []*cobra.Command{
+				InjectEnableAutoscale(p),
+				InjectDisableAutoscale(p),
+				InjectCreateAutoscalingRule(p),
+				InjectDeleteAutoscalingRules(p),
+				InjectUpdateAutoscalingLimits(p),
 			},
 		},
 		{
@@ -114,23 +173,19 @@ func NewKfCommand() *cobra.Command {
 				InjectRoutes(p),
 				InjectCreateRoute(p),
 				InjectDeleteRoute(p),
+				InjectDeleteOrphanedRoutes(p),
 				InjectMapRoute(p),
 				InjectUnmapRoute(p),
 				InjectProxyRoute(p),
-			},
-		},
-		{
-			Name: "Quotas",
-			Commands: []*cobra.Command{
-				InjectGetQuota(p),
-				InjectUpdateQuota(p),
-				InjectDeleteQuota(p),
+				InjectDomains(p),
 			},
 		},
 		{
 			Name: "Services",
 			Commands: []*cobra.Command{
 				InjectCreateService(p),
+				InjectCreateUserProvidedService(p),
+				InjectUpdateUserProvidedService(p),
 				InjectDeleteService(p),
 				InjectGetService(p),
 				InjectListServices(p),
@@ -140,7 +195,7 @@ func NewKfCommand() *cobra.Command {
 		{
 			Name: "Service Bindings",
 			Commands: []*cobra.Command{
-				InjectBindingService(p),
+				InjectBindService(p),
 				InjectListBindings(p),
 				InjectUnbindService(p),
 				InjectVcapServices(p),
@@ -156,11 +211,21 @@ func NewKfCommand() *cobra.Command {
 		{
 			Name: "Spaces",
 			Commands: []*cobra.Command{
+				InjectTarget(p),
 				InjectSpaces(p),
 				InjectSpace(p),
 				InjectCreateSpace(p),
 				InjectDeleteSpace(p),
 				InjectConfigSpace(p),
+				InjectSpaceUsers(p),
+				InjectSetSpaceRole(p),
+				InjectUnsetSpaceRole(p),
+			},
+		},
+		{
+			Name: "Cluster",
+			Commands: []*cobra.Command{
+				InjectConfigCluster(p),
 			},
 		},
 		{
@@ -172,6 +237,44 @@ func NewKfCommand() *cobra.Command {
 			},
 		},
 		{
+			Name: "Network Policies",
+			Commands: []*cobra.Command{
+				InjectNetworkPolicies(p),
+				InjectDeleteNetworkPolicies(p),
+				InjectDescribeNetworkPolicy(p),
+			},
+		},
+		{
+			Name: "Tasks",
+			Commands: []*cobra.Command{
+				InjectRunTask(p),
+				InjectTerminateTask(p),
+				InjectTasks(p),
+			},
+		},
+		{
+			Name: "Jobs",
+			Commands: []*cobra.Command{
+				InjectCreateJob(p),
+				InjectRunJob(p),
+				InjectScheduleJob(p),
+				InjectListJobs(p),
+				InjectListJobSchedules(p),
+				InjectJobHistory(p),
+				InjectDeleteJob(p),
+				InjectDeleteJobSchedule(p),
+			},
+		},
+		utils.PreviewCommandGroup(
+			"Route Services",
+			InjectBindRouteService(p),
+			InjectUnbindRouteService(p),
+		),
+		utils.ExperimentalCommandGroup(
+			"Buildpacks",
+			InjectWrapV2Buildpack(p),
+		),
+		{
 			Name: "Other Commands",
 			Commands: []*cobra.Command{
 				// DoctorTests are run in the order they're defined in this list.
@@ -179,53 +282,65 @@ func NewKfCommand() *cobra.Command {
 				// should be ordered in a logical way e.g. testing apps should come after
 				// testing the cluster because if the cluster isn't working then all the
 				// app tests will fail.
-				doctor.NewDoctorCommand(p, []doctor.DoctorTest{
-					{Name: "cluster", Test: pkgdoctor.NewClusterDiagnostic(config.GetKubernetes(p))},
-					{Name: "buildpacks", Test: InjectBuildpacksClient(p)},
-					{Name: "istio", Test: istio.NewIstioClient(config.GetKubernetes(p))},
-				}),
+				doctor.NewDoctorCommand(
+					p,
+					[]doctor.DoctorTest{
+						{Name: "cluster", Test: pkgdoctor.NewClusterDiagnostic(config.GetKubernetes(p))},
+						{Name: "istio", Test: pkgdoctor.NewIstioDiagnostic(config.GetKubernetes(p))},
+						{Name: "operator", Test: pkgdoctor.NewOperatorDiagnostic(config.GetKubernetes(p))},
+					},
+					troubleshooter.CustomResourceComponents(),
+					troubleshooter.NewTroubleshootingCloser(p),
+				),
 
-				completionCommand(rootCmd),
-				install.NewInstallCommand(),
-				NewTargetCommand(p),
 				NewVersionCommand(Version, runtime.GOOS),
 				NewDebugCommand(p, config.GetKubernetes(p)),
-				InjectNamesCommand(p),
+				stubs.NewLoginCommand(),
+				stubs.NewApiCommand(),
+				stubs.NewAuthCommand(),
+				stubs.NewLogoutCommand(),
+				NewThirdPartyLicensesCommand(),
+				NewAboutCommand(),
+				InjectSSH(p),
+				InjectDependencyCommand(p),
 			},
 		},
 	})
-
-	completion.AddBashCompletion(rootCmd)
 
 	// We don't want the AutoGenTag as it makes the doc generation
 	// non-deterministic. We would rather allow the CI to ensure the docs were
 	// regenerated for each commit.
 	rootCmd.DisableAutoGenTag = true
 
-	rootCmd = templates.NormalizeAll(rootCmd)
-
 	return rootCmd
 }
 
-func completionCommand(rootCmd *cobra.Command) *cobra.Command {
-	return &cobra.Command{
-		Use:   "completion bash|zsh",
-		Short: "Generate auto-completion files for kf commands",
-		Example: `
-  eval "$(kf completion bash)"
-  eval "$(kf completion zsh)"
-		`,
-		Long: `completion is used to create set up bash/zsh auto-completion for kf commands.`,
-		Args: cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			switch shell := strings.ToLower(args[0]); shell {
-			case "bash":
-				return rootCmd.GenBashCompletion(os.Stdout)
-			case "zsh":
-				return rootCmd.GenZshCompletion(os.Stdout)
-			default:
-				return fmt.Errorf("unknown shell %q. Only bash and zsh are supported", shell)
-			}
-		},
+func getKfNamespace(ctx context.Context, k kubernetes.Interface) *v1.Namespace {
+	ns, err := k.CoreV1().Namespaces().Get(ctx, v1alpha1.KfNamespace, metav1.GetOptions{})
+	if err != nil {
+		logging.FromContext(ctx).Warnf(
+			"Error getting %s namespace for CLI warnings: %s",
+			v1alpha1.KfNamespace,
+			err,
+		)
+		return nil
+	}
+	return ns
+}
+
+// Warn user if client and server semver versions are different
+func checkVersion(ctx context.Context, ns *v1.Namespace) {
+	clientVersion := Version
+	serverVersion := ns.Labels[v1alpha1.VersionLabel]
+
+	if clientVersion != serverVersion {
+		logger := logging.FromContext(ctx)
+		logger.Warnf(
+			"Client version %s does not match server version %s",
+			clientVersion,
+			serverVersion,
+		)
+
+		logger.Warnf("Visit %s to download a matching version", versionURL)
 	}
 }

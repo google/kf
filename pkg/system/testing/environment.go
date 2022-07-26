@@ -18,10 +18,9 @@ package testing
 import (
 	"os"
 
-	"github.com/google/kf/pkg/system"
+	"github.com/google/kf/v2/pkg/system"
 )
 
 func init() {
 	os.Setenv(system.NamespaceEnvKey, "kf-testing")
-	os.Setenv(system.KnativeServingNamespaceEnvKey, "knative-serving-testing")
 }

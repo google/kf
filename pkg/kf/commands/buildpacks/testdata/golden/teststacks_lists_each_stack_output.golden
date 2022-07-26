@@ -1,0 +1,3 @@
+Version  Name           Build Image                     Run Image                       Description
+V2       cflinuxfs3     cloudfoundry/cflinuxfs3:latest  cloudfoundry/cflinuxfs3:latest  A CF Compatible Stack
+V3       google-golang  gcr.io/buildpacks/go            gcr.io/buildpacks/slim          A stack for golang by Google

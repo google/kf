@@ -17,16 +17,21 @@ package commands
 import (
 	"fmt"
 
+	"github.com/google/kf/v2/pkg/kf/commands/config"
 	"github.com/spf13/cobra"
 )
 
 // NewVersionCommand returns a command that displays the version.
 func NewVersionCommand(version, goos string) *cobra.Command {
 	return &cobra.Command{
-		Use:     "version",
-		Short:   "Display the CLI version",
-		Example: `  kf version`,
-		Args:    cobra.ExactArgs(0),
+		Annotations: map[string]string{
+			config.SkipVersionCheckAnnotation: "",
+		},
+		Use:          "version",
+		Short:        "Print the CLI version.",
+		Example:      `  kf version`,
+		Args:         cobra.ExactArgs(0),
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			fmt.Fprintln(cmd.OutOrStdout(), "kf version", version, goos)
 			return nil

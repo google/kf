@@ -1,0 +1,16 @@
+{
+    "sourcePackage": {},
+    "name": "kaniko",
+    "kind": "KfBuiltinTask",
+    "apiVersion": "builtin.kf.dev/v1alpha1",
+    "params": [
+        {
+            "name": "SOURCE_IMAGE",
+            "value": "some/source/image"
+        },
+        {
+            "name": "DOCKERFILE",
+            "value": "path/to/Dockerfile"
+        }
+    ]
+}

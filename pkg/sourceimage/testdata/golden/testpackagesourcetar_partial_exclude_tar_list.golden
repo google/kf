@@ -1,0 +1,6 @@
+MODE        SIZE  NAME
+-rwxr-xr-x  0     /var/run/kontext
+-rwxr-xr-x  8     /var/run/kontext/include
+-rwxr-xr-x  0     /var/run/kontext/include-dir
+-rwxr-xr-x  8     /var/run/kontext/include-dir/include
+-rwxr-xr-x  8     /var/run/kontext/symlink

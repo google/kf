@@ -18,5 +18,4 @@
 // Namespaces without that label are ignored.
 package spaces
 
-//go:generate go run ../internal/tools/option-builder/option-builder.go --pkg spaces ../internal/tools/clientgen/common-options.yml zz_generated.clientoptions.go
 //go:generate go run ../internal/tools/clientgen/genclient.go client.yml

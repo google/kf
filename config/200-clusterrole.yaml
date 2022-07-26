@@ -14,6 +14,8 @@
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
+  annotations:
+    operator.knative.dev/mode: Reconcile
   name: kf-admin
 aggregationRule:
   clusterRoleSelectors:
@@ -27,9 +29,10 @@ metadata:
   name: kf-core
   labels:
     kf.dev/controller: "true"
+    kf.dev/release: VERSION_PLACEHOLDER
 rules:
 - apiGroups: [""]
-  resources: ["pods", "namespaces", "secrets", "configmaps", "endpoints", "services", "events", "serviceaccounts", "resourcequotas", "limitranges"]
+  resources: ["pods", "namespaces", "secrets", "configmaps", "endpoints", "services", "events", "serviceaccounts", "persistentvolumes", "persistentvolumeclaims"]
   verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
 - apiGroups: [""]
   resources: ["endpoints/restricted"] # Permission for RestrictedEndpointsAdmission
@@ -38,7 +41,7 @@ rules:
   resources: ["deployments", "deployments/finalizers"] # finalizers are needed for the owner reference of the webhook
   verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
 - apiGroups: ["admissionregistration.k8s.io"]
-  resources: ["mutatingwebhookconfigurations"]
+  resources: ["mutatingwebhookconfigurations", "validatingwebhookconfigurations"]
   verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
 - apiGroups: ["apiextensions.k8s.io"]
   resources: ["customresourcedefinitions"]
@@ -46,25 +49,11 @@ rules:
 - apiGroups: ["autoscaling"]
   resources: ["horizontalpodautoscalers"]
   verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
-- apiGroups: ["serving.knative.dev", "autoscaling.internal.knative.dev", "networking.internal.knative.dev"]
-  resources: ["*"]
-  verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
 - apiGroups: ["kf.dev", "spaces.kf.dev"]
   resources: ["*", "*/status", "*/finalizers"]
   verbs: ["get", "list", "create", "update", "delete", "deletecollection", "patch", "watch"]
-- apiGroups: ["rbac.authorization.k8s.io"]
-  resources: ["roles"]
-  verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
-# the controller MUST hold the roles it will grant within the namespaces
-# TODO(#839): When can we remove this without breaking existing clusters?
-- apiGroups: ["build.knative.dev"]
-  resources: ["*"]
-  verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
 - apiGroups: ["tekton.dev"]
-  resources: ["taskruns"]
-  verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
-- apiGroups: ["servicecatalog.k8s.io"]
-  resources: ["*"]
+  resources: ["taskruns", "clustertasks", "tasks", "pipelineruns"]
   verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
 - apiGroups: [""]
   resources: ["pods/log"]
@@ -72,3 +61,33 @@ rules:
 - apiGroups: ["networking.istio.io"]
   resources: ["virtualservices"]
   verbs: ["get", "list", "create", "update", "delete", "deletecollection", "patch", "watch"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["networkpolicies"]
+  verbs: ["get", "list", "create", "update", "delete", "deletecollection", "patch", "watch"]
+- apiGroups: ["batch"]
+  resources: ["cronjobs", "jobs"]
+  verbs: ["get", "list", "create", "update", "delete", "deletecollection", "patch", "watch"]
+- apiGroups: ["anthos.gke.io"]
+  resources: ["*"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["coordination.k8s.io"]
+  resources: ["leases"]
+  verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
+- apiGroups: ["apiregistration.k8s.io"]
+  resources: ["apiservices"]
+  verbs: ["get", "list", "update", "patch", "watch"]
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["roles", "rolebindings", "clusterrolebindings", "clusterroles"]
+  verbs: ["get", "list", "create", "update", "delete", "deletecollection", "patch", "watch"]
+- apiGroups: ["iam.cnrm.cloud.google.com"]
+  resources: ["iampolicies"]
+  verbs: ["get", "list", "create", "update", "delete", "deletecollection", "patch", "watch"]
+- apiGroups: ["builds.appdevexperience.dev"]
+  resources: ["*/status", "builds"]
+  verbs: ["get", "list", "update", "delete", "patch", "watch"]
+- apiGroups: ["upload.kf.dev"]
+  resources: ["*"]
+  verbs: ["*"]
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["clusterroles"]
+  verbs: ["bind"]

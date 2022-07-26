@@ -16,59 +16,33 @@ package servicebindings_test
 
 import (
 	"bytes"
-	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/commands/config"
-	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
-	"github.com/google/kf/pkg/kf/service-bindings/fake"
-	"github.com/google/kf/pkg/kf/testutil"
-	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 	"github.com/spf13/cobra"
 )
 
-type commandFactory func(p *config.KfParams, client servicebindings.ClientInterface) *cobra.Command
-
-func dummyBindingInstance(appName, instanceName string) *v1beta1.ServiceBinding {
-	instance := v1beta1.ServiceBinding{}
-	instance.Name = fmt.Sprintf("kf-binding-%s-%s", appName, instanceName)
-
-	return &instance
-}
-
-func dummyBindingRequestInstance(appName, instanceName string) *kfv1alpha1.AppSpecServiceBinding {
-	return &kfv1alpha1.AppSpecServiceBinding{
-		BindingName: fmt.Sprintf("kf-binding-%s-%s", appName, instanceName),
-		Instance:    instanceName,
-	}
-}
+type commandFactory func(p *config.KfParams) *cobra.Command
 
 type serviceTest struct {
-	Args      []string
-	Setup     func(t *testing.T, f *fake.FakeClientInterface)
-	Namespace string
+	Args  []string
+	Space string
 
 	ExpectedErr     error
 	ExpectedStrings []string
 }
 
 func runTest(t *testing.T, tc serviceTest, newCommand commandFactory) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	client := fake.NewFakeClientInterface(ctrl)
-	if tc.Setup != nil {
-		tc.Setup(t, client)
-	}
+	gomock.NewController(t)
 
 	buf := new(bytes.Buffer)
 	p := &config.KfParams{
-		Namespace: tc.Namespace,
+		Space: tc.Space,
 	}
 
-	cmd := newCommand(p, client)
+	cmd := newCommand(p)
 	cmd.SetOutput(buf)
 	cmd.SetArgs(tc.Args)
 	_, actualErr := cmd.ExecuteC()

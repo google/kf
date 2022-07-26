@@ -15,39 +15,17 @@
 package services
 
 import (
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/describe"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	"github.com/google/kf/pkg/kf/services"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/internal/genericcli"
+	"github.com/google/kf/v2/pkg/kf/serviceinstances"
 	"github.com/spf13/cobra"
 )
 
 // NewGetServiceCommand allows users to get a service instance.
-func NewGetServiceCommand(p *config.KfParams, client services.Client) *cobra.Command {
-	serviceCommand := &cobra.Command{
-		Use:     "service SERVICE_INSTANCE",
-		Short:   "Show service instance info",
-		Example: `kf service my-service`,
-		Args:    cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := utils.ValidateNamespace(p); err != nil {
-				return err
-			}
-
-			instanceName := args[0]
-
-			cmd.SilenceUsage = true
-
-			instance, err := client.Get(p.Namespace, instanceName)
-			if err != nil {
-				return err
-			}
-
-			describe.ServiceInstance(cmd.OutOrStdout(), instance)
-
-			return nil
-		},
-	}
-
-	return serviceCommand
+func NewGetServiceCommand(p *config.KfParams) *cobra.Command {
+	return genericcli.NewDescribeCommand(
+		serviceinstances.NewResourceInfo(),
+		p,
+		genericcli.WithDescribeCommandName("service"),
+	)
 }

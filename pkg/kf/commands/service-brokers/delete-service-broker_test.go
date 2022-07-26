@@ -20,10 +20,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/kf/pkg/kf/commands/config"
-	cluster "github.com/google/kf/pkg/kf/service-brokers/cluster/fake"
-	namespaced "github.com/google/kf/pkg/kf/service-brokers/namespaced/fake"
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	cluster "github.com/google/kf/v2/pkg/kf/service-brokers/cluster/fake"
+	namespaced "github.com/google/kf/v2/pkg/kf/service-brokers/namespaced/fake"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 )
 
 func TestNewDeleteServiceBrokerCommand(t *testing.T) {
@@ -47,18 +47,18 @@ func TestNewDeleteServiceBrokerCommand(t *testing.T) {
 			args: []string{"some-broker", "--space-scoped"},
 			setup: func(t *testing.T, mocks mocks) {
 				// unset namespace
-				mocks.p.Namespace = ""
+				mocks.p.Space = ""
 			},
-			wantErr: errors.New("no space targeted, use 'kf target --space SPACE' to target a space"),
+			wantErr: errors.New(config.EmptySpaceError),
 		},
 		"no namespace global scoped": {
 			args: []string{"some-broker"},
 			setup: func(t *testing.T, mocks mocks) {
 				// unset namespace
-				mocks.p.Namespace = ""
+				mocks.p.Space = ""
 
 				// expect ok
-				mocks.clusterClient.EXPECT().Delete(gomock.Any())
+				mocks.clusterClient.EXPECT().Delete(gomock.Any(), gomock.Any())
 				mocks.clusterClient.EXPECT().WaitForDeletion(gomock.Any(), gomock.Any(), gomock.Any())
 			},
 			wantOut: "Deleting cluster service broker \"some-broker\"...\nSuccess\n",
@@ -66,7 +66,7 @@ func TestNewDeleteServiceBrokerCommand(t *testing.T) {
 		"global scoped arguments get passed correctly": {
 			args: []string{"cluster-broker"},
 			setup: func(t *testing.T, mocks mocks) {
-				mocks.clusterClient.EXPECT().Delete("cluster-broker")
+				mocks.clusterClient.EXPECT().Delete(gomock.Any(), "cluster-broker")
 				mocks.clusterClient.EXPECT().WaitForDeletion(gomock.Any(), "cluster-broker", gomock.Any())
 			},
 			wantOut: "Deleting cluster service broker \"cluster-broker\"...\nSuccess\n",
@@ -74,36 +74,35 @@ func TestNewDeleteServiceBrokerCommand(t *testing.T) {
 		"namespaced arguments get passed correctly": {
 			args: []string{"ns-broker", "--space-scoped"},
 			setup: func(t *testing.T, mocks mocks) {
-				mocks.p.Namespace = "custom-ns"
-				mocks.namespacedClient.EXPECT().Delete("custom-ns", "ns-broker")
+				mocks.p.Space = "custom-ns"
+				mocks.namespacedClient.EXPECT().Delete(gomock.Any(), "custom-ns", "ns-broker")
 				mocks.namespacedClient.EXPECT().WaitForDeletion(gomock.Any(), "custom-ns", "ns-broker", gomock.Any())
 			},
-			wantOut: "Deleting service broker \"ns-broker\" in space \"custom-ns\"...\nSuccess\n",
+			wantOut: "Deleting service broker \"ns-broker\" in Space \"custom-ns\"...\nSuccess\n",
 		},
 		"global broker async deltion": {
 			args: []string{"cluster-broker", "--async"},
 			setup: func(t *testing.T, mocks mocks) {
-				mocks.clusterClient.EXPECT().Delete(gomock.Any())
+				mocks.clusterClient.EXPECT().Delete(gomock.Any(), gomock.Any())
 			},
 			wantOut: "Deleting cluster service broker \"cluster-broker\" asynchronously\n",
 		},
 		"namespaced broker async deltion": {
 			args: []string{"ns-broker", "--space-scoped", "--async"},
 			setup: func(t *testing.T, mocks mocks) {
-				mocks.namespacedClient.EXPECT().Delete(gomock.Any(), gomock.Any())
+				mocks.namespacedClient.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any())
 			},
-			wantOut: "Deleting service broker \"ns-broker\" in space \"default\" asynchronously\n",
+			wantOut: "Deleting service broker \"ns-broker\" in Space \"default\" asynchronously\n",
 		},
 	}
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
 
 			args := mocks{
 				p: &config.KfParams{
-					Namespace: "default",
+					Space: "default",
 				},
 				clusterClient:    cluster.NewFakeClient(ctrl),
 				namespacedClient: namespaced.NewFakeClient(ctrl),
@@ -114,7 +113,11 @@ func TestNewDeleteServiceBrokerCommand(t *testing.T) {
 			}
 
 			buf := new(bytes.Buffer)
-			cmd := NewDeleteServiceBrokerCommand(args.p, args.clusterClient, args.namespacedClient)
+			cmd := NewDeleteServiceBrokerCommand(
+				args.p,
+				args.clusterClient,
+				args.namespacedClient,
+			)
 			cmd.SetOutput(buf)
 			cmd.SetArgs(tc.args)
 			_, actualErr := cmd.ExecuteC()

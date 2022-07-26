@@ -1,0 +1,17 @@
+<dl>
+<dt><code translate="no">--bool</code></dt>
+<dd><p>A zero boolean default.</p>
+</dd>
+<dt><code translate="no">--int=<var translate="no">int</var></code></dt>
+<dd><p>A zero int default.</p>
+</dd>
+<dt><code translate="no">--nilstrarr=<var translate="no">stringArray</var></code></dt>
+<dd><p>A nil array default.</p>
+</dd>
+<dt><code translate="no">--strarr=<var translate="no">stringArray</var></code></dt>
+<dd><p>An empty array default.</p>
+</dd>
+<dt><code translate="no">--string=<var translate="no">string</var></code></dt>
+<dd><p>A zero string default.</p>
+</dd>
+</dl>

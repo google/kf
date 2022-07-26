@@ -16,11 +16,13 @@ package utils
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 	"github.com/spf13/cobra"
 )
 
@@ -62,6 +64,105 @@ func ExampleAsyncFlags_IsSynchronous() {
 
 	// Output: Running sync? true
 	// Running sync? false
+}
+
+func callbackTrueAfter(n int) func() (bool, error) {
+	times := 0
+	return func() (bool, error) {
+		times += 1
+		if times >= n {
+			return true, nil
+		}
+		return false, nil
+	}
+}
+
+func TestAsyncFlags_WaitFor(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		ctx      func() (context.Context, context.CancelFunc)
+		action   string
+		callback func() (bool, error)
+	}
+	cases := []struct {
+		name    string
+		args    args
+		async   bool
+		wantW   string
+		wantErr error
+	}{
+		{
+			name: "polls until true",
+			args: args{
+				ctx: func() (context.Context, context.CancelFunc) {
+					return context.Background(), nil
+				},
+				action:   "waiting for true",
+				callback: callbackTrueAfter(3),
+			},
+			async: false,
+			wantW: "waiting for true...\nSuccess\n",
+		},
+		{
+			name: "times out with context",
+			args: args{
+				ctx: func() (context.Context, context.CancelFunc) {
+					return context.WithTimeout(context.Background(), 2*time.Millisecond)
+				},
+				action:   "waiting for true",
+				callback: func() (bool, error) { return false, nil },
+			},
+			async:   false,
+			wantW:   "waiting for true...\n",
+			wantErr: fmt.Errorf("waiting for true timed out"),
+		},
+		{
+
+			name: "returns error",
+			args: args{
+				ctx: func() (context.Context, context.CancelFunc) {
+					return context.Background(), nil
+				},
+				action:   "waiting for true",
+				callback: func() (bool, error) { return false, fmt.Errorf("error during action") },
+			},
+			async:   false,
+			wantW:   "waiting for true...\n",
+			wantErr: fmt.Errorf("error during action"),
+		},
+		{
+
+			name: "asynchronous",
+			args: args{
+				ctx: func() (context.Context, context.CancelFunc) {
+					return context.Background(), nil
+				},
+				action:   "waiting for true",
+				callback: func() (bool, error) { return false, fmt.Errorf("not invoked") },
+			},
+			async: true,
+			wantW: "waiting for true asynchronously\n",
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			flags := &AsyncFlags{
+				async: c.async,
+			}
+			w := &bytes.Buffer{}
+
+			ctx, cancel := c.args.ctx()
+			if cancel != nil {
+				defer cancel()
+			}
+			actualErr := flags.WaitFor(ctx, w, c.args.action, time.Millisecond, c.args.callback)
+			testutil.AssertErrorsEqual(t, c.wantErr, actualErr)
+
+			testutil.AssertEqual(t, "output", c.wantW, w.String())
+		})
+	}
 }
 
 func TestAsyncFlags_AwaitAndLog(t *testing.T) {
@@ -127,7 +228,7 @@ func TestAsyncFlags_AwaitAndLog(t *testing.T) {
 			actualErr := flags.AwaitAndLog(w, tc.args.action, tc.args.callback)
 			testutil.AssertErrorsEqual(t, actualErr, tc.wantErr)
 
-			testutil.AssertEqual(t, "output", w.String(), tc.wantW)
+			testutil.AssertEqual(t, "output", tc.wantW, w.String())
 		})
 	}
 }

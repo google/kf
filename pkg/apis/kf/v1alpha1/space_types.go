@@ -14,9 +14,32 @@
 
 package v1alpha1
 
-import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-import corev1 "k8s.io/api/core/v1"
-import duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
+import (
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
+
+	"github.com/google/kf/v2/pkg/apis/kf/config"
+	"knative.dev/pkg/apis"
+	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
+)
+
+const (
+	// NetworkPolicyLabel holds a label key for determining which default network
+	// policy will be applied to a Pod.
+	NetworkPolicyLabel = "kf.dev/networkpolicy"
+
+	// NetworkPolicyApp holds the NetworkPolicyLabel value for app policies.
+	NetworkPolicyApp = "app"
+
+	// NetworkPolicyBuild holds the NetworkPolicyLabel value for build policies.
+	NetworkPolicyBuild = "build"
+
+	// PermitAllNetworkPolicy is the key used to indcate all traffic is allowed.
+	PermitAllNetworkPolicy = "PermitAll"
+	// DenyAllNetworkPolicy is the key used to indcate all traffic is denied.
+	DenyAllNetworkPolicy = "DenyAll"
+)
 
 // +genclient
 // +genclient:nonNamespaced
@@ -36,50 +59,36 @@ type Space struct {
 	Status SpaceStatus `json:"status,omitempty"`
 }
 
+var _ apis.Validatable = (*Space)(nil)
+var _ apis.Defaultable = (*Space)(nil)
+
+// DefaultDomainOrBlank gets the default domain for the space if set, otherwise
+// blank.
+func (s *Space) DefaultDomainOrBlank() string {
+	for _, domain := range s.Status.NetworkConfig.Domains {
+		return domain.Domain
+	}
+
+	return ""
+}
+
 // SpaceSpec contains the specification for a space.
 type SpaceSpec struct {
-	// Security contains config for RBAC roles that will be created for the
-	// space.
+	// BuildConfig contains config for the build pipelines.
 	// +optional
-	Security SpaceSpecSecurity `json:"security,omitempty"`
+	BuildConfig SpaceSpecBuildConfig `json:"buildConfig,omitempty"`
 
-	// BuildpackBuild contains config for the build pipelines.
-	// Currently, this is the only way to build source -> container workflows, but
-	// in the future additional types may be added. For example DockerBuild or
-	// WebhookBuild to execute a build via webhook.
+	// RuntimeConfig contains settings for the app runtime environment.
 	// +optional
-	BuildpackBuild SpaceSpecBuildpackBuild `json:"buildpackBuild,omitempty"`
+	RuntimeConfig SpaceSpecRuntimeConfig `json:"runtimeConfig,omitempty"`
 
-	// Execution contains settings for the execution environment.
+	// NetworkConfig contains settings for the space's networking environment.
 	// +optional
-	Execution SpaceSpecExecution `json:"execution,omitempty"`
-
-	// SpaceSpecResourceLimits contains definitions for resource usage limits.
-	// +optional
-	ResourceLimits SpaceSpecResourceLimits `json:"resourceLimits,omitempty"`
+	NetworkConfig SpaceSpecNetworkConfig `json:"networkConfig,omitempty"`
 }
 
-// SpaceSpecSecurity holds fields for creating RBAC in the space.
-type SpaceSpecSecurity struct {
-	// NOTE: The false value for each field should be the default and safe.
-
-	// EnableDeveloperLogsAccess allows developers to access pod logging endpoints.
-	// +optional
-	EnableDeveloperLogsAccess bool `json:"enableDeveloperLogsAccess,omitempty"`
-
-	// BuildServiceAccount sets the service account that will be propagated to
-	// all builds.
-	// +optional
-	BuildServiceAccount string `json:"buildServiceAccount,omitempty"`
-}
-
-// SpaceSpecBuildpackBuild holds fields for managing building via buildpacks.
-type SpaceSpecBuildpackBuild struct {
-	// NOTE: The false value for each field should be the default and safe.
-
-	// BuilderImage is a buildpacks.io builder image.
-	BuilderImage string `json:"builderImage,omitempty"`
-
+// SpaceSpecBuildConfig holds fields for managing building.
+type SpaceSpecBuildConfig struct {
 	// ContainerRegistry holds the container registry that buildpack builds are
 	// stored in.
 	ContainerRegistry string `json:"containerRegistry,omitempty"`
@@ -90,36 +99,58 @@ type SpaceSpecBuildpackBuild struct {
 	// +patchMergeKey=name
 	// +patchStrategy=merge
 	Env []corev1.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
+
+	// DefaultToV3Stack tells kf whether it applications should default
+	// to using V3 stacks. If not supplied, the default value is taken from the
+	// config-defaults configmap.
+	//
+	// +nullable
+	// +optional
+	DefaultToV3Stack *bool `json:"defaultToV3Stack"`
+
+	// ServiceAccount is the service account that will be propagated to
+	// all builds.
+	// +optional
+	ServiceAccount string `json:"serviceAccount,omitempty"`
 }
 
-// SpaceSpecExecution contains settings for the execution environment.
-type SpaceSpecExecution struct {
+// SpaceSpecRuntimeConfig contains config for the actual applciation runtime
+// configuration for the space.
+type SpaceSpecRuntimeConfig struct {
 	// Env sets default environment variables on kf applications for the whole
 	// space.
-	// +optional
 	// +patchMergeKey=name
 	// +patchStrategy=merge
+	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
 
+	// NodeSelector sets the NodeSelector in the podSpec to invoke Node Assignment
+	// https://kubernetes.io/docs/tasks/configure-pod-container/assign-pods-nodes/
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+}
+
+// SpaceSpecNetworkConfig contains settings for the space's networking.
+type SpaceSpecNetworkConfig struct {
 	// Domains sets valid domains that can be used for routes in the space.
 	// +optional
 	// +patchMergeKey=name
 	// +patchStrategy=merge
 	Domains []SpaceDomain `json:"domains,omitempty" patchStrategy:"merge" patchMergeKey:"domain"`
+
+	// AppNetworkPolicy holds the default network policy for apps.
+	AppNetworkPolicy SpaceSpecNetworkConfigPolicy `json:"appNetworkPolicy,omitempty"`
+
+	// BuildNetworkPolicy holds the default network policy for builds.
+	BuildNetworkPolicy SpaceSpecNetworkConfigPolicy `json:"buildNetworkPolicy,omitempty"`
 }
 
-// SpaceSpecResourceLimits contains definitions for resource usage limits.
-type SpaceSpecResourceLimits struct {
-	// SpaceQuota holds the k8s ResourceQuota created for the whole space.
-	// For now, only one ResourceQuota per space is supported.
-	// Consider allowing multiple ResourceQuotas when more quota scopes are enabled in k8s
-	// +optional
-	SpaceQuota corev1.ResourceList `json:"spaceQuota,omitempty"`
-
-	// ResourceDefaults holds the k8s LimitRange created for the whole space,
-	// which sets default request/limit for resources per pod or container.
-	// +optional
-	ResourceDefaults []corev1.LimitRangeItem `json:"resourceDefaults,omitempty"`
+// SpaceSpecNetworkConfigPolicy holds the policy for a particular type.
+type SpaceSpecNetworkConfigPolicy struct {
+	// Ingress holds the default network policy for inbound traffic.
+	Ingress string `json:"ingress,omitempty"`
+	// Egress holds the default network policy for outbound traffic.
+	Egress string `json:"egress,omitempty"`
 }
 
 // SpaceDomain stores information about a domain available in a space.
@@ -128,10 +159,27 @@ type SpaceDomain struct {
 	// hostname and path for a route.
 	Domain string `json:"domain"`
 
-	// Default implies that this SpaceDomain is used when a domain is not
-	// specified. There can only be a single default set to true per space.
-	// NOTE: This may change in the future.
-	Default bool `json:"default,omitempty"`
+	// GatewayName is the name of the Istio Gateway supported by the domain.
+	// Values can include a Namespace as a prefix.
+	// Only the kf Namespace is allowed e.g. kf/some-gateway.
+	// See https://istio.io/docs/reference/config/networking/gateway/
+	GatewayName string `json:"gatewayName,omitempty"`
+}
+
+// StableDeduplicateSpaceDomainList removes SpaceDomain with duplicate domain fields
+// preserving the order of the input.
+func StableDeduplicateSpaceDomainList(domains []SpaceDomain) (out []SpaceDomain) {
+	known := sets.NewString()
+	for _, domain := range domains {
+		if known.Has(domain.Domain) {
+			continue
+		}
+
+		known.Insert(domain.Domain)
+		out = append(out, domain)
+	}
+
+	return
 }
 
 // SpaceStatus represents information about the status of a Space.
@@ -139,7 +187,90 @@ type SpaceStatus struct {
 	// Pull in the fields from Knative's duckv1beta1 status field.
 	duckv1beta1.Status `json:",inline"`
 
-	Quota corev1.ResourceQuotaStatus `json:"quota,omitempty"`
+	// RuntimeConfig contains the info necessary to configure the application
+	// runtime.
+	RuntimeConfig SpaceStatusRuntimeConfig `json:"runtimeConfig,omitempty"`
+
+	// NetworkConfig contains the info necessary to configure application
+	// networking.
+	NetworkConfig SpaceStatusNetworkConfig `json:"networkConfig,omitempty"`
+
+	// BuildConfig contains the info necessary to configure builds.
+	BuildConfig SpaceStatusBuildConfig `json:"buildConfig,omitempty"`
+
+	// IngressGateways contains the list of ingress gateways that could
+	// direct traffic into this Kf space.
+	IngressGateways []corev1.LoadBalancerIngress `json:"ingressGateways"`
+}
+
+// FindIngressIP gets the lexicographicaly first IP address from a the
+// listed ingress gateways if one exists.
+func (s *SpaceStatus) FindIngressIP() *string {
+	ips := sets.NewString()
+	for _, gateway := range s.IngressGateways {
+		if ip := gateway.IP; ip != "" {
+			ips.Insert(ip)
+		}
+	}
+
+	// List returns a sorted list.
+	orderedIPs := ips.List()
+
+	if len(orderedIPs) > 0 {
+		return &orderedIPs[0]
+	}
+
+	return nil
+}
+
+// SpaceStatusRuntimeConfig reflects the actual applciation runtime
+// configuration for the space.
+type SpaceStatusRuntimeConfig struct {
+	// Env sets default environment variables on kf applications for the whole
+	// space.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+}
+
+// SpaceStatusNetworkConfig reflects the actual Networking configuration for the
+// space.
+type SpaceStatusNetworkConfig struct {
+	// Domains sets valid domains that can be used for routes in the space.
+	// +optional
+	Domains []SpaceDomain `json:"domains,omitempty"`
+}
+
+// SpaceStatusBuildConfig reflects the actual build configuration for the
+// space.
+type SpaceStatusBuildConfig struct {
+	// BuildpacksV2 contains a list of V2 (Cloud Foundry) compatible buildpacks
+	// that will be available by builders in the space.
+	BuildpacksV2 config.BuildpackV2List `json:"buildpacksV2,omitempty"`
+
+	// StacksV2 contains a list of V2 (Cloud Foundry) compatible stacks
+	// that will be available by builders in the space.
+	StacksV2 config.StackV2List `json:"stacksV2,omitempty"`
+
+	// StacksV3 contains a list of V3 (Cloud Native Buildpacks) compatible stacks
+	// that will be available by builders in the space.
+	StacksV3 config.StackV3List `json:"stacksV3,omitempty"`
+
+	// Env contains additional build environment variables for the whole space.
+	// +optional
+	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// ServiceAccount is the service account that will be propagated to
+	// all builds.
+	// +optional
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+
+	// ContainerRegistry holds the container registry that buildpack builds are
+	// stored in.
+	ContainerRegistry string `json:"containerRegistry,omitempty"`
+
+	// DefaultToV3Stack tells kf whether it applications should default to using
+	// V3 stacks.
+	DefaultToV3Stack bool `json:"defaultToV3Stack"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

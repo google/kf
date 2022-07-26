@@ -18,8 +18,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"knative.dev/pkg/ptr"
@@ -86,29 +86,35 @@ func TestApplication_ToAppSpecInstances(t *testing.T) {
 			source:   Application{},
 			expected: v1alpha1.AppSpecInstances{},
 		},
-		"stopped autoscaled app": {
+		"stopped app": {
 			source: Application{
+				Instances: ptr.Int32(5),
 				KfApplicationExtension: KfApplicationExtension{
-					NoStart:  ptr.Bool(true),
-					MinScale: intPtr(2),
-					MaxScale: intPtr(300),
+					NoStart: ptr.Bool(true),
 				},
 			},
 			expected: v1alpha1.AppSpecInstances{
+				Stopped:  true,
+				Replicas: ptr.Int32(5),
+			},
+		},
+		"app for task": {
+			source: Application{
+				Task: ptr.Bool(true),
+			},
+			expected: v1alpha1.AppSpecInstances{
 				Stopped: true,
-				Min:     intPtr(2),
-				Max:     intPtr(300),
 			},
 		},
 		"started app with instances": {
 			source: Application{
-				Instances: intPtr(3),
+				Instances: ptr.Int32(3),
 				KfApplicationExtension: KfApplicationExtension{
 					NoStart: ptr.Bool(false),
 				},
 			},
 			expected: v1alpha1.AppSpecInstances{
-				Exactly: intPtr(3),
+				Replicas: ptr.Int32(3),
 			},
 		},
 	}
@@ -136,12 +142,12 @@ func TestApplication_ToHealthCheck(t *testing.T) {
 			expectErr: errors.New("unknown health check type foo, supported types are http and port"),
 		},
 		"process type": {
-			checkType: "process",
-			expectErr: errors.New("kf doesn't support the process health check type"),
+			checkType:   "process",
+			expectProbe: nil,
 		},
 		"none is process type": {
-			checkType: "none",
-			expectErr: errors.New("kf doesn't support the process health check type"),
+			checkType:   "none",
+			expectProbe: nil,
 		},
 		"http complete": {
 			checkType: "http",
@@ -150,7 +156,7 @@ func TestApplication_ToHealthCheck(t *testing.T) {
 			expectProbe: &corev1.Probe{
 				TimeoutSeconds:   int32(180),
 				SuccessThreshold: 1,
-				Handler: corev1.Handler{
+				ProbeHandler: corev1.ProbeHandler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Path: "/healthz",
 					},
@@ -161,7 +167,7 @@ func TestApplication_ToHealthCheck(t *testing.T) {
 			checkType: "http",
 			expectProbe: &corev1.Probe{
 				SuccessThreshold: 1,
-				Handler: corev1.Handler{
+				ProbeHandler: corev1.ProbeHandler{
 					HTTPGet: &corev1.HTTPGetAction{},
 				},
 			},
@@ -169,7 +175,7 @@ func TestApplication_ToHealthCheck(t *testing.T) {
 		"blank type uses port": {
 			expectProbe: &corev1.Probe{
 				SuccessThreshold: 1,
-				Handler: corev1.Handler{
+				ProbeHandler: corev1.ProbeHandler{
 					TCPSocket: &corev1.TCPSocketAction{},
 				},
 			},
@@ -184,7 +190,7 @@ func TestApplication_ToHealthCheck(t *testing.T) {
 			expectProbe: &corev1.Probe{
 				TimeoutSeconds:   int32(180),
 				SuccessThreshold: 1,
-				Handler: corev1.Handler{
+				ProbeHandler: corev1.ProbeHandler{
 					TCPSocket: &corev1.TCPSocketAction{},
 				},
 			},
@@ -193,7 +199,7 @@ func TestApplication_ToHealthCheck(t *testing.T) {
 			checkType: "port",
 			expectProbe: &corev1.Probe{
 				SuccessThreshold: 1,
-				Handler: corev1.Handler{
+				ProbeHandler: corev1.ProbeHandler{
 					TCPSocket: &corev1.TCPSocketAction{},
 				},
 			},
@@ -224,7 +230,7 @@ func TestApplication_ToHealthCheck(t *testing.T) {
 func TestApplication_ToContainer(t *testing.T) {
 	defaultHealthCheck := &corev1.Probe{
 		SuccessThreshold: 1,
-		Handler: corev1.Handler{
+		ProbeHandler: corev1.ProbeHandler{
 			TCPSocket: &corev1.TCPSocketAction{},
 		},
 	}
@@ -259,9 +265,12 @@ func TestApplication_ToContainer(t *testing.T) {
 				DiskQuota:       "1Gi",
 				Env:             map[string]string{"KEYMASTER": "GATEKEEPER"},
 				KfApplicationExtension: KfApplicationExtension{
-					Args:        []string{"foo", "bar"},
-					Entrypoint:  "bash",
-					EnableHTTP2: ptr.Bool(true),
+					Args:       []string{"foo", "bar"},
+					Entrypoint: "bash",
+					Ports: AppPortList{
+						{Port: 9000, Protocol: protocolHTTP2},
+						{Port: 2525, Protocol: protocolTCP},
+					},
 				},
 			},
 			expectContainer: corev1.Container{
@@ -269,7 +278,7 @@ func TestApplication_ToContainer(t *testing.T) {
 				Command: []string{"bash"},
 				ReadinessProbe: &corev1.Probe{
 					SuccessThreshold: 1,
-					Handler: corev1.Handler{
+					ProbeHandler: corev1.ProbeHandler{
 						HTTPGet: &corev1.HTTPGetAction{},
 					},
 				},
@@ -282,7 +291,10 @@ func TestApplication_ToContainer(t *testing.T) {
 						corev1.ResourceEphemeralStorage: resource.MustParse("1Gi"),
 					},
 				},
-				Ports: HTTP2ContainerPort(),
+				Ports: []corev1.ContainerPort{
+					{Name: "http2-9000", ContainerPort: 9000, Protocol: "TCP"},
+					{Name: "tcp-2525", ContainerPort: 2525, Protocol: "TCP"},
+				},
 			},
 		},
 	}
@@ -293,6 +305,53 @@ func TestApplication_ToContainer(t *testing.T) {
 
 			testutil.AssertErrorsEqual(t, tc.expectErr, actualErr)
 			testutil.AssertEqual(t, "container", tc.expectContainer, actualContainer)
+		})
+	}
+}
+
+func TestCFToSIUnits(t *testing.T) {
+	cases := map[string]struct {
+		input        string
+		expectOutput string
+	}{
+		"T to Ti": {
+			input:        "1T",
+			expectOutput: "1Ti",
+		},
+		"G to Gi": {
+			input:        "1G",
+			expectOutput: "1Gi",
+		},
+		"M to Mi": {
+			input:        "1M",
+			expectOutput: "1Mi",
+		},
+		"K to Ki": {
+			input:        "1K",
+			expectOutput: "1Ki",
+		},
+		"Ti is unchanged": {
+			input:        "1Ti",
+			expectOutput: "1Ti",
+		},
+		"Gi is unchanged": {
+			input:        "1Gi",
+			expectOutput: "1Gi",
+		},
+		"Mi is unchanged": {
+			input:        "1Mi",
+			expectOutput: "1Mi",
+		},
+		"Ki is unchanged": {
+			input:        "1Ki",
+			expectOutput: "1Ki",
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			actualOutput := CFToSIUnits(tc.input)
+			testutil.AssertEqual(t, "conversion", tc.expectOutput, actualOutput)
 		})
 	}
 }

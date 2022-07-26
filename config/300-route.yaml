@@ -12,36 +12,170 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
+  annotations:
+    operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: VERSION_PLACEHOLDER
   name: routes.kf.dev
 spec:
   group: kf.dev
-  version: v1alpha1
   names:
     kind: Route
     plural: routes
     singular: route
     categories:
-    - all
-    - kf
+      - all
+      - kf
   scope: Namespaced
-  subresources:
-    status: {}
-  additionalPrinterColumns:
-  - name: Host
-    type: string
-    JSONPath: .spec.hostname
-  - name: Domain
-    type: string
-    JSONPath: .spec.domain
-  - name: Path
-    type: string
-    JSONPath: .spec.path
-  - name: App
-    type: string
-    JSONPath: .spec.appName
-  - name: Age
-    type: date
-    JSONPath: .metadata.creationTimestamp
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      schema:
+        openAPIV3Schema:
+          description: Route is a mapping between a Hostname/Domain/Path combination and Apps that want to receive traffic from it.
+          type: object
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: RouteSpec contains the specification for a Route.
+              type: object
+              properties:
+                domain:
+                  description: Domain is the domain of the route (e.g, in hostname.example.com it would be example.com).
+                  type: string
+                hostname:
+                  description: Hostname is the hostname or subdomain of the route (e.g, in hostname.example.com it would be hostname).
+                  type: string
+                path:
+                  description: Path is the URL path of the route.
+                  type: string
+            status:
+              description: RouteStatus is the current configuration for a Route.
+              type: object
+              properties:
+                annotations:
+                  description: Annotations is additional Status fields for the Resource to save some additional State as well as convey more information to the user. This is roughly akin to Annotations on any k8s resource, just the reconciler conveying richer information outwards.
+                  type: object
+                  additionalProperties:
+                    type: string
+                appBindingDisplayNames:
+                  description: AppBindingDisplayNames is the list of DisplayNames in the Bindings field that belong to Apps.
+                  type: array
+                  items:
+                    type: string
+                bindings:
+                  description: Bindings is the list of bindings the RouteSpecFields matches.
+                  type: array
+                  items:
+                    description: RouteDestination represents enough information to route traffic from a source to a sink.
+                    type: object
+                    required:
+                      - port
+                      - serviceName
+                      - weight
+                    properties:
+                      port:
+                        description: Port is the port to send traffic to.
+                        type: integer
+                        format: int32
+                      serviceName:
+                        description: Service is the name of the service to send traffic to. With Apps, the service name is the App name.
+                        type: string
+                      weight:
+                        description: Weight is the proportion of traffic to send to this binding.
+                        type: integer
+                        format: int32
+                conditions:
+                  description: Conditions the latest available observations of a resource's current state.
+                  type: array
+                  items:
+                    description: 'Conditions defines a readiness condition for a Knative resource. See: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties'
+                    type: object
+                    required:
+                      - status
+                      - type
+                    properties:
+                      lastTransitionTime:
+                        description: LastTransitionTime is the last time the condition transitioned from one status to another. We use VolatileTime in place of metav1.Time to exclude this from creating equality.Semantic differences (all other things held constant).
+                        type: string
+                        format: date-time
+                      message:
+                        description: A human readable message indicating details about the transition.
+                        type: string
+                      reason:
+                        description: The reason for the condition's last transition.
+                        type: string
+                      severity:
+                        description: Severity with which to treat failures of this type of condition. When this is not specified, it defaults to Error.
+                        type: string
+                      status:
+                        description: Status of the condition, one of True, False, Unknown.
+                        type: string
+                      type:
+                        description: Type of condition.
+                        type: string
+                domain:
+                  description: Domain is the domain of the route (e.g, in hostname.example.com it would be example.com).
+                  type: string
+                hostname:
+                  description: Hostname is the hostname or subdomain of the route (e.g, in hostname.example.com it would be hostname).
+                  type: string
+                observedGeneration:
+                  description: ObservedGeneration is the 'Generation' of the Service that was last processed by the controller.
+                  type: integer
+                  format: int64
+                path:
+                  description: Path is the URL path of the route.
+                  type: string
+                routeService:
+                  description: RouteService is the Route Service instance bound to the route, if one exists.
+                  type: object
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                virtualservice:
+                  description: VirtualService is the VirtualService that is created with the Route.
+                  type: object
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+      additionalPrinterColumns:
+        - name: Host
+          type: string
+          jsonPath: .spec.hostname
+        - name: Domain
+          type: string
+          jsonPath: .spec.domain
+        - name: Path
+          type: string
+          jsonPath: .spec.path
+        - name: Apps
+          type: string
+          jsonPath: .status.appBindingDisplayNames
+        - name: RouteService
+          type: string
+          jsonPath: .status.routeService.name
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+        - name: Ready
+          type: string
+          jsonPath: ".status.conditions[?(@.type=='Ready')].status"
+        - name: Reason
+          type: string
+          jsonPath: ".status.conditions[?(@.type=='Ready')].reason"

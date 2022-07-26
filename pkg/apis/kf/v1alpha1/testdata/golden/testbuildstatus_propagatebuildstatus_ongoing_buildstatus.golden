@@ -1,0 +1,39 @@
+# Test:	TestBuildStatus_PropagateBuildStatus/ongoing
+# TaskRun:
+#   metadata:
+#     creationTimestamp: null
+#     name: some-build-name
+#   spec:
+#     resources:
+#       outputs:
+#       - name: IMAGE
+#         resourceSpec:
+#           params:
+#           - name: url
+#             value: some-container-image
+#           type: image
+#     serviceAccountName: ""
+#   status:
+#     conditions:
+#     - lastTransitionTime: null
+#       status: Unknown
+#       type: Succeeded
+#     podName: ""
+#     startTime: "1970-01-01T00:00:00Z"
+
+{
+    "conditions": [
+        {
+            "type": "Succeeded",
+            "status": "Unknown",
+            "lastTransitionTime": null
+        },
+        {
+            "type": "TaskRunReady",
+            "status": "Unknown",
+            "lastTransitionTime": null
+        }
+    ],
+    "buildName": "some-build-name",
+    "startTime": "1970-01-01T00:00:00Z"
+}

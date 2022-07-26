@@ -15,6 +15,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  annotations:
+    operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: VERSION_PLACEHOLDER
   name: webhook
   namespace: kf
 spec:
@@ -31,14 +35,14 @@ spec:
       labels:
         app: webhook
         role: webhook
-        serving.knative.dev/release: devel
+        kf.dev/release: VERSION_PLACEHOLDER
     spec:
       serviceAccountName: controller
       containers:
       - name: webhook
         # This is the Go import path for the binary that is containerized
         # and substituted here.
-        image: github.com/google/kf/cmd/webhook
+        image: ko://github.com/google/kf/v2/cmd/webhook
         resources:
           # Request 2x what we saw running e2e
           requests:
@@ -58,8 +62,10 @@ spec:
               fieldPath: metadata.namespace
         - name: CONFIG_LOGGING_NAME
           value: config-logging
-        - name: KNATIVE_SERVING_NAMESPACE
-          value: knative-serving
+        - name: METRICS_DOMAIN
+          value: kf.dev
+        - name: KUBERNETES_MIN_VERSION
+          value: v1.21.0
         securityContext:
           allowPrivilegeEscalation: false
       volumes:

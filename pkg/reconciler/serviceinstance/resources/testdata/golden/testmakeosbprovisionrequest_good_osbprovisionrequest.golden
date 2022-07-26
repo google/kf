@@ -1,0 +1,49 @@
+# Test:	TestMakeOSBProvisionRequest/good
+# namespace:
+#   metadata:
+#     creationTimestamp: null
+#     name: some-ns
+#     uid: 11111111-1111-1111-1111-111111111111
+#   spec: {}
+#   status: {}
+# paramsSecret:
+#   data:
+#     params: eyJmb28iOiJiYXIifQ==
+#   metadata:
+#     creationTimestamp: null
+# serviceInstance:
+#   metadata:
+#     creationTimestamp: null
+#     name: mydb
+#     namespace: test-ns
+#     uid: 00000000-0000-0000-0000-000008675309
+#   spec:
+#     osb:
+#       classUID: class-uid
+#       planUID: plan-uid
+#     parametersFrom: {}
+#     tags: null
+#   status:
+#     osbStatus: {}
+#     tags: null
+
+{
+    "instance_id": "00000000-0000-0000-0000-000008675309",
+    "accepts_incomplete": true,
+    "service_id": "class-uid",
+    "plan_id": "plan-uid",
+    "organization_guid": "11111111-1111-1111-1111-111111111111",
+    "space_guid": "11111111-1111-1111-1111-111111111111",
+    "parameters": {
+        "foo": "bar"
+    },
+    "context": {
+        "instance_name": "mydb",
+        "namespace": "test-ns",
+        "organization_guid": "11111111-1111-1111-1111-111111111111",
+        "organization_name": "some-ns",
+        "platform": "kf",
+        "space_guid": "11111111-1111-1111-1111-111111111111",
+        "space_name": "some-ns"
+    }
+}

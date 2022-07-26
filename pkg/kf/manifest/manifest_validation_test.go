@@ -16,9 +16,11 @@ package manifest
 
 import (
 	"context"
+	"math"
 	"testing"
 
-	"github.com/google/kf/pkg/kf/testutil"
+	kfapis "github.com/google/kf/v2/pkg/apis/kf"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 	"knative.dev/pkg/apis"
 )
 
@@ -63,23 +65,60 @@ func TestApplication_Validation(t *testing.T) {
 			},
 			want: apis.ErrMultipleOneOf("buildpack", "buildpacks"),
 		},
-		"min and instances": {
+		"good ports and routes": {
 			spec: Application{
-				Instances: intPtr(3),
 				KfApplicationExtension: KfApplicationExtension{
-					MinScale: intPtr(3),
+					Ports: AppPortList{
+						{Port: 8080, Protocol: protocolHTTP},
+						{Port: 8081, Protocol: protocolHTTP2},
+						{Port: 8082, Protocol: protocolTCP},
+					},
+				},
+				Routes: []Route{
+					{Route: "default"},
+					{Route: "explicit", AppPort: 8080},
 				},
 			},
-			want: apis.ErrMultipleOneOf("instances", "min-scale"),
+			want: nil,
 		},
-		"max and instances": {
+		"duplicate port": {
 			spec: Application{
-				Instances: intPtr(3),
 				KfApplicationExtension: KfApplicationExtension{
-					MaxScale: intPtr(3),
+					Ports: AppPortList{
+						{Port: 8080, Protocol: protocolHTTP},
+						{Port: 8080, Protocol: protocolHTTP2},
+					},
 				},
 			},
-			want: apis.ErrMultipleOneOf("instances", "max-scale"),
+			want: kfapis.ErrDuplicateValue(8080, "ports[1].port"),
+		},
+		"bad protocol": {
+			spec: Application{
+				KfApplicationExtension: KfApplicationExtension{
+					Ports: AppPortList{
+						{Port: 8080, Protocol: "foo"},
+					},
+				},
+			},
+			want: apis.ErrInvalidValue("must be one of: [http http2 tcp]", "ports[0].protocol"),
+		},
+		"bad port": {
+			spec: Application{
+				KfApplicationExtension: KfApplicationExtension{
+					Ports: AppPortList{
+						{Port: 80808080, Protocol: "tcp"},
+					},
+				},
+			},
+			want: apis.ErrOutOfBoundsValue(80808080, 1, math.MaxUint16, "ports[0].port"),
+		},
+		"route port missing": {
+			spec: Application{
+				Routes: []Route{
+					{Route: "missing-port", AppPort: 8080},
+				},
+			},
+			want: apis.ErrInvalidValue("must match a declared port", "routes[0].appPort"),
 		},
 	}
 

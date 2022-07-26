@@ -16,49 +16,66 @@ package servicebindings_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/apps"
-	"github.com/google/kf/pkg/kf/apps/fake"
-	"github.com/google/kf/pkg/kf/commands/config"
-	servicebindingscmd "github.com/google/kf/pkg/kf/commands/service-bindings"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	"github.com/google/kf/pkg/kf/testutil"
-	"github.com/spf13/cobra"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	appsfake "github.com/google/kf/v2/pkg/kf/apps/fake"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	configlogging "github.com/google/kf/v2/pkg/kf/commands/config/logging"
+	servicebindingscmd "github.com/google/kf/v2/pkg/kf/commands/service-bindings"
+	secretsfake "github.com/google/kf/v2/pkg/kf/secrets/fake"
+	serviceinstancebindingsfake "github.com/google/kf/v2/pkg/kf/serviceinstancebindings/fake"
+	"github.com/google/kf/v2/pkg/kf/testutil"
+	v1 "k8s.io/api/core/v1"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"knative.dev/pkg/ptr"
 )
 
-type appsCommandFactory func(p *config.KfParams, client apps.Client) *cobra.Command
+type fakes struct {
+	servicebindings *serviceinstancebindingsfake.FakeClient
+	secrets         *secretsfake.FakeClient
+	apps            *appsfake.FakeClient
+}
 
-type appsTest struct {
-	Args      []string
-	Setup     func(t *testing.T, f *fake.FakeClient)
-	Namespace string
+type bindingTest struct {
+	Args  []string
+	Setup func(*testing.T, fakes)
+	Space string
 
 	ExpectedErr     error
 	ExpectedStrings []string
 }
 
-func runAppsTest(t *testing.T, tc appsTest, newCommand appsCommandFactory) {
+func runBindingTest(t *testing.T, tc bindingTest) {
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
-	client := fake.NewFakeClient(ctrl)
+	sbClient := serviceinstancebindingsfake.NewFakeClient(ctrl)
+	secretClient := secretsfake.NewFakeClient(ctrl)
+	appsClient := appsfake.NewFakeClient(ctrl)
+
 	if tc.Setup != nil {
-		tc.Setup(t, client)
+		tc.Setup(t, fakes{
+			servicebindings: sbClient,
+			secrets:         secretClient,
+			apps:            appsClient,
+		})
 	}
 
 	buf := new(bytes.Buffer)
 	p := &config.KfParams{
-		Namespace: tc.Namespace,
+		Space: tc.Space,
 	}
+	ctx := configlogging.SetupLogger(context.Background(), buf)
 
-	cmd := newCommand(p, client)
+	cmd := servicebindingscmd.NewBindServiceCommand(p, sbClient, secretClient, appsClient)
 	cmd.SetOutput(buf)
 	cmd.SetArgs(tc.Args)
+	cmd.SetContext(ctx)
 	_, actualErr := cmd.ExecuteC()
 	if tc.ExpectedErr != nil || actualErr != nil {
 		testutil.AssertErrorsEqual(t, tc.ExpectedErr, actualErr)
@@ -69,66 +86,142 @@ func runAppsTest(t *testing.T, tc appsTest, newCommand appsCommandFactory) {
 }
 
 func TestNewBindServiceCommand(t *testing.T) {
-	cases := map[string]appsTest{
+	sampleApp := &v1alpha1.App{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "APP_NAME",
+		},
+		Spec: v1alpha1.AppSpec{},
+	}
+	ownerRefs := []metav1.OwnerReference{
+		{
+			APIVersion:         "kf.dev/v1alpha1",
+			Kind:               "App",
+			Name:               "APP_NAME",
+			Controller:         ptr.Bool(true),
+			BlockOwnerDeletion: ptr.Bool(true),
+		},
+	}
+
+	cases := map[string]bindingTest{
 		"wrong number of args": {
 			Args:        []string{},
 			ExpectedErr: errors.New("accepts 2 arg(s), received 0"),
 		},
 		"command params get passed correctly": {
-			Args:      []string{"APP_NAME", "SERVICE_INSTANCE", `--config={"ram_gb":4}`, "--binding-name=BINDING_NAME"},
-			Namespace: "custom-ns",
-			Setup: func(t *testing.T, f *fake.FakeClient) {
-				f.EXPECT().BindService("custom-ns", "APP_NAME", &v1alpha1.AppSpecServiceBinding{
-					Instance:    "SERVICE_INSTANCE",
-					Parameters:  json.RawMessage(`{"ram_gb":4}`),
-					BindingName: "BINDING_NAME",
+			Args:  []string{"APP_NAME", "SERVICE_INSTANCE", `-c={"ram_gb":4}`, "--binding-name=BINDING_NAME", "--timeout=30s"},
+			Space: "custom-ns",
+			Setup: func(t *testing.T, fakes fakes) {
+				bindingName := v1alpha1.MakeServiceBindingName("APP_NAME", "SERVICE_INSTANCE")
+				secretName := v1alpha1.MakeServiceBindingParamsSecretName("APP_NAME", "SERVICE_INSTANCE")
+				fakes.servicebindings.EXPECT().Create(gomock.Any(), "custom-ns", &v1alpha1.ServiceInstanceBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            bindingName,
+						Namespace:       "custom-ns",
+						OwnerReferences: ownerRefs,
+					},
+					Spec: v1alpha1.ServiceInstanceBindingSpec{
+						BindingType: v1alpha1.BindingType{
+							App: &v1alpha1.AppRef{
+								Name: "APP_NAME",
+							},
+						},
+						InstanceRef: v1.LocalObjectReference{
+							Name: "SERVICE_INSTANCE",
+						},
+						ParametersFrom: v1.LocalObjectReference{
+							Name: secretName,
+						},
+						BindingNameOverride:     "BINDING_NAME",
+						ProgressDeadlineSeconds: 30,
+					},
 				})
 
-				f.EXPECT().WaitForConditionServiceBindingsReadyTrue(gomock.Any(), "custom-ns", "APP_NAME", gomock.Any())
+				fakes.secrets.EXPECT().CreateParamsSecret(gomock.Any(), gomock.Any(), secretName, json.RawMessage(`{"ram_gb":4}`))
+				fakes.servicebindings.EXPECT().WaitForConditionReadyTrue(gomock.Any(), "custom-ns",
+					bindingName, gomock.Any())
+				fakes.apps.EXPECT().Get(gomock.Any(), "custom-ns", "APP_NAME").Return(sampleApp, nil)
 			},
+			ExpectedStrings: []string{"Success", "kf restart"},
 		},
 		"empty namespace": {
-			Args:        []string{"APP_NAME", "SERVICE_INSTANCE", `--config={"ram_gb":4}`, "--binding-name=BINDING_NAME"},
-			ExpectedErr: errors.New(utils.EmptyNamespaceError),
+			Args:        []string{"APP_NAME", "SERVICE_INSTANCE", `-c={"ram_gb":4}`, "--binding-name=BINDING_NAME"},
+			ExpectedErr: errors.New(config.EmptySpaceError),
 		},
 		"defaults config": {
-			Args:      []string{"APP_NAME", "SERVICE_INSTANCE"},
-			Namespace: "custom-ns",
-			Setup: func(t *testing.T, f *fake.FakeClient) {
-				f.EXPECT().BindService("custom-ns", "APP_NAME", &v1alpha1.AppSpecServiceBinding{
-					Instance:   "SERVICE_INSTANCE",
-					Parameters: json.RawMessage(`{}`),
+			Args:  []string{"APP_NAME", "SERVICE_INSTANCE"},
+			Space: "custom-ns",
+			Setup: func(t *testing.T, fakes fakes) {
+				bindingName := v1alpha1.MakeServiceBindingName("APP_NAME", "SERVICE_INSTANCE")
+				secretName := v1alpha1.MakeServiceBindingParamsSecretName("APP_NAME", "SERVICE_INSTANCE")
+				fakes.servicebindings.EXPECT().Create(gomock.Any(), "custom-ns", &v1alpha1.ServiceInstanceBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            bindingName,
+						Namespace:       "custom-ns",
+						OwnerReferences: ownerRefs,
+					},
+					Spec: v1alpha1.ServiceInstanceBindingSpec{
+						BindingType: v1alpha1.BindingType{
+							App: &v1alpha1.AppRef{
+								Name: "APP_NAME",
+							},
+						},
+						InstanceRef: v1.LocalObjectReference{
+							Name: "SERVICE_INSTANCE",
+						},
+						ParametersFrom: v1.LocalObjectReference{
+							Name: secretName,
+						},
+						ProgressDeadlineSeconds: v1alpha1.DefaultServiceInstanceBindingProgressDeadlineSeconds,
+					},
 				})
-
-				f.EXPECT().WaitForConditionServiceBindingsReadyTrue(gomock.Any(), "custom-ns", "APP_NAME", gomock.Any())
+				fakes.secrets.EXPECT().CreateParamsSecret(gomock.Any(), gomock.Any(), secretName, json.RawMessage("{}"))
+				fakes.servicebindings.EXPECT().WaitForConditionReadyTrue(gomock.Any(), "custom-ns",
+					bindingName, gomock.Any())
+				fakes.apps.EXPECT().Get(gomock.Any(), "custom-ns", "APP_NAME").Return(sampleApp, nil)
 			},
 		},
 		"bad config path": {
-			Args:        []string{"APP_NAME", "SERVICE_INSTANCE", `--config=/some/bad/path`},
-			Namespace:   "custom-ns",
+			Args:  []string{"APP_NAME", "SERVICE_INSTANCE", `-c=/some/bad/path`},
+			Space: "custom-ns",
+			Setup: func(t *testing.T, fakes fakes) {
+				fakes.apps.EXPECT().Get(gomock.Any(), "custom-ns", "APP_NAME").Return(sampleApp, nil)
+			},
 			ExpectedErr: errors.New("couldn't read file: open /some/bad/path: no such file or directory"),
 		},
 		"bad server call": {
-			Args:      []string{"APP_NAME", "SERVICE_INSTANCE"},
-			Namespace: "custom-ns",
-			Setup: func(t *testing.T, f *fake.FakeClient) {
-				f.EXPECT().BindService(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api-error"))
+			Args:  []string{"APP_NAME", "SERVICE_INSTANCE"},
+			Space: "custom-ns",
+			Setup: func(t *testing.T, fakes fakes) {
+				fakes.servicebindings.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api-error"))
+				fakes.apps.EXPECT().Get(gomock.Any(), "custom-ns", "APP_NAME").Return(sampleApp, nil)
 			},
 			ExpectedErr: errors.New("api-error"),
 		},
+		"app doesn't exist": {
+			Args:  []string{"APP_NAME", "SERVICE_INSTANCE"},
+			Space: "custom-ns",
+			Setup: func(t *testing.T, fakes fakes) {
+				fakes.apps.EXPECT().Get(gomock.Any(), "custom-ns", "APP_NAME").Return(nil, apierrs.NewNotFound(v1alpha1.Resource("apps"), "APP_NAME"))
+			},
+			ExpectedErr: errors.New("failed to get App for binding: apps.kf.dev \"APP_NAME\" not found"),
+		},
 		"async": {
-			Args:      []string{"--async", "APP_NAME", "SERVICE_INSTANCE"},
-			Namespace: "default",
-			Setup: func(t *testing.T, f *fake.FakeClient) {
-				f.EXPECT().BindService(gomock.Any(), gomock.Any(), gomock.Any())
+			Args:  []string{"--async", "APP_NAME", "SERVICE_INSTANCE"},
+			Space: "default",
+			Setup: func(t *testing.T, fakes fakes) {
+				fakes.secrets.EXPECT().CreateParamsSecret(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
+				fakes.servicebindings.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any())
+				fakes.apps.EXPECT().Get(gomock.Any(), "default", "APP_NAME").Return(sampleApp, nil)
 			},
 		},
 		"failed binding": {
-			Args:      []string{"APP_NAME", "SERVICE_INSTANCE"},
-			Namespace: "custom-ns",
-			Setup: func(t *testing.T, f *fake.FakeClient) {
-				f.EXPECT().BindService(gomock.Any(), gomock.Any(), gomock.Any())
-				f.EXPECT().WaitForConditionServiceBindingsReadyTrue(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("binding already exists"))
+			Args:  []string{"APP_NAME", "SERVICE_INSTANCE"},
+			Space: "custom-ns",
+			Setup: func(t *testing.T, fakes fakes) {
+				fakes.secrets.EXPECT().CreateParamsSecret(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
+				fakes.servicebindings.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any())
+				fakes.servicebindings.EXPECT().WaitForConditionReadyTrue(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("binding already exists"))
+				fakes.apps.EXPECT().Get(gomock.Any(), "custom-ns", "APP_NAME").Return(sampleApp, nil)
 			},
 			ExpectedErr: errors.New("bind failed: binding already exists"),
 		},
@@ -136,7 +229,7 @@ func TestNewBindServiceCommand(t *testing.T) {
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			runAppsTest(t, tc, servicebindingscmd.NewBindServiceCommand)
+			runBindingTest(t, tc)
 		})
 	}
 }

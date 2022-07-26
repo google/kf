@@ -15,47 +15,85 @@
 package apps
 
 import (
-	"github.com/google/kf/pkg/kf/apps"
-	"github.com/google/kf/pkg/kf/commands/completion"
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/describe"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
+	"fmt"
+	"io"
+
+	"github.com/MakeNowJust/heredoc"
+	"github.com/google/kf/v2/pkg/kf/apps"
+	"github.com/google/kf/v2/pkg/kf/commands/completion"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/describe"
+	"github.com/google/kf/v2/pkg/reconciler/app/resources"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // NewEnvCommand creates a Env command.
 func NewEnvCommand(p *config.KfParams, appClient apps.Client) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "env APP_NAME",
-		Short:   "List the names and values of the environment variables for an app",
+		Short:   "Print information about an App's environment variables.",
 		Example: `kf env myapp`,
 		Args:    cobra.ExactArgs(1),
-		Long: `The env command gets the names and values of developer managed
-		environment variables for an application.
+		Long: heredoc.Doc(`
+		The env command gets the names and values of developer managed
+		environment variables for an App.
 
-		This command does not include environment variables that are set by kf
-		such as VCAP_SERVICES or set by operators for all apps on the space.`,
+		Environment variables are evaluated in the following order with later values
+		overriding earlier ones with the same name:
+
+		1. Space (set by administrators)
+		1. App (set by developers)
+		1. System (set by Kf)
+
+		Environment variables containing variable substitution "$(...)" are
+		replaced at runtime by Kubernetes.
+		`) + heredoc.Doc(resources.RuntimeEnvVarDocs(resources.CFRunning)),
+		ValidArgsFunction: completion.AppCompletionFn(p),
+		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := utils.ValidateNamespace(p); err != nil {
+			if err := p.ValidateSpaceTargeted(); err != nil {
 				return err
 			}
 
 			appName := args[0]
-			cmd.SilenceUsage = true
 
-			app, err := appClient.Get(p.Namespace, appName)
+			app, err := appClient.Get(cmd.Context(), p.Space, appName)
 			if err != nil {
 				return err
 			}
 
-			kfapp := (*apps.KfApp)(app)
-			describe.EnvVars(cmd.OutOrStdout(), kfapp.GetEnvVars())
+			space, err := p.GetTargetSpace(cmd.Context())
+			if err != nil {
+				return err
+			}
+
+			envs := []struct {
+				name string
+				env  []corev1.EnvVar
+			}{
+				{name: "Space-Provided", env: space.Status.RuntimeConfig.Env},
+				{name: "User-Provided", env: (*apps.KfApp)(app).GetEnvVars()},
+				{name: "System-Provided", env: resources.BuildRuntimeEnvVars(resources.CFRunning, app)},
+			}
+
+			for _, env := range envs {
+				describe.SectionWriter(cmd.OutOrStdout(), env.name, func(w io.Writer) {
+					for _, e := range env.env {
+						value := e.Value
+
+						if e.ValueFrom != nil {
+							value = "[Resolved at runtime]"
+						}
+
+						fmt.Fprintf(w, "%s:\t%s\n", e.Name, value)
+					}
+				})
+			}
 
 			return nil
 		},
 	}
-
-	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 
 	return cmd
 }

@@ -1,0 +1,2 @@
+Version  Name           Build Image           Run Image               Description
+V3       google-golang  gcr.io/buildpacks/go  gcr.io/buildpacks/slim  A stack for golang by Google

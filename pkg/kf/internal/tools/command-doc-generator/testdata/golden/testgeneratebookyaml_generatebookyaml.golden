@@ -1,0 +1,10 @@
+toc:
+- path: /migrate/kf/docs/v2.2.0/cli/
+  section:
+  - path: /migrate/kf/docs/v2.2.0/cli/root-bar
+    title: root bar
+  - path: /migrate/kf/docs/v2.2.0/cli/root-bar-baz
+    title: root bar baz
+  - path: /migrate/kf/docs/v2.2.0/cli/root-foo
+    title: root foo
+  title: kf Command reference

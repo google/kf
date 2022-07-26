@@ -15,14 +15,14 @@
 package routes
 
 import (
-	kf "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
+	kf "github.com/google/kf/v2/pkg/client/kf/clientset/versioned/typed/kf/v1alpha1"
 )
 
-// ClientExtension holds additional functions that should be exposed by client.
+// ClientExtension holds additional functions that should be exposed by Client.
 type ClientExtension interface {
 }
 
-// NewClient creates a new route client.
+// NewClient creates a new Route client.
 func NewClient(kclient kf.KfV1alpha1Interface) Client {
 	return &coreClient{
 		kclient: kclient,

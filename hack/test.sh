@@ -30,12 +30,6 @@ trap finish EXIT
 
 if [ "${SKIP_INTEGRATION:-false}" = "true" ]; then
     echo "SKIP_INTEGRATION set to 'true'. Skipping integration tests..."
-    export DOCKER_REGISTRY=""
-else
-  if [ "${DOCKER_REGISTRY}" = "" ]; then
-    echo running integration tests
-    export DOCKER_REGISTRY="gcr.io/$(gcloud config get-value project)"
-  fi
 fi
 
 green() {
@@ -46,16 +40,14 @@ red() {
     echo -e "\033[31m$1\033[0m"
 }
 
-args="-v"
+args=()
 if [ "${RACE:-true}" = "true" ]; then
   echo enabling race
-  args="--race $args"
+  args+=("--race")
 fi
 
-if [ "x$@" = "x" ]; then
-  packages="./..."
+if [ "x$*" = "x" ]; then
+  go test -timeout 30m "${args[@]}" ./...
 else
-  packages="$@"
+  go test -timeout 30m "${args[@]}" "$@"
 fi
-
-go test -timeout 30m $args $packages

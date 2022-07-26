@@ -15,16 +15,14 @@
 package apps
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
-	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/testutil"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"knative.dev/pkg/apis"
-	duckv1alpha1 "knative.dev/pkg/apis/duck/v1alpha1"
-	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
 
 func ExampleKfApp() {
@@ -136,31 +134,203 @@ func ExampleKfApp_GetNamespace() {
 	// Output: my-ns
 }
 
-func ExampleKfApp_GetHealthCheck() {
-	app := NewKfApp()
-	app.SetContainer(corev1.Container{
-		ReadinessProbe: &corev1.Probe{
-			TimeoutSeconds: 34,
+func rwb(host, domain, path string) v1alpha1.RouteWeightBinding {
+	return v1alpha1.RouteWeightBinding{
+		RouteSpecFields: v1alpha1.RouteSpecFields{
+			Hostname: host,
+			Domain:   domain,
+			Path:     path,
 		},
-	})
-
-	fmt.Println("Timeout:", app.GetHealthCheck().TimeoutSeconds)
-
-	// Output: Timeout: 34
+	}
 }
 
-func ExampleKfApp_GetClusterURL() {
-	app := NewKfApp()
-	app.Status.Address = &duckv1alpha1.Addressable{
-		Addressable: duckv1beta1.Addressable{
-			URL: &apis.URL{
-				Host:   "app-a.some-namespace.svc.cluster.local",
-				Scheme: "http",
+func TestKfApp_MergeRoute(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		routes     []v1alpha1.RouteWeightBinding
+		merge      v1alpha1.RouteWeightBinding
+		wantRoutes []v1alpha1.RouteWeightBinding
+	}{
+		"empty start": {
+			routes: nil,
+			merge:  rwb("test", "example.com", "/"),
+			wantRoutes: []v1alpha1.RouteWeightBinding{
+				rwb("test", "example.com", "/"),
+			},
+		},
+		"appends new": {
+			routes: []v1alpha1.RouteWeightBinding{
+				rwb("test", "example.com", "/foo"),
+			},
+			merge: rwb("test", "example.com", "/bar"),
+			wantRoutes: []v1alpha1.RouteWeightBinding{
+				rwb("test", "example.com", "/foo"),
+				rwb("test", "example.com", "/bar"),
+			},
+		},
+		"removes duplicates": {
+			routes: []v1alpha1.RouteWeightBinding{
+				rwb("test", "example.com", "/foo"),
+				rwb("test", "example.com", "/foo"),
+			},
+			merge: rwb("test", "example.com", "/foo"),
+			wantRoutes: []v1alpha1.RouteWeightBinding{
+				rwb("test", "example.com", "/foo"),
 			},
 		},
 	}
 
-	fmt.Println(app.GetClusterURL())
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			app := NewKfApp()
+			app.Spec.Routes = tc.routes
 
-	// Output: http://app-a.some-namespace.svc.cluster.local
+			app.MergeRoute(tc.merge)
+
+			testutil.AssertEqual(t, "after", tc.wantRoutes, app.Spec.Routes)
+		})
+	}
+}
+
+func TestKfApp_RemoveRoute(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		routes     []v1alpha1.RouteWeightBinding
+		remove     v1alpha1.RouteWeightBinding
+		wantRoutes []v1alpha1.RouteWeightBinding
+	}{
+		"from nil routes": {
+			routes:     nil,
+			remove:     rwb("test", "example.com", "/"),
+			wantRoutes: nil,
+		},
+		"does not exist": {
+			routes: []v1alpha1.RouteWeightBinding{
+				rwb("a", "example.com", "/"),
+				rwb("b", "example.com", "/"),
+			},
+			remove: rwb("c", "example.com", "/"),
+			wantRoutes: []v1alpha1.RouteWeightBinding{
+				rwb("a", "example.com", "/"),
+				rwb("b", "example.com", "/"),
+			},
+		},
+		"multiple": {
+			routes: []v1alpha1.RouteWeightBinding{
+				rwb("c", "example.com", "/"),
+				rwb("b", "example.com", "/"),
+				rwb("c", "example.com", "/"),
+			},
+			remove: rwb("c", "example.com", "/"),
+			wantRoutes: []v1alpha1.RouteWeightBinding{
+				rwb("b", "example.com", "/"),
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			app := NewKfApp()
+			app.Spec.Routes = tc.routes
+
+			app.RemoveRoute(context.Background(), tc.remove)
+
+			testutil.AssertEqual(t, "after", tc.wantRoutes, app.Spec.Routes)
+		})
+	}
+}
+
+func TestKfApp_RemoveRoutesForClaim(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		routes     []v1alpha1.RouteWeightBinding
+		claim      v1alpha1.RouteSpecFields
+		wantRoutes []v1alpha1.RouteWeightBinding
+	}{
+		"from nil routes": {
+			routes:     nil,
+			claim:      rwb("test", "example.com", "/").RouteSpecFields,
+			wantRoutes: nil,
+		},
+		"does not exist": {
+			routes: []v1alpha1.RouteWeightBinding{
+				rwb("a", "example.com", "/"),
+				rwb("b", "example.com", "/"),
+			},
+			claim: rwb("c", "example.com", "/").RouteSpecFields,
+			wantRoutes: []v1alpha1.RouteWeightBinding{
+				rwb("a", "example.com", "/"),
+				rwb("b", "example.com", "/"),
+			},
+		},
+		"multiple": {
+			routes: []v1alpha1.RouteWeightBinding{
+				rwb("c", "example.com", "/"),
+				rwb("b", "example.com", "/"),
+				rwb("c", "example.com", "/"),
+			},
+			claim: rwb("c", "example.com", "/").RouteSpecFields,
+			wantRoutes: []v1alpha1.RouteWeightBinding{
+				rwb("b", "example.com", "/"),
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			app := NewKfApp()
+			app.Spec.Routes = tc.routes
+
+			app.RemoveRoutesForClaim(tc.claim)
+
+			testutil.AssertEqual(t, "after", tc.wantRoutes, app.Spec.Routes)
+		})
+	}
+}
+
+func TestKfApp_HasMatchingRoutes(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		routes []v1alpha1.RouteWeightBinding
+		claim  v1alpha1.RouteSpecFields
+		want   bool
+	}{
+		"from nil routes": {
+			routes: nil,
+			claim:  rwb("test", "example.com", "/").RouteSpecFields,
+			want:   false,
+		},
+		"does not exist": {
+			routes: []v1alpha1.RouteWeightBinding{
+				rwb("a", "example.com", "/"),
+				rwb("b", "example.com", "/"),
+			},
+			claim: rwb("c", "example.com", "/").RouteSpecFields,
+			want:  false,
+		},
+		"multiple": {
+			routes: []v1alpha1.RouteWeightBinding{
+				rwb("c", "example.com", "/"),
+				rwb("b", "example.com", "/"),
+				rwb("c", "example.com", "/"),
+			},
+			claim: rwb("c", "example.com", "/").RouteSpecFields,
+			want:  true,
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			app := NewKfApp()
+			app.Spec.Routes = tc.routes
+
+			got := app.HasMatchingRoutes(tc.claim)
+
+			testutil.AssertEqual(t, "matched", tc.want, got)
+		})
+	}
 }

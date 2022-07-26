@@ -15,48 +15,44 @@
 package services
 
 import (
-	"context"
 	"fmt"
-	"time"
 
-	"github.com/google/kf/pkg/kf/commands/config"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	"github.com/google/kf/pkg/kf/services"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/internal/genericcli"
+	"github.com/google/kf/v2/pkg/kf/serviceinstances"
 	"github.com/spf13/cobra"
 )
 
 // NewDeleteServiceCommand allows users to delete service instances.
-func NewDeleteServiceCommand(p *config.KfParams, client services.Client) *cobra.Command {
-	var async utils.AsyncFlags
+func NewDeleteServiceCommand(p *config.KfParams, client serviceinstances.Client) *cobra.Command {
+	cmd := genericcli.NewDeleteByNameCommand(
+		serviceinstances.NewResourceInfo(),
+		p,
+		genericcli.WithDeleteByNameCommandName("delete-service"),
+		genericcli.WithDeleteByNameAliases([]string{"ds"}),
+		genericcli.WithDeleteByNameAdditionalLongText(`
+		You should delete all bindings before deleting a service. If you don't, the
+		service will wait for that to occur before deleting.
+		`),
+	)
 
-	deleteCmd := &cobra.Command{
-		Use:     "delete-service SERVICE_INSTANCE",
-		Aliases: []string{"ds"},
-		Short:   "Delete a service instance",
-		Example: "kf delete-service my-service",
-		Args:    cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			instanceName := args[0]
+	originalRunE := cmd.RunE
+	cmd.RunE = func(c *cobra.Command, args []string) error {
+		ctx := c.Context()
+		resourceName := args[0]
 
-			cmd.SilenceUsage = true
+		mutator := func(instance *v1alpha1.ServiceInstance) error {
+			instance.Spec.DeleteRequests++
+			return nil
+		}
 
-			if err := utils.ValidateNamespace(p); err != nil {
-				return err
-			}
+		if _, err := client.Transform(ctx, p.Space, resourceName, mutator); err != nil {
+			return fmt.Errorf("Failed to update unbinding requests: %s", err)
+		}
 
-			if err := client.Delete(p.Namespace, instanceName); err != nil {
-				return err
-			}
-
-			action := fmt.Sprintf("Deleting service instance %q in space %q", instanceName, p.Namespace)
-			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
-				_, err := client.WaitForDeletion(context.Background(), p.Namespace, instanceName, 1*time.Second)
-				return err
-			})
-		},
+		return originalRunE(c, args)
 	}
 
-	async.Add(deleteCmd)
-
-	return deleteCmd
+	return cmd
 }

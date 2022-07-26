@@ -1,0 +1,7 @@
+Status:
+  Ready:
+    Ready:  Unknown
+  Conditions:
+    Type            Status  Updated    Message  Reason
+    NamespaceReady  False   <unknown>           
+    SecretReady     True    <unknown>           

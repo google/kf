@@ -16,14 +16,144 @@ package v1alpha1
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"knative.dev/pkg/apis"
+	"knative.dev/pkg/ptr"
 )
+
+func TestAppSpec_SetDefaults(t *testing.T) {
+	t.Parallel()
+
+	// Build
+	ctx := apis.WithinUpdate(context.TODO(), &App{
+		Spec: AppSpec{
+			Build: AppSpecBuild{
+				UpdateRequests: 1,
+			},
+		},
+	})
+
+	spec := AppSpec{
+		Routes: []RouteWeightBinding{
+			// Empty weight
+			{},
+		},
+	}
+	spec.SetDefaults(ctx)
+
+	// Build
+	{
+		// Both build specs are nil and therefore equal. The UpdateRequests
+		// should simply be copied.
+		testutil.AssertEqual(t, "Build", spec.Build.UpdateRequests, 1)
+	}
+
+	// Template
+	{
+		// AppSpecTemplate.SetDefaults adds a default container if Containers
+		// is empty.
+		testutil.AssertEqual(t, "Template", len(spec.Template.Spec.Containers), 1)
+	}
+
+	// Instances
+	{
+		// AppSpecInstances.SetDefaults will set an empty Replicas to 1.
+		testutil.AssertEqual(t, "Instances", spec.Instances.Replicas, ptr.Int32(1))
+	}
+
+	// Routes
+	{
+		// AppSpecRoutes.SetDefaults will set an empty weight to the default
+		// value.
+		testutil.AssertEqual(t, "Routes", spec.Routes[0].Weight, ptr.Int32(1))
+	}
+}
+
+func TestAppSpec_SetDefaults_updateRequests(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		old     *AppSpec
+		current AppSpec
+		want    AppSpec
+	}{
+		"update autoincrement": {
+			old: &AppSpec{
+				Template: AppSpecTemplate{},
+			},
+			current: AppSpec{
+				Template: AppSpecTemplate{},
+				Instances: AppSpecInstances{
+					Replicas: ptr.Int32(1),
+				},
+			},
+			want: AppSpec{
+				Template: AppSpecTemplate{
+					UpdateRequests: 1,
+				},
+			},
+		},
+		"update with increment": {
+			old: &AppSpec{
+				Template: AppSpecTemplate{},
+			},
+			current: AppSpec{
+				Template: AppSpecTemplate{
+					UpdateRequests: 2,
+				},
+			},
+			want: AppSpec{
+				Template: AppSpecTemplate{
+					UpdateRequests: 2,
+				},
+			},
+		},
+		"update with no change": {
+			old: &AppSpec{
+				Template: AppSpecTemplate{},
+				Instances: AppSpecInstances{
+					Replicas: ptr.Int32(1),
+				},
+			},
+			current: AppSpec{
+				Template: AppSpecTemplate{
+					UpdateRequests: 2,
+				},
+				Instances: AppSpecInstances{
+					Replicas: ptr.Int32(1),
+				},
+			},
+			want: AppSpec{
+				Template: AppSpecTemplate{
+					UpdateRequests: 2,
+				},
+				Instances: AppSpecInstances{
+					Replicas: ptr.Int32(1),
+				},
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			ctx := context.TODO()
+			if tc.old != nil {
+				ctx = apis.WithinUpdate(ctx, &App{
+					Spec: *tc.old,
+				})
+			}
+
+			actual := tc.current
+			actual.Template.SetDefaults(ctx, &actual)
+
+			testutil.AssertEqual(t, "defaulted", tc.want.Template.UpdateRequests, actual.Template.UpdateRequests)
+		})
+	}
+}
 
 func TestAppSpec_SetDefaults_BlankContainer(t *testing.T) {
 	t.Parallel()
@@ -32,7 +162,7 @@ func TestAppSpec_SetDefaults_BlankContainer(t *testing.T) {
 	app.SetDefaults(context.Background())
 
 	testutil.AssertEqual(t, "len(spec.template.spec.containers)", 1, len(app.Spec.Template.Spec.Containers))
-	testutil.AssertEqual(t, "spec.template.spec.containers.name", "user-container", app.Spec.Template.Spec.Containers[0].Name)
+	testutil.AssertEqual(t, "spec.template.spec.containers.name", DefaultUserContainerName, app.Spec.Template.Spec.Containers[0].Name)
 }
 
 func TestAppSpec_SetDefaults_ResourceLimits_AlreadySet(t *testing.T) {
@@ -69,6 +199,8 @@ func TestAppSpec_SetDefaults_ResourceLimits_AlreadySet(t *testing.T) {
 }
 
 func TestSetKfAppContainerDefaults(t *testing.T) {
+	t.Parallel()
+
 	defaultContainer := &corev1.Container{}
 	SetKfAppContainerDefaults(context.Background(), defaultContainer)
 
@@ -76,19 +208,11 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 		template *corev1.Container
 		expected *corev1.Container
 	}{
-		"default everything": {
+		"default everything except ReadinessProbe": {
 			template: &corev1.Container{},
 			expected: &corev1.Container{
-				Name: "user-container",
-				ReadinessProbe: &corev1.Probe{
-					TimeoutSeconds:   DefaultHealthCheckProbeTimeout,
-					PeriodSeconds:    DefaultHealthCheckPeriodSeconds,
-					FailureThreshold: DefaultHealthCheckFailureThreshold,
-					SuccessThreshold: 1,
-					Handler: corev1.Handler{
-						TCPSocket: &corev1.TCPSocketAction{},
-					},
-				},
+				Name:           DefaultUserContainerName,
+				ReadinessProbe: nil,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
 						corev1.ResourceCPU:              defaultCPU,
@@ -105,7 +229,7 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 					TimeoutSeconds:   DefaultHealthCheckProbeTimeout,
 					PeriodSeconds:    DefaultHealthCheckPeriodSeconds,
 					FailureThreshold: DefaultHealthCheckFailureThreshold,
-					Handler: corev1.Handler{
+					ProbeHandler: corev1.ProbeHandler{
 						HTTPGet: &corev1.HTTPGetAction{},
 					},
 				},
@@ -116,7 +240,7 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 					TimeoutSeconds:   DefaultHealthCheckProbeTimeout,
 					PeriodSeconds:    DefaultHealthCheckPeriodSeconds,
 					FailureThreshold: DefaultHealthCheckFailureThreshold,
-					Handler: corev1.Handler{
+					ProbeHandler: corev1.ProbeHandler{
 						HTTPGet: &corev1.HTTPGetAction{Path: DefaultHealthCheckProbeEndpoint},
 					},
 				},
@@ -130,7 +254,7 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 					TimeoutSeconds:   180,
 					PeriodSeconds:    180,
 					FailureThreshold: 300,
-					Handler: corev1.Handler{
+					ProbeHandler: corev1.ProbeHandler{
 						HTTPGet: &corev1.HTTPGetAction{Path: "/healthz"},
 					},
 				},
@@ -141,7 +265,7 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 					TimeoutSeconds:   180,
 					PeriodSeconds:    180,
 					FailureThreshold: 300,
-					Handler: corev1.Handler{
+					ProbeHandler: corev1.ProbeHandler{
 						HTTPGet: &corev1.HTTPGetAction{Path: "/healthz"},
 					},
 				},
@@ -182,84 +306,128 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 	}
 }
 
-func TestAppSpec_SetSourceDefaults(t *testing.T) {
+func TestAppSpec_SetBuildDefaults(t *testing.T) {
+	t.Parallel()
+
+	buildpackBuildSpec := &BuildSpec{
+		BuildTaskRef: buildpackV3BuildTaskRef(),
+	}
+
+	dockerfileBuildSpec := &BuildSpec{
+		BuildTaskRef: dockerfileBuildTaskRef(),
+	}
+
 	cases := map[string]struct {
-		old     *SourceSpec
-		current SourceSpec
-		want    SourceSpec
+		old     *AppSpec
+		current AppSpec
+		want    AppSpec
 	}{
 		"update autoincrement": {
-			old: &SourceSpec{
-				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			old: &AppSpec{
+				Build: AppSpecBuild{
+					Spec: buildpackBuildSpec,
+				},
 			},
-			current: SourceSpec{
-				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			current: AppSpec{
+				Build: AppSpecBuild{
+					Spec: dockerfileBuildSpec,
+				},
 			},
-			want: SourceSpec{
-				UpdateRequests: 1,
-				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			want: AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 1,
+					Spec:           dockerfileBuildSpec,
+				},
 			},
 		},
 		"update with increment": {
-			old: &SourceSpec{
-				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			old: &AppSpec{
+				Build: AppSpecBuild{
+					Spec: buildpackBuildSpec,
+				},
 			},
-			current: SourceSpec{
-				UpdateRequests: 2,
-				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			current: AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 2,
+					Spec:           dockerfileBuildSpec,
+				},
 			},
-			want: SourceSpec{
-				UpdateRequests: 2,
-				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			want: AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 2,
+					Spec:           dockerfileBuildSpec,
+				},
 			},
 		},
-		"update no source change": {
-			old: &SourceSpec{
-				UpdateRequests: 3,
-				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+		"update no build change": {
+			old: &AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 3,
+					Spec:           buildpackBuildSpec,
+				},
 			},
-			current: SourceSpec{
-				UpdateRequests: 3,
-				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			current: AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 3,
+					Spec:           buildpackBuildSpec,
+				},
 			},
-			want: SourceSpec{
-				UpdateRequests: 3,
-				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			want: AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 3,
+					Spec:           buildpackBuildSpec,
+				},
 			},
 		},
 		"update post missing updaterequests": {
-			old: &SourceSpec{
-				UpdateRequests: 3,
-				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			old: &AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 3,
+					Spec:           buildpackBuildSpec,
+				},
 			},
-			current: SourceSpec{
-				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			current: AppSpec{
+				Build: AppSpecBuild{
+					Spec: dockerfileBuildSpec,
+				},
 			},
-			want: SourceSpec{
-				UpdateRequests: 4,
-				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			want: AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 4,
+					Spec:           dockerfileBuildSpec,
+				},
 			},
 		},
 		"kf restage": {
-			old: &SourceSpec{
-				UpdateRequests: 3,
-				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			old: &AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 3,
+					Spec:           buildpackBuildSpec,
+				},
 			},
-			current: SourceSpec{
-				UpdateRequests: 4,
-				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			current: AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 4,
+					Spec:           buildpackBuildSpec,
+				},
 			},
-			want: SourceSpec{
-				UpdateRequests: 4,
-				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+			want: AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 4,
+					Spec:           buildpackBuildSpec,
+				},
 			},
 		},
 		"create": {
-			current: SourceSpec{
-				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			current: AppSpec{
+				Build: AppSpecBuild{
+					Spec: buildpackBuildSpec,
+				},
 			},
-			want: SourceSpec{
-				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			want: AppSpec{
+				Build: AppSpecBuild{
+					Spec: buildpackBuildSpec,
+				},
 			},
 		},
 	}
@@ -269,58 +437,77 @@ func TestAppSpec_SetSourceDefaults(t *testing.T) {
 			ctx := context.TODO()
 			if tc.old != nil {
 				ctx = apis.WithinUpdate(ctx, &App{
-					Spec: AppSpec{
-						Source: *tc.old,
-					},
+					Spec: *tc.old,
 				})
 			}
 
-			actual := &AppSpec{Source: tc.current}
-			actual.SetSourceDefaults(ctx)
+			actual := tc.current
+			actual.SetBuildDefaults(ctx)
 
-			testutil.AssertEqual(t, "defaulted", tc.want, actual.Source)
+			testutil.AssertEqual(t, "defaulted", tc.want.Build, actual.Build)
 		})
 	}
 }
 
-func TestAppSpec_SetServiceBindingsDefaults(t *testing.T) {
+func TestAppSpec_SetRouteDefaults(t *testing.T) {
+	t.Parallel()
+
 	cases := map[string]struct {
-		old     *[]AppSpecServiceBinding
-		current []AppSpecServiceBinding
-		want    []AppSpecServiceBinding
+		routes []RouteWeightBinding
+		want   []RouteWeightBinding
 	}{
-		"binding": {
-			current: []AppSpecServiceBinding{
-				{
-					Instance: "instance",
-				},
+		"blank defaults": {
+			routes: []RouteWeightBinding{
+				{},
 			},
-			want: []AppSpecServiceBinding{
+			want: []RouteWeightBinding{
 				{
-					BindingName: "instance",
-					Instance:    "instance",
-					Parameters:  json.RawMessage("null"),
+					RouteSpecFields: RouteSpecFields{
+						Path: "/",
+					},
+					Weight: &defaultRouteWeight,
 				},
 			},
 		},
-		"binding update": {
-			old: &[]AppSpecServiceBinding{
+
+		"populated gets no defaults": {
+			routes: []RouteWeightBinding{
 				{
-					BindingName: "some-binding",
-					Instance:    "instance",
-					Parameters:  json.RawMessage("null"),
+					RouteSpecFields: RouteSpecFields{
+						Hostname: "host",
+						Domain:   "domain",
+						Path:     "/foo",
+					},
+					Weight: ptr.Int32(42),
 				},
 			},
-			current: []AppSpecServiceBinding{
+			want: []RouteWeightBinding{
 				{
-					Instance: "instance",
+					RouteSpecFields: RouteSpecFields{
+						Hostname: "host",
+						Domain:   "domain",
+						Path:     "/foo",
+					},
+					Weight: ptr.Int32(42),
 				},
 			},
-			want: []AppSpecServiceBinding{
+		},
+
+		"duplicates get merged": {
+			routes: []RouteWeightBinding{
 				{
-					BindingName: "instance",
-					Instance:    "instance",
-					Parameters:  json.RawMessage("null"),
+					RouteSpecFields: RouteSpecFields{Path: "/foo"},
+					Weight:          ptr.Int32(2),
+				},
+				{
+					RouteSpecFields: RouteSpecFields{Path: "/foo"},
+					Weight:          ptr.Int32(2),
+				},
+			},
+			want: []RouteWeightBinding{
+				{
+					RouteSpecFields: RouteSpecFields{Path: "/foo"},
+					Weight:          ptr.Int32(4),
 				},
 			},
 		},
@@ -328,19 +515,57 @@ func TestAppSpec_SetServiceBindingsDefaults(t *testing.T) {
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			ctx := context.TODO()
-			if tc.old != nil {
-				ctx = apis.WithinUpdate(ctx, &App{
-					Spec: AppSpec{
-						ServiceBindings: *tc.old,
-					},
-				})
+			appSpec := &AppSpec{
+				Routes: tc.routes,
 			}
 
-			actual := &AppSpec{ServiceBindings: tc.current}
-			actual.SetServiceBindingDefaults(ctx)
+			appSpec.SetRouteDefaults(context.Background())
 
-			testutil.AssertEqual(t, "defaulted", tc.want, actual.ServiceBindings)
+			testutil.AssertEqual(t, "spec", tc.want, appSpec.Routes)
+		})
+	}
+}
+
+func TestAppSpecInstances_SetDefaults(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		spec AppSpecInstances
+		want AppSpecInstances
+	}{
+		"defers to replicas": {
+			spec: AppSpecInstances{
+				Replicas:          ptr.Int32(99),
+				DeprecatedExactly: ptr.Int32(101),
+			},
+			want: AppSpecInstances{
+				Replicas: ptr.Int32(99),
+			},
+		},
+		"copies exactly to replicas": {
+			spec: AppSpecInstances{
+				Replicas:          nil,
+				DeprecatedExactly: ptr.Int32(99),
+			},
+			want: AppSpecInstances{
+				Replicas: ptr.Int32(99),
+			},
+		},
+		"defaults to 1 replica": {
+			spec: AppSpecInstances{
+				Replicas:          nil,
+				DeprecatedExactly: nil,
+			},
+			want: AppSpecInstances{
+				Replicas: ptr.Int32(1),
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			tc.spec.SetDefaults(context.Background())
+			testutil.AssertEqual(t, "AppSpecInstances", tc.want, tc.spec)
 		})
 	}
 }

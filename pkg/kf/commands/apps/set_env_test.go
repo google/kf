@@ -16,24 +16,24 @@ package apps
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/internal/envutil"
-	"github.com/google/kf/pkg/kf/apps"
-	"github.com/google/kf/pkg/kf/apps/fake"
-	"github.com/google/kf/pkg/kf/commands/config"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	"github.com/google/kf/pkg/kf/testutil"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/internal/envutil"
+	"github.com/google/kf/v2/pkg/kf/apps"
+	"github.com/google/kf/v2/pkg/kf/apps/fake"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 )
 
 func TestSetEnvCommand(t *testing.T) {
 	t.Parallel()
 
 	for tn, tc := range map[string]struct {
-		Namespace       string
+		Space           string
 		Args            []string
 		ExpectedStrings []string
 		ExpectedErr     error
@@ -45,32 +45,29 @@ func TestSetEnvCommand(t *testing.T) {
 		},
 		"setting variables fails": {
 			Args:        []string{"app-name", "NAME", "VALUE"},
-			Namespace:   "some-namespace",
-			ExpectedErr: errors.New("failed to set env var on app: some-error"),
+			Space:       "some-namespace",
+			ExpectedErr: errors.New("failed to set environment variable on App: some-error"),
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform(gomock.Any(), "app-name", gomock.Any()).Return(nil, errors.New("some-error"))
+				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), "app-name", gomock.Any()).Return(nil, errors.New("some-error"))
 			},
 		},
 		"namespace is not provided": {
 			Args:        []string{"app-name", "NAME", "VALUE"},
-			ExpectedErr: errors.New(utils.EmptyNamespaceError),
-			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform("some-namespace", "app-name", gomock.Any())
-			},
+			ExpectedErr: errors.New(config.EmptySpaceError),
 		},
 		"custom namespace": {
-			Args:      []string{"app-name", "NAME", "VALUE"},
-			Namespace: "some-namespace",
+			Args:  []string{"app-name", "NAME", "VALUE"},
+			Space: "some-namespace",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform("some-namespace", "app-name", gomock.Any())
+				fake.EXPECT().Transform(gomock.Any(), "some-namespace", "app-name", gomock.Any())
 				fake.EXPECT().WaitForConditionKnativeServiceReadyTrue(gomock.Any(), "some-namespace", "app-name", gomock.Any())
 			},
 		},
 		"sets values": {
-			Args:      []string{"app-name", "NAME", "VALUE"},
-			Namespace: "some-namespace",
+			Args:  []string{"app-name", "NAME", "VALUE"},
+			Space: "some-namespace",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform(gomock.Any(), "app-name", gomock.Any()).Do(func(namespace, appName string, mutator apps.Mutator) {
+				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), "app-name", gomock.Any()).Do(func(ctx context.Context, namespace, appName string, mutator apps.Mutator) {
 					out := &v1alpha1.App{}
 					err := mutator(out)
 					testutil.AssertNil(t, "mutator err", err)
@@ -83,10 +80,10 @@ func TestSetEnvCommand(t *testing.T) {
 			},
 		},
 		"async call does not wait": {
-			Args:      []string{"app-name", "NAME", "VALUE", "--async"},
-			Namespace: "some-namespace",
+			Args:  []string{"app-name", "NAME", "VALUE", "--async"},
+			Space: "some-namespace",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any())
+				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 			},
 		},
 	} {
@@ -100,7 +97,7 @@ func TestSetEnvCommand(t *testing.T) {
 
 			buf := new(bytes.Buffer)
 			p := &config.KfParams{
-				Namespace: tc.Namespace,
+				Space: tc.Space,
 			}
 
 			cmd := NewSetEnvCommand(p, fake)
@@ -115,7 +112,6 @@ func TestSetEnvCommand(t *testing.T) {
 			testutil.AssertContainsAll(t, buf.String(), tc.ExpectedStrings)
 			testutil.AssertEqual(t, "SilenceUsage", true, cmd.SilenceUsage)
 
-			ctrl.Finish()
 		})
 	}
 }

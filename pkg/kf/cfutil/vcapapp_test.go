@@ -17,21 +17,36 @@ package cfutil_test
 import (
 	"fmt"
 
-	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/cfutil"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/cfutil"
 )
 
 func ExampleCreateVcapApplication() {
 	app := &v1alpha1.App{}
 	app.Name = "my-app"
 	app.Namespace = "my-ns"
+	app.UID = "12345"
+	app.Status.Routes = []v1alpha1.AppRouteStatus{{URL: "app.example.com"}}
 
-	env, err := cfutil.CreateVcapApplication(app)
-	if err != nil {
-		panic(err)
-	}
+	envMap := cfutil.CreateVcapApplication(app)
 
-	fmt.Println("Name:", env.Name, "Value:", env.Value)
+	fmt.Println("VCAP_APPLICATION values:")
+	fmt.Println("application_id:", envMap["application_id"])
+	fmt.Println("application_name:", envMap["application_name"])
+	fmt.Println("name:", envMap["name"])
+	fmt.Println("application_uris:", envMap["application_uris"])
+	fmt.Println("uris:", envMap["uris"])
+	fmt.Println("space_name:", envMap["space_name"])
+	fmt.Println("process_id:", envMap["process_id"])
+	fmt.Println("process_type:", envMap["process_type"])
 
-	// Output: Name: VCAP_APPLICATION Value: {"application_name":"my-app","name":"my-app","space_name":"my-ns"}
+	// Output: VCAP_APPLICATION values:
+	// application_id: 12345
+	// application_name: my-app
+	// name: my-app
+	// application_uris: [app.example.com]
+	// uris: [app.example.com]
+	// space_name: my-ns
+	// process_id: 12345
+	// process_type: web
 }

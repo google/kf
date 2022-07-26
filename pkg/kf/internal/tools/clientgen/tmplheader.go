@@ -17,7 +17,7 @@ package clientgen
 import (
 	"text/template"
 
-	"github.com/google/kf/pkg/kf/internal/tools/generator"
+	"github.com/google/kf/v2/pkg/kf/internal/tools/generator"
 )
 
 var headerTemplate = template.Must(template.New("").Funcs(generator.TemplateFuncs()).Parse(`
@@ -32,11 +32,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"strings"
 	"time"
 
-	"knative.dev/pkg/kmp"
 	{{ if .SupportsConditions }}"knative.dev/pkg/apis"
 	corev1 "k8s.io/api/core/v1"{{ end }}
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

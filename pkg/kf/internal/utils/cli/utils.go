@@ -15,25 +15,25 @@
 package utils
 
 import (
+	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"net/http/httputil"
 	"os"
+	"strings"
+	"unicode"
 
-	"github.com/google/kf/pkg/kf/commands/config"
-	cserving "github.com/google/kf/third_party/knative-serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
-	serving "github.com/google/kf/third_party/knative-serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
+	"github.com/MakeNowJust/heredoc"
+	"github.com/fatih/color"
+	"github.com/google/kf/v2/pkg/kf/commands/group"
 	"github.com/segmentio/textio"
-	"k8s.io/client-go/rest"
-)
-
-const (
-	EmptyNamespaceError = "no space targeted, use 'kf target --space SPACE' to target a space"
+	"github.com/spf13/cobra"
+	"knative.dev/pkg/logging"
 )
 
 // ConfigErr is used to indicate that the returned error is due to a user's
@@ -52,25 +52,6 @@ func (e ConfigErr) Error() string {
 func ConfigError(err error) bool {
 	_, ok := err.(ConfigErr)
 	return ok
-}
-
-// KfParams stores everything needed to interact with the user and Knative.
-type KfParams struct {
-	Output    io.Writer
-	Namespace string
-}
-
-// GetServingConfig returns the serving interface.
-func GetServingConfig() cserving.ServingV1alpha1Interface {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		log.Fatalf("failed to get in cluster config: %s", err)
-	}
-	client, err := serving.NewForConfig(config)
-	if err != nil {
-		log.Fatalf("failed to setup serving client: %s", err)
-	}
-	return client
 }
 
 type Config struct {
@@ -104,14 +85,6 @@ func InBuildParseConfig() Config {
 	}
 }
 
-// ValidateNamespace validate non-empty namespace param
-func ValidateNamespace(p *config.KfParams) error {
-	if p.Namespace == "" {
-		return errors.New(EmptyNamespaceError)
-	}
-	return nil
-}
-
 func parseCommandLine() (args []string, flags map[string][]string) {
 	if len(os.Args) != 3 {
 		log.Fatalf("invalid number of arguments for container: %#v", os.Args)
@@ -127,40 +100,167 @@ func parseCommandLine() (args []string, flags map[string][]string) {
 }
 
 // CreateProxy creates a proxy to the specified gateway with the specified host in the request header.
-func CreateProxy(w io.Writer, host, gateway string) *httputil.ReverseProxy {
-	// TODO (#698): use color package instead of color code
-	logger := log.New(w, fmt.Sprintf("\033[34m[%s via %s]\033[0m ", host, gateway), log.Ltime)
+func CreateProxy(w io.Writer, host, gateway string, overrideHeader http.Header) *httputil.ReverseProxy {
+	fgBlue := color.New(color.FgBlue)
+	logger := log.New(w, fgBlue.Sprintf("[%s via %s] ", host, gateway), log.Ltime)
+	director := CreateProxyDirector(host, gateway, overrideHeader)
 
 	return &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
-			req.Host = host
-			req.URL.Scheme = "http"
-			req.URL.Host = gateway
-
+			director(req)
 			logger.Printf("%s %s\n", req.Method, req.URL.RequestURI())
 		},
 		ErrorLog: logger,
 	}
 }
 
+// CreateProxyDirector creates a function that modifies requests being sent to a
+// http.RoundTripper so the request is redirected to an IP other than what the
+// domain specifies.
+func CreateProxyDirector(host, gateway string, overrideHeader http.Header) func(*http.Request) {
+	return func(req *http.Request) {
+		req.Host = host
+		req.URL.Scheme = "http"
+		req.URL.Host = gateway
+
+		for k, v := range overrideHeader {
+			req.Header[k] = v
+		}
+	}
+}
+
 // PrintCurlExamples lists example HTTP requests the user can send.
-func PrintCurlExamples(w io.Writer, listener net.Listener, host, gateway string) {
-	fmt.Fprintf(w, "Forwarding requests from %s to %s with host %s\n", listener.Addr(), gateway, host)
-	fmt.Fprintln(w, "Example GET:")
-	fmt.Fprintf(w, "  curl %s\n", listener.Addr())
-	fmt.Fprintln(w, "Example POST:")
-	fmt.Fprintf(w, "  curl --request POST %s --data \"POST data\"\n", listener.Addr())
-	fmt.Fprintln(w, "Browser link:")
-	fmt.Fprintf(w, "  http://%s\n", listener.Addr())
-	fmt.Fprintln(w)
+func PrintCurlExamples(ctx context.Context, listener net.Listener, host, gateway string) {
+	logger := logging.FromContext(ctx)
+	logger.Infof("Forwarding requests from %s to %s with host %s", listener.Addr(), gateway, host)
+	logger.Info("Example GET:")
+	logger.Infof("  curl %s", listener.Addr())
+	logger.Info("Example POST:")
+	logger.Infof("  curl --request POST %s --data \"POST data\"", listener.Addr())
+	logger.Info("Browser link:")
+	logger.Infof("  http://%s", listener.Addr())
 }
 
 // PrintCurlExamplesNoListener prints CURL examples against the real gateway.
-func PrintCurlExamplesNoListener(w io.Writer, host, gateway string) {
-	fmt.Fprintf(w, "Requests can be sent to %s with host %s\n", gateway, host)
-	fmt.Fprintln(w, "Example GET:")
-	fmt.Fprintf(w, "  curl -H \"Host: %s\" http://%s\n", host, gateway)
-	fmt.Fprintln(w, "Example POST:")
-	fmt.Fprintf(w, "  curl --request POST -H \"Host: %s\" http://%s --data \"POST data\"\n", host, gateway)
-	fmt.Fprintln(w)
+func PrintCurlExamplesNoListener(ctx context.Context, host, gateway string) {
+	logger := logging.FromContext(ctx)
+	logger.Infof("Requests can be sent to %s with host %s", gateway, host)
+	logger.Info("Example GET:")
+	logger.Infof("  curl -H \"Host: %s\" http://%s", host, gateway)
+	logger.Info("Example POST:")
+	logger.Infof("  curl --request POST -H \"Host: %s\" http://%s --data \"POST data\"", host, gateway)
+}
+
+// ParseJSONOrFile parses the value as JSON if it's valid or else it tries to
+// read the value as a file on the filesystem.
+func ParseJSONOrFile(jsonOrFile string) (json.RawMessage, error) {
+	if json.Valid([]byte(jsonOrFile)) {
+		return AssertJSONMap([]byte(jsonOrFile))
+	}
+
+	contents, err := ioutil.ReadFile(jsonOrFile)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't read file: %v", err)
+	}
+
+	result, err := AssertJSONMap(contents)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't parse %s as JSON: %v", jsonOrFile, err)
+	}
+
+	return result, nil
+}
+
+// AssertJSONMap asserts that the string is a JSON map.
+func AssertJSONMap(jsonString []byte) (json.RawMessage, error) {
+	p := make(map[string]interface{})
+	if err := json.Unmarshal([]byte(jsonString), &p); err != nil {
+		return nil, fmt.Errorf("value must be a JSON map, got: %q", jsonString)
+	}
+	return json.RawMessage(jsonString), nil
+}
+
+// SplitTags parses a string of tags into a list by splitting the string by whitespace and commas.
+func SplitTags(tagsStr string) []string {
+	f := func(c rune) bool {
+		return unicode.IsSpace(c) || c == ','
+	}
+	return strings.FieldsFunc(tagsStr, f)
+}
+
+// JoinHeredoc joins documentation that was defined in-line by removing leading
+// whitespace and joining blocks of text with two newlines.
+func JoinHeredoc(docstrings ...string) string {
+	var normalized []string
+	for _, doc := range docstrings {
+		trimmed := strings.TrimSpace(heredoc.Doc(doc))
+		if trimmed == "" {
+			continue
+		}
+
+		normalized = append(normalized, trimmed)
+	}
+
+	return strings.Join(normalized, "\n\n")
+}
+
+// PreviewCommandGroup returns a CommandGroup that has a [PREVIEW] prefix. It
+// will alter each command to have a PersistentPreRunE that notes that it is
+// in preview.
+func PreviewCommandGroup(name string, cmds ...*cobra.Command) group.CommandGroup {
+	// Wrap the preview commands with a warning message.
+	for _, cmd := range cmds {
+		addPreviewWarning(cmd, previewWarning)
+	}
+
+	return group.CommandGroup{
+		Name:     "[PREVIEW] " + name,
+		Commands: cmds,
+	}
+}
+
+const (
+	previewWarning      = "This command and feature is in preview and can change in future releases."
+	experimentalWarning = "This command and feature is an experiment and can change in future releases."
+)
+
+func addPreviewWarning(cmd *cobra.Command, tmpl string) {
+	var origRunE func(*cobra.Command, []string) error
+	switch {
+	case cmd.PersistentPreRunE != nil:
+		origRunE = cmd.PersistentPreRunE
+	case cmd.PersistentPreRun != nil:
+		origRun := cmd.PersistentPreRun
+		origRunE = func(innerCommand *cobra.Command, args []string) error {
+			origRun(innerCommand, args)
+			return nil
+		}
+		cmd.PersistentPreRun = nil
+	default:
+		origRunE = func(*cobra.Command, []string) error {
+			// NOP
+			return nil
+		}
+	}
+
+	cmd.PersistentPreRunE = func(innerCmd *cobra.Command, args []string) error {
+		ctx := innerCmd.Context()
+		logging.FromContext(ctx).Warn(tmpl)
+		return origRunE(innerCmd, args)
+	}
+}
+
+// ExperimentalCommandGroup returns a CommandGroup that has a [EXPERIMENTAL]
+// prefix. It will alter each command to have a PersistentPreRunE that notes
+// that it is an experiment.
+func ExperimentalCommandGroup(name string, cmds ...*cobra.Command) group.CommandGroup {
+	// Wrap the preview commands with a warning message.
+	for _, cmd := range cmds {
+		addPreviewWarning(cmd, experimentalWarning)
+	}
+
+	return group.CommandGroup{
+		Name:     "[EXPERIMENTAL] " + name,
+		Commands: cmds,
+	}
 }

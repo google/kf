@@ -15,5 +15,4 @@
 // Package routes provides a way of managing a v1alpha1.Route.
 package routes
 
-//go:generate go run ../internal/tools/option-builder/option-builder.go --pkg routes ../internal/tools/clientgen/common-options.yml zz_generated.clientoptions.go
 //go:generate go run ../internal/tools/clientgen/genclient.go client.yml

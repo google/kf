@@ -1,0 +1,468 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This is assumed to be ran from the root directory so that it has all the
+# source code. Run it as follows:
+#
+# ```sh
+# gcloud builds submit . \
+# --config=cmd/generate-release/cloudbuild.yaml \
+# --substitutions=_RELEASE_BUCKET=<GCP BUCKET>,_VERSION=<VERSION>
+# ```
+#
+# *NOTE* replace `<GCP BUCKET>` with your own bucket, and `<VERSION>` with the
+# desired version.
+
+substitutions:
+  _VERSION: 'develop' #
+  _GIT_SHA: ''        # Required
+  _EXTRA_TAG: ''      # Defaults to _VERSION
+  _RELEASE_BUCKET: '' # Required
+  _RELEASE_FOLDER: '' # Defaults to _VERSION
+  _KO_IMAGE: 'gcr.io/kf-build-images/ko:latest'
+  _CLOUDSDK_IMAGE: 'gcr.io/kf-build-images/cloud-sdk:alpine'
+  _GOLANG_IMAGE: 'gcr.io/kf-build-images/golang:1.17'
+  _BUILDPACK_WRAPPER_GOLANG_IMAGE: 'gcr.io/kf-build-images/golang:1.15'
+
+timeout: '1800s'
+
+options:
+  machineType: 'N1_HIGHCPU_8'
+
+steps:
+- id: check substitutions
+  entrypoint: bash
+  name: "${_KO_IMAGE}"
+  args:
+  - '-euc'
+  - |
+    if [ -z "${_VERSION}" ]; then
+      echo "_VERSION is empty"
+      exit 1
+    fi
+    if [ -z "${_RELEASE_BUCKET}" ]; then
+      echo "_RELEASE_BUCKET is empty"
+      exit 1
+    fi
+    if [ -z "${_GIT_SHA}" ]; then
+      echo "_GIT_SHA is empty"
+      exit 1
+    fi
+    FOLDER="${_RELEASE_FOLDER}"
+    if [ -z "$${FOLDER}" ]; then
+      echo "_RELEASE_FOLDER is empty. Using _VERSION"
+      FOLDER="${_VERSION}"
+    fi
+
+    TAGS=("${_VERSION}")
+    if [ -n "${_EXTRA_TAG}" ]; then
+      TAGS+=("${_EXTRA_TAG}")
+    fi
+
+    mkdir -p /workspace/substitutions
+    rm -fr /workspace/substitutions/*
+
+    echo "${_VERSION}" > /workspace/substitutions/version
+    echo "${_GIT_SHA}" > /workspace/substitutions/git_sha
+    for TAG in "$${TAGS[@]}"; do
+      echo "$${TAG}" >> /workspace/substitutions/tags
+    done
+    echo "${_RELEASE_BUCKET}" > /workspace/substitutions/release_bucket
+    echo "$${FOLDER}" > /workspace/substitutions/release_folder
+
+    echo '_VERSION="${_VERSION}"'
+    echo '_GIT_SHA="${_GIT_SHA}"'
+    echo "_TAGS=\"$${TAGS[*]}\""
+    echo "_RELEASE_FOLDER=\"$${FOLDER}\""
+    echo '_RELEASE_BUCKET="${_RELEASE_BUCKET}"'
+
+- id: setup workspace
+  name: "${_CLOUDSDK_IMAGE}"
+  entrypoint: bash
+  args:
+  - '-euxc'
+  - |
+    mkdir -p /workspace/bin/
+    cd /workspace
+
+    GIT_SHA="$(</workspace/substitutions/git_sha)"
+
+    echo "Checking out $${GIT_SHA}..."
+    git checkout "$${GIT_SHA}"
+
+- id: go mod vendor
+  name: "${_GOLANG_IMAGE}"
+  dir: /workspace
+  waitFor: ['setup workspace']
+  entrypoint: go
+  env:
+  - "GOPROXY=https://proxy.golang.org"
+  - "GOSUMDB=sum.golang.org"
+  - "GO111MODULE=on"
+  - "CGO_ENABLED=0"
+  args: ["mod", "vendor"]
+
+- id: operator go mod vendor
+  name: "${_GOLANG_IMAGE}"
+  dir: /workspace/operator
+  waitFor: ['setup workspace']
+  entrypoint: go
+  env:
+  - "GOPROXY=https://proxy.golang.org"
+  - "GOSUMDB=sum.golang.org"
+  - "GO111MODULE=on"
+  - "CGO_ENABLED=0"
+  args: ["mod", "vendor"]
+
+- id: build third party image
+  waitFor: ["go mod vendor", "operator go mod vendor"]
+  name: "${_CLOUDSDK_IMAGE}"
+  dir: /workspace
+  entrypoint: bash
+  args:
+  - '-euxc'
+  - |
+    mapfile -t TAGS < /workspace/substitutions/tags
+    IMAGES=()
+    for TAG in "$${TAGS[@]}"; do
+      IMAGES+=("-t" "gcr.io/${PROJECT_ID}/kf-thirdparty:$${TAG}")
+    done
+    docker build \
+      -f ./cmd/generate-release/scripts/Dockerfile.thirdparty \
+      "$${IMAGES[@]}" .
+
+- id: push third party image
+  waitFor: ["build third party image"]
+  name: "${_CLOUDSDK_IMAGE}"
+  dir: /workspace
+  entrypoint: bash
+  args:
+  - '-euxc'
+  - |
+    mapfile -t TAGS < /workspace/substitutions/tags
+    for TAG in "$${TAGS[@]}"; do
+      docker push "gcr.io/${PROJECT_ID}/kf-thirdparty:$${TAG}"
+    done
+
+- id: generate v2 lifecycle image artifacts
+  name: "${_KO_IMAGE}"
+  dir: /workspace
+  waitFor: ['push third party image']
+  env:
+  - "GO111MODULE=on"
+  - "GOPROXY=https://proxy.golang.org"
+  - "GOSUMDB=sum.golang.org"
+  - "CGO_ENABLED=0"
+  entrypoint: 'bash'
+  args:
+  - '-euxc'
+  - |
+    # Compile the builder and launcher and place them in the kodata folder.
+    rm -rf ./third_party/forked/v2-buildpack-lifecycle/installer/kodata
+    mkdir -p ./third_party/forked/v2-buildpack-lifecycle/installer/kodata
+
+    pushd ./third_party/forked/v2-buildpack-lifecycle
+    go build -o ./installer/kodata/builder ./builder
+    go build -o ./installer/kodata/launcher ./launcher
+    popd
+
+    # Place these in the vendor directory as well. ko can pull from either, so
+    # to cover our bases, we'll copy it to both.
+    cp -r \
+      ./third_party/forked/v2-buildpack-lifecycle/installer/kodata \
+      vendor/code.cloudfoundry.org/buildpackapplifecycle/installer/kodata
+
+- id: generate Kf Release
+  name: "${_KO_IMAGE}"
+  dir: /workspace
+  waitFor: ['push third party image']
+  env:
+  - "GO111MODULE=on"
+  - "GOPROXY=https://proxy.golang.org"
+  - "GOSUMDB=sum.golang.org"
+  - "CGO_ENABLED=0"
+  entrypoint: 'bash'
+  args:
+  - '-euxc'
+  - |
+    VERSION="$(</workspace/substitutions/version)"
+
+    export CLOUDSDK_CORE_PROJECT=${PROJECT_ID}
+    export KO_DOCKER_REPO=gcr.io/${PROJECT_ID}
+
+    echo "defaultBaseImage: gcr.io/${PROJECT_ID}/kf-thirdparty:$${VERSION}" > .ko.yaml
+
+    # Test the main directories to force go mod to update everything.
+    # go test ./cmd/...
+    sed -i "s|PROJECT_PLACEHOLDER|${PROJECT_ID}|g" config/config-defaults.yaml
+    /builder/ko.bash resolve --filename config | sed "s/VERSION_PLACEHOLDER/$${VERSION}/" > /workspace/bin/kf.yaml
+
+    # Append empty config-secrets to kf release.
+    # The Operator need this to exist so the configmap transformers can do their work.
+    cat << EOF >> /workspace/bin/kf.yaml
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      annotations:
+        operator.knative.dev/mode: Reconcile
+      name: config-secrets
+      namespace: kf
+    data:
+      wi.googleProjectID: ""
+    EOF
+
+- id: generate kf Operator Release
+  name: "${_KO_IMAGE}"
+  dir: /workspace/operator
+  waitFor: ['generate Kf Release']
+  env:
+  - "GO111MODULE=on"
+  - "GOPROXY=https://proxy.golang.org"
+  - "GOSUMDB=sum.golang.org"
+  - "CGO_ENABLED=0"
+  entrypoint: 'bash'
+  args:
+  - '-euxc'
+  - |
+    VERSION="$(</workspace/substitutions/version)"
+
+    export CLOUDSDK_CORE_PROJECT=${PROJECT_ID}
+    export KO_DOCKER_REPO=gcr.io/${PROJECT_ID}
+
+    echo "defaultBaseImage: gcr.io/distroless/static:nonroot" > .ko.yaml
+
+    # Move kf release to the Operator, so that the Operator will install the current version of Kf.
+    kf_folder="/workspace/operator/cmd/manager/kodata/kf"
+
+    # Assume kf version won't be higher than v999999.9.9 for a long time.
+    top_version="999999.9.9"
+    # Version regular expression
+    rx='^v?([0-9]+\.){2}(\*|[0-9]+)(.*)?$'
+    kf_version=${_VERSION}
+    if [[ ! $kf_version =~ $rx ]]; then
+          kf_version=${top_version}
+    fi
+    # Get major version
+    # e.g. kf_version=v2.3.2, target_version=2.3
+    IFS='.'
+    read -ra version_numbers <<< "${kf_version}"
+    major="${version_numbers[0]}"
+    minor="${version_numbers[1]}"
+    target_version="${major:1}.${minor}"
+
+    target_dir="${kf_folder}/${target_version}"
+    echo "target_dir:${target_dir}"
+    rm -rf "${target_dir}"
+    mkdir "${target_dir}"
+    cp /workspace/bin/kf.yaml "${target_dir}"
+
+    /builder/ko.bash resolve --filename config > /workspace/bin/operator.yaml
+
+    cp /workspace/cmd/generate-release/scripts/kfsystems-cr.yaml /workspace/bin/kfsystem.yaml
+
+- id: generate cloud build templates
+  name: "${_GOLANG_IMAGE}"
+  dir: /workspace
+  waitFor: ["go mod vendor", "operator go mod vendor"]
+  entrypoint: bash
+  env:
+  - "GOPROXY=https://proxy.golang.org"
+  - "GOSUMDB=sum.golang.org"
+  - "GO111MODULE=on"
+  - "CGO_ENABLED=0"
+  args:
+  - '-euxc'
+  - |
+    VERSION="$(</workspace/substitutions/version)"
+
+    go build -mod=vendor -o /tmp/generate-release ./cmd/generate-release/
+    mkdir -p /workspace/bin/cloud-build
+
+    # newline delimited so allow globbing
+    for template_type in $(/tmp/generate-release --list-templates); do
+      /tmp/generate-release \
+        --deployer-image "gcr.io/${PROJECT_ID}/kf-release-deployer:$${VERSION}" \
+        --template-type "${template_type}" > "/workspace/bin/cloud-build/${template_type}.yaml"
+    done
+
+- id: build CLIs
+  name: "${_GOLANG_IMAGE}"
+  dir: /workspace
+  waitFor: ['go mod vendor']
+  entrypoint: bash
+  env:
+  - "GOPROXY=https://proxy.golang.org"
+  - "GOSUMDB=sum.golang.org"
+  - "GO111MODULE=on"
+  - "CGO_ENABLED=0"
+  args:
+  - '-euxc'
+  - |
+    VERSION="$(</workspace/substitutions/version)"
+
+    # Build the binaries
+    for os in linux darwin windows; do
+      destination_dir=/workspace/bin
+      destination=${destination_dir}/kf-${os}
+
+      if [ "${os}" = "windows" ]; then
+        # Windows only executes things with the .exe extension
+        destination=${destination}.exe
+      fi
+
+      mkdir -p ${destination_dir}
+
+      # Build
+      GOOS=${os} go build \
+        -mod=vendor \
+        -o ${destination} \
+        --ldflags "-X 'github.com/google/kf/v2/pkg/kf/commands.Version=$${VERSION}'" \
+        ./cmd/kf
+
+    done
+- id: generate v2 wrapper buildpacks
+  name: "${_BUILDPACK_WRAPPER_GOLANG_IMAGE}"
+  dir: /workspace
+  waitFor: ['build CLIs']
+  entrypoint: bash
+  env:
+  - "GOPROXY=https://proxy.golang.org"
+  - "GOSUMDB=sum.golang.org"
+  - "GO111MODULE=on"
+  - "CGO_ENABLED=0"
+  args:
+  - '-euxc'
+  - |
+    # TODO: Consider creating a container with all this pre-baked.
+    # Install Pack for the wrap-v2-buildpack generating wrapper buildpack images and builder image.
+    # This is pulled from https://buildpacks.io/docs/tools/pack/
+    (curl -sSL "https://github.com/buildpacks/pack/releases/download/v0.22.0/pack-v0.22.0-linux.tgz" | tar -C /usr/local/bin/ --no-same-owner -xzv pack)
+    apt-get update
+    apt-get install zip -y
+
+    ./cmd/generate-release/scripts/builder.bash ${PROJECT_ID} ${_VERSION}
+- id: package third_party
+  name: "${_CLOUDSDK_IMAGE}"
+  dir: /workspace
+  waitFor: ['setup workspace', 'go mod vendor', "operator go mod vendor"]
+  entrypoint: tar
+  args: ["-czf", "/workspace/bin/third_party.tgz", "./third_party/", "./vendor/"]
+
+- id: package deployment-manager templates
+  name: "${_CLOUDSDK_IMAGE}"
+  dir: /workspace
+  waitFor: ['setup workspace']
+  entrypoint: cp
+  args: ["-r", "./samples/deployment-manager/", "/workspace/bin"]
+
+- id: download Tekton
+  waitFor: ['setup workspace', 'go mod vendor', "operator go mod vendor"]
+  name: "${_GOLANG_IMAGE}"
+  entrypoint: bash
+  env:
+  - "GOPROXY=https://proxy.golang.org"
+  - "GOSUMDB=sum.golang.org"
+  - "GO111MODULE=on"
+  - "CGO_ENABLED=0"
+  args:
+  - '-euxc'
+  - |
+    tekton_url=$(go run ./cmd/kf dependencies url tekton)
+    curl ${tekton_url} \
+    -v \
+    -L \
+    -o \
+    /workspace/bin/tekton.yaml
+
+- id: upload kf artifacts
+  name: "${_CLOUDSDK_IMAGE}"
+  dir: /workspace/bin
+  waitFor:
+  - build CLIs
+  - generate v2 wrapper buildpacks
+  - generate cloud build templates
+  - generate Kf Release
+  - generate kf Operator Release
+  - package third_party
+  - package deployment-manager templates
+  - download Tekton
+  entrypoint: bash
+  args:
+  - '-euxc'
+  - |
+    FOLDER="$(</workspace/substitutions/release_folder)"
+    BUCKET="$(</workspace/substitutions/release_bucket)"
+    gsutil -m cp -r * gs://$${BUCKET}/$${FOLDER}/
+
+- id: build deployer image
+  waitFor:
+  - generate Kf Release
+  - generate kf Operator Release
+  - build CLIs
+  - package third_party
+  - download Tekton
+  - package deployment-manager templates
+  name: "${_CLOUDSDK_IMAGE}"
+  dir: /workspace
+  entrypoint: bash
+  args:
+  - '-euxc'
+  - |
+    mapfile -t TAGS < /workspace/substitutions/tags
+    IMAGES=()
+    for TAG in "$${TAGS[@]}"; do
+      IMAGES+=("-t" "gcr.io/${PROJECT_ID}/kf-release-deployer:$${TAG}")
+    done
+
+    docker build \
+      -f "./cmd/generate-release/scripts/Dockerfile.deployer" \
+      "$${IMAGES[@]}" .
+
+- id: push deployer image
+  waitFor: ["build deployer image"]
+  name: "${_CLOUDSDK_IMAGE}"
+  dir: /workspace
+  entrypoint: bash
+  args:
+  - '-euxc'
+  - |
+    mapfile -t TAGS < /workspace/substitutions/tags
+    for TAG in "$${TAGS[@]}"; do
+      docker push "gcr.io/${PROJECT_ID}/kf-release-deployer:$${TAG}"
+    done
+
+- id: echo success
+  name: "${_CLOUDSDK_IMAGE}"
+  entrypoint: bash
+  args:
+  - '-euc'
+  - |
+    VERSION="$(</workspace/substitutions/version)"
+    GIT_SHA="$(</workspace/substitutions/git_sha)"
+
+    function green {
+        echo -e "\033[32m$1\033[0m"
+    }
+    function bold_blue {
+        echo -e "\033[1;34m$1\033[0m"
+    }
+    green "Success!"
+    bold_blue "Created deployer image gcr.io/${PROJECT_ID}/kf-release-deployer:$${VERSION}"
+    bold_blue "Release was built on SHA $${GIT_SHA}"
+    bold_blue "Continue with the release process."
+
+images:
+- gcr.io/${PROJECT_ID}/kf-release-deployer:${_VERSION}
+- gcr.io/${PROJECT_ID}/kf-thirdparty:${_VERSION}
+- gcr.io/$PROJECT_ID/v2-to-v3-builder:${_VERSION}

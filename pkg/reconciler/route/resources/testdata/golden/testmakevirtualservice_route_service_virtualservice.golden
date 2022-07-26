@@ -1,0 +1,244 @@
+# Test:	TestMakeVirtualService/route_service
+# routeBindings:
+# - destination:
+#     port: 80
+#     serviceName: some-app
+#     weight: 1
+#   source:
+#     domain: example.com
+#     hostname: some-host
+#     path: /some-path
+# routeServiceBindings:
+# - destination: http://some-route-service.com
+#   source:
+#     domain: example.com
+#     hostname: some-host
+# - destination: https://another-route-service.com:443/fake-path
+#   source:
+#     domain: example.com
+#     hostname: some-host
+#     path: /some-path
+# routes:
+# - metadata:
+#     creationTimestamp: null
+#     name: fake-route-some-host-example-coade3bfc08c73862f46464527a489d109
+#     namespace: some-namespace
+#   spec:
+#     domain: example.com
+#     hostname: some-host
+#   status:
+#     routeService: {}
+#     virtualservice: {}
+# - metadata:
+#     creationTimestamp: null
+#     name: fake-route-some-host-example-co98ab99cdf188e05a65dad35fa162c013
+#     namespace: some-namespace
+#   spec:
+#     domain: example.com
+#     hostname: some-host
+#     path: /some-path
+#   status:
+#     routeService: {}
+#     virtualservice: {}
+# spaceDomain:
+#   domain: example.com
+#   gatewayName: kf/some-gateway
+
+{
+    "kind": "VirtualService",
+    "apiVersion": "networking.istio.io/v1alpha3",
+    "metadata": {
+        "name": "example-com5ababd603b22780302dd8d83498e5172",
+        "namespace": "some-namespace",
+        "creationTimestamp": null,
+        "labels": {
+            "app.kubernetes.io/component": "virtualservice",
+            "app.kubernetes.io/managed-by": "kf"
+        },
+        "annotations": {
+            "kf.dev/domain": "example.com"
+        },
+        "ownerReferences": [
+            {
+                "apiVersion": "kf.dev/v1alpha1",
+                "kind": "Route",
+                "name": "fake-route-some-host-example-co98ab99cdf188e05a65dad35fa162c013",
+                "uid": ""
+            },
+            {
+                "apiVersion": "kf.dev/v1alpha1",
+                "kind": "Route",
+                "name": "fake-route-some-host-example-coade3bfc08c73862f46464527a489d109",
+                "uid": ""
+            }
+        ]
+    },
+    "spec": {
+        "hosts": [
+            "*.example.com",
+            "example.com"
+        ],
+        "gateways": [
+            "kf/some-gateway"
+        ],
+        "http": [
+            {
+                "match": [
+                    {
+                        "uri": {
+                            "regex": "^/some-path(/.*)?"
+                        },
+                        "authority": {
+                            "exact": "some-host.example.com"
+                        },
+                        "headers": {
+                            "x-cf-proxy-metadata": {
+                                "exact": "noopRouteServiceHeaderValue"
+                            },
+                            "x-cf-proxy-signature": {
+                                "exact": "noopRouteServiceHeaderValue"
+                            },
+                            "x-kf-app": {
+                                "exact": "some-app"
+                            }
+                        }
+                    }
+                ],
+                "route": [
+                    {
+                        "destination": {
+                            "host": "some-app",
+                            "port": {
+                                "number": 80
+                            }
+                        },
+                        "weight": 100
+                    }
+                ]
+            },
+            {
+                "match": [
+                    {
+                        "uri": {
+                            "regex": "^/some-path(/.*)?"
+                        },
+                        "authority": {
+                            "exact": "some-host.example.com"
+                        },
+                        "headers": {
+                            "x-cf-proxy-metadata": {
+                                "exact": "noopRouteServiceHeaderValue"
+                            },
+                            "x-cf-proxy-signature": {
+                                "exact": "noopRouteServiceHeaderValue"
+                            }
+                        }
+                    }
+                ],
+                "route": [
+                    {
+                        "destination": {
+                            "host": "some-app",
+                            "port": {
+                                "number": 80
+                            }
+                        },
+                        "weight": 100
+                    }
+                ]
+            },
+            {
+                "match": [
+                    {
+                        "uri": {
+                            "regex": "^/some-path(/.*)?"
+                        },
+                        "authority": {
+                            "exact": "some-host.example.com"
+                        }
+                    }
+                ],
+                "route": [
+                    {
+                        "destination": {
+                            "host": "another-route-svc-proxy"
+                        },
+                        "weight": 100
+                    }
+                ],
+                "headers": {
+                    "request": {
+                        "add": {
+                            "X-CF-Proxy-Metadata": "noopRouteServiceHeaderValue",
+                            "X-CF-Proxy-Signature": "noopRouteServiceHeaderValue"
+                        }
+                    }
+                }
+            },
+            {
+                "match": [
+                    {
+                        "uri": {
+                            "regex": "^(/.*)?"
+                        },
+                        "authority": {
+                            "exact": "some-host.example.com"
+                        },
+                        "headers": {
+                            "x-cf-proxy-metadata": {
+                                "exact": "noopRouteServiceHeaderValue"
+                            },
+                            "x-cf-proxy-signature": {
+                                "exact": "noopRouteServiceHeaderValue"
+                            }
+                        }
+                    }
+                ],
+                "route": [
+                    {
+                        "destination": {
+                            "host": "null.invalid"
+                        },
+                        "weight": 100
+                    }
+                ],
+                "fault": {
+                    "abort": {
+                        "httpStatus": 404,
+                        "percentage": {
+                            "value": 100
+                        }
+                    }
+                }
+            },
+            {
+                "match": [
+                    {
+                        "uri": {
+                            "regex": "^(/.*)?"
+                        },
+                        "authority": {
+                            "exact": "some-host.example.com"
+                        }
+                    }
+                ],
+                "route": [
+                    {
+                        "destination": {
+                            "host": "some-route-svc-proxy"
+                        },
+                        "weight": 100
+                    }
+                ],
+                "headers": {
+                    "request": {
+                        "add": {
+                            "X-CF-Proxy-Metadata": "noopRouteServiceHeaderValue",
+                            "X-CF-Proxy-Signature": "noopRouteServiceHeaderValue"
+                        }
+                    }
+                }
+            }
+        ]
+    }
+}

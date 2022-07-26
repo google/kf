@@ -28,8 +28,8 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"github.com/google/kf/pkg/dockerutil"
-	"github.com/google/kf/pkg/kf/describe"
+	"github.com/google/kf/v2/pkg/dockerutil"
+	"github.com/google/kf/v2/pkg/kf/describe"
 	"github.com/segmentio/textio"
 )
 
@@ -40,6 +40,8 @@ func main() {
 	builderImage := flag.String("builder-image", "", "the image to use as the builder")
 	useCredHelpers := flag.String("use-cred-helpers", "", "whether or not to use cred helpers")
 	cacheVolume := flag.String("cache", "", "the name of the cache volume")
+	platformVolume := flag.String("platform", "", "the name of the platform volume")
+	platformEnv := flag.String("platform-env", "", "comma delimited list of environment variables to copy to the platform")
 	buildpackOverrides := flag.String("buildpack", "", "custom buildpacks")
 
 	flag.Parse()
@@ -67,7 +69,7 @@ func main() {
 			log.Fatal(err)
 		}
 
-		for _, dir := range []string{"/builder/home", "/layers", "/cache", *workspace} {
+		for _, dir := range []string{"/tekton/home", "/layers", "/cache", *workspace} {
 			fmt.Fprintf(w, "chown -R %d:%d %s\n", uid, gid, dir)
 
 			if err := chown(dir, uid, gid); err != nil {
@@ -82,17 +84,50 @@ func main() {
 	fmt.Fprintln(w)
 	fmt.Fprintln(w)
 
+	// Set up environment as specified by the Buildpack v3 specification:
+	// https://github.com/buildpacks/spec/blob/main/buildpack.md#provided-by-the-platform
+	describe.SectionWriter(w, "Platform environment", func(w io.Writer) {
+		envPath := filepath.Join(*platformVolume, "env")
+		if err := os.MkdirAll(envPath, 0755); err != nil && !os.IsExist(err) {
+			log.Fatal(err)
+		}
+
+		fmt.Fprintln(w, "Environment Variable\tDestination")
+		for _, envName := range strings.Split(*platformEnv, ",") {
+			// If platformEnv is blank or has a blank item, skip it.
+			if envName == "" {
+				continue
+			}
+
+			contents, ok := os.LookupEnv(envName)
+			if !ok {
+				log.Fatal(fmt.Errorf("couldn't find environment variable %q", envName))
+			}
+
+			path := filepath.Join(envPath, envName)
+			// envName doesn't need quotes because it can't contain special chars.
+			fmt.Fprintf(w, "%s\t%q\n", envName, path)
+
+			if err := ioutil.WriteFile(path, []byte(contents), 0644); err != nil {
+				log.Fatal(err)
+			}
+		}
+	})
+	fmt.Fprintln(w)
+
 	describe.SectionWriter(w, "Build info", func(w io.Writer) {
 		fmt.Fprintf(w, "Destination image:\t%s\n", *image)
 		fmt.Fprintf(w, "Stack:\t%s\n", *runImage)
 		fmt.Fprintf(w, "Builder image:\t%s\n", *builderImage)
 		fmt.Fprintf(w, "Use cred helpers:\t%s\n", *useCredHelpers)
 		fmt.Fprintf(w, "Cache volume:\t%s\n", *cacheVolume)
+		fmt.Fprintf(w, "Platform volume:\t%s\n", *platformVolume)
 		fmt.Fprintf(w, "Buildpack overrides:\t%q\n", *buildpackOverrides)
 	})
 	fmt.Fprintln(w)
 
 	dockerutil.DescribeDefaultConfig(w)
+	dockerutil.DescribeWorkloadIdentity(w)
 }
 
 // getBuildUser returns the UID and GID as specified by the buildpack builder

@@ -15,20 +15,23 @@
 package apps
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
 
-	"github.com/google/kf/pkg/kf/apps"
-	"github.com/google/kf/pkg/kf/commands/completion"
-	"github.com/google/kf/pkg/kf/commands/config"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	"github.com/google/kf/pkg/kf/istio"
+	"github.com/google/kf/v2/pkg/kf/apps"
+	"github.com/google/kf/v2/pkg/kf/commands/completion"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	utils "github.com/google/kf/v2/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/v2/pkg/reconciler/route/resources"
+	"github.com/google/kf/v2/pkg/system"
 	"github.com/spf13/cobra"
+	"knative.dev/pkg/logging"
 )
 
 // NewProxyCommand creates a command capable of proxying a remote server locally.
-func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister istio.IngressLister) *cobra.Command {
+func NewProxyCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
 	var (
 		gateway string
 		port    int
@@ -37,50 +40,85 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister i
 
 	cmd := &cobra.Command{
 		Use:     "proxy APP_NAME",
-		Short:   "Create a proxy to an app on a local port",
+		Short:   "Start a local reverse proxy to an App.",
 		Example: `kf proxy myapp`,
 		Long: `
-	This command creates a local proxy to a remote gateway modifying the request
-	headers to make requests route to your app.
+		Proxy creates a reverse HTTP proxy to the cluster's gateway on a local
+		port opened on the operating system's loopback device.
 
-	You can manually specify the gateway or have it autodetected based on your
-	cluster.`,
-		Args: cobra.ExactArgs(1),
+		The proxy rewrites all HTTP requests, changing the HTTP Host header
+		and adding an additional header X-Kf-App to ensure traffic reaches
+		the specified App even if multiple are attached to the same route.
+
+		Proxy does not establish a direct connection to the App.
+
+		For proxy to work:
+
+		* The cluster's gateway must be accessible from your local machine.
+		* The App must have a public URL
+
+		If you need to establish a direct connection to an App, use the
+		port-forward command in kubectl. It establishes a proxied connection
+		directly to a port on a pod via the Kubernetes cluster. port-forward
+		bypasses all routing.
+		`,
+		Args:              cobra.ExactArgs(1),
+		ValidArgsFunction: completion.AppCompletionFn(p),
+		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := utils.ValidateNamespace(p); err != nil {
+			ctx := cmd.Context()
+			if err := p.ValidateSpaceTargeted(); err != nil {
 				return err
 			}
 
 			appName := args[0]
 
-			cmd.SilenceUsage = true
+			logger := logging.FromContext(ctx)
 
-			app, err := appsClient.Get(p.Namespace, appName)
+			app, err := appsClient.Get(ctx, p.Space, appName)
 			if err != nil {
 				return err
 			}
 
-			url := app.Status.URL
-			if url == nil {
-				return fmt.Errorf("No route for app %s", appName)
+			routes := app.Status.Routes
+			if len(routes) == 0 {
+				return fmt.Errorf("no public routes for App %s", appName)
+			}
+
+			appDomain := ""
+			for _, route := range routes {
+				// we can't use wildcard DNS entries because we won't know the
+				// valid host
+				if route.Source.IsWildcard() {
+					continue
+				}
+
+				appDomain = route.Source.Host()
+				break
+			}
+
+			if appDomain == "" {
+				return errors.New("couldn't find suitable App domain")
 			}
 
 			if gateway == "" {
-				fmt.Fprintln(cmd.OutOrStdout(), "Autodetecting app gateway. Specify a custom gateway using the --gateway flag.")
+				logger.Info("Autodetecting App gateway. Specify a custom gateway using the --gateway flag.")
 
-				ingress, err := istio.ExtractIngressFromList(ingressLister.ListIngresses())
+				space, err := p.GetTargetSpace(ctx)
+				if err != nil {
+					return err
+				}
+
+				ingress, err := system.ExtractProxyIngressFromList(space.Status.IngressGateways)
 				if err != nil {
 					return err
 				}
 				gateway = ingress
 			}
 
-			appHost := url.Host
-			w := cmd.OutOrStdout()
-
 			if noStart {
-				fmt.Fprintln(w, "exiting because no-start flag was provided")
-				utils.PrintCurlExamplesNoListener(w, appHost, gateway)
+				logger.Info("Exiting because no-start flag was provided")
+				utils.PrintCurlExamplesNoListener(ctx, appDomain, gateway)
 				return nil
 			}
 
@@ -89,10 +127,16 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister i
 				return err
 			}
 
-			utils.PrintCurlExamples(w, listener, appHost, gateway)
-			fmt.Fprintln(w, "\033[33mNOTE: the first request may take some time if the app is scaled to zero\033[0m")
+			utils.PrintCurlExamples(ctx, listener, appDomain, gateway)
 
-			return http.Serve(listener, utils.CreateProxy(cmd.OutOrStdout(), app.Status.URL.Host, gateway))
+			// Write the address to stdout so it can be consumed by scripts.
+			fmt.Fprintln(cmd.OutOrStdout(), "http://"+listener.Addr().String())
+
+			additional := http.Header{
+				resources.KfAppMatchHeader: []string{appName},
+			}
+
+			return http.Serve(listener, utils.CreateProxy(cmd.OutOrStderr(), appDomain, gateway, additional))
 		},
 	}
 
@@ -100,25 +144,23 @@ func NewProxyCommand(p *config.KfParams, appsClient apps.Client, ingressLister i
 		&gateway,
 		"gateway",
 		"",
-		"HTTP gateway to route requests to (default: autodetected from cluster)",
+		"IP address of the HTTP gateway to route requests to.",
 	)
 
 	cmd.Flags().IntVar(
 		&port,
 		"port",
 		8080,
-		"Local port to listen on",
+		"Local port to listen on.",
 	)
 
 	cmd.Flags().BoolVar(
 		&noStart,
 		"no-start",
 		false,
-		"Exit before starting the proxy",
+		"Exit before starting the proxy.",
 	)
 	cmd.Flags().MarkHidden("no-start")
-
-	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 
 	return cmd
 }

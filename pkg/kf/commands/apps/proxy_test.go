@@ -20,13 +20,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	fakeapps "github.com/google/kf/pkg/kf/apps/fake"
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/istio/fake"
-	"github.com/google/kf/pkg/kf/testutil"
-	serving "github.com/google/kf/third_party/knative-serving/pkg/apis/serving/v1alpha1"
-	"knative.dev/pkg/apis"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	fakeapps "github.com/google/kf/v2/pkg/kf/apps/fake"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -35,43 +32,69 @@ func TestNewProxyCommand(t *testing.T) {
 	t.Parallel()
 
 	cases := map[string]struct {
-		Namespace       string
+		Space           string
 		Args            []string
 		ExpectedStrings []string
 		ExpectedErr     error
-		Setup           func(t *testing.T, lister *fakeapps.FakeClient, istio *fake.FakeIstioClient)
+		IngressGateways []corev1.LoadBalancerIngress
+		Setup           func(t *testing.T, lister *fakeapps.FakeClient)
 	}{
 		"no app name": {
-			Namespace:   "default",
+			Space:       "default",
 			Args:        []string{},
 			ExpectedErr: errors.New("accepts 1 arg(s), received 0"),
 		},
 		"no url for app": {
-			Namespace:   "default",
-			Args:        []string{"my-app", "--no-start=true"},
-			ExpectedErr: errors.New("No route for app my-app"),
-			Setup: func(t *testing.T, lister *fakeapps.FakeClient, istio *fake.FakeIstioClient) {
-				istio.EXPECT().ListIngresses(gomock.Any()).Return([]corev1.LoadBalancerIngress{{IP: "8.8.8.8"}}, nil)
-				lister.EXPECT().Get("default", "my-app").Return(&v1alpha1.App{
+			Space:           "default",
+			Args:            []string{"my-app", "--no-start=true"},
+			ExpectedErr:     errors.New("no public routes for App my-app"),
+			IngressGateways: []corev1.LoadBalancerIngress{{IP: "8.8.8.8"}},
+			Setup: func(t *testing.T, lister *fakeapps.FakeClient) {
+				lister.EXPECT().Get(gomock.Any(), "default", "my-app").Return(&v1alpha1.App{
 					Status: v1alpha1.AppStatus{
-						RouteStatusFields: serving.RouteStatusFields{
-							URL: nil,
+						Routes: nil,
+					},
+				}, nil)
+			},
+		},
+		"only wildcard for app": {
+			Space:           "default",
+			Args:            []string{"my-app", "--no-start=true"},
+			ExpectedErr:     errors.New("couldn't find suitable App domain"),
+			IngressGateways: []corev1.LoadBalancerIngress{{IP: "8.8.8.8"}},
+			Setup: func(t *testing.T, lister *fakeapps.FakeClient) {
+				lister.EXPECT().Get(gomock.Any(), "default", "my-app").Return(&v1alpha1.App{
+					Status: v1alpha1.AppStatus{
+						Routes: []v1alpha1.AppRouteStatus{
+							{
+								QualifiedRouteBinding: v1alpha1.QualifiedRouteBinding{
+									Source: v1alpha1.RouteSpecFields{
+										Hostname: "*",
+										Domain:   "example.com",
+									},
+								},
+							},
 						},
 					},
 				}, nil)
 			},
 		},
 		"minimal configuration": {
-			Namespace:   "default",
-			Args:        []string{"my-app", "--no-start=true"},
-			ExpectedErr: nil,
-			Setup: func(t *testing.T, lister *fakeapps.FakeClient, istio *fake.FakeIstioClient) {
-				istio.EXPECT().ListIngresses(gomock.Any()).Return([]corev1.LoadBalancerIngress{{IP: "8.8.8.8"}}, nil)
-				lister.EXPECT().Get("default", "my-app").Return(&v1alpha1.App{
+			Space:           "default",
+			Args:            []string{"my-app", "--no-start=true"},
+			ExpectedErr:     nil,
+			IngressGateways: []corev1.LoadBalancerIngress{{IP: "8.8.8.8"}},
+			Setup: func(t *testing.T, lister *fakeapps.FakeClient) {
+				lister.EXPECT().Get(gomock.Any(), "default", "my-app").Return(&v1alpha1.App{
 					Status: v1alpha1.AppStatus{
-						RouteStatusFields: serving.RouteStatusFields{
-							URL: &apis.URL{
-								Host: "example.com",
+						Routes: []v1alpha1.AppRouteStatus{
+							{
+								QualifiedRouteBinding: v1alpha1.QualifiedRouteBinding{
+									Source: v1alpha1.RouteSpecFields{
+										Hostname: "my-app",
+										Domain:   "example.com",
+									},
+								},
 							},
 						},
 					},
@@ -79,20 +102,26 @@ func TestNewProxyCommand(t *testing.T) {
 			},
 		},
 		"autodetect failure": {
-			Namespace:   "default",
-			Args:        []string{"my-app"},
-			ExpectedErr: errors.New("istio-failure"),
-			Setup: func(t *testing.T, lister *fakeapps.FakeClient, istio *fake.FakeIstioClient) {
-				lister.EXPECT().Get("default", "my-app").Return(&v1alpha1.App{
+			Space:           "default",
+			Args:            []string{"my-app"},
+			ExpectedErr:     errors.New("no ingresses were found"),
+			IngressGateways: []corev1.LoadBalancerIngress{}, // no gateways
+			Setup: func(t *testing.T, lister *fakeapps.FakeClient) {
+				lister.EXPECT().Get(gomock.Any(), "default", "my-app").Return(&v1alpha1.App{
 					Status: v1alpha1.AppStatus{
-						RouteStatusFields: serving.RouteStatusFields{
-							URL: &apis.URL{
-								Host: "example.com",
+						Routes: []v1alpha1.AppRouteStatus{
+							{
+								QualifiedRouteBinding: v1alpha1.QualifiedRouteBinding{
+									Source: v1alpha1.RouteSpecFields{
+										Hostname: "my-app",
+										Domain:   "example.com",
+										Path:     "/",
+									},
+								},
 							},
 						},
 					},
 				}, nil)
-				istio.EXPECT().ListIngresses(gomock.Any()).Return(nil, errors.New("istio-failure"))
 			},
 		},
 	}
@@ -101,18 +130,22 @@ func TestNewProxyCommand(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			fakeAppClient := fakeapps.NewFakeClient(ctrl)
-			fakeIstio := fake.NewFakeIstioClient(ctrl)
 
 			if tc.Setup != nil {
-				tc.Setup(t, fakeAppClient, fakeIstio)
+				tc.Setup(t, fakeAppClient)
 			}
 
 			buf := new(bytes.Buffer)
 			p := &config.KfParams{
-				Namespace: tc.Namespace,
+				Space: tc.Space,
+				TargetSpace: &v1alpha1.Space{
+					Status: v1alpha1.SpaceStatus{
+						IngressGateways: tc.IngressGateways,
+					},
+				},
 			}
 
-			cmd := NewProxyCommand(p, fakeAppClient, fakeIstio)
+			cmd := NewProxyCommand(p, fakeAppClient)
 			cmd.SetOutput(buf)
 			cmd.SetArgs(tc.Args)
 			_, actualErr := cmd.ExecuteC()
@@ -124,7 +157,6 @@ func TestNewProxyCommand(t *testing.T) {
 			testutil.AssertContainsAll(t, buf.String(), tc.ExpectedStrings)
 			testutil.AssertEqual(t, "SilenceUsage", true, cmd.SilenceUsage)
 
-			ctrl.Finish()
 		})
 	}
 }

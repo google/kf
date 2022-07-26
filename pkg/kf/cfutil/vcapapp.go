@@ -15,9 +15,7 @@
 package cfutil
 
 import (
-	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/internal/envutil"
-	corev1 "k8s.io/api/core/v1"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 )
 
 const (
@@ -26,21 +24,35 @@ const (
 	VcapApplicationEnvVarName = "VCAP_APPLICATION"
 )
 
-// CreateVcapApplication creates a VCAP_APPLICATION style environment variable
-// based on the values on the given service.
-func CreateVcapApplication(app *v1alpha1.App) (corev1.EnvVar, error) {
+// CreateVcapApplication creates values for the VCAP_APPLICATION environment variable
+// based on values on the app. These values are merged with the pod values determined at runtime.
+func CreateVcapApplication(app *v1alpha1.App) map[string]interface{} {
 	// You can find a list of values here:
 	// https://docs.run.pivotal.io/devguide/deploy-apps/environment-variable.html
 
-	// XXX: The values here are incomplete but are currently the best we can do.
-	values := map[string]interface{}{
-		// application_name The name assigned to the app when it was pushed.
-		"application_name": app.Name,
-		// name Identical to application_name.
-		"name": app.Name,
-		// space_name	Human-readable name of the space where the app is deployed.
-		"space_name": app.Namespace,
+	urls := []string{}
+	for _, r := range app.Status.Routes {
+		urls = append(urls, r.URL)
 	}
 
-	return envutil.NewJSONEnvVar(VcapApplicationEnvVarName, values)
+	values := map[string]interface{}{
+		// application_id The GUID identifying the app.
+		"application_id": app.UID,
+		// application_name The name assigned to the app when it was pushed.
+		"application_name": app.Name,
+		// application_uris The URIs assigned to the app.
+		"application_uris": urls,
+		// name Identical to application_name.
+		"name": app.Name,
+		// process_id The UID identifying the process. Only present in running app containers.
+		"process_id": app.UID,
+		// process_type The type of process. Only present in running app containers.
+		"process_type": "web",
+		// space_name Human-readable name of the space where the app is deployed.
+		"space_name": app.Namespace,
+		// uris Identical to application_uris.
+		"uris": urls,
+	}
+
+	return values
 }

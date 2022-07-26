@@ -1,0 +1,333 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the License);
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an AS IS BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: VERSION_PLACEHOLDER
+  name: serviceinstances.kf.dev
+spec:
+  group: kf.dev
+  names:
+    kind: ServiceInstance
+    plural: serviceinstances
+    singular: serviceinstance
+    categories:
+      - all
+      - kf
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      schema:
+        openAPIV3Schema:
+          description: ServiceInstance is a representation for any type of service instance (user-provided or created using a service broker).
+          type: object
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: ServiceInstanceSpec contains the specification for a binding.
+              type: object
+              required:
+                - tags
+              properties:
+                brokered:
+                  description: Brokered is a service instance created using a service broker via KSC.
+                  type: object
+                  properties:
+                    broker:
+                      description: Broker is the name of the service broker for the service instance. Fill this in to explicitly specify a broker if a service class and plan could match to multiple brokers.
+                      type: string
+                    className:
+                      description: ClassName is the name of the service class.
+                      type: string
+                    namespaced:
+                      description: Namespaced is true if the service broker/class/plan is namespaced, and false they are available at the cluster level.
+                      type: boolean
+                    planName:
+                      description: PlanName is the name of the service plan.
+                      type: string
+                deleteRequests:
+                  description: DeleteRequests is a unique identifier, updating will trigger an additional delete retry.
+                  type: integer
+                osb:
+                  description: OSB is a service instance created using Kf's built-in OSB support.
+                  type: object
+                  properties:
+                    brokerName:
+                      description: BrokerName is the name of the service broker for the service instance.
+                      type: string
+                    className:
+                      description: ClassName contains the human-readable name of the class.
+                      type: string
+                    classUID:
+                      description: ClassUID contains the UID of the class, used for provisioning purposes.
+                      type: string
+                    namespaced:
+                      description: Namespaced is true if the service broker/class/plan is namespaced, and false they are available at the cluster level.
+                      type: boolean
+                    planName:
+                      description: PlanName contains the human-readable name of the plan.
+                      type: string
+                    planUID:
+                      description: PlanUID contains the UID of the plan, used for provisioning purposes.
+                      type: string
+                    progressDeadlineSeconds:
+                      description: ProgressDeadlineSeconds contains a configurable timeout between state transition and reaching a stable state before provisioning or deprovisioning times out.
+                      type: integer
+                      format: int64
+                parametersFrom:
+                  description: ParametersFrom contains a reference to a secret containing parameters for the service.
+                  type: object
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
+                      type: string
+                tags:
+                  description: Tags are optional tags provided by the user. They are included in VCAP_SERVICES for a service. Brokered services have tags associated with the CommonServiceClassSpec for that service. The tags set in this field will override all other tags. The JSON encoding of tags in VCAP_SERVICES in Cloud Foundry is [] rather than null, which is why the Tags field is not omitempty.
+                  type: array
+                  items:
+                    type: string
+                userProvided:
+                  description: One and only one of the following should be specified. UPS is a user-provided service instance.
+                  type: object
+                  properties:
+                    mockClassName:
+                      description: MockClassName mocks the name of a different service class. This allows overriding the name as it shows up in VCAP_SERVICES to something other than the default "user-provided".
+                      type: string
+                    mockPlanName:
+                      description: MockPlanName mocks the name of a different plan. This allows overriding the name as it shows up in VCAP_SERVICES to something other than the default blank string.
+                      type: string
+                    routeServiceURL:
+                      description: RouteServiceURL is an alias for the net/url parsing of the service URL. It is not empty if the service instance is a route service.
+                      type: object
+                      properties:
+                        ForceQuery:
+                          type: boolean
+                        Fragment:
+                          type: string
+                        Host:
+                          type: string
+                        Opaque:
+                          type: string
+                        Path:
+                          type: string
+                        RawFragment:
+                          type: string
+                        RawPath:
+                          type: string
+                        RawQuery:
+                          type: string
+                        Scheme:
+                          type: string
+                volume:
+                  description: Volume is a volume service instance created using volume broker.
+                  type: object
+                  properties:
+                    brokerName:
+                      description: BrokerName is the name of the service broker for the service instance.
+                      type: string
+                    className:
+                      description: ClassName contains the human-readable name of the class.
+                      type: string
+                    classUID:
+                      description: ClassUID contains the UID of the class, used for provisioning purposes.
+                      type: string
+                    namespaced:
+                      description: Namespaced is true if the service broker/class/plan is namespaced, and false they are available at the cluster level.
+                      type: boolean
+                    planName:
+                      description: PlanName contains the human-readable name of the plan.
+                      type: string
+                    planUID:
+                      description: PlanUID contains the UID of the plan, used for provisioning purposes.
+                      type: string
+                    progressDeadlineSeconds:
+                      description: ProgressDeadlineSeconds contains a configurable timeout between state transition and reaching a stable state before provisioning or deprovisioning times out.
+                      type: integer
+                      format: int64
+            status:
+              description: ServiceInstanceStatus represents information about the status of a ServiceInstance.
+              type: object
+              required:
+                - tags
+              properties:
+                annotations:
+                  description: Annotations is additional Status fields for the Resource to save some additional State as well as convey more information to the user. This is roughly akin to Annotations on any k8s resource, just the reconciler conveying richer information outwards.
+                  type: object
+                  additionalProperties:
+                    type: string
+                className:
+                  description: ClassName contains the human-readable name of the class
+                  type: string
+                conditions:
+                  description: Conditions the latest available observations of a resource's current state.
+                  type: array
+                  items:
+                    description: 'Conditions defines a readiness condition for a Knative resource. See: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties'
+                    type: object
+                    required:
+                      - status
+                      - type
+                    properties:
+                      lastTransitionTime:
+                        description: LastTransitionTime is the last time the condition transitioned from one status to another. We use VolatileTime in place of metav1.Time to exclude this from creating equality.Semantic differences (all other things held constant).
+                        type: string
+                        format: date-time
+                      message:
+                        description: A human readable message indicating details about the transition.
+                        type: string
+                      reason:
+                        description: The reason for the condition's last transition.
+                        type: string
+                      severity:
+                        description: Severity with which to treat failures of this type of condition. When this is not specified, it defaults to Error.
+                        type: string
+                      status:
+                        description: Status of the condition, one of True, False, Unknown.
+                        type: string
+                      type:
+                        description: Type of condition.
+                        type: string
+                deleteRequests:
+                  description: DeleteRequests is a unique identifier, updating will trigger an additional delete retry.
+                  type: integer
+                observedGeneration:
+                  description: ObservedGeneration is the 'Generation' of the Service that was last processed by the controller.
+                  type: integer
+                  format: int64
+                osbStatus:
+                  description: OSBStatus contains information about the lifecycle of the OSB backed service.
+                  type: object
+                  properties:
+                    deprovisionFailed:
+                      description: OSBState contains information about a specific state.
+                      type: object
+                      properties:
+                        operationKey:
+                          description: OperationKey, if specified, holds the long running operation key for a given state. OSB uses this arbitrary value to reference specific back-end tasks it's performing.
+                          type: string
+                    deprovisioned:
+                      description: OSBState contains information about a specific state.
+                      type: object
+                      properties:
+                        operationKey:
+                          description: OperationKey, if specified, holds the long running operation key for a given state. OSB uses this arbitrary value to reference specific back-end tasks it's performing.
+                          type: string
+                    deprovisioning:
+                      description: OSBState contains information about a specific state.
+                      type: object
+                      properties:
+                        operationKey:
+                          description: OperationKey, if specified, holds the long running operation key for a given state. OSB uses this arbitrary value to reference specific back-end tasks it's performing.
+                          type: string
+                    provisionFailed:
+                      description: OSBState contains information about a specific state.
+                      type: object
+                      properties:
+                        operationKey:
+                          description: OperationKey, if specified, holds the long running operation key for a given state. OSB uses this arbitrary value to reference specific back-end tasks it's performing.
+                          type: string
+                    provisioned:
+                      description: OSBState contains information about a specific state.
+                      type: object
+                      properties:
+                        operationKey:
+                          description: OperationKey, if specified, holds the long running operation key for a given state. OSB uses this arbitrary value to reference specific back-end tasks it's performing.
+                          type: string
+                    provisioning:
+                      description: OSBState contains information about a specific state.
+                      type: object
+                      properties:
+                        operationKey:
+                          description: OperationKey, if specified, holds the long running operation key for a given state. OSB uses this arbitrary value to reference specific back-end tasks it's performing.
+                          type: string
+                planName:
+                  description: PlanName contains the human-readable name of the plan
+                  type: string
+                routeServiceURL:
+                  description: RouteServiceURL is an alias for the net/url parsing of the service URL.
+                  type: object
+                  properties:
+                    ForceQuery:
+                      type: boolean
+                    Fragment:
+                      type: string
+                    Host:
+                      type: string
+                    Opaque:
+                      type: string
+                    Path:
+                      type: string
+                    RawFragment:
+                      type: string
+                    RawPath:
+                      type: string
+                    RawQuery:
+                      type: string
+                    Scheme:
+                      type: string
+                secretName:
+                  description: SecretName is the K8s secret name that stores the parameters for a service instance.
+                  type: string
+                serviceTypeDescription:
+                  description: ServiceTypeDescription is a human-readable name for the type of service referenced by this instance.
+                  type: string
+                tags:
+                  description: Tags contains a list of tags to apply to the service when injecting via VCAP_SERVICES. The JSON encoding of tags in VCAP_SERVICES in Cloud Foundry is [] rather than null, which is why the Tags field is not omitempty.
+                  type: array
+                  items:
+                    type: string
+                volumeStatus:
+                  description: VolumeStatus contains information about the k8s Volume objects
+                  type: object
+                  properties:
+                    PersistentVolumeClaimName:
+                      description: PersistentVolumeClaimName is the name of the PersistentVolumeClaim created for this instance.
+                      type: string
+                    PersistentVolumeName:
+                      description: PersistentVolumeName is the name of the PersistentVolume created for this instance.
+                      type: string
+      additionalPrinterColumns:
+        - name: Type
+          type: string
+          jsonPath: .status.serviceTypeDescription
+        - name: ClassName
+          type: string
+          jsonPath: .status.className
+        - name: PlanName
+          type: string
+          jsonPath: .status.planName
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+        - name: Ready
+          type: string
+          jsonPath: ".status.conditions[?(@.type=='Ready')].status"
+        - name: Reason
+          type: string
+          jsonPath: ".status.conditions[?(@.type=='Ready')].reason"

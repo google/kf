@@ -1,0 +1,48 @@
+# Test:	TestMakeService/default
+# serviceInstance:
+#   metadata:
+#     creationTimestamp: null
+#     name: my-route-svc
+#   spec:
+#     parametersFrom: {}
+#     tags: null
+#     userProvided:
+#       routeServiceURL: http://auth.my-route-svc.com:80/some-path
+#   status:
+#     osbStatus: {}
+#     tags: null
+
+{
+    "metadata": {
+        "name": "my-route-svc-proxy",
+        "creationTimestamp": null,
+        "ownerReferences": [
+            {
+                "apiVersion": "kf.dev/v1alpha1",
+                "kind": "ServiceInstance",
+                "name": "my-route-svc",
+                "uid": "",
+                "controller": true,
+                "blockOwnerDeletion": true
+            }
+        ]
+    },
+    "spec": {
+        "ports": [
+            {
+                "name": "http",
+                "protocol": "TCP",
+                "port": 80,
+                "targetPort": 8080
+            }
+        ],
+        "selector": {
+            "app.kubernetes.io/component": "route-service",
+            "app.kubernetes.io/managed-by": "kf",
+            "app.kubernetes.io/name": "my-route-svc-proxy"
+        }
+    },
+    "status": {
+        "loadBalancer": {}
+    }
+}

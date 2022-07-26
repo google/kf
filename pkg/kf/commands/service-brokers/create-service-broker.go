@@ -19,64 +19,118 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/kf/pkg/kf/commands/config"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	"github.com/google/kf/pkg/kf/service-brokers/cluster"
-	"github.com/google/kf/pkg/kf/service-brokers/namespaced"
-	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/internal/osbutil"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	utils "github.com/google/kf/v2/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/v2/pkg/kf/secrets"
+	cluster "github.com/google/kf/v2/pkg/kf/service-brokers/cluster"
+	namespaced "github.com/google/kf/v2/pkg/kf/service-brokers/namespaced"
 	"github.com/spf13/cobra"
+	"knative.dev/pkg/kmeta"
+)
+
+var (
+	provisionTimeout = 1 * time.Minute
 )
 
 // NewCreateServiceBrokerCommand adds a service broker (either cluster or namespaced) to the service catalog.
-// TODO (juliaguo): Add user/pw args to match cf
-func NewCreateServiceBrokerCommand(p *config.KfParams, clusterClient cluster.Client, namespacedClient namespaced.Client) *cobra.Command {
+func NewCreateServiceBrokerCommand(
+	p *config.KfParams,
+	clusterClient cluster.Client,
+	namespacedClient namespaced.Client,
+	secretsClient secrets.Client,
+) *cobra.Command {
+
 	var (
 		spaceScoped bool
 		async       utils.AsyncFlags
 	)
 
 	createCmd := &cobra.Command{
-		Use:     "create-service-broker BROKER_NAME URL",
-		Aliases: []string{"csb"},
-		Short:   "Add a service broker to service catalog",
-		Example: `  kf create-service-broker mybroker http://mybroker.broker.svc.cluster.local`,
-		Args:    cobra.ExactArgs(2),
+		Use:          "create-service-broker NAME USERNAME PASSWORD URL",
+		Aliases:      []string{"csb"},
+		Short:        "Add a service broker to the marketplace.",
+		Example:      `  kf create-service-broker mybroker user pass http://mybroker.broker.svc.cluster.local`,
+		Args:         cobra.ExactArgs(4),
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			serviceBrokerName := args[0]
-			url := args[1]
+			username := args[1]
+			password := args[2]
+			url := args[3]
 
-			cmd.SilenceUsage = true
-
-			// TODO (juliaguo): validate URL
+			// TODO: validate URL
 
 			if spaceScoped {
-				if err := utils.ValidateNamespace(p); err != nil {
+				if err := p.ValidateSpaceTargeted(); err != nil {
 					return err
 				}
-
-				desiredBroker := PopulateSpaceBrokerTemplate(p.Namespace, serviceBrokerName, url)
-				if _, err := namespacedClient.Create(p.Namespace, desiredBroker); err != nil {
-					return err
-				}
-
-				action := fmt.Sprintf("Creating service broker %q in space %q", serviceBrokerName, p.Namespace)
-				return async.AwaitAndLog(cmd.OutOrStdout(), action, func() (err error) {
-					_, err = namespacedClient.WaitForConditionReadyTrue(context.Background(), p.Namespace, serviceBrokerName, 1*time.Second)
-					return
-				})
 			}
 
-			desiredBroker := PopulateClusterBrokerTemplate(serviceBrokerName, url)
-			if _, err := clusterClient.Create(desiredBroker); err != nil {
+			var callback func(context.Context) error
+			var provisionedBroker kmeta.OwnerRefable
+
+			brokerSecretName := v1alpha1.GenerateName(serviceBrokerName, "auth")
+
+			switch {
+			case spaceScoped:
+				desiredBroker := populateV1alpha1SpaceBrokerTemplate(p.Space, serviceBrokerName, brokerSecretName)
+				actualBroker, err := namespacedClient.Create(cmd.Context(), p.Space, desiredBroker)
+				if err != nil {
+					return err
+				}
+				provisionedBroker = actualBroker
+				callback = func(ctx context.Context) error {
+					_, err := namespacedClient.WaitForConditionReadyTrue(ctx, p.Space, serviceBrokerName, 1*time.Second)
+					return err
+				}
+
+			default:
+				desiredBroker := populateV1alpha1ClusterBrokerTemplate(serviceBrokerName, brokerSecretName)
+				actualBroker, err := clusterClient.Create(cmd.Context(), desiredBroker)
+				if err != nil {
+					return err
+				}
+				provisionedBroker = actualBroker
+				callback = func(ctx context.Context) error {
+					_, err := clusterClient.WaitForConditionReadyTrue(ctx, serviceBrokerName, 1*time.Second)
+					return err
+				}
+			}
+
+			// Create secret
+			secret := osbutil.NewBasicAuthSecret(brokerSecretName, username, password, url, provisionedBroker)
+			if _, err := secretsClient.Create(cmd.Context(), secret.Namespace, secret); err != nil {
 				return err
 			}
 
-			action := fmt.Sprintf("Creating cluster service broker %q", serviceBrokerName)
-			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() (err error) {
-				_, err = clusterClient.WaitForConditionReadyTrue(context.Background(), serviceBrokerName, 1*time.Second)
-				return
+			// Set up messages for the user
+			var action, deleteAction string
+			if spaceScoped {
+				action = fmt.Sprintf("Creating service broker %q in Space %q", serviceBrokerName, p.Space)
+				deleteAction = fmt.Sprintf("kf delete-service-broker --space %s --space-scoped %s", p.Space, serviceBrokerName)
+			} else {
+				action = fmt.Sprintf("Creating cluster service broker %q", serviceBrokerName)
+				deleteAction = fmt.Sprintf("kf delete-service-broker %s", serviceBrokerName)
+			}
+
+			// Wait for provision
+			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
+				ctx, cancel := context.WithTimeout(context.Background(), provisionTimeout)
+				defer cancel()
+
+				err := callback(ctx)
+
+				if err != nil {
+					w := cmd.OutOrStdout()
+					fmt.Fprintln(w, "Waiting failed, check your URL, credentials and the broker status.")
+					fmt.Fprintln(w, utils.Warnf("NOTE: The broker HAS NOT been deleted."))
+					fmt.Fprintln(w, "You can delete the broker with:")
+					fmt.Fprintf(w, "  %s\n", deleteAction)
+				}
+
+				return err
 			})
 		},
 	}
@@ -87,38 +141,31 @@ func NewCreateServiceBrokerCommand(p *config.KfParams, clusterClient cluster.Cli
 		&spaceScoped,
 		"space-scoped",
 		false,
-		"Set to create a space scoped service broker.")
+		"Only create the broker in the targeted space.")
 
 	return createCmd
 }
 
-// PopulateSpaceBrokerTemplate fills in a broker template that can be used
-// to generate space scoped service-brokers.
-func PopulateSpaceBrokerTemplate(namespace, name, url string) *servicecatalogv1beta1.ServiceBroker {
-	return &servicecatalogv1beta1.ServiceBroker{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Spec: servicecatalogv1beta1.ServiceBrokerSpec{
-			CommonServiceBrokerSpec: servicecatalogv1beta1.CommonServiceBrokerSpec{
-				URL: url,
-			},
-		},
-	}
+// populateV1alpha1SpaceBrokerTemplate fills in a broker template that can be used
+// to generate Kf space scoped service-brokers.
+func populateV1alpha1SpaceBrokerTemplate(namespace, name, secretName string) *v1alpha1.ServiceBroker {
+	broker := &v1alpha1.ServiceBroker{}
+
+	broker.Name = name
+	broker.Namespace = namespace
+	broker.Spec.Credentials.Name = secretName
+
+	return broker
 }
 
-// PopulateClusterBrokerTemplate fills in a broker template that can be used
-// to generate global service-brokers.
-func PopulateClusterBrokerTemplate(name, url string) *servicecatalogv1beta1.ClusterServiceBroker {
-	return &servicecatalogv1beta1.ClusterServiceBroker{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
-		Spec: servicecatalogv1beta1.ClusterServiceBrokerSpec{
-			CommonServiceBrokerSpec: servicecatalogv1beta1.CommonServiceBrokerSpec{
-				URL: url,
-			},
-		},
-	}
+// populateV1alpha1ClusterBrokerTemplate fills in a broker template that can be used
+// to generate Kf sluster scoped service-brokers.
+func populateV1alpha1ClusterBrokerTemplate(name, secretName string) *v1alpha1.ClusterServiceBroker {
+	broker := &v1alpha1.ClusterServiceBroker{}
+
+	broker.Name = name
+	broker.Spec.Credentials.Name = secretName
+	broker.Spec.Credentials.Namespace = v1alpha1.KfNamespace
+
+	return broker
 }

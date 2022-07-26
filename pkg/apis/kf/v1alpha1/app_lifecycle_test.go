@@ -18,14 +18,18 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/google/kf/pkg/kf/testutil"
-	serving "github.com/google/kf/third_party/knative-serving/pkg/apis/serving/v1alpha1"
-	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	networking "github.com/google/kf/v2/pkg/apis/networking/v1alpha3"
+	"github.com/google/kf/v2/pkg/kf/dynamicutils"
+	"github.com/google/kf/v2/pkg/kf/testutil"
+	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 	apitesting "knative.dev/pkg/apis/testing"
+	"knative.dev/pkg/ptr"
 )
 
 func TestAppSucceeded(t *testing.T) {
@@ -131,40 +135,35 @@ func initTestAppStatus(t *testing.T) *AppStatus {
 	status := &AppStatus{}
 	status.InitializeConditions()
 
-	// sanity check
-	apitesting.CheckConditionOngoing(status.duck(), AppConditionReady, t)
-	apitesting.CheckConditionOngoing(status.duck(), AppConditionSpaceReady, t)
-	apitesting.CheckConditionOngoing(status.duck(), AppConditionSourceReady, t)
-	apitesting.CheckConditionOngoing(status.duck(), AppConditionEnvVarSecretReady, t)
-	apitesting.CheckConditionOngoing(status.duck(), AppConditionKnativeServiceReady, t)
+	// sanity check conditions get initiailized as unknown
+	for _, cond := range status.Conditions {
+		apitesting.CheckConditionOngoing(status.duck(), cond.Type, t)
+	}
+
+	// sanity check total conditions (add 1 for "Ready")
+	testutil.AssertEqual(t, "conditions count", 10, len(status.Conditions))
 
 	return status
 }
 
-func happySource() *Source {
-	return &Source{
+func happyBuild() *Build {
+	return &Build{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "some-source-name",
+			Name: "some-build-name",
 		},
-		Spec: SourceSpec{
-			ServiceAccount: "builder-account",
-			BuildpackBuild: SourceSpecBuildpackBuild{
-				Source:           "gcr.io/my-registry/src-mysource",
-				Stack:            "cflinuxfs3",
-				BuildpackBuilder: "gcr.io/my-registry/my-builder:latest",
-				Image:            "gcr.io/my-registry/output:123",
-			},
+		Spec: BuildSpec{
+			BuildTaskRef: buildpackV3BuildTaskRef(),
 		},
-		Status: SourceStatus{
+		Status: BuildStatus{
 			Status: duckv1beta1.Status{
 				Conditions: duckv1beta1.Conditions{
 					{
-						Type:   SourceConditionSucceeded,
+						Type:   BuildConditionSucceeded,
 						Status: corev1.ConditionTrue,
 					},
 				},
 			},
-			SourceStatusFields: SourceStatusFields{
+			BuildStatusFields: BuildStatusFields{
 				BuildName: "some-build-name",
 				Image:     "some-container-image",
 			},
@@ -172,30 +171,24 @@ func happySource() *Source {
 	}
 }
 
-func pendingSource() *Source {
-	return &Source{
+func pendingBuild() *Build {
+	return &Build{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "some-source-name",
+			Name: "some-build-name",
 		},
-		Spec: SourceSpec{
-			ServiceAccount: "builder-account",
-			BuildpackBuild: SourceSpecBuildpackBuild{
-				Source:           "gcr.io/my-registry/src-mysource",
-				Stack:            "cflinuxfs3",
-				BuildpackBuilder: "gcr.io/my-registry/my-builder:latest",
-				Image:            "gcr.io/my-registry/output:123",
-			},
+		Spec: BuildSpec{
+			BuildTaskRef: buildpackV3BuildTaskRef(),
 		},
-		Status: SourceStatus{
+		Status: BuildStatus{
 			Status: duckv1beta1.Status{
 				Conditions: duckv1beta1.Conditions{
 					{
-						Type:   SourceConditionSucceeded,
+						Type:   BuildConditionSucceeded,
 						Status: corev1.ConditionUnknown,
 					},
 				},
 			},
-			SourceStatusFields: SourceStatusFields{
+			BuildStatusFields: BuildStatusFields{
 				BuildName: "",
 				Image:     "",
 			},
@@ -214,49 +207,68 @@ func envVarSecret() *corev1.Secret {
 	}
 }
 
-func happyKnativeService() *serving.Service {
-	return &serving.Service{
+func serviceAccount() *corev1.ServiceAccount {
+	return &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "some-service-name",
-		},
-		Status: serving.ServiceStatus{
-			Status: duckv1beta1.Status{
-				Conditions: duckv1beta1.Conditions{
-					{
-						Type:   serving.ServiceConditionReady,
-						Status: corev1.ConditionTrue,
-					},
-				},
-			},
-			ConfigurationStatusFields: serving.ConfigurationStatusFields{
-				LatestReadyRevisionName:   "some-ready-revision-name",
-				LatestCreatedRevisionName: "some-created-revision-name",
-			},
-			RouteStatusFields: serving.RouteStatusFields{
-				URL: &apis.URL{
-					Host: "example.com",
-				},
-			},
+			Name: "sa-app-name",
 		},
 	}
 }
 
-func pendingKnativeService() *serving.Service {
-	return &serving.Service{
+func happyDeployment() *appsv1.Deployment {
+	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "some-service-name",
 		},
-		Status: serving.ServiceStatus{
-			Status: duckv1beta1.Status{
-				Conditions: duckv1beta1.Conditions{
-					{
-						Type:   serving.ServiceConditionReady,
-						Status: corev1.ConditionUnknown,
-					},
-				},
-			},
+		Status: appsv1.DeploymentStatus{
+			AvailableReplicas: 3,
+			ReadyReplicas:     3,
+			UpdatedReplicas:   3,
+			Replicas:          3,
 		},
 	}
+}
+
+func pendingDeployment() *appsv1.Deployment {
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "some-service-name",
+		},
+		Status: appsv1.DeploymentStatus{
+			AvailableReplicas: 1,
+			ReadyReplicas:     3,
+			UpdatedReplicas:   3,
+			Replicas:          3,
+		},
+	}
+}
+
+func happyHorizontalPodAutoscaler() *autoscalingv1.HorizontalPodAutoscaler {
+	return &autoscalingv1.HorizontalPodAutoscaler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "some-hpa-name",
+		},
+		Status: autoscalingv1.HorizontalPodAutoscalerStatus{
+			CurrentReplicas: 1,
+			DesiredReplicas: 1,
+		},
+	}
+}
+
+func pendingHorizontalPodAutoscaler() *autoscalingv1.HorizontalPodAutoscaler {
+	return &autoscalingv1.HorizontalPodAutoscaler{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "some-hpa-name",
+		},
+		Status: autoscalingv1.HorizontalPodAutoscalerStatus{
+			CurrentReplicas: 1,
+			DesiredReplicas: 2,
+		},
+	}
+}
+
+func happyService() *corev1.Service {
+	return &corev1.Service{}
 }
 
 func TestAppHappyPath(t *testing.T) {
@@ -264,55 +276,78 @@ func TestAppHappyPath(t *testing.T) {
 
 	apitesting.CheckConditionOngoing(status.duck(), AppConditionReady, t)
 	apitesting.CheckConditionOngoing(status.duck(), AppConditionSpaceReady, t)
-	apitesting.CheckConditionOngoing(status.duck(), AppConditionSourceReady, t)
+	apitesting.CheckConditionOngoing(status.duck(), AppConditionBuildReady, t)
 	apitesting.CheckConditionOngoing(status.duck(), AppConditionEnvVarSecretReady, t)
-	apitesting.CheckConditionOngoing(status.duck(), AppConditionKnativeServiceReady, t)
+	apitesting.CheckConditionOngoing(status.duck(), AppConditionDeploymentReady, t)
+	apitesting.CheckConditionOngoing(status.duck(), AppConditionServiceAccountReady, t)
+	apitesting.CheckConditionOngoing(status.duck(), AppConditionServiceReady, t)
+	apitesting.CheckConditionOngoing(status.duck(), AppConditionHorizontalPodAutoscalerReady, t)
 
 	// space is healthy
 	status.MarkSpaceHealthy()
 
 	apitesting.CheckConditionSucceeded(status.duck(), AppConditionSpaceReady, t)
 
-	// Source starts out pending
-	status.PropagateSourceStatus(pendingSource())
+	// bindings become ready
+	status.PropagateServiceInstanceBindingsStatus(nil)
+	apitesting.CheckConditionSucceeded(status.duck(), AppConditionServiceInstanceBindingsReady, t)
 
-	apitesting.CheckConditionOngoing(status.duck(), AppConditionSourceReady, t)
-	testutil.AssertEqual(t, "LatestCreatedSourceName", "some-source-name", status.LatestCreatedSourceName)
-	testutil.AssertEqual(t, "LatestReadySourceName", "", status.LatestReadySourceName)
-	testutil.AssertEqual(t, "BuildName", "", status.SourceStatusFields.BuildName)
-	testutil.AssertEqual(t, "Image", "", status.SourceStatusFields.Image)
+	// Build starts out pending
+	status.PropagateBuildStatus(pendingBuild())
 
-	// Source succeeds
-	status.PropagateSourceStatus(happySource())
+	apitesting.CheckConditionOngoing(status.duck(), AppConditionBuildReady, t)
+	testutil.AssertEqual(t, "LatestCreatedBuildName", "some-build-name", status.LatestCreatedBuildName)
+	testutil.AssertEqual(t, "LatestReadyBuildName", "", status.LatestReadyBuildName)
+	testutil.AssertEqual(t, "BuildName", "", status.BuildStatusFields.BuildName)
+	testutil.AssertEqual(t, "Image", "", status.BuildStatusFields.Image)
 
-	apitesting.CheckConditionSucceeded(status.duck(), AppConditionSourceReady, t)
-	testutil.AssertEqual(t, "LatestReadySourceName", "some-source-name", status.LatestReadySourceName)
-	testutil.AssertEqual(t, "BuildName", "some-build-name", status.SourceStatusFields.BuildName)
-	testutil.AssertEqual(t, "Image", "some-container-image", status.SourceStatusFields.Image)
+	// Build succeeds
+	status.PropagateBuildStatus(happyBuild())
+
+	apitesting.CheckConditionSucceeded(status.duck(), AppConditionBuildReady, t)
+	testutil.AssertEqual(t, "LatestReadyBuildName", "some-build-name", status.LatestReadyBuildName)
+	testutil.AssertEqual(t, "BuildName", "some-build-name", status.BuildStatusFields.BuildName)
+	testutil.AssertEqual(t, "Image", "some-container-image", status.BuildStatusFields.Image)
 
 	// envVarSecret exists
 	status.PropagateEnvVarSecretStatus(envVarSecret())
-
 	apitesting.CheckConditionSucceeded(status.duck(), AppConditionEnvVarSecretReady, t)
 
-	// Knative Serving starts out pending
-	status.PropagateKnativeServiceStatus(pendingKnativeService())
+	// service gets reconciled
+	status.PropagateServiceStatus(&corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "my-namespace",
+		},
+	})
+
+	// service account gets reconciled
+	status.PropagateServiceAccountStatus(serviceAccount())
+	apitesting.CheckConditionSucceeded(status.duck(), AppConditionServiceAccountReady, t)
+
+	// Hpa gets reconciled
+	status.PropagateAutoscalerV1Status(pendingHorizontalPodAutoscaler())
+	apitesting.CheckConditionOngoing(status.duck(), AppConditionHorizontalPodAutoscalerReady, t)
+
+	// Deployment starts out pending
+	status.PropagateDeploymentStatus(pendingDeployment())
 
 	apitesting.CheckConditionOngoing(status.duck(), AppConditionReady, t)
-	apitesting.CheckConditionOngoing(status.duck(), AppConditionKnativeServiceReady, t)
+	apitesting.CheckConditionOngoing(status.duck(), AppConditionDeploymentReady, t)
 
-	testutil.AssertEqual(t, "LatestReadyRevisionName", "", status.LatestReadyRevisionName)
-	testutil.AssertEqual(t, "LatestCreatedRevisionName", "", status.LatestCreatedRevisionName)
-	testutil.AssertEqual(t, "RouteStatusFields", serving.RouteStatusFields{}, status.RouteStatusFields)
+	// Deployment is ready
+	status.PropagateDeploymentStatus(happyDeployment())
+	apitesting.CheckConditionSucceeded(status.duck(), AppConditionDeploymentReady, t)
 
-	// Knative Serving is ready
-	status.PropagateKnativeServiceStatus(happyKnativeService())
+	// Autoscaler is ready
+	status.PropagateAutoscalerV1Status(happyHorizontalPodAutoscaler())
+	apitesting.CheckConditionSucceeded(status.duck(), AppConditionHorizontalPodAutoscalerReady, t)
+
+	// Routes and bindings are reeady
+	status.PropagateRouteStatus(nil, nil, nil)
+	apitesting.CheckConditionSucceeded(status.duck(), AppConditionRouteReady, t)
 
 	apitesting.CheckConditionSucceeded(status.duck(), AppConditionReady, t)
-	apitesting.CheckConditionSucceeded(status.duck(), AppConditionKnativeServiceReady, t)
-	testutil.AssertEqual(t, "LatestReadyRevisionName", "some-ready-revision-name", status.LatestReadyRevisionName)
-	testutil.AssertEqual(t, "LatestCreatedRevisionName", "some-created-revision-name", status.LatestCreatedRevisionName)
-	testutil.AssertEqual(t, "RouteHost", "example.com", status.RouteStatusFields.URL.Host)
 }
 
 func TestAppStatus_lifecycle(t *testing.T) {
@@ -326,40 +361,35 @@ func TestAppStatus_lifecycle(t *testing.T) {
 		"happy path": {
 			Init: func(status *AppStatus) {
 				status.MarkSpaceHealthy()
-				status.PropagateSourceStatus(happySource())
+				status.PropagateBuildStatus(happyBuild())
 				status.PropagateEnvVarSecretStatus(envVarSecret())
-				status.PropagateKnativeServiceStatus(happyKnativeService())
+				status.PropagateServiceStatus(happyService())
+				status.PropagateRouteStatus(nil, nil, nil)
+				status.PropagateServiceInstanceBindingsStatus(nil)
+				status.PropagateServiceAccountStatus(serviceAccount())
+				status.PropagateDeploymentStatus(happyDeployment())
+				status.PropagateAutoscalerV1Status(happyHorizontalPodAutoscaler())
 			},
 			ExpectSucceeded: []apis.ConditionType{
 				AppConditionReady,
 				AppConditionSpaceReady,
-				AppConditionSourceReady,
+				AppConditionBuildReady,
 				AppConditionEnvVarSecretReady,
-				AppConditionKnativeServiceReady,
-			},
-		},
-		"stopped app": {
-			Init: func(status *AppStatus) {
-				status.MarkSpaceHealthy()
-				status.PropagateSourceStatus(happySource())
-				status.PropagateEnvVarSecretStatus(envVarSecret())
-				// Nil Knative service because a stopped app doesn't have a
-				// Knative service.
-				status.PropagateKnativeServiceStatus(nil)
-			},
-			ExpectSucceeded: []apis.ConditionType{
-				AppConditionSpaceReady,
-				AppConditionSourceReady,
-				AppConditionEnvVarSecretReady,
+				AppConditionServiceReady,
+				AppConditionRouteReady,
+				AppConditionServiceInstanceBindingsReady,
+				AppConditionServiceAccountReady,
+				AppConditionDeploymentReady,
+				AppConditionHorizontalPodAutoscalerReady,
 			},
 		},
 		"out of sync": {
 			Init: func(status *AppStatus) {
 				status.MarkSpaceHealthy()
-				status.PropagateSourceStatus(happySource())
+				status.PropagateBuildStatus(happyBuild())
 				status.PropagateEnvVarSecretStatus(envVarSecret())
 				// out of sync
-				status.PropagateKnativeServiceStatus(&serving.Service{
+				status.PropagateDeploymentStatus(&appsv1.Deployment{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:       "some-service-name",
 						Generation: 42,
@@ -368,7 +398,7 @@ func TestAppStatus_lifecycle(t *testing.T) {
 			},
 			ExpectSucceeded: []apis.ConditionType{
 				AppConditionSpaceReady,
-				AppConditionSourceReady,
+				AppConditionBuildReady,
 				AppConditionEnvVarSecretReady,
 			},
 			ExpectOngoing: []apis.ConditionType{
@@ -409,28 +439,27 @@ func TestAppStatus_lifecycle(t *testing.T) {
 
 func TestServiceBindingConditionType(t *testing.T) {
 	cases := map[string]struct {
-		binding     *servicecatalogv1beta1.ServiceBinding
+		binding     ServiceInstanceBinding
 		expected    apis.ConditionType
 		expectedErr error
 	}{
-		"missing label": {
-			binding: &servicecatalogv1beta1.ServiceBinding{
+		"correct": {
+			binding: ServiceInstanceBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-binding",
-					Labels: map[string]string{
-						"wow": "cool",
+				},
+				Spec: ServiceInstanceBindingSpec{
+					BindingType: BindingType{
+						App: &AppRef{
+							Name: "my-app",
+						},
+					},
+					InstanceRef: corev1.LocalObjectReference{
+						Name: "my-service-instance",
 					},
 				},
-			},
-			expectedErr: errors.New("binding my-binding is missing the label app.kubernetes.io/component"),
-		},
-		"correct": {
-			binding: &servicecatalogv1beta1.ServiceBinding{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "my-binding",
-					Labels: map[string]string{
-						"app.kubernetes.io/component": "my-service-instance",
-					},
+				Status: ServiceInstanceBindingStatus{
+					BindingName: "my-service-instance",
 				},
 			},
 			expected: apis.ConditionType("my-service-instanceReady"),
@@ -439,9 +468,482 @@ func TestServiceBindingConditionType(t *testing.T) {
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			actual, err := serviceBindingConditionType(tc.binding)
-			testutil.AssertEqual(t, "err", tc.expectedErr, err)
+			actual := serviceBindingConditionType(tc.binding)
 			testutil.AssertEqual(t, "conditionType", tc.expected, actual)
 		})
 	}
+}
+
+func TestAppStatus_PropagateDeploymentStatus(t *testing.T) {
+	cases := map[string]struct {
+		deployment    appsv1.Deployment
+		wantCondition apis.Condition
+	}{
+		"generation mismatch": {
+			deployment: appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Generation: 300,
+				},
+			},
+			wantCondition: apis.Condition{
+				Type:    AppConditionDeploymentReady,
+				Status:  corev1.ConditionUnknown,
+				Reason:  "GenerationOutOfDate",
+				Message: "waiting for deployment spec update to be observed",
+			},
+		},
+		"failed": {
+			deployment: appsv1.Deployment{
+				Status: appsv1.DeploymentStatus{
+					Conditions: []appsv1.DeploymentCondition{
+						{
+							Type:    appsv1.DeploymentReplicaFailure,
+							Status:  corev1.ConditionTrue,
+							Reason:  "OOM",
+							Message: "Out of memory",
+						},
+					},
+				},
+			},
+			wantCondition: apis.Condition{
+				Type:    AppConditionDeploymentReady,
+				Status:  corev1.ConditionFalse,
+				Reason:  "OOM",
+				Message: "Out of memory",
+			},
+		},
+		"rolling out": {
+			deployment: appsv1.Deployment{
+				Status: appsv1.DeploymentStatus{
+					Replicas:            1,
+					ReadyReplicas:       1,
+					UpdatedReplicas:     1,
+					UnavailableReplicas: 2,
+				},
+			},
+			wantCondition: apis.Condition{
+				Type:    AppConditionDeploymentReady,
+				Status:  corev1.ConditionUnknown,
+				Reason:  "InitializingPods",
+				Message: `waiting for deployment "" rollout to finish: 0 of 1 updated replicas are available`,
+			},
+		},
+		"upgrade in-place": {
+			deployment: appsv1.Deployment{
+				Status: appsv1.DeploymentStatus{
+					Replicas:          2,
+					ReadyReplicas:     2,
+					UpdatedReplicas:   1,
+					AvailableReplicas: 1,
+				},
+			},
+			wantCondition: apis.Condition{
+				Type:    AppConditionDeploymentReady,
+				Status:  corev1.ConditionUnknown,
+				Reason:  "TerminatingOldReplicas",
+				Message: `waiting for deployment "" rollout to finish: 1 old replicas are pending termination`,
+			},
+		},
+		"starting up new pods": {
+			deployment: appsv1.Deployment{
+				Status: appsv1.DeploymentStatus{
+					Replicas:          2,
+					ReadyReplicas:     1,
+					UpdatedReplicas:   2,
+					AvailableReplicas: 1,
+				},
+			},
+			wantCondition: apis.Condition{
+				Type:    AppConditionDeploymentReady,
+				Status:  corev1.ConditionUnknown,
+				Reason:  "InitializingPods",
+				Message: `waiting for deployment "" rollout to finish: 1 of 2 updated replicas are available`,
+			},
+		},
+		"waiting for health checks": {
+			deployment: appsv1.Deployment{
+				Status: appsv1.DeploymentStatus{
+					Replicas:          2,
+					ReadyReplicas:     2,
+					UpdatedReplicas:   2,
+					AvailableReplicas: 1,
+				},
+			},
+			wantCondition: apis.Condition{
+				Type:    AppConditionDeploymentReady,
+				Status:  corev1.ConditionUnknown,
+				Reason:  "InitializingPods",
+				Message: `waiting for deployment "" rollout to finish: 1 of 2 updated replicas are available`,
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			status := AppStatus{}
+			status.PropagateDeploymentStatus(&tc.deployment)
+
+			actualCond := status.GetCondition(AppConditionDeploymentReady)
+
+			testutil.AssertEqual(t, "condition type", tc.wantCondition.Type, actualCond.Type)
+			testutil.AssertEqual(t, "condition status", tc.wantCondition.Status, actualCond.Status)
+			testutil.AssertEqual(t, "condition reason", tc.wantCondition.Reason, actualCond.Reason)
+			testutil.AssertEqual(t, "condition message", tc.wantCondition.Message, actualCond.Message)
+		})
+	}
+}
+
+func TestAppStatus_PropagateAutoscalerStatus(t *testing.T) {
+	cases := map[string]struct {
+		autoscaler    *autoscalingv1.HorizontalPodAutoscaler
+		wantCondition apis.Condition
+	}{
+		"scaling up": {
+			autoscaler: &autoscalingv1.HorizontalPodAutoscaler{
+				Status: autoscalingv1.HorizontalPodAutoscalerStatus{
+					CurrentReplicas: 1,
+					DesiredReplicas: 2,
+				},
+			},
+			wantCondition: apis.Condition{
+				Type:    AppConditionHorizontalPodAutoscalerReady,
+				Status:  corev1.ConditionUnknown,
+				Reason:  "ScalingUp",
+				Message: `waiting for autoscaler to finish scaling up: current replicas 1, target replicas 2`,
+			},
+		},
+		"scaling down": {
+			autoscaler: &autoscalingv1.HorizontalPodAutoscaler{
+				Status: autoscalingv1.HorizontalPodAutoscalerStatus{
+					CurrentReplicas: 2,
+					DesiredReplicas: 1,
+				},
+			},
+			wantCondition: apis.Condition{
+				Type:    AppConditionHorizontalPodAutoscalerReady,
+				Status:  corev1.ConditionUnknown,
+				Reason:  "ScalingDown",
+				Message: `waiting for autoscaler to finish scaling down: current replicas 2, target replicas 1`,
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			status := AppStatus{}
+			status.PropagateAutoscalerV1Status(tc.autoscaler)
+
+			actualCond := status.GetCondition(AppConditionHorizontalPodAutoscalerReady)
+
+			testutil.AssertEqual(t, "condition type", tc.wantCondition.Type, actualCond.Type)
+			testutil.AssertEqual(t, "condition status", tc.wantCondition.Status, actualCond.Status)
+			testutil.AssertEqual(t, "condition reason", tc.wantCondition.Reason, actualCond.Reason)
+			testutil.AssertEqual(t, "condition message", tc.wantCondition.Message, actualCond.Message)
+		})
+	}
+}
+func TestAppStatus_PropagateRouteStatus(t *testing.T) {
+	t.Parallel()
+
+	buildQRB := func(name string) QualifiedRouteBinding {
+		return QualifiedRouteBinding{
+			Source: RouteSpecFields{
+				Hostname: name,
+				Domain:   "example.com",
+				Path:     "/",
+			},
+			Destination: RouteDestination{
+				Port:        DefaultRouteDestinationPort,
+				ServiceName: name,
+				Weight:      defaultRouteWeight,
+			},
+		}
+	}
+
+	buildRoute := func(qrb QualifiedRouteBinding) (route Route) {
+		route.Name = "some-route"
+		route.Generation = 1
+		route.Status.ObservedGeneration = route.Generation
+		route.Spec.RouteSpecFields = qrb.Source
+		route.Status.InitializeConditions()
+		route.Status.PropagateRouteSpecFields(qrb.Source)
+		route.Status.PropagateVirtualService(&networking.VirtualService{
+			ObjectMeta: metav1.ObjectMeta{Name: "some-vs"},
+		}, nil)
+		route.Status.PropagateBindings([]RouteDestination{qrb.Destination})
+		route.Status.PropagateSpaceDomain(&SpaceDomain{
+			Domain: qrb.Source.Domain,
+		})
+		route.Status.PropagateRouteServiceBinding(nil)
+
+		// sanity check
+		if !route.Status.IsReady() {
+			t.Logf("%#v", route.Status.GetConditions())
+			t.Fatal("Expected Route to be ready")
+		}
+
+		return
+	}
+
+	buildDesiredStatus := func(qrb QualifiedRouteBinding, isReady bool) (s AppRouteStatus) {
+		s.QualifiedRouteBinding = qrb
+		s.Status = RouteBindingStatusUnknown
+
+		if isReady {
+			s.VirtualService = corev1.LocalObjectReference{
+				Name: "some-vs",
+			}
+			s.Status = RouteBindingStatusReady
+		}
+		s.URL = qrb.Source.String()
+		return
+	}
+
+	buildOrphanedStatus := func(qrb QualifiedRouteBinding) (s AppRouteStatus) {
+		s = buildDesiredStatus(qrb, false)
+		s.Status = RouteBindingStatusOrphaned
+		return s
+	}
+
+	bindingA := buildQRB("app-a")
+	bindingB := buildQRB("app-b")
+	routeA := buildRoute(bindingA)
+	routeB := buildRoute(bindingB)
+
+	cases := map[string]struct {
+		bindings          []QualifiedRouteBinding
+		routes            []Route
+		extraBindings     []QualifiedRouteBinding
+		wantCondition     apis.Condition
+		wantRouteStatuses []AppRouteStatus
+		wantURLs          []string
+	}{
+		"multiple success": {
+			bindings: []QualifiedRouteBinding{bindingB, bindingA},
+			routes:   []Route{routeB, routeA},
+			wantCondition: apis.Condition{
+				Type:   AppConditionRouteReady,
+				Status: corev1.ConditionTrue,
+			},
+			wantRouteStatuses: []AppRouteStatus{
+				buildDesiredStatus(bindingA, true),
+				buildDesiredStatus(bindingB, true),
+			},
+			wantURLs: []string{bindingA.Source.String(), bindingB.Source.String()},
+		},
+		"route missing": {
+			bindings: []QualifiedRouteBinding{bindingA},
+			routes:   []Route{routeB},
+			wantCondition: apis.Condition{
+				Type:    AppConditionRouteReady,
+				Status:  corev1.ConditionFalse,
+				Reason:  "RouteMissing",
+				Message: "No Route defined for URL: app-a.example.com",
+			},
+			wantRouteStatuses: []AppRouteStatus{
+				buildDesiredStatus(bindingA, false),
+			},
+			wantURLs: []string{bindingA.Source.String()},
+		},
+		"generation mismatch": {
+			bindings: []QualifiedRouteBinding{bindingA},
+			routes: []Route{func() Route {
+				tmp := routeA.DeepCopy()
+				tmp.Status.ObservedGeneration++
+				return *tmp
+			}()},
+			wantCondition: apis.Condition{
+				Type:    AppConditionRouteReady,
+				Status:  corev1.ConditionUnknown,
+				Reason:  "RouteReconciling",
+				Message: "The Route is currently updating",
+			},
+			wantRouteStatuses: []AppRouteStatus{
+				buildDesiredStatus(bindingA, false),
+			},
+			wantURLs: []string{bindingA.Source.String()},
+		},
+		"unknown status": {
+			bindings: []QualifiedRouteBinding{bindingA},
+			routes: []Route{func() Route {
+				tmp := routeA.DeepCopy()
+				tmp.Status.manage().SetCondition(apis.Condition{
+					Type:    RouteConditionReady,
+					Status:  corev1.ConditionUnknown,
+					Message: "some-message",
+					Reason:  "SomeReason",
+				})
+				return *tmp
+			}()},
+			wantCondition: apis.Condition{
+				Type:    AppConditionRouteReady,
+				Status:  corev1.ConditionUnknown,
+				Reason:  "RouteUnhealthy",
+				Message: "Route has status SomeReason: some-message",
+			},
+			wantRouteStatuses: []AppRouteStatus{
+				buildDesiredStatus(bindingA, false),
+			},
+			wantURLs: []string{bindingA.Source.String()},
+		},
+		"failed route status": {
+			bindings: []QualifiedRouteBinding{bindingA},
+			routes: []Route{func() Route {
+				tmp := routeA.DeepCopy()
+				tmp.Status.manage().SetCondition(apis.Condition{
+					Type:    RouteConditionReady,
+					Status:  corev1.ConditionFalse,
+					Message: "some-message",
+					Reason:  "SomeReason",
+				})
+				return *tmp
+			}()},
+			wantCondition: apis.Condition{
+				Type:    AppConditionRouteReady,
+				Status:  corev1.ConditionFalse,
+				Reason:  "RouteUnhealthy",
+				Message: "Route has status SomeReason: some-message",
+			},
+			wantRouteStatuses: []AppRouteStatus{
+				buildDesiredStatus(bindingA, false),
+			},
+			wantURLs: []string{bindingA.Source.String()},
+		},
+		"binding missing": {
+			bindings: []QualifiedRouteBinding{bindingA},
+			routes: []Route{func() Route {
+				tmp := routeA.DeepCopy()
+				tmp.Status.Bindings = nil
+				return *tmp
+			}()},
+			wantCondition: apis.Condition{
+				Type:    AppConditionRouteReady,
+				Status:  corev1.ConditionUnknown,
+				Reason:  "RouteBindingPropagating",
+				Message: "The binding is still propagating to the Route",
+			},
+			wantRouteStatuses: []AppRouteStatus{
+				buildDesiredStatus(bindingA, false),
+			},
+			wantURLs: []string{bindingA.Source.String()},
+		},
+		"extra bindings": {
+			bindings:      []QualifiedRouteBinding{bindingA},
+			routes:        []Route{routeA},
+			extraBindings: []QualifiedRouteBinding{bindingB},
+			wantCondition: apis.Condition{
+				Type:    AppConditionRouteReady,
+				Status:  corev1.ConditionUnknown,
+				Reason:  "ExtraRouteBinding",
+				Message: "The Route app-b.example.com has an extra binding to this App",
+			},
+			wantRouteStatuses: []AppRouteStatus{
+				buildDesiredStatus(bindingA, true),
+				buildOrphanedStatus(bindingB),
+			},
+			wantURLs: []string{bindingA.Source.String(), bindingB.Source.String()},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			status := &AppStatus{}
+			status.InitializeConditions()
+			status.PropagateRouteStatus(tc.bindings, tc.routes, tc.extraBindings)
+
+			var urls []string
+			for _, r := range status.Routes {
+				urls = append(urls, r.URL)
+			}
+
+			actualCond := status.GetCondition(AppConditionRouteReady)
+			testutil.AssertEqual(t, "condition type", tc.wantCondition.Type, actualCond.Type)
+			testutil.AssertEqual(t, "condition status", tc.wantCondition.Status, actualCond.Status)
+			testutil.AssertEqual(t, "condition reason", tc.wantCondition.Reason, actualCond.Reason)
+			testutil.AssertEqual(t, "condition message", tc.wantCondition.Message, actualCond.Message)
+			testutil.AssertEqual(t, "route statuses", tc.wantRouteStatuses, status.Routes)
+			testutil.AssertEqual(t, "URLs", tc.wantURLs, urls)
+			testutil.AssertEqual(t, "Outer URLs", tc.wantURLs, status.URLs)
+		})
+	}
+}
+
+func TestAppInstancesStatus(t *testing.T) {
+	t.Parallel()
+	autoscalingRule := AppAutoscalingRule{
+		RuleType: CPURuleType,
+		Target:   ptr.Int32(80),
+	}
+
+	cases := map[string]struct {
+		app     *App
+		hpa     *autoscalingv1.HorizontalPodAutoscaler
+		current InstanceStatus
+		want    InstanceStatus
+	}{
+		"hpa is nil.": {
+			current: InstanceStatus{},
+			want:    InstanceStatus{},
+		},
+		"Propogated status successfully.": {
+			app: &App{
+				Spec: AppSpec{
+					Instances: AppSpecInstances{
+						Autoscaling: AppSpecAutoscaling{
+							Rules: []AppAutoscalingRule{
+								autoscalingRule,
+							},
+						},
+					},
+				},
+			},
+			hpa: &autoscalingv1.HorizontalPodAutoscaler{
+				Status: autoscalingv1.HorizontalPodAutoscalerStatus{
+					CurrentCPUUtilizationPercentage: ptr.Int32(70),
+				},
+			},
+			current: InstanceStatus{},
+			want: InstanceStatus{
+				AutoscalingStatus: []AutoscalingRuleStatus{
+					{
+						AppAutoscalingRule: autoscalingRule,
+						Current: AutoscalingRuleMetricValueStatus{
+							AverageValue: resource.NewQuantity(70, resource.DecimalSI),
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			tc.current.PropagateAutoscalingStatus(tc.app, tc.hpa)
+			testutil.AssertEqual(t, "AutoscalingStatus", tc.want, tc.current)
+		})
+	}
+}
+
+func TestPropagateADXBuildStatus(t *testing.T) {
+	t.Parallel()
+
+	t.Run("success", func(t *testing.T) {
+		u := dynamicutils.NewUnstructured(map[string]interface{}{
+			"metadata.name": "some-name",
+			"status.image":  "some-image",
+		})
+
+		s := new(AppStatus)
+		err := s.PropagateADXBuildStatus(u)
+		testutil.AssertErrorsEqual(t, nil, err)
+	})
+	t.Run("fail", func(t *testing.T) {
+		u := dynamicutils.NewUnstructured(map[string]interface{}{
+			"metadata.name": "some-name",
+			"status.image":  []string{"wrong-type"},
+		})
+		s := new(AppStatus)
+		err := s.PropagateADXBuildStatus(u)
+		testutil.AssertErrorsEqual(t, errors.New("failed to read image from status: .status.image accessor error: [wrong-type] is of the type []string, expected string"), err)
+	})
 }

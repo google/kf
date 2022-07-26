@@ -44,13 +44,19 @@ func translateTimestampSince(timestamp metav1.Time) string {
 	return duration.HumanDuration(time.Since(timestamp.Time))
 }
 
-// IndentWriter creates a new writer that indents all lines passing through it
-// by two spaces.
-func IndentWriter(w io.Writer, f func(io.Writer)) {
-	iw := textio.NewPrefixWriter(w, "  ")
+// PrefixWriter creates a new writer that indents all lines passing through it
+// with a given prefix.
+func PrefixWriter(w io.Writer, prefix string, f func(io.Writer)) {
+	iw := textio.NewPrefixWriter(w, prefix)
 	defer iw.Flush()
 
 	f(iw)
+}
+
+// IndentWriter creates a new writer that indents all lines passing through it
+// by two spaces.
+func IndentWriter(w io.Writer, f func(io.Writer)) {
+	PrefixWriter(w, "  ", f)
 }
 
 // SectionWriter writes a section heading with the given name then calls f with

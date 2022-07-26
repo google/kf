@@ -17,7 +17,8 @@ package resources
 import (
 	"fmt"
 
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/apis/networking"
 )
 
 func ExampleNamespaceName() {
@@ -33,7 +34,7 @@ func ExampleMakeNamespace() {
 	space := &v1alpha1.Space{}
 	space.Name = "my-space"
 
-	ns, err := MakeNamespace(space)
+	ns, err := MakeNamespace(space, "some-asm-rev")
 	if err != nil {
 		panic(err)
 	}
@@ -41,10 +42,10 @@ func ExampleMakeNamespace() {
 	fmt.Println("Name:", NamespaceName(space))
 	fmt.Println("Label Count:", len(ns.Labels))
 	fmt.Println("Managed By:", ns.Labels[managedByLabel])
-	fmt.Println("Istio Injection:", ns.Labels[istioInjectionLabel])
+	fmt.Println("Istio Injection:", ns.Labels[networking.IstioInjectionLabel])
 
 	// Output: Name: my-space
 	// Label Count: 2
 	// Managed By: kf
-	// Istio Injection: enabled
+	// Istio Injection: some-asm-rev
 }

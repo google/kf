@@ -15,36 +15,32 @@
 package builds
 
 import (
-	"context"
-
-	"github.com/google/kf/pkg/kf/commands/completion"
-	"github.com/google/kf/pkg/kf/commands/config"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	"github.com/google/kf/pkg/kf/sources"
+	"github.com/google/kf/v2/pkg/kf/builds"
+	"github.com/google/kf/v2/pkg/kf/commands/completion"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
 	"github.com/spf13/cobra"
 )
 
-// NewBuildLogsCommand allows users to list spaces.
-func NewBuildLogsCommand(p *config.KfParams, client sources.Client) *cobra.Command {
+// NewBuildLogsCommand allows users to list Spaces.
+func NewBuildLogsCommand(p *config.KfParams, client builds.Client) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "build-logs BUILD_NAME",
-		Short:   "Get the logs of the given build",
-		Example: "kf build-logs build-12345",
-		Args:    cobra.ExactArgs(1),
+		Use:               "build-logs BUILD_NAME",
+		Short:             "Get the logs of the given Build.",
+		Example:           "kf build-logs build-12345",
+		Args:              cobra.ExactArgs(1),
+		ValidArgsFunction: completion.BuildCompletionFn(p),
+		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := utils.ValidateNamespace(p); err != nil {
+			ctx := cmd.Context()
+			if err := p.ValidateSpaceTargeted(); err != nil {
 				return err
 			}
 
-			cmd.SilenceUsage = true
-
 			buildName := args[0]
 
-			return client.Tail(context.Background(), p.Namespace, buildName, cmd.OutOrStdout())
+			return client.Tail(ctx, p.Space, buildName, cmd.OutOrStdout())
 		},
 	}
-
-	completion.MarkArgCompletionSupported(cmd, completion.SourceCompletion)
 
 	return cmd
 }

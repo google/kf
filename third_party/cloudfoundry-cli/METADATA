@@ -1,0 +1,21 @@
+name: "Cloud Foundry CLI"
+description:
+  "The official command line client for Cloud Foundry"
+
+third_party: {
+  type: PACKAGE
+  url {
+    type: HOMEPAGE
+    value: "https://github.com/cloudfoundry/cli"
+  }
+  url {
+    type: GIT
+    value: "https://github.com/cloudfoundry/cli"
+  }
+  version: "v7.0.0-beta.30"
+  last_upgrade_date {
+    year: 2020
+    month: 03
+    day: 02
+  }
+}

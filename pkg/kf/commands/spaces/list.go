@@ -15,16 +15,14 @@
 package spaces
 
 import (
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/internal/genericcli"
-	"github.com/google/kf/pkg/kf/internal/tableclient"
-	"github.com/google/kf/pkg/kf/spaces"
-	"k8s.io/client-go/dynamic"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/internal/genericcli"
+	"github.com/google/kf/v2/pkg/kf/spaces"
 
 	"github.com/spf13/cobra"
 )
 
 // NewListSpacesCommand allows users to list spaces.
-func NewListSpacesCommand(p *config.KfParams, client dynamic.Interface, tc tableclient.Interface) *cobra.Command {
-	return genericcli.NewListCommand(spaces.NewResourceInfo(), p, client, tc)
+func NewListSpacesCommand(p *config.KfParams) *cobra.Command {
+	return genericcli.NewListCommand(spaces.NewResourceInfo(), p)
 }

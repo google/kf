@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+# This is a script written based on
+# https://cloud.google.com/service-mesh/docs/gke-install-existing-cluster
+#
+# NOTE: It uses a local and altered version of the script. There are more
+# notes in the script as to what was changed.
+
+set -ex
+
+PROJECT_ID=$1
+CLUSTER_NAME=$2
+CLUSTER_LOCATION=$3
+
+if
+    [ -z "${PROJECT_ID}" ] ||
+        [ -z "${CLUSTER_NAME}" ] ||
+        [ -z "${CLUSTER_LOCATION}" ]
+then
+    echo "usage: $0 [PROJECT_ID] [CLOUDSDK_CONTAINER_CLUSTER] [CLOUDSDK_COMPUTE_ZONE]"
+    exit 1
+fi
+
+# Necessary to download ASM tarball
+apt-get update -y
+apt-get install -y gnutls-bin google-cloud-sdk-kpt jq
+
+curl https://storage.googleapis.com/csm-artifacts/asm/asmcli_1.14 >asmcli
+chmod +x asmcli
+
+gcloud container clusters get-credentials "${CLUSTER_NAME}" \
+    --project="${PROJECT_ID}" \
+    --zone="${CLUSTER_LOCATION}"
+
+kubectl create namespace asm-gateways
+
+if [ "${ASM_MANAGED:-false}" = "true" ]; then
+    ./asmcli install \
+        --project_id "${PROJECT_ID}" \
+        --cluster_name "${CLUSTER_NAME}" \
+        --cluster_location "${CLUSTER_LOCATION}" \
+        --enable_all \
+        --managed \
+        --ca mesh_ca \
+        --output_dir out
+
+    kubectl label namespace asm-gateways istio-injection- istio.io/rev="asm-managed" --overwrite
+else
+    ./asmcli install \
+        --project_id "${PROJECT_ID}" \
+        --cluster_name "${CLUSTER_NAME}" \
+        --cluster_location "${CLUSTER_LOCATION}" \
+        --enable_all \
+        --ca mesh_ca \
+        --output_dir out
+
+    REVISION=$(kubectl get deploy -n istio-system -l app=istiod -o json |
+        jq '.items[].metadata.labels."istio.io/rev"' -r)
+    kubectl label namespace asm-gateways istio-injection- istio.io/rev="$REVISION" --overwrite
+fi
+kubectl apply -n asm-gateways -f out/samples/gateways/istio-ingressgateway

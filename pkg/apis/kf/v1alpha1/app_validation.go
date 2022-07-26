@@ -16,11 +16,10 @@ package v1alpha1
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"math"
 
-	"github.com/google/kf/third_party/knative-serving/pkg/apis/serving"
-	v1 "k8s.io/api/core/v1"
+	"github.com/google/kf/v2/pkg/apis/kf"
 	"knative.dev/pkg/apis"
 )
 
@@ -28,9 +27,12 @@ import (
 func (app *App) Validate(ctx context.Context) (errs *apis.FieldError) {
 	// If we're specifically updating status, don't reject the change because
 	// of a spec issue.
-	if !apis.IsInStatusUpdate(ctx) {
-		errs = errs.Also(app.Spec.Validate(apis.WithinSpec(ctx)).ViaField("spec"))
+	if apis.IsInStatusUpdate(ctx) {
+		return
 	}
+
+	errs = errs.Also(apis.ValidateObjectMetadata(app.GetObjectMeta()).ViaField("metadata"))
+	errs = errs.Also(app.Spec.Validate(apis.WithinSpec(ctx)).ViaField("spec"))
 
 	return errs
 }
@@ -39,30 +41,59 @@ func (app *App) Validate(ctx context.Context) (errs *apis.FieldError) {
 // and that the scaling and lifecycle is valid.
 func (spec *AppSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
 
-	errs = errs.Also(ValidatePodSpec(spec.Template.Spec).ViaField("template.spec"))
+	errs = errs.Also(kf.ValidatePodSpec(spec.Template.Spec).ViaField("template.spec"))
 	errs = errs.Also(spec.Instances.Validate(ctx).ViaField("instances"))
-	errs = errs.Also(spec.ValidateSourceSpec(ctx).ViaField("source"))
-	errs = errs.Also(spec.ValidateServiceBindings(ctx).ViaField("serviceBindings"))
+	errs = errs.Also(spec.Build.Validate(ctx).ViaField("build"))
+	errs = errs.Also(spec.ValidateRoutes(ctx).ViaField("routes"))
 
 	return errs
 }
 
-// ValidateSourceSpec validates the SourceSpec embedded in the AppSpec.
-func (spec *AppSpec) ValidateSourceSpec(ctx context.Context) (errs *apis.FieldError) {
-	errs = errs.Also(apis.CheckDisallowedFields(spec.Source, AppSpecSourceMask(spec.Source)))
+// ValidateBuildSpec validates the BuildSpec embedded in the AppSpec.
+func (spec *AppSpecBuild) Validate(ctx context.Context) (errs *apis.FieldError) {
 
-	// Fail if the app source has changed without changing the UpdateRequests.
+	// Ensure there is only one build method.
+	{
+		var methods int
+		if spec.Spec != nil {
+			methods++
+		}
+		if spec.Image != nil {
+			methods++
+		}
+		if spec.BuildRef != nil {
+			methods++
+		}
+
+		if methods == 0 {
+			errs = errs.Also(apis.ErrMissingOneOf("spec", "image", "buildRef"))
+		} else if methods > 1 {
+			errs = errs.Also(apis.ErrMultipleOneOf("spec", "image", "buildRef"))
+		}
+	}
+
+	// Ensure if ADX Builds is the method used, that the name is populated.
+	if spec.BuildRef != nil && spec.BuildRef.Name == "" {
+		errs = errs.Also(apis.ErrMissingField("buildRef.name"))
+	}
+
+	if spec.Spec != nil {
+		errs = errs.Also(apis.CheckDisallowedFields(*spec.Spec, AppSpecBuildMask(*spec.Spec)))
+		errs = errs.Also(spec.Spec.Validate(ctx).ViaField("spec"))
+	}
+
+	// Fail if the App Build has changed without changing the UpdateRequests.
 	if base := apis.GetBaseline(ctx); base != nil {
 		if old, ok := base.(*App); ok {
-			previousValue := old.Spec.Source.UpdateRequests
-			newValue := spec.Source.UpdateRequests
+			previousValue := old.Spec.Build.UpdateRequests
+			newValue := spec.UpdateRequests
 			if previousValue > newValue {
 				msg := fmt.Sprintf("UpdateRequests must be nondecreasing, previous value: %d new value: %d", previousValue, newValue)
 				errs = errs.Also(&apis.FieldError{Message: msg, Paths: []string{"UpdateRequests"}})
 			}
 
-			if spec.Source.NeedsUpdateRequestsIncrement(old.Spec.Source) {
-				errs = errs.Also(&apis.FieldError{Message: "must increment UpdateRequests with change to source", Paths: []string{"UpdateRequests"}})
+			if spec.NeedsUpdateRequestsIncrement(old.Spec.Build) {
+				errs = errs.Also(&apis.FieldError{Message: "must increment UpdateRequests with change to build", Paths: []string{"UpdateRequests"}})
 			}
 		}
 	}
@@ -73,83 +104,80 @@ func (spec *AppSpec) ValidateSourceSpec(ctx context.Context) (errs *apis.FieldEr
 // Validate checks that the fields the user has specified in AppSpecInstances
 // can be used together.
 func (instances *AppSpecInstances) Validate(ctx context.Context) (errs *apis.FieldError) {
-	hasExactly := instances.Exactly != nil
-	hasMin := instances.Min != nil
-	hasMax := instances.Max != nil
+	hasReplicas := instances.Replicas != nil
 
-	if hasExactly && hasMin {
-		errs = errs.Also(apis.ErrMultipleOneOf("exactly", "min"))
+	if hasReplicas && *instances.Replicas <= 0 {
+		errs = errs.Also(apis.ErrInvalidValue(*instances.Replicas, "replicas"))
 	}
 
-	if hasExactly && hasMax {
-		errs = errs.Also(apis.ErrMultipleOneOf("exactly", "max"))
+	errs = errs.Also(instances.Autoscaling.Validate(ctx).ViaField("autoscaling"))
+
+	return errs
+}
+
+// Validate checks that the fields the user has specified in AppSpecAutoscaling
+// can be used together.
+func (autoscaling *AppSpecAutoscaling) Validate(ctx context.Context) (errs *apis.FieldError) {
+	if len(autoscaling.Rules) > 1 {
+		errs = errs.Also(apis.ErrMultipleOneOf("rules"))
 	}
 
-	if hasExactly && *instances.Exactly < 0 {
-		errs = errs.Also(apis.ErrInvalidValue(*instances.Exactly, "exactly"))
+	for idx, rule := range autoscaling.Rules {
+		errs = errs.Also(rule.Validate(ctx).ViaFieldIndex("rules", idx))
 	}
 
-	if hasMin && *instances.Min < 0 {
-		errs = errs.Also(apis.ErrInvalidValue(*instances.Min, "min"))
-	}
+	minReplicas, maxReplicas := autoscaling.MinReplicas, autoscaling.MaxReplicas
 
-	if hasMax && *instances.Max < 0 {
-		errs = errs.Also(apis.ErrInvalidValue(*instances.Max, "max"))
-	}
-
-	if hasMin && hasMax && *instances.Min > *instances.Max {
-		errs = errs.Also(&apis.FieldError{Message: "max must be >= min", Paths: []string{"min", "max"}})
+	switch {
+	case maxReplicas == nil && minReplicas == nil:
+		// Autoscaling is not yet fully enabled, nothing to check.
+	case maxReplicas == nil:
+		errs = errs.Also(apis.ErrMissingField("maxReplicas"))
+	case *maxReplicas <= 0:
+		errs = errs.Also(apis.ErrOutOfBoundsValue(*autoscaling.MaxReplicas, 1, math.MaxInt32, "maxReplicas"))
+	case minReplicas == nil:
+		errs = errs.Also(apis.ErrMissingField("minReplicas"))
+	case *minReplicas <= 0 || *minReplicas > *maxReplicas:
+		errs = errs.Also(apis.ErrOutOfBoundsValue(*autoscaling.MinReplicas, 1, *maxReplicas, "minReplicas"))
 	}
 
 	return errs
 }
 
-// ValidatePodSpec proxies Knative Serving's checks on PodSpec, except for
-// one condition. We don't allow setting the container image directly on the
-// PodSpec because it'll be set by the source instead.
-func ValidatePodSpec(podSpec v1.PodSpec) (errs *apis.FieldError) {
-	// copy because we need to edit the PodSpec
-	ps := podSpec.DeepCopy()
+// Validate checks that the fields the user has specified in AppAutoscalingRules
+// can be used together.
+func (r *AppAutoscalingRule) Validate(ctx context.Context) (errs *apis.FieldError) {
+	target := r.Target
 
-	switch len(ps.Containers) {
-	case 0:
-		errs = errs.Also(apis.ErrMissingField("containers"))
-	case 1:
-		if ps.Containers[0].Image != "" {
-			errs = errs.Also(apis.ErrDisallowedFields("image"))
-		}
-
-		// Use a valid dummy image so we can re-use the validation from Knative
-		// serving.
-		ps.Containers[0].Image = "gcr.io/dummy/image:latest"
-		errs = errs.Also(serving.ValidatePodSpec(*ps))
-	default:
-		errs = errs.Also(apis.ErrMultipleOneOf("containers"))
+	switch {
+	case r.RuleType != CPURuleType:
+		errs = errs.Also(apis.ErrInvalidValue(r.RuleType, "ruleType"))
+	case target == nil:
+		errs = errs.Also(apis.ErrMissingField("target"))
+	case *target <= 0 || *target > 100:
+		// XXX: For different rule types, we may need impose different limits to Target.
+		errs = errs.Also(apis.ErrOutOfBoundsValue(*r.Target, 1, 100, "target"))
 	}
 
 	return errs
 }
 
-// ValidateServiceBindings validates each AppSpecServiceBinding for an App.
-func (spec *AppSpec) ValidateServiceBindings(ctx context.Context) (errs *apis.FieldError) {
-	for _, binding := range spec.ServiceBindings {
-		errs = errs.Also(binding.Validate(ctx))
+// Validate implements Validatable.
+func (s *Scale) Validate(ctx context.Context) (errs *apis.FieldError) {
+	if s.Spec.Replicas < 0 {
+		errs = errs.Also(apis.ErrInvalidValue(s.Spec.Replicas, "replicas"))
 	}
 	return errs
 }
 
-// Validate validates the fields of an AppSpecServiceBinding.
-func (binding *AppSpecServiceBinding) Validate(ctx context.Context) (errs *apis.FieldError) {
-	if binding.BindingName == "" {
-		errs = errs.Also(apis.ErrMissingField("bindingName"))
-	}
+// ValidateRoutes validates each Route for an App.
+func (spec *AppSpec) ValidateRoutes(ctx context.Context) (errs *apis.FieldError) {
+	ctx = withAllowEmptyDomains(ctx)
+	ctx = withAllowEmptyDestinationPort(ctx) // will be populated by the App
 
-	if binding.Instance == "" {
-		errs = errs.Also(apis.ErrMissingField("instance"))
-	}
-
-	if !json.Valid(binding.Parameters) {
-		errs = errs.Also(apis.ErrMissingField("parameters"))
+	for i := range spec.Routes {
+		route := &spec.Routes[i]
+		errs = errs.Also(route.Validate(ctx).ViaIndex(i))
 	}
 
 	return errs

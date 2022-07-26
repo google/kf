@@ -15,74 +15,30 @@
 package apps
 
 import (
-	"context"
-	"fmt"
-	"time"
-
-	"github.com/google/kf/pkg/kf/apps"
-	"github.com/google/kf/pkg/kf/commands/completion"
-	"github.com/google/kf/pkg/kf/commands/config"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/v2/pkg/kf/apps"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/internal/genericcli"
 	"github.com/spf13/cobra"
 )
 
 // NewDeleteCommand creates a delete command.
-func NewDeleteCommand(p *config.KfParams, appsClient apps.Client) *cobra.Command {
-	var async utils.AsyncFlags
-
-	cmd := &cobra.Command{
-		Use:     "delete APP_NAME",
-		Short:   "Delete an existing app",
-		Example: `kf delete myapp`,
-		Args:    cobra.ExactArgs(1),
-		Long: `
-		This command deletes an application from kf.
+func NewDeleteCommand(p *config.KfParams) *cobra.Command {
+	cmd := genericcli.NewDeleteByNameCommand(
+		apps.NewResourceInfo(),
+		p,
+		genericcli.WithDeleteByNameCommandName("delete"),
+		genericcli.WithDeleteByNameAliases([]string{"d"}),
+		genericcli.WithDeleteByNameAdditionalLongText(`
+		Deleting an App will remove associated deployment history, cluster logs, and Builds.
 
 		Things that won't be deleted:
 
 		* source code
-		* application images
-		* routes
-		* service instances
-
-		Things that will be deleted:
-
-		* builds
-		* bindings
-
-		Apps may take a long time to delete if:
-
-		* there are still connections waiting to be served
-		* bindings fail to deprovision
-		* the cluster is in an unhealthy state
-		`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cmd.SilenceUsage = true
-
-			if err := utils.ValidateNamespace(p); err != nil {
-				return err
-			}
-
-			// Cobra ensures we are only called with a single argument.
-			appName := args[0]
-
-			if err := appsClient.Delete(p.Namespace, appName); err != nil {
-				return err
-			}
-
-			return async.AwaitAndLog(cmd.OutOrStdout(), fmt.Sprintf("Deleting app %s", appName), func() error {
-				if _, err := appsClient.WaitForDeletion(context.Background(), p.Namespace, appName, 1*time.Second); err != nil {
-					return fmt.Errorf("couldn't delete: %s", err)
-				}
-
-				return nil
-			})
-		},
-	}
-
-	async.Add(cmd)
-
-	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
+		* container images
+		* Routes
+		* ServiceInstances
+		`),
+	)
 
 	return cmd
 }

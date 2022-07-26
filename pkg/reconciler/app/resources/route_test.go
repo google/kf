@@ -18,10 +18,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
+	"knative.dev/pkg/ptr"
 )
 
 func TestMakeRoutes(t *testing.T) {
@@ -30,7 +30,7 @@ func TestMakeRoutes(t *testing.T) {
 	for tn, tc := range map[string]struct {
 		app    v1alpha1.App
 		space  v1alpha1.Space
-		assert func(t *testing.T, routes []v1alpha1.Route, claims []v1alpha1.RouteClaim)
+		assert func(t *testing.T, routes []v1alpha1.Route, bindings []v1alpha1.QualifiedRouteBinding)
 	}{
 		"configures correctly": {
 			app: v1alpha1.App{
@@ -38,62 +38,206 @@ func TestMakeRoutes(t *testing.T) {
 					Name: "some-name",
 				},
 				Spec: v1alpha1.AppSpec{
-					Routes: []v1alpha1.RouteSpecFields{
-						{Hostname: "some-hostname", Domain: "example.com", Path: "/some-path"},
+					Routes: []v1alpha1.RouteWeightBinding{
+						{
+							Weight:          ptr.Int32(1),
+							DestinationPort: ptr.Int32(9090),
+							RouteSpecFields: v1alpha1.RouteSpecFields{
+								Hostname: "some-hostname",
+								Domain:   "example.com",
+								Path:     "/some-path",
+							},
+						},
 					},
 				},
 			},
-			assert: func(t *testing.T, routes []v1alpha1.Route, claims []v1alpha1.RouteClaim) {
-				testutil.AssertEqual(t, "len(routes)", 1, len(routes))
-				testutil.AssertEqual(t, "route.Spec.AppName", "some-name", routes[0].Spec.AppName)
-				testutil.AssertEqual(t, "route.Spec.Domain", "example.com", routes[0].Spec.Domain)
-				testutil.AssertEqual(t, "route.Spec.Hostname", "some-hostname", routes[0].Spec.Hostname)
-				testutil.AssertEqual(t, "route.Spec.Path", "/some-path", routes[0].Spec.Path)
+			assert: func(t *testing.T, routes []v1alpha1.Route, bindings []v1alpha1.QualifiedRouteBinding) {
+				testutil.AssertEqual(t, "len(bindings)", 1, len(bindings))
+				testutil.AssertEqual(t, "binding.Destination.ServiceName", "some-name", bindings[0].Destination.ServiceName)
+				testutil.AssertEqual(t, "binding.Source.Domain", "example.com", bindings[0].Source.Domain)
+				testutil.AssertEqual(t, "binding.Source.Hostname", "some-hostname", bindings[0].Source.Hostname)
+				testutil.AssertEqual(t, "binding.Source.Path", "/some-path", bindings[0].Source.Path)
+				testutil.AssertEqual(t, "binding.Destination.Port", int32(9090), bindings[0].Destination.Port)
+				testutil.AssertEqual(t, "binding.Destination.Weight", int32(1), bindings[0].Destination.Weight)
 			},
 		},
 		"creates claim route": {
 			app: v1alpha1.App{
 				Spec: v1alpha1.AppSpec{
-					Routes: []v1alpha1.RouteSpecFields{
-						{Hostname: "some-hostname", Domain: "example.com", Path: "/some-path"},
+					Routes: []v1alpha1.RouteWeightBinding{
+						{
+							Weight: ptr.Int32(1),
+							RouteSpecFields: v1alpha1.RouteSpecFields{
+								Hostname: "some-hostname",
+								Domain:   "example.com",
+								Path:     "/some-path",
+							},
+						},
 					},
 				},
 			},
-			assert: func(t *testing.T, routes []v1alpha1.Route, claims []v1alpha1.RouteClaim) {
-				testutil.AssertEqual(t, "len(claims)", 1, len(claims))
+			assert: func(t *testing.T, routes []v1alpha1.Route, bindings []v1alpha1.QualifiedRouteBinding) {
+				testutil.AssertEqual(t, "len(routes)", 1, len(routes))
 				testutil.AssertEqual(
 					t,
 					"route.ObjectMeta.Name",
-					v1alpha1.GenerateRouteName("some-hostname", "example.com", "/some-path", ""),
-					claims[0].Name,
+					v1alpha1.GenerateRouteName("some-hostname", "example.com", "/some-path"),
+					routes[0].Name,
 				)
-				testutil.AssertEqual(t, "route.Spec.Domain", "example.com", claims[0].Spec.Domain)
-				testutil.AssertEqual(t, "route.Spec.Hostname", "some-hostname", claims[0].Spec.Hostname)
-				testutil.AssertEqual(t, "route.Spec.Path", "/some-path", claims[0].Spec.Path)
+				testutil.AssertEqual(t, "route.Spec.Domain", "example.com", routes[0].Spec.Domain)
+				testutil.AssertEqual(t, "route.Spec.Hostname", "some-hostname", routes[0].Spec.Hostname)
+				testutil.AssertEqual(t, "route.Spec.Path", "/some-path", routes[0].Spec.Path)
+			},
+		},
+		"one claim per destination": {
+			app: v1alpha1.App{
+				Spec: v1alpha1.AppSpec{
+					Routes: []v1alpha1.RouteWeightBinding{
+						{
+							Weight: ptr.Int32(1),
+							RouteSpecFields: v1alpha1.RouteSpecFields{
+								Hostname: "some-hostname",
+								Domain:   "example.com",
+								Path:     "/some-path",
+							},
+						},
+						{
+							Weight:          ptr.Int32(1),
+							DestinationPort: ptr.Int32(8080),
+							RouteSpecFields: v1alpha1.RouteSpecFields{
+								Hostname: "some-hostname",
+								Domain:   "example.com",
+								Path:     "/some-path",
+							},
+						},
+					},
+				},
+			},
+			assert: func(t *testing.T, routes []v1alpha1.Route, bindings []v1alpha1.QualifiedRouteBinding) {
+				testutil.AssertEqual(t, "len(routes)", 1, len(routes))
+				testutil.AssertEqual(t, "len(bindings)", 2, len(bindings))
+				testutil.AssertEqual(
+					t,
+					"route.ObjectMeta.Name",
+					v1alpha1.GenerateRouteName("some-hostname", "example.com", "/some-path"),
+					routes[0].Name,
+				)
+				testutil.AssertEqual(t, "route.Spec.Domain", "example.com", routes[0].Spec.Domain)
+				testutil.AssertEqual(t, "route.Spec.Hostname", "some-hostname", routes[0].Spec.Hostname)
+				testutil.AssertEqual(t, "route.Spec.Path", "/some-path", routes[0].Spec.Path)
+			},
+		},
+		"merges RouteWeightBindings": {
+			app: v1alpha1.App{
+				Spec: v1alpha1.AppSpec{
+					Routes: []v1alpha1.RouteWeightBinding{
+						{
+							RouteSpecFields: v1alpha1.RouteSpecFields{
+								Hostname: "some-hostname",
+								Domain:   "example.com",
+								Path:     "/some-path",
+							},
+						},
+						{
+							RouteSpecFields: v1alpha1.RouteSpecFields{
+								Hostname: "some-hostname",
+								Domain:   "example.com",
+								Path:     "/some-path",
+							},
+						},
+					},
+				},
+			},
+			assert: func(t *testing.T, routes []v1alpha1.Route, bindings []v1alpha1.QualifiedRouteBinding) {
+				testutil.AssertEqual(t, "len(routes)", 1, len(routes))
+				testutil.AssertEqual(t, "len(bindings)", 1, len(bindings))
+				testutil.AssertEqual(t, "binding.Destination.Weight", int32(2), bindings[0].Destination.Weight)
+			},
+		},
+		"defaults destinationport": {
+			app: v1alpha1.App{
+				Spec: v1alpha1.AppSpec{
+					Routes: []v1alpha1.RouteWeightBinding{
+						{
+							RouteSpecFields: v1alpha1.RouteSpecFields{
+								Hostname: "some-hostname",
+								Domain:   "example.com",
+								Path:     "/some-path",
+							},
+						},
+					},
+				},
+			},
+			assert: func(t *testing.T, routes []v1alpha1.Route, bindings []v1alpha1.QualifiedRouteBinding) {
+				testutil.AssertEqual(t, "len(bindings)", 1, len(bindings))
+				testutil.AssertEqual(t, "binding.Destination.Port", int32(v1alpha1.DefaultRouteDestinationPort), bindings[0].Destination.Port)
 			},
 		},
 		"no domain, uses space default": {
 			space: v1alpha1.Space{
-				Spec: v1alpha1.SpaceSpec{
-					Execution: v1alpha1.SpaceSpecExecution{
+				Status: v1alpha1.SpaceStatus{
+					NetworkConfig: v1alpha1.SpaceStatusNetworkConfig{
 						Domains: []v1alpha1.SpaceDomain{
-							{Domain: "example.com", Default: true},
-							{Domain: "wrong.example.com", Default: false},
+							{Domain: "example.com"},
+							{Domain: "wrong.example.com"},
 						},
 					},
 				},
 			},
 			app: v1alpha1.App{
 				Spec: v1alpha1.AppSpec{
-					Routes: []v1alpha1.RouteSpecFields{
-						{Hostname: "some-hostname", Domain: ""},
+					Routes: []v1alpha1.RouteWeightBinding{
+						{
+							Weight: ptr.Int32(1),
+							RouteSpecFields: v1alpha1.RouteSpecFields{
+								Hostname: "some-hostname",
+								Domain:   "",
+							},
+						},
 					},
 				},
 			},
-			assert: func(t *testing.T, routes []v1alpha1.Route, claims []v1alpha1.RouteClaim) {
-				testutil.AssertEqual(t, "len(routes)", 1, len(routes))
-				testutil.AssertEqual(t, "route.Spec.Domain", "example.com", routes[0].Spec.Domain)
-				testutil.AssertEqual(t, "route.Spec.Hostname", "some-hostname", routes[0].Spec.Hostname)
+			assert: func(t *testing.T, routes []v1alpha1.Route, bindings []v1alpha1.QualifiedRouteBinding) {
+				testutil.AssertEqual(t, "len(bindings)", 1, len(bindings))
+				testutil.AssertEqual(t, "binding.Source.Domain", "example.com", bindings[0].Source.Domain)
+				testutil.AssertEqual(t, "binding.Source.Hostname", "some-hostname", bindings[0].Source.Hostname)
+			},
+		},
+		"merges default domain with existing": {
+			space: v1alpha1.Space{
+				Status: v1alpha1.SpaceStatus{
+					NetworkConfig: v1alpha1.SpaceStatusNetworkConfig{
+						Domains: []v1alpha1.SpaceDomain{
+							{Domain: "example.com"},
+						},
+					},
+				},
+			},
+			app: v1alpha1.App{
+				Spec: v1alpha1.AppSpec{
+					Routes: []v1alpha1.RouteWeightBinding{
+						{
+							Weight: ptr.Int32(2),
+							RouteSpecFields: v1alpha1.RouteSpecFields{
+								Hostname: "some-hostname",
+								Domain:   "",
+							},
+						},
+						{
+							Weight: ptr.Int32(3),
+							RouteSpecFields: v1alpha1.RouteSpecFields{
+								Hostname: "some-hostname",
+								Domain:   "example.com",
+							},
+						},
+					},
+				},
+			},
+			assert: func(t *testing.T, routes []v1alpha1.Route, bindings []v1alpha1.QualifiedRouteBinding) {
+				testutil.AssertEqual(t, "len(bindings)", 1, len(bindings))
+				testutil.AssertEqual(t, "binding.Source.Domain", "example.com", bindings[0].Source.Domain)
+				testutil.AssertEqual(t, "binding.Source.Hostname", "some-hostname", bindings[0].Source.Hostname)
+				testutil.AssertEqual(t, "binding.Destination.Weight", int32(5), bindings[0].Destination.Weight)
 			},
 		},
 		"ObjectMeta": {
@@ -110,93 +254,50 @@ func TestMakeRoutes(t *testing.T) {
 					Labels:    map[string]string{"a": "1", "b": "2"},
 				},
 				Spec: v1alpha1.AppSpec{
-					Routes: []v1alpha1.RouteSpecFields{
-						{Hostname: "some-hostname", Domain: "some-domain", Path: "some-path"},
+					Routes: []v1alpha1.RouteWeightBinding{
+						{
+							Weight:          ptr.Int32(1),
+							DestinationPort: ptr.Int32(9999),
+							RouteSpecFields: v1alpha1.RouteSpecFields{
+								Hostname: "some-hostname",
+								Domain:   "some-domain",
+								Path:     "some-path",
+							},
+						},
 					},
 				},
 			},
-			assert: func(t *testing.T, routes []v1alpha1.Route, claims []v1alpha1.RouteClaim) {
+			assert: func(t *testing.T, routes []v1alpha1.Route, bindings []v1alpha1.QualifiedRouteBinding) {
 				testutil.AssertEqual(t, "len(routes)", 1, len(routes))
 				testutil.AssertEqual(
 					t,
 					"route.ObjectMeta.Name",
-					v1alpha1.GenerateRouteName("some-hostname", "some-domain", "some-path", "some-app-name"),
+					v1alpha1.GenerateRouteName("some-hostname", "some-domain", "some-path"),
 					routes[0].ObjectMeta.Name,
 				)
 				testutil.AssertEqual(t, "route.ObjectMeta.Labels", map[string]string{
-					"a":                     "1",
-					"b":                     "2",
-					v1alpha1.NameLabel:      "some-app-name",
 					v1alpha1.ManagedByLabel: "kf",
 					v1alpha1.ComponentLabel: "route",
-					v1alpha1.RouteHostname:  "some-hostname",
-					v1alpha1.RouteDomain:    "some-domain",
-					v1alpha1.RoutePath:      v1alpha1.ToBase36("/some-path"),
-					v1alpha1.RouteAppName:   "some-app-name",
 				}, routes[0].ObjectMeta.Labels)
-				testutil.AssertEqual(
-					t,
-					"OwnerReferences",
-					"some-app-name",
-					routes[0].ObjectMeta.OwnerReferences[0].Name,
-				)
 			},
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
-			routes, claims, err := MakeRoutes(&tc.app, &tc.space)
+			routes, bindings, err := MakeRoutes(&tc.app, &tc.space)
 			testutil.AssertNil(t, "err", err)
-			tc.assert(t, routes, claims)
+			tc.assert(t, routes, bindings)
 		})
 	}
 }
 
 func ExampleMakeRouteLabels() {
-	l := MakeRouteLabels(v1alpha1.RouteSpecFields{
-		Hostname: "some-hostname",
-		Domain:   "some-domain",
-		Path:     "/some/path",
-	})
+	l := MakeRouteLabels()
 
 	fmt.Println("Managed by:", l[v1alpha1.ManagedByLabel])
 	fmt.Println("Component Label:", l[v1alpha1.ComponentLabel])
-	fmt.Println("Route Hostname:", l[v1alpha1.RouteHostname])
-	fmt.Println("Route Domain:", l[v1alpha1.RouteDomain])
-	fmt.Println("Route Path (base-36):", l[v1alpha1.RoutePath])
 	fmt.Printf("Number of Keys: %d\n", len(l))
 
 	// Output: Managed by: kf
 	// Component Label: route
-	// Route Hostname: some-hostname
-	// Route Domain: some-domain
-	// Route Path (base-36): 2uusd3k2mp26d
-	// Number of Keys: 5
-}
-
-func TestMakeRouteSelector(t *testing.T) {
-	t.Parallel()
-
-	s := MakeRouteSelector(v1alpha1.RouteSpecFields{
-		Hostname: "some-host",
-		Domain:   "some-domain",
-		Path:     "some-path",
-	})
-
-	good := labels.Set{
-		v1alpha1.ManagedByLabel: "kf",
-		v1alpha1.ComponentLabel: "route",
-		v1alpha1.RouteHostname:  "some-host",
-		v1alpha1.RouteDomain:    "some-domain",
-		v1alpha1.RoutePath:      v1alpha1.ToBase36("/some-path"),
-	}
-	bad := labels.Set{
-		v1alpha1.ManagedByLabel: "other-kf",
-		v1alpha1.ComponentLabel: "other-route",
-		v1alpha1.RouteHostname:  "some-other-host",
-		v1alpha1.RouteDomain:    "some-other-host",
-		v1alpha1.RoutePath:      v1alpha1.ToBase36("some-other-path"),
-	}
-
-	testutil.AssertEqual(t, "matches", true, s.Matches(good))
-	testutil.AssertEqual(t, "doesn't match", false, s.Matches(bad))
+	// Number of Keys: 2
 }

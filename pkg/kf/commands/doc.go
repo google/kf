@@ -13,5 +13,3 @@
 // limitations under the License.
 
 package commands
-
-//go:generate ../../../hack/generate-command-docs.sh

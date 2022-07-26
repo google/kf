@@ -1,0 +1,8 @@
+<dl>
+<dt><code translate="no">--long-flag=<var translate="no">string</var></code></dt>
+<dd><p>A long flag.</p>
+</dd>
+<dt><code translate="no">-s, --short-long-flag=<var translate="no">string</var></code></dt>
+<dd><p>A long and short flag.</p>
+</dd>
+</dl>

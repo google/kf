@@ -1,0 +1,28 @@
+{
+    "sourcePackage": {},
+    "name": "buildpackv3",
+    "kind": "KfBuiltinTask",
+    "apiVersion": "builtin.kf.dev/v1alpha1",
+    "params": [
+        {
+            "name": "SOURCE_IMAGE",
+            "value": "some/source/image"
+        },
+        {
+            "name": "BUILDPACK",
+            "value": "buildpack-1,buildpack-2"
+        },
+        {
+            "name": "RUN_IMAGE",
+            "value": "run/image:latest"
+        },
+        {
+            "name": "BUILDER_IMAGE",
+            "value": "build/image:latest"
+        }
+    ],
+    "nodeSelector": {
+        "cpu": "amd64",
+        "disktype": "ssd"
+    }
+}

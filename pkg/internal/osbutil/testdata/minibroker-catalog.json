@@ -1,0 +1,174 @@
+{
+  "services": [
+    {
+      "id": "mariadb",
+      "name": "mariadb",
+      "description": "Helm Chart for mariadb",
+      "tags": [
+        "mariadb",
+        "mysql",
+        "database",
+        "sql"
+      ],
+      "bindable": true,
+      "plans": [
+        {
+          "id": "mariadb-10-1-29",
+          "name": "10-1-29",
+          "description": "Fast, reliable, scalable, and easy to use open-source relational database system. MariaDB Server is intended for mission-critical, heavy-load production systems as well as for embedding into mass-deployed software.",
+          "free": true
+        },
+        {
+          "id": "mariadb-10-3-22",
+          "name": "10-3-22",
+          "description": "DEPRECATED Fast, reliable, scalable, and easy to use open-source relational database system. MariaDB Server is intended for mission-critical, heavy-load production systems as well as for embedding into mass-deployed software. Highly available MariaDB cluster.",
+          "free": true
+        },
+        {
+          "id": "mariadb-10-3-16",
+          "name": "10-3-16",
+          "description": "Fast, reliable, scalable, and easy to use open-source relational database system. MariaDB Server is intended for mission-critical, heavy-load production systems as well as for embedding into mass-deployed software. Highly available MariaDB cluster.",
+          "free": true
+        }
+      ]
+    },
+    {
+      "id": "redis",
+      "name": "redis",
+      "description": "Helm Chart for redis",
+      "tags": [
+        "redis",
+        "keyvalue",
+        "database"
+      ],
+      "bindable": true,
+      "plans": [
+        {
+          "id": "redis-4-0-8",
+          "name": "4-0-8",
+          "description": "Open source, advanced key-value store. It is often referred to as a data structure server since keys can contain strings, hashes, lists, sets and sorted sets.",
+          "free": true
+        },
+        {
+          "id": "redis-4-0-7",
+          "name": "4-0-7",
+          "description": "Open source, advanced key-value store. It is often referred to as a data structure server since keys can contain strings, hashes, lists, sets and sorted sets.",
+          "free": true
+        },
+        {
+          "id": "redis-4-0-6",
+          "name": "4-0-6",
+          "description": "Open source, advanced key-value store. It is often referred to as a data structure server since keys can contain strings, hashes, lists, sets and sorted sets.",
+          "free": true
+        }
+      ]
+    },
+    {
+      "id": "mongodb",
+      "name": "mongodb",
+      "description": "Helm Chart for mongodb",
+      "tags": [
+        "mongodb",
+        "database",
+        "nosql"
+      ],
+      "bindable": true,
+      "plans": [
+        {
+          "id": "mongodb-4-0-5",
+          "name": "4-0-5",
+          "description": "NoSQL document-oriented database that stores JSON-like documents with dynamic schemas, simplifying the integration of data in content-driven applications.",
+          "free": true
+        },
+        {
+          "id": "mongodb-4-0-2",
+          "name": "4-0-2",
+          "description": "NoSQL document-oriented database that stores JSON-like documents with dynamic schemas, simplifying the integration of data in content-driven applications.",
+          "free": true
+        },
+        {
+          "id": "mongodb-3-6-5",
+          "name": "3-6-5",
+          "description": "NoSQL document-oriented database that stores JSON-like documents with dynamic schemas, simplifying the integration of data in content-driven applications.",
+          "free": true
+        }
+      ]
+    },
+    {
+      "id": "mysql",
+      "name": "mysql",
+      "description": "Helm Chart for mysql",
+      "tags": [
+        "mysql",
+        "database",
+        "sql"
+      ],
+      "bindable": true,
+      "plans": [
+        {
+          "id": "mysql-5-7-27",
+          "name": "5-7-27",
+          "description": "Fast, reliable, scalable, and easy to use open-source relational database system.",
+          "free": true
+        },
+        {
+          "id": "mysql-5-7-14",
+          "name": "5-7-14",
+          "description": "Fast, reliable, scalable, and easy to use open-source relational database system.",
+          "free": true
+        }
+      ]
+    },
+    {
+      "id": "rabbitmq",
+      "name": "rabbitmq",
+      "description": "Helm Chart for rabbitmq",
+      "tags": [
+        "rabbitmq",
+        "message queue",
+        "AMQP"
+      ],
+      "bindable": true,
+      "plans": [
+        {
+          "id": "rabbitmq-3-7-12",
+          "name": "3-7-12",
+          "description": "Open source message broker software that implements the Advanced Message Queuing Protocol (AMQP)",
+          "free": true
+        }
+      ]
+    },
+    {
+      "id": "postgresql",
+      "name": "postgresql",
+      "description": "Helm Chart for postgresql",
+      "tags": [
+        "postgresql",
+        "postgres",
+        "database",
+        "sql"
+      ],
+      "bindable": true,
+      "plans": [
+        {
+          "id": "postgresql-11-5-0",
+          "name": "11-5-0",
+          "description": "Chart for PostgreSQL, an object-relational database management system (ORDBMS) with an emphasis on extensibility and on standards-compliance.",
+          "free": true
+        },
+        {
+          "id": "postgresql-11-3-0",
+          "name": "11-3-0",
+          "description": "Chart for PostgreSQL, an object-relational database management system (ORDBMS) with an emphasis on extensibility and on standards-compliance.",
+          "free": true
+        },
+        {
+          "id": "postgresql-10-6-0",
+          "name": "10-6-0",
+          "description": "Chart for PostgreSQL, an object-relational database management system (ORDBMS) with an emphasis on extensibility and on standards-compliance.",
+          "free": true
+        }
+      ]
+    }
+  ]
+}

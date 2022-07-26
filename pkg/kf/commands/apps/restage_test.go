@@ -20,58 +20,58 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/kf/pkg/kf/apps/fake"
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/kf/apps/fake"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 )
 
 func TestRestage(t *testing.T) {
 	t.Parallel()
 
 	cases := map[string]struct {
-		Namespace       string
+		Space           string
 		Args            []string
 		ExpectedStrings []string
 		ExpectedErr     error
 		Setup           func(t *testing.T, fake *fake.FakeClient)
 	}{
 		"restages app": {
-			Namespace: "default",
-			Args:      []string{"my-app"},
+			Space: "default",
+			Args:  []string{"my-app"},
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Restage("default", "my-app")
-				fake.EXPECT().DeployLogsForApp(gomock.Any(), gomock.Any())
+				fake.EXPECT().Restage(gomock.Any(), "default", "my-app")
+				fake.EXPECT().DeployLogsForApp(gomock.Any(), gomock.Any(), gomock.Any())
 			},
 		},
 		"no app name": {
-			Namespace:   "default",
+			Space:       "default",
 			Args:        []string{},
 			ExpectedErr: errors.New("accepts 1 arg(s), received 0"),
 		},
 		"restage app fails": {
-			Namespace:   "default",
+			Space:       "default",
 			Args:        []string{"my-app"},
-			ExpectedErr: errors.New("failed to restage app: some-error"),
+			ExpectedErr: errors.New("failed to restage App: some-error"),
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().
-					Restage(gomock.Any(), gomock.Any()).
+					Restage(gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil, errors.New("some-error"))
 			},
 		},
 		"restages app async": {
-			Namespace: "default",
-			Args:      []string{"--async", "my-app"},
+			Space: "default",
+			Args:  []string{"--async", "my-app"},
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Restage("default", "my-app")
+				fake.EXPECT().Restage(gomock.Any(), "default", "my-app")
 			},
 		},
 		"restages app deployment fail": {
-			Namespace:   "default",
+			Space:       "default",
 			Args:        []string{"my-app"},
-			ExpectedErr: errors.New("failed to restage app: some-log-error"),
+			ExpectedErr: errors.New("failed to restage App: some-log-error"),
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Restage("default", "my-app")
-				fake.EXPECT().DeployLogsForApp(gomock.Any(), gomock.Any()).Return(errors.New("some-log-error"))
+				fake.EXPECT().Restage(gomock.Any(), "default", "my-app")
+				fake.EXPECT().DeployLogsForApp(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("some-log-error"))
 			},
 		},
 	}
@@ -87,7 +87,7 @@ func TestRestage(t *testing.T) {
 
 			buf := new(bytes.Buffer)
 			p := &config.KfParams{
-				Namespace: tc.Namespace,
+				Space: tc.Space,
 			}
 
 			cmd := NewRestageCommand(p, fake)
@@ -102,7 +102,6 @@ func TestRestage(t *testing.T) {
 			testutil.AssertContainsAll(t, buf.String(), tc.ExpectedStrings)
 			testutil.AssertEqual(t, "SilenceUsage", true, cmd.SilenceUsage)
 
-			ctrl.Finish()
 		})
 	}
 }

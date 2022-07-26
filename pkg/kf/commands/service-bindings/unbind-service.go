@@ -19,52 +19,66 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/kf/pkg/kf/apps"
-	"github.com/google/kf/pkg/kf/commands/config"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/commands/completion"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	utils "github.com/google/kf/v2/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/v2/pkg/kf/serviceinstancebindings"
 	"github.com/spf13/cobra"
+	"knative.dev/pkg/logging"
 )
 
 // NewUnbindServiceCommand allows users to unbind apps from service instances.
-func NewUnbindServiceCommand(p *config.KfParams, client apps.Client) *cobra.Command {
+func NewUnbindServiceCommand(p *config.KfParams, client serviceinstancebindings.Client) *cobra.Command {
 	var async utils.AsyncFlags
 
 	cmd := &cobra.Command{
 		Use:     "unbind-service APP_NAME SERVICE_INSTANCE",
 		Aliases: []string{"us"},
-		Short:   "Unbind a service instance from an app",
-		Long: `Unbind removes an application's access to a service instance.
+		Short:   "Revoke an App's access to a service instance.",
+		Long: `Unbind removes an App's access to a service instance.
 
 		This will delete the credential from the service broker that created the
 		instance and update the VCAP_SERVICES environment variable for the
-		application to remove the reference to the instance.
+		App to remove the reference to the instance.
 		`,
-		Example: `kf unbind-service myapp my-instance`,
-		Args:    cobra.ExactArgs(2),
+		Example:           `kf unbind-service myapp my-instance`,
+		Args:              cobra.ExactArgs(2),
+		ValidArgsFunction: completion.AppCompletionFn(p),
+		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
 			appName := args[0]
 			instanceName := args[1]
+			bindingName := v1alpha1.MakeServiceBindingName(appName, instanceName)
 
-			cmd.SilenceUsage = true
-
-			if err := utils.ValidateNamespace(p); err != nil {
+			if err := p.ValidateSpaceTargeted(); err != nil {
 				return err
 			}
 
-			if _, err := client.UnbindService(p.Namespace, appName, instanceName); err != nil {
+			mutator := func(b *v1alpha1.ServiceInstanceBinding) error {
+				b.Spec.UnbindRequests++
+
+				return nil
+			}
+
+			if _, err := client.Transform(cmd.Context(), p.Space, bindingName, mutator); err != nil {
+				return fmt.Errorf("Failed to update unbinding requests: %s", err)
+			}
+
+			if err := client.Delete(ctx, p.Space, bindingName); err != nil {
 				return err
 			}
 
-			if async.IsSynchronous() {
-				fmt.Fprintf(cmd.OutOrStderr(), "Waiting for bindings to become ready on %s...\n", appName)
-				if _, err := client.WaitForConditionServiceBindingsReadyTrue(context.Background(), p.Namespace, appName, 2*time.Second); err != nil {
-					return fmt.Errorf("imbind failed: %s", err)
+			action := fmt.Sprintf("Deleting service instance binding in Space %q", p.Space)
+			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
+				_, err := client.WaitForDeletion(context.Background(), p.Space, bindingName, 1*time.Second)
+				if err != nil {
+					return fmt.Errorf("unbind failed: %s", err)
 				}
-			}
-
-			fmt.Fprintf(cmd.OutOrStderr(), "Use 'kf restart %s' to ensure your changes take effect\n", appName)
-
-			return nil
+				logging.FromContext(ctx).Infof("Use 'kf restart %s' to ensure your changes take effect", appName)
+				return nil
+			})
 		},
 	}
 

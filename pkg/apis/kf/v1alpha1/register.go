@@ -15,7 +15,7 @@
 package v1alpha1
 
 import (
-	"github.com/google/kf/pkg/apis/kf"
+	"github.com/google/kf/v2/pkg/apis/kf"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -48,14 +48,26 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		SchemeGroupVersion,
 		&App{},
 		&AppList{},
-		&Source{},
-		&SourceList{},
+		&Build{},
+		&BuildList{},
+		&ClusterServiceBroker{},
+		&ClusterServiceBrokerList{},
+		&ServiceBroker{},
+		&ServiceBrokerList{},
+		&ServiceInstance{},
+		&ServiceInstanceList{},
+		&ServiceInstanceBinding{},
+		&ServiceInstanceBindingList{},
 		&Space{},
 		&SpaceList{},
+		&Task{},
+		&TaskList{},
+		&TaskSchedule{},
+		&TaskScheduleList{},
 		&Route{},
 		&RouteList{},
-		&RouteClaim{},
-		&RouteClaimList{},
+		&SourcePackage{},
+		&SourcePackageList{},
 		&metav1.Status{},
 	)
 

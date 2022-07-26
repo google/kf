@@ -1,0 +1,72 @@
+#! /bin/bash -eu
+
+pushd fstest
+  # remove all the tests that fail because of the way that mapfs works
+  rm tests/chmod/00.t
+  rm tests/chmod/05.t
+  rm tests/chmod/07.t
+  rm tests/chmod/11.t
+  rm tests/chown/00.t
+  rm tests/chown/02.t
+  rm tests/chown/03.t
+  rm tests/chown/05.t
+  rm tests/chown/07.t
+  rm tests/link/00.t
+  rm tests/link/02.t
+  rm tests/link/03.t
+  rm tests/link/06.t
+  rm tests/link/07.t
+  rm tests/link/09.t
+  rm tests/link/11.t
+  rm tests/mkdir/00.t
+  rm tests/mkdir/05.t
+  rm tests/mkdir/06.t
+  rm tests/mkfifo/00.t
+  rm tests/mkfifo/05.t
+  rm tests/mkfifo/06.t
+  rm tests/open/00.t
+  rm tests/open/02.t
+  rm tests/open/03.t
+  rm tests/open/05.t
+  rm tests/open/06.t
+  rm tests/open/07.t
+  rm tests/open/08.t
+  rm tests/rename/00.t
+  rm tests/rename/04.t
+  rm tests/rename/05.t
+  rm tests/rename/09.t
+  rm tests/rename/10.t
+  rm tests/rmdir/07.t
+  rm tests/rmdir/08.t
+  rm tests/rmdir/11.t
+  rm tests/symlink/05.t
+  rm tests/symlink/06.t
+  rm tests/truncate/00.t
+  rm tests/truncate/05.t
+  rm tests/truncate/06.t
+  rm tests/unlink/00.t
+  rm tests/unlink/05.t
+  rm tests/unlink/06.t
+  rm tests/unlink/11.t
+
+
+  make clean
+  make all
+popd
+
+pushd mapfs
+  go build -o /mapfs
+popd
+
+mkdir -p foo1 foo2
+chown 1000:1000 foo2
+/mapfs -uid 1000 -gid 1000 foo1 foo2 &
+
+sleep 1
+
+pushd foo1
+  prove -r ../fstest/
+popd
+
+umount -l foo1
+

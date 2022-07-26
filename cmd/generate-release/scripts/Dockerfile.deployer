@@ -1,0 +1,9 @@
+FROM gcr.io/google.com/cloudsdktool/cloud-sdk
+WORKDIR /kf
+COPY bin bin
+
+# Copy scripts
+COPY ./cmd/generate-release/scripts /builder
+
+# Place wrapper scripts on the path
+RUN ln -s /kf/bin/kf-linux /usr/local/bin/kf

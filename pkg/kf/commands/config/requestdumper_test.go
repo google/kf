@@ -24,19 +24,19 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 )
 
-type dummyTransport struct {
+type recordingTransport struct {
 	requestDump string
 }
 
-func (d *dummyTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+func (rt *recordingTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	dump, err := httputil.DumpRequest(r, true)
 	if err != nil {
 		return nil, fmt.Errorf("dumping request: %v", err)
 	}
-	d.requestDump = string(dump)
+	rt.requestDump = string(dump)
 	return &http.Response{
 		Status:     "200 OK",
 		StatusCode: 200,
@@ -53,8 +53,8 @@ func (d *errorTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 
 func TestLoggingRoundTripper_RoundTrip_normal(t *testing.T) {
 	out := &bytes.Buffer{}
-	dt := &dummyTransport{}
-	transport := NewLoggingRoundTripperWithStream(&KfParams{LogHTTP: true}, dt, out)
+	recorder := &recordingTransport{}
+	transport := NewLoggingRoundTripperWithStream(&KfParams{LogHTTP: true}, recorder, out)
 
 	body := "{this: is, the: body, of: [the, request]}"
 	req, _ := http.NewRequest("POST", "http://example.com", strings.NewReader(body))
@@ -78,7 +78,7 @@ func TestLoggingRoundTripper_RoundTrip_normal(t *testing.T) {
 	}
 
 	// the redacted fields SHOULD be passed to the downstream RoundTripper
-	testutil.AssertContainsAll(t, dt.requestDump, []string{
+	testutil.AssertContainsAll(t, recorder.requestDump, []string{
 		body,
 		nonRedacted,
 		redacted,
@@ -100,7 +100,7 @@ func TestLoggingRoundTripper_RoundTrip_error(t *testing.T) {
 
 func TestLoggingRoundTripper_RoundTrip_noLogging(t *testing.T) {
 	out := &bytes.Buffer{}
-	transport := NewLoggingRoundTripperWithStream(&KfParams{LogHTTP: false}, &dummyTransport{}, out)
+	transport := NewLoggingRoundTripperWithStream(&KfParams{LogHTTP: false}, &recordingTransport{}, out)
 	req, _ := http.NewRequest("GET", "http://example.com", nil)
 	transport.RoundTrip(req)
 	s := out.String()

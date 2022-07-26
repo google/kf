@@ -25,9 +25,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/google/kf/pkg/internal/envutil"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/internal/envutil"
 	"github.com/imdario/mergo"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"knative.dev/pkg/kmp"
+	"knative.dev/pkg/logging"
 	"sigs.k8s.io/yaml"
 )
 
@@ -43,7 +46,7 @@ type Application struct {
 	Services        []string          `json:"services,omitempty"`
 	DiskQuota       string            `json:"disk_quota,omitempty"`
 	Memory          string            `json:"memory,omitempty"`
-	Instances       *int              `json:"instances,omitempty"`
+	Instances       *int32            `json:"instances,omitempty"`
 
 	// Container command configuration
 	Command string `json:"command,omitempty"`
@@ -51,6 +54,7 @@ type Application struct {
 	Routes      []Route `json:"routes,omitempty"`
 	NoRoute     *bool   `json:"no-route,omitempty"`
 	RandomRoute *bool   `json:"random-route,omitempty"`
+	Task        *bool   `json:"task,omitempty"`
 
 	// HealthCheckTimeout holds the health check timeout.
 	// Note the serialized field is just timeout.
@@ -71,20 +75,29 @@ type Application struct {
 // KfApplicationExtension holds fields that aren't officially in cf
 type KfApplicationExtension struct {
 	// TODO(#95): These aren't CF proper. How do we expose these in the manifest?
-
-	CPU string `json:"cpu,omitempty"`
-
-	MinScale *int  `json:"min-scale,omitempty"`
-	MaxScale *int  `json:"max-scale,omitempty"`
-	NoStart  *bool `json:"no-start,omitempty"`
-
-	EnableHTTP2 *bool `json:"enable-http2,omitempty"`
-
-	Entrypoint string   `json:"entrypoint,omitempty"`
-	Args       []string `json:"args,omitempty"`
-
-	Dockerfile Dockerfile `json:"dockerfile,omitempty"`
+	CPU        string              `json:"cpu,omitempty"`
+	NoStart    *bool               `json:"no-start,omitempty"`
+	Entrypoint string              `json:"entrypoint,omitempty"`
+	Args       []string            `json:"args,omitempty"`
+	Dockerfile Dockerfile          `json:"dockerfile,omitempty"`
+	Build      *v1alpha1.BuildSpec `json:"build,omitempty"`
+	Ports      AppPortList         `json:"ports,omitempty"`
 }
+
+// AppPort represents an open port on an App.
+type AppPort struct {
+	// Port is the port number to open on the App. It's an int32 to match K8s.
+	Port int32 `json:"port"`
+	// Protocol is the protocol name of the port, either tcp, http or http2.
+	// It's not an L4 protocol, but instead an L7 protocol.
+	// The protocol name gets turned into port label that can be tracked
+	// by Anthos Service Mesh so they have to be valid Istio protocols:
+	// https://istio.io/docs/ops/configuration/traffic-management/protocol-selection/#manual-protocol-selection
+	Protocol string `json:"protocol,omitempty"`
+}
+
+// AppPortList is a list of AppPort.
+type AppPortList []AppPort
 
 // AppDockerImage is the struct for docker configuration.
 type AppDockerImage struct {
@@ -93,11 +106,16 @@ type AppDockerImage struct {
 
 // Route is a route name (including hostname, domain, and path) for an application.
 type Route struct {
-	Route string `json:"route,omitempty"`
+	Route   string `json:"route,omitempty"`
+	AppPort int32  `json:"appPort,omitempty"`
 }
 
 // Manifest is an application's configuration.
 type Manifest struct {
+	// RelativePathRoot holds the directory that the manifest's paths are relative
+	// to.
+	RelativePathRoot string `json:"-"`
+
 	Applications []Application `json:"applications"`
 }
 
@@ -107,39 +125,69 @@ type Dockerfile struct {
 }
 
 // NewFromFile creates a Manifest from a manifest file.
-func NewFromFile(manifestFile string) (*Manifest, error) {
+func NewFromFile(
+	ctx context.Context,
+	manifestFile string,
+	variables map[string]interface{},
+) (*Manifest, error) {
 	reader, err := os.Open(manifestFile)
 	if err != nil {
 		return nil, err
 	}
-	return NewFromReader(reader)
+	return NewFromReader(ctx, reader, filepath.Dir(manifestFile), variables)
 }
 
 // NewFromReader creates a Manifest from a reader.
-func NewFromReader(reader io.Reader) (*Manifest, error) {
+func NewFromReader(
+	ctx context.Context,
+	reader io.Reader,
+	relativePathRoot string,
+	variables map[string]interface{},
+) (*Manifest, error) {
 	bytes, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO: validate manifest
-	m := Manifest{}
-	if err = yaml.UnmarshalStrict(bytes, &m); err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: manifest file contains unsupported config: %v", err)
-	} else if err = yaml.Unmarshal(bytes, &m); err != nil {
+	bytes, err = ApplySubstitution(bytes, variables)
+	if err != nil {
 		return nil, err
 	}
+
+	m := Manifest{}
+	if strictError := yaml.UnmarshalStrict(bytes, &m); strictError != nil {
+
+		// Fallback if strict unmarshaling doesn't work.
+		if err := yaml.Unmarshal(bytes, &m); err != nil {
+			return nil, fmt.Errorf("manifest appears invalid: %v", err)
+		}
+
+		// Print the strict error only if regular unmarshaling worked; the
+		// YAML library wraps the type of error that caused the issue so
+		// there's not a good way to tell if UnmarshalStrict failed due to
+		// invalid structure or invalid configuration.
+		logging.FromContext(ctx).Warnf("Manifest file contains unsupported config: %v\n", strictError)
+	}
+
+	m.RelativePathRoot = relativePathRoot
 
 	return &m, nil
 }
 
-// New creates a Manifest for a single app.
+// New creates a Manifest for a single app relative to the current working
+// directory.
 func New(appName string) (*Manifest, error) {
 	if appName == "" {
 		return nil, errors.New("appName cannot be empty")
 	}
 
+	path, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
 	return &Manifest{
+		RelativePathRoot: path,
 		Applications: []Application{
 			{
 				Name: appName,
@@ -148,22 +196,23 @@ func New(appName string) (*Manifest, error) {
 	}, nil
 }
 
-// CheckForManifest will optionally return a Manifest given a directory.
-func CheckForManifest(directory string) (*Manifest, error) {
-	dirFile, err := os.Stat(directory)
+// CheckForManifest looks for a manifest in the working directory.
+// It returns a pointer to a Manifest if one is found, nil otherwise.
+// An error is also returned in case an unexpected error occurs.
+func CheckForManifest(
+	ctx context.Context,
+	variables map[string]interface{},
+) (*Manifest, error) {
+	path, err := os.Getwd()
 	if err != nil {
 		return nil, err
 	}
 
-	if !dirFile.IsDir() {
-		return nil, fmt.Errorf("expected %s to be a directory", directory)
-	}
-
 	for _, fileName := range []string{"manifest.yml", "manifest.yaml"} {
-		filePath := filepath.Join(directory, fileName)
+		filePath := filepath.Join(path, fileName)
 
 		if _, err := os.Stat(filePath); err == nil {
-			return NewFromFile(filePath)
+			return NewFromFile(ctx, filePath, variables)
 		}
 	}
 
@@ -172,13 +221,25 @@ func CheckForManifest(directory string) (*Manifest, error) {
 
 // App returns an Application by name.
 func (m Manifest) App(name string) (*Application, error) {
+	// If the manifest only has one App, override the App's name
+	if len(m.Applications) == 1 {
+		// To avoid changing m.Applications directly
+		app := m.Applications[0]
+		if name != "" {
+			app.Name = name
+		}
+		return &app, nil
+	}
+
+	appNames := sets.NewString()
 	for _, app := range m.Applications {
 		if app.Name == name {
 			return &app, nil
 		}
+		appNames.Insert(app.Name)
 	}
 
-	return nil, fmt.Errorf("no app %s found in the Manifest", name)
+	return nil, fmt.Errorf("the manifest doesn't have an App named %q, available names are: %q", name, appNames.List())
 }
 
 // Override overrides values using corresponding non-empty values from overrides.
@@ -211,6 +272,14 @@ func (app *Application) Override(overrides *Application) error {
 		app.Env = envutil.EnvVarsToMap(envutil.DeduplicateEnvVars(combined))
 	}
 
+	// Default ports to TCP if not otherwise specified because HTTP traffic should
+	// still be correctly classified under TCP, but not the other way around.
+	for idx, port := range app.Ports {
+		if port.Protocol == "" {
+			app.Ports[idx].Protocol = protocolTCP
+		}
+	}
+
 	if err := app.Validate(context.Background()); err.Error() != "" {
 		return err
 	}
@@ -218,11 +287,12 @@ func (app *Application) Override(overrides *Application) error {
 	return nil
 }
 
-// WarnUnofficialFields prints a message to the given writer if the user is
-// using any kf specific fields in their configuration.
-func (app *Application) WarnUnofficialFields(w io.Writer) error {
-	// TODO(#95) Warn the user about using unofficial fields that are subject to
-	// change.
+// WriteWarnings prints a message to the given writer if the user is
+// using any kf specific fields in their configuration, any of the fields
+// are deprecated or if the name had to have underscores swapped out.
+func (app *Application) WriteWarnings(ctx context.Context) error {
+	logger := logging.FromContext(ctx)
+
 	unofficialFields, err := kmp.CompareSetFields(app.KfApplicationExtension, KfApplicationExtension{})
 	if err != nil {
 		return err
@@ -231,10 +301,23 @@ func (app *Application) WarnUnofficialFields(w io.Writer) error {
 	if len(unofficialFields) != 0 {
 		sort.Strings(unofficialFields)
 
-		fmt.Fprintln(w)
-		fmt.Fprintf(w, "WARNING! The field(s) %v are Kf-specific manifest extensions and may change.\n", unofficialFields)
-		fmt.Fprintln(w, "See https://github.com/google/kf/issues/95 for more info.")
-		fmt.Fprintln(w)
+		logger.Warnf("The field(s) %v are Kf-specific manifest extensions and may change.", unofficialFields)
+	}
+
+	for _, port := range app.Ports {
+		if port.Protocol == protocolTCP {
+			logger.Warn("Kf supports TCP ports but currently only HTTP Routes. " +
+				"TCP ports can be reached on the App's cluster-internal app-<name>.<space>.svc.cluster.local address.")
+			break // only show once
+		}
+	}
+
+	// CF supports names with underscores however K8s does not. There might be
+	// some existing apps that are migrated that use underscores. Replace any
+	// underscore with a hyphen and throw up a warning.
+	if strings.Contains(app.Name, "_") {
+		logger.Warn("Underscores ('_') in names are not allowed in Kubernetes. Replacing with hyphens ('-')...")
+		app.Name = strings.ReplaceAll(app.Name, "_", "-")
 	}
 
 	return nil
@@ -249,6 +332,20 @@ func (app *Application) Buildpack() string {
 	}
 
 	return app.LegacyBuildpack
+}
+
+// BuildpacksSlice returns the buildpacks as a slice of strings.
+// The legacy buildpack field is checked.
+func (app *Application) BuildpacksSlice() []string {
+	if len(app.Buildpacks) > 0 {
+		return app.Buildpacks
+	}
+
+	if app.LegacyBuildpack != "" {
+		return []string{app.LegacyBuildpack}
+	}
+
+	return nil
 }
 
 // CommandEntrypoint gets an override for the entrypoint of the container.

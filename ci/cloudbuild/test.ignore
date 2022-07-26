@@ -1,0 +1,7 @@
+# This should be used when running tests and the .git folder is not necessary.
+# It simply speeds up upload times.
+.git/
+bin/
+__pycache__/
+.pyc
+docs/

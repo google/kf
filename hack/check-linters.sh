@@ -18,8 +18,11 @@ set -eux
 
 cd "${0%/*}"/..
 
+# Use mapfile to store an array of the go packages.
+mapfile -t packages < <(find . -type f -name '*.go' | grep -v \./vendor/ | grep -v \./third_party | grep -v \./first_party)
+
 # gofmt -s -d
-GOFMT_DIFF=$(IFS=$'\n' gofmt -s -d $( find . -type f -name '*.go' | grep -v \./vendor/) )
+GOFMT_DIFF=$(gofmt -s -d "${packages[@]}")
 if [ -n "${GOFMT_DIFF}" ]; then
     echo "${GOFMT_DIFF}"
     echo
@@ -27,10 +30,10 @@ if [ -n "${GOFMT_DIFF}" ]; then
     exit 1
 fi
 
-go list ./... | grep -v ^github.com/google/kf/third_party | grep -v ^github.com/google/kf/vendor | xargs go vet
+go list ./... | grep -v ^github.com/google/kf/v2/third_party | grep -v ^github.com/google/kf/v2/vendor | grep -v ^github.com/google/kf/v2/first_party | xargs go vet
 
 # Checking for misspelled words
 GO111MODULE=off go get -u github.com/client9/misspell/cmd/misspell
 
 # ignore vendor directory
-find . -type f -name '*.go' | grep -v ./vendor/ grep -v ./third_party/ | xargs -n1 -P 20 $(go env GOPATH)/bin/misspell -error
+find . -type f -name '*.go' | grep -v ./vendor/ | grep -v ./third_party/ | grep -v ./first_party/ | xargs -n1 -P 20 "$(go env GOPATH)/bin/misspell" -error

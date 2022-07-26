@@ -22,10 +22,6 @@ import (
 const (
 	// NamespaceEnvKey is the environment variable that holds kf's namespace.
 	NamespaceEnvKey = "SYSTEM_NAMESPACE"
-
-	// KnativeServingNamespaceEnvKey is the environment variable that holds
-	// the knative serving namespace.
-	KnativeServingNamespaceEnvKey = "KNATIVE_SERVING_NAMESPACE"
 )
 
 // Namespace holds the K8s namespace where our serving system
@@ -46,31 +42,8 @@ API to initialize this variable via:
 If this is a Go unit test consuming serverside.Namespace() then it should add the
 following import:
 import (
-	_ "github.com/google/kf/pkg/serverside/testing"
+	_ "github.com/google/kf/v2/pkg/system/testing"
 )`, NamespaceEnvKey, NamespaceEnvKey)
-
-	// log.Fatalf should terminate the process but go doesn't recognize that
-	panic("log.Fatalf should have crashed the process")
-}
-
-// KnativeServingNamespace holds the K8s namespace where our serving system
-// components run.
-func KnativeServingNamespace() string {
-	if ns := os.Getenv(KnativeServingNamespaceEnvKey); ns != "" {
-		return ns
-	}
-
-	log.Fatalf(`The environment variable %q is not set
-If this is a process running on Kubernetes, then it should be using the downward
-API to initialize this variable via:
-  env:
-  - name: %s
-    value: knative-serving
-If this is a Go unit test consuming serverside.KnativeServingNamespace() then
-it should add the following import:
-import (
-	_ "github.com/google/kf/pkg/serverside/testing"
-)`, KnativeServingNamespaceEnvKey, KnativeServingNamespaceEnvKey)
 
 	// log.Fatalf should terminate the process but go doesn't recognize that
 	panic("log.Fatalf should have crashed the process")

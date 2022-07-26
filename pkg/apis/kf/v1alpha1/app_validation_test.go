@@ -16,13 +16,20 @@ package v1alpha1
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
+	"math"
+	"strings"
 	"testing"
 
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/apis/kf/config"
+	"github.com/google/kf/v2/pkg/kf/testutil"
+	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	autoscaling "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
+	logtesting "knative.dev/pkg/logging/testing"
+	"knative.dev/pkg/ptr"
 )
 
 func TestApp_Validate(t *testing.T) {
@@ -32,12 +39,31 @@ func TestApp_Validate(t *testing.T) {
 			Containers: []corev1.Container{{}},
 		},
 	}
-	goodSource := SourceSpec{
-		BuildpackBuild: SourceSpecBuildpackBuild{
-			Source: "gcr.io/kf-source",
-			Stack:  "cflinuxfs3",
+	goodBuild := AppSpecBuild{
+		Spec: &BuildSpec{
+			BuildTaskRef: buildpackV3BuildTaskRef(),
 		},
 	}
+	badMeta := metav1.ObjectMeta{
+		Name: strings.Repeat("A", 64), // Too long
+	}
+
+	goodRoute := RouteWeightBinding{
+		Weight: ptr.Int32(1),
+		RouteSpecFields: RouteSpecFields{
+			Hostname: "some-host",
+			Domain:   "example.com",
+		},
+	}
+
+	badRouteWeight := *goodRoute.DeepCopy()
+	badRouteWeight.Weight = ptr.Int32(-1)
+
+	routeWithoutDomain := *goodRoute.DeepCopy()
+	routeWithoutDomain.Domain = ""
+
+	goodRouteWithDestinationPort := *goodRoute.DeepCopy()
+	goodRouteWithDestinationPort.DestinationPort = ptr.Int32(8080)
 
 	cases := map[string]struct {
 		spec App
@@ -51,9 +77,44 @@ func TestApp_Validate(t *testing.T) {
 				Spec: AppSpec{
 					Template:  goodTemplate,
 					Instances: goodInstances,
-					Source:    goodSource,
+					Build:     goodBuild,
+					Routes: []RouteWeightBinding{
+						goodRoute,
+						routeWithoutDomain,
+						goodRouteWithDestinationPort,
+					},
 				},
 			},
+		},
+		"valid with buildRef": {
+			spec: App{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "valid",
+				},
+				Spec: AppSpec{
+					Template:  goodTemplate,
+					Instances: goodInstances,
+					Build: AppSpecBuild{
+						BuildRef: &corev1.LocalObjectReference{Name: "some-name"},
+					},
+					Routes: []RouteWeightBinding{
+						goodRoute,
+						routeWithoutDomain,
+						goodRouteWithDestinationPort,
+					},
+				},
+			},
+		},
+		"invalid ObjectMeta": {
+			spec: App{
+				ObjectMeta: badMeta,
+				Spec: AppSpec{
+					Template:  goodTemplate,
+					Instances: goodInstances,
+					Build:     goodBuild,
+				},
+			},
+			want: apis.ValidateObjectMetadata(badMeta.GetObjectMeta()).ViaField("metadata"),
 		},
 		"invalid instances": {
 			spec: App{
@@ -62,11 +123,11 @@ func TestApp_Validate(t *testing.T) {
 				},
 				Spec: AppSpec{
 					Template:  goodTemplate,
-					Instances: AppSpecInstances{Exactly: intPtr(-1)},
-					Source:    goodSource,
+					Instances: AppSpecInstances{Replicas: ptr.Int32(-1)},
+					Build:     goodBuild,
 				},
 			},
-			want: apis.ErrInvalidValue(-1, "spec.instances.exactly"),
+			want: apis.ErrInvalidValue(-1, "spec.instances.replicas"),
 		},
 		"invalid template": {
 			spec: App{
@@ -76,12 +137,12 @@ func TestApp_Validate(t *testing.T) {
 				Spec: AppSpec{
 					Template:  AppSpecTemplate{},
 					Instances: goodInstances,
-					Source:    goodSource,
+					Build:     goodBuild,
 				},
 			},
 			want: apis.ErrMissingField("spec.template.spec.containers"),
 		},
-		"invalid source fields": {
+		"invalid build fields": {
 			spec: App{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "valid",
@@ -89,79 +150,290 @@ func TestApp_Validate(t *testing.T) {
 				Spec: AppSpec{
 					Template:  goodTemplate,
 					Instances: goodInstances,
-					Source: SourceSpec{
-						ServiceAccount: "not-user-settable",
+					Build: AppSpecBuild{
+						Spec: &BuildSpec{
+							BuildTaskRef: BuildTaskRef{
+								Name: "a-name",
+								Kind: "a-terrible-kind",
+							},
+						},
 					},
 				},
 			},
-			want: apis.ErrDisallowedFields("spec.source.serviceAccount"),
+			want: ErrInvalidEnumValue("a-terrible-kind", "spec.build.spec.kind", []string{"Task", BuiltinTaskKind, "ClusterTask"}),
+		},
+		"build image and buildRef": {
+			spec: App{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "valid",
+				},
+				Spec: AppSpec{
+					Template:  goodTemplate,
+					Instances: goodInstances,
+					Build: AppSpecBuild{
+						Image: ptr.String("some-image"),
+						BuildRef: &corev1.LocalObjectReference{
+							Name: "some-name",
+						},
+					},
+				},
+			},
+			want: apis.ErrMultipleOneOf("spec.build.spec", "spec.build.image", "spec.build.buildRef"),
+		},
+		"build fields and buildRef": {
+			spec: App{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "valid",
+				},
+				Spec: AppSpec{
+					Template:  goodTemplate,
+					Instances: goodInstances,
+					Build: AppSpecBuild{
+						Spec: &BuildSpec{
+							BuildTaskRef: buildpackV3BuildTaskRef(),
+						},
+						BuildRef: &corev1.LocalObjectReference{
+							Name: "some-name",
+						},
+					},
+				},
+			},
+			want: apis.ErrMultipleOneOf("spec.build.spec", "spec.build.image", "spec.build.buildRef"),
+		},
+		"invalid route weight": {
+			spec: App{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "valid",
+				},
+				Spec: AppSpec{
+					Template:  goodTemplate,
+					Instances: goodInstances,
+					Build:     goodBuild,
+					Routes: []RouteWeightBinding{
+						badRouteWeight,
+					},
+				},
+			},
+			want: apis.ErrInvalidValue(-1, "spec.routes[0].weight"),
+		},
+		"route without domain": {
+			spec: App{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "valid",
+				},
+				Spec: AppSpec{
+					Template:  goodTemplate,
+					Instances: goodInstances,
+					Build:     goodBuild,
+					Routes: []RouteWeightBinding{
+						routeWithoutDomain,
+					},
+				},
+			},
+		},
+		"non-nil buildRef with empty name": {
+			spec: App{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "valid",
+				},
+				Spec: AppSpec{
+					Template:  goodTemplate,
+					Instances: goodInstances,
+					Build: AppSpecBuild{
+						BuildRef: &corev1.LocalObjectReference{
+							Name: "",
+						},
+					},
+				},
+			},
+			want: apis.ErrMissingField("spec.build.buildRef.name"),
 		},
 	}
 
+	store := config.NewDefaultConfigStore(logtesting.TestLogger(t))
+
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			got := tc.spec.Validate(context.Background())
+			got := tc.spec.Validate(store.ToContext(context.Background()))
 
 			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())
 		})
 	}
 }
 
-func TestAppSpec_ValidateSourceSpec(t *testing.T) {
+func TestAppSpec_ValidateBuildSpec(t *testing.T) {
+	dockerBuild := DockerfileBuild("some/source/image", "path/to/dockerfile")
+	dockerBuild2 := DockerfileBuild("other/source/image", "path/to/dockerfile")
 	cases := map[string]struct {
-		old     *SourceSpec
-		current SourceSpec
-		want    *apis.FieldError
+		old                      *AppSpec
+		current                  AppSpec
+		customBuildsDisabled     bool
+		dockerfileBuildsDisabled bool
+		want                     *apis.FieldError
 	}{
-		"invalid source fields": {
-			current: SourceSpec{
-				ServiceAccount: "not-user-settable",
+		"invalid build fields": {
+			current: AppSpec{
+				Build: AppSpecBuild{
+					Spec: &BuildSpec{
+						BuildTaskRef: BuildTaskRef{
+							Name: "a-name",
+							Kind: "a-terrible-kind",
+						},
+					},
+				},
 			},
-			want: apis.ErrDisallowedFields("serviceAccount"),
+			want: ErrInvalidEnumValue("a-terrible-kind", "spec.kind", []string{"Task", BuiltinTaskKind, "ClusterTask"}),
 		},
-		"source changed incorrectly": {
-			old: &SourceSpec{
-				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+		"build changed incorrectly": {
+			old: &AppSpec{
+				Build: AppSpecBuild{
+					Spec: &BuildSpec{
+						BuildTaskRef: buildpackV3BuildTaskRef(),
+					},
+				},
 			},
-			current: SourceSpec{
-				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			current: AppSpec{
+				Build: AppSpecBuild{
+					Spec: &BuildSpec{
+						BuildTaskRef: dockerfileBuildTaskRef(),
+					},
+				},
 			},
-			want: &apis.FieldError{Message: "must increment UpdateRequests with change to source", Paths: []string{"UpdateRequests"}},
+			want: &apis.FieldError{Message: "must increment UpdateRequests with change to build", Paths: []string{"UpdateRequests"}},
 		},
-		"source UpdateRequests less than last": {
-			old: &SourceSpec{
-				UpdateRequests: 42,
-				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+		"build UpdateRequests less than last": {
+			old: &AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 42,
+					Spec: &BuildSpec{
+						BuildTaskRef: buildpackV3BuildTaskRef(),
+					},
+				},
 			},
-			current: SourceSpec{
-				UpdateRequests: 5,
-				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			current: AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 5,
+					Spec: &BuildSpec{
+						BuildTaskRef: dockerfileBuildTaskRef(),
+					},
+				},
 			},
 			want: &apis.FieldError{Message: "UpdateRequests must be nondecreasing, previous value: 42 new value: 5", Paths: []string{"UpdateRequests"}},
 		},
-		"source changed with increment": {
-			old: &SourceSpec{
-				ContainerImage: SourceSpecContainerImage{Image: "mysql"},
+		"build changed with increment": {
+			old: &AppSpec{
+				Build: AppSpecBuild{
+					Spec: &BuildSpec{
+						BuildTaskRef: buildpackV3BuildTaskRef(),
+					},
+				},
 			},
-			current: SourceSpec{
-				UpdateRequests: 2,
-				ContainerImage: SourceSpecContainerImage{Image: "sqlite3"},
+			current: AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 2,
+					Spec: &BuildSpec{
+						BuildTaskRef: dockerfileBuildTaskRef(),
+					},
+				},
 			},
+		},
+		"Custom Builds Disabled, in update": {
+			old: &AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 3,
+					Spec: &BuildSpec{
+						BuildTaskRef: BuildTaskRef{
+							Name: "a-custom-name",
+							Kind: string(tektonv1beta1.ClusterTaskKind),
+						},
+					},
+				},
+			},
+			current: AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 4,
+					Spec: &BuildSpec{
+						BuildTaskRef: BuildTaskRef{
+							Name: "a-different-name",
+							Kind: string(tektonv1beta1.ClusterTaskKind),
+						},
+					},
+				},
+			},
+			customBuildsDisabled: true,
+		},
+		"Custom Builds Disabled, in create": {
+			current: AppSpec{
+				Build: AppSpecBuild{
+					Spec: &BuildSpec{
+						BuildTaskRef: BuildTaskRef{
+							Name: "a-name",
+							Kind: string(tektonv1beta1.NamespacedTaskKind),
+						},
+					},
+				},
+			},
+			customBuildsDisabled: true,
+			want: apis.ErrGeneric(
+				fmt.Sprintf("Custom Builds are disabled, kind must be %q but was %q",
+					BuiltinTaskKind,
+					string(tektonv1beta1.NamespacedTaskKind)),
+				"spec.kind"),
+		},
+		"Docker Builds Disabled, in update": {
+			old: &AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 4,
+					Spec:           &dockerBuild,
+				},
+			},
+			current: AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 5,
+					Spec:           &dockerBuild2,
+				},
+			},
+			dockerfileBuildsDisabled: true,
+			want: apis.ErrGeneric(fmt.Sprintf(
+				"Dockerfile Builds are disabled, but BuildTaskRef name was %q",
+				DockerfileBuildTaskName),
+				"spec.name"),
+		},
+		"Dockerfile Builds Disabled, in create": {
+			current: AppSpec{
+				Build: AppSpecBuild{
+					Spec: &dockerBuild,
+				},
+			},
+			dockerfileBuildsDisabled: true,
+			want: apis.ErrGeneric(fmt.Sprintf(
+				"Dockerfile Builds are disabled, but BuildTaskRef name was %q",
+				DockerfileBuildTaskName),
+				"spec.name"),
 		},
 	}
 
+	store := config.NewDefaultConfigStore(logtesting.TestLogger(t))
+
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			ctx := context.TODO()
+			ctx := store.ToContext(context.Background())
+
 			if tc.old != nil {
 				ctx = apis.WithinUpdate(ctx, &App{
-					Spec: AppSpec{
-						Source: *tc.old,
-					},
+					Spec: *tc.old,
 				})
+			} else {
+				ctx = apis.WithinCreate(ctx)
 			}
 
-			got := (&AppSpec{Source: tc.current}).ValidateSourceSpec(ctx)
+			cfg, err := config.FromContext(ctx).Defaults()
+			testutil.AssertNil(t, "err", err)
+			cfg.FeatureFlags = config.FeatureFlagToggles{}
+			cfg.FeatureFlags.SetDisableCustomBuilds(tc.customBuildsDisabled)
+			cfg.FeatureFlags.SetDockerfileBuilds(!tc.dockerfileBuildsDisabled)
+
+			got := tc.current.Build.Validate(store.ToContext(ctx))
 
 			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())
 		})
@@ -182,35 +454,16 @@ func TestAppSpecInstances_Validate(t *testing.T) {
 		"stopped": {
 			spec: AppSpecInstances{Stopped: true},
 		},
-		"valid minmax": {
-			spec: AppSpecInstances{Min: intPtr(3), Max: intPtr(5)},
+		"valid replicas": {
+			spec: AppSpecInstances{Replicas: ptr.Int32(3)},
 		},
-		"valid exactly": {
-			spec: AppSpecInstances{Exactly: intPtr(3)},
+		"replicas lt 0": {
+			spec: AppSpecInstances{Replicas: ptr.Int32(-1)},
+			want: apis.ErrInvalidValue(-1, "replicas"),
 		},
-		"exactly and min": {
-			spec: AppSpecInstances{Exactly: intPtr(3), Min: intPtr(3)},
-			want: apis.ErrMultipleOneOf("exactly", "min"),
-		},
-		"exactly and max": {
-			spec: AppSpecInstances{Exactly: intPtr(3), Max: intPtr(3)},
-			want: apis.ErrMultipleOneOf("exactly", "max"),
-		},
-		"exactly lt 0": {
-			spec: AppSpecInstances{Exactly: intPtr(-1)},
-			want: apis.ErrInvalidValue(-1, "exactly"),
-		},
-		"min lt 0": {
-			spec: AppSpecInstances{Min: intPtr(-1)},
-			want: apis.ErrInvalidValue(-1, "min"),
-		},
-		"max lt 0": {
-			spec: AppSpecInstances{Max: intPtr(-1)},
-			want: apis.ErrInvalidValue(-1, "max"),
-		},
-		"max lt min": {
-			spec: AppSpecInstances{Max: intPtr(1), Min: intPtr(50)},
-			want: &apis.FieldError{Message: "max must be >= min", Paths: []string{"min", "max"}},
+		"replicas eq 0": {
+			spec: AppSpecInstances{Replicas: ptr.Int32(0)},
+			want: apis.ErrInvalidValue(0, "replicas"),
 		},
 	}
 
@@ -223,94 +476,161 @@ func TestAppSpecInstances_Validate(t *testing.T) {
 	}
 }
 
-func TestValidatePodSpec(t *testing.T) {
+func TestAutoscalingSpec_Validate(t *testing.T) {
+	// These test cases are broken out separately because they're
+	// too extenstive to copy the whole service struct for.
+
 	cases := map[string]struct {
-		spec corev1.PodSpec
+		spec AppSpecAutoscaling
 		want *apis.FieldError
 	}{
-		"missing container": {
-			spec: corev1.PodSpec{
-				Containers: []corev1.Container{},
-			},
-			want: apis.ErrMissingField("containers"),
+		"blank, valid": {
+			spec: AppSpecAutoscaling{},
 		},
-		"too many containers": {
-			spec: corev1.PodSpec{
-				Containers: []corev1.Container{{}, {}},
+		"multiple rules": {
+			spec: AppSpecAutoscaling{
+				MaxReplicas: ptr.Int32(3),
+				MinReplicas: ptr.Int32(1),
+				Rules: []AppAutoscalingRule{
+					{
+						RuleType: CPURuleType,
+						Target:   ptr.Int32(80),
+					},
+					{
+						RuleType: CPURuleType,
+						Target:   ptr.Int32(50),
+					},
+				},
 			},
-			want: apis.ErrMultipleOneOf("containers"),
+			want: apis.ErrMultipleOneOf("rules"),
 		},
-		"container has image": {
-			spec: corev1.PodSpec{
-				Containers: []corev1.Container{{Image: "some-image"}},
+		"max replicas is nil, min replicas is not nil": {
+			spec: AppSpecAutoscaling{
+				MinReplicas: ptr.Int32(3),
 			},
-			want: apis.ErrDisallowedFields("image"),
+			want: apis.ErrMissingField("maxReplicas"),
 		},
-		"upstream failure": {
-			// NOTE: this test is intended to show that a Knative Serving error will
-			// be passed thorugh, it doesn't matter which upstream error. In the
-			// future Knative Serving may decide to allow InitContainers in which case
-			// this test will need to choose some other invalid field.
-			spec: corev1.PodSpec{
-				Containers:     []corev1.Container{{}},
-				InitContainers: []corev1.Container{{Image: "some-image"}},
+		"max replicas not a positive integer": {
+			spec: AppSpecAutoscaling{MaxReplicas: ptr.Int32(0)},
+			want: apis.ErrOutOfBoundsValue(0, 1, math.MaxInt32, "maxReplicas"),
+		},
+		"min replicas not a positive integer": {
+			spec: AppSpecAutoscaling{
+				MaxReplicas: ptr.Int32(3),
+				MinReplicas: ptr.Int32(0),
 			},
-			want: apis.ErrDisallowedFields("initContainers"),
+			want: apis.ErrOutOfBoundsValue(0, 1, 3, "minReplicas"),
 		},
-		"missing image is okay": {
-			spec: corev1.PodSpec{
-				Containers: []corev1.Container{{}},
+		"max replicas lt min replicas": {
+			spec: AppSpecAutoscaling{
+				MaxReplicas: ptr.Int32(3),
+				MinReplicas: ptr.Int32(4),
+			},
+			want: apis.ErrOutOfBoundsValue(4, 1, 3, "minReplicas"),
+		},
+		"min replicas nil, max replicas valid, invalid": {
+			spec: AppSpecAutoscaling{
+				MaxReplicas: ptr.Int32(3),
+			},
+			want: apis.ErrMissingField("minReplicas"),
+		},
+		"min replicas valid, max replicas valid, valid": {
+			spec: AppSpecAutoscaling{
+				MaxReplicas: ptr.Int32(3),
+				MinReplicas: ptr.Int32(1),
 			},
 		},
 	}
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			got := ValidatePodSpec(tc.spec)
-
+			got := tc.spec.Validate(context.Background())
 			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())
 		})
 	}
 }
 
-func TestAppSpecServiceBinding_Validate(t *testing.T) {
+func TestAppAutoscalingRules_Validate(t *testing.T) {
+	// These test cases are broken out separately because they're
+	// too extenstive to copy the whole service struct for.
+
 	cases := map[string]struct {
-		binding *AppSpecServiceBinding
-		want    *apis.FieldError
+		spec AppAutoscalingRule
+		want *apis.FieldError
 	}{
-		"missing bindingName": {
-			binding: &AppSpecServiceBinding{
-				Instance:   "my-cool-instance",
-				Parameters: json.RawMessage(`{"cool":"params"}`),
-			},
-			want: apis.ErrMissingField("bindingName"),
+		"blank": {
+			spec: AppAutoscalingRule{},
+			want: apis.ErrInvalidValue("", "ruleType"),
 		},
-		"missing instance": {
-			binding: &AppSpecServiceBinding{
-				BindingName: "my-cool-binding",
-				Parameters:  json.RawMessage(`{"cool":"params"}`),
+		"ruleType not CPU": {
+			spec: AppAutoscalingRule{
+				RuleType: "type",
 			},
-			want: apis.ErrMissingField("instance"),
+			want: apis.ErrInvalidValue("type", "ruleType"),
 		},
-		"missing parameters": {
-			binding: &AppSpecServiceBinding{
-				BindingName: "my-cool-binding",
-				Instance:    "my-cool-instance",
+		"target is nil": {
+			spec: AppAutoscalingRule{
+				RuleType: CPURuleType,
 			},
-			want: apis.ErrMissingField("parameters"),
+			want: apis.ErrMissingField("target"),
 		},
-		"null parameters": {
-			binding: &AppSpecServiceBinding{
-				BindingName: "my-cool-binding",
-				Instance:    "my-cool-instance",
-				Parameters:  json.RawMessage("null"),
+		"invalid target, too small": {
+			spec: AppAutoscalingRule{
+				RuleType: CPURuleType,
+				Target:   ptr.Int32(0),
+			},
+			want: apis.ErrOutOfBoundsValue(0, 1, 100, "target"),
+		},
+		"invalid target, too large": {
+			spec: AppAutoscalingRule{
+				RuleType: CPURuleType,
+				Target:   ptr.Int32(101),
+			},
+			want: apis.ErrOutOfBoundsValue(101, 1, 100, "target"),
+		},
+		"valid": {
+			spec: AppAutoscalingRule{
+				RuleType: CPURuleType,
+				Target:   ptr.Int32(80),
 			},
 		},
 	}
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			got := tc.binding.Validate(context.Background())
+			got := tc.spec.Validate(context.Background())
+			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())
+		})
+	}
+}
+
+func TestScale_Validate(t *testing.T) {
+	// These test cases are broken out separately because they're
+	// too extenstive to copy the whole service struct for.
+
+	cases := map[string]struct {
+		spec autoscaling.ScaleSpec
+		want *apis.FieldError
+	}{
+		"valid replicas": {
+			spec: autoscaling.ScaleSpec{Replicas: 3},
+		},
+		"replicas lt 0": {
+			spec: autoscaling.ScaleSpec{Replicas: -1},
+			want: apis.ErrInvalidValue(-1, "replicas"),
+		},
+		"replicas eq 0": {
+			spec: autoscaling.ScaleSpec{Replicas: 0},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			s := Scale{
+				Scale: autoscaling.Scale{Spec: tc.spec},
+			}
+			got := s.Validate(context.Background())
+
 			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())
 		})
 	}

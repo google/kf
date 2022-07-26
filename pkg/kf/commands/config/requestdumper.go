@@ -22,15 +22,12 @@ import (
 	"os"
 
 	"github.com/segmentio/textio"
+	"k8s.io/client-go/transport"
 )
-
-// WrapperFunc wraps an http.RoundTripper when a new transport is created for a
-// client, allowing per connection behavior to be injected.
-type WrapperFunc func(http.RoundTripper) http.RoundTripper
 
 // LoggingRoundTripperWrapper returns a WrapperFunc that logs values to stderr
 // if params.LogHTTP is true.
-func LoggingRoundTripperWrapper(params *KfParams) WrapperFunc {
+func LoggingRoundTripperWrapper(params *KfParams) transport.WrapperFunc {
 	return func(in http.RoundTripper) http.RoundTripper {
 		return NewLoggingRoundTripper(params, in)
 	}

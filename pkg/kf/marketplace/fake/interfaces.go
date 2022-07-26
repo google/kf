@@ -14,9 +14,9 @@
 
 package fake
 
-import "github.com/google/kf/pkg/kf/marketplace"
+import "github.com/google/kf/v2/pkg/kf/marketplace"
 
-//go:generate mockgen --package=fake --destination=fake_client_interface.go --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --mock_names=ClientInterface=FakeClientInterface github.com/google/kf/pkg/kf/marketplace/fake ClientInterface
+//go:generate mockgen --package=fake --destination=fake_client_interface.go --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --mock_names=ClientInterface=FakeClientInterface github.com/google/kf/v2/pkg/kf/marketplace/fake ClientInterface
 
 // ClientInterface is implementd by marketplace.Client.
 type ClientInterface interface {

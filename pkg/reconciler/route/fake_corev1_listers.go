@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,36 +20,37 @@
 package route
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	v1 "k8s.io/api/core/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
-	reflect "reflect"
 )
 
-// FakeNamespaceLister is a mock of NamespaceLister interface
+// FakeNamespaceLister is a mock of NamespaceLister interface.
 type FakeNamespaceLister struct {
 	ctrl     *gomock.Controller
 	recorder *FakeNamespaceListerMockRecorder
 }
 
-// FakeNamespaceListerMockRecorder is the mock recorder for FakeNamespaceLister
+// FakeNamespaceListerMockRecorder is the mock recorder for FakeNamespaceLister.
 type FakeNamespaceListerMockRecorder struct {
 	mock *FakeNamespaceLister
 }
 
-// NewFakeNamespaceLister creates a new mock instance
+// NewFakeNamespaceLister creates a new mock instance.
 func NewFakeNamespaceLister(ctrl *gomock.Controller) *FakeNamespaceLister {
 	mock := &FakeNamespaceLister{ctrl: ctrl}
 	mock.recorder = &FakeNamespaceListerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *FakeNamespaceLister) EXPECT() *FakeNamespaceListerMockRecorder {
 	return m.recorder
 }
 
-// Get mocks base method
+// Get mocks base method.
 func (m *FakeNamespaceLister) Get(arg0 string) (*v1.Namespace, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", arg0)
@@ -58,13 +59,13 @@ func (m *FakeNamespaceLister) Get(arg0 string) (*v1.Namespace, error) {
 	return ret0, ret1
 }
 
-// Get indicates an expected call of Get
+// Get indicates an expected call of Get.
 func (mr *FakeNamespaceListerMockRecorder) Get(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*FakeNamespaceLister)(nil).Get), arg0)
 }
 
-// List mocks base method
+// List mocks base method.
 func (m *FakeNamespaceLister) List(arg0 labels.Selector) ([]*v1.Namespace, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "List", arg0)
@@ -73,7 +74,7 @@ func (m *FakeNamespaceLister) List(arg0 labels.Selector) ([]*v1.Namespace, error
 	return ret0, ret1
 }
 
-// List indicates an expected call of List
+// List indicates an expected call of List.
 func (mr *FakeNamespaceListerMockRecorder) List(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*FakeNamespaceLister)(nil).List), arg0)

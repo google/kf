@@ -21,14 +21,19 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
-	"reflect"
+	"strings"
 	"testing"
 
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/testutil"
+	apiconfig "github.com/google/kf/v2/pkg/apis/kf/config"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	configlogging "github.com/google/kf/v2/pkg/kf/commands/config/logging"
+	injection "github.com/google/kf/v2/pkg/kf/injection/fake"
+	"github.com/google/kf/v2/pkg/kf/testutil"
+	v1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/homedir"
+	kubeclient "knative.dev/pkg/client/injection/kube/client/fake"
 )
 
 func TestParamsPath(t *testing.T) {
@@ -67,7 +72,7 @@ func ExampleWrite() {
 
 	{
 		toWrite := &KfParams{
-			Namespace: "my-namespace",
+			Space: "my-namespace",
 		}
 
 		if err := Write(configFile, toWrite); err != nil {
@@ -81,44 +86,10 @@ func ExampleWrite() {
 			panic(err)
 		}
 
-		fmt.Println("Read namespace:", toRead.Namespace)
+		fmt.Println("Read namespace:", toRead.Space)
 	}
 
 	// Output: Read namespace: my-namespace
-}
-
-func TestNewDefaultKfParams(t *testing.T) {
-	cases := map[string]struct {
-		configPathEnv string
-		expected      KfParams
-	}{
-		"KUBECONFIG set": {
-			configPathEnv: "kube-config.yml",
-			expected: KfParams{
-				KubeCfgFile: "kube-config.yml",
-			},
-		},
-		"KUBECONFIG not set": {
-			configPathEnv: "",
-			expected: KfParams{
-				KubeCfgFile: filepath.Join(homedir.HomeDir(), ".kube", "config"),
-			},
-		},
-	}
-
-	for tn, tc := range cases {
-		t.Run(tn, func(t *testing.T) {
-			if len(tc.configPathEnv) != 0 {
-				os.Setenv("KUBECONFIG", tc.configPathEnv)
-			} else {
-				os.Unsetenv("KUBECONFIG")
-			}
-			defaultConfig := NewDefaultKfParams()
-
-			testutil.AssertEqual(t, "config", &tc.expected, defaultConfig)
-		})
-	}
-
 }
 
 func TestLoad(t *testing.T) {
@@ -142,19 +113,19 @@ func TestLoad(t *testing.T) {
 		"overrides": {
 			configFile: "custom-config.yml",
 			override: KfParams{
-				Namespace:   "foo",
+				Space:       "foo",
 				KubeCfgFile: "kubecfg",
 			},
 			expected: KfParams{
-				Namespace:   "foo",
+				Space:       "foo",
 				KubeCfgFile: "kubecfg",
 			},
 		},
 		"populated config": {
 			configFile: "custom-config.yml",
 			expected: KfParams{
-				Namespace:   "customns",
-				KubeCfgFile: "customkubecfg",
+				Space:       "customns",
+				KubeCfgFile: "", // this changed after Kf v2.1.0 so Kf no long caches Kubeconfig.
 			},
 		},
 	}
@@ -173,7 +144,7 @@ func TestLoad(t *testing.T) {
 
 }
 
-func ExampleKfParams_GetTargetSpaceOrDefault() {
+func ExampleKfParams_GetTargetSpace() {
 	target := &v1alpha1.Space{}
 	target.Name = "cached-target"
 
@@ -181,7 +152,7 @@ func ExampleKfParams_GetTargetSpaceOrDefault() {
 		TargetSpace: target,
 	}
 
-	space, err := p.GetTargetSpaceOrDefault()
+	space, err := p.GetTargetSpace(context.Background())
 	fmt.Println("Space:", space.Name)
 	fmt.Println("Error:", err)
 
@@ -189,24 +160,12 @@ func ExampleKfParams_GetTargetSpaceOrDefault() {
 	// Error: <nil>
 }
 
-func ExampleKfParams_SetTargetSpaceToDefault() {
-	defaultSpace := &v1alpha1.Space{}
-	defaultSpace.SetDefaults(context.Background())
-
-	p := &KfParams{}
-	p.SetTargetSpaceToDefault()
-
-	fmt.Printf("Set to default: %v\n", reflect.DeepEqual(p.TargetSpace, defaultSpace))
-
-	// Output: Set to default: true
-}
-
 func TestKfParams_cacheSpace(t *testing.T) {
 	goodSpace := &v1alpha1.Space{}
 	goodSpace.Name = "test-space"
 
 	defaultSpace := &v1alpha1.Space{}
-	defaultSpace.SetDefaults(context.Background())
+	defaultSpace.SetDefaults(apiconfig.DefaultConfigContext(context.Background()))
 
 	cases := map[string]struct {
 		space *v1alpha1.Space
@@ -221,8 +180,8 @@ func TestKfParams_cacheSpace(t *testing.T) {
 			expectSpace: goodSpace,
 		},
 		"not found error": {
-			err:         apierrs.NewNotFound(v1alpha1.Resource("sources"), ""),
-			expectSpace: defaultSpace,
+			err:       apierrs.NewNotFound(v1alpha1.Resource("builds"), ""),
+			expectErr: errors.New(`Space "test-space" doesn't exist`),
 		},
 		"other error": {
 			err:       errors.New("api connection error"),
@@ -233,13 +192,74 @@ func TestKfParams_cacheSpace(t *testing.T) {
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
 			p := &KfParams{}
-			p.Namespace = "test-space"
+			p.Space = "test-space"
 
 			actualSpace, actualErr := p.cacheSpace(tc.space, tc.err)
-
+			testutil.AssertErrorsEqual(t, tc.expectErr, actualErr)
 			testutil.AssertEqual(t, "spaces", tc.expectSpace, actualSpace)
-			testutil.AssertEqual(t, "errors", tc.expectErr, actualErr)
 			testutil.AssertEqual(t, "TargetSpace", tc.expectSpace, p.TargetSpace)
 		})
 	}
+}
+
+func TestFeatureFlagWarning(t *testing.T) {
+	t.Parallel()
+
+	cases := map[string]struct {
+		namespace   *v1.Namespace
+		expectedOut string
+	}{
+		"nominal": {
+			namespace:   namespace(v1alpha1.KfNamespace, ""),
+			expectedOut: "",
+		},
+		"missing flags": {
+			namespace: (func() *v1.Namespace {
+				ns := namespace(v1alpha1.KfNamespace, "")
+				delete(ns.Annotations, v1alpha1.FeatureFlagsAnnotation)
+				return ns
+			}()),
+			expectedOut: fmt.Sprintf("WARN Unable to read feature flags from server.\n"),
+		},
+		"bad flags": {
+			namespace: (func() *v1.Namespace {
+				ns := namespace(v1alpha1.KfNamespace, "")
+				ns.Annotations[v1alpha1.FeatureFlagsAnnotation] = ""
+				return ns
+			}()),
+			expectedOut: "WARN Invalid feature flag config: unexpected end of JSON input\n",
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			ctx := injection.WithInjection(context.Background(), t)
+			client := kubeclient.Get(ctx)
+			_, err := client.
+				CoreV1().
+				Namespaces().
+				Create(ctx, tc.namespace, metav1.CreateOptions{})
+			testutil.AssertErrorsEqual(t, nil, err)
+
+			buf := &strings.Builder{}
+			ctx = configlogging.SetupLogger(ctx, buf)
+			var p KfParams
+			p.FeatureFlags(ctx)
+
+			actual := buf.String()
+			testutil.AssertEqual(t, "warning messages", tc.expectedOut, actual)
+		})
+	}
+}
+
+func namespace(namespace, status string) *v1.Namespace {
+	return &v1.Namespace{ObjectMeta: metav1.ObjectMeta{
+		Name: namespace,
+		Labels: map[string]string{
+			v1alpha1.NameLabel: namespace,
+		},
+		Annotations: map[string]string{
+			v1alpha1.FeatureFlagsAnnotation: "{}",
+		},
+	}}
 }

@@ -16,14 +16,16 @@ package routes_test
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/commands/routes"
-	"github.com/google/kf/pkg/kf/istio/fake"
-	"github.com/google/kf/pkg/kf/testutil"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	configlogging "github.com/google/kf/v2/pkg/kf/commands/config/logging"
+	"github.com/google/kf/v2/pkg/kf/commands/routes"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 
 	corev1 "k8s.io/api/core/v1"
 )
@@ -32,52 +34,49 @@ func TestNewProxyRouteCommand(t *testing.T) {
 	t.Parallel()
 
 	cases := map[string]struct {
-		Namespace       string
+		Space           string
 		Args            []string
+		IngressGateways []corev1.LoadBalancerIngress
 		ExpectedStrings []string
 		ExpectedErr     error
-		Setup           func(t *testing.T, istio *fake.FakeIstioClient)
 	}{
 		"no route": {
-			Namespace:   "default",
+			Space:       "default",
 			Args:        []string{},
 			ExpectedErr: errors.New("accepts 1 arg(s), received 0"),
 		},
 		"minimal configuration": {
-			Namespace:       "default",
+			Space:           "default",
 			Args:            []string{"myhost.example.com", "--no-start=true"},
 			ExpectedStrings: []string{"myhost.example.com", "8.8.8.8"},
+			IngressGateways: []corev1.LoadBalancerIngress{{IP: "8.8.8.8"}},
 			ExpectedErr:     nil,
-			Setup: func(t *testing.T, istio *fake.FakeIstioClient) {
-				istio.EXPECT().ListIngresses(gomock.Any()).Return([]corev1.LoadBalancerIngress{{IP: "8.8.8.8"}}, nil)
-			},
 		},
 		"autodetect failure": {
-			Namespace:   "default",
-			Args:        []string{"myhost.example.com", "--no-start=true"},
-			ExpectedErr: errors.New("istio-failure"),
-			Setup: func(t *testing.T, istio *fake.FakeIstioClient) {
-				istio.EXPECT().ListIngresses(gomock.Any()).Return(nil, errors.New("istio-failure"))
-			},
+			Space:           "default",
+			Args:            []string{"myhost.example.com", "--no-start=true"},
+			IngressGateways: []corev1.LoadBalancerIngress{}, // no gateways
+			ExpectedErr:     errors.New("no ingresses were found"),
 		},
 	}
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			fakeIstio := fake.NewFakeIstioClient(ctrl)
-
-			if tc.Setup != nil {
-				tc.Setup(t, fakeIstio)
-			}
+			gomock.NewController(t)
 
 			buf := new(bytes.Buffer)
 			p := &config.KfParams{
-				Namespace: tc.Namespace,
+				Space: tc.Space,
+				TargetSpace: &v1alpha1.Space{
+					Status: v1alpha1.SpaceStatus{
+						IngressGateways: tc.IngressGateways,
+					},
+				},
 			}
 
-			cmd := routes.NewProxyRouteCommand(p, fakeIstio)
+			cmd := routes.NewProxyRouteCommand(p)
 			cmd.SetOutput(buf)
+			cmd.SetContext(configlogging.SetupLogger(context.Background(), buf))
 			cmd.SetArgs(tc.Args)
 			_, actualErr := cmd.ExecuteC()
 			if tc.ExpectedErr != nil || actualErr != nil {
@@ -88,7 +87,6 @@ func TestNewProxyRouteCommand(t *testing.T) {
 			testutil.AssertContainsAll(t, buf.String(), tc.ExpectedStrings)
 			testutil.AssertEqual(t, "SilenceUsage", true, cmd.SilenceUsage)
 
-			ctrl.Finish()
 		})
 	}
 }

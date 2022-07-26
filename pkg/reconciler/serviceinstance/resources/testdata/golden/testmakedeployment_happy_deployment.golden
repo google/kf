@@ -1,0 +1,97 @@
+# Test:	TestMakeDeployment/happy
+# config.defaults:
+#   routeServiceProxyImage: gcr.io/fake/proxy/image
+# serviceInstance:
+#   metadata:
+#     creationTimestamp: null
+#     name: my-route-svc
+#   spec:
+#     parametersFrom: {}
+#     tags: null
+#     userProvided:
+#       routeServiceURL: http://auth.my-route-svc.com:80/some-path
+#   status:
+#     osbStatus: {}
+#     tags: null
+
+{
+    "metadata": {
+        "name": "my-route-svc-proxy",
+        "creationTimestamp": null,
+        "ownerReferences": [
+            {
+                "apiVersion": "kf.dev/v1alpha1",
+                "kind": "ServiceInstance",
+                "name": "my-route-svc",
+                "uid": "",
+                "controller": true,
+                "blockOwnerDeletion": true
+            }
+        ]
+    },
+    "spec": {
+        "replicas": 1,
+        "selector": {
+            "matchLabels": {
+                "app.kubernetes.io/component": "route-service",
+                "app.kubernetes.io/managed-by": "kf",
+                "app.kubernetes.io/name": "my-route-svc-proxy"
+            }
+        },
+        "template": {
+            "metadata": {
+                "creationTimestamp": null,
+                "labels": {
+                    "app.kubernetes.io/component": "route-service",
+                    "app.kubernetes.io/managed-by": "kf",
+                    "app.kubernetes.io/name": "my-route-svc-proxy",
+                    "kf.dev/networkpolicy": "app"
+                },
+                "annotations": {
+                    "sidecar.istio.io/inject": "true",
+                    "traffic.sidecar.istio.io/includeOutboundIPRanges": "*"
+                }
+            },
+            "spec": {
+                "containers": [
+                    {
+                        "name": "user-container",
+                        "image": "gcr.io/fake/proxy/image",
+                        "ports": [
+                            {
+                                "name": "http",
+                                "containerPort": 8080
+                            }
+                        ],
+                        "env": [
+                            {
+                                "name": "ROUTE_SERVICE_URL",
+                                "value": "http://auth.my-route-svc.com:80/some-path"
+                            },
+                            {
+                                "name": "PORT",
+                                "value": "8080"
+                            }
+                        ],
+                        "resources": {},
+                        "livenessProbe": {
+                            "tcpSocket": {
+                                "port": 8080
+                            }
+                        },
+                        "readinessProbe": {
+                            "tcpSocket": {
+                                "port": 8080
+                            }
+                        },
+                        "imagePullPolicy": "IfNotPresent"
+                    }
+                ],
+                "enableServiceLinks": false
+            }
+        },
+        "strategy": {},
+        "revisionHistoryLimit": 1
+    },
+    "status": {}
+}

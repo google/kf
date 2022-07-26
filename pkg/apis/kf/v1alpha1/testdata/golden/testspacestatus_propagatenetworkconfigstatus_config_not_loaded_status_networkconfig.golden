@@ -1,0 +1,8 @@
+# Test:	TestSpaceStatus_PropagateNetworkConfigStatus/config_not_loaded
+# config.defaults: null
+# space.spec.networkConfig:
+#   appNetworkPolicy: {}
+#   buildNetworkPolicy: {}
+# space.status.ingressGateways: null
+
+{}

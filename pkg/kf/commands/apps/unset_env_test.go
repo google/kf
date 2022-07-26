@@ -16,24 +16,23 @@ package apps
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"testing"
 
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-
 	"github.com/golang/mock/gomock"
-	"github.com/google/kf/pkg/internal/envutil"
-	"github.com/google/kf/pkg/kf/apps"
-	"github.com/google/kf/pkg/kf/apps/fake"
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/internal/envutil"
+	"github.com/google/kf/v2/pkg/kf/apps"
+	"github.com/google/kf/v2/pkg/kf/apps/fake"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 )
 
 func TestUnsetEnvCommand(t *testing.T) {
 	t.Parallel()
 
 	for tn, tc := range map[string]struct {
-		Namespace       string
+		Space           string
 		Args            []string
 		ExpectedStrings []string
 		ExpectedErr     error
@@ -45,32 +44,29 @@ func TestUnsetEnvCommand(t *testing.T) {
 		},
 		"unsetting variables fails": {
 			Args:        []string{"app-name", "NAME"},
-			Namespace:   "some-namespace",
-			ExpectedErr: errors.New("failed to unset env var on app: some-error"),
+			Space:       "some-namespace",
+			ExpectedErr: errors.New("failed to unset environment variable on App: some-error"),
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform(gomock.Any(), "app-name", gomock.Any()).Return(nil, errors.New("some-error"))
+				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), "app-name", gomock.Any()).Return(nil, errors.New("some-error"))
 			},
 		},
 		"custom namespace": {
-			Args:      []string{"app-name", "NAME"},
-			Namespace: "some-namespace",
+			Args:  []string{"app-name", "NAME"},
+			Space: "some-namespace",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform("some-namespace", "app-name", gomock.Any())
+				fake.EXPECT().Transform(gomock.Any(), "some-namespace", "app-name", gomock.Any())
 				fake.EXPECT().WaitForConditionKnativeServiceReadyTrue(gomock.Any(), "some-namespace", "app-name", gomock.Any())
 			},
 		},
 		"namespace is not provided": {
 			Args:        []string{"app-name", "NAME"},
-			ExpectedErr: errors.New(utils.EmptyNamespaceError),
-			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform("some-namespace", "app-name", gomock.Any())
-			},
+			ExpectedErr: errors.New(config.EmptySpaceError),
 		},
 		"unsets values": {
-			Args:      []string{"app-name", "NAME"},
-			Namespace: "some-namespace",
+			Args:  []string{"app-name", "NAME"},
+			Space: "some-namespace",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform(gomock.Any(), "app-name", gomock.Any()).Do(func(ns, appName string, mutator apps.Mutator) {
+				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), "app-name", gomock.Any()).Do(func(ctx context.Context, ns, appName string, mutator apps.Mutator) {
 					input := apps.NewKfApp()
 					input.SetEnvVars(envutil.MapToEnvVars(map[string]string{"NAME": "FOO", "PORT": "8080"}))
 					app := input.ToApp()
@@ -86,10 +82,10 @@ func TestUnsetEnvCommand(t *testing.T) {
 			},
 		},
 		"async call does not wait": {
-			Args:      []string{"app-name", "NAME", "--async"},
-			Namespace: "some-namespace",
+			Args:  []string{"app-name", "NAME", "--async"},
+			Space: "some-namespace",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any())
+				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 			},
 		},
 	} {
@@ -103,7 +99,7 @@ func TestUnsetEnvCommand(t *testing.T) {
 
 			buf := new(bytes.Buffer)
 			p := &config.KfParams{
-				Namespace: tc.Namespace,
+				Space: tc.Space,
 			}
 
 			cmd := NewUnsetEnvCommand(p, fake)
@@ -118,7 +114,6 @@ func TestUnsetEnvCommand(t *testing.T) {
 			testutil.AssertContainsAll(t, buf.String(), tc.ExpectedStrings)
 			testutil.AssertEqual(t, "SilenceUsage", true, cmd.SilenceUsage)
 
-			ctrl.Finish()
 		})
 	}
 }

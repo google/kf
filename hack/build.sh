@@ -16,6 +16,15 @@
 
 set -eux
 cd "${0%/*}"/..
+
+source ./hack/util.sh
+
 mkdir -p bin
 go mod vendor
-go build $@ -mod=vendor -o bin/kf ./cmd/kf/...
+
+VERSION="${VERSION:-$(version)}"
+
+go build "$@" -mod=vendor \
+  -o bin/kf \
+  --ldflags "-X 'github.com/google/kf/v2/pkg/kf/commands.Version=${VERSION}'" \
+  ./cmd/kf/...

@@ -19,15 +19,23 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"time"
 
+	"github.com/fatih/color"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 )
 
-// Tailer reads the logs for a KF application. It should be created via
+var (
+	warningColor   = color.New(color.FgYellow)
+	podChangeColor = color.New(color.FgWhite, color.Faint)
+)
+
+// Tailer reads the logs for a Kf application. It should be created via
 // NewTailer().
 type Tailer interface {
 	// Tail tails the logs from a KF application and writes them to the
@@ -46,7 +54,7 @@ func NewTailer(client kubernetes.Interface) Tailer {
 	}
 }
 
-// Tail tails the logs from a KF application and writes them to the writer.
+// Tail tails the logs from a Kf application and writes them to the writer.
 func (t *tailer) Tail(ctx context.Context, appName string, out io.Writer, opts ...TailOption) error {
 	cfg := TailOptionDefaults().Extend(opts).toConfig()
 	if appName == "" {
@@ -57,13 +65,15 @@ func (t *tailer) Tail(ctx context.Context, appName string, out io.Writer, opts .
 		return errors.New("number of lines must be greater than or equal to 0")
 	}
 
-	namespace := cfg.Namespace
+	namespace := cfg.Space
+
 	logOpts := corev1.PodLogOptions{
 		// We need to specify which container we want to use. 'user-container'
 		// is the container where the user's application is ran (as opposed to
 		// a side-car such as istio-proxy).
-		Container: "user-container",
-		Follow:    cfg.Follow,
+		Container:  cfg.ContainerName,
+		Follow:     cfg.Follow,
+		Timestamps: true,
 	}
 
 	if cfg.NumberLines != 0 {
@@ -71,19 +81,25 @@ func (t *tailer) Tail(ctx context.Context, appName string, out io.Writer, opts .
 		logOpts.TailLines = &(n)
 	}
 
-	writer := &MutexWriter{
-		Writer: out,
+	writer := &LineWriter{
+		Writer:        out,
+		NumberOfLines: cfg.NumberLines,
 	}
 
-	if err := t.watchForPods(ctx, namespace, appName, writer, logOpts, cfg.Timeout); err != nil {
+	if err := t.watchForPods(ctx, namespace, appName, writer, logOpts, cfg); err != nil {
 		return fmt.Errorf("failed to watch pods: %s", err)
 	}
 	return nil
 }
 
-func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, writer *MutexWriter, opts corev1.PodLogOptions, timeout time.Duration) error {
-	w, err := t.client.CoreV1().Pods(namespace).Watch(metav1.ListOptions{
-		LabelSelector: "serving.knative.dev/service=" + appName,
+func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, writer *LineWriter, opts corev1.PodLogOptions, cfg tailConfig) error {
+
+	appLabels := v1alpha1.AppComponentLabels(appName, cfg.ComponentName)
+
+	selectors := v1alpha1.UnionMaps(appLabels, cfg.Labels)
+
+	w, err := t.client.CoreV1().Pods(namespace).Watch(ctx, metav1.ListOptions{
+		LabelSelector: metav1.FormatLabelSelector(metav1.SetAsLabelSelector(selectors)),
 	})
 	if err != nil {
 		return err
@@ -93,7 +109,7 @@ func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, wr
 
 	// We will only wait a second for the first log. If nothing happens after
 	// that period of time and we're not following, then stop.
-	initTimer := time.NewTimer(timeout)
+	initTimer := time.NewTimer(cfg.Timeout)
 	if opts.Follow {
 		initTimer.Stop()
 	}
@@ -115,7 +131,7 @@ func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, wr
 
 			pod, ok := e.Object.(*corev1.Pod)
 			if !ok {
-				writer.WriteStringf("[WARN] watched object is not pod\n")
+				log.Println("[WARN] watched object is not pod")
 				continue
 			}
 
@@ -125,10 +141,7 @@ func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, wr
 					t.readLogs(ctx, namespace, pod.Name, writer, opts)
 				}(e)
 			case watch.Deleted:
-				err = writer.WriteStringf("[INFO] Pod '%s/%s' is deleted\n", namespace, pod.Name)
-				if err != nil {
-					return err
-				}
+				log.Println(podChangeColor.Sprintf("[INFO] Pod '%s/%s' has been deleted", namespace, pod.Name))
 			}
 		}
 	}
@@ -138,15 +151,16 @@ func (t *tailer) readLogs(
 	ctx context.Context,
 	namespace string,
 	name string,
-	out *MutexWriter,
+	out *LineWriter,
 	opts corev1.PodLogOptions,
 ) {
 	var err error
 	var stop bool
+	var ts time.Time
 
 	for ctx.Err() == nil && !stop {
-		if stop, err = t.readStream(ctx, name, namespace, out, opts); err != nil {
-			out.WriteStringf("[WARN] %s", err)
+		if stop, ts, err = t.readStream(ctx, name, namespace, out, opts); err != nil {
+			log.Println(warningColor.Sprintf("[WARN] %s", err))
 		}
 
 		if !opts.Follow {
@@ -154,56 +168,77 @@ func (t *tailer) readLogs(
 		}
 		// wait 5 seconds for pod running
 		time.Sleep(5 * time.Second)
+
+		if !ts.IsZero() {
+			opts.SinceTime = &metav1.Time{Time: ts}
+		}
 	}
 }
 
-func (t *tailer) readStream(ctx context.Context, name, namespace string, mw *MutexWriter, opts corev1.PodLogOptions) (bool, error) {
-	pod, err := t.client.CoreV1().Pods(namespace).Get(name, metav1.GetOptions{})
+func (t *tailer) readStream(ctx context.Context, name, namespace string, mw *LineWriter, opts corev1.PodLogOptions) (bool, time.Time, error) {
+	ts := time.Now()
+	if opts.SinceTime != nil {
+		ts = opts.SinceTime.Time
+	}
+
+	pod, err := t.client.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return true, fmt.Errorf("failed to get Pod '%s': %s", name, err)
+		return true, ts, fmt.Errorf("failed to get Pod '%s': %s", name, err)
 	}
 
 	if !pod.DeletionTimestamp.IsZero() {
-		err = mw.WriteStringf("[INFO] Pod '%s/%s' is terminated\n", namespace, name)
-		if err != nil {
-			return false, err
-		}
-
-		return true, nil
+		log.Println(podChangeColor.Sprintf("[INFO] Pod '%s/%s' is terminated", namespace, name))
+		return true, ts, nil
 	}
 
+	// If we aren't following, then we want more historical logs. This implies
+	// if the pod has succeeded/failed, then let it go through this (but only
+	// once).
 	if pod.Status.Phase != corev1.PodRunning {
-		err = mw.WriteStringf("[INFO] Pod '%s/%s' is not running\n", namespace, name)
-		if err != nil {
-			return false, err
+		log.Println(podChangeColor.Sprintf("[INFO] Pod '%s/%s' is not running (phase=%q)", namespace, name, pod.Status.Phase))
+		switch pod.Status.Phase {
+		case corev1.PodSucceeded, corev1.PodFailed:
+			if opts.Follow {
+				return true, ts, nil
+			}
+			// Otherwise, read the logs.
+		case corev1.PodPending, corev1.PodUnknown:
+			// Can't read from a pod in this phase. Try again later.
+			return false, ts, nil
 		}
-
-		return false, nil
 	}
 
-	err = mw.WriteStringf("[INFO] Pod '%s/%s' is running\n", namespace, pod.Name)
-	if err != nil {
-		return false, err
-	}
+	log.Println(podChangeColor.Sprintf("[INFO] Pod '%s/%s' is running", namespace, pod.Name))
 
 	// XXX: This is not tested at a unit level and instead defers to
 	// integration tests.
 	req := t.client.
 		CoreV1().
 		Pods(namespace).
-		GetLogs(name, &opts).
-		Context(ctx)
+		GetLogs(name, &opts)
 
-	stream, err := req.Stream()
+	stream, err := req.Stream(ctx)
 	if err != nil {
-		return false, fmt.Errorf("failed to read stream: %s", err)
+		return false, ts, fmt.Errorf("failed to read stream: %s", err)
 	}
 	defer stream.Close()
 
-	err = mw.CopyFrom(stream)
+	lastTime, err := mw.CopyFrom(stream)
 	if err != nil {
-		return false, err
+		return false, ts, err
 	}
 
-	return false, nil
+	if !lastTime.IsZero() {
+		// Advance it by a second so if we repeat on this pod, we don't pick up
+		// any logs that we already have. We use a second because RFC3339
+		// doesn't do partial seconds and SinceTime is formatted in RFC3339.
+		ts = lastTime.Add(time.Second)
+	}
+
+	// If the pod is done, then don't read it again.
+	if pod.Status.Phase != corev1.PodRunning {
+		return true, ts, nil
+	}
+
+	return false, ts, nil
 }

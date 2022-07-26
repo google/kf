@@ -16,6 +16,7 @@ package tableclient
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -31,7 +32,7 @@ func (MockType) Namespaced() bool {
 	return true
 }
 
-func (MockType) GroupVersionResource() schema.GroupVersionResource {
+func (MockType) GroupVersionResource(context.Context) schema.GroupVersionResource {
 	return schema.GroupVersionResource{
 		Group:    "test.group",
 		Version:  "v1",
@@ -49,7 +50,7 @@ func ExampleNew() {
 
 	// This example won't hit a real endpoint, but the mock will show that the URL
 	// and selector work for getting namespaced tables.
-	client.Table(MockType{}, "demo", metav1.ListOptions{})
+	client.Table(context.Background(), MockType{}, "demo", metav1.ListOptions{})
 
 	// Output: URL: http://localhost/apis/test.group/v1/namespaces/demo/tests
 	// Accepts: application/json;as=Table;v=v1beta1;g=meta.k8s.io, application/json

@@ -1,0 +1,16 @@
+# Test:	TestMakeDeployment/missing_image_in_config
+# config.defaults: {}
+# serviceInstance:
+#   metadata:
+#     creationTimestamp: null
+#     name: my-route-svc
+#   spec:
+#     parametersFrom: {}
+#     tags: null
+#     userProvided:
+#       routeServiceURL: http://auth.my-route-svc.com:80/some-path
+#   status:
+#     osbStatus: {}
+#     tags: null
+
+null

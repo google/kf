@@ -16,16 +16,16 @@ package route
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
-	gomock "github.com/golang/mock/gomock"
-	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/testutil"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	networking "github.com/google/kf/v2/pkg/apis/networking/v1alpha3"
+	"github.com/google/kf/v2/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/reconciler/route/resources"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	types "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/cache"
-	networking "knative.dev/pkg/apis/istio/v1alpha3"
 )
 
 //go:generate mockgen --package=route --copyright_file ../../kf/internal/tools/option-builder/LICENSE_HEADER --destination=fake_reconciler.go --mock_names=Reconciler=FakeReconciler knative.dev/pkg/controller Reconciler
@@ -34,51 +34,67 @@ func TestBuildEnqueuer(t *testing.T) {
 	t.Parallel()
 
 	testCases := map[string]struct {
-		ExpectedErr error
-		Obj         interface{}
-		Enqueue     func(obj interface{})
+		obj          interface{}
+		wantErr      error
+		wantEnqueued []types.NamespacedName
 	}{
-		"route": {
-			Obj: &v1alpha1.Route{
+		"app": {
+			obj: &v1alpha1.App{
 				ObjectMeta: metav1.ObjectMeta{Namespace: "some-namespace"},
-				Spec: v1alpha1.RouteSpec{
-					RouteSpecFields: v1alpha1.RouteSpecFields{
-						Hostname: "some-hostname",
+				Status: v1alpha1.AppStatus{
+					Routes: []v1alpha1.AppRouteStatus{
+						{
+							QualifiedRouteBinding: v1alpha1.QualifiedRouteBinding{
+								Source: v1alpha1.RouteSpecFields{
+									Domain: "some-domain1",
+								},
+							},
+						},
+						{
+							QualifiedRouteBinding: v1alpha1.QualifiedRouteBinding{
+								Source: v1alpha1.RouteSpecFields{
+									Domain: "some-domain2",
+								},
+							},
+						},
 					},
 				},
 			},
-			Enqueue: func(obj interface{}) {
-				testutil.AssertJSONEqual(t, `{"namespace":"some-namespace", "hostname":"some-hostname"}`, string(obj.(cache.ExplicitKey)))
+			wantEnqueued: []types.NamespacedName{
+				{Namespace: "some-namespace", Name: "some-domain1"},
+				{Namespace: "some-namespace", Name: "some-domain2"},
 			},
 		},
 		"route claim": {
-			Obj: &v1alpha1.RouteClaim{
+			obj: &v1alpha1.Route{
 				ObjectMeta: metav1.ObjectMeta{Namespace: "some-namespace"},
-				Spec: v1alpha1.RouteClaimSpec{
+				Spec: v1alpha1.RouteSpec{
 					RouteSpecFields: v1alpha1.RouteSpecFields{
-						Hostname: "some-hostname",
+						Domain: "some-domain",
 					},
 				},
 			},
-			Enqueue: func(obj interface{}) {
-				testutil.AssertJSONEqual(t, `{"namespace":"some-namespace", "hostname":"some-hostname"}`, string(obj.(cache.ExplicitKey)))
+			wantEnqueued: []types.NamespacedName{
+				{Namespace: "some-namespace", Name: "some-domain"},
 			},
 		},
 		"unhandled type": {
-			ExpectedErr: errors.New("unexpected type: int"),
-			Obj:         99,
+			wantErr: errors.New("unexpected type: int"),
+			obj:     99,
 		},
 	}
 
 	for tn, tc := range testCases {
 		t.Run(tn, func(t *testing.T) {
-			f := BuildEnqueuer(tc.Enqueue)
-			err := f(tc.Obj)
+			var gotEnqueued []types.NamespacedName
 
-			testutil.AssertErrorsEqual(t, tc.ExpectedErr, err)
-			if err != nil {
-				return
-			}
+			f := BuildEnqueuer(func(obj types.NamespacedName) {
+				gotEnqueued = append(gotEnqueued, obj)
+			})
+			err := f(tc.obj)
+
+			testutil.AssertErrorsEqual(t, tc.wantErr, err)
+			testutil.AssertEqual(t, "enqueued", tc.wantEnqueued, gotEnqueued)
 		})
 	}
 }
@@ -117,86 +133,57 @@ func TestFilterVSManagedByKf(t *testing.T) {
 func TestEnqueueRoutesOfVirtualService(t *testing.T) {
 	t.Parallel()
 
-	buildVS := func() *networking.VirtualService {
-		return &networking.VirtualService{}
-	}
+	cases := map[string]struct {
+		obj interface{}
 
-	testCases := map[string]struct {
-		ExpectedErr   error
-		Obj           interface{}
-		BuildEnqueuer func(t *testing.T) func(interface{})
-		Setup         func(t *testing.T, f *FakeRouteLister, fn *FakeRouteNamespaceLister)
+		wantEnqueue bool
 	}{
-		"enqueues each route": {
-			Obj: buildVS(),
-			Setup: func(t *testing.T, f *FakeRouteLister, fn *FakeRouteNamespaceLister) {
-				f.EXPECT().
-					Routes(gomock.Any()).
-					Return(fn)
-
-				fn.EXPECT().
-					List(gomock.Any()).
-					Return([]*v1alpha1.Route{
-						{Spec: v1alpha1.RouteSpec{RouteSpecFields: v1alpha1.RouteSpecFields{Hostname: "host-1"}}},
-						{Spec: v1alpha1.RouteSpec{RouteSpecFields: v1alpha1.RouteSpecFields{Hostname: "host-2"}}},
-					}, nil)
-			},
-			BuildEnqueuer: func(t *testing.T) func(interface{}) {
-				var i int
-				return func(obj interface{}) {
-					i++
-					r := obj.(*v1alpha1.Route)
-					testutil.AssertEqual(
-						t,
-						fmt.Sprintf("route-%d", i),
-						fmt.Sprintf("host-%d", i),
-						r.Spec.Hostname,
-					)
+		"no domain specified": {
+			obj: &networking.VirtualService{},
+		},
+		"has domain": {
+			obj: (func() *networking.VirtualService {
+				out := networking.VirtualService{}
+				out.Annotations = map[string]string{
+					resources.DomainAnnotation: "example.com",
 				}
-			},
+				return &out
+			})(),
+			wantEnqueue: true,
 		},
 		"handle non VirtualServices": {
-			Obj: 99,
-		},
-		"route lister fails": {
-			Obj:         buildVS(),
-			ExpectedErr: errors.New("failed to list corresponding routes: some-error"),
-			Setup: func(t *testing.T, f *FakeRouteLister, fn *FakeRouteNamespaceLister) {
-				f.EXPECT().
-					Routes(gomock.Any()).
-					Return(fn)
-
-				fn.EXPECT().
-					List(gomock.Any()).
-					Return(nil, errors.New("some-error"))
-			},
+			obj: 99,
 		},
 	}
 
-	for tn, tc := range testCases {
+	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			fakeRouteLister := NewFakeRouteLister(ctrl)
-			fakeRouteNamespaceLister := NewFakeRouteNamespaceLister(ctrl)
 
-			if tc.Setup != nil {
-				tc.Setup(t, fakeRouteLister, fakeRouteNamespaceLister)
+			gotEnqueue := false
+			enqueuer := func(_ interface{}) {
+				gotEnqueue = true
 			}
-
-			if tc.BuildEnqueuer == nil {
-				tc.BuildEnqueuer = func(*testing.T) func(interface{}) {
-					return func(interface{}) {}
-				}
-			}
-
-			f := EnqueueRoutesOfVirtualService(tc.BuildEnqueuer(t), fakeRouteLister)
-			err := f(tc.Obj)
-			testutil.AssertErrorsEqual(t, tc.ExpectedErr, err)
-
-			if err != nil {
-				return
-			}
-			ctrl.Finish()
+			f := EnqueueRoutesOfVirtualService(enqueuer)
+			f(tc.obj)
+			testutil.AssertEqual(t, "object enqueued", tc.wantEnqueue, gotEnqueue)
 		})
 	}
+}
+
+// TestEncodeDecodeKey ensures the behavior of cache.SplitMetaNamespaceKey
+// and types.NamespacedName are compatible with domains.
+func TestEncodeDecodeKey(t *testing.T) {
+	t.Parallel()
+
+	ns := "some-namespace"
+	domain := "example.google.com"
+	nn := types.NamespacedName{
+		Namespace: ns,
+		Name:      domain,
+	}
+
+	actualNs, actualDomain, err := cache.SplitMetaNamespaceKey(nn.String())
+	testutil.AssertNil(t, "err", err)
+	testutil.AssertEqual(t, "namespace", ns, actualNs)
+	testutil.AssertEqual(t, "domain", domain, actualDomain)
 }

@@ -1,2 +1,4 @@
 bin
-vendor
+/vendor
+operator/vendor
+.idea

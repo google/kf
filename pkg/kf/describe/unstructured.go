@@ -15,6 +15,7 @@
 package describe
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"sort"
@@ -28,6 +29,24 @@ import (
 // object.
 func Unstructured(w io.Writer, resource *unstructured.Unstructured) {
 	UnstructuredMap(w, resource.UnstructuredContent())
+}
+
+// UnstructuredStruct converts the object to and from JSON then writes it,
+// similar to what would happen when sent through the Kubernetes API.
+func UnstructuredStruct(w io.Writer, obj interface{}) error {
+	marshaled, err := json.Marshal(obj)
+	if err != nil {
+		return err
+	}
+
+	unmarshaled := make(map[string]interface{})
+	if err := json.Unmarshal(marshaled, &unmarshaled); err != nil {
+		return err
+	}
+
+	UnstructuredMap(w, unmarshaled)
+
+	return nil
 }
 
 // UnstructuredMap writes information about a JSON style unstructured

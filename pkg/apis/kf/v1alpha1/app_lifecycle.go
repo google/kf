@@ -18,9 +18,12 @@ import (
 	"fmt"
 	"sort"
 
-	serving "github.com/google/kf/third_party/knative-serving/pkg/apis/serving/v1alpha1"
-	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
+	autoscalingv1 "k8s.io/api/autoscaling/v1"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
@@ -31,159 +34,286 @@ func (r *App) GetGroupVersionKind() schema.GroupVersionKind {
 	return SchemeGroupVersion.WithKind("App")
 }
 
-// ConditionType represents a Service condition value
-const (
-	// AppConditionReady is set when the app is configured
-	// and is usable by developers.
-	AppConditionReady = apis.ConditionReady
-	// AppConditionSourceReady is set when the build is ready.
-	AppConditionSourceReady apis.ConditionType = "SourceReady"
-	// AppConditionKnativeServiceReady is set when service is ready.
-	AppConditionKnativeServiceReady apis.ConditionType = "KnativeServiceReady"
-	// AppConditionSpaceReady is used to indicate when the space has an error that
-	// causes apps to not reconcile correctly.
-	AppConditionSpaceReady apis.ConditionType = "SpaceReady"
-	// AppConditionRouteReady is set when route is ready.
-	AppConditionRouteReady apis.ConditionType = "RouteReady"
-	// AppConditionEnvVarSecretReady is set when env var secret is ready.
-	AppConditionEnvVarSecretReady apis.ConditionType = "EnvVarSecretReady"
-	// AppConditionServiceBindingsReady is set when all service bindings are ready.
-	AppConditionServiceBindingsReady apis.ConditionType = "ServiceBindingsReady"
-)
+// PropagateBuildStatus copies the Build status to the App's.
+func (status *AppStatus) PropagateBuildStatus(build *Build) {
+	status.LatestCreatedBuildName = build.Name
 
-func (status *AppStatus) manage() apis.ConditionManager {
-	return apis.NewLivingConditionSet(
-		AppConditionSourceReady,
-		AppConditionKnativeServiceReady,
-		AppConditionSpaceReady,
-		AppConditionEnvVarSecretReady,
-	).Manage(status)
-}
-
-// IsReady looks at the conditions to see if they are happy.
-func (status *AppStatus) IsReady() bool {
-	return status.manage().IsHappy()
-}
-
-// GetCondition returns the condition by name.
-func (status *AppStatus) GetCondition(t apis.ConditionType) *apis.Condition {
-	return status.manage().GetCondition(t)
-}
-
-// InitializeConditions sets the initial values to the conditions.
-func (status *AppStatus) InitializeConditions() {
-	status.manage().InitializeConditions()
-}
-
-// SourceCondition gets a manager for the state of the source.
-func (status *AppStatus) SourceCondition() SingleConditionManager {
-	return NewSingleConditionManager(status.manage(), AppConditionSourceReady, "Source")
-}
-
-// KnativeServiceCondition gets a manager for the state of the Knative Service.
-func (status *AppStatus) KnativeServiceCondition() SingleConditionManager {
-	return NewSingleConditionManager(status.manage(), AppConditionKnativeServiceReady, "Knative Service")
-}
-
-// RouteCondition gets a manager for the state of the kf Route.
-func (status *AppStatus) RouteCondition() SingleConditionManager {
-	return NewSingleConditionManager(status.manage(), AppConditionRouteReady, "Route")
-}
-
-// EnvVarSecretCondition gets a manager for the state of the env var secret.
-func (status *AppStatus) EnvVarSecretCondition() SingleConditionManager {
-	return NewSingleConditionManager(status.manage(), AppConditionEnvVarSecretReady, "Env Var Secret")
-}
-
-// ServiceBindingCondition gets a manager for the state of the service bindings.
-func (status *AppStatus) ServiceBindingCondition() SingleConditionManager {
-	return NewSingleConditionManager(status.manage(), AppConditionServiceBindingsReady, "Service Bindings")
-}
-
-// PropagateSourceStatus copies the source status to the app's.
-func (status *AppStatus) PropagateSourceStatus(source *Source) {
-	status.LatestCreatedSourceName = source.Name
-
-	cond := source.Status.GetCondition(SourceConditionSucceeded)
-	if PropagateCondition(status.manage(), AppConditionSourceReady, cond) {
-		status.LatestReadySourceName = source.Name
-		status.SourceStatusFields = source.Status.SourceStatusFields
+	cond := build.Status.GetCondition(BuildConditionSucceeded)
+	if PropagateCondition(status.manage(), AppConditionBuildReady, cond) {
+		status.LatestReadyBuildName = build.Name
+		status.BuildStatusFields = build.Status.BuildStatusFields
+		status.Image = build.Status.Image
 	}
 }
 
-// PropagageInstanceStatus updates the effective instance status from the app.
-func (status *AppStatus) PropagageInstanceStatus(is InstanceStatus) {
+// PropagateADXBuildStatus copies the AppDevExperience Build status to the
+// App's.
+func (status *AppStatus) PropagateADXBuildStatus(u *unstructured.Unstructured) error {
+	status.LatestCreatedBuildName = u.GetName()
+	status.LatestReadyBuildName = u.GetName()
+
+	image, _, err := unstructured.NestedString(u.Object, "status", "image")
+	if err != nil {
+		return fmt.Errorf("failed to read image from status: %v", err)
+	}
+
+	status.Image = image
+	return nil
+}
+
+// PropagateInstanceStatus updates the effective instance status from the app
+func (status *AppStatus) PropagateInstanceStatus(is InstanceStatus) {
 	status.Instances = is
 }
 
-// PropagateKnativeServiceStatus updates the Knative service status to reflect
-// the underlying service.
-func (status *AppStatus) PropagateKnativeServiceStatus(service *serving.Service) {
-	// Stopped apps don't have a Knative service
-	if service == nil {
+// PropagateAutoscalingStatus updates the effective instance status with autoscaling status.
+func (status *InstanceStatus) PropagateAutoscalingStatus(app *App, hpa *autoscalingv1.HorizontalPodAutoscaler) {
+	// hpa is nil when autoscaling is disabled, or maxreplicas hasn't been set, or no rules specified by user.
+	if hpa == nil {
 		return
 	}
 
-	if service.Status.ObservedGeneration != service.Generation {
-		status.manage().MarkUnknown(AppConditionKnativeServiceReady, "GenerationMismatch", "the Knative service needs to be synchronized")
+	if hpa.Status.CurrentCPUUtilizationPercentage == nil {
+		// hpa is not ready yet
 		return
 	}
 
-	cond := service.Status.GetCondition(apis.ConditionReady)
-
-	if PropagateCondition(status.manage(), AppConditionKnativeServiceReady, cond) {
-		status.ConfigurationStatusFields = service.Status.ConfigurationStatusFields
-		status.RouteStatusFields = service.Status.RouteStatusFields
+	// Set instance status for autoscaling rule
+	status.AutoscalingStatus = []AutoscalingRuleStatus{
+		{
+			// Rules is guaranteed to not be empty here because hpa is not nil.
+			AppAutoscalingRule: app.Spec.Instances.Autoscaling.Rules[0],
+			Current: AutoscalingRuleMetricValueStatus{
+				AverageValue: resource.NewQuantity(int64(*hpa.Status.CurrentCPUUtilizationPercentage), resource.DecimalSI),
+			},
+		},
 	}
+}
+
+// PropagateAutoscalerV1Status updates the autoscaler status to reflect the
+// underlying state of the autoscaler.
+// HorizontalPodAutoscalerCondition is not available for V1.
+func (status *AppStatus) PropagateAutoscalerV1Status(autoscaler *autoscalingv1.HorizontalPodAutoscaler) {
+
+	if autoscaler == nil {
+		status.HorizontalPodAutoscalerCondition().MarkSuccess()
+		return
+	}
+
+	if autoscaler.Status.CurrentReplicas > autoscaler.Status.DesiredReplicas {
+		status.HorizontalPodAutoscalerCondition().MarkUnknown("ScalingDown", "waiting for autoscaler to finish scaling down: current replicas %d, target replicas %d", autoscaler.Status.CurrentReplicas, autoscaler.Status.DesiredReplicas)
+		return
+	}
+
+	if autoscaler.Status.CurrentReplicas < autoscaler.Status.DesiredReplicas {
+		status.HorizontalPodAutoscalerCondition().MarkUnknown("ScalingUp", "waiting for autoscaler to finish scaling up: current replicas %d, target replicas %d", autoscaler.Status.CurrentReplicas, autoscaler.Status.DesiredReplicas)
+		return
+	}
+
+	status.HorizontalPodAutoscalerCondition().MarkSuccess()
+}
+
+// PropagateDeploymentStatus updates the deployment status to reflect the
+// underlying state of the deployment.
+func (status *AppStatus) PropagateDeploymentStatus(deployment *appsv1.Deployment) {
+
+	for _, cond := range deployment.Status.Conditions {
+		// ReplicaFailure is added in a deployment when one of its pods fails to be created
+		// or deleted.
+		if cond.Type == appsv1.DeploymentReplicaFailure && cond.Status == corev1.ConditionTrue {
+			status.DeploymentCondition().MarkFalse(cond.Reason, cond.Message)
+			return
+		}
+	}
+
+	if deployment.Generation > deployment.Status.ObservedGeneration {
+		status.DeploymentCondition().MarkUnknown("GenerationOutOfDate", "waiting for deployment spec update to be observed")
+		return
+	}
+
+	for _, cond := range deployment.Status.Conditions {
+		if cond.Type == appsv1.DeploymentProgressing && cond.Reason == "ProgressDeadlineExceeded" {
+			status.DeploymentCondition().MarkFalse("DeadlineExceeded", "deployment %q exceeded its progress deadline", deployment.Name)
+			return
+		}
+	}
+
+	if deployment.Spec.Replicas != nil && deployment.Status.UpdatedReplicas < *deployment.Spec.Replicas {
+		status.DeploymentCondition().MarkUnknown("UpdatingReplicas", "waiting for deployment %q rollout to finish: %d out of %d new replicas have been updated", deployment.Name, deployment.Status.UpdatedReplicas, *deployment.Spec.Replicas)
+		return
+	}
+	if deployment.Status.Replicas > deployment.Status.UpdatedReplicas {
+		status.DeploymentCondition().MarkUnknown("TerminatingOldReplicas", "waiting for deployment %q rollout to finish: %d old replicas are pending termination", deployment.Name, deployment.Status.Replicas-deployment.Status.UpdatedReplicas)
+		return
+	}
+	if deployment.Status.AvailableReplicas < deployment.Status.UpdatedReplicas {
+		status.DeploymentCondition().MarkUnknown("InitializingPods", "waiting for deployment %q rollout to finish: %d of %d updated replicas are available", deployment.Name, deployment.Status.AvailableReplicas, deployment.Status.UpdatedReplicas)
+		return
+	}
+
+	status.DeploymentCondition().MarkSuccess()
 }
 
 // PropagateEnvVarSecretStatus updates the env var secret readiness status.
 func (status *AppStatus) PropagateEnvVarSecretStatus(secret *v1.Secret) {
-	status.manage().MarkTrue(AppConditionEnvVarSecretReady)
+	status.EnvVarSecretCondition().MarkSuccess()
+}
+
+// PropagateServiceStatus propagates the app's internal URL.
+func (status *AppStatus) PropagateServiceStatus(service *corev1.Service) {
+	// Services don't have conditions to indicate readiness.
+	status.ServiceCondition().MarkSuccess()
+}
+
+// PropagateServiceAccountStatus propagates the app's service account name.
+func (status *AppStatus) PropagateServiceAccountStatus(serviceAccount *corev1.ServiceAccount) {
+	status.ServiceAccountName = serviceAccount.Name
+	status.ServiceAccountCondition().MarkSuccess()
 }
 
 // PropagateRouteStatus updates the route readiness status.
-func (status *AppStatus) PropagateRouteStatus(routes []Route) {
-	status.Routes = []string{}
+func (status *AppStatus) PropagateRouteStatus(bindings []QualifiedRouteBinding, routes []Route, undeclaredBindings []QualifiedRouteBinding) {
+	var rs []AppRouteStatus
+	var conditions []apis.Condition
+	var urls []string
 
-	for _, rt := range routes {
-		status.Routes = append(status.Routes, rt.Spec.RouteSpecFields.String())
+	// Ensure output is deterministic
+	sort.Slice(bindings, func(i, j int) bool {
+		return bindings[i].Source.String() < bindings[j].Source.String()
+	})
+
+	sort.Slice(undeclaredBindings, func(i, j int) bool {
+		return undeclaredBindings[i].Source.String() < undeclaredBindings[j].Source.String()
+	})
+
+	// Create a mapping for lookup later
+	routeMapping := make(map[RouteSpecFields]Route)
+	for _, route := range routes {
+		routeMapping[route.Spec.RouteSpecFields] = route
 	}
 
-	sort.Strings(status.Routes)
+	for idx, binding := range bindings {
+		cond := apis.Condition{
+			Type: apis.ConditionType(fmt.Sprintf("Route%dReady", idx)),
+		}
 
-	status.manage().MarkTrue(AppConditionRouteReady)
-}
+		bindingStatus := AppRouteStatus{
+			QualifiedRouteBinding: binding,
+			URL:                   binding.Source.String(),
+			Status:                RouteBindingStatusUnknown,
+		}
 
-// serviceBindingConditionType creates a Conditiontype for a ServiceBinding.
-func serviceBindingConditionType(binding *servicecatalogv1beta1.ServiceBinding) (apis.ConditionType, error) {
-	serviceInstance, ok := binding.Labels[ComponentLabel]
-	if !ok {
-		return "", fmt.Errorf("binding %s is missing the label %s", binding.Name, ComponentLabel)
+		route, routeFound := routeMapping[binding.Source]
+
+		// Reasons all start with Route so when they're propagated all the way
+		// up to the App's status it's easy to determine what went wrong.
+		switch {
+		case !routeFound:
+			cond.Status = corev1.ConditionFalse
+			cond.Reason = "RouteMissing"
+			cond.Message = fmt.Sprintf("No Route defined for URL: %s", bindingStatus.URL)
+
+		case route.Generation != route.Status.ObservedGeneration:
+			cond.Status = corev1.ConditionUnknown
+			cond.Reason = "RouteReconciling"
+			cond.Message = "The Route is currently updating"
+
+		case !route.Status.IsReady():
+			rc := route.Status.GetCondition(RouteConditionReady)
+			cond.Status = rc.Status
+			cond.Reason = "RouteUnhealthy"
+			cond.Message = fmt.Sprintf("Route has status %s: %s", rc.Reason, rc.Message)
+
+		case !route.hasDestination(binding.Destination):
+			cond.Status = corev1.ConditionUnknown
+			cond.Reason = "RouteBindingPropagating"
+			cond.Message = "The binding is still propagating to the Route"
+
+		default:
+			cond.Status = corev1.ConditionTrue
+			cond.Reason = "RouteReady"
+			cond.Message = "The Route is up to date and is mapped to this App"
+
+			bindingStatus.Status = RouteBindingStatusReady
+			bindingStatus.VirtualService = route.Status.VirtualService
+		}
+
+		conditions = append(conditions, cond)
+		rs = append(rs, bindingStatus)
+		urls = append(urls, bindingStatus.URL)
 	}
 
-	return apis.ConditionType(fmt.Sprintf("%sReady", serviceInstance)), nil
+	// Add statuses for all bindings that exist but aren't on the App.
+	// This usually happens as the result of deleting an binding from
+	// an App, the result should be reconciled away relatively quickly.
+	// Bindings are appended with a deleting status to prevent the
+	// route reconciler from getting stuck in a catch-22 but still allow
+	// it to enqueue the routes that are holding old bindings.
+	for _, binding := range undeclaredBindings {
+		rs = append(rs, AppRouteStatus{
+			QualifiedRouteBinding: binding,
+			URL:                   binding.Source.String(),
+			Status:                RouteBindingStatusOrphaned,
+		})
+
+		conditions = append(conditions, apis.Condition{
+			Type:    apis.ConditionType(fmt.Sprintf("Route%dReady", len(rs))),
+			Status:  corev1.ConditionUnknown,
+			Reason:  "ExtraRouteBinding",
+			Message: fmt.Sprintf("The Route %s has an extra binding to this App", binding.Source.String()),
+		})
+		urls = append(urls, binding.Source.String())
+	}
+
+	// Sort the URLs for deterministic output.
+	sort.Strings(urls)
+	status.URLs = urls
+
+	summaryCondition, allConditions := SummarizeChildConditions(conditions)
+
+	status.Routes = rs
+	PropagateCondition(
+		status.manage(),
+		AppConditionRouteReady,
+		summaryCondition,
+	)
+	status.RouteConditions = allConditions
 }
 
-// PropagateServiceBindingsStatus updates the service binding readiness status.
-func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalogv1beta1.ServiceBinding) {
+// PropagateVolumeBindingsStatus updates the service binding readiness status.
+func (status *AppStatus) PropagateVolumeBindingsStatus(volumeBindings []*ServiceInstanceBinding) {
+	volumeStatus := []AppVolumeStatus{}
+
+	for _, binding := range volumeBindings {
+		volumeStatus = append(volumeStatus, AppVolumeStatus{
+			VolumeName:      binding.Status.VolumeStatus.PersistentVolumeName,
+			MountPath:       binding.Status.VolumeStatus.Mount,
+			VolumeClaimName: binding.Status.VolumeStatus.PersistentVolumeClaimName,
+			ReadOnly:        binding.Status.VolumeStatus.ReadOnly,
+			UidGid: UidGid{
+				GID: binding.Status.VolumeStatus.GID,
+				UID: binding.Status.VolumeStatus.UID,
+			},
+		})
+	}
+
+	status.Volumes = volumeStatus
+}
+
+// PropagateServiceInstanceBindingsStatus updates the service binding readiness status.
+func (status *AppStatus) PropagateServiceInstanceBindingsStatus(bindings []ServiceInstanceBinding) {
 
 	// Gather binding names
 	var bindingNames []string
 	for _, binding := range bindings {
-		bindingNames = append(bindingNames, binding.Name)
+		bindingNames = append(bindingNames, binding.Status.BindingName)
 	}
 	status.ServiceBindingNames = bindingNames
 
 	// Gather binding conditions
 	var conditionTypes []apis.ConditionType
 	for _, binding := range bindings {
-		conditionType, err := serviceBindingConditionType(&binding)
-		if err != nil {
-			status.manage().MarkFalse(AppConditionServiceBindingsReady, "Error", "%v", err)
-			return
-		}
-
+		conditionType := serviceBindingConditionType(binding)
 		conditionTypes = append(conditionTypes, conditionType)
 	}
 
@@ -192,22 +322,16 @@ func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalo
 	manager.InitializeConditions()
 
 	for _, binding := range bindings {
-		if binding.Generation != binding.Status.ReconciledGeneration {
-
+		if binding.Generation != binding.Status.ObservedGeneration {
 			// this binding's conditions are out of date.
 			continue
 		}
-
 		for _, cond := range binding.Status.Conditions {
-			if cond.Type != servicecatalogv1beta1.ServiceBindingConditionReady {
+			if cond.Type != ServiceInstanceBindingConditionReady {
 				continue
 			}
 
-			conditionType, err := serviceBindingConditionType(&binding)
-			if err != nil {
-				status.manage().MarkFalse(AppConditionServiceBindingsReady, "Error", "%v", err)
-				return
-			}
+			conditionType := serviceBindingConditionType(binding)
 			switch v1.ConditionStatus(cond.Status) {
 			case v1.ConditionTrue:
 				manager.MarkTrue(conditionType)
@@ -225,21 +349,23 @@ func (status *AppStatus) PropagateServiceBindingsStatus(bindings []servicecatalo
 	}
 
 	// Copy Ready condition
-	PropagateCondition(status.manage(), AppConditionServiceBindingsReady, manager.GetCondition(apis.ConditionReady))
+	PropagateCondition(status.manage(), AppConditionServiceInstanceBindingsReady, manager.GetCondition(apis.ConditionReady))
 	status.ServiceBindingConditions = duckStatus.Conditions
 }
 
 // MarkSpaceHealthy notes that the space was able to be retrieved and
 // defaults can be applied from it.
 func (status *AppStatus) MarkSpaceHealthy() {
-	status.manage().MarkTrue(AppConditionSpaceReady)
+	status.SpaceCondition().MarkSuccess()
 }
 
 // MarkSpaceUnhealthy notes that the space was could not be retrieved.
 func (status *AppStatus) MarkSpaceUnhealthy(reason, message string) {
-	status.manage().MarkFalse(AppConditionSpaceReady, reason, message)
+	status.SpaceCondition().MarkFalse(reason, message)
 }
 
-func (status *AppStatus) duck() *duckv1beta1.Status {
-	return &status.Status
+// serviceBindingConditionType creates a Conditiontype for a ServiceBinding.
+func serviceBindingConditionType(binding ServiceInstanceBinding) apis.ConditionType {
+	serviceBinding := binding.Status.BindingName
+	return apis.ConditionType(fmt.Sprintf("%sReady", serviceBinding))
 }

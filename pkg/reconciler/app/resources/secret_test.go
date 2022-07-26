@@ -15,14 +15,14 @@
 package resources
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	cfutilfake "github.com/google/kf/pkg/kf/cfutil/fake"
-	"github.com/google/kf/pkg/kf/testutil"
-	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	cfutilfake "github.com/google/kf/v2/pkg/kf/cfutil/fake"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -39,21 +39,16 @@ func ExampleKfInjectedEnvSecretName() {
 }
 
 func TestMakeKfInjectedEnvSecret_happyPath(t *testing.T) {
-	vcapApplication := v1.EnvVar{
-		Name:  "VCAP_APPLICATION",
-		Value: `{"application_name":"some-app"}`,
-	}
-
 	vcapServices := v1.EnvVar{
 		Name:  "VCAP_SERVICES",
 		Value: "{}",
 	}
 
-	envVars := []v1.EnvVar{vcapApplication, vcapServices}
+	envVars := []v1.EnvVar{vcapServices}
 	ctrl := gomock.NewController(t)
 
 	fakeInjector := cfutilfake.NewFakeSystemEnvInjector(ctrl)
-	fakeInjector.EXPECT().ComputeSystemEnv(gomock.Any(), gomock.Any()).Return(envVars, nil)
+	fakeInjector.EXPECT().ComputeSystemEnv(gomock.Any(), gomock.Any(), gomock.Any()).Return(envVars, nil)
 
 	app := v1alpha1.App{
 		ObjectMeta: metav1.ObjectMeta{
@@ -70,9 +65,9 @@ func TestMakeKfInjectedEnvSecret_happyPath(t *testing.T) {
 		},
 	}
 
-	serviceBindings := []apiv1beta1.ServiceBinding{}
+	serviceBindings := []v1alpha1.ServiceInstanceBinding{}
 
-	secret, err := MakeKfInjectedEnvSecret(&app, &space, serviceBindings, fakeInjector)
+	secret, err := MakeKfInjectedEnvSecret(context.Background(), &app, &space, serviceBindings, fakeInjector)
 
 	testutil.AssertNil(t, "err", err)
 	testutil.AssertNotNil(t, "secret", secret)
@@ -99,14 +94,8 @@ func TestMakeKfInjectedEnvSecret_happyPath(t *testing.T) {
 
 	testutil.AssertEqual(t,
 		"Num of env vars",
-		2,
+		1,
 		len(secret.Data),
-	)
-
-	testutil.AssertEqual(t,
-		"VCAP application",
-		vcapApplication.Value,
-		string(secret.Data[vcapApplication.Name]),
 	)
 
 	testutil.AssertEqual(t,

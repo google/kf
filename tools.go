@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build tools
 // +build tools
 
 // This package contains code generation utilities
@@ -20,6 +21,8 @@ package tools
 
 import (
 	_ "github.com/golang/mock/mockgen/model"
+	_ "github.com/google/licenseclassifier"
+	_ "github.com/google/subcommands"
 	_ "k8s.io/code-generator/cmd/client-gen"
 	_ "k8s.io/code-generator/cmd/conversion-gen"
 	_ "k8s.io/code-generator/cmd/deepcopy-gen"
@@ -31,4 +34,11 @@ import (
 	_ "k8s.io/code-generator/cmd/register-gen"
 	_ "k8s.io/code-generator/cmd/set-gen"
 	_ "knative.dev/pkg/codegen/cmd/injection-gen"
+
+	// codegen: hack/update-schemas.sh
+	_ "sigs.k8s.io/controller-tools/cmd/controller-gen"
+
+	// This is necessary for the V2 build pipeline. Our release pipeline uses
+	// it but only indirectly.
+	_ "code.cloudfoundry.org/buildpackapplifecycle/installer"
 )

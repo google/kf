@@ -1,0 +1,10 @@
+{
+    "buildpacksV2": [
+        {
+            "name": "java_buildpack",
+            "url": "path/to/java",
+            "disabled": false
+        }
+    ],
+    "defaultToV3Stack": false
+}

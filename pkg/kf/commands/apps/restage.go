@@ -17,10 +17,10 @@ package apps
 import (
 	"fmt"
 
-	"github.com/google/kf/pkg/kf/apps"
-	"github.com/google/kf/pkg/kf/commands/completion"
-	"github.com/google/kf/pkg/kf/commands/config"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/v2/pkg/kf/apps"
+	"github.com/google/kf/v2/pkg/kf/commands/completion"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	utils "github.com/google/kf/v2/pkg/kf/internal/utils/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -32,28 +32,39 @@ func NewRestageCommand(
 	var async utils.AsyncFlags
 
 	cmd := &cobra.Command{
-		Use:     "restage APP_NAME",
-		Short:   "Rebuild and deploy using the last uploaded source code and current buildpacks",
-		Example: `kf restage myapp`,
-		Args:    cobra.ExactArgs(1),
-		Aliases: []string{"rg"},
+		Use:   "restage APP_NAME",
+		Short: "Rebuild and redeploy an App without downtime.",
+		Long: `
+		Restaging an App will re-run the latest Build to produce a new
+		container image, and if successful will replace each running instance
+		with the new image.
+
+		Instances are replaced one at a time, always ensuring that the desired
+		number of instances are healthy. This property is upheld by running one
+		additional instance of the App and swapping it out for an old instance.
+
+		The operation completes once all instances have been replaced.
+		`,
+		Example:           `kf restage myapp`,
+		Args:              cobra.ExactArgs(1),
+		Aliases:           []string{"rg"},
+		ValidArgsFunction: completion.AppCompletionFn(p),
+		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := utils.ValidateNamespace(p); err != nil {
+			if err := p.ValidateSpaceTargeted(); err != nil {
 				return err
 			}
 
 			appName := args[0]
 
-			cmd.SilenceUsage = true
-
-			app, err := client.Restage(p.Namespace, appName)
+			app, err := client.Restage(cmd.Context(), p.Space, appName)
 			if err != nil {
-				return fmt.Errorf("failed to restage app: %s", err)
+				return fmt.Errorf("failed to restage App: %s", err)
 			}
 
 			if async.IsSynchronous() {
-				if err := client.DeployLogsForApp(cmd.OutOrStdout(), app); err != nil {
-					return fmt.Errorf("failed to restage app: %s", err)
+				if err := client.DeployLogsForApp(cmd.Context(), cmd.OutOrStdout(), app); err != nil {
+					return fmt.Errorf("failed to restage App: %s", err)
 				}
 
 				fmt.Fprintf(cmd.OutOrStdout(), "%q successfully restaged\n", appName)
@@ -64,8 +75,6 @@ func NewRestageCommand(
 	}
 
 	async.Add(cmd)
-
-	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 
 	return cmd
 }

@@ -21,6 +21,9 @@ set -eux
 # Change to the project root directory
 cd "${0%/*}"/..
 
-gofmt -s -w $( find . -type f -name '*.go' | grep -v \./vendor)
+# Use mapfile to store an array of the go packages.
+mapfile -t paths < <(find . -type f -name '*.go' | grep -v \./vendor | grep -v \./third_party | grep -v \./first_party)
+
+gofmt -s -w "${paths[@]}"
 
 go mod tidy

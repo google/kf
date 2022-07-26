@@ -15,8 +15,10 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -34,7 +36,7 @@ func (flags *AsyncFlags) Add(cmd *cobra.Command) {
 		"async",
 		"",
 		false,
-		"Don't wait for the action to complete on the server before returning",
+		"Do not wait for the action to complete on the server before returning.",
 	)
 }
 
@@ -67,4 +69,37 @@ func (flags *AsyncFlags) AwaitAndLog(w io.Writer, action string, callback func()
 	}
 
 	return nil
+}
+
+// WaitFor waits for the action to be completed (signified by the callback
+// returning true) if the flag specifies the command should be run
+// synchronously. In either case, it will notify the user of the decision by
+// logging to the writer whether it waited or not. If an error is returned by
+// the callback the result will be an error, otherwise the error will be nil.
+func (flags *AsyncFlags) WaitFor(
+	ctx context.Context,
+	w io.Writer,
+	action string,
+	interval time.Duration,
+	callback func() (bool, error),
+) error {
+	return flags.AwaitAndLog(w, action, func() error {
+		tick := time.NewTicker(interval)
+		defer tick.Stop()
+
+		for {
+			if done, err := callback(); err != nil {
+				return err
+			} else if done {
+				return nil
+			}
+
+			select {
+			case <-tick.C:
+				// Continue waiting for callback.
+			case <-ctx.Done():
+				return fmt.Errorf("%s timed out", action)
+			}
+		}
+	})
 }

@@ -1,0 +1,17 @@
+name: "mapfs"
+description:
+  "A fork of Cloud Foundry's golang based fuse file system for uid mapping local file access"
+
+third_party: {
+  type: PACKAGE
+  url {
+    type: GIT
+    value: "https://github.com/cloudfoundry/mapfs"
+  }
+  version: "master"
+  last_upgrade_date {
+    year: 2022
+    month: 05
+    day: 26
+  }
+}

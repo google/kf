@@ -1,0 +1,11 @@
+# Test:	TestApplySubstitution/nested_map
+# input: |2-
+# 
+#   env:
+#     ((key)): ((value))
+# variables:
+#   key: 1
+#   value: 2
+
+env:
+  "1": 2

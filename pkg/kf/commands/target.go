@@ -15,43 +15,92 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/google/kf/pkg/kf/commands/completion"
-	"github.com/google/kf/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/commands/completion"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	utils "github.com/google/kf/v2/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/v2/pkg/kf/spaces"
 	"github.com/spf13/cobra"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"knative.dev/pkg/logging"
 )
 
-// NewTargetCommand creates a command that can set the default space.
-func NewTargetCommand(p *config.KfParams) *cobra.Command {
-	var space string
+func suggestMissingSpaceNextAction() {
+	utils.SuggestNextAction(utils.NextAction{
+		Description: "List known spaces",
+		Commands: []string{
+			"kf spaces",
+			"kubectl get spaces",
+		},
+	})
+}
 
+// NewTargetCommand creates a command that can set the default space.
+func NewTargetCommand(p *config.KfParams, client spaces.Client) *cobra.Command {
 	command := &cobra.Command{
+		Annotations: map[string]string{
+			config.SkipVersionCheckAnnotation: "",
+		},
 		Use:   "target",
-		Short: "Set or view the targeted space",
+		Short: "Set the default Space to run commands against.",
 		Example: `
-		# See the current space
+		# See the current Space
 		kf target
-		# Target a space
+		# Target a Space
 		kf target -s my-space
 		`,
-		Args: cobra.ExactArgs(0),
+		Args:         cobra.MaximumNArgs(1),
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if space != "" {
-				p.Namespace = space
+			ctx := cmd.Context()
+			flagsChanged := cmd.Flags().Lookup("target-space").Changed
+			flagsChanged = flagsChanged || cmd.Parent().PersistentFlags().Lookup("space").Changed
+
+			// We'll support the use case where the user hands us an argument
+			// (instead of using a flag). But we're not going to pick between
+			// the argument and the flag, so if they gave us both, fail.
+
+			updateSpace := false
+
+			switch {
+			case flagsChanged && len(args) > 0:
+				// Both flags and an arg was used. Fail.
+				return errors.New("--space (or --target-space) can't be used when the Space is provided via arguments.")
+			case flagsChanged:
+				// Only flags were used, update.
+				updateSpace = true
+			case len(args) > 0:
+				// Only an arg was used, update.
+				p.Space = args[0]
+				updateSpace = true
+			default:
+				updateSpace = false
+			}
+
+			if updateSpace {
+				if _, err := client.Get(cmd.Context(), p.Space); apierrors.IsNotFound(err) {
+					suggestMissingSpaceNextAction()
+					return fmt.Errorf("Space %q doesn't exist", p.Space)
+				} else if err != nil {
+					return err
+				}
+
 				if err := config.Write(p.Config, p); err != nil {
 					return err
 				}
+				logging.FromContext(ctx).Info("Updated target Space:")
 			}
 
-			fmt.Println("Current space is:", p.Namespace)
+			fmt.Fprintln(cmd.OutOrStdout(), p.Space)
 
 			return nil
 		},
 	}
 
-	command.Flags().StringVarP(&space, "space", "s", "", "Target the given space.")
-	completion.MarkFlagCompletionSupported(command.Flags(), "space", completion.SpaceCompletion)
+	command.Flags().StringVarP(&p.Space, "target-space", "s", "", "Target the given space.")
+	command.RegisterFlagCompletionFunc("target-space", completion.SpaceCompletionFn(p))
 
 	return command
 }

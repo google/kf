@@ -1,0 +1,38 @@
+# Test:	TestMakeOSBBindingLastOperationRequest/populated_key
+# binding:
+#   metadata:
+#     creationTimestamp: null
+#     name: mydb-binding
+#     namespace: test-ns
+#     uid: 22222222-2222-2222-2222-222222222222
+#   spec:
+#     instanceRef: {}
+#     parametersFrom: {}
+#   status:
+#     credentialsSecretRef: {}
+#     osbStatus: {}
+#     tags: null
+# operationKey: some-long-running-operation-key
+# serviceInstance:
+#   metadata:
+#     creationTimestamp: null
+#     name: mydb
+#     namespace: test-ns
+#     uid: 00000000-0000-0000-0000-000008675309
+#   spec:
+#     osb:
+#       classUID: class-uid
+#       planUID: plan-uid
+#     parametersFrom: {}
+#     tags: null
+#   status:
+#     osbStatus: {}
+#     tags: null
+
+{
+    "instance_id": "00000000-0000-0000-0000-000008675309",
+    "binding_id": "22222222-2222-2222-2222-222222222222",
+    "service_id": "class-uid",
+    "plan_id": "plan-uid",
+    "operation": "some-long-running-operation-key"
+}

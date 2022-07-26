@@ -15,6 +15,10 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
+  annotations:
+    operator.knative.dev/mode: EnsureExists
+  labels:
+    kf.dev/release: VERSION_PLACEHOLDER
   name: config-logging
   namespace: kf
 data:

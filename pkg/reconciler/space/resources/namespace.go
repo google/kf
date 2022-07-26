@@ -15,15 +15,15 @@
 package resources
 
 import (
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/apis/networking"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/kmeta"
 )
 
 const (
-	managedByLabel      = "app.kubernetes.io/managed-by"
-	istioInjectionLabel = "istio-injection"
+	managedByLabel = "app.kubernetes.io/managed-by"
 )
 
 // NamespaceName gets the name of a namespace given the space.
@@ -32,7 +32,7 @@ func NamespaceName(space *v1alpha1.Space) string {
 }
 
 // MakeNamespace creates a Namespace from a Space object.
-func MakeNamespace(space *v1alpha1.Space) (*v1.Namespace, error) {
+func MakeNamespace(space *v1alpha1.Space, asmRev string) (*v1.Namespace, error) {
 	return &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: NamespaceName(space),
@@ -44,8 +44,8 @@ func MakeNamespace(space *v1alpha1.Space) (*v1.Namespace, error) {
 			// North/South.
 			Labels: v1alpha1.UnionMaps(
 				space.GetLabels(), map[string]string{
-					istioInjectionLabel: "enabled",
-					managedByLabel:      "kf",
+					networking.IstioInjectionLabel: asmRev,
+					managedByLabel:                 "kf",
 				}),
 		},
 	}, nil

@@ -1,0 +1,14 @@
+<dl>
+<dt><code translate="no">--bool</code></dt>
+<dd><p>A nonzero boolean default. (default true)</p>
+</dd>
+<dt><code translate="no">--int=<var translate="no">int</var></code></dt>
+<dd><p>A nonzero int default. (default 10)</p>
+</dd>
+<dt><code translate="no">--strarr=<var translate="no">stringArray</var></code></dt>
+<dd><p>A nonzero array default. (default [foo,bar])</p>
+</dd>
+<dt><code translate="no">--string=<var translate="no">string</var></code></dt>
+<dd><p>A nonzero string default. (default &quot;nonzero&quot;)</p>
+</dd>
+</dl>

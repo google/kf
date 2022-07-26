@@ -16,104 +16,13 @@ package v1alpha1
 
 import (
 	"path"
+	"strings"
 
-	"github.com/google/kf/pkg/kf/algorithms"
-	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/google/kf/v2/pkg/kf/algorithms"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"knative.dev/pkg/apis/istio/v1alpha3"
 )
 
 // TODO(poy): This file SHOULD be generated, but it has been written by hand.
-
-// OwnerReferences implements the necessary interfaces for the algorithms
-// package.
-type OwnerReferences []metav1.OwnerReference
-
-// Set implements Interface.
-func (d OwnerReferences) Set(i int, a algorithms.Interface, j int, b algorithms.Interface) {
-	a.(OwnerReferences)[i] = b.(OwnerReferences)[j]
-}
-
-// Append implements Interface.
-func (d OwnerReferences) Append(a algorithms.Interface) algorithms.Interface {
-	return append(d, a.(OwnerReferences)...)
-}
-
-// Clone implements Interface.
-func (d OwnerReferences) Clone() algorithms.Interface {
-	return append(OwnerReferences{}, d...)
-}
-
-// Slice implements Interface.
-func (d OwnerReferences) Slice(i int, j int) algorithms.Interface {
-	return d[i:j]
-}
-
-// Len implements Interface.
-func (d OwnerReferences) Len() int {
-	return len(d)
-}
-
-// Less implements Interface.
-func (d OwnerReferences) Less(i int, j int) bool {
-	return d[i].UID < d[j].UID
-}
-
-// Swap implements Interface.
-func (d OwnerReferences) Swap(i int, j int) {
-	d[i], d[j] = d[j], d[i]
-}
-
-// HTTPRoutes implements the necessary interfaces for the algorithms
-// package.
-type HTTPRoutes []v1alpha3.HTTPRoute
-
-// Set implements Interface.
-func (h HTTPRoutes) Set(i int, a algorithms.Interface, j int, b algorithms.Interface) {
-	a.(HTTPRoutes)[i] = b.(HTTPRoutes)[j]
-}
-
-// Append implements Interface.
-func (h HTTPRoutes) Append(a algorithms.Interface) algorithms.Interface {
-	return append(h, a.(HTTPRoutes)...)
-}
-
-// Clone implements Interface.
-func (h HTTPRoutes) Clone() algorithms.Interface {
-	return append(HTTPRoutes{}, h...)
-}
-
-// Slice implements Interface.
-func (h HTTPRoutes) Slice(i int, j int) algorithms.Interface {
-	return h[i:j]
-}
-
-// Len implements Interface.
-func (h HTTPRoutes) Len() int {
-	return len(h)
-}
-
-// Less implements Interface.
-func (h HTTPRoutes) Less(i int, j int) bool {
-	f := func(h v1alpha3.HTTPRoute) string {
-		var m string
-		for _, s := range h.Match {
-			if s.URI == nil {
-				continue
-			}
-			m += s.URI.Exact + s.URI.Prefix + s.URI.Suffix + s.URI.Regex
-		}
-		return m
-	}
-
-	return f(h[i]) < f(h[j])
-}
-
-// Swap implements Interface.
-func (h HTTPRoutes) Swap(i int, j int) {
-	h[i], h[j] = h[j], h[i]
-}
 
 // SpaceDomains implements the necessary interfaces for the algorithms
 // package.
@@ -146,93 +55,11 @@ func (d SpaceDomains) Len() int {
 
 // Less implements Interface.
 func (d SpaceDomains) Less(i int, j int) bool {
-	// We don't want to lose default information.
-	if d[i].Domain == d[j].Domain {
-		d[i].Default = d[i].Default || d[j].Default
-		d[j].Default = d[i].Default || d[j].Default
-	}
-
 	return d[i].Domain < d[j].Domain
 }
 
 // Swap implements Interface.
 func (d SpaceDomains) Swap(i int, j int) {
-	d[i], d[j] = d[j], d[i]
-}
-
-// ServiceBindings implements the necessary interfaces for the algorithms package.
-type ServiceBindings []servicecatalogv1beta1.ServiceBinding
-
-// Set implements Interface.
-func (d ServiceBindings) Set(i int, a algorithms.Interface, j int, b algorithms.Interface) {
-	a.(ServiceBindings)[i] = b.(ServiceBindings)[j]
-}
-
-// Append implements Interface.
-func (d ServiceBindings) Append(a algorithms.Interface) algorithms.Interface {
-	return append(d, a.(ServiceBindings)...)
-}
-
-// Clone implements Interface.
-func (s ServiceBindings) Clone() algorithms.Interface {
-	return append(ServiceBindings{}, s...)
-}
-
-// Slice implements Interface.
-func (s ServiceBindings) Slice(i int, j int) algorithms.Interface {
-	return s[i:j]
-}
-
-// Len implements Interface.
-func (s ServiceBindings) Len() int {
-	return len(s)
-}
-
-// Less implements Interface.
-func (s ServiceBindings) Less(i int, j int) bool {
-	return s[i].Name < s[j].Name
-}
-
-// Swap implements Interface.
-func (s ServiceBindings) Swap(i int, j int) {
-	s[i], s[j] = s[j], s[i]
-}
-
-// Routes implements the necessary interfaces for the algorithms package.
-type Routes []Route
-
-// Set implements Interface.
-func (d Routes) Set(i int, a algorithms.Interface, j int, b algorithms.Interface) {
-	a.(Routes)[i] = b.(Routes)[j]
-}
-
-// Append implements Interface.
-func (d Routes) Append(a algorithms.Interface) algorithms.Interface {
-	return append(d, a.(Routes)...)
-}
-
-// Clone implements Interface.
-func (d Routes) Clone() algorithms.Interface {
-	return append(Routes{}, d...)
-}
-
-// Slice implements Interface.
-func (d Routes) Slice(i int, j int) algorithms.Interface {
-	return d[i:j]
-}
-
-// Len implements Interface.
-func (d Routes) Len() int {
-	return len(d)
-}
-
-// Less implements Interface.
-func (d Routes) Less(i int, j int) bool {
-	return d[i].Name < d[j].Name
-}
-
-// Swap implements Interface.
-func (d Routes) Swap(i int, j int) {
 	d[i], d[j] = d[j], d[i]
 }
 
@@ -266,6 +93,11 @@ func (d RouteSpecFieldsSlice) Len() int {
 }
 
 // Less implements Interface.
+// This is used to sort RouteSpecFields in an order that makes sense for generating VirtualService rules.
+// RouteSpecFields are sorted alphabetically by hostname and domain (though the domain should be the same for all RSFs being compared).
+// RSFs with the "*" host are listed last, since they are the most general.
+// Within RSFs with the same hostname + domain, the ones with longer paths come first, since they are more specific and
+// should be evaluated first in the VS.
 func (d RouteSpecFieldsSlice) Less(i int, j int) bool {
 	// TODO(https://github.com/knative/pkg/issues/542):
 	// We can't garuntee that the path will have the '/' or not
@@ -273,7 +105,23 @@ func (d RouteSpecFieldsSlice) Less(i int, j int) bool {
 	d[i].Path = path.Join("/", d[i].Path)
 	d[j].Path = path.Join("/", d[j].Path)
 
-	return GenerateRouteNameFromSpec(d[i], "") < GenerateRouteNameFromSpec(d[j], "")
+	if d[i].Hostname != d[j].Hostname {
+		if strings.HasPrefix(d[i].Hostname, "*") {
+			return false
+		}
+		if strings.HasPrefix(d[j].Hostname, "*") {
+			return true
+		}
+		return d[i].Hostname < d[j].Hostname
+	}
+
+	// RouteSpecFields sort is only used by the VirtualService reconciler currently,
+	// which uses a list of RSFs with the same domain, so this case shouldn't happen.
+	if d[i].Domain != d[j].Domain {
+		return d[i].Domain < d[j].Domain
+	}
+
+	return len(d[i].Path) > len(d[j].Path)
 }
 
 // Swap implements Interface.

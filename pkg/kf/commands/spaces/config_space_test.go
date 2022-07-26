@@ -16,20 +16,25 @@ package spaces
 
 import (
 	"bytes"
+	"context"
 	"errors"
+	"fmt"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/internal/envutil"
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/spaces"
-	"github.com/google/kf/pkg/kf/spaces/fake"
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/internal/envutil"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/spaces"
+	"github.com/google/kf/v2/pkg/kf/spaces/fake"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestNewConfigSpaceCommand(t *testing.T) {
+	t.Skip("b/236783219")
 	space := "my-space"
 
 	cases := map[string]struct {
@@ -47,14 +52,14 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 		"set-container-registry valid": {
 			args: []string{"set-container-registry", space, "gcr.io/foo"},
 			validate: func(t *testing.T, space *v1alpha1.Space) {
-				testutil.AssertEqual(t, "container registry", "gcr.io/foo", space.Spec.BuildpackBuild.ContainerRegistry)
+				testutil.AssertEqual(t, "container registry", "gcr.io/foo", space.Spec.BuildConfig.ContainerRegistry)
 			},
 		},
 
 		"set with targeted space": {
 			args: []string{"set-container-registry", "gcr.io/foo"},
 			validate: func(t *testing.T, space *v1alpha1.Space) {
-				testutil.AssertEqual(t, "container registry", "gcr.io/foo", space.Spec.BuildpackBuild.ContainerRegistry)
+				testutil.AssertEqual(t, "container registry", "gcr.io/foo", space.Spec.BuildConfig.ContainerRegistry)
 			},
 			space: v1alpha1.Space{
 				ObjectMeta: metav1.ObjectMeta{
@@ -66,7 +71,7 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 		"set-env valid": {
 			space: v1alpha1.Space{
 				Spec: v1alpha1.SpaceSpec{
-					Execution: v1alpha1.SpaceSpecExecution{
+					RuntimeConfig: v1alpha1.SpaceSpecRuntimeConfig{
 						Env: envutil.MapToEnvVars(map[string]string{
 							"EXISTS": "FOO",
 							"BAR":    "BAZZ",
@@ -79,14 +84,14 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 				testutil.AssertEqual(t, "execution env", map[string]string{
 					"EXISTS": "REPLACED",
 					"BAR":    "BAZZ",
-				}, envutil.EnvVarsToMap(space.Spec.Execution.Env))
+				}, envutil.EnvVarsToMap(space.Spec.RuntimeConfig.Env))
 			},
 		},
 
 		"unset-env valid": {
 			space: v1alpha1.Space{
 				Spec: v1alpha1.SpaceSpec{
-					Execution: v1alpha1.SpaceSpecExecution{
+					RuntimeConfig: v1alpha1.SpaceSpecRuntimeConfig{
 						Env: envutil.MapToEnvVars(map[string]string{
 							"EXISTS": "FOO",
 							"BAR":    "BAZZ",
@@ -98,14 +103,14 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 			validate: func(t *testing.T, space *v1alpha1.Space) {
 				testutil.AssertEqual(t, "execution env", map[string]string{
 					"BAR": "BAZZ",
-				}, envutil.EnvVarsToMap(space.Spec.Execution.Env))
+				}, envutil.EnvVarsToMap(space.Spec.RuntimeConfig.Env))
 			},
 		},
 
 		"set-buildpack-env valid": {
 			space: v1alpha1.Space{
 				Spec: v1alpha1.SpaceSpec{
-					BuildpackBuild: v1alpha1.SpaceSpecBuildpackBuild{
+					BuildConfig: v1alpha1.SpaceSpecBuildConfig{
 						Env: envutil.MapToEnvVars(map[string]string{
 							"EXISTS": "FOO",
 							"BAR":    "BAZZ",
@@ -118,14 +123,14 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 				testutil.AssertEqual(t, "buildpack env", map[string]string{
 					"EXISTS": "REPLACED",
 					"BAR":    "BAZZ",
-				}, envutil.EnvVarsToMap(space.Spec.BuildpackBuild.Env))
+				}, envutil.EnvVarsToMap(space.Spec.BuildConfig.Env))
 			},
 		},
 
 		"unset-buildpack-env valid": {
 			space: v1alpha1.Space{
 				Spec: v1alpha1.SpaceSpec{
-					BuildpackBuild: v1alpha1.SpaceSpecBuildpackBuild{
+					BuildConfig: v1alpha1.SpaceSpecBuildConfig{
 						Env: envutil.MapToEnvVars(map[string]string{
 							"EXISTS": "FOO",
 							"BAR":    "BAZZ",
@@ -137,63 +142,59 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 			validate: func(t *testing.T, space *v1alpha1.Space) {
 				testutil.AssertEqual(t, "buildpack env", map[string]string{
 					"BAR": "BAZZ",
-				}, envutil.EnvVarsToMap(space.Spec.BuildpackBuild.Env))
-			},
-		},
-
-		"set-buildpack-builder valid": {
-			args: []string{"set-buildpack-builder", space, "gcr.io/path/to/builder"},
-			validate: func(t *testing.T, space *v1alpha1.Space) {
-				testutil.AssertEqual(t, "container registry", "gcr.io/path/to/builder", space.Spec.BuildpackBuild.BuilderImage)
+				}, envutil.EnvVarsToMap(space.Spec.BuildConfig.Env))
 			},
 		},
 
 		"append-domain valid": {
 			args: []string{"append-domain", space, "example.com"},
 			validate: func(t *testing.T, space *v1alpha1.Space) {
-				testutil.AssertEqual(t, "len(domains)", 1, len(space.Spec.Execution.Domains))
-				testutil.AssertEqual(t, "domains", "example.com", space.Spec.Execution.Domains[0].Domain)
+				testutil.AssertEqual(t, "len(domains)", 1, len(space.Spec.NetworkConfig.Domains))
+				testutil.AssertEqual(t, "domains", "example.com", space.Spec.NetworkConfig.Domains[0].Domain)
 			},
 		},
 
 		"set-default-domain valid": {
 			space: v1alpha1.Space{
 				Spec: v1alpha1.SpaceSpec{
-					Execution: v1alpha1.SpaceSpecExecution{
+					NetworkConfig: v1alpha1.SpaceSpecNetworkConfig{
 						Domains: []v1alpha1.SpaceDomain{
 							{Domain: "example.com"},
-							{Domain: "other-example.com", Default: true},
+							{Domain: "other-example.com"},
 						},
 					},
 				},
 			},
-			args: []string{"set-default-domain", space, "example.com"},
+			args: []string{"set-default-domain", space, "other-example.com"},
 			validate: func(t *testing.T, space *v1alpha1.Space) {
-				testutil.AssertEqual(t, "len(domains)", 2, len(space.Spec.Execution.Domains))
-				testutil.AssertEqual(t, "domains", "example.com", space.Spec.Execution.Domains[0].Domain)
-				testutil.AssertEqual(t, "default", true, space.Spec.Execution.Domains[0].Default)
-				testutil.AssertEqual(t, "unsets previous default", false, space.Spec.Execution.Domains[1].Default)
+				testutil.AssertEqual(t, "len(domains)", 2, len(space.Spec.NetworkConfig.Domains))
+				testutil.AssertEqual(t, "domains[0].domain", "other-example.com", space.Spec.NetworkConfig.Domains[0].Domain)
+				testutil.AssertEqual(t, "domains[1].domain", "example.com", space.Spec.NetworkConfig.Domains[1].Domain)
 			},
 		},
 
-		"set-default-domain invalid": {
+		"set-default-domain not-present": {
 			space: v1alpha1.Space{
 				Spec: v1alpha1.SpaceSpec{
-					Execution: v1alpha1.SpaceSpecExecution{
+					NetworkConfig: v1alpha1.SpaceSpecNetworkConfig{
 						Domains: []v1alpha1.SpaceDomain{
 							{Domain: "example.com"},
 						},
 					},
 				},
 			},
-			wantErr: errors.New("failed to find domain other-example.com"),
-			args:    []string{"set-default-domain", space, "other-example.com"},
+			args: []string{"set-default-domain", space, "other-example.com"},
+			validate: func(t *testing.T, space *v1alpha1.Space) {
+				testutil.AssertEqual(t, "len(domains)", 2, len(space.Spec.NetworkConfig.Domains))
+				testutil.AssertEqual(t, "domains[0].domain", "other-example.com", space.Spec.NetworkConfig.Domains[0].Domain)
+				testutil.AssertEqual(t, "domains[1].domain", "example.com", space.Spec.NetworkConfig.Domains[1].Domain)
+			},
 		},
 
 		"remove-domain valid": {
 			space: v1alpha1.Space{
 				Spec: v1alpha1.SpaceSpec{
-					Execution: v1alpha1.SpaceSpecExecution{
+					NetworkConfig: v1alpha1.SpaceSpecNetworkConfig{
 						Domains: []v1alpha1.SpaceDomain{
 							{Domain: "example.com"},
 							{Domain: "other-example.com"},
@@ -203,22 +204,99 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 			},
 			args: []string{"remove-domain", space, "other-example.com"},
 			validate: func(t *testing.T, space *v1alpha1.Space) {
-				testutil.AssertEqual(t, "len(domains)", 1, len(space.Spec.Execution.Domains))
-				testutil.AssertEqual(t, "domains", "example.com", space.Spec.Execution.Domains[0].Domain)
+				testutil.AssertEqual(t, "len(domains)", 1, len(space.Spec.NetworkConfig.Domains))
+				testutil.AssertEqual(t, "domains", "example.com", space.Spec.NetworkConfig.Domains[0].Domain)
 			},
 		},
 
 		"set-build-service-account valid": {
 			space: v1alpha1.Space{
 				Spec: v1alpha1.SpaceSpec{
-					Security: v1alpha1.SpaceSpecSecurity{
-						BuildServiceAccount: "some-service-account",
+					BuildConfig: v1alpha1.SpaceSpecBuildConfig{
+						ServiceAccount: "some-service-account",
 					},
 				},
 			},
 			args: []string{"set-build-service-account", space, "some-other-service-account"},
 			validate: func(t *testing.T, space *v1alpha1.Space) {
-				testutil.AssertEqual(t, "build-service-account", "some-other-service-account", space.Spec.Security.BuildServiceAccount)
+				testutil.AssertEqual(t, "build-service-account", "some-other-service-account", space.Spec.BuildConfig.ServiceAccount)
+			},
+		},
+
+		"set-app-ingress-policy DenyAll": {
+			space: v1alpha1.Space{},
+			args:  []string{"set-app-ingress-policy", space, "DenyAll"},
+			validate: func(t *testing.T, space *v1alpha1.Space) {
+				testutil.AssertEqual(t, "policy", "DenyAll", space.Spec.NetworkConfig.AppNetworkPolicy.Ingress)
+			},
+		},
+		"set-app-egress-policy DenyAll": {
+			space: v1alpha1.Space{},
+			args:  []string{"set-app-egress-policy", space, "DenyAll"},
+			validate: func(t *testing.T, space *v1alpha1.Space) {
+				testutil.AssertEqual(t, "policy", "DenyAll", space.Spec.NetworkConfig.AppNetworkPolicy.Egress)
+			},
+		},
+		"set-build-ingress-policy DenyAll": {
+			space: v1alpha1.Space{},
+			args:  []string{"set-build-ingress-policy", space, "DenyAll"},
+			validate: func(t *testing.T, space *v1alpha1.Space) {
+				testutil.AssertEqual(t, "policy", "DenyAll", space.Spec.NetworkConfig.BuildNetworkPolicy.Ingress)
+			},
+		},
+		"set-build-egress-policy DenyAll": {
+			space: v1alpha1.Space{},
+			args:  []string{"set-build-egress-policy", space, "DenyAll"},
+			validate: func(t *testing.T, space *v1alpha1.Space) {
+				testutil.AssertEqual(t, "policy", "DenyAll", space.Spec.NetworkConfig.BuildNetworkPolicy.Egress)
+			},
+		},
+		"set-nodeselector valid": {
+			space: v1alpha1.Space{
+				Spec: v1alpha1.SpaceSpec{
+					RuntimeConfig: v1alpha1.SpaceSpecRuntimeConfig{},
+				},
+			},
+			args: []string{"set-nodeselector", space, "DISKTYPE", "SSD"},
+			validate: func(t *testing.T, space *v1alpha1.Space) {
+				testutil.AssertEqual(t, "nodeselector", map[string]string{
+					"DISKTYPE": "SSD",
+				}, space.Spec.RuntimeConfig.NodeSelector)
+			},
+		},
+		"unset-nodeselector valid": {
+			space: v1alpha1.Space{
+				Spec: v1alpha1.SpaceSpec{
+					RuntimeConfig: v1alpha1.SpaceSpecRuntimeConfig{
+						NodeSelector: map[string]string{
+							"DISKTYPE": "HDD",
+							"CPU":      "X86",
+						},
+					},
+				},
+			},
+			args: []string{"unset-nodeselector", space, "CPU"},
+			validate: func(t *testing.T, space *v1alpha1.Space) {
+				testutil.AssertEqual(t, "nodeselector", map[string]string{
+					"DISKTYPE": "HDD",
+				}, space.Spec.RuntimeConfig.NodeSelector)
+			},
+		},
+		"unset-nodeselector invalid name": {
+			space: v1alpha1.Space{
+				Spec: v1alpha1.SpaceSpec{
+					RuntimeConfig: v1alpha1.SpaceSpecRuntimeConfig{
+						NodeSelector: map[string]string{
+							"DISKTYPE": "HDD",
+						},
+					},
+				},
+			},
+			args: []string{"unset-nodeselector", space, "CPU"},
+			validate: func(t *testing.T, space *v1alpha1.Space) {
+				testutil.AssertEqual(t, "nodeselector", map[string]string{
+					"DISKTYPE": "HDD",
+				}, space.Spec.RuntimeConfig.NodeSelector)
 			},
 		},
 	}
@@ -229,17 +307,19 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 			fakeSpaces := fake.NewFakeClient(ctrl)
 
 			output := tc.space.DeepCopy()
-			fakeSpaces.EXPECT().Transform(space, gomock.Any()).DoAndReturn(func(spaceName string, transformer spaces.Mutator) (*v1alpha1.Space, error) {
+			fakeSpaces.EXPECT().Transform(gomock.Any(), space, gomock.Any()).DoAndReturn(func(ctx context.Context, spaceName string, transformer spaces.Mutator) (*v1alpha1.Space, error) {
 				if err := transformer(output); err != nil {
 					return nil, err
 				}
 				return output, nil
 			})
 
+			fakeSpaces.EXPECT().WaitForConditionReadyTrue(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
+
 			buffer := &bytes.Buffer{}
 
 			c := NewConfigSpaceCommand(&config.KfParams{
-				Namespace: tc.space.GetName(),
+				Space: tc.space.GetName(),
 			}, fakeSpaces)
 			c.SetOutput(buffer)
 			c.SetArgs(tc.args)
@@ -253,8 +333,6 @@ func TestNewConfigSpaceCommand(t *testing.T) {
 			if tc.validate != nil {
 				tc.validate(t, output)
 			}
-
-			ctrl.Finish()
 		})
 	}
 }
@@ -265,24 +343,27 @@ func TestNewConfigSpaceCommand_accessors(t *testing.T) {
 			Name: "space-name",
 		},
 		Spec: v1alpha1.SpaceSpec{
-			Security: v1alpha1.SpaceSpecSecurity{
-				BuildServiceAccount: "some-service-account",
-			},
-			BuildpackBuild: v1alpha1.SpaceSpecBuildpackBuild{
+			BuildConfig: v1alpha1.SpaceSpecBuildConfig{
+				ServiceAccount:    "some-service-account",
 				ContainerRegistry: "gcr.io/foo",
-				BuilderImage:      "gcr.io/buildpack-builder:latest",
 				Env: envutil.MapToEnvVars(map[string]string{
 					"JAVA_VERSION": "11",
 					"BAR":          "BAZZ",
 				}),
 			},
-			Execution: v1alpha1.SpaceSpecExecution{
+			RuntimeConfig: v1alpha1.SpaceSpecRuntimeConfig{
 				Env: envutil.MapToEnvVars(map[string]string{
 					"PROFILE": "development",
 					"BAR":     "BAZZ",
 				}),
+				NodeSelector: map[string]string{
+					"DISKTYPE": "SSD",
+					"CPU":      "X86",
+				},
+			},
+			NetworkConfig: v1alpha1.SpaceSpecNetworkConfig{
 				Domains: []v1alpha1.SpaceDomain{
-					{Domain: "example.com", Default: true},
+					{Domain: "example.com"},
 					{Domain: "other-example.com"},
 				},
 			},
@@ -322,11 +403,6 @@ func TestNewConfigSpaceCommand_accessors(t *testing.T) {
   value: "11"
 `,
 		},
-		"get-buildpack-builder valid": {
-			args:       []string{"get-buildpack-builder", "space-name"},
-			space:      space,
-			wantOutput: "gcr.io/buildpack-builder:latest\n",
-		},
 		"get-container-registry valid": {
 			args:       []string{"get-container-registry", "space-name"},
 			space:      space,
@@ -335,8 +411,7 @@ func TestNewConfigSpaceCommand_accessors(t *testing.T) {
 		"get-domains valid": {
 			args:  []string{"get-domains", "space-name"},
 			space: space,
-			wantOutput: `- default: true
-  domain: example.com
+			wantOutput: `- domain: example.com
 - domain: other-example.com
 `,
 		},
@@ -345,6 +420,13 @@ func TestNewConfigSpaceCommand_accessors(t *testing.T) {
 			space:      space,
 			wantOutput: "some-service-account\n",
 		},
+		"get-nodeselector valid": {
+			args:  []string{"get-nodeselector", "space-name"},
+			space: space,
+			wantOutput: `CPU: X86
+DISKTYPE: SSD
+`,
+		},
 	}
 
 	for tn, tc := range cases {
@@ -352,12 +434,12 @@ func TestNewConfigSpaceCommand_accessors(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			fakeSpaces := fake.NewFakeClient(ctrl)
 
-			fakeSpaces.EXPECT().Get("space-name").Return(&tc.space, nil)
+			fakeSpaces.EXPECT().Get(gomock.Any(), "space-name").Return(&tc.space, nil)
 
 			buffer := &bytes.Buffer{}
 
 			c := NewConfigSpaceCommand(&config.KfParams{
-				Namespace: tc.space.GetName(),
+				Space: tc.space.GetName(),
 			}, fakeSpaces)
 			c.SetOutput(buffer)
 			c.SetArgs(tc.args)
@@ -369,7 +451,49 @@ func TestNewConfigSpaceCommand_accessors(t *testing.T) {
 			}
 
 			testutil.AssertEqual(t, "output", tc.wantOutput, buffer.String())
-			ctrl.Finish()
 		})
 	}
+}
+
+func ExampleDiffWrapper_noDiff() {
+	obj := &v1alpha1.Space{}
+
+	wrapper := DiffWrapper(os.Stdout, func(s *v1alpha1.Space) error {
+		// don't mutate the object
+		return nil
+	})
+
+	wrapper(obj)
+
+	// Output: No changes
+}
+
+func ExampleDiffWrapper_changes() {
+	obj := &v1alpha1.Space{}
+	obj.Name = "opaque"
+
+	contents := &bytes.Buffer{}
+	wrapper := DiffWrapper(contents, func(obj *v1alpha1.Space) error {
+		obj.Name = "docker-creds"
+		return nil
+	})
+
+	fmt.Println("Error:", wrapper(obj))
+	firstLine := strings.Split(contents.String(), "\n")[0]
+	fmt.Println("First line:", firstLine)
+
+	// Output: Error: <nil>
+	// First line: Space Diff (-old +new):
+}
+
+func ExampleDiffWrapper_err() {
+	obj := &v1alpha1.Space{}
+
+	wrapper := DiffWrapper(os.Stdout, func(_ *v1alpha1.Space) error {
+		return errors.New("some-error")
+	})
+
+	fmt.Println(wrapper(obj))
+
+	// Output: some-error
 }

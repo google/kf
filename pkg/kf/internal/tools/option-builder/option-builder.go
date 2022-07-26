@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build ignore
 // +build ignore
 
 package main
@@ -28,7 +29,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/google/kf/pkg/kf/internal/tools/generator"
+	"github.com/google/kf/v2/pkg/kf/internal/tools/generator"
 	"sigs.k8s.io/yaml"
 )
 

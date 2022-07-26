@@ -18,14 +18,15 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 	time "time"
 
-	"github.com/google/kf/pkg/kf/logs"
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/logs"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/fake"
 	ktesting "k8s.io/client-go/testing"
@@ -79,7 +80,7 @@ func TestTailer_Tail(t *testing.T) {
 		"custom namespace": {
 			opts: []logs.TailOption{
 				logs.WithTailTimeout(0),
-				logs.WithTailNamespace("custom-namespace"),
+				logs.WithTailSpace("custom-namespace"),
 			},
 			setup: func(t *testing.T, cs *fake.Clientset) context.Context {
 				cs.PrependWatchReactor("pods", namespaceWatchReactor(t, "custom-namespace"))
@@ -108,9 +109,6 @@ func TestTailer_Tail(t *testing.T) {
 			},
 			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
-				testutil.AssertContainsAll(t, buf.String(), []string{
-					"[WARN] watched object is not pod\n",
-				})
 			},
 		},
 		"cancelled context": {
@@ -142,35 +140,15 @@ func TestTailer_Tail(t *testing.T) {
 				testutil.AssertNil(t, "err", err)
 			},
 		},
-		"uses label selector": {
+		"tail logs": {
 			opts: []logs.TailOption{
 				logs.WithTailTimeout(0),
+				logs.WithTailComponentName("app-server"),
 			},
 			setup: func(t *testing.T, cs *fake.Clientset) context.Context {
-				cs.PrependWatchReactor("pods", labelSelectorWatchReactor(t, "serving.knative.dev/service="+defaultAppName))
+				expectedSelector := labels.SelectorFromSet(v1alpha1.AppComponentLabels(defaultAppName, "app-server"))
+				cs.PrependWatchReactor("pods", labelSelectorWatchReactor(t, expectedSelector))
 				return context.Background()
-			},
-		},
-		"writes logs about deleted pod": {
-			opts: []logs.TailOption{
-				// This helps the test move a little faster.
-				logs.WithTailTimeout(250 * time.Millisecond),
-			},
-			setup: func(t *testing.T, cs *fake.Clientset) context.Context {
-				watcher := watch.NewFake()
-				cs.PrependWatchReactor("pods", ktesting.DefaultWatchReactor(watcher, nil))
-				go watcher.Delete(&corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: defaultAppName,
-					},
-				})
-				return context.Background()
-			},
-			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
-				testutil.AssertNil(t, "err", err)
-				testutil.AssertContainsAll(t, buf.String(), []string{
-					fmt.Sprintf("Pod 'default/%s' is deleted\n", defaultAppName),
-				})
 			},
 		},
 		"getting pod fails": {
@@ -183,9 +161,6 @@ func TestTailer_Tail(t *testing.T) {
 			setup: whenAddEvent(nil),
 			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
-				testutil.AssertContainsAll(t, buf.String(), []string{
-					fmt.Sprintf(`[WARN] failed to get Pod '%s': pods "%s" not found`, defaultAppName, defaultAppName),
-				})
 			},
 		},
 		"pod is deleted": {
@@ -205,9 +180,6 @@ func TestTailer_Tail(t *testing.T) {
 			),
 			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
-				testutil.AssertContainsAll(t, buf.String(), []string{
-					fmt.Sprintf("[INFO] Pod 'default/%s' is terminated\n", defaultAppName),
-				})
 			},
 		},
 		"pod is not running": {
@@ -227,9 +199,6 @@ func TestTailer_Tail(t *testing.T) {
 			),
 			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
 				testutil.AssertNil(t, "err", err)
-				testutil.AssertContainsAll(t, buf.String(), []string{
-					fmt.Sprintf("[INFO] Pod 'default/%s' is not running\n", defaultAppName),
-				})
 			},
 		},
 		"write logs from pod": {
@@ -238,7 +207,9 @@ func TestTailer_Tail(t *testing.T) {
 				logs.WithTailTimeout(250 * time.Millisecond),
 			},
 			assert: func(t *testing.T, buf *bytes.Buffer, err error) {
-				t.Skip("https://github.com/kubernetes/kubernetes/issues/84203")
+				// BUG(b/160016559) This is resolved in k8s 1.19, Kf needs to get there
+				// https://github.com/kubernetes/kubernetes/issues/84203
+				t.Skip("b/160016559 - fix in K8s 1.19")
 			},
 		},
 	} {
@@ -262,7 +233,7 @@ func TestTailer_Tail(t *testing.T) {
 			// writer on different go routines than what we are reading from.
 			// We need to ensure that we can read safely while not upsetting
 			// the race detector.
-			mw := &logs.MutexWriter{Writer: &bytes.Buffer{}}
+			mw := &logs.LineWriter{Writer: &bytes.Buffer{}}
 			gotErr := logs.NewTailer(fakeClient).Tail(ctx, defaultAppName, mw, tc.opts...)
 
 			buf := &bytes.Buffer{}
@@ -285,13 +256,14 @@ func namespaceWatchReactor(t *testing.T, namespace string) ktesting.WatchReactio
 	}
 }
 
-func labelSelectorWatchReactor(t *testing.T, selector string) ktesting.WatchReactionFunc {
+func labelSelectorWatchReactor(t *testing.T, selector labels.Selector) ktesting.WatchReactionFunc {
 	t.Helper()
 	return func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
-		actualLabel := action.(ktesting.WatchActionImpl).WatchRestrictions.Labels.String()
 
-		if actualLabel != selector {
-			t.Errorf("%s: expected label selector %q, got %q", t.Name(), selector, actualLabel)
+		actualSelector := action.(ktesting.WatchActionImpl).WatchRestrictions.Labels
+
+		if actualSelector.String() != selector.String() {
+			t.Errorf("%s: expected label selector %q, got %q", t.Name(), selector, actualSelector)
 		}
 
 		return false, nil, nil
@@ -326,7 +298,7 @@ func whenAddEvent(f func(*testing.T, *fake.Clientset)) func(*testing.T, *fake.Cl
 
 func whenPodAdded(pod *corev1.Pod, f func(*testing.T, *fake.Clientset)) func(*testing.T, *fake.Clientset) {
 	return func(t *testing.T, cs *fake.Clientset) {
-		cs.CoreV1().Pods("default").Create(pod)
+		cs.CoreV1().Pods("default").Create(context.Background(), pod, metav1.CreateOptions{})
 		if f != nil {
 			f(t, cs)
 		}

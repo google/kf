@@ -24,8 +24,8 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"github.com/google/kf/pkg/kf/buildpacks"
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/kf/buildpacks"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 	ktesting "k8s.io/client-go/testing"
 )
 
@@ -38,7 +38,7 @@ func TestClient_List(t *testing.T) {
 
 	setupTests(t, action, map[string]testSetup{
 		"reads buldpack from label in container": {
-			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
+			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.Option) (gcrv1.Image, error) {
 				testutil.AssertEqual(t, "image name", "index.docker.io/library/some-image:latest", ref.Name())
 				fakeImage := NewFakeImage(gomock.NewController(t))
 				fakeImage.EXPECT().ConfigFile().Return(&gcrv1.ConfigFile{
@@ -61,41 +61,10 @@ func TestClient_List(t *testing.T) {
 	})
 }
 
-func TestClient_Stacks(t *testing.T) {
-	t.Parallel()
-
-	action := func(c buildpacks.Client) (interface{}, error) {
-		return c.Stacks("some-image")
-	}
-
-	setupTests(t, action, map[string]testSetup{
-		"reads stacks from label in container": {
-			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
-				testutil.AssertEqual(t, "image name", "index.docker.io/library/some-image:latest", ref.Name())
-				fakeImage := NewFakeImage(gomock.NewController(t))
-				fakeImage.EXPECT().ConfigFile().Return(&gcrv1.ConfigFile{
-					Config: gcrv1.Config{
-						Labels: map[string]string{
-							"io.buildpacks.builder.metadata": `{"stack":{"runImage":{"image":"bionic"}}}`,
-						},
-					},
-				}, nil)
-				return fakeImage, nil
-			},
-			HandleOutput: func(t *testing.T, output interface{}, err error) {
-				testutil.AssertNil(t, "error", err)
-				stacks := output.([]string)
-				testutil.AssertEqual(t, "len", 1, len(stacks))
-				testutil.AssertEqual(t, "stack", "bionic", stacks[0])
-			},
-		},
-	})
-}
-
 type testSetup struct {
 	ReactorListErr     error
 	HandleListAction   func(t *testing.T, action ktesting.Action)
-	RemoteImageFetcher func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error)
+	RemoteImageFetcher func(t *testing.T, ref name.Reference, options ...remote.Option) (gcrv1.Image, error)
 	HandleOutput       func(t *testing.T, output interface{}, err error)
 }
 
@@ -110,7 +79,7 @@ func setupTests(t *testing.T, action func(c buildpacks.Client) (interface{}, err
 			},
 		},
 		"fetch image with default keychain": {
-			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
+			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.Option) (gcrv1.Image, error) {
 				testutil.AssertEqual(t, "image name", "index.docker.io/library/some-image:latest", ref.Name())
 				fakeImage := NewFakeImage(gomock.NewController(t))
 				setEmptyConfig(fakeImage)
@@ -118,7 +87,7 @@ func setupTests(t *testing.T, action func(c buildpacks.Client) (interface{}, err
 			},
 		},
 		"fetching container ConfigFile fails": {
-			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
+			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.Option) (gcrv1.Image, error) {
 				fakeImage := NewFakeImage(gomock.NewController(t))
 				fakeImage.EXPECT().ConfigFile().Return(nil, errors.New("some-error"))
 				return fakeImage, nil
@@ -128,7 +97,7 @@ func setupTests(t *testing.T, action func(c buildpacks.Client) (interface{}, err
 			},
 		},
 		"unmarshalling MetaDataLabel fails": {
-			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
+			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.Option) (gcrv1.Image, error) {
 				fakeImage := NewFakeImage(gomock.NewController(t))
 				fakeImage.EXPECT().ConfigFile().Return(&gcrv1.ConfigFile{
 					Config: gcrv1.Config{
@@ -142,7 +111,7 @@ func setupTests(t *testing.T, action func(c buildpacks.Client) (interface{}, err
 			},
 		},
 		"fetching image fails": {
-			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
+			RemoteImageFetcher: func(t *testing.T, ref name.Reference, options ...remote.Option) (gcrv1.Image, error) {
 				return nil, errors.New("some-error")
 			},
 			HandleOutput: func(t *testing.T, output interface{}, err error) {
@@ -157,7 +126,7 @@ func setupTests(t *testing.T, action func(c buildpacks.Client) (interface{}, err
 	for tn, tc := range tests {
 		t.Run(tn, func(t *testing.T) {
 
-			rif := func(ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error) {
+			rif := func(ref name.Reference, options ...remote.Option) (gcrv1.Image, error) {
 				if tc.RemoteImageFetcher == nil {
 					fakeImage := NewFakeImage(gomock.NewController(t))
 					setEmptyConfig(fakeImage)

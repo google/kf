@@ -19,10 +19,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/kf/pkg/kf/apps"
-	"github.com/google/kf/pkg/kf/commands/completion"
-	"github.com/google/kf/pkg/kf/commands/config"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/v2/pkg/kf/apps"
+	"github.com/google/kf/v2/pkg/kf/commands/completion"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	utils "github.com/google/kf/v2/pkg/kf/internal/utils/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -34,34 +34,41 @@ func NewRestartCommand(
 	var async utils.AsyncFlags
 
 	cmd := &cobra.Command{
-		Use:     "restart APP_NAME",
-		Short:   "Restarts all running instances of the app",
-		Example: `kf restart myapp`,
-		Args:    cobra.ExactArgs(1),
+		Use:   "restart APP_NAME",
+		Short: "Restart each running instance of an App without downtime.",
+		Long: `
+		Restarting an App will replace each running instance of an App with a new one.
+
+		Instances are replaced one at a time, always ensuring that the desired
+		number of instances are healthy. This property is upheld by running one
+		additional instance of the App and swapping it out for an old instance.
+
+		The operation completes once all instances have been replaced.
+		`,
+		Example:           `kf restart myapp`,
+		Args:              cobra.ExactArgs(1),
+		ValidArgsFunction: completion.AppCompletionFn(p),
+		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := utils.ValidateNamespace(p); err != nil {
+			if err := p.ValidateSpaceTargeted(); err != nil {
 				return err
 			}
 
 			appName := args[0]
 
-			cmd.SilenceUsage = true
-
-			if err := client.Restart(p.Namespace, appName); err != nil {
-				return fmt.Errorf("failed to restart app: %s", err)
+			if err := client.Restart(cmd.Context(), p.Space, appName); err != nil {
+				return fmt.Errorf("failed to restart App: %s", err)
 			}
 
-			action := fmt.Sprintf("Restarting app %q in space %q", appName, p.Namespace)
+			action := fmt.Sprintf("Restarting App %q in Space %q", appName, p.Space)
 			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
-				_, err := client.WaitForConditionKnativeServiceReadyTrue(context.Background(), p.Namespace, appName, 1*time.Second)
+				_, err := client.WaitForConditionKnativeServiceReadyTrue(context.Background(), p.Space, appName, 1*time.Second)
 				return err
 			})
 		},
 	}
 
 	async.Add(cmd)
-
-	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 
 	return cmd
 }

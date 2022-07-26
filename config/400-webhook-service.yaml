@@ -15,7 +15,10 @@
 apiVersion: v1
 kind: Service
 metadata:
+  annotations:
+    operator.knative.dev/mode: Reconcile
   labels:
+    kf.dev/release: VERSION_PLACEHOLDER
     role: webhook
   name: webhook
   namespace: kf

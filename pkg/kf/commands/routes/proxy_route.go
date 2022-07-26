@@ -19,15 +19,16 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/google/kf/pkg/kf/commands/completion"
-	"github.com/google/kf/pkg/kf/commands/config"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	"github.com/google/kf/pkg/kf/istio"
+	"github.com/google/kf/v2/pkg/kf/commands/completion"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	utils "github.com/google/kf/v2/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/v2/pkg/system"
 	"github.com/spf13/cobra"
+	"knative.dev/pkg/logging"
 )
 
 // NewProxyRouteCommand creates a command capable of proxying a remote server locally.
-func NewProxyRouteCommand(p *config.KfParams, ingressLister istio.IngressLister) *cobra.Command {
+func NewProxyRouteCommand(p *config.KfParams) *cobra.Command {
 	var (
 		gateway string
 		port    int
@@ -36,38 +37,56 @@ func NewProxyRouteCommand(p *config.KfParams, ingressLister istio.IngressLister)
 
 	cmd := &cobra.Command{
 		Use:     "proxy-route ROUTE",
-		Short:   "Create a proxy to a route on a local port",
+		Short:   "Start a local reverse proxy to a Route.",
 		Example: `kf proxy-route myhost.example.com`,
 		Long: `
-	This command creates a local proxy to a remote gateway modifying the request
-	headers to make requests with the host set as the specified route.
+		Proxy route creates a reverse HTTP proxy to the cluster's gateway on a local
+		port opened on the operating system's loopback device.
 
-	You can manually specify the gateway or have it autodetected based on your
-	cluster.`,
-		Args: cobra.ExactArgs(1),
+		The proxy rewrites all HTTP requests, changing the HTTP Host header to match
+		the Route. If multiple Apps are mapped to the same route, the traffic sent
+		over the proxy will follow their routing rules with regards to weight.
+		If no Apps are mapped to the route, traffic sent through the proxy will
+		return a HTTP 404 status code.
+
+		Proxy route DOES NOT establish a direct connection to any Kubernetes resource.
+
+		For proxy to work:
+
+		* The cluster's gateway MUST be accessible from your local machine.
+		* The Route MUST have a public URL
+		`,
+		Args:              cobra.ExactArgs(1),
+		ValidArgsFunction: completion.AppCompletionFn(p),
+		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := utils.ValidateNamespace(p); err != nil {
+			ctx := cmd.Context()
+			logger := logging.FromContext(ctx)
+
+			if err := p.ValidateSpaceTargeted(); err != nil {
 				return err
 			}
 
 			routeHost := args[0]
-			cmd.SilenceUsage = true
 
 			if gateway == "" {
-				fmt.Fprintln(cmd.OutOrStdout(), "Autodetecting app gateway. Specify a custom gateway using the --gateway flag.")
+				logger.Info("Autodetecting app gateway. Specify a custom gateway using the --gateway flag.")
 
-				ingress, err := istio.ExtractIngressFromList(ingressLister.ListIngresses())
+				space, err := p.GetTargetSpace(ctx)
+				if err != nil {
+					return err
+				}
+
+				ingress, err := system.ExtractProxyIngressFromList(space.Status.IngressGateways)
 				if err != nil {
 					return err
 				}
 				gateway = ingress
 			}
 
-			w := cmd.OutOrStdout()
-
 			if noStart {
-				fmt.Fprintln(w, "exiting proxy because no-start flag was provided")
-				utils.PrintCurlExamplesNoListener(w, routeHost, gateway)
+				logger.Info("exiting proxy because no-start flag was provided")
+				utils.PrintCurlExamplesNoListener(ctx, routeHost, gateway)
 				return nil
 			}
 
@@ -76,8 +95,12 @@ func NewProxyRouteCommand(p *config.KfParams, ingressLister istio.IngressLister)
 				return err
 			}
 
-			utils.PrintCurlExamples(w, listener, routeHost, gateway)
-			return http.Serve(listener, utils.CreateProxy(cmd.OutOrStdout(), routeHost, gateway))
+			utils.PrintCurlExamples(ctx, listener, routeHost, gateway)
+
+			// Write the address to stdout so it can be consumed by scripts.
+			fmt.Fprintln(cmd.OutOrStdout(), "http://"+listener.Addr().String())
+
+			return http.Serve(listener, utils.CreateProxy(cmd.OutOrStderr(), routeHost, gateway, http.Header{}))
 		},
 	}
 
@@ -85,25 +108,23 @@ func NewProxyRouteCommand(p *config.KfParams, ingressLister istio.IngressLister)
 		&gateway,
 		"gateway",
 		"",
-		"HTTP gateway to route requests to (default: autodetected from cluster)",
+		"IP address of the HTTP gateway to route requests to.",
 	)
 
 	cmd.Flags().IntVar(
 		&port,
 		"port",
 		8080,
-		"Local port to listen on",
+		"Local port to listen on.",
 	)
 
 	cmd.Flags().BoolVar(
 		&noStart,
 		"no-start",
 		false,
-		"Exit before starting the proxy",
+		"Exit before starting the proxy.",
 	)
 	cmd.Flags().MarkHidden("no-start")
-
-	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 
 	return cmd
 }

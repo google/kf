@@ -16,87 +16,112 @@ package buildpacks_test
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-	"github.com/google/kf/pkg/kf/buildpacks/fake"
-	cbuildpacks "github.com/google/kf/pkg/kf/commands/buildpacks"
-	"github.com/google/kf/pkg/kf/commands/config"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	"github.com/google/kf/pkg/kf/testutil"
+	kfconfig "github.com/google/kf/v2/pkg/apis/kf/config"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	cbuildpacks "github.com/google/kf/v2/pkg/kf/commands/buildpacks"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	injection "github.com/google/kf/v2/pkg/kf/injection/fake"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 )
 
 func TestStacks(t *testing.T) {
 	t.Parallel()
 
+	enableAppDevExBuilds := make(kfconfig.FeatureFlagToggles)
+	enableAppDevExBuilds.SetAppDevExperienceBuilds(true)
+
 	for tn, tc := range map[string]struct {
-		Namespace   string
-		ExpectedErr error
-		Args        []string
-		Setup       func(t *testing.T, fake *fake.FakeClient, params *config.KfParams)
-		BufferF     func(t *testing.T, buffer *bytes.Buffer)
+		Space           string
+		TargetSpace     *v1alpha1.Space
+		ExpectedErr     error
+		Args            []string
+		EnableADXBuilds bool
 	}{
-		"wrong number of args": {ExpectedErr: errors.New("accepts 0 arg(s), received 1"),
-			Args: []string{"arg-1"},
+		"wrong number of args": {
+			ExpectedErr: errors.New("accepts 0 arg(s), received 1"),
+			Args:        []string{"arg-1"},
 		},
 		"no space chosen": {
-			ExpectedErr: errors.New(utils.EmptyNamespaceError),
+			ExpectedErr: errors.New(config.EmptySpaceError),
 			Args:        []string{},
 		},
-		"listing fails": {
-			Namespace:   "my-space",
-			ExpectedErr: errors.New("some-error"),
-			Setup: func(t *testing.T, fake *fake.FakeClient, params *config.KfParams) {
-				params.TargetSpace.Spec.BuildpackBuild.BuilderImage = "my-image"
-
-				fake.EXPECT().Stacks("my-image").Return(nil, errors.New("some-error"))
+		"lists each stack": {
+			Space: "some-space",
+			TargetSpace: &v1alpha1.Space{
+				Status: v1alpha1.SpaceStatus{
+					BuildConfig: v1alpha1.SpaceStatusBuildConfig{
+						StacksV2: kfconfig.StackV2List{
+							{
+								Name:        "cflinuxfs3",
+								Description: "A CF Compatible Stack",
+								Image:       "cloudfoundry/cflinuxfs3:latest",
+							},
+						},
+						StacksV3: kfconfig.StackV3List{
+							{
+								Name:        "google-golang",
+								Description: "A stack for golang by Google",
+								BuildImage:  "gcr.io/buildpacks/go",
+								RunImage:    "gcr.io/buildpacks/slim",
+							},
+						},
+					},
+				},
 			},
 		},
-		"lists each stack": {
-			Namespace: "my-space",
-			Setup: func(t *testing.T, fake *fake.FakeClient, params *config.KfParams) {
-				params.TargetSpace.Spec.BuildpackBuild.BuilderImage = "my-image"
-
-				fake.EXPECT().Stacks("my-image").Return([]string{"s-1", "s-2"}, nil)
-			},
-			BufferF: func(t *testing.T, buffer *bytes.Buffer) {
-				testutil.AssertContainsAll(t, buffer.String(), []string{"s-1", "s-2"})
+		"lists only V3 stack when appDevExperience builds are enabled": {
+			Space:           "some-space",
+			EnableADXBuilds: true,
+			TargetSpace: &v1alpha1.Space{
+				Status: v1alpha1.SpaceStatus{
+					BuildConfig: v1alpha1.SpaceStatusBuildConfig{
+						StacksV2: kfconfig.StackV2List{
+							{
+								Name:        "cflinuxfs3",
+								Description: "A CF Compatible Stack",
+								Image:       "cloudfoundry/cflinuxfs3:latest",
+							},
+						},
+						StacksV3: kfconfig.StackV3List{
+							{
+								Name:        "google-golang",
+								Description: "A stack for golang by Google",
+								BuildImage:  "gcr.io/buildpacks/go",
+								RunImage:    "gcr.io/buildpacks/slim",
+							},
+						},
+					},
+				},
 			},
 		},
 	} {
 		t.Run(tn, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			fake := fake.NewFakeClient(ctrl)
-
 			params := &config.KfParams{
-				Namespace: tc.Namespace,
+				Space:       tc.Space,
+				TargetSpace: tc.TargetSpace,
 			}
-			params.SetTargetSpaceToDefault()
 
-			if tc.Setup != nil {
-				tc.Setup(t, fake, params)
+			ctx := injection.WithInjection(context.Background(), t)
+			if tc.EnableADXBuilds {
+				ff := make(kfconfig.FeatureFlagToggles)
+				ff.SetAppDevExperienceBuilds(true)
+				ctx = testutil.WithFeatureFlags(ctx, t, ff)
 			}
 
 			var buffer bytes.Buffer
-			cmd := cbuildpacks.NewStacksCommand(
-				params,
-				fake,
-			)
+			cmd := cbuildpacks.NewStacksCommand(params)
 			cmd.SetArgs(tc.Args)
 			cmd.SetOutput(&buffer)
+			cmd.SetContext(ctx)
 
 			gotErr := cmd.Execute()
-			if gotErr != nil || tc.ExpectedErr != nil {
-				testutil.AssertErrorsEqual(t, tc.ExpectedErr, gotErr)
-				return
-			}
+			testutil.AssertErrorsEqual(t, tc.ExpectedErr, gotErr)
 
-			if tc.BufferF != nil {
-				tc.BufferF(t, &buffer)
-			}
-
-			ctrl.Finish()
+			testutil.AssertGolden(t, "output", buffer.Bytes())
 		})
 	}
 }

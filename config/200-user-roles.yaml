@@ -1,0 +1,115 @@
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  annotations:
+    operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: VERSION_PLACEHOLDER
+  name: kf-cluster-reader
+rules:
+- apiGroups: ["kf.dev"]
+  resources: ["spaces", "clusterservicebrokers"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get", "list", "watch"]
+  resourceNames: ["kf"]
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  annotations:
+    operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: VERSION_PLACEHOLDER
+  name: space-manager
+rules:
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["rolebindings"]
+  verbs: ["get", "list", "update", "patch", "watch"]
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["clusterroles"]
+  verbs: ["bind"]
+  resourceNames: ["space-manager", "space-developer", "space-auditor"]
+- apiGroups: ["kf.dev"]
+  resources: ["apps"]
+  verbs: ["get", "list", "watch"]
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  annotations:
+    operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: VERSION_PLACEHOLDER
+  name: space-developer
+rules:
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["rolebindings"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["kf.dev"]
+  resources: ["*"]
+  verbs: ["*"]
+- apiGroups: ["upload.kf.dev"]
+  resources: ["*"]
+  verbs: ["*"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["create"]
+- apiGroups: [""]
+  resources: ["pods/log"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["*"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["create", "update", "delete", "patch"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["networkpolicies"]
+  verbs: ["*"]
+- apiGroups: ["builds.appdevexperience.dev"]
+  resources: ["*/status", "builds"]
+  verbs: ["get", "list", "update", "delete", "patch", "watch"]
+- apiGroups: ["data.builds.appdevexperience.dev"]
+  resources: ["*"]
+  verbs: ["get", "list", "create", "update", "delete", "patch", "watch", "proxy"]
+- apiGroups: ["tekton.dev"]
+  resources: ["*"]
+  verbs: ["get", "list", "watch"]
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  annotations:
+    operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: VERSION_PLACEHOLDER
+  name: space-auditor
+rules:
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["rolebindings"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["kf.dev"]
+  resources: ["apps"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["*"]

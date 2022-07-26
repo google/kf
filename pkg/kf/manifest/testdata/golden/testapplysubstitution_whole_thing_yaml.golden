@@ -1,0 +1,28 @@
+# Test:	TestApplySubstitution/whole_thing
+# input: |2-
+# 
+#   applications:
+#   - name: ((name))
+#     env:
+#       ((db type))_CXN: 127.0.0.1:((port))
+#     instances: ((instances))
+#     services: ((services))
+# variables:
+#   db type: MYSQL
+#   instances: 3
+#   name: my-app
+#   port: 8080
+#   services:
+#   - a
+#   - b
+#   - c
+
+applications:
+- env:
+    MYSQL_CXN: 127.0.0.1:8080
+  instances: 3
+  name: my-app
+  services:
+  - a
+  - b
+  - c

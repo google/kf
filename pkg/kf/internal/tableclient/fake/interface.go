@@ -14,9 +14,9 @@
 
 package fake
 
-import "github.com/google/kf/pkg/kf/internal/tableclient"
+import "github.com/google/kf/v2/pkg/kf/internal/tableclient"
 
-//go:generate mockgen --package=fake --copyright_file ../../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_client.go --mock_names=Interface=FakeInterface github.com/google/kf/pkg/kf/internal/tableclient/fake Interface
+//go:generate mockgen --package=fake --copyright_file ../../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_client.go --mock_names=Interface=FakeInterface github.com/google/kf/v2/pkg/kf/internal/tableclient/fake Interface
 
 // Interface is the client for tables.
 type Interface interface {

@@ -1,56 +1,41 @@
 # Kf
 
-[![knative.slack.com][slack-badge]][kf-slack]
+See go/kf for details.
 
-`kf` provides a `cf`-like experience on top of Knative.
+## Getting started the manual way
 
-![](./docs/images/helloworld.gif)
+Follow the install instructions at go/kf-docs to create a GKE cluster,
+install Kf into it, and deploy an app with the `kf` CLI.
 
-`kf` aims to be fully compatible with CF applications and lifecycle. It supports
-logs, buildpacks, app manifests, routing, service brokers, and injected services.
+## Deploy a local Kf install to a new cluster
 
-At the same time, it aims to improve the operational experience by supporting
-git-ops, self-healing infrastructure, containers, a service mesh, autoscaling,
-scale-to-zero, improved quota management and does it all on Kubernetes using
-industry-standard OSS tools including Knative, Istio, and Tekton.
+If you need to set up a new development cluster run the following command:
 
-## Getting started
+```sh
+./hack/deploy-dev-release.sh
+```
 
-Follow the [install instructions](docs/install.md) to create a GKE cluster, install Kf into it, and deploy an app with the `kf` CLI.
+It will fetch all your local sources and kick off a Cloud Build that builds
+a version of Kf, creates a GKE cluster and installs the Kf version onto it.
 
-## How to build
+## Iterative development
 
-**Requirements:**
-
-  - Golang `1.12` ([go mod](https://github.com/golang/go/wiki/Modules#quick-start)
-is used and required for dependencies)
-
-
-**Building:**
+**Building the CLI:**
 
 ```sh
 $ ./hack/build.sh
 ```
 
-**Notes:**
-
-- The `kf` CLI must be built outside of the `$GOPATH` folder unless
-you explicitly use `export GO111MODULE=on`.
-
-## Development and releasing
+**Installing Kf server-side components:**
 
 We use [ko](https://github.com/google/ko) for rapid development
 and during the release process to build a full set of `kf` images
-and installation YAML.
+and installation YAML. Run the following to stage local changes on
+a targeted cluster:
 
-To update your cluster while developing run `ko apply`:
-
-```
-KO_DOCKER_REPO=gcr.io/my-repo ko apply -f config
+```sh
+$ ./hack/ko-apply.sh
 ```
 
 This will build any images required by `config/`, upload them to the provided
 registry, and apply the resulting configuration to the current cluster.
-
-[slack-badge]: https://img.shields.io/badge/slack-knative/kf-purple.svg
-[kf-slack]:    https://knative.slack.com/archives/kf

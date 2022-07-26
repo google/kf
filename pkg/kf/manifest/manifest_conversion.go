@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/internal/envutil"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/internal/envutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -32,24 +32,21 @@ func (source *Application) ToAppSpecInstances() v1alpha1.AppSpecInstances {
 		instances.Stopped = *source.NoStart
 	}
 
-	instances.Min = source.MinScale
-	instances.Max = source.MaxScale
-	instances.Exactly = source.Instances
+	if source.Task != nil && *source.Task {
+		instances.Stopped = true
+	}
+
+	instances.Replicas = source.Instances
 
 	return instances
-}
-
-// intPtr creates a pointer to an int.
-func intPtr(i int) *int {
-	return &i
 }
 
 // ToResourceRequests returns a ResourceList with memory, CPU, and storage set.
 // If none are set by the user, the returned ResourceList will be nil.
 func (source *Application) ToResourceRequests() (corev1.ResourceList, error) {
 	resourceMapping := map[corev1.ResourceName]string{
-		corev1.ResourceMemory:           cfToSIUnits(source.Memory),
-		corev1.ResourceEphemeralStorage: cfToSIUnits(source.DiskQuota),
+		corev1.ResourceMemory:           CFToSIUnits(source.Memory),
+		corev1.ResourceEphemeralStorage: CFToSIUnits(source.DiskQuota),
 		// CPU is not converted to SI because it's not a normal CF field
 		// and is therefore expected to be in SI to begin with.
 		corev1.ResourceCPU: source.CPU,
@@ -74,10 +71,10 @@ func (source *Application) ToResourceRequests() (corev1.ResourceList, error) {
 	return requests, nil
 }
 
-// cfToSiUnits converts CF resource quantities into the equivalent k8s quantity
+// CFToSIUnits converts CF resource quantities into the equivalent k8s quantity
 // strings. CF interprets K, M, G, T as binary SI units while k8s interprets
 // them as decimal, so we convert them here into binary SI units (Ki, Mi, Gi, Ti)
-func cfToSIUnits(orig string) string {
+func CFToSIUnits(orig string) string {
 	trimmed := strings.TrimSuffix(strings.TrimSpace(orig), "B")
 
 	for _, suffix := range []string{"T", "G", "M", "K"} {
@@ -100,11 +97,12 @@ func (source *Application) ToHealthCheck() (*corev1.Probe, error) {
 	probe := &corev1.Probe{
 		TimeoutSeconds:   int32(source.HealthCheckTimeout),
 		SuccessThreshold: 1,
+		ProbeHandler:     corev1.ProbeHandler{},
 	}
 
 	switch source.HealthCheckType {
 	case "http":
-		probe.Handler.HTTPGet = &corev1.HTTPGetAction{Path: source.HealthCheckHTTPEndpoint}
+		probe.ProbeHandler.HTTPGet = &corev1.HTTPGetAction{Path: source.HealthCheckHTTPEndpoint}
 		return probe, nil
 
 	case "port", "": // By default, cf uses a port based health check.
@@ -112,11 +110,14 @@ func (source *Application) ToHealthCheck() (*corev1.Probe, error) {
 			return nil, errors.New("health check endpoints can only be used with http checks")
 		}
 
-		probe.Handler.TCPSocket = &corev1.TCPSocketAction{}
+		probe.ProbeHandler.TCPSocket = &corev1.TCPSocketAction{}
 		return probe, nil
 
 	case "process", "none":
-		return nil, errors.New("kf doesn't support the process health check type")
+		// A process check implies there isn't a probe but instead just rely
+		// on the process failing.
+		// https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes
+		return nil, nil
 
 	default:
 		return nil, fmt.Errorf("unknown health check type %s, supported types are http and port", source.HealthCheckType)
@@ -149,15 +150,14 @@ func (source *Application) ToContainer() (corev1.Container, error) {
 		container.Env = envutil.MapToEnvVars(source.Env)
 	}
 
-	if source.EnableHTTP2 != nil && *source.EnableHTTP2 {
-		container.Ports = HTTP2ContainerPort()
+	for _, port := range source.Ports {
+		container.Ports = append(container.Ports, corev1.ContainerPort{
+			Name:          fmt.Sprintf("%s-%d", port.Protocol, port.Port),
+			ContainerPort: port.Port,
+			// Protocol here is the L4 protocol, not the L7 protocol.
+			Protocol: corev1.ProtocolTCP,
+		})
 	}
 
 	return container, nil
-}
-
-// HTTP2ContainerPort returns the container port used to notify Knative that
-// the container should be allowed to accept HTTP2 requests.
-func HTTP2ContainerPort() []corev1.ContainerPort {
-	return []corev1.ContainerPort{{Name: "h2c", ContainerPort: 8080}}
 }

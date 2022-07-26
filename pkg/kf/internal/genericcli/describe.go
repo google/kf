@@ -15,54 +15,61 @@
 package genericcli
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
 
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/describe"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/describe"
+	cliutil "github.com/google/kf/v2/pkg/kf/internal/utils/cli"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/client-go/dynamic"
+	"knative.dev/pkg/injection/clients/dynamicclient"
+	"knative.dev/pkg/logging"
 )
 
 // NewDescribeCommand creates a describe command.
-func NewDescribeCommand(t Type, p *config.KfParams, client dynamic.Interface) *cobra.Command {
-	printFlags := genericclioptions.NewPrintFlags("")
+func NewDescribeCommand(t Type, p *config.KfParams, opts ...DescribeOption) *cobra.Command {
+	printFlags := cliutil.NewKfPrintFlags()
 	friendlyType := t.FriendlyName()
-	commandName := strings.ToLower(friendlyType)
+
+	options := DescribeOptions{
+		WithDescribeCommandName(strings.ToLower(friendlyType)),
+	}.Extend(opts)
 
 	cmd := &cobra.Command{
-		Use:     fmt.Sprintf("%s NAME", commandName),
-		Short:   fmt.Sprintf("Print information about the given %s", friendlyType),
-		Long:    fmt.Sprintf("Print information about the given %s", friendlyType),
-		Example: fmt.Sprintf("kf %s my-%s", commandName, commandName),
-		Args:    cobra.ExactArgs(1),
+		Use:               fmt.Sprintf("%s NAME", options.CommandName()),
+		Aliases:           options.Aliases(),
+		Short:             fmt.Sprintf("Print information about the given %s.", friendlyType),
+		Long:              fmt.Sprintf("Print information about the given %s.", friendlyType),
+		Example:           fmt.Sprintf("kf %s my-%s", options.CommandName(), options.CommandName()),
+		Args:              cobra.ExactArgs(1),
+		ValidArgsFunction: ValidArgsFunction(t, p),
+		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
 			if t.Namespaced() {
-				if err := utils.ValidateNamespace(p); err != nil {
+				if err := p.ValidateSpaceTargeted(); err != nil {
 					return err
 				}
 			}
 
-			cmd.SilenceUsage = true
-
 			resourceName := args[0]
 			w := cmd.OutOrStdout()
+			logger := logging.FromContext(ctx)
 
 			// Print status messages to stderr so stdout is syntatically valid output
 			// if the user wanted JSON, YAML, etc.
 			if t.Namespaced() {
-				fmt.Fprintf(cmd.ErrOrStderr(), "Getting %s %s in namespace: %s\n", friendlyType, resourceName, p.Namespace)
+				logger.Infof("Getting %s %s in Space: %s", friendlyType, resourceName, p.Space)
 			} else {
-				fmt.Fprintf(cmd.ErrOrStderr(), "Getting %s %s\n", friendlyType, resourceName)
+				logger.Infof("Getting %s %s", friendlyType, resourceName)
 			}
 
-			client := getResourceInterface(t, client, p.Namespace)
+			client := GetResourceInterface(ctx, t, dynamicclient.Get(ctx), p.Space)
 
-			resource, err := client.Get(resourceName, metav1.GetOptions{})
+			resource, err := client.Get(context.Background(), resourceName, metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -75,7 +82,7 @@ func NewDescribeCommand(t Type, p *config.KfParams, client dynamic.Interface) *c
 
 				// If the type didn't come back with a kind, update it with the
 				// type we deserialized it with so the printer will work.
-				resource.SetGroupVersionKind(t.GroupVersionKind())
+				resource.SetGroupVersionKind(t.GroupVersionKind(ctx))
 				return printer.PrintObj(resource, w)
 			}
 

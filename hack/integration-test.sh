@@ -18,13 +18,27 @@ set -e
 
 cd "${0%/*}"/..
 
-echo "Executing integration tests from: `pwd`"
-if [ "${DOCKER_REGISTRY}" = "" ]; then
-  echo running integration tests
-  export DOCKER_REGISTRY="gcr.io/$(gcloud config get-value project)"
-fi
+echo "Executing integration tests from: $(pwd)"
+export KUBECTL=${KUBECTL:-kubectl}
+
+temp_dir=$(mktemp -d)
+trap 'rm -rf ${temp_dir}' EXIT
+
+go clean -testcache
+
+# We need the retry function.
+source ./hack/util.sh
+
+export APP_CACHE=${temp_dir}/images.json
+export RANDOM_SPACE_NAMES=true
+export SPACE_DOMAIN="${TEST_DOMAIN:-integration-tests.kf.dev}"
+echo "Space domain: ${SPACE_DOMAIN}"
+${KUBECTL} delete spaces --all
+
+go install ./cmd/test-runner
 
 START_TIME=$(date +%s)
+
 # When running integration tests, we would like two things that simply running
 # go test -v ./... doesn't provide:
 # 1. Don't run each package in parallel - This puts quite a bit of burden on
@@ -33,9 +47,20 @@ START_TIME=$(date +%s)
 #
 # Note: We also enforce that all integration tests have the naming convention
 # TestIntegration_XXX. Therefore we can single them out.
-for f in $(find . | grep integration_test.go); do
-  go test -v --timeout=30m $(dirname $f) --run TestIntegration_
+# NOTE: The tests in ./pkg/kf/internal/last_integration_tests are ran last.
+
+# Find all the integration tests and put
+# ./pkg/kf/internal/last_integration_tests/integration_test.go at the end.
+arr=(`find . -name "integration_test.go" | grep -v "./pkg/kf/internal/last_integration_tests/integration_test.go"`)
+arr+=("./pkg/kf/internal/last_integration_tests/integration_test.go")
+
+for f in "${arr[@]}"; do
+  echo "Executing sub-integration tests for: $(dirname "$f")"
+  START_SUBTEST=$(date +%s)
+  GOMAXPROCS=24 test-runner --attempts=3 --timeout=60m --run=TestIntegration_ $(dirname "$f")
+  END_SUBTEST=$(date +%s)
+  echo "Sub-integration tests for $(dirname "$f") took $((END_SUBTEST - START_SUBTEST)) seconds to complete."
 done
 
 END_TIME=$(date +%s)
-echo "Integration tests took $(($END_TIME - $START_TIME)) seconds to complete."
+echo "Integration tests took $((END_TIME - START_TIME)) seconds to complete."

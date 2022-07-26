@@ -16,16 +16,18 @@ package apps_test
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"strings"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	v1alpha1fake "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1/fake"
-	"github.com/google/kf/pkg/kf/apps"
-	sourcesfake "github.com/google/kf/pkg/kf/sources/fake"
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	v1alpha1fake "github.com/google/kf/v2/pkg/client/kf/clientset/versioned/typed/kf/v1alpha1/fake"
+	"github.com/google/kf/v2/pkg/kf/apps"
+	buildsfake "github.com/google/kf/v2/pkg/kf/builds/fake"
+	logsfake "github.com/google/kf/v2/pkg/kf/logs/fake"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	ktesting "k8s.io/client-go/testing"
@@ -53,7 +55,7 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			resourceVersion: "some-version",
 			events: createMsgEvents("some-app", duckv1beta1.Conditions{
 				{
-					Type:    "SourceReady",
+					Type:    "BuildReady",
 					Status:  "True",
 					Message: "msg-1",
 				},
@@ -73,7 +75,7 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			noStart:         true,
 			events: createMsgEvents("some-app", duckv1beta1.Conditions{
 				{
-					Type:    "SourceReady",
+					Type:    "BuildReady",
 					Status:  "True",
 					Message: "msg-1",
 				},
@@ -103,7 +105,7 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 				},
 			}, createMsgEvents("some-app", duckv1beta1.Conditions{
 				{
-					Type:    "SourceReady",
+					Type:    "BuildReady",
 					Status:  "True",
 					Message: "msg-1",
 				},
@@ -129,7 +131,7 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			resourceVersion: "some-version",
 			events: createMsgEvents("some-app", duckv1beta1.Conditions{
 				{
-					Type:    "SourceReady",
+					Type:    "BuildReady",
 					Status:  "True",
 					Message: "some-error",
 				},
@@ -141,24 +143,23 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 			}),
 			wantErr: errors.New("deployment failed: some-error"),
 		},
+		// NOTE: logging callbacks are tested through integration tests because
+		// testing async code is brittle.
 	} {
 		t.Run(tn, func(t *testing.T) {
-			ctrl, fakeApps := buildLogWatchFakes(
-				t,
-				tc.events, nil,
-				tc.serviceWatchErr, nil,
-			)
-
-			fakeApps.PrependWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
+			ctrl, fakeApps := buildLogWatchFakes(t, tc.events, tc.serviceWatchErr)
+			fakeApps.PrependWatchReactor("*", func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
 				testWatch(t, action, "apps", tc.namespace, tc.resourceVersion)
 				return false, nil, nil
-			}))
+			})
 
-			sourceClient := sourcesfake.NewFakeClient(ctrl)
-			lt := apps.NewClient(fakeApps, sourceClient)
+			buildsClient := buildsfake.NewFakeClient(ctrl)
+			appTailer := logsfake.NewFakeTailer(ctrl)
+			lt := apps.NewClient(fakeApps, buildsClient, appTailer)
 
 			var buffer bytes.Buffer
 			gotErr := lt.DeployLogs(
+				context.Background(),
 				&buffer,
 				tc.appName,
 				tc.resourceVersion,
@@ -182,7 +183,6 @@ func TestLogTailer_DeployLogs_ServiceLogs(t *testing.T) {
 				}
 			}
 
-			ctrl.Finish()
 		})
 	}
 }
@@ -226,8 +226,8 @@ func createMsgEvents(appName string, conditions duckv1beta1.Conditions) []watch.
 
 func buildLogWatchFakes(
 	t *testing.T,
-	serviceEvents, buildEvents []watch.Event,
-	serviceErr, buildErr error,
+	serviceEvents []watch.Event,
+	serviceErr error,
 ) (*gomock.Controller, *v1alpha1fake.FakeKfV1alpha1) {
 	ctrl := gomock.NewController(t)
 
@@ -251,9 +251,9 @@ func buildLogWatchFakes(
 		Fake: &ktesting.Fake{},
 	}
 
-	fakeKfClient.AddWatchReactor("*", ktesting.WatchReactionFunc(func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
+	fakeKfClient.AddWatchReactor("*", func(action ktesting.Action) (handled bool, ret watch.Interface, err error) {
 		return true, fakeWatcher, serviceErr
-	}))
+	})
 
 	return ctrl, fakeKfClient
 }

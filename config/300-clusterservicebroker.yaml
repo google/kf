@@ -1,0 +1,232 @@
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: VERSION_PLACEHOLDER
+  name: clusterservicebrokers.kf.dev
+spec:
+  group: kf.dev
+  names:
+    kind: ClusterServiceBroker
+    plural: clusterservicebrokers
+    singular: clusterservicebroker
+    categories:
+      - all
+      - kf
+  scope: Cluster
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      schema:
+        openAPIV3Schema:
+          description: ClusterServiceBroker represents an Open Service Broker (OSB) compatible service broker available at the cluster level.
+          type: object
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: ClusterServiceBrokerSpec contains the user supplied specification for the broker.
+              type: object
+              properties:
+                credentials:
+                  description: Credentials contains a reference to a secret containing credentials for the service.
+                  type: object
+                  required:
+                    - name
+                    - namespace
+                  properties:
+                    name:
+                      description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                      type: string
+                    namespace:
+                      description: 'Namespace of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/'
+                      type: string
+                updateRequests:
+                  description: UpdateRequests is a unique identifier, updating will trigger a refresh.
+                  type: integer
+                volume:
+                  description: VolumeBrokerSpec indicates this service broker is a VolumeBroker.
+                  type: object
+                  properties:
+                    offering:
+                      description: VolumeOfferings contains ServiceOfferings supported by this broker.
+                      type: array
+                      items:
+                        description: ServiceOffering has just enough info to display the offering in the marketplace command and provision it.
+                        type: object
+                        required:
+                          - description
+                          - displayName
+                          - uid
+                        properties:
+                          description:
+                            description: Description is a human readable description of the offering.
+                            type: string
+                          displayName:
+                            description: DisplayName is the human readable name of the offering, the field is unstable across releases.
+                            type: string
+                          plans:
+                            description: Plans contains a list of tiers that can be provisioned. For example, databases might come in different sizes.
+                            type: array
+                            items:
+                              description: ServicePlan has just enough info to display the offering in the marketplace command and provision it.
+                              type: object
+                              required:
+                                - description
+                                - displayName
+                                - free
+                                - uid
+                              properties:
+                                description:
+                                  description: Description is a human readable description of the plan.
+                                  type: string
+                                displayName:
+                                  description: DisplayName is the human readable name of the plan. This value is unstable across releases.
+                                  type: string
+                                free:
+                                  description: Free indicates that the plan has no cost to the end-user. https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#service-plan-object
+                                  type: boolean
+                                uid:
+                                  description: UID is the unique ID of the plan (within the service). The value is stable across broker releases. It's recommended, but not required that this value be a UUID.
+                                  type: string
+                          tags:
+                            description: 'Tags contains opaque labels to help filter marketplace, examples include: gcp, sql, myssql.'
+                            type: array
+                            items:
+                              type: string
+                            nullable: true
+                          uid:
+                            description: UID is a unique ID of the offering within the broker, this value is stable across broker releases and is used to track when names change. It's recommended, but not required that this value be a UUID.
+                            type: string
+            status:
+              description: CommonServiceBrokerStatus contains the status of the broker.
+              type: object
+              required:
+                - updateRequests
+              properties:
+                annotations:
+                  description: Annotations is additional Status fields for the Resource to save some additional State as well as convey more information to the user. This is roughly akin to Annotations on any k8s resource, just the reconciler conveying richer information outwards.
+                  type: object
+                  additionalProperties:
+                    type: string
+                conditions:
+                  description: Conditions the latest available observations of a resource's current state.
+                  type: array
+                  items:
+                    description: 'Conditions defines a readiness condition for a Knative resource. See: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#typical-status-properties'
+                    type: object
+                    required:
+                      - status
+                      - type
+                    properties:
+                      lastTransitionTime:
+                        description: LastTransitionTime is the last time the condition transitioned from one status to another. We use VolatileTime in place of metav1.Time to exclude this from creating equality.Semantic differences (all other things held constant).
+                        type: string
+                        format: date-time
+                      message:
+                        description: A human readable message indicating details about the transition.
+                        type: string
+                      reason:
+                        description: The reason for the condition's last transition.
+                        type: string
+                      severity:
+                        description: Severity with which to treat failures of this type of condition. When this is not specified, it defaults to Error.
+                        type: string
+                      status:
+                        description: Status of the condition, one of True, False, Unknown.
+                        type: string
+                      type:
+                        description: Type of condition.
+                        type: string
+                observedGeneration:
+                  description: ObservedGeneration is the 'Generation' of the Service that was last processed by the controller.
+                  type: integer
+                  format: int64
+                services:
+                  description: Services contains the list of services offered by the broker.
+                  type: array
+                  items:
+                    description: ServiceOffering has just enough info to display the offering in the marketplace command and provision it.
+                    type: object
+                    required:
+                      - description
+                      - displayName
+                      - uid
+                    properties:
+                      description:
+                        description: Description is a human readable description of the offering.
+                        type: string
+                      displayName:
+                        description: DisplayName is the human readable name of the offering, the field is unstable across releases.
+                        type: string
+                      plans:
+                        description: Plans contains a list of tiers that can be provisioned. For example, databases might come in different sizes.
+                        type: array
+                        items:
+                          description: ServicePlan has just enough info to display the offering in the marketplace command and provision it.
+                          type: object
+                          required:
+                            - description
+                            - displayName
+                            - free
+                            - uid
+                          properties:
+                            description:
+                              description: Description is a human readable description of the plan.
+                              type: string
+                            displayName:
+                              description: DisplayName is the human readable name of the plan. This value is unstable across releases.
+                              type: string
+                            free:
+                              description: Free indicates that the plan has no cost to the end-user. https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#service-plan-object
+                              type: boolean
+                            uid:
+                              description: UID is the unique ID of the plan (within the service). The value is stable across broker releases. It's recommended, but not required that this value be a UUID.
+                              type: string
+                      tags:
+                        description: 'Tags contains opaque labels to help filter marketplace, examples include: gcp, sql, myssql.'
+                        type: array
+                        items:
+                          type: string
+                        nullable: true
+                      uid:
+                        description: UID is a unique ID of the offering within the broker, this value is stable across broker releases and is used to track when names change. It's recommended, but not required that this value be a UUID.
+                        type: string
+                updateRequests:
+                  description: UpdateRequests is the last processed UpdateRequests value.
+                  type: integer
+      additionalPrinterColumns:
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+        - name: Ready
+          type: string
+          jsonPath: ".status.conditions[?(@.type=='Ready')].status"
+        - name: Reason
+          type: string
+          jsonPath: ".status.conditions[?(@.type=='Ready')].reason"

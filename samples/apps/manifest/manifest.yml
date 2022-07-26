@@ -1,6 +1,0 @@
----
-applications:
-- name: manifest-app
-  path: app
-  env:
-    WHATNOW: BROWNCOW

@@ -1,0 +1,21 @@
+name: "Tekton CLI"
+description:
+  "The Tekton Pipelines cli project provides a CLI for interacting with Tekton!"
+
+third_party: {
+  type: PACKAGE
+  url {
+    type: HOMEPAGE
+    value: "https://github.com/tektoncd/cli"
+  }
+  url {
+    type: GIT
+    value: "https://github.com/tektoncd/cli"
+  }
+  version: "d46a084d3264c2f894449a24b9826e0ab21822f8"
+  last_upgrade_date {
+    year: 2020
+    month: 02
+    day: 06
+  }
+}

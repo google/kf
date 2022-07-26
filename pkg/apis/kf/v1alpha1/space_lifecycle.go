@@ -15,13 +15,22 @@
 package v1alpha1
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"strings"
 
+	"github.com/google/kf/v2/pkg/apis/kf/config"
+	"github.com/google/kf/v2/pkg/kf/dynamicutils"
+	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
-	rv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"knative.dev/pkg/apis"
-	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
+)
+
+const (
+	clusterIngressIPDomainKey = "CLUSTER_INGRESS_IP"
+	spaceNameDomainKey        = "SPACE_NAME"
 )
 
 // GetGroupVersionKind returns the GroupVersionKind.
@@ -29,101 +38,9 @@ func (r *Space) GetGroupVersionKind() schema.GroupVersionKind {
 	return SchemeGroupVersion.WithKind("Space")
 }
 
-// ConditionType represents a Service condition value
-const (
-	// SpaceConditionReady is set when the space is configured
-	// and is usable by developers.
-	SpaceConditionReady = apis.ConditionReady
-	// SpaceConditionNamespaceReady is set when the backing namespace is ready.
-	SpaceConditionNamespaceReady apis.ConditionType = "NamespaceReady"
-	// SpaceConditionDeveloperRoleReady is set when the developer RBAC role is
-	// ready.
-	SpaceConditionDeveloperRoleReady apis.ConditionType = "DeveloperRoleReady"
-	// SpaceConditionAuditorRoleReady is set when the auditor RBAC role is
-	// ready.
-	SpaceConditionAuditorRoleReady apis.ConditionType = "AuditorRoleReady"
-	// SpaceConditionResourceQuotaReady is set when the resource quota is
-	// ready.
-	SpaceConditionResourceQuotaReady apis.ConditionType = "ResourceQuotaReady"
-	// SpaceConditionLimitRangeReady is set when the limit range is
-	// ready.
-	SpaceConditionLimitRangeReady apis.ConditionType = "LimitRangeReady"
-	// SpaceConditionBuildServiceAccountReady is set when the
-	// BuildServiceAccount is ready.
-	SpaceConditionBuildServiceAccountReady apis.ConditionType = "BuildServiceAccountReady"
-	// SpaceConditionBuildSecretReady is set when the build Secret is ready.
-	SpaceConditionBuildSecretReady apis.ConditionType = "BuildSecretReady"
-)
-
-func (status *SpaceStatus) manage() apis.ConditionManager {
-	return apis.NewLivingConditionSet(
-		SpaceConditionNamespaceReady,
-		SpaceConditionDeveloperRoleReady,
-		SpaceConditionAuditorRoleReady,
-		SpaceConditionResourceQuotaReady,
-		SpaceConditionLimitRangeReady,
-		SpaceConditionBuildServiceAccountReady,
-		SpaceConditionBuildSecretReady,
-	).Manage(status)
-}
-
-// IsReady returns if the space is ready to be used.
-func (status *SpaceStatus) IsReady() bool {
-	return status.manage().IsHappy()
-}
-
-// GetCondition returns the condition by name.
-func (status *SpaceStatus) GetCondition(t apis.ConditionType) *apis.Condition {
-	return status.manage().GetCondition(t)
-}
-
-// InitializeConditions sets the initial values to the conditions.
-func (status *SpaceStatus) InitializeConditions() {
-	status.manage().InitializeConditions()
-}
-
-// MarkNamespaceNotOwned marks the namespace as not being owned by the Space.
-func (status *SpaceStatus) MarkNamespaceNotOwned(name string) {
-	status.manage().MarkFalse(SpaceConditionNamespaceReady, "NotOwned",
-		fmt.Sprintf("There is an existing Namespace %q that we do not own.", name))
-}
-
-// MarkDeveloperRoleNotOwned marks the developer role as not being owned by the Space.
-func (status *SpaceStatus) MarkDeveloperRoleNotOwned(name string) {
-	status.manage().MarkFalse(SpaceConditionDeveloperRoleReady, "NotOwned",
-		fmt.Sprintf("There is an existing developer role %q that we do not own.", name))
-}
-
-// MarkAuditorRoleNotOwned marks the auditor role as not being owned by the Space.
-func (status *SpaceStatus) MarkAuditorRoleNotOwned(name string) {
-	status.manage().MarkFalse(SpaceConditionAuditorRoleReady, "NotOwned",
-		fmt.Sprintf("There is an existing auditor role %q that we do not own.", name))
-}
-
-// MarkResourceQuotaNotOwned marks the ResourceQuota as not being owned by the Space.
-func (status *SpaceStatus) MarkResourceQuotaNotOwned(name string) {
-	status.manage().MarkFalse(SpaceConditionResourceQuotaReady, "NotOwned",
-		fmt.Sprintf("There is an existing resourcequota %q that we do not own.", name))
-}
-
-// MarkLimitRangeNotOwned marks the LimitRange as not being owned by the Space.
-func (status *SpaceStatus) MarkLimitRangeNotOwned(name string) {
-	status.manage().MarkFalse(SpaceConditionLimitRangeReady, "NotOwned",
-		fmt.Sprintf("There is an existing limitrange %q that we do not own.", name))
-}
-
-// MarkBuildServiceAccountNotOwned marks the build ServiceAccount as not being
-// owned by the Space.
-func (status *SpaceStatus) MarkBuildServiceAccountNotOwned(name string) {
-	status.manage().MarkFalse(SpaceConditionBuildServiceAccountReady, "NotOwned",
-		fmt.Sprintf("There is an existing build serviceaccount %q that we do not own.", name))
-}
-
 // PropagateNamespaceStatus copies fields from the Namespace status to Space
 // and updates the readiness based on the current phase.
 func (status *SpaceStatus) PropagateNamespaceStatus(ns *v1.Namespace) {
-	// TODO(josephlewis42): should we copy the namespace's UID into the status?
-
 	switch ns.Status.Phase {
 	case v1.NamespaceActive:
 		status.manage().MarkTrue(SpaceConditionNamespaceReady)
@@ -134,54 +51,145 @@ func (status *SpaceStatus) PropagateNamespaceStatus(ns *v1.Namespace) {
 	}
 }
 
-// PropagateDeveloperRoleStatus copies fields from the Role to Space
-// and updates the readiness based on the current phase.
-func (status *SpaceStatus) PropagateDeveloperRoleStatus(*rv1.Role) {
-	// Roles don't have a status field so they just need to exist to be ready.
-	status.manage().MarkTrue(SpaceConditionDeveloperRoleReady)
+// PropagateIAMPolicyStatus updates the readiness based on the current phase.
+func (status *SpaceStatus) PropagateIAMPolicyStatus(ctx context.Context, u *unstructured.Unstructured) {
+	switch dynamicutils.CheckCondtions(ctx, u) {
+	case corev1.ConditionUnknown:
+		status.manage().MarkUnknown(SpaceConditionIAMPolicyReady, "BadPhase", "IAM Policy is not yet ready")
+	case corev1.ConditionTrue:
+		status.manage().MarkTrue(SpaceConditionIAMPolicyReady)
+	default:
+		status.manage().MarkFalse(SpaceConditionIAMPolicyReady, "BadPhase", "IAM Policy is unhealthy")
+	}
 }
 
-// PropagateAuditorRoleStatus copies fields from the Role to Space
-// and updates the readiness based on the current phase.
-func (status *SpaceStatus) PropagateAuditorRoleStatus(*rv1.Role) {
-	// Roles don't have a status field so they just need to exist to be ready.
-	status.manage().MarkTrue(SpaceConditionAuditorRoleReady)
+// PropagateIngressGatewayStatus copies the list of ingresses to the status
+// and updates the condition. There must be at least one externally reachable
+// ingress for the space to become healthy.
+func (status *SpaceStatus) PropagateIngressGatewayStatus(ingresses []corev1.LoadBalancerIngress) {
+	status.IngressGateways = ingresses
+
+	if len(status.IngressGateways) == 0 {
+		status.IngressGatewayCondition().MarkReconciliationPending()
+	} else {
+		status.IngressGatewayCondition().MarkSuccess()
+	}
 }
 
-// PropagateResourceQuotaStatus copies the ResourceQuota Used and Hard amounts
-// to the Space and updates the readiness based on if a quota exists.
-func (status *SpaceStatus) PropagateResourceQuotaStatus(quota *v1.ResourceQuota) {
-	status.Quota = quota.Status
-	status.manage().MarkTrue(SpaceConditionResourceQuotaReady)
+// PropagateRuntimeConfigStatus copies the application runtime settings to the
+// space status.
+func (status *SpaceStatus) PropagateRuntimeConfigStatus(runtimeConfig SpaceSpecRuntimeConfig) {
+	// Copy environment over wholesale because there are no values that can be set
+	// cluster-wide.
+	status.RuntimeConfig.Env = runtimeConfig.Env
+
+	status.RuntimeConfigCondition().MarkSuccess()
 }
 
-// PropagateLimitRangeStatus updates the readiness of the space
-// based on if a LimitRange exists.
-func (status *SpaceStatus) PropagateLimitRangeStatus(limitRange *v1.LimitRange) {
-	status.manage().MarkTrue(SpaceConditionLimitRangeReady)
+// PropagateNetworkConfigStatus copies the application networking settings to the
+// space status.
+func (status *SpaceStatus) PropagateNetworkConfigStatus(networkConfig SpaceSpecNetworkConfig, cfg *config.Config, spaceName string) {
+	status.NetworkConfig = SpaceStatusNetworkConfig{} // clear out anything old
+	if cfg == nil {
+		status.NetworkConfigCondition().MarkReconciliationError("NilConfig", errors.New("the Kf defaults configmap couldn't be found"))
+		return
+	}
+
+	defaultsConfig, err := cfg.Defaults()
+	if err != nil {
+		status.NetworkConfigCondition().MarkReconciliationError("NilConfig", err)
+		return
+	}
+
+	// Join domains in the order space -> custom then deduplicate to ensure
+	// space config takes precedence over global configuration
+	{
+		var domains []SpaceDomain
+
+		// Space configured domains take precedence over cluster-wide ones.
+		for _, domain := range networkConfig.Domains {
+			// Deep copy to prevent accidentally modifying a cached value
+			domains = append(domains, *domain.DeepCopy())
+		}
+
+		for _, defaultDomain := range defaultsConfig.SpaceClusterDomains {
+			domains = append(domains, SpaceDomain{
+				Domain:      defaultDomain.Domain,
+				GatewayName: defaultDomain.GatewayName,
+			})
+		}
+
+		// Replace variables
+		replacements := make(map[string]string)
+		replacements[spaceNameDomainKey] = spaceName
+
+		if ipPtr := status.FindIngressIP(); ipPtr != nil {
+			replacements[clusterIngressIPDomainKey] = *ipPtr
+		}
+
+		for i := range domains {
+			domains[i].Domain = applyDomainReplacements(domains[i].Domain, replacements)
+		}
+
+		status.NetworkConfig.Domains = StableDeduplicateSpaceDomainList(domains)
+	}
+
+	// Ensure all domains have a gatewayName
+	{
+		var domains []SpaceDomain
+		for _, d := range status.NetworkConfig.Domains {
+			if d.GatewayName == "" {
+				domains = append(domains, SpaceDomain{
+					Domain:      d.Domain,
+					GatewayName: KfExternalIngressGateway,
+				})
+			} else {
+				domains = append(domains, d)
+			}
+		}
+		status.NetworkConfig.Domains = domains
+	}
+
+	status.NetworkConfigCondition().MarkSuccess()
 }
 
-// PropagateBuildServiceAccountStatus updates the readiness of the space based
-// on if a BuildServiceAccount exists.
-func (status *SpaceStatus) PropagateBuildServiceAccountStatus(sa *v1.ServiceAccount) {
-	status.manage().MarkTrue(SpaceConditionBuildServiceAccountReady)
+func applyDomainReplacements(input string, replacements map[string]string) string {
+	var oldnew []string
+	for k, v := range replacements {
+		oldnew = append(oldnew, fmt.Sprintf("$(%s)", k), v)
+	}
+
+	replacer := strings.NewReplacer(oldnew...)
+	return replacer.Replace(input)
 }
 
-// PropagateBuildSecretStatus updates the readiness of the space based
-// on if a BuildSecret exists.
-func (status *SpaceStatus) PropagateBuildSecretStatus(secret *v1.Secret) {
-	status.manage().MarkTrue(SpaceConditionBuildSecretReady)
-}
+// PropagateBuildConfigStatus copies the application build settings to the
+// space status.
+func (status *SpaceStatus) PropagateBuildConfigStatus(spaceSpec SpaceSpec, cfg *config.Config) {
+	status.BuildConfig = SpaceStatusBuildConfig{} // clear out anything old
+	if cfg == nil {
+		status.BuildConfigCondition().MarkReconciliationError("NilConfig", errors.New("the kf defaults configmap couldn't be found"))
+		return
+	}
 
-// BuildSecretCondition gets a manager for the state of the build secret.
-func (status *SpaceStatus) BuildSecretCondition() SingleConditionManager {
-	return NewSingleConditionManager(
-		status.manage(),
-		SpaceConditionBuildSecretReady,
-		"Build Secret",
-	)
-}
+	configDefaults, err := cfg.Defaults()
+	if err != nil {
+		status.BuildConfigCondition().MarkReconciliationError("NilConfig", err)
+		return
+	}
 
-func (status *SpaceStatus) duck() *duckv1beta1.Status {
-	return &status.Status
+	status.BuildConfig.BuildpacksV2 = configDefaults.SpaceBuildpacksV2.WithoutDisabled()
+	status.BuildConfig.StacksV2 = configDefaults.SpaceStacksV2
+	status.BuildConfig.StacksV3 = configDefaults.SpaceStacksV3
+	status.BuildConfig.Env = spaceSpec.BuildConfig.Env
+	status.BuildConfig.ContainerRegistry = spaceSpec.BuildConfig.ContainerRegistry
+	status.BuildConfig.ServiceAccount = spaceSpec.BuildConfig.ServiceAccount
+
+	if spaceSpec.BuildConfig.DefaultToV3Stack != nil {
+		status.BuildConfig.DefaultToV3Stack = *spaceSpec.BuildConfig.DefaultToV3Stack
+	} else {
+		status.BuildConfig.DefaultToV3Stack = configDefaults.SpaceDefaultToV3Stack
+	}
+
+	status.BuildConfigCondition().MarkSuccess()
 }

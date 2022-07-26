@@ -15,110 +15,100 @@
 package routes
 
 import (
+	"context"
 	"fmt"
+	"time"
 
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/algorithms"
-	"github.com/google/kf/pkg/kf/apps"
-	"github.com/google/kf/pkg/kf/commands/config"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	"github.com/google/kf/pkg/kf/routeclaims"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/apps"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	utils "github.com/google/kf/v2/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/v2/pkg/kf/routes"
 	"github.com/spf13/cobra"
+	"knative.dev/pkg/logging"
 )
 
 // NewDeleteRouteCommand creates a DeleteRoute command. To delete a route and
 // not have the controller bring it back, delete is a multistep process.
 // First, unmap the route from each app that has it. Next, delete the
-// RouteClaim.
+// Route.
 func NewDeleteRouteCommand(
 	p *config.KfParams,
-	c routeclaims.Client,
+	c routes.Client,
 	a apps.Client,
 ) *cobra.Command {
-	var hostname, urlPath string
+	var (
+		routeFlags RouteFlags
+		async      utils.AsyncFlags
+	)
 
 	cmd := &cobra.Command{
 		Use:   "delete-route DOMAIN [--hostname HOSTNAME] [--path PATH]",
-		Short: "Delete a route",
+		Short: "Delete a Route in the targeted Space.",
 		Example: `
-  kf delete-route example.com --hostname myapp # myapp.example.com
-  kf delete-route example.com --hostname myapp --path /mypath # myapp.example.com/mypath
+  # Delete the Route myapp.example.com
+  kf delete-route example.com --hostname myapp
+  # Delete a Route on a path myapp.example.com/mypath
+  kf delete-route example.com --hostname myapp --path /mypath
   `,
-		Args: cobra.ExactArgs(1),
+		Args:         cobra.ExactArgs(1),
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := utils.ValidateNamespace(p); err != nil {
+			ctx := cmd.Context()
+			logger := logging.FromContext(ctx)
+			if err := p.ValidateSpaceTargeted(); err != nil {
 				return err
 			}
 
 			domain := args[0]
-			cmd.SilenceUsage = true
 
-			route := v1alpha1.RouteSpecFields{
-				Hostname: hostname,
-				Domain:   domain,
-				Path:     urlPath,
-			}
+			route := routeFlags.RouteSpecFields(domain)
 
 			// TODO: This is O(apps). We could do better if we lookup the
 			// routes with the proper labels first, then use their apps.
-			apps, err := a.List(
-				p.Namespace,
-				apps.WithListFilter(func(app *v1alpha1.App) bool {
-					return algorithms.Search(
-						0,
-						v1alpha1.RouteSpecFieldsSlice{route},
-						v1alpha1.RouteSpecFieldsSlice(app.Spec.Routes),
-					)
-				}),
-			)
+			spaceApps, err := a.List(ctx, p.Space)
 			if err != nil {
-				return fmt.Errorf("failed to list apps: %s", err)
+				return fmt.Errorf("failed to list Apps: %s", err)
 			}
 
-			// NOTE: RouteClaims don't have a status so there's nothing to wait on
-			// after deletion.
-			fmt.Fprintln(cmd.OutOrStdout(), "Deleting route...")
+			logger.Info("Unmapping bound Apps...")
 
-			for _, app := range apps {
-				fmt.Fprintf(cmd.OutOrStderr(), "Unmapping route from %s...\n", app.Name)
-				if err := unmapApp(
-					p.Namespace,
-					app.Name,
-					route,
-					a,
-					cmd.OutOrStderr(),
-				); err != nil {
-					return err
+			for _, app := range spaceApps {
+				if !apps.NewFromApp(&app).HasMatchingRoutes(route) {
+					continue
+				}
+
+				logger.Infof("Unmapping Route from %s...", app.Name)
+
+				if _, err := a.Transform(ctx, p.Space, app.Name, func(app *v1alpha1.App) error {
+					apps.NewFromApp(app).RemoveRoutesForClaim(route)
+					return nil
+				}); err != nil {
+					return fmt.Errorf("failed to unmap Route: %s", err)
 				}
 			}
 
-			fmt.Fprintf(cmd.OutOrStderr(), "Deleting route claim...\n")
-			if err := c.Delete(
-				p.Namespace,
-				v1alpha1.GenerateRouteClaimName(
-					hostname,
-					domain,
-					urlPath,
-				),
-			); err != nil {
+			instanceName := v1alpha1.GenerateRouteName(
+				routeFlags.Hostname,
+				domain,
+				routeFlags.Path,
+			)
+
+			action := fmt.Sprintf("Deleting Route %q in Space %q", instanceName, p.Space)
+
+			logger.Info("Deleting Route...")
+			if err := c.Delete(ctx, p.Space, instanceName); err != nil {
 				return fmt.Errorf("failed to delete Route: %s", err)
 			}
-			return nil
+
+			return async.AwaitAndLog(cmd.OutOrStderr(), action, func() error {
+				_, err := c.WaitForDeletion(context.Background(), p.Space, instanceName, 1*time.Second)
+				return err
+			})
 		},
 	}
-
-	cmd.Flags().StringVar(
-		&hostname,
-		"hostname",
-		"",
-		"Hostname for the route",
-	)
-	cmd.Flags().StringVar(
-		&urlPath,
-		"path",
-		"",
-		"URL Path for the route",
-	)
+	async.Add(cmd)
+	routeFlags.Add(cmd)
 
 	return cmd
 }

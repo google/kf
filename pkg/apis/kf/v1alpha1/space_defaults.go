@@ -16,98 +16,76 @@ package v1alpha1
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/google/kf/pkg/kf/algorithms"
-	routecfg "github.com/google/kf/third_party/knative-serving/pkg/reconciler/route/config"
+	apiconfig "github.com/google/kf/v2/pkg/apis/kf/config"
 )
 
-// TODO(#396): We should pull these from a ConfigMap
 const (
-	// DefaultBuilderImage contains the default buildpack builder image.
-	DefaultBuilderImage = "gcr.io/kf-releases/buildpack-builder:latest"
+	// DefaultBuildServiceAccountName is the name of the service-account created
+	// by spaces with the intent of being used to hold connection credentials to
+	// the necessary back-end systems.
+	DefaultBuildServiceAccountName = "kf-builder"
 
-	// DefaultDomainTemplate contains the default domain template. It should
-	// be used with `fmt.Sprintf(DefaultDomainTemplate, namespace)`
-	DefaultDomainTemplate = "%s.%s"
+	// KfExternalIngressGateway holds the gateway for Kf's external HTTP ingress.
+	KfExternalIngressGateway = "kf/external-gateway"
 )
 
 // SetDefaults implements apis.Defaultable
 func (k *Space) SetDefaults(ctx context.Context) {
-	k.Spec.SetDefaults(ctx, k.Name)
+	k.Spec.SetDefaults(ctx)
 }
 
 // SetDefaults implements apis.Defaultable
-func (k *SpaceSpec) SetDefaults(ctx context.Context, name string) {
-	k.Security.SetDefaults(ctx)
-	k.BuildpackBuild.SetDefaults(ctx)
-	k.Execution.SetDefaults(ctx, name)
-	k.ResourceLimits.SetDefaults(ctx)
-}
-
-const DefaultBuildServiceAccountName = "kf-builder"
-
-// SetDefaults implements apis.Defaultable
-func (k *SpaceSpecSecurity) SetDefaults(ctx context.Context) {
-	// TODO(#458): We eventually want this to be configurable.
-	k.EnableDeveloperLogsAccess = true
-
-	if k.BuildServiceAccount == "" {
-		k.BuildServiceAccount = DefaultBuildServiceAccountName
-	}
+func (k *SpaceSpec) SetDefaults(ctx context.Context) {
+	k.BuildConfig.SetDefaults(ctx)
+	k.RuntimeConfig.SetDefaults(ctx)
+	k.NetworkConfig.SetDefaults(ctx)
 }
 
 // SetDefaults implements apis.Defaultable
-func (k *SpaceSpecBuildpackBuild) SetDefaults(ctx context.Context) {
-	if k.BuilderImage == "" {
-		k.BuilderImage = DefaultBuilderImage
-	}
-}
-
-// SetDefaults implements apis.Defaultable
-func (k *SpaceSpecExecution) SetDefaults(ctx context.Context, name string) {
-	if len(k.Domains) == 0 {
-		k.Domains = append(
-			k.Domains,
-			SpaceDomain{
-				Domain:  fmt.Sprintf(DefaultDomainTemplate, name, DefaultDomain(ctx)),
-				Default: true,
-			},
-		)
+func (k *SpaceSpecBuildConfig) SetDefaults(ctx context.Context) {
+	if k.ServiceAccount == "" {
+		k.ServiceAccount = DefaultBuildServiceAccountName
 	}
 
-	k.Domains = []SpaceDomain(algorithms.Dedupe(
-		SpaceDomains(k.Domains),
-	).(SpaceDomains))
-}
-
-// DefaultDomain gets the default domain to use for spaces from the context.
-func DefaultDomain(ctx context.Context) (domain string) {
-	// routecfg.FromContext can panic if the resource isn't on the context rather
-	// than returning nil. In this case, we still just want the DefaultDomain.
-	defer func() {
-		if r := recover(); r != nil {
-			domain = routecfg.DefaultDomain
+	if k.ContainerRegistry == "" {
+		configDefaults, err := apiconfig.FromContext(ctx).Defaults()
+		if err == nil {
+			k.ContainerRegistry = configDefaults.SpaceContainerRegistry
 		}
-	}()
-
-	if ctx == nil {
-		return routecfg.DefaultDomain
 	}
-
-	rc := routecfg.FromContext(ctx)
-	if rc == nil {
-		return routecfg.DefaultDomain
-	}
-
-	if domainCfg := rc.Domain; domainCfg != nil {
-		return domainCfg.LookupDomainForLabels(map[string]string{})
-	}
-
-	return routecfg.DefaultDomain
 }
 
 // SetDefaults implements apis.Defaultable
-func (k *SpaceSpecResourceLimits) SetDefaults(ctx context.Context) {
-	// XXX: currently no defaults to set
+func (k *SpaceSpecRuntimeConfig) SetDefaults(ctx context.Context) {
+	// no defaults to set
+}
+
+// SetDefaults implements apis.Defaultable
+func (k *SpaceSpecNetworkConfig) SetDefaults(ctx context.Context) {
+	k.Domains = StableDeduplicateSpaceDomainList(k.Domains)
+	k.DefaultSpaceDomainGateways(ctx)
+	k.AppNetworkPolicy.SetDefaults(ctx)
+	k.BuildNetworkPolicy.SetDefaults(ctx)
+}
+
+// DefaultSpaceDomainGateways replaces missing gatewayNames with the kf
+// default external gateway.
+func (k *SpaceSpecNetworkConfig) DefaultSpaceDomainGateways(ctx context.Context) {
+	for i := range k.Domains {
+		if k.Domains[i].GatewayName == "" {
+			k.Domains[i].GatewayName = KfExternalIngressGateway
+		}
+	}
+}
+
+// SetDefaults implements apis.Defaultable
+func (s *SpaceSpecNetworkConfigPolicy) SetDefaults(ctx context.Context) {
+	if s.Ingress == "" {
+		s.Ingress = PermitAllNetworkPolicy
+	}
+
+	if s.Egress == "" {
+		s.Egress = PermitAllNetworkPolicy
+	}
 }

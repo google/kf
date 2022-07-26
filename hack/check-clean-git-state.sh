@@ -18,7 +18,7 @@ set -eux
 
 cd "${0%/*}"/..
 
-if [ ! -z "$(git status --porcelain)" ]; then
+if [ -n "$(git status --porcelain)" ]; then
     git status
     echo
     echo "The git state is dirty."

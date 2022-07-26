@@ -1,0 +1,38 @@
+{
+    "sourcePackage": {},
+    "name": "buildpackv2",
+    "kind": "KfBuiltinTask",
+    "apiVersion": "builtin.kf.dev/v1alpha1",
+    "params": [
+        {
+            "name": "SOURCE_IMAGE",
+            "value": "some/source/image"
+        },
+        {
+            "name": "BUILDPACKS",
+            "value": "buildpack-1,buildpack-2"
+        },
+        {
+            "name": "RUN_IMAGE",
+            "value": "google/base:latest"
+        },
+        {
+            "name": "BUILDER_IMAGE",
+            "value": "google/base:latest"
+        },
+        {
+            "name": "SKIP_DETECT",
+            "value": "false"
+        }
+    ],
+    "env": [
+        {
+            "name": "CF_STACK",
+            "value": "stack-name"
+        }
+    ],
+    "nodeSelector": {
+        "cpu": "amd64",
+        "disktype": "ssd"
+    }
+}

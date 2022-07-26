@@ -16,10 +16,11 @@ package pods
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 
-	"github.com/google/kf/third_party/tektoncd-cli/pkg/helper/pods/stream"
+	"github.com/google/kf/v2/third_party/tektoncd-cli/pkg/helper/pods/stream"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -29,8 +30,8 @@ type Container struct {
 	pod         *Pod
 }
 
-func (c *Container) Status() error {
-	pod, err := c.pod.Get()
+func (c *Container) Status(ctx context.Context) error {
+	pod, err := c.pod.Get(ctx)
 	if err != nil {
 		return err
 	}
@@ -85,14 +86,14 @@ func (c *Container) LogReader(follow bool) *LogReader {
 	return &LogReader{c.name, c.pod, follow}
 }
 
-func (lr *LogReader) Read() (<-chan Log, <-chan error, error) {
+func (lr *LogReader) Read(ctx context.Context) (<-chan Log, <-chan error, error) {
 	pod := lr.pod
 	opts := &corev1.PodLogOptions{
 		Follow:    lr.follow,
 		Container: lr.containerName,
 	}
 
-	stream, err := pod.Stream(opts)
+	stream, err := pod.Stream(ctx, opts)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error getting logs for pod %s(%s) : %s", pod.Name, lr.containerName, err)
 	}

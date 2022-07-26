@@ -57,9 +57,14 @@ func (m *Module) Description() string {
 	return orig
 }
 
-// Source contains the source of the package.
+// Build contains the source of the package.
 func (m *Module) Source() string {
 	return filepath.Join(m.VendorDir, filepath.FromSlash(m.Module))
+}
+
+func (a *Module) IsLessThan(b Module) bool {
+	return a.RealModule() < b.RealModule() ||
+	a.RealModule() == b.RealModule() && a.RealVersion() < b.RealVersion()
 }
 
 func CollectVendoredModules(projectDirectories []string) ([]Module, error) {
@@ -82,7 +87,7 @@ func CollectVendoredModules(projectDirectories []string) ([]Module, error) {
 			// Replacement import:
 			// # github.com/google/go-cmp v0.2.0 => github.com/google/go-cmp v0.3.0
 			// Replacement local:
-			// # github.com/google/kf/pkg/kf/commands/install v0.0.0 => ./pkg/kf/commands/install
+			// # github.com/google/kf/v2/pkg/kf/commands/install v0.0.0 => ./pkg/kf/commands/install
 			if !isModImport(line) {
 				continue
 			}
@@ -100,6 +105,11 @@ func CollectVendoredModules(projectDirectories []string) ([]Module, error) {
 
 			// Skip if not in vendor
 			if entries, err := ioutil.ReadDir(mod.Source()); os.IsNotExist(err) || len(entries) == 0 {
+				continue
+			}
+
+			// Skip if in first_party
+			if strings.HasPrefix(filepath.Clean(mod.Replace), "first_party") || strings.Contains(mod.Module, "corp.google.com") {
 				continue
 			}
 

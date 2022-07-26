@@ -14,9 +14,9 @@
 
 package fake
 
-import "github.com/google/kf/pkg/kf/cfutil"
+import "github.com/google/kf/v2/pkg/kf/cfutil"
 
-//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_systemenvinjector.go --mock_names=SystemEnvInjector=FakeSystemEnvInjector github.com/google/kf/pkg/kf/cfutil/fake SystemEnvInjector
+//go:generate mockgen --package=fake --copyright_file ../../internal/tools/option-builder/LICENSE_HEADER --destination=fake_systemenvinjector.go --mock_names=SystemEnvInjector=FakeSystemEnvInjector github.com/google/kf/v2/pkg/kf/cfutil/fake SystemEnvInjector
 
 // SystemEnvInjector is implemented by cfutil.SystemEnvInjector
 type SystemEnvInjector interface {

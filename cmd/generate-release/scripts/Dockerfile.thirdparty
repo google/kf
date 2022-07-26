@@ -1,0 +1,9 @@
+FROM gcr.io/distroless/base:latest
+
+WORKDIR /third_party/src
+COPY vendor vendor
+COPY third_party third_party
+COPY operator/vendor operator/vendor
+
+WORKDIR /third_party
+COPY third_party/VENDOR-LICENSE licenses.txt

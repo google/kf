@@ -17,7 +17,7 @@ package clientgen
 import (
 	"text/template"
 
-	"github.com/google/kf/pkg/kf/internal/tools/generator"
+	"github.com/google/kf/v2/pkg/kf/internal/tools/generator"
 )
 
 var functionalUtilTemplate = template.Must(template.New("").Funcs(generator.TemplateFuncs()).Parse(`
@@ -39,7 +39,7 @@ func (*ResourceInfo) Namespaced() bool {
 }
 
 // GroupVersionResource gets the GVR struct for the resource.
-func (*ResourceInfo) GroupVersionResource() schema.GroupVersionResource {
+func (*ResourceInfo) GroupVersionResource(context.Context) schema.GroupVersionResource {
 	return schema.GroupVersionResource{
 		Group:    "{{ .Kubernetes.Group }}",
 		Version:  "{{ .Kubernetes.Version }}",
@@ -48,7 +48,7 @@ func (*ResourceInfo) GroupVersionResource() schema.GroupVersionResource {
 }
 
 // GroupVersionKind gets the GVK struct for the resource.
-func (*ResourceInfo) GroupVersionKind() schema.GroupVersionKind {
+func (*ResourceInfo) GroupVersionKind(context.Context) schema.GroupVersionKind {
 	return schema.GroupVersionKind{
 		Group:   "{{ .Kubernetes.Group }}",
 		Version: "{{ .Kubernetes.Version }}",
@@ -74,57 +74,6 @@ type Predicate func(*{{.Type}}) bool
 // Mutator is a function that changes {{.Type}}.
 type Mutator func(*{{.Type}}) error
 
-// DiffWrapper wraps a mutator and prints out the diff between the original object
-// and the one it returns if there's no error.
-func DiffWrapper(w io.Writer, mutator Mutator) Mutator {
-	return func(mutable *{{.Type}}) error {
-		before := mutable.DeepCopy()
-
-		if err := mutator(mutable); err != nil {
-			return err
-		}
-
-		FormatDiff(w, "old", "new", before, mutable)
-
-		return nil
-	}
-}
-
-// FormatDiff creates a diff between two {{.Type}}s and writes it to the given
-// writer.
-func FormatDiff(w io.Writer, leftName, rightName string, left, right *{{.Type}}) {
-	diff, err := kmp.SafeDiff(left, right)
-	switch {
-	case err != nil:
-		fmt.Fprintf(w, "couldn't format diff: %s\n", err.Error())
-
-	case diff == "":
-		fmt.Fprintln(w, "No changes")
-
-	default:
-		fmt.Fprintf(w, "{{.CF.Name}} Diff (-%s +%s):\n", leftName, rightName)
-		// go-cmp randomly chooses to prefix lines with non-breaking spaces or
-		// regular spaces to prevent people from using it as a real diff/patch
-		// tool. We normalize them so our outputs will be consistent.
-		fmt.Fprintln(w, strings.ReplaceAll(diff, " ", " "))
-	}
-}
-
-// List represents a collection of {{.Type}}.
-type List []{{.Type}}
-
-// Filter returns a new list items for which the predicates fails removed.
-func (list List) Filter(filter Predicate) (out List) {
-	for _, v := range list {
-		if filter(&v) {
-			out = append(out, v)
-		}
-	}
-
-	return
-}
-
-
 {{ if .SupportsObservedGeneration }}
 // ObservedGenerationMatchesGeneration is a predicate that returns true if the
 // object's ObservedGeneration matches the genration of the object.
@@ -139,7 +88,7 @@ func ObservedGenerationMatchesGeneration(obj *{{.Type}}) bool {
 func ExtractConditions(obj *{{.Type}}) (extracted []apis.Condition) {
 	for _, cond := range obj.{{.Kubernetes.ConditionsFieldPath}} {
 		// Only copy the following four fields to be compatible with
-		// recommended Kuberntes fields.
+		// recommended Kubernetes fields.
 		extracted = append(extracted, apis.Condition{
 			Type:    apis.ConditionType(cond.Type),
 			Status:  corev1.ConditionStatus(cond.Status),

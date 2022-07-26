@@ -1,7 +1,0 @@
-!vendor/
-public/
-resources/
-node_modules/
-tech-doc-hugo
-.firebase/
-.firebaserc

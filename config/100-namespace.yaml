@@ -15,7 +15,10 @@
 apiVersion: v1
 kind: Namespace
 metadata:
+  annotations:
+    operator.knative.dev/mode: Reconcile
   name: kf
   labels:
     app.kubernetes.io/name: kf
     app.kubernetes.io/version: VERSION_PLACEHOLDER
+    kf.dev/release: VERSION_PLACEHOLDER

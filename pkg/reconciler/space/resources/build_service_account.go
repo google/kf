@@ -15,22 +15,25 @@
 package resources
 
 import (
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"fmt"
+
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/kmeta"
 )
 
+const imagePushSecretPrefix = "kf-registry"
+
 // BuildServiceAccountName gets the name of the service account for given the
 // space.
 func BuildServiceAccountName(space *v1alpha1.Space) string {
-	return v1alpha1.DefaultBuildServiceAccountName
+	return space.Status.BuildConfig.ServiceAccount
 }
 
-// BuildSecretName gets the name of the secret for given the space.
-func BuildSecretName(space *v1alpha1.Space) string {
-	// We'll just use the same name as the service account
-	return BuildServiceAccountName(space)
+// BuildImagePushSecretName generates a name for a secret given the original secret from config-secrets.
+func BuildImagePushSecretName(secret *corev1.Secret) string {
+	return v1alpha1.GenerateName(imagePushSecretPrefix, secret.Name)
 }
 
 // MakeBuildServiceAccount creates a ServiceAccount for build pipelines to
@@ -38,7 +41,15 @@ func BuildSecretName(space *v1alpha1.Space) string {
 func MakeBuildServiceAccount(
 	space *v1alpha1.Space,
 	kfSecrets []*corev1.Secret,
+	gsaName string,
+	containerregistry string,
 ) (*corev1.ServiceAccount, []*corev1.Secret, error) {
+	annotations := map[string]string{}
+	if gsaName != "" {
+		// Workload Identity
+		annotations[v1alpha1.WorkloadIdentityAnnotation] = gsaName
+	}
+
 	sa := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      BuildServiceAccountName(space),
@@ -49,14 +60,14 @@ func MakeBuildServiceAccount(
 			Labels: v1alpha1.UnionMaps(space.GetLabels(), map[string]string{
 				v1alpha1.ManagedByLabel: "kf",
 			}),
-		},
-		Secrets: []corev1.ObjectReference{
-			{Name: BuildSecretName(space)},
+			Annotations: annotations,
 		},
 	}
 
+	// If WI is not enabled or no GSA is provided, then the build secrets set in config-secrets
+	// should be referenced in the service account.
 	var desiredSecrets []*corev1.Secret
-	for _, kfs := range kfSecrets {
+	for idx, kfs := range kfSecrets {
 		// We'll make a copy of the Data to ensure nothing gets altered anywhere.
 		dataCopy := map[string][]byte{}
 		for k, v := range kfs.Data {
@@ -67,7 +78,7 @@ func MakeBuildServiceAccount(
 
 		desiredSecret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      BuildSecretName(space),
+				Name:      BuildImagePushSecretName(kfs),
 				Namespace: NamespaceName(space),
 				OwnerReferences: []metav1.OwnerReference{
 					*kmeta.NewControllerRef(space),
@@ -80,8 +91,20 @@ func MakeBuildServiceAccount(
 			Data: dataCopy,
 		}
 
+		// Docker secrets needs to be properly annotation for Tekton to pick up.
+		// https://github.com/tektoncd/pipeline/blob/main/docs/auth.md
+		if containerregistry != "" {
+			if desiredSecret.Annotations == nil {
+				desiredSecret.Annotations = make(map[string]string)
+			}
+			desiredSecret.Annotations[fmt.Sprintf("tekton.dev/docker-%d", idx)] = containerregistry
+		}
+
 		desiredSecrets = append(desiredSecrets, desiredSecret)
 		sa.Secrets = append(sa.Secrets, corev1.ObjectReference{
+			Name: desiredSecret.Name,
+		})
+		sa.ImagePullSecrets = append(sa.ImagePullSecrets, corev1.LocalObjectReference{
 			Name: desiredSecret.Name,
 		})
 	}

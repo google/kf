@@ -15,89 +15,19 @@
 package servicebindings
 
 import (
-	"fmt"
-	"io"
-
-	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/describe"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	servicebindings "github.com/google/kf/pkg/kf/service-bindings"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/internal/genericcli"
+	"github.com/google/kf/v2/pkg/kf/serviceinstancebindings"
 	"github.com/spf13/cobra"
 )
 
 // NewListBindingsCommand allows users to list bindings.
-func NewListBindingsCommand(p *config.KfParams, client servicebindings.ClientInterface) *cobra.Command {
-	var (
-		appName         string
-		serviceInstance string
+func NewListBindingsCommand(p *config.KfParams) *cobra.Command {
+	return genericcli.NewListCommand(
+		serviceinstancebindings.NewResourceInfo(),
+		p,
+		genericcli.WithListPluralFriendlyName("bindings"),
+		genericcli.WithListCommandName("bindings"),
+		genericcli.WithListAliases([]string{"b"}),
 	)
-
-	listCmd := &cobra.Command{
-		Use:   "bindings [--app APP_NAME] [--service SERVICE_NAME]",
-		Short: "List bindings",
-		Example: `
-		# Show all bindings
-		kf bindings
-
-		# Show bindings for "my-app"
-		kf bindings --app my-app
-
-		# Show bindings for a particular service
-		kf bindings --service users-db
-		`,
-		Args: cobra.ExactArgs(0),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cmd.SilenceUsage = true
-
-			if err := utils.ValidateNamespace(p); err != nil {
-				return err
-			}
-
-			bindings, err := client.List(
-				servicebindings.WithListAppName(appName),
-				servicebindings.WithListNamespace(p.Namespace),
-				servicebindings.WithListServiceInstance(serviceInstance))
-			if err != nil {
-				return err
-			}
-
-			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
-				fmt.Fprintln(w, "Name\tApp\tBinding Name\tService\tSecret\tReady\tReason")
-				for _, b := range bindings {
-					status := ""
-					reason := ""
-					for _, cond := range b.Status.Conditions {
-						if cond.Type == "Ready" {
-							status = fmt.Sprintf("%v", cond.Status)
-							reason = cond.Reason
-						}
-					}
-					app := b.Labels[kfv1alpha1.NameLabel]
-					bindingName := b.Labels[kfv1alpha1.ComponentLabel]
-
-					fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s", b.Name, app, bindingName, b.Spec.InstanceRef.Name, b.Spec.SecretName, status, reason)
-					fmt.Fprintln(w)
-				}
-			})
-
-			return nil
-		},
-	}
-
-	listCmd.Flags().StringVarP(
-		&appName,
-		"app",
-		"a",
-		"",
-		"App to display bindings for")
-
-	listCmd.Flags().StringVarP(
-		&serviceInstance,
-		"service",
-		"s",
-		"",
-		"Service instance to display bindings for")
-
-	return listCmd
 }

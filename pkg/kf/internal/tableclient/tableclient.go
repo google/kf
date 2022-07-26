@@ -15,6 +15,7 @@
 package tableclient
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -31,17 +32,17 @@ type Type interface {
 	// Namespaced returns whether the resource is namespace-scoped.
 	Namespaced() bool
 	// GroupVersionResource returns the GVR of the target resource.
-	GroupVersionResource() schema.GroupVersionResource
+	GroupVersionResource(ctx context.Context) schema.GroupVersionResource
 }
 
 // Interface contains the public definitions for table clients.
 type Interface interface {
-	Table(typ Type, namespace string, opts metav1.ListOptions) (*metav1beta1.Table, error)
+	Table(ctx context.Context, typ Type, namespace string, opts metav1.ListOptions) (*metav1beta1.Table, error)
 }
 
 // New creates a table client given a RestConfig. The config WILL BE MODIFIED.
 func New(config *rest.Config) (Interface, error) {
-	config.WrapTransport = NewTableRoundTripper
+	config.Wrap(NewTableRoundTripper)
 
 	client, err := dynamic.NewForConfig(config)
 	if err != nil {
@@ -59,15 +60,15 @@ type tableClientImpl struct {
 
 // Table gets a table formatted version of the given type. Namespace is
 // ignored if the type's Namespaced() function returns false.
-func (t *tableClientImpl) Table(typ Type, namespace string, opts metav1.ListOptions) (*metav1beta1.Table, error) {
+func (t *tableClientImpl) Table(ctx context.Context, typ Type, namespace string, opts metav1.ListOptions) (*metav1beta1.Table, error) {
 	var resourceFetcher dynamic.ResourceInterface
 	if typ.Namespaced() {
-		resourceFetcher = t.client.Resource(typ.GroupVersionResource()).Namespace(namespace)
+		resourceFetcher = t.client.Resource(typ.GroupVersionResource(ctx)).Namespace(namespace)
 	} else {
-		resourceFetcher = t.client.Resource(typ.GroupVersionResource())
+		resourceFetcher = t.client.Resource(typ.GroupVersionResource(ctx))
 	}
 
-	unstr, err := resourceFetcher.List(opts)
+	unstr, err := resourceFetcher.List(ctx, opts)
 	if err != nil {
 		return nil, err
 	}

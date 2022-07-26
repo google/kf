@@ -16,122 +16,210 @@ package v1alpha1
 
 import (
 	"context"
-	"fmt"
-	"strings"
+	"testing"
 
-	routecfg "github.com/google/kf/third_party/knative-serving/pkg/reconciler/route/config"
+	apiconfig "github.com/google/kf/v2/pkg/apis/kf/config"
+	"github.com/google/kf/v2/pkg/kf/testutil"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func dummyConfig() context.Context {
-	cfg := &routecfg.Config{
-		Domain: &routecfg.Domain{
-			Domains: map[string]*routecfg.LabelSelector{
-				"custom.example.com": {},
+func defaultContext() context.Context {
+	return apiconfig.DefaultConfigContext(context.Background())
+}
+
+// sampleConfig overrides ALL values
+func sampleConfig() context.Context {
+	cfg := apiconfig.CreateConfigForTest(&apiconfig.DefaultsConfig{
+		SpaceContainerRegistry: "gcr.io/mycompany/project-xyz",
+		SpaceClusterDomains: []apiconfig.DomainTemplate{
+			{Domain: "$(SPACE_NAME).custom.example.com"},
+		},
+	})
+	return apiconfig.ToContextForTest(context.Background(), cfg)
+}
+
+func TestSpaceSpecNetworkConfig_SetDefaults(t *testing.T) {
+	defaultPolicy := SpaceSpecNetworkConfigPolicy{
+		Ingress: PermitAllNetworkPolicy,
+		Egress:  PermitAllNetworkPolicy,
+	}
+
+	cases := testutil.ApisDefaultableTestSuite{
+		"builtin": {
+			Context: sampleConfig(),
+			Input:   &SpaceSpecNetworkConfig{},
+			Want: &SpaceSpecNetworkConfig{
+				AppNetworkPolicy:   defaultPolicy,
+				BuildNetworkPolicy: defaultPolicy,
+			},
+		},
+		"domains retain order": {
+			Context: sampleConfig(),
+			Input: &SpaceSpecNetworkConfig{
+				Domains: []SpaceDomain{
+					{Domain: "z.com"},
+					{Domain: "a.com"},
+					{Domain: "b.com"},
+				},
+			},
+			Want: &SpaceSpecNetworkConfig{
+				Domains: []SpaceDomain{
+					{
+						Domain:      "z.com",
+						GatewayName: "kf/external-gateway",
+					},
+					{
+						Domain:      "a.com",
+						GatewayName: "kf/external-gateway",
+					},
+					{
+						Domain:      "b.com",
+						GatewayName: "kf/external-gateway",
+					},
+				},
+				AppNetworkPolicy:   defaultPolicy,
+				BuildNetworkPolicy: defaultPolicy,
+			},
+		},
+		"domains retain order while deduplicated": {
+			Context: sampleConfig(),
+			Input: &SpaceSpecNetworkConfig{
+				Domains: []SpaceDomain{
+					{Domain: "example.com"},
+					{Domain: "other-example.com"},
+					{Domain: "example.com"},
+				},
+			},
+			Want: &SpaceSpecNetworkConfig{
+				Domains: []SpaceDomain{
+					{
+						Domain:      "example.com",
+						GatewayName: "kf/external-gateway",
+					},
+					{
+						Domain:      "other-example.com",
+						GatewayName: "kf/external-gateway",
+					},
+				},
+				AppNetworkPolicy:   defaultPolicy,
+				BuildNetworkPolicy: defaultPolicy,
+			},
+		},
+		"replace empty domain gateways": {
+			Context: sampleConfig(),
+			Input: &SpaceSpecNetworkConfig{
+				Domains: []SpaceDomain{
+					{Domain: "example.com"},
+				},
+			},
+			Want: &SpaceSpecNetworkConfig{
+				Domains: []SpaceDomain{
+					{
+						Domain:      "example.com",
+						GatewayName: "kf/external-gateway",
+					},
+				},
+				AppNetworkPolicy:   defaultPolicy,
+				BuildNetworkPolicy: defaultPolicy,
+			},
+		},
+		"don't override set policies": {
+			Context: sampleConfig(),
+			Input: &SpaceSpecNetworkConfig{
+				AppNetworkPolicy: SpaceSpecNetworkConfigPolicy{
+					Ingress: "CustomAIPolicy",
+					Egress:  "CustomAEPolicy",
+				},
+				BuildNetworkPolicy: SpaceSpecNetworkConfigPolicy{
+					Ingress: "CustomBIPolicy",
+					Egress:  "CustomBEPolicy",
+				},
+			},
+			Want: &SpaceSpecNetworkConfig{
+				AppNetworkPolicy: SpaceSpecNetworkConfigPolicy{
+					Ingress: "CustomAIPolicy",
+					Egress:  "CustomAEPolicy",
+				},
+				BuildNetworkPolicy: SpaceSpecNetworkConfigPolicy{
+					Ingress: "CustomBIPolicy",
+					Egress:  "CustomBEPolicy",
+				},
 			},
 		},
 	}
 
-	return routecfg.ToContext(context.TODO(), cfg)
+	cases.Run(t)
 }
 
-func ExampleSpace_SetDefaults() {
-	space := Space{}
-	space.Name = "mynamespace"
-	space.SetDefaults(dummyConfig())
-
-	var domainNames []string
-	for _, domain := range space.Spec.Execution.Domains {
-		if domain.Default {
-			domainNames = append(domainNames, "*"+domain.Domain)
-			continue
-		}
-		domainNames = append(domainNames, domain.Domain)
-	}
-
-	fmt.Println("Builder:", space.Spec.BuildpackBuild.BuilderImage)
-	fmt.Println("Domains:", strings.Join(domainNames, ", "))
-
-	// Output: Builder: gcr.io/kf-releases/buildpack-builder:latest
-	// Domains: *mynamespace.custom.example.com
-}
-
-func ExampleSpaceSpecExecution_SetDefaults_dedupe() {
-	space := Space{}
-	space.Spec.Execution = SpaceSpecExecution{
-		Domains: []SpaceDomain{
-			{Domain: "example.com"},
-			{Domain: "other-example.com"},
-			{Domain: "example.com", Default: true},
-			{Domain: "other-example.com"},
+func TestSpaceSpecBuildConfig_SetDefaults(t *testing.T) {
+	cases := testutil.ApisDefaultableTestSuite{
+		"builtin": {
+			Context: defaultContext(),
+			Input:   &SpaceSpecBuildConfig{},
+			Want: &SpaceSpecBuildConfig{
+				ServiceAccount: DefaultBuildServiceAccountName,
+			},
+		},
+		"custom-config": {
+			Context: sampleConfig(),
+			Input:   &SpaceSpecBuildConfig{},
+			Want: &SpaceSpecBuildConfig{
+				ContainerRegistry: "gcr.io/mycompany/project-xyz",
+				ServiceAccount:    DefaultBuildServiceAccountName,
+			},
+		},
+		"do not override set values": {
+			Context: defaultContext(),
+			Input: &SpaceSpecBuildConfig{
+				ContainerRegistry: "b",
+				ServiceAccount:    "some-other-account",
+			},
+			Want: &SpaceSpecBuildConfig{
+				ContainerRegistry: "b",
+				ServiceAccount:    "some-other-account",
+			},
 		},
 	}
-	space.SetDefaults(context.Background())
 
-	var domainNames []string
-	for _, domain := range space.Spec.Execution.Domains {
-		if domain.Default {
-			domainNames = append(domainNames, "*"+domain.Domain)
-			continue
-		}
-		domainNames = append(domainNames, domain.Domain)
-	}
-
-	fmt.Println(strings.Join(domainNames, ", "))
-
-	// Output: *example.com, other-example.com
-
+	cases.Run(t)
 }
 
-func ExampleSpaceSpecSecurity_SetDefaults() {
-	space := Space{}
-	space.Spec.Security = SpaceSpecSecurity{
-		EnableDeveloperLogsAccess: false,
-	}
-	space.SetDefaults(dummyConfig())
-
-	fmt.Println("EnableDeveloperLogsAccess:", space.Spec.Security.EnableDeveloperLogsAccess)
-	fmt.Println("BuildServiceAccount:", space.Spec.Security.BuildServiceAccount)
-
-	// Output: EnableDeveloperLogsAccess: true
-	// BuildServiceAccount: kf-builder
-}
-
-func ExampleSpaceSpecSecurity_SetDefaults_preserves() {
-	space := Space{}
-	space.Spec.Security = SpaceSpecSecurity{
-		EnableDeveloperLogsAccess: false,
-		BuildServiceAccount:       "some-other-account",
-	}
-	space.SetDefaults(dummyConfig())
-
-	fmt.Println("EnableDeveloperLogsAccess:", space.Spec.Security.EnableDeveloperLogsAccess)
-	fmt.Println("BuildServiceAccount:", space.Spec.Security.BuildServiceAccount)
-
-	// Output: EnableDeveloperLogsAccess: true
-	// BuildServiceAccount: some-other-account
-}
-
-func ExampleSpaceSpecExecution_SetDefaults_badContextPanic() {
-	space := Space{}
-	space.Name = "mynamespace"
-	space.SetDefaults(context.Background())
-
-	var domainNames []string
-	for _, domain := range space.Spec.Execution.Domains {
-		if domain.Default {
-			domainNames = append(domainNames, "*"+domain.Domain)
-			continue
-		}
-		domainNames = append(domainNames, domain.Domain)
+func TestSpace_SetDefaults(t *testing.T) {
+	// This test just asserts a blank space being defaulted for sanity purposes
+	// to ensure nothing new gets added. Each function should also have its own
+	// complete tests.
+	cases := testutil.ApisDefaultableTestSuite{
+		"full-custom-config": {
+			Context: sampleConfig(),
+			Input: &Space{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-space",
+				},
+			},
+			Want: &Space{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-space",
+				},
+				Spec: SpaceSpec{
+					BuildConfig: SpaceSpecBuildConfig{
+						ServiceAccount:    "kf-builder",
+						ContainerRegistry: "gcr.io/mycompany/project-xyz",
+						Env:               nil,
+					},
+					NetworkConfig: SpaceSpecNetworkConfig{
+						AppNetworkPolicy: SpaceSpecNetworkConfigPolicy{
+							Ingress: PermitAllNetworkPolicy,
+							Egress:  PermitAllNetworkPolicy,
+						},
+						BuildNetworkPolicy: SpaceSpecNetworkConfigPolicy{
+							Ingress: PermitAllNetworkPolicy,
+							Egress:  PermitAllNetworkPolicy,
+						},
+					},
+				},
+			},
+		},
 	}
 
-	fmt.Println("Domains:", strings.Join(domainNames, ", "))
-
-	// Output: Domains: *mynamespace.example.com
-}
-
-func ExampleDefaultDomain() {
-	fmt.Println(DefaultDomain(context.Background()))
-
-	// Output: example.com
+	cases.Run(t)
 }

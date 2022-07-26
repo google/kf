@@ -1,0 +1,585 @@
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package resources
+
+import (
+	"strings"
+
+	"github.com/google/kf/v2/pkg/apis/kf/config"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
+)
+
+// FindBuiltinTask returns a TaskSpec for a build task that's built-in to Kf.
+// The implementation details of these tasks may change because they're not
+// public.
+// If no task matching the given ref is found, then nil is returned.
+func FindBuiltinTask(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, googleServiceAccount string) *tektonv1beta1.TaskSpec {
+	if cfg == nil {
+		return nil
+	}
+
+	buildTaskRef := buildSpec.BuildTaskRef
+
+	if buildTaskRef.Kind != v1alpha1.BuiltinTaskKind {
+		return nil
+	}
+
+	if buildTaskRef.APIVersion != v1alpha1.BuiltinTaskAPIVersion {
+		return nil
+	}
+
+	switch buildTaskRef.Name {
+	case v1alpha1.BuildpackV2BuildTaskName:
+		return buildpackV2Task(cfg)
+	case v1alpha1.DockerfileBuildTaskName:
+		return dockerfileBuildTask(cfg)
+	case v1alpha1.BuildpackV3BuildTaskName:
+		return buildpackV3Build(cfg, buildSpec, googleServiceAccount)
+	}
+
+	return nil
+}
+
+func stringParam(name, description string) tektonv1beta1.ParamSpec {
+	return tektonv1beta1.ParamSpec{
+		Name:        name,
+		Description: description,
+		Type:        tektonv1beta1.ParamTypeString,
+	}
+}
+
+func defaultStringParam(name, description, defaultValue string) tektonv1beta1.ParamSpec {
+	out := stringParam(name, description)
+	out.Default = &tektonv1beta1.ArrayOrString{
+		Type:      tektonv1beta1.ParamTypeString,
+		StringVal: defaultValue,
+	}
+
+	return out
+}
+
+func imageOutput() *tektonv1beta1.TaskResources {
+	return &tektonv1beta1.TaskResources{
+		Outputs: []tektonv1beta1.TaskResource{
+			{
+				ResourceDeclaration: tektonv1beta1.ResourceDeclaration{
+					Name: "IMAGE",
+					Type: "image",
+				},
+			},
+		},
+	}
+}
+
+func emptyVolume(name string) corev1.Volume {
+	return corev1.Volume{
+		Name: name,
+		VolumeSource: corev1.VolumeSource{
+			EmptyDir: &corev1.EmptyDirVolumeSource{},
+		},
+	}
+}
+
+func buildpackV2Task(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
+	var resources corev1.ResourceRequirements
+	if cfg.BuildPodResources != nil {
+		resources = *cfg.BuildPodResources
+	}
+
+	return &tektonv1beta1.TaskSpec{
+		Params: []tektonv1beta1.ParamSpec{
+			defaultStringParam("BUILD_NAME", "The name of the Build to push destination image for.", ""),
+			defaultStringParam("SOURCE_IMAGE", "The image that contains the app's source code.", ""),
+			defaultStringParam("SOURCE_PACKAGE_NAMESPACE", "The namespace of the source package.", ""),
+			defaultStringParam("SOURCE_PACKAGE_NAME", "The name of the source package.", ""),
+			stringParam("BUILDPACKS", "Ordered list of comma separated builtpacks to attempt."),
+			stringParam("RUN_IMAGE", "The run image apps will use as the base for IMAGE (output)."),
+			stringParam("BUILDER_IMAGE", "The image on which builds will run."),
+			defaultStringParam("SKIP_DETECT", "Skip the detect phase", "false"),
+		},
+		Resources: imageOutput(),
+		Steps: []tektonv1beta1.Step{
+			{
+				Name:    "source-extraction",
+				Image:   cfg.BuildHelpersImage,
+				Command: []string{"/ko-app/build-helpers"},
+				Args: []string{
+					"extract",
+					"--output-dir",
+					"/staging/app",
+					"--source-package-namespace",
+					"$(inputs.params.SOURCE_PACKAGE_NAMESPACE)",
+					"--source-package-name",
+					"$(inputs.params.SOURCE_PACKAGE_NAME)",
+					"--source-image",
+					"$(inputs.params.SOURCE_IMAGE)",
+				},
+				VolumeMounts: []corev1.VolumeMount{
+					{Name: "staging-tmp-dir", MountPath: "/staging"},
+				},
+			},
+			{
+				Name:    "copy-lifecycle",
+				Image:   cfg.BuildpacksV2LifecycleImage,
+				Command: []string{"/ko-app/installer"},
+				VolumeMounts: []corev1.VolumeMount{
+					{Name: "staging-tmp-dir", MountPath: "/staging"},
+				},
+			},
+			{
+				Name:  "run-lifecycle",
+				Image: "$(inputs.params.BUILDER_IMAGE)",
+				// NOTE: this command shouldn't be run as root, instead it should be run as
+				// vcap:vcap
+				Command: []string{"bash"},
+				// A /tmp directory is necessary because some buildpacks use /tmp
+				// which causes cross-device links to be made because Tekton mounts
+				// the /workspace directory.
+				// TODO: add fuseimage to buildpackv2Build buildspec, and pull from config.
+				Args: []string{
+					"-euc",
+					`
+cp -r /staging/app /tmp/app
+/workspace/builder \
+  -buildArtifactsCacheDir=/tmp/cache \
+  -buildDir=/tmp/app \
+  -buildpacksDir=/tmp/buildpacks \
+  -outputBuildArtifactsCache=/tmp/output-cache \
+  -outputDroplet=/tmp/droplet \
+  -outputMetadata=/tmp/result.json \
+  "-buildpackOrder=$(inputs.params.BUILDPACKS)" \
+  "-skipDetect=$(inputs.params.SKIP_DETECT)"
+cp -r /tmp/droplet /workspace/droplet
+
+cat << 'EOF' > /workspace/entrypoint.bash
+#!/usr/bin/env bash
+set -e
+
+if [[ "$@" == "" ]]; then
+  exec /lifecycle/launcher "/home/vcap/app" "" ""
+else
+  exec /lifecycle/launcher "/home/vcap/app" "$@" ""
+fi
+
+EOF
+chmod a+x /workspace/entrypoint.bash
+
+cat << 'EOF' > /workspace/Dockerfile
+FROM gcr.io/kf-releases/fusesidecar:v2.11.2 as builder
+
+FROM $(inputs.params.RUN_IMAGE)
+COPY launcher /lifecycle/launcher
+COPY entrypoint.bash /lifecycle/entrypoint.bash
+COPY --from=builder --chown=root:vcap /bin/mapfs /bin/mapfs
+
+# need this to allow users other than root to use fuse.
+RUN echo "user_allow_other" >> /etc/fuse.conf
+RUN chmod 644 /etc/fuse.conf
+
+RUN chmod 750 /bin/mapfs
+# so that whoever runs this has the privileges of the owner(root).
+RUN chmod u+s /bin/mapfs
+
+WORKDIR /home/vcap
+USER vcap:vcap
+COPY droplet droplet.tar.gz
+RUN tar -xzf droplet.tar.gz && rm droplet.tar.gz
+ENTRYPOINT ["/lifecycle/entrypoint.bash"]
+EOF
+`,
+				},
+				Resources: resources,
+				VolumeMounts: []corev1.VolumeMount{
+					{Name: "staging-tmp-dir", MountPath: "/staging"},
+				},
+			},
+
+			{
+				Name:       "build",
+				WorkingDir: "/workspace",
+				Command:    []string{"/kaniko/executor"},
+				Image:      cfg.BuildKanikoExecutorImage,
+				Args: []string{
+					"--dockerfile",
+					"/workspace/Dockerfile",
+					"--context",
+					"/workspace",
+					"--destination",
+					"$(outputs.resources.IMAGE.url)",
+					"--oci-layout-path",
+					"/tekton/home/image-outputs/IMAGE",
+					"--single-snapshot",
+					"--no-push",
+					"--tarPath",
+					"/workspace/image.tar",
+				},
+				Resources: resources,
+				VolumeMounts: []corev1.VolumeMount{
+					{Name: "cache-dir", MountPath: "/cache"},
+					{Name: "staging-tmp-dir", MountPath: "/workspace/staging"},
+				},
+			},
+			{
+				Name:       "publish",
+				WorkingDir: "/workspace",
+				Command:    []string{"/ko-app/build-helpers"},
+				Image:      cfg.BuildHelpersImage,
+				Args: []string{
+					"publish",
+					"/workspace/image.tar",
+					"$(inputs.params.SOURCE_PACKAGE_NAMESPACE)",
+					"$(inputs.params.BUILD_NAME)",
+				},
+			},
+		},
+		Volumes: []corev1.Volume{
+			emptyVolume("cache-dir"),
+			emptyVolume("staging-tmp-dir"),
+		},
+	}
+}
+
+func dockerfileBuildTask(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
+	var resources corev1.ResourceRequirements
+	if cfg.BuildPodResources != nil {
+		resources = *cfg.BuildPodResources
+	}
+
+	layers := []corev1.VolumeMount{
+		{Name: "layers-dir", MountPath: "/layers"},
+	}
+
+	return &tektonv1beta1.TaskSpec{
+		Params: []tektonv1beta1.ParamSpec{
+			defaultStringParam("BUILD_NAME", "The name of the Build to push destination image for.", ""),
+			defaultStringParam("SOURCE_IMAGE", "The image that contains the app's source code.", ""),
+			defaultStringParam("SOURCE_PACKAGE_NAMESPACE", "The namespace of the source package.", ""),
+			defaultStringParam("SOURCE_PACKAGE_NAME", "The name of the source package.", ""),
+			defaultStringParam("DOCKERFILE", "Path to the Dockerfile to build.", "./Dockerfile"),
+		},
+		Resources: imageOutput(),
+		Steps: []tektonv1beta1.Step{
+			{
+				Name:    "source-extraction",
+				Image:   cfg.BuildHelpersImage,
+				Command: []string{"/ko-app/build-helpers"},
+				Args: []string{
+					"extract",
+					"--output-dir",
+					"/layers/source",
+					"--source-package-namespace",
+					"$(inputs.params.SOURCE_PACKAGE_NAMESPACE)",
+					"--source-package-name",
+					"$(inputs.params.SOURCE_PACKAGE_NAME)",
+					"--source-image",
+					"$(inputs.params.SOURCE_IMAGE)",
+				},
+				VolumeMounts: layers,
+			},
+			{
+				Name:       "build",
+				WorkingDir: "/layers/source",
+				Image:      cfg.BuildKanikoExecutorImage,
+				Command:    []string{"/kaniko/executor"},
+				Args: []string{
+					"--dockerfile",
+					"$(inputs.params.DOCKERFILE)",
+					"--context",
+					"/layers/source/",
+					"--destination",
+					"$(outputs.resources.IMAGE.url)",
+					"--no-push",
+					"--tarPath",
+					"/workspace/image.tar",
+				},
+				Resources:    resources,
+				VolumeMounts: layers,
+			},
+			{
+				Name:       "publish",
+				WorkingDir: "/workspace",
+				Command:    []string{"/ko-app/build-helpers"},
+				Image:      cfg.BuildHelpersImage,
+				Args: []string{
+					"publish",
+					"/workspace/image.tar",
+					"$(inputs.params.SOURCE_PACKAGE_NAMESPACE)",
+					"$(inputs.params.BUILD_NAME)",
+				},
+				VolumeMounts: layers,
+			},
+		},
+		Volumes: []corev1.Volume{
+			emptyVolume("layers-dir"),
+		},
+	}
+}
+
+func buildpackV3Build(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, googleServiceAccount string) *tektonv1beta1.TaskSpec {
+	var resources corev1.ResourceRequirements
+	if cfg.BuildPodResources != nil {
+		resources = *cfg.BuildPodResources
+	}
+
+	cacheAndLayers := []corev1.VolumeMount{
+		{Name: "cache-dir", MountPath: "/cache"},
+		{Name: "layers-dir", MountPath: "/layers"},
+		{Name: "platform-dir", MountPath: "/platform"},
+	}
+
+	platformEnvSet := sets.NewString()
+
+	for _, v := range buildSpec.Env {
+		platformEnvSet.Insert(v.Name)
+	}
+
+	return &tektonv1beta1.TaskSpec{
+		Params: []tektonv1beta1.ParamSpec{
+			defaultStringParam("SOURCE_IMAGE", "The image that contains the app's source code.", ""),
+			defaultStringParam("SOURCE_PACKAGE_NAMESPACE", "The namespace of the source package.", ""),
+			defaultStringParam("SOURCE_PACKAGE_NAME", "The name of the source package.", ""),
+			defaultStringParam("BUILDPACK", "When set, skip the detect step and use the given buildpack.", ""),
+			stringParam("RUN_IMAGE", "The run image buildpacks will use as the base for IMAGE (output)."),
+			stringParam("BUILDER_IMAGE", "The image on which builds will run (must include v3 lifecycle and compatible buildpacks)."),
+		},
+		Resources: imageOutput(),
+		Steps: []tektonv1beta1.Step{
+			{
+				Name:    "source-extraction",
+				Image:   cfg.BuildHelpersImage,
+				Command: []string{"/ko-app/build-helpers"},
+				Args: []string{
+					"extract",
+					"--output-dir",
+					"/layers/source",
+					"--source-package-namespace",
+					"$(inputs.params.SOURCE_PACKAGE_NAMESPACE)",
+					"--source-package-name",
+					"$(inputs.params.SOURCE_PACKAGE_NAME)",
+					"--source-image",
+					"$(inputs.params.SOURCE_IMAGE)",
+				},
+				VolumeMounts: cacheAndLayers,
+			},
+			{
+				Name:    "info",
+				Image:   cfg.BuildInfoImage,
+				Command: []string{"/ko-app/setup-buildpack-build"},
+				Args: []string{
+					"--app",
+					"/layers/source",
+					"--image",
+					"$(outputs.resources.IMAGE.url)",
+					"--run-image",
+					"$(inputs.params.RUN_IMAGE)",
+					"--builder-image",
+					"$(inputs.params.BUILDER_IMAGE)",
+					"--cache",
+					"/cache",
+					"--platform",
+					"/platform",
+					"--buildpack",
+					"$(inputs.params.BUILDPACK)",
+					"--platform-env",
+					strings.Join(platformEnvSet.List(), ","),
+				},
+				VolumeMounts: cacheAndLayers,
+			},
+			{
+				Name:    "detect",
+				Image:   "$(inputs.params.BUILDER_IMAGE)",
+				Command: []string{"/bin/bash"},
+				Args: []string{
+					"-c",
+					`
+if [[ -z "$(inputs.params.BUILDPACK)" ]]; then
+  /lifecycle/detector \
+    -app=/layers/source \
+    -group=/layers/group.toml \
+    -plan=/layers/plan.toml \
+    -platform=/platform
+else
+  touch /layers/plan.toml
+  echo -e "[[buildpacks]]\nid = \"$(inputs.params.BUILDPACK)\"\nversion = \"latest\"\n" > /layers/group.toml
+fi
+						`,
+				},
+				VolumeMounts: cacheAndLayers,
+			},
+			{
+				Name:    "restore",
+				Image:   "$(inputs.params.BUILDER_IMAGE)",
+				Command: []string{"/lifecycle/restorer"},
+				Args: []string{
+					"-group=/layers/group.toml",
+					"-layers=/layers",
+					"-cache-dir=/cache",
+				},
+				VolumeMounts: cacheAndLayers,
+			},
+			{
+				Name:    "build",
+				Image:   "$(inputs.params.BUILDER_IMAGE)",
+				Command: []string{"/lifecycle/builder"},
+				Args: []string{
+					"-app=/layers/source",
+					"-layers=/layers",
+					"-group=/layers/group.toml",
+					"-plan=/layers/plan.toml",
+					"-platform=/platform",
+				},
+				VolumeMounts: cacheAndLayers,
+				Resources:    resources,
+			},
+			{
+				Name:    "download-token",
+				Image:   cfg.BuildTokenDownloadImage,
+				Command: []string{"bash"},
+				Args: []string{
+					// TODO(b/169582594): This should likely reference a
+					// container that was written in Go that is better
+					// tested.
+					"-c",
+					`
+cat << 'EOF' > /tmp/token.py
+from urllib.parse import urlparse
+import sys
+import json
+
+
+def extract_gcp_cr(u):
+    o = urlparse("http://" + u)
+    if o is None or o.hostname is None:
+        return None
+
+    # Exclude the subdomain.
+    domain = '.'.join(o.hostname.split('.')[-2:])
+    if domain == "gcr.io" or domain == "pkg.dev":
+        return o.hostname
+    else:
+        return None
+
+
+def write_token(cr, output_path, token):
+    if cr is None:
+        return
+
+    data = {cr: "Bearer " + token}
+
+    with open(output_path, 'w') as f:
+        json.dump(data, f)
+
+
+def main():
+    # Check to see that we have 3 args and none are empty.
+    if len(sys.argv) != 4 or not all(sys.argv[1:]):
+        print("Usage: {name} [IMAGE_PATH] [OUTPUT] [TOKEN]".format(name = sys.argv[0]))
+        sys.exit(1)
+    image_path = sys.argv[1]
+    output_path = sys.argv[2]
+    token = sys.argv[3]
+
+    write_token(extract_gcp_cr(image_path), output_path, token)
+
+
+if __name__ == '__main__':
+    main()
+EOF
+
+# This will retry a few times in case the gcloud command failed (i.e., WI token
+# hasn't had time to propagate).
+googleServiceAccount=$1
+if [ "$googleServiceAccount" = "" ]; then
+    exit 0
+fi
+
+# Retry for 2 minutes.
+for i in $$(seq 1 24); do
+    token="$$(gcloud auth application-default print-access-token)"
+    if python3 /tmp/token.py $(outputs.resources.IMAGE.url) /workspace/gcloud.token "${token}"; then
+        # Success
+        exit 0
+    else
+        # Failure
+        echo "failed to download token. Retrying..."
+        sleep 5
+    fi
+done
+
+# Never worked...
+exit 1
+`,
+					"_",
+					googleServiceAccount,
+				},
+				VolumeMounts: cacheAndLayers,
+			},
+			{
+				Name:    "export",
+				Image:   "$(inputs.params.BUILDER_IMAGE)",
+				Command: []string{"bash"},
+				Args: []string{
+					"-c",
+					`
+set -eu
+
+# CNB_REGISTRY_AUTH is used by /lifecycle/exporter
+googleServiceAccount=$1
+if [ "$googleServiceAccount" = "" ]; then
+  echo "Workload Identity is not used"
+else
+  export CNB_REGISTRY_AUTH=$(cat /workspace/gcloud.token)
+fi
+
+# TODO: If https://github.com/buildpacks/lifecycle/issues/423 is resolved, then
+# this can be replaced with /ko-app/build-helpers publish
+export_image () {
+  /lifecycle/exporter \
+    -app=/layers/source \
+    -layers=/layers \
+    -group=/layers/group.toml \
+    -image=$(inputs.params.RUN_IMAGE) \
+    $(outputs.resources.IMAGE.url)
+}
+
+# This will retry a few times (2 minutes) in case exporting failed (i.e., WI
+# token hasn't had time to propagate).
+for i in $$(seq 1 24); do
+	if export_image; then
+        # Success
+        exit 0
+    else
+        # Failure
+        echo "failed to export image. Retrying..."
+        sleep 5
+    fi
+done
+`,
+					"_",
+					googleServiceAccount,
+				},
+				VolumeMounts: cacheAndLayers,
+			},
+		},
+		Volumes: []corev1.Volume{
+			emptyVolume("cache-dir"),
+			emptyVolume("layers-dir"),
+			emptyVolume("platform-dir"),
+		},
+	}
+}

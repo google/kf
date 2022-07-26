@@ -17,13 +17,13 @@ package routes
 import (
 	"context"
 	"fmt"
-	"path"
 	"time"
 
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/apps"
-	"github.com/google/kf/pkg/kf/commands/config"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/apps"
+	"github.com/google/kf/v2/pkg/kf/commands/completion"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	utils "github.com/google/kf/v2/pkg/kf/internal/utils/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -33,65 +33,68 @@ func NewMapRouteCommand(
 	appsClient apps.Client,
 ) *cobra.Command {
 	var (
-		async    utils.AsyncFlags
-		hostname string
-		urlPath  string
+		async        utils.AsyncFlags
+		bindingFlags routeBindingFlags
+		weight       int32
 	)
 
 	cmd := &cobra.Command{
-		Use:   "map-route APP_NAME DOMAIN [--hostname HOSTNAME] [--path PATH]",
-		Short: "Map a route to an app",
-		Example: `
-  kf map-route myapp example.com --hostname myapp # myapp.example.com
-  kf map-route --namespace myspace myapp example.com --hostname myapp # myapp.example.com
-  kf map-route myapp example.com --hostname myapp --path /mypath # myapp.example.com/mypath
-  `,
-		Args: cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cmd.SilenceUsage = true
+		Use:   "map-route APP_NAME DOMAIN [--hostname HOSTNAME] [--path PATH] [--weight WEIGHT]",
+		Short: "Grant an App access to receive traffic from the Route.",
+		Long: `
+		Mapping an App to a Route will cause traffic to be forwarded to the App if
+		the App has instances that are running and healthy.
 
-			if err := utils.ValidateNamespace(p); err != nil {
+		If multiple Apps are mapped to the same Route they will split traffic
+		between them roughly evenly. Incoming network traffic is handled by multiple
+		gateways which update their routing tables with slight delays and route
+		independently. Because of this, traffic routing may not appear even but it
+		will converge over time.
+		`,
+		Example: `
+		kf map-route myapp example.com --hostname myapp # myapp.example.com
+		kf map-route myapp myapp.example.com # myapp.example.com
+		kf map-route myapp example.com --hostname myapp --weight 2 # myapp.example.com, myapp receives 2x traffic
+		kf map-route --space myspace myapp example.com --hostname myapp # myapp.example.com
+		kf map-route myapp example.com --hostname myapp --path /mypath # myapp.example.com/mypath
+		`,
+		Args:              cobra.ExactArgs(2),
+		ValidArgsFunction: completion.AppCompletionFn(p),
+		SilenceUsage:      true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := p.ValidateSpaceTargeted(); err != nil {
 				return err
 			}
 			appName, domain := args[0], args[1]
 
 			mutator := func(app *v1alpha1.App) error {
-				app.Spec.Routes = append(
-					app.Spec.Routes,
-					v1alpha1.RouteSpecFields{
-						Hostname: hostname,
-						Domain:   domain,
-						Path:     path.Join("/", urlPath),
-					},
-				)
+				toAdd := bindingFlags.RouteWeightBinding(domain)
+				toAdd.Weight = &weight
+
+				apps.NewFromApp(app).MergeRoute(toAdd)
 				return nil
 			}
 
-			if _, err := appsClient.Transform(p.Namespace, appName, mutator); err != nil {
+			if _, err := appsClient.Transform(cmd.Context(), p.Space, appName, mutator); err != nil {
 				return fmt.Errorf("failed to map Route: %s", err)
 			}
 
-			action := fmt.Sprintf("Mapping route to app %q in space %q", appName, p.Namespace)
+			action := fmt.Sprintf("Mapping route to app %q in space %q", appName, p.Space)
 			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
-				_, err := appsClient.WaitForConditionRoutesReadyTrue(context.Background(), p.Namespace, appName, 1*time.Second)
+				_, err := appsClient.WaitForConditionRoutesReadyTrue(context.Background(), p.Space, appName, 1*time.Second)
 				return err
 			})
 		},
 	}
 
 	async.Add(cmd)
+	bindingFlags.Add(cmd)
 
-	cmd.Flags().StringVar(
-		&hostname,
-		"hostname",
-		"",
-		"Hostname for the route",
-	)
-	cmd.Flags().StringVar(
-		&urlPath,
-		"path",
-		"",
-		"URL Path for the route",
+	cmd.Flags().Int32Var(
+		&weight,
+		"weight",
+		1,
+		"Weight for the Route.",
 	)
 
 	return cmd

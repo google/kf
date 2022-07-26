@@ -21,26 +21,67 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/kf/pkg/kf/commands/config"
-	servicescmd "github.com/google/kf/pkg/kf/commands/services"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	marketplacefake "github.com/google/kf/pkg/kf/marketplace/fake"
-	servicesfake "github.com/google/kf/pkg/kf/services/fake"
-	"github.com/google/kf/pkg/kf/testutil"
-	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	servicescmd "github.com/google/kf/v2/pkg/kf/commands/services"
+	"github.com/google/kf/v2/pkg/kf/marketplace"
+	marketplacefake "github.com/google/kf/v2/pkg/kf/marketplace/fake"
+	secretsfake "github.com/google/kf/v2/pkg/kf/secrets/fake"
+	serviceinstancesfake "github.com/google/kf/v2/pkg/kf/serviceinstances/fake"
+	"github.com/google/kf/v2/pkg/kf/testutil"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestNewCreateServiceCommand(t *testing.T) {
 	type fakes struct {
-		services    *servicesfake.FakeClient
+		services    *serviceinstancesfake.FakeClient
+		secrets     *secretsfake.FakeClient
 		marketplace *marketplacefake.FakeClientInterface
+	}
+
+	const mockNs = "test-ns"
+	const mockServiceUID = "00000000-0000-0000-0000-000000000000"
+	const mockPlanUID = "11111111-1111-1111-1111-111111111111"
+
+	mockNsBroker := &v1alpha1.ServiceBroker{}
+	mockNsBroker.Name = "namespaced-broker"
+	mockNsBroker.Namespace = mockNs
+	mockNsBroker.Status.Services = []v1alpha1.ServiceOffering{
+		{
+			DisplayName: "db-service",
+			UID:         mockServiceUID,
+			Tags:        []string{"ns", "db"},
+			Plans: []v1alpha1.ServicePlan{
+				{DisplayName: "free", UID: mockPlanUID},
+			},
+		},
+	}
+
+	mockClusterBroker := &v1alpha1.ClusterServiceBroker{}
+	mockClusterBroker.Name = "cluster-broker"
+	mockClusterBroker.Status.Services = []v1alpha1.ServiceOffering{
+		{
+			DisplayName: "db-service",
+			UID:         mockServiceUID,
+			Tags:        []string{"cluster", "db"},
+			Plans: []v1alpha1.ServicePlan{
+				{DisplayName: "free", UID: mockPlanUID},
+			},
+		},
+	}
+
+	mockMarketplace := &marketplace.KfMarketplace{
+		Brokers: []v1alpha1.CommonServiceBroker{
+			mockClusterBroker,
+			mockNsBroker,
+		},
 	}
 
 	cases := map[string]struct {
 		args      []string
 		namespace string
+		enableOSB bool
 		setup     func(*testing.T, fakes)
 		expectErr error
 	}{
@@ -50,122 +91,134 @@ func TestNewCreateServiceCommand(t *testing.T) {
 		},
 		"bad namespace": {
 			args:      []string{"db-service", "free", "mydb"},
-			expectErr: errors.New(utils.EmptyNamespaceError),
+			expectErr: errors.New(config.EmptySpaceError),
 		},
 		"bad path": {
-			namespace: "test-ns",
-			args:      []string{"db-service", "free", "mydb", "--config=/some/bad/path"},
+			namespace: mockNs,
+			args:      []string{"db-service", "free", "mydb", "-c=/some/bad/path"},
 			expectErr: errors.New("couldn't read file: open /some/bad/path: no such file or directory"),
 		},
 
 		// server errors
-		"cluster plan failure": {
-			namespace: "test-ns",
+		"marketplace failure": {
+			namespace: mockNs,
 			args:      []string{"db-service", "free", "mydb"},
+			enableOSB: true,
 			setup: func(t *testing.T, fakes fakes) {
-				fakes.marketplace.EXPECT().ListClusterPlans(gomock.Any()).Return(nil, errors.New("cluster-list-failure"))
+				fakes.marketplace.EXPECT().Marketplace(gomock.Any(), gomock.Any()).Return(nil, errors.New("marketplace-failure"))
 			},
-			expectErr: errors.New("cluster-list-failure"),
-		},
-		"namespace plan failure": {
-			namespace: "test-ns",
-			args:      []string{"db-service", "free", "mydb"},
-			setup: func(t *testing.T, fakes fakes) {
-				fakes.marketplace.EXPECT().ListClusterPlans(gomock.Any())
-				fakes.marketplace.EXPECT().ListNamespacedPlans(gomock.Any(), gomock.Any()).Return(nil, errors.New("ns-list-failure"))
-			},
-			expectErr: errors.New("ns-list-failure"),
+			expectErr: errors.New("marketplace-failure"),
 		},
 
 		// plans errors
 		"no plans all brokers": {
-			namespace: "test-ns",
+			namespace: mockNs,
 			args:      []string{"db-service", "free", "mydb"},
+			enableOSB: true,
 			setup: func(t *testing.T, fakes fakes) {
-				fakes.marketplace.EXPECT().ListClusterPlans(gomock.Any())
-				fakes.marketplace.EXPECT().ListNamespacedPlans(gomock.Any(), gomock.Any())
+				fakes.marketplace.EXPECT().Marketplace(gomock.Any(), gomock.Any()).Return(&marketplace.KfMarketplace{}, nil)
 			},
 			expectErr: errors.New("no plan free found for class db-service for all service-brokers"),
 		},
 		"no plans specific broker": {
-			namespace: "test-ns",
-			args:      []string{"db-service", "free", "mydb", "-b", "testbroker"},
+			namespace: mockNs,
+			args:      []string{"db-service", "badplan", "mydb", "-b", mockNsBroker.Name},
+			enableOSB: true,
 			setup: func(t *testing.T, fakes fakes) {
-				fakes.marketplace.EXPECT().ListClusterPlans(gomock.Any())
-				fakes.marketplace.EXPECT().ListNamespacedPlans(gomock.Any(), gomock.Any())
+				fakes.marketplace.EXPECT().Marketplace(gomock.Any(), gomock.Any()).Return(&marketplace.KfMarketplace{}, nil)
 			},
-			expectErr: errors.New("no plan free found for class db-service for the service-broker testbroker"),
+			expectErr: errors.New("no plan badplan found for class db-service for the service-broker namespaced-broker"),
 		},
 		"multiple plan matches": {
-			namespace: "test-ns",
-			args:      []string{"db-service", "free", "mydb", "-b", "testbroker"},
+			namespace: mockNs,
+			args:      []string{"db-service", "free", "mydb"},
+			enableOSB: true,
 			setup: func(t *testing.T, fakes fakes) {
-				fakes.marketplace.EXPECT().ListClusterPlans(gomock.Any()).Return([]servicecatalogv1beta1.ClusterServicePlan{{}}, nil)
-				fakes.marketplace.EXPECT().ListNamespacedPlans(gomock.Any(), gomock.Any()).Return([]servicecatalogv1beta1.ServicePlan{{}}, nil)
+				fakes.marketplace.EXPECT().Marketplace(gomock.Any(), gomock.Any()).Return(mockMarketplace, nil)
 			},
 			expectErr: errors.New("plans matched from multiple brokers, specify a broker with --broker"),
 		},
 
 		// good results
 		"cluster": {
-			namespace: "test-ns",
-			args:      []string{"db-service", "free", "mydb", "-b", "testbroker"},
+			namespace: mockNs,
+			args:      []string{"db-service", "free", "mydb", "-b", mockClusterBroker.Name, "--timeout", "600s"},
+			enableOSB: true,
 			setup: func(t *testing.T, fakes fakes) {
-				fakes.marketplace.EXPECT().ListClusterPlans(gomock.Any()).Return([]servicecatalogv1beta1.ClusterServicePlan{{}}, nil)
-				fakes.marketplace.EXPECT().ListNamespacedPlans(gomock.Any(), gomock.Any())
+				fakes.marketplace.EXPECT().Marketplace(gomock.Any(), gomock.Any()).Return(mockMarketplace, nil)
 
-				fakes.services.EXPECT().Create("test-ns", &servicecatalogv1beta1.ServiceInstance{
+				fakes.services.EXPECT().Create(gomock.Any(), mockNs, &v1alpha1.ServiceInstance{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "mydb",
-						Namespace: "test-ns",
+						Namespace: mockNs,
 					},
-					Spec: servicecatalogv1beta1.ServiceInstanceSpec{
-						PlanReference: servicecatalogv1beta1.PlanReference{
-							ClusterServicePlanExternalName:  "free",
-							ClusterServiceClassExternalName: "db-service",
+					Spec: v1alpha1.ServiceInstanceSpec{
+						ServiceType: v1alpha1.ServiceType{
+							OSB: &v1alpha1.OSBInstance{
+								BrokerName:              mockClusterBroker.Name,
+								ClassName:               "db-service",
+								ClassUID:                mockServiceUID,
+								PlanName:                "free",
+								PlanUID:                 mockPlanUID,
+								Namespaced:              false,
+								ProgressDeadlineSeconds: 600,
+							},
 						},
-						Parameters: &runtime.RawExtension{
-							Raw: json.RawMessage(`{}`),
+						ParametersFrom: corev1.LocalObjectReference{
+							Name: v1alpha1.GenerateName("serviceinstance", "mydb", "params"),
 						},
+						Tags: []string{"cluster", "db"},
 					},
 				})
 
-				fakes.services.EXPECT().WaitForProvisionSuccess(gomock.Any(), "test-ns", "mydb", gomock.Any())
+				fakes.secrets.EXPECT().CreateParamsSecret(gomock.Any(), gomock.Any(), gomock.Any(), json.RawMessage("{}"))
+				fakes.services.EXPECT().WaitForConditionReadyTrue(gomock.Any(), mockNs, "mydb", gomock.Any())
 			},
 		},
 		"namespaced": {
 			namespace: "test-ns",
-			args:      []string{"db-service", "free", "mydb", "-b", "testbroker"},
+			args:      []string{"db-service", "free", "mydb", "-b", mockNsBroker.Name},
+			enableOSB: true,
 			setup: func(t *testing.T, fakes fakes) {
-				fakes.marketplace.EXPECT().ListClusterPlans(gomock.Any())
-				fakes.marketplace.EXPECT().ListNamespacedPlans(gomock.Any(), gomock.Any()).Return([]servicecatalogv1beta1.ServicePlan{{}}, nil)
+				fakes.marketplace.EXPECT().Marketplace(gomock.Any(), gomock.Any()).Return(mockMarketplace, nil)
 
-				fakes.services.EXPECT().Create("test-ns", &servicecatalogv1beta1.ServiceInstance{
+				secretName := v1alpha1.GenerateName("serviceinstance", "mydb", "params")
+				fakes.services.EXPECT().Create(gomock.Any(), mockNs, &v1alpha1.ServiceInstance{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "mydb",
-						Namespace: "test-ns",
+						Namespace: mockNs,
 					},
-					Spec: servicecatalogv1beta1.ServiceInstanceSpec{
-						PlanReference: servicecatalogv1beta1.PlanReference{
-							ServicePlanExternalName:  "free",
-							ServiceClassExternalName: "db-service",
+					Spec: v1alpha1.ServiceInstanceSpec{
+						ServiceType: v1alpha1.ServiceType{
+							OSB: &v1alpha1.OSBInstance{
+								BrokerName:              mockNsBroker.Name,
+								ClassName:               "db-service",
+								ClassUID:                mockServiceUID,
+								PlanName:                "free",
+								PlanUID:                 mockPlanUID,
+								Namespaced:              true,
+								ProgressDeadlineSeconds: 1800,
+							},
 						},
-						Parameters: &runtime.RawExtension{
-							Raw: json.RawMessage(`{}`),
+						ParametersFrom: corev1.LocalObjectReference{
+							Name: secretName,
 						},
+						Tags: []string{"db", "ns"},
 					},
 				})
 
-				fakes.services.EXPECT().WaitForProvisionSuccess(gomock.Any(), "test-ns", "mydb", gomock.Any())
+				fakes.secrets.EXPECT().CreateParamsSecret(gomock.Any(), gomock.Any(), secretName, json.RawMessage("{}"))
+				fakes.services.EXPECT().WaitForConditionReadyTrue(gomock.Any(), mockNs, "mydb", gomock.Any())
 			},
 		},
 		"async": {
 			namespace: "test-ns",
-			args:      []string{"db-service", "free", "mydb", "--async"},
+			args:      []string{"db-service", "free", "mydb", "--async", "--broker", mockNsBroker.Name},
+			enableOSB: true,
 			setup: func(t *testing.T, fakes fakes) {
-				fakes.marketplace.EXPECT().ListClusterPlans(gomock.Any())
-				fakes.marketplace.EXPECT().ListNamespacedPlans(gomock.Any(), gomock.Any()).Return([]servicecatalogv1beta1.ServicePlan{{}}, nil)
-				fakes.services.EXPECT().Create(gomock.Any(), gomock.Any())
+				fakes.marketplace.EXPECT().Marketplace(gomock.Any(), gomock.Any()).Return(mockMarketplace, nil)
+				fakes.services.EXPECT().Create(gomock.Any(), gomock.Any(), gomock.Any())
+				fakes.secrets.EXPECT().CreateParamsSecret(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 				// expect WaitForConditionReadyTrue not to be called
 			},
 		},
@@ -174,23 +227,25 @@ func TestNewCreateServiceCommand(t *testing.T) {
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
 
-			sClient := servicesfake.NewFakeClient(ctrl)
+			sClient := serviceinstancesfake.NewFakeClient(ctrl)
 			mClient := marketplacefake.NewFakeClientInterface(ctrl)
+			secretClient := secretsfake.NewFakeClient(ctrl)
+
 			if tc.setup != nil {
 				tc.setup(t, fakes{
 					services:    sClient,
 					marketplace: mClient,
+					secrets:     secretClient,
 				})
 			}
 
 			buf := new(bytes.Buffer)
 			p := &config.KfParams{
-				Namespace: tc.namespace,
+				Space: tc.namespace,
 			}
 
-			cmd := servicescmd.NewCreateServiceCommand(p, sClient, mClient)
+			cmd := servicescmd.NewCreateServiceCommand(p, sClient, secretClient, mClient)
 			cmd.SetOutput(buf)
 			cmd.SetArgs(tc.args)
 			_, actualErr := cmd.ExecuteC()

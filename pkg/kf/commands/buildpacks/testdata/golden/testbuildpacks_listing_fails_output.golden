@@ -1,0 +1,4 @@
+Buildpacks for V2 Stacks:
+  Name  Position  URL
+V3 Stack: custom-stack:
+  error fetching stacks for image my-image: some-error

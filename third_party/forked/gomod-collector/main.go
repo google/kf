@@ -51,6 +51,14 @@ func main() {
 		log.Fatalf("Error identifying licenses for transitive dependencies: %v", err)
 	}
 
+	path := "third_party"
+	scanCollection, err := ScanForMetadataLicenses(path)
+	if err != nil {
+		log.Fatalf("Error identifying licenses by METADATA in path %s: %v", path, err)
+	}
+
+	collection = append(collection, scanCollection...)
+
 	if *check {
 		classifier, err := licenseclassifier.NewWithForbiddenLicenses(MatchThreshold)
 		if err != nil {

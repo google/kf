@@ -1,0 +1,17 @@
+name: "buildpackapplifecycle"
+description:
+  "A fork of buildpackapplifecycle. See b/200837342 for more information."
+
+third_party: {
+  type: PACKAGE
+  url {
+    type: GIT
+    value: "https://github.com/cloudfoundry/buildpackapplifecycle/"
+  }
+  version: "e6b576c815a1759edba5747b2da8c460c6e679f3"
+  last_upgrade_date {
+    year: 2021
+    month: 09
+    day: 22
+  }
+}

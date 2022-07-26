@@ -15,14 +15,13 @@
 package builds
 
 import (
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/internal/genericcli"
-	"github.com/google/kf/pkg/kf/sources"
+	"github.com/google/kf/v2/pkg/kf/builds"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/internal/genericcli"
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/dynamic"
 )
 
 // NewGetBuildCommand allows users to get builds.
-func NewGetBuildCommand(p *config.KfParams, client dynamic.Interface) *cobra.Command {
-	return genericcli.NewDescribeCommand(sources.NewResourceInfo(), p, client)
+func NewGetBuildCommand(p *config.KfParams) *cobra.Command {
+	return genericcli.NewDescribeCommand(builds.NewResourceInfo(), p)
 }

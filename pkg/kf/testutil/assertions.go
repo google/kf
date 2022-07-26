@@ -15,13 +15,17 @@
 package testutil
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
+	"testing"
+	"time"
 
 	gomock "github.com/golang/mock/gomock"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"knative.dev/pkg/kmp"
 )
 
@@ -48,7 +52,16 @@ func AssertTrue(t Failable, fieldName string, predicate bool) {
 	t.Helper()
 
 	if !predicate {
-		t.Fatalf("expected %s to be true, actual: %t", t.Name(), fieldName, predicate)
+		t.Fatalf("%s: expected %s to be true, actual: %t", t.Name(), fieldName, predicate)
+	}
+}
+
+// AssertFalse causes a test to fail if the asserted statement is true.
+func AssertFalse(t Failable, fieldName string, predicate bool) {
+	t.Helper()
+
+	if predicate {
+		t.Fatalf("%s: expected %s to be false, actual: %t", t.Name(), fieldName, predicate)
 	}
 }
 
@@ -178,9 +191,47 @@ func AssertJSONEqual(t Failable, expected, actual string) {
 	t.Helper()
 	var em, am interface{}
 	AssertNil(t, "expected JSON", json.Unmarshal([]byte(expected), &em))
-	AssertNil(t, "actual JSON", json.Unmarshal([]byte(expected), &am))
+	AssertNil(t, "actual JSON", json.Unmarshal([]byte(actual), &am))
 
 	if !reflect.DeepEqual(em, am) {
 		t.Fatalf("%s: expected %q to equal %q", t.Name(), actual, expected)
 	}
+}
+
+// AssertRetrySucceeds asserts that a Retry call succeeds at least once.
+func AssertRetrySucceeds(ctx context.Context, t Failable, times int, delay time.Duration, callback func() error) {
+	t.Helper()
+
+	err := Retry(ctx, times, delay, callback)
+	AssertNil(t, "Retry error", err)
+}
+
+// Retry retries the callback for as long as the context does not have an
+// error up to `times` times. If `times` is < 0, then it will try until the
+// context has an error. The last error is returned.
+func Retry(ctx context.Context, times int, delay time.Duration, callback func() error) error {
+	// Retries n-1 times and ignores failures. Only return early on success.
+	for i := 1; (i < times || times < 0) && ctx.Err() == nil; i++ {
+		if err := callback(); err == nil {
+			return nil
+		}
+
+		time.Sleep(delay)
+	}
+
+	// The last error (if any) is the one to keep.
+	return callback()
+}
+
+// AssertUnstructuredEqual asserts that the actual value is equal to the value
+// at the given path in the Unstructured object.
+func AssertUnstructuredEqual(t *testing.T, field string, expected interface{}, u *unstructured.Unstructured) {
+	t.Helper()
+
+	actual, _, err := unstructured.NestedFieldNoCopy(
+		u.Object,
+		strings.Split(field, ".")...,
+	)
+	AssertErrorsEqual(t, nil, err)
+	AssertEqual(t, field, expected, actual)
 }

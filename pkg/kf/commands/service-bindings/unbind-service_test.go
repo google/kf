@@ -15,55 +15,145 @@
 package servicebindings_test
 
 import (
+	"bytes"
+	"context"
 	"errors"
 	"testing"
 
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-
 	"github.com/golang/mock/gomock"
-	"github.com/google/kf/pkg/kf/apps/fake"
-	servicebindingscmd "github.com/google/kf/pkg/kf/commands/service-bindings"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	servicebindingscmd "github.com/google/kf/v2/pkg/kf/commands/service-bindings"
+	"github.com/google/kf/v2/pkg/kf/serviceinstancebindings"
+	serviceinstancebindingsfake "github.com/google/kf/v2/pkg/kf/serviceinstancebindings/fake"
+	"github.com/google/kf/v2/pkg/kf/testutil"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func runUnbindTest(t *testing.T, tc bindingTest) {
+	ctrl := gomock.NewController(t)
+
+	sbClient := serviceinstancebindingsfake.NewFakeClient(ctrl)
+
+	if tc.Setup != nil {
+		tc.Setup(t, fakes{
+			servicebindings: sbClient,
+		})
+	}
+
+	buf := new(bytes.Buffer)
+	p := &config.KfParams{
+		Space: tc.Space,
+	}
+
+	cmd := servicebindingscmd.NewUnbindServiceCommand(p, sbClient)
+	cmd.SetOutput(buf)
+	cmd.SetArgs(tc.Args)
+	_, actualErr := cmd.ExecuteC()
+	if tc.ExpectedErr != nil || actualErr != nil {
+		testutil.AssertErrorsEqual(t, tc.ExpectedErr, actualErr)
+		return
+	}
+
+	testutil.AssertContainsAll(t, buf.String(), tc.ExpectedStrings)
+}
+
 func TestNewUnbindServiceCommand(t *testing.T) {
-	cases := map[string]appsTest{
+	cases := map[string]bindingTest{
 		"wrong number of args": {
 			Args:        []string{},
 			ExpectedErr: errors.New("accepts 2 arg(s), received 0"),
 		},
 		"command params get passed correctly": {
-			Args:      []string{"APP_NAME", "SERVICE_INSTANCE"},
-			Namespace: "custom-ns",
-			Setup: func(t *testing.T, f *fake.FakeClient) {
-				f.EXPECT().UnbindService("custom-ns", "APP_NAME", "SERVICE_INSTANCE")
-
-				f.EXPECT().WaitForConditionServiceBindingsReadyTrue(gomock.Any(), "custom-ns", "APP_NAME", gomock.Any())
+			Args:  []string{"APP_NAME", "SERVICE_INSTANCE"},
+			Space: "custom-ns",
+			Setup: func(t *testing.T, fakes fakes) {
+				bindingName := v1alpha1.MakeServiceBindingName("APP_NAME", "SERVICE_INSTANCE")
+				binding := &v1alpha1.ServiceInstanceBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      bindingName,
+						Namespace: "custom-ns",
+					},
+					Spec: v1alpha1.ServiceInstanceBindingSpec{
+						BindingType: v1alpha1.BindingType{
+							App: &v1alpha1.AppRef{
+								Name: "APP_NAME",
+							},
+						},
+						InstanceRef: v1.LocalObjectReference{
+							Name: "SERVICE_INSTANCE",
+						},
+					},
+					Status: v1alpha1.ServiceInstanceBindingStatus{
+						OSBStatus: v1alpha1.BindingOSBStatus{
+							UnbindFailed: &v1alpha1.OSBState{},
+						},
+					},
+				}
+				fakes.servicebindings.EXPECT().
+					Transform(gomock.Any(), "custom-ns", bindingName, gomock.Any()).
+					Do(func(_ context.Context, _, _ string, m serviceinstancebindings.Mutator) {
+						testutil.AssertNil(t, "mutator error", m(binding))
+						testutil.AssertTrue(t, "binding.spec.UnbindRequests", binding.Spec.UnbindRequests == 1)
+					})
+				fakes.servicebindings.EXPECT().Delete(gomock.Any(), "custom-ns", bindingName)
+				fakes.servicebindings.EXPECT().WaitForDeletion(gomock.Any(), "custom-ns", bindingName, gomock.Any())
 			},
 		},
 		"empty namespace": {
 			Args:        []string{"APP_NAME", "SERVICE_INSTANCE"},
-			ExpectedErr: errors.New(utils.EmptyNamespaceError),
+			ExpectedErr: errors.New(config.EmptySpaceError),
 		},
 		"bad server call": {
-			Args:      []string{"APP_NAME", "SERVICE_INSTANCE"},
-			Namespace: "custom-ns",
-			Setup: func(t *testing.T, f *fake.FakeClient) {
-				f.EXPECT().UnbindService(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, errors.New("api-error"))
+			Args:  []string{"APP_NAME", "SERVICE_INSTANCE"},
+			Space: "custom-ns",
+			Setup: func(t *testing.T, fakes fakes) {
+				fakes.servicebindings.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
+				fakes.servicebindings.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("api-error"))
 			},
 			ExpectedErr: errors.New("api-error"),
 		},
 		"async": {
-			Args:      []string{"--async", "APP_NAME", "SERVICE_INSTANCE"},
-			Namespace: "default",
-			Setup: func(t *testing.T, f *fake.FakeClient) {
-				f.EXPECT().UnbindService(gomock.Any(), gomock.Any(), gomock.Any())
+			Args:  []string{"--async", "APP_NAME", "SERVICE_INSTANCE"},
+			Space: "custom-ns",
+			Setup: func(t *testing.T, fakes fakes) {
+				bindingName := v1alpha1.MakeServiceBindingName("APP_NAME", "SERVICE_INSTANCE")
+				binding := &v1alpha1.ServiceInstanceBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      bindingName,
+						Namespace: "custom-ns",
+					},
+					Spec: v1alpha1.ServiceInstanceBindingSpec{
+						BindingType: v1alpha1.BindingType{
+							App: &v1alpha1.AppRef{
+								Name: "APP_NAME",
+							},
+						},
+						InstanceRef: v1.LocalObjectReference{
+							Name: "SERVICE_INSTANCE",
+						},
+					},
+					Status: v1alpha1.ServiceInstanceBindingStatus{
+						OSBStatus: v1alpha1.BindingOSBStatus{
+							UnbindFailed: &v1alpha1.OSBState{},
+						},
+					},
+				}
+				fakes.servicebindings.EXPECT().
+					Transform(gomock.Any(), "custom-ns", bindingName, gomock.Any()).
+					Do(func(_ context.Context, _, _ string, m serviceinstancebindings.Mutator) {
+						testutil.AssertNil(t, "mutator error", m(binding))
+						testutil.AssertTrue(t, "binding.spec.UnbindRequests", binding.Spec.UnbindRequests == 1)
+					})
+				fakes.servicebindings.EXPECT().Delete(gomock.Any(), gomock.Any(), gomock.Any())
 			},
 		},
 	}
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			runAppsTest(t, tc, servicebindingscmd.NewUnbindServiceCommand)
+			runUnbindTest(t, tc)
 		})
 	}
 }

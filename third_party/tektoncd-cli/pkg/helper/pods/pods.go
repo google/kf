@@ -15,11 +15,12 @@
 package pods
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"time"
 
-	"github.com/google/kf/third_party/tektoncd-cli/pkg/helper/pods/stream"
+	"github.com/google/kf/v2/third_party/tektoncd-cli/pkg/helper/pods/stream"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,8 +42,8 @@ func NewStream(pods typedv1.PodInterface, name string, opts *corev1.PodLogOption
 }
 
 //Stream Creates a stream object which allows reading the logs
-func (s *Stream) Stream() (io.ReadCloser, error) {
-	return s.pods.GetLogs(s.name, s.opts).Stream()
+func (s *Stream) Stream(ctx context.Context) (io.ReadCloser, error) {
+	return s.pods.GetLogs(s.name, s.opts).Stream(ctx)
 }
 
 type Pod struct {
@@ -69,9 +70,9 @@ func NewWithDefaults(name, ns string, client k8s.Interface) *Pod {
 }
 
 //Wait wait for the pod to get up and running
-func (p *Pod) Wait() (*corev1.Pod, error) {
+func (p *Pod) Wait(ctx context.Context) (*corev1.Pod, error) {
 	// ensure pod exists before we actually check for it
-	if _, err := p.Get(); err != nil {
+	if _, err := p.Get(ctx); err != nil {
 		return nil, err
 	}
 
@@ -113,7 +114,6 @@ func (p *Pod) watcher(stopC <-chan struct{}, eventC chan<- interface{}) {
 
 func podOpts(name string) func(opts *v1.ListOptions) {
 	return func(opts *v1.ListOptions) {
-		opts.IncludeUninitialized = true
 		opts.FieldSelector = fields.OneTermEqualSelector("metadata.name", name).String()
 	}
 }
@@ -147,8 +147,8 @@ func checkPodStatus(obj interface{}) (*corev1.Pod, error) {
 }
 
 //Get gets the pod
-func (p *Pod) Get() (*corev1.Pod, error) {
-	return p.Kc.CoreV1().Pods(p.Ns).Get(p.Name, metav1.GetOptions{})
+func (p *Pod) Get(ctx context.Context) (*corev1.Pod, error) {
+	return p.Kc.CoreV1().Pods(p.Ns).Get(ctx, p.Name, metav1.GetOptions{})
 }
 
 //Container returns the an instance of Container
@@ -162,11 +162,11 @@ func (p *Pod) Container(c string) *Container {
 
 //Stream returns the stream object for given container and mode
 // in order to fetch the logs
-func (p *Pod) Stream(opt *corev1.PodLogOptions) (io.ReadCloser, error) {
+func (p *Pod) Stream(ctx context.Context, opt *corev1.PodLogOptions) (io.ReadCloser, error) {
 	pods := p.Kc.CoreV1().Pods(p.Ns)
 	if pods == nil {
 		return nil, fmt.Errorf("error getting pods")
 	}
 
-	return p.Streamer(pods, p.Name, opt).Stream()
+	return p.Streamer(pods, p.Name, opt).Stream(ctx)
 }

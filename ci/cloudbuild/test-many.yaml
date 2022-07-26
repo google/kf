@@ -1,0 +1,47 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+# # Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This can be ran by doing the following:
+# gcloud builds submit . \
+# --config=ci/cloudbuild/test-many.yaml \
+# --ignore-file=ci/cloudbuild/test.ignore \
+# --substitutions='_FULL_RELEASE_BUCKET=<FULL-RELEASE-BUCKET>'
+#
+# NOTE: Be sure to replace <FULL-RELEASE-BUCKET>. A <FULL-RELEASE-BUCKET> is
+# the same used when creating a release. It is the gs:// URI that contains
+# cloud-build/fresh-cluster.yaml and cloud-build/delete-cluster.yaml.
+
+timeout: 7200s
+substitutions:
+  # See ci/cloudbuild/test.yaml for description.
+  _FULL_RELEASE_BUCKET: ''
+
+  # _SCENARIOS_NODE_COUNTS is a space delimited group of node counts to run
+  # the tests against. The length has to match _SCENARIOS_MACHINE_TYPES.
+  _SCENARIOS_NODE_COUNTS: '3 4 5'
+
+  # _SCENARIOS_MACHINE_TYPES is a space delimited group of Google Compute
+  # Engine type to run the tests against. The length has to match
+  # _SCENARIOS_NODE_COUNTS.
+  _SCENARIOS_MACHINE_TYPES: 'n1-standard-8 n1-standard-4 n1-standard-2'
+
+steps:
+- id: run test scenarios
+  timeout: 7200s
+  entrypoint: python3
+  name: gcr.io/google.com/cloudsdktool/cloud-sdk:alpine
+  args:
+  - ci/cloudbuild/scripts/run_tests.py
+  - ${_FULL_RELEASE_BUCKET}
+  - ${_SCENARIOS_NODE_COUNTS}
+  - ${_SCENARIOS_MACHINE_TYPES}

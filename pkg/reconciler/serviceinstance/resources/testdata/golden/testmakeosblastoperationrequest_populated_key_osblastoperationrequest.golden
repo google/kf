@@ -1,0 +1,24 @@
+# Test:	TestMakeOSBLastOperationRequest/populated_key
+# operationKey: some-long-running-operation-key
+# serviceInstance:
+#   metadata:
+#     creationTimestamp: null
+#     name: mydb
+#     namespace: test-ns
+#     uid: 00000000-0000-0000-0000-000008675309
+#   spec:
+#     osb:
+#       classUID: class-uid
+#       planUID: plan-uid
+#     parametersFrom: {}
+#     tags: null
+#   status:
+#     osbStatus: {}
+#     tags: null
+
+{
+    "instance_id": "00000000-0000-0000-0000-000008675309",
+    "service_id": "class-uid",
+    "plan_id": "plan-uid",
+    "operation": "some-long-running-operation-key"
+}

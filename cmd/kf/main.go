@@ -15,13 +15,23 @@
 package main
 
 import (
+	"math/rand"
 	"os"
+	"time"
 
-	"github.com/google/kf/pkg/kf/commands"
+	"github.com/fatih/color"
+	"github.com/google/kf/v2/pkg/kf/commands"
 )
 
 func main() {
-	if err := commands.NewKfCommand().Execute(); err != nil {
+	rand.Seed(time.Now().UnixNano())
+	cmd := commands.NewKfCommand()
+	if err := cmd.Execute(); err != nil {
+		// If there's an error, Cobra won't run the PersistentPostRun hook,
+		// but we need it to save progress and/or show tips about how to
+		// resolve the issue.
+		cmd.PersistentPostRun(cmd, nil)
+		color.New(color.FgRed, color.Bold).Println("FAIL")
 		os.Exit(1)
 	}
 }

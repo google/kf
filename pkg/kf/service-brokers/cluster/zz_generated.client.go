@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,8 +21,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"strings"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -30,13 +28,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"knative.dev/pkg/apis"
-	"knative.dev/pkg/kmp"
 )
 
 // User defined imports
 import (
-	cv1beta1 "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/typed/servicecatalog/v1beta1"
-	v1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	cv1alpha1 "github.com/google/kf/v2/pkg/client/kf/clientset/versioned/typed/kf/v1alpha1"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -56,19 +53,19 @@ func (*ResourceInfo) Namespaced() bool {
 }
 
 // GroupVersionResource gets the GVR struct for the resource.
-func (*ResourceInfo) GroupVersionResource() schema.GroupVersionResource {
+func (*ResourceInfo) GroupVersionResource(context.Context) schema.GroupVersionResource {
 	return schema.GroupVersionResource{
-		Group:    "servicecatalog.k8s.io",
-		Version:  "v1beta1",
+		Group:    "kf.dev",
+		Version:  "v1alpha1",
 		Resource: "clusterservicebrokers",
 	}
 }
 
 // GroupVersionKind gets the GVK struct for the resource.
-func (*ResourceInfo) GroupVersionKind() schema.GroupVersionKind {
+func (*ResourceInfo) GroupVersionKind(context.Context) schema.GroupVersionKind {
 	return schema.GroupVersionKind{
-		Group:   "servicecatalog.k8s.io",
-		Version: "v1beta1",
+		Group:   "kf.dev",
+		Version: "v1alpha1",
 		Kind:    "ClusterServiceBroker",
 	}
 }
@@ -79,71 +76,27 @@ func (*ResourceInfo) FriendlyName() string {
 }
 
 var (
-	ConditionReady = apis.ConditionType(v1beta1.ServiceBrokerConditionReady)
+	ConditionReady = apis.ConditionType(v1alpha1.CommonServiceBrokerConditionReady)
 )
 
-// Predicate is a boolean function for a v1beta1.ClusterServiceBroker.
-type Predicate func(*v1beta1.ClusterServiceBroker) bool
+// Predicate is a boolean function for a v1alpha1.ClusterServiceBroker.
+type Predicate func(*v1alpha1.ClusterServiceBroker) bool
 
-// Mutator is a function that changes v1beta1.ClusterServiceBroker.
-type Mutator func(*v1beta1.ClusterServiceBroker) error
+// Mutator is a function that changes v1alpha1.ClusterServiceBroker.
+type Mutator func(*v1alpha1.ClusterServiceBroker) error
 
-// DiffWrapper wraps a mutator and prints out the diff between the original object
-// and the one it returns if there's no error.
-func DiffWrapper(w io.Writer, mutator Mutator) Mutator {
-	return func(mutable *v1beta1.ClusterServiceBroker) error {
-		before := mutable.DeepCopy()
-
-		if err := mutator(mutable); err != nil {
-			return err
-		}
-
-		FormatDiff(w, "old", "new", before, mutable)
-
-		return nil
-	}
-}
-
-// FormatDiff creates a diff between two v1beta1.ClusterServiceBrokers and writes it to the given
-// writer.
-func FormatDiff(w io.Writer, leftName, rightName string, left, right *v1beta1.ClusterServiceBroker) {
-	diff, err := kmp.SafeDiff(left, right)
-	switch {
-	case err != nil:
-		fmt.Fprintf(w, "couldn't format diff: %s\n", err.Error())
-
-	case diff == "":
-		fmt.Fprintln(w, "No changes")
-
-	default:
-		fmt.Fprintf(w, "ClusterServiceBroker Diff (-%s +%s):\n", leftName, rightName)
-		// go-cmp randomly chooses to prefix lines with non-breaking spaces or
-		// regular spaces to prevent people from using it as a real diff/patch
-		// tool. We normalize them so our outputs will be consistent.
-		fmt.Fprintln(w, strings.ReplaceAll(diff, " ", " "))
-	}
-}
-
-// List represents a collection of v1beta1.ClusterServiceBroker.
-type List []v1beta1.ClusterServiceBroker
-
-// Filter returns a new list items for which the predicates fails removed.
-func (list List) Filter(filter Predicate) (out List) {
-	for _, v := range list {
-		if filter(&v) {
-			out = append(out, v)
-		}
-	}
-
-	return
+// ObservedGenerationMatchesGeneration is a predicate that returns true if the
+// object's ObservedGeneration matches the genration of the object.
+func ObservedGenerationMatchesGeneration(obj *v1alpha1.ClusterServiceBroker) bool {
+	return obj.Generation == obj.Status.ObservedGeneration
 }
 
 // ExtractConditions converts the native condition types into an apis.Condition
 // array with the Type, Status, Reason, and Message fields intact.
-func ExtractConditions(obj *v1beta1.ClusterServiceBroker) (extracted []apis.Condition) {
+func ExtractConditions(obj *v1alpha1.ClusterServiceBroker) (extracted []apis.Condition) {
 	for _, cond := range obj.Status.Conditions {
 		// Only copy the following four fields to be compatible with
-		// recommended Kuberntes fields.
+		// recommended Kubernetes fields.
 		extracted = append(extracted, apis.Condition{
 			Type:    apis.ConditionType(cond.Type),
 			Status:  corev1.ConditionStatus(cond.Status),
@@ -159,82 +112,65 @@ func ExtractConditions(obj *v1beta1.ClusterServiceBroker) (extracted []apis.Cond
 // Client
 ////////////////////////////////////////////////////////////////////////////////
 
-// Client is the interface for interacting with v1beta1.ClusterServiceBroker types as ClusterServiceBroker CF style objects.
+// Client is the interface for interacting with v1alpha1.ClusterServiceBroker types as ClusterServiceBroker CF style objects.
 type Client interface {
-	Create(obj *v1beta1.ClusterServiceBroker, opts ...CreateOption) (*v1beta1.ClusterServiceBroker, error)
-	Update(obj *v1beta1.ClusterServiceBroker, opts ...UpdateOption) (*v1beta1.ClusterServiceBroker, error)
-	Transform(name string, transformer Mutator) (*v1beta1.ClusterServiceBroker, error)
-	Get(name string, opts ...GetOption) (*v1beta1.ClusterServiceBroker, error)
-	Delete(name string, opts ...DeleteOption) error
-	List(opts ...ListOption) ([]v1beta1.ClusterServiceBroker, error)
-	Upsert(newObj *v1beta1.ClusterServiceBroker, merge Merger) (*v1beta1.ClusterServiceBroker, error)
-	WaitFor(ctx context.Context, name string, interval time.Duration, condition Predicate) (*v1beta1.ClusterServiceBroker, error)
-	WaitForE(ctx context.Context, name string, interval time.Duration, condition ConditionFuncE) (*v1beta1.ClusterServiceBroker, error)
+	Create(ctx context.Context, obj *v1alpha1.ClusterServiceBroker) (*v1alpha1.ClusterServiceBroker, error)
+	Transform(ctx context.Context, name string, transformer Mutator) (*v1alpha1.ClusterServiceBroker, error)
+	Get(ctx context.Context, name string) (*v1alpha1.ClusterServiceBroker, error)
+	Delete(ctx context.Context, name string) error
+	List(ctx context.Context) ([]v1alpha1.ClusterServiceBroker, error)
+	Upsert(ctx context.Context, newObj *v1alpha1.ClusterServiceBroker, merge Merger) (*v1alpha1.ClusterServiceBroker, error)
+	WaitFor(ctx context.Context, name string, interval time.Duration, condition Predicate) (*v1alpha1.ClusterServiceBroker, error)
 
 	// Utility functions
-	WaitForDeletion(ctx context.Context, name string, interval time.Duration) (*v1beta1.ClusterServiceBroker, error)
-	WaitForConditionReadyTrue(ctx context.Context, name string, interval time.Duration) (*v1beta1.ClusterServiceBroker, error)
+	WaitForDeletion(ctx context.Context, name string, interval time.Duration) (*v1alpha1.ClusterServiceBroker, error)
+	WaitForConditionReadyTrue(ctx context.Context, name string, interval time.Duration) (*v1alpha1.ClusterServiceBroker, error)
 
 	// ClientExtension can be used by the developer to extend the client.
 	ClientExtension
 }
 
 type coreClient struct {
-	kclient      cv1beta1.ClusterServiceBrokersGetter
-	upsertMutate Mutator
+	kclient cv1alpha1.ClusterServiceBrokersGetter
 }
 
-func (core *coreClient) preprocessUpsert(obj *v1beta1.ClusterServiceBroker) error {
-	if core.upsertMutate == nil {
-		return nil
-	}
-
-	return core.upsertMutate(obj)
-}
-
-// Create inserts the given v1beta1.ClusterServiceBroker into the cluster.
+// Create inserts the given v1alpha1.ClusterServiceBroker into the cluster.
 // The value to be inserted will be preprocessed and validated before being sent.
-func (core *coreClient) Create(obj *v1beta1.ClusterServiceBroker, opts ...CreateOption) (*v1beta1.ClusterServiceBroker, error) {
-	if err := core.preprocessUpsert(obj); err != nil {
-		return nil, err
-	}
-
-	return core.kclient.ClusterServiceBrokers().Create(obj)
-}
-
-// Update replaces the existing object in the cluster with the new one.
-// The value to be inserted will be preprocessed and validated before being sent.
-func (core *coreClient) Update(obj *v1beta1.ClusterServiceBroker, opts ...UpdateOption) (*v1beta1.ClusterServiceBroker, error) {
-	if err := core.preprocessUpsert(obj); err != nil {
-		return nil, err
-	}
-
-	return core.kclient.ClusterServiceBrokers().Update(obj)
+func (core *coreClient) Create(ctx context.Context, obj *v1alpha1.ClusterServiceBroker) (*v1alpha1.ClusterServiceBroker, error) {
+	return core.kclient.ClusterServiceBrokers().Create(ctx, obj, metav1.CreateOptions{})
 }
 
 // Transform performs a read/modify/write on the object with the given name
 // and returns the updated object. Transform manages the options for the Get and
-// Update calls.
-func (core *coreClient) Transform(name string, mutator Mutator) (*v1beta1.ClusterServiceBroker, error) {
-	obj, err := core.Get(name)
-	if err != nil {
-		return nil, err
-	}
+// Update calls. The transform will be retried as long as the resource is in
+// conflict.
+func (core *coreClient) Transform(ctx context.Context, name string, mutator Mutator) (*v1alpha1.ClusterServiceBroker, error) {
+	for {
+		obj, err := core.Get(ctx, name)
+		if err != nil {
+			return nil, err
+		}
 
-	if err := mutator(obj); err != nil {
-		return nil, err
-	}
+		if err := mutator(obj); err != nil {
+			return nil, err
+		}
 
-	return core.Update(obj)
+		result, err := core.kclient.ClusterServiceBrokers().Update(ctx, obj, metav1.UpdateOptions{})
+
+		if apierrors.IsConflict(err) {
+			continue
+		}
+		return result, err
+	}
 }
 
 // Get retrieves an existing object in the cluster with the given name.
 // The function will return an error if an object is retrieved from the cluster
 // but doesn't pass the membership test of this client.
-func (core *coreClient) Get(name string, opts ...GetOption) (*v1beta1.ClusterServiceBroker, error) {
-	res, err := core.kclient.ClusterServiceBrokers().Get(name, metav1.GetOptions{})
+func (core *coreClient) Get(ctx context.Context, name string) (*v1alpha1.ClusterServiceBroker, error) {
+	res, err := core.kclient.ClusterServiceBrokers().Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("couldn't get the ClusterServiceBroker with the name %q: %v", name, err)
+		return nil, err
 	}
 
 	return res, nil
@@ -242,99 +178,88 @@ func (core *coreClient) Get(name string, opts ...GetOption) (*v1beta1.ClusterSer
 
 // Delete removes an existing object in the cluster.
 // The deleted object is NOT tested for membership before deletion.
-func (core *coreClient) Delete(name string, opts ...DeleteOption) error {
-	cfg := DeleteOptionDefaults().Extend(opts).toConfig()
-
-	if err := core.kclient.ClusterServiceBrokers().Delete(name, cfg.ToDeleteOptions()); err != nil {
+// The object is only deleted once all of the objects it owns are deleted.
+func (core *coreClient) Delete(ctx context.Context, name string) error {
+	foreground := metav1.DeletePropagationForeground
+	if err := core.kclient.ClusterServiceBrokers().Delete(ctx, name, metav1.DeleteOptions{PropagationPolicy: &foreground}); err != nil {
 		return fmt.Errorf("couldn't delete the ClusterServiceBroker with the name %q: %v", name, err)
 	}
 
 	return nil
 }
 
-func (cfg deleteConfig) ToDeleteOptions() *metav1.DeleteOptions {
-	resp := metav1.DeleteOptions{}
-
-	if cfg.ForegroundDeletion {
-		propigationPolicy := metav1.DeletePropagationForeground
-		resp.PropagationPolicy = &propigationPolicy
-	}
-
-	return &resp
-}
-
 // List gets objects in the cluster and filters the results based on the
 // internal membership test.
-func (core *coreClient) List(opts ...ListOption) ([]v1beta1.ClusterServiceBroker, error) {
-	cfg := ListOptionDefaults().Extend(opts).toConfig()
-
-	res, err := core.kclient.ClusterServiceBrokers().List(cfg.ToListOptions())
+func (core *coreClient) List(ctx context.Context) ([]v1alpha1.ClusterServiceBroker, error) {
+	res, err := core.kclient.ClusterServiceBrokers().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("couldn't list ClusterServiceBrokers: %v", err)
 	}
 
-	if cfg.filter == nil {
-		return res.Items, nil
-	}
-
-	return List(res.Items).Filter(cfg.filter), nil
-}
-
-func (cfg listConfig) ToListOptions() (resp metav1.ListOptions) {
-	if cfg.fieldSelector != nil {
-		resp.FieldSelector = metav1.FormatLabelSelector(metav1.SetAsLabelSelector(cfg.fieldSelector))
-	}
-
-	return
+	return res.Items, nil
 }
 
 // Merger is a type to merge an existing value with a new one.
-type Merger func(newObj, oldObj *v1beta1.ClusterServiceBroker) *v1beta1.ClusterServiceBroker
+type Merger func(newObj, oldObj *v1alpha1.ClusterServiceBroker) *v1alpha1.ClusterServiceBroker
 
 // Upsert inserts the object into the cluster if it doesn't already exist, or else
 // calls the merge function to merge the existing and new then performs an Update.
-func (core *coreClient) Upsert(newObj *v1beta1.ClusterServiceBroker, merge Merger) (*v1beta1.ClusterServiceBroker, error) {
-	// NOTE: the field selector may be ignored by some Kubernetes resources
-	// so we double check down below.
-	existing, err := core.List(WithListFieldSelector(map[string]string{"metadata.name": newObj.Name}))
-	if err != nil {
-		return nil, err
-	}
+// If the update results in a conflict error, then it is retried with the new
+// object. Meaning, the merge function is invoked again.
+func (core *coreClient) Upsert(ctx context.Context, newObj *v1alpha1.ClusterServiceBroker, merge Merger) (*v1alpha1.ClusterServiceBroker, error) {
+	for ctx.Err() == nil {
+		// kclient must be used so the error code can be validated by apierrors
+		oldObj, err := core.kclient.ClusterServiceBrokers().Get(ctx, newObj.Name, metav1.GetOptions{})
 
-	for _, oldObj := range existing {
-		if oldObj.Name == newObj.Name {
-			return core.Update(merge(newObj, &oldObj))
+		switch {
+		case apierrors.IsNotFound(err):
+			return core.Create(ctx, newObj)
+		case err != nil:
+			return nil, err
 		}
+
+		updated, err := core.kclient.ClusterServiceBrokers().Update(ctx, merge(newObj, oldObj), metav1.UpdateOptions{})
+		switch {
+		case apierrors.IsConflict(err):
+			continue
+		case err != nil:
+			return nil, err
+		}
+
+		return updated, nil
 	}
 
-	return core.Create(newObj)
+	return nil, ctx.Err()
 }
 
-// WaitFor is a convenience wrapper for WaitForE that fails if the error
-// passed is non-nil. It allows the use of Predicates instead of ConditionFuncE.
-func (core *coreClient) WaitFor(ctx context.Context, name string, interval time.Duration, condition Predicate) (*v1beta1.ClusterServiceBroker, error) {
-	return core.WaitForE(ctx, name, interval, wrapPredicate(condition))
+// WaitFor polls for the given object every interval until the condition
+// function becomes done or the timeout expires. The first poll occurs
+// immediately after the function is invoked.
+//
+// The function polls infinitely if no timeout is supplied.
+func (core *coreClient) WaitFor(ctx context.Context, name string, interval time.Duration, condition Predicate) (*v1alpha1.ClusterServiceBroker, error) {
+	return core.waitForE(ctx, name, interval, wrapPredicate(condition))
 }
 
-// ConditionFuncE is a callback used by WaitForE. Done should be set to true
+// ConditionFuncE is a callback used by waitForE. Done should be set to true
 // once the condition succeeds and shouldn't be called anymore. The error
 // will be passed back to the user.
 //
 // This function MAY retrieve a nil instance and an apiErr. It's up to the
 // function to decide how to handle the apiErr.
-type ConditionFuncE func(instance *v1beta1.ClusterServiceBroker, apiErr error) (done bool, err error)
+type ConditionFuncE func(instance *v1alpha1.ClusterServiceBroker, apiErr error) (done bool, err error)
 
-// WaitForE polls for the given object every interval until the condition
+// waitForE polls for the given object every interval until the condition
 // function becomes done or the timeout expires. The first poll occurs
 // immediately after the function is invoked.
 //
 // The function polls infinitely if no timeout is supplied.
-func (core *coreClient) WaitForE(ctx context.Context, name string, interval time.Duration, condition ConditionFuncE) (instance *v1beta1.ClusterServiceBroker, err error) {
+func (core *coreClient) waitForE(ctx context.Context, name string, interval time.Duration, condition ConditionFuncE) (instance *v1alpha1.ClusterServiceBroker, err error) {
 	var done bool
 	tick := time.Tick(interval)
 
 	for {
-		instance, err = core.kclient.ClusterServiceBrokers().Get(name, metav1.GetOptions{})
+		instance, err = core.kclient.ClusterServiceBrokers().Get(ctx, name, metav1.GetOptions{})
 		if done, err = condition(instance, err); done {
 			return
 		}
@@ -350,7 +275,7 @@ func (core *coreClient) WaitForE(ctx context.Context, name string, interval time
 
 // ConditionDeleted is a ConditionFuncE that succeeds if the error returned by
 // the cluster was a not found error.
-func ConditionDeleted(_ *v1beta1.ClusterServiceBroker, apiErr error) (bool, error) {
+func ConditionDeleted(_ *v1alpha1.ClusterServiceBroker, apiErr error) (bool, error) {
 	if apiErr != nil {
 		if apierrors.IsNotFound(apiErr) {
 			apiErr = nil
@@ -363,25 +288,38 @@ func ConditionDeleted(_ *v1beta1.ClusterServiceBroker, apiErr error) (bool, erro
 }
 
 // wrapPredicate converts a predicate to a ConditionFuncE that fails if the
-// error is not nil
+// error is not nil or if the Status has a False condition.
 func wrapPredicate(condition Predicate) ConditionFuncE {
-	return func(obj *v1beta1.ClusterServiceBroker, err error) (bool, error) {
+	return func(obj *v1alpha1.ClusterServiceBroker, err error) (bool, error) {
 		if err != nil {
 			return true, err
+		}
+
+		if ObservedGenerationMatchesGeneration(obj) {
+			for _, cond := range ExtractConditions(obj) {
+				if cond.Status == corev1.ConditionFalse {
+					return true, fmt.Errorf("Reason: %q, Message: %q", cond.Reason, cond.Message)
+				}
+			}
 		}
 
 		return condition(obj), nil
 	}
 }
 
-// WaitForDeletion is a utility function that combines WaitForE with ConditionDeleted.
-func (core *coreClient) WaitForDeletion(ctx context.Context, name string, interval time.Duration) (instance *v1beta1.ClusterServiceBroker, err error) {
-	return core.WaitForE(ctx, name, interval, ConditionDeleted)
+// WaitForDeletion is a utility function that combines waitForE with ConditionDeleted.
+func (core *coreClient) WaitForDeletion(ctx context.Context, name string, interval time.Duration) (instance *v1alpha1.ClusterServiceBroker, err error) {
+	return core.waitForE(ctx, name, interval, ConditionDeleted)
 }
 
-func checkConditionTrue(obj *v1beta1.ClusterServiceBroker, err error, condition apis.ConditionType) (bool, error) {
+func checkConditionTrue(obj *v1alpha1.ClusterServiceBroker, err error, condition apis.ConditionType) (bool, error) {
 	if err != nil {
 		return true, err
+	}
+
+	// don't propagate old statuses
+	if !ObservedGenerationMatchesGeneration(obj) {
+		return false, nil
 	}
 
 	for _, cond := range ExtractConditions(obj) {
@@ -404,13 +342,13 @@ func checkConditionTrue(obj *v1beta1.ClusterServiceBroker, err error, condition 
 	return false, nil
 }
 
-// ConditionReadyTrue is a ConditionFuncE that waits for Condition{Ready v1beta1.ServiceBrokerConditionReady } to
+// ConditionReadyTrue is a ConditionFuncE that waits for Condition{Ready v1alpha1.CommonServiceBrokerConditionReady } to
 // become true and fails with an error if the condition becomes false.
-func ConditionReadyTrue(obj *v1beta1.ClusterServiceBroker, err error) (bool, error) {
+func ConditionReadyTrue(obj *v1alpha1.ClusterServiceBroker, err error) (bool, error) {
 	return checkConditionTrue(obj, err, ConditionReady)
 }
 
-// WaitForConditionReadyTrue is a utility function that combines WaitForE with ConditionReadyTrue.
-func (core *coreClient) WaitForConditionReadyTrue(ctx context.Context, name string, interval time.Duration) (instance *v1beta1.ClusterServiceBroker, err error) {
-	return core.WaitForE(ctx, name, interval, ConditionReadyTrue)
+// WaitForConditionReadyTrue is a utility function that combines waitForE with ConditionReadyTrue.
+func (core *coreClient) WaitForConditionReadyTrue(ctx context.Context, name string, interval time.Duration) (instance *v1alpha1.ClusterServiceBroker, err error) {
+	return core.waitForE(ctx, name, interval, ConditionReadyTrue)
 }

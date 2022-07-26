@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,34 +21,35 @@ package route
 
 import (
 	context "context"
-	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-// FakeReconciler is a mock of Reconciler interface
+// FakeReconciler is a mock of Reconciler interface.
 type FakeReconciler struct {
 	ctrl     *gomock.Controller
 	recorder *FakeReconcilerMockRecorder
 }
 
-// FakeReconcilerMockRecorder is the mock recorder for FakeReconciler
+// FakeReconcilerMockRecorder is the mock recorder for FakeReconciler.
 type FakeReconcilerMockRecorder struct {
 	mock *FakeReconciler
 }
 
-// NewFakeReconciler creates a new mock instance
+// NewFakeReconciler creates a new mock instance.
 func NewFakeReconciler(ctrl *gomock.Controller) *FakeReconciler {
 	mock := &FakeReconciler{ctrl: ctrl}
 	mock.recorder = &FakeReconcilerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *FakeReconciler) EXPECT() *FakeReconcilerMockRecorder {
 	return m.recorder
 }
 
-// Reconcile mocks base method
+// Reconcile mocks base method.
 func (m *FakeReconciler) Reconcile(arg0 context.Context, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Reconcile", arg0, arg1)
@@ -56,7 +57,7 @@ func (m *FakeReconciler) Reconcile(arg0 context.Context, arg1 string) error {
 	return ret0
 }
 
-// Reconcile indicates an expected call of Reconcile
+// Reconcile indicates an expected call of Reconcile.
 func (mr *FakeReconcilerMockRecorder) Reconcile(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reconcile", reflect.TypeOf((*FakeReconciler)(nil).Reconcile), arg0, arg1)

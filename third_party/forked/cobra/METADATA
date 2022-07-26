@@ -1,0 +1,17 @@
+name: "Cobra"
+description:
+  "A fork of Cobra with hook chaining and context support"
+
+third_party: {
+  type: PACKAGE
+  url {
+    type: GIT
+    value: "https://github.com/spf13/cobra"
+  }
+  version: "master"
+  last_upgrade_date {
+    year: 2020
+    month: 06
+    day: 10
+  }
+}

@@ -1,0 +1,4 @@
+# Test:	TestApplySubstitution/missing_substitution
+# input: 'name: ((name))'
+# variables: null
+

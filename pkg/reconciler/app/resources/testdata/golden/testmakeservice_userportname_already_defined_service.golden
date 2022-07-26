@@ -1,0 +1,65 @@
+# Test:	TestMakeService/UserPortName_already_defined
+# app:
+#   metadata:
+#     creationTimestamp: null
+#     name: test
+#     namespace: my-ns
+#   spec:
+#     build: {}
+#     instances:
+#       autoscaling: {}
+#     template:
+#       spec:
+#         containers:
+#         - name: user-service
+#           ports:
+#           - containerPort: 8888
+#             name: http-user-port
+#           resources: {}
+#       updateRequests: 0
+#   status:
+#     instances:
+#       labelSelector: ""
+#     serviceBindingConditions: null
+#     tasks:
+#       updateRequests: 0
+
+{
+    "metadata": {
+        "name": "test",
+        "namespace": "my-ns",
+        "creationTimestamp": null,
+        "labels": {
+            "app.kubernetes.io/component": "service",
+            "app.kubernetes.io/managed-by": "kf",
+            "app.kubernetes.io/name": "test"
+        },
+        "ownerReferences": [
+            {
+                "apiVersion": "kf.dev/v1alpha1",
+                "kind": "App",
+                "name": "test",
+                "uid": "",
+                "controller": true,
+                "blockOwnerDeletion": true
+            }
+        ]
+    },
+    "spec": {
+        "ports": [
+            {
+                "name": "http-user-port",
+                "port": 8888,
+                "targetPort": 8888
+            }
+        ],
+        "selector": {
+            "app.kubernetes.io/component": "app-server",
+            "app.kubernetes.io/managed-by": "kf",
+            "app.kubernetes.io/name": "test"
+        }
+    },
+    "status": {
+        "loadBalancer": {}
+    }
+}

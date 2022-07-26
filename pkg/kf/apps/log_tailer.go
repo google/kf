@@ -20,35 +20,39 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"sort"
-	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/watch"
-	"knative.dev/pkg/apis/duck/v1beta1"
 
 	"github.com/fatih/color"
-	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	utils "github.com/google/kf/v2/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/v2/pkg/kf/logs"
+	"github.com/segmentio/textio"
 	corev1 "k8s.io/api/core/v1"
 	k8smeta "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type pushLogTailer struct {
-	client               *appsClient
-	out                  io.Writer
-	logger               *log.Logger
-	appName              string
-	resourceVersion      string
-	namespace            string
-	noStart              bool
-	buildStartTime       time.Time
-	deployStartTime      time.Time
-	ctx                  context.Context
-	ctxCancel            func()
-	tailBuildLogsOnce    sync.Once
-	checkSourceReadyOnce sync.Once
+	client              *appsClient
+	out                 io.Writer
+	logger              *log.Logger
+	appName             string
+	resourceVersion     string
+	namespace           string
+	noStart             bool
+	buildStartTime      time.Time
+	deployStartTime     time.Time
+	tailBuildLogsMutex  int32
+	checkBuildReadyOnce sync.Once
+	buildOut            io.Writer
+	appTailer           logs.Tailer
+	tailAppLogsMutex    int32
+	appOut              io.Writer
+	startingAppOnce     sync.Once
 }
 
 func newPushLogTailer(
@@ -72,33 +76,35 @@ func newPushLogTailer(
 	logColor := color.New(color.FgGreen)
 
 	t.logger = log.New(out, logColor.Sprintf("[deploy] "), 0)
-	t.logger.Printf("Starting app: %s\n", appName)
+	t.buildOut = textio.NewPrefixWriter(out, logColor.Sprintf("[build] "))
+	t.appOut = textio.NewPrefixWriter(out, logColor.Sprintf("[app] "))
 	t.buildStartTime = time.Now()
-	t.ctx, t.ctxCancel = context.WithCancel(context.Background())
 	return t
 }
 
 // DeployLogsForApp gets the deployment logs for an application. It blocks until
 // the operation has completed.
-func (a *appsClient) DeployLogsForApp(out io.Writer, app *v1alpha1.App) error {
-	return a.DeployLogs(out, app.Name, app.ResourceVersion, app.Namespace, app.Spec.Instances.Stopped)
+func (a *appsClient) DeployLogsForApp(ctx context.Context, out io.Writer, app *v1alpha1.App) error {
+	return a.DeployLogs(ctx, out, app.Name, app.ResourceVersion, app.Namespace, app.Spec.Instances.Stopped)
 }
 
 // DeployLogs writes the logs for the deploy step for the resourceVersion
 // to out. It blocks until the operation has completed.
 func (a *appsClient) DeployLogs(
+	ctx context.Context,
 	out io.Writer,
 	appName string,
 	resourceVersion string,
 	namespace string,
 	noStart bool,
 ) error {
+	ctx, cancel := context.WithCancel(ctx)
 
 	t := newPushLogTailer(a, out, appName, resourceVersion, namespace, noStart)
-	defer t.ctxCancel()
+	defer cancel()
 
-	for {
-		done, err := t.handleWatch()
+	for ctx.Err() == nil {
+		done, err := t.handleWatch(ctx)
 		if err != nil {
 			return err
 		}
@@ -108,15 +114,16 @@ func (a *appsClient) DeployLogs(
 
 		// ResourceVersion is set on list, update it before trying to tail again.
 		// If we get an error, it's not really worth reporting.
-		if apps, err := t.client.kclient.Apps(t.namespace).List(k8smeta.ListOptions{}); err == nil {
+		if apps, err := t.client.kclient.Apps(t.namespace).List(ctx, k8smeta.ListOptions{}); err == nil {
 			t.resourceVersion = apps.ResourceVersion
 		}
 	}
+
+	return ctx.Err()
 }
 
-func (t *pushLogTailer) handleWatch() (bool, error) {
-
-	ws, err := t.client.kclient.Apps(t.namespace).Watch(k8smeta.ListOptions{
+func (t *pushLogTailer) handleWatch(ctx context.Context) (bool, error) {
+	ws, err := t.client.kclient.Apps(t.namespace).Watch(ctx, k8smeta.ListOptions{
 		ResourceVersion: t.resourceVersion,
 
 		FieldSelector: fields.OneTermEqualSelector("metadata.name", t.appName).String(),
@@ -147,7 +154,7 @@ func (t *pushLogTailer) handleWatch() (bool, error) {
 					continue
 				}
 
-				done, err := t.handleUpdate(obj)
+				done, err := t.handleUpdate(ctx, obj)
 				if err != nil {
 					return true, err
 				}
@@ -168,46 +175,62 @@ func (t *pushLogTailer) handleWatch() (bool, error) {
 	return false, nil
 }
 
-func (t *pushLogTailer) handleUpdate(app *v1alpha1.App) (bool, error) {
+func (t *pushLogTailer) handleUpdate(ctx context.Context, app *v1alpha1.App) (bool, error) {
 
-	sourceReady := app.Status.GetCondition(v1alpha1.AppConditionSourceReady)
-	if sourceReady == nil {
-		// source might still be creating
+	buildReady := app.Status.GetCondition(v1alpha1.AppConditionBuildReady)
+	if buildReady == nil {
+		// build might still be creating
 		return false, nil
 	}
-	if sourceReady.Message != "" {
-		t.logger.Printf("Updated state to: %s\n", sourceReady.Message)
+	if buildReady.Message != "" {
+		t.logger.Printf("Updated state to: %s\n", buildReady.Message)
 	}
-	printConditions(t.logger, app.Status.Conditions)
 
-	switch sourceReady.Status {
+	switch buildReady.Status {
 	case corev1.ConditionTrue:
-		// Only handle source success case once
-		t.checkSourceReadyOnce.Do(func() {
-			duration := time.Now().Sub(t.buildStartTime)
-			t.logger.Printf("Built in %0.2f seconds\n", duration.Seconds())
+		// Only handle build success case once
+		t.checkBuildReadyOnce.Do(func() {
+			t.logger.Printf("Built in %0.2f seconds\n", time.Since(t.buildStartTime).Seconds())
 			t.deployStartTime = time.Now()
 		})
 	case corev1.ConditionFalse:
-		t.logger.Printf("Failed to build: %s\n", sourceReady.Message)
-		return true, fmt.Errorf("build failed: %s", sourceReady.Message)
+		t.logger.Printf("Failed to build: %s\n", buildReady.Message)
+		return true, fmt.Errorf("build failed: %s", buildReady.Message)
 	default:
 
-		// This case should mean the Source is still in progress.
+		// This case should mean the Build is still in progress.
 		// It should be safe to tail the logs to show the user what's happening.
-		go t.tailBuildLogsOnce.Do(
-			func() {
-				// ignoring tail errs because they are spurious
-				t.client.sourcesClient.Tail(t.ctx, t.namespace, app.Status.LatestCreatedSourceName, t.out)
-			},
-		)
+		t.runIfNotRunning(&t.tailBuildLogsMutex, "tailing Build logs", func() {
+			utils.SuggestNextAction(utils.NextAction{
+				Description: "View build logs",
+				Commands: []string{
+					fmt.Sprintf("kf build-logs %s --space %s", app.Status.LatestCreatedBuildName, t.namespace),
+				},
+			})
+
+			// Pick which build to go look for. If
+			// app.Spec.Build.BuildRef.Name is set, then that is the preferred
+			// build.
+			buildName := app.Status.LatestCreatedBuildName
+			if app.Spec.Build.BuildRef != nil {
+				buildName = app.Spec.Build.BuildRef.Name
+			}
+
+			// ignoring tail errs because they are spurious
+			t.client.buildsClient.Tail(ctx, t.namespace, buildName, t.buildOut)
+		})
+
 		return false, nil
 	}
 
 	if t.noStart {
-		t.logger.Printf("Total deploy time %0.2f seconds\n", time.Now().Sub(t.deployStartTime).Seconds())
+		t.logger.Printf("Total push time %0.2f seconds\n", time.Since(t.buildStartTime).Seconds())
 		return true, nil
 	}
+
+	t.startingAppOnce.Do(func() {
+		t.logger.Printf("Starting App: %s\n", app.Name)
+	})
 
 	appReady := app.Status.GetCondition(v1alpha1.AppConditionReady)
 	if appReady == nil {
@@ -219,35 +242,48 @@ func (t *pushLogTailer) handleUpdate(app *v1alpha1.App) (bool, error) {
 
 	switch appReady.Status {
 	case corev1.ConditionTrue:
-		now := time.Now()
-		duration := now.Sub(t.buildStartTime)
-		deployDuration := now.Sub(t.deployStartTime)
-		t.logger.Printf("App took %0.2f seconds to become ready.\n", deployDuration.Seconds())
-		t.logger.Printf("Total deploy time %0.2f seconds\n", duration.Seconds())
+		t.logger.Printf("App took %0.2f seconds to become ready.\n", time.Since(t.deployStartTime).Seconds())
+		t.logger.Printf("Total push time %0.2f seconds\n", time.Since(t.buildStartTime).Seconds())
 		return true, nil
 	case corev1.ConditionFalse:
 		t.logger.Printf("Failed to deploy: %s\n", appReady.Message)
 		return true, fmt.Errorf("deployment failed: %s", appReady.Message)
+	default:
+		// This case should mean the deployment is still in progress.
+		// It should be safe to tail the logs to show the user what's happening.
+		t.runIfNotRunning(&t.tailAppLogsMutex, "tailing App logs", func() {
+			utils.SuggestNextAction(utils.NextAction{
+				Description: "View App logs",
+				Commands: []string{
+					fmt.Sprintf("kf logs %s --space %s", app.Name, t.namespace),
+				},
+			})
+
+			// ignoring tail errs because they are spurious
+			t.client.appTailer.Tail(
+				ctx,
+				app.Name,
+				t.appOut,
+				logs.WithTailSpace(t.namespace),
+				logs.WithTailFollow(true),
+			)
+		})
 	}
 
 	return false, nil
 }
 
-func printConditions(logger *log.Logger, conditions v1beta1.Conditions) {
-	conds := []string{}
-
-	for _, cond := range conditions {
-		if cond.Status == corev1.ConditionTrue {
-			continue
-		}
-		text := fmt.Sprintf("%s: %s", cond.Type, cond.Status)
-		conds = append(conds, text)
-	}
-
-	if len(conds) == 0 {
+func (t *pushLogTailer) runIfNotRunning(lock *int32, action string, callback func()) {
+	if !atomic.CompareAndSwapInt32(lock, 0, 1) {
+		// some other routine is running
 		return
 	}
 
-	sort.Strings(conds)
-	logger.Println("Pending Conditions:", strings.Join(conds, ", "))
+	go func() {
+		defer atomic.StoreInt32(lock, 0) // release lock
+
+		t.logger.Printf("Start %s\n", action)
+		callback()
+		t.logger.Printf("End %s\n", action)
+	}()
 }

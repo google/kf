@@ -18,12 +18,22 @@ set -eux
 
 cd "${0%/*}"/..
 
-./hack/tidy.sh
-./hack/update-codegen.sh
-./hack/tidy.sh
-./hack/go-generate.sh
-./hack/tidy.sh
-./hack/update-vendor-license.sh
-./hack/tidy.sh
-./hack/check-linters.sh
+scripts=(
+  # update-vendor-license.sh should always go first because it expects the
+  # operator to be checked out in the root dir. This is done by Louhi (if this
+  # is running in automation). However, this will imply the repo is "dirty"
+  # and would fail other scripts. The script removes the dir so others won't
+  # fail.
+  "update-vendor-license.sh"
+
+  "update-codegen.sh"
+  "go-generate.sh"
+  "check-linters.sh"
+)
+
+for s in "${scripts[@]}"; do
+  ./hack/tidy.sh
+  "./hack/${s}"
+done
+
 ./hack/tidy.sh

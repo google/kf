@@ -15,12 +15,13 @@
 package cfutil_test
 
 import (
+	"encoding/json"
 	"fmt"
 
-	kfv1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/cfutil"
-	apiv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/cfutil"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func ExampleVcapServicesMap_Add() {
@@ -39,34 +40,52 @@ func ExampleVcapServicesMap_Add() {
 }
 
 func ExampleNewVcapService() {
-	instance := apiv1beta1.ServiceInstance{}
-	instance.Name = "my-instance"
-	instance.Spec.ServiceClassExternalName = "my-service"
-	instance.Spec.ServicePlanExternalName = "my-service-plan"
-
-	binding := apiv1beta1.ServiceBinding{}
-	binding.Spec.InstanceRef.Name = "my-instance"
-	binding.Name = "my-binding"
-	binding.Labels = map[string]string{
-		kfv1alpha1.ComponentLabel: "custom-binding-name",
+	val1 := json.RawMessage(`"value1"`)
+	val2 := json.RawMessage(`"value2"`)
+	credentialsSecret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-creds-secret",
+		},
+		Data: map[string][]byte{
+			"key1": val1,
+			"key2": val2,
+		},
 	}
 
-	secret := corev1.Secret{}
-	secret.Data = map[string][]byte{
-		"key1": []byte("value1"),
-		"key2": []byte("value2"),
+	binding := v1alpha1.ServiceInstanceBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "my-binding-generated-name",
+		},
+		Spec: v1alpha1.ServiceInstanceBindingSpec{
+			BindingType: v1alpha1.BindingType{
+				App: &v1alpha1.AppRef{
+					Name: "my-app",
+				},
+			},
+			InstanceRef: corev1.LocalObjectReference{
+				Name: "my-instance",
+			},
+			BindingNameOverride: "custom-binding-name",
+		},
+		Status: v1alpha1.ServiceInstanceBindingStatus{
+			BindingName: "custom-binding-name",
+			CredentialsSecretRef: corev1.LocalObjectReference{
+				Name: "my-creds-secret",
+			},
+			ServiceFields: v1alpha1.ServiceFields{
+				Tags:      []string{"mysql"},
+				ClassName: "my-service",
+				PlanName:  "my-service-plan",
+			},
+		},
 	}
 
-	class := apiv1beta1.CommonServiceClassSpec{
-		Tags: []string{"mysql"},
-	}
-
-	vs := cfutil.NewVcapService(class, instance, binding, &secret)
+	vs := cfutil.NewVcapService(binding, credentialsSecret)
 
 	fmt.Printf("Name: %s\n", vs.Name)
 	fmt.Printf("InstanceName: %s\n", vs.InstanceName)
-	fmt.Printf("BindingName: %s\n", vs.BindingName)
-	fmt.Printf("Credentials: %v\n", vs.Credentials)
+	fmt.Printf("BindingName: %s\n", *vs.BindingName)
+	fmt.Printf("Credentials: %s\n", vs.Credentials)
 	fmt.Printf("Service: %v\n", vs.Label)
 	fmt.Printf("Plan: %v\n", vs.Plan)
 	fmt.Printf("Tags: %v\n", vs.Tags)
@@ -74,7 +93,7 @@ func ExampleNewVcapService() {
 	// Output: Name: custom-binding-name
 	// InstanceName: my-instance
 	// BindingName: custom-binding-name
-	// Credentials: map[key1:value1 key2:value2]
+	// Credentials: map[key1:"value1" key2:"value2"]
 	// Service: my-service
 	// Plan: my-service-plan
 	// Tags: [mysql]

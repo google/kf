@@ -16,15 +16,17 @@ package spaces
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"testing"
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/spaces/fake"
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/internal/envutil"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/spaces/fake"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 )
 
 func TestNewCreateSpaceCommand(t *testing.T) {
@@ -40,16 +42,29 @@ func TestNewCreateSpaceCommand(t *testing.T) {
 			wantErr: errors.New("accepts 1 arg(s), received 0"),
 		},
 		"object passed through": {
-			args: []string{"my-ns", "--container-registry=some-registry", "--domain=domain-1", "--domain=domain-2", "--build-service-account=some-service-account"},
+			args: []string{
+				"my-ns",
+				"--container-registry=some-registry",
+				"--domain=domain-1",
+				"--domain=domain-2",
+				"--build-service-account=some-service-account",
+				"--run-env=A=B,C=D",
+				"--stage-env=E=F",
+				"--stage-env=G=H",
+			},
 			setup: func(t *testing.T, fakeSpaces *fake.FakeClient) {
 				fakeSpaces.
 					EXPECT().
-					Create(gomock.Any()).
-					Do(func(space *v1alpha1.Space) {
+					Create(gomock.Any(), gomock.Any()).
+					Do(func(ctx context.Context, space *v1alpha1.Space) {
 						testutil.AssertEqual(t, "sets name", "my-ns", space.Name)
-						testutil.AssertEqual(t, "sets container registry", "some-registry", space.Spec.BuildpackBuild.ContainerRegistry)
-						testutil.AssertEqual(t, "sets domains", []v1alpha1.SpaceDomain{{Domain: "domain-1", Default: true}, {Domain: "domain-2"}}, space.Spec.Execution.Domains)
-						testutil.AssertEqual(t, "sets build service account", "some-service-account", space.Spec.Security.BuildServiceAccount)
+						testutil.AssertEqual(t, "sets container registry", "some-registry", space.Spec.BuildConfig.ContainerRegistry)
+						testutil.AssertEqual(t, "sets domains", []v1alpha1.SpaceDomain{{Domain: "domain-1"}, {Domain: "domain-2"}}, space.Spec.NetworkConfig.Domains)
+						testutil.AssertEqual(t, "sets build service account", "some-service-account", space.Spec.BuildConfig.ServiceAccount)
+						wantBuildEnv := envutil.MapToEnvVars(map[string]string{"E": "F", "G": "H"})
+						testutil.AssertEqual(t, "sets build environment variables", wantBuildEnv, space.Spec.BuildConfig.Env)
+						wantRunEnv := envutil.MapToEnvVars(map[string]string{"A": "B", "C": "D"})
+						testutil.AssertEqual(t, "sets runtime environment variables", wantRunEnv, space.Spec.RuntimeConfig.Env)
 					})
 
 				fakeSpaces.EXPECT().WaitFor(gomock.Any(), "my-ns", 1*time.Second, gomock.Any()).Return(&v1alpha1.Space{}, nil)
@@ -60,7 +75,7 @@ func TestNewCreateSpaceCommand(t *testing.T) {
 			setup: func(t *testing.T, fakeSpaces *fake.FakeClient) {
 				fakeSpaces.
 					EXPECT().
-					Create(gomock.Any()).
+					Create(gomock.Any(), gomock.Any()).
 					Return(nil, errors.New("some-server-error"))
 			},
 			wantErr: errors.New("some-server-error"),
@@ -78,14 +93,13 @@ func TestNewCreateSpaceCommand(t *testing.T) {
 
 			buffer := &bytes.Buffer{}
 
-			c := NewCreateSpaceCommand(&config.KfParams{Namespace: "default"}, fakeSpaces)
+			c := NewCreateSpaceCommand(&config.KfParams{Space: "default"}, fakeSpaces)
 			c.SetOutput(buffer)
 			c.SetArgs(tc.args)
 
 			gotErr := c.Execute()
 			testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
 
-			ctrl.Finish()
 		})
 	}
 }

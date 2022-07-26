@@ -18,21 +18,19 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"testing"
 
-	"github.com/google/kf/pkg/kf/commands/config"
-	servicebindings "github.com/google/kf/pkg/kf/commands/service-bindings"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	servicebindings "github.com/google/kf/v2/pkg/kf/commands/service-bindings"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
 )
 
 func TestNewVcapServicesCommand(t *testing.T) {
 	type serviceTest struct {
-		Args      []string
-		Namespace string
+		Args  []string
+		Space string
 
 		ExpectedErr     error
 		ExpectedStrings []string
@@ -59,7 +57,6 @@ func TestNewVcapServicesCommand(t *testing.T) {
 
 	var secret *corev1.Secret
 	err := json.Unmarshal([]byte(secretSerialized), &secret)
-	fmt.Println(secret.Name)
 	testutil.AssertNil(t, "err", err)
 	k8sclient := k8sfake.NewSimpleClientset(secret)
 
@@ -69,15 +66,15 @@ func TestNewVcapServicesCommand(t *testing.T) {
 			ExpectedErr: errors.New("accepts 1 arg(s), received 0"),
 		},
 		"command params get passed correctly": {
-			Args:      []string{"APP_NAME"},
-			Namespace: "custom-ns",
+			Args:  []string{"APP_NAME"},
+			Space: "custom-ns",
 			ExpectedStrings: []string{
 				`{"some":"services"}`,
 			},
 		},
 		"empty namespace": {
 			Args:        []string{"APP_NAME"},
-			ExpectedErr: errors.New(utils.EmptyNamespaceError),
+			ExpectedErr: errors.New(config.EmptySpaceError),
 		},
 	}
 
@@ -85,7 +82,7 @@ func TestNewVcapServicesCommand(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 			buf := new(bytes.Buffer)
 			p := &config.KfParams{
-				Namespace: tc.Namespace,
+				Space: tc.Space,
 			}
 
 			cmd := servicebindings.NewVcapServicesCommand(p, k8sclient)

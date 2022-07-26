@@ -1,0 +1,155 @@
+# Test:	TestMakeVirtualService/destination_ports
+# routeBindings:
+# - destination:
+#     port: 8080
+#     serviceName: myapp
+#     weight: 1
+#   source:
+#     domain: example.com/
+#     hostname: some-host
+# - destination:
+#     port: 9999
+#     serviceName: myapp
+#     weight: 1
+#   source:
+#     domain: example.com/
+#     hostname: some-host
+# routeServiceBindings: null
+# routes:
+# - metadata:
+#     creationTimestamp: null
+#     name: fake-route-some-host-example-co143d6edbccade4a6bb9a378a53f0a32e
+#     namespace: some-namespace
+#   spec:
+#     domain: example.com/
+#     hostname: some-host
+#   status:
+#     routeService: {}
+#     virtualservice: {}
+# spaceDomain:
+#   domain: example.com
+#   gatewayName: kf/some-gateway
+
+{
+    "kind": "VirtualService",
+    "apiVersion": "networking.istio.io/v1alpha3",
+    "metadata": {
+        "name": "example-com617a9471507f0eb608f3858291adb70f",
+        "namespace": "some-namespace",
+        "creationTimestamp": null,
+        "labels": {
+            "app.kubernetes.io/component": "virtualservice",
+            "app.kubernetes.io/managed-by": "kf"
+        },
+        "annotations": {
+            "kf.dev/domain": "example.com/"
+        },
+        "ownerReferences": [
+            {
+                "apiVersion": "kf.dev/v1alpha1",
+                "kind": "Route",
+                "name": "fake-route-some-host-example-co143d6edbccade4a6bb9a378a53f0a32e",
+                "uid": ""
+            }
+        ]
+    },
+    "spec": {
+        "hosts": [
+            "*.example.com/",
+            "example.com/"
+        ],
+        "gateways": [
+            "kf/some-gateway"
+        ],
+        "http": [
+            {
+                "match": [
+                    {
+                        "uri": {
+                            "regex": "^(/.*)?"
+                        },
+                        "authority": {
+                            "exact": "some-host.example.com/"
+                        },
+                        "headers": {
+                            "x-kf-app": {
+                                "exact": "myapp"
+                            }
+                        }
+                    }
+                ],
+                "route": [
+                    {
+                        "destination": {
+                            "host": "myapp",
+                            "port": {
+                                "number": 8080
+                            }
+                        },
+                        "weight": 100
+                    }
+                ]
+            },
+            {
+                "match": [
+                    {
+                        "uri": {
+                            "regex": "^(/.*)?"
+                        },
+                        "authority": {
+                            "exact": "some-host.example.com/"
+                        },
+                        "headers": {
+                            "x-kf-app": {
+                                "exact": "myapp"
+                            }
+                        }
+                    }
+                ],
+                "route": [
+                    {
+                        "destination": {
+                            "host": "myapp",
+                            "port": {
+                                "number": 9999
+                            }
+                        },
+                        "weight": 100
+                    }
+                ]
+            },
+            {
+                "match": [
+                    {
+                        "uri": {
+                            "regex": "^(/.*)?"
+                        },
+                        "authority": {
+                            "exact": "some-host.example.com/"
+                        }
+                    }
+                ],
+                "route": [
+                    {
+                        "destination": {
+                            "host": "myapp",
+                            "port": {
+                                "number": 8080
+                            }
+                        },
+                        "weight": 50
+                    },
+                    {
+                        "destination": {
+                            "host": "myapp",
+                            "port": {
+                                "number": 9999
+                            }
+                        },
+                        "weight": 50
+                    }
+                ]
+            }
+        ]
+    }
+}

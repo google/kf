@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,39 +17,44 @@
 package apps
 
 import (
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/apis/kf/config"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"io"
 	corev1 "k8s.io/api/core/v1"
 	"os"
 )
 
 type pushConfig struct {
+	// ADXBuild is use AppDevExperience for builds
+	ADXBuild bool
+	// ADXContainerRegistry is the container registry configured on the Space
+	ADXContainerRegistry string
+	// ADXDockerfile is the path to the dockerfile to us with the AppDevExperience build
+	ADXDockerfile string
+	// ADXStack is the stack to use with the AppDevExperience build
+	ADXStack config.StackV3Definition
 	// AppSpecInstances is Scaling information for the service
 	AppSpecInstances v1alpha1.AppSpecInstances
-	// Buildpack is skip the detect buildpack step and use the given name
-	Buildpack string
+	// Build is a custom Tekton task used for the build
+	Build *v1alpha1.BuildSpec
 	// Container is the app container template
 	Container corev1.Container
 	// ContainerImage is the container to deploy
-	ContainerImage string
-	// DefaultRouteDomain is Domain for a defaultroute. Only used if a route doesn't already exist
-	DefaultRouteDomain string
-	// DockerfilePath is the path to a Dockerfile to build
-	DockerfilePath string
-	// Namespace is the Kubernetes namespace to use
-	Namespace string
+	ContainerImage *string
+	// GenerateDefaultRoute is returns true if the app should receive a default route if a route does not already exist
+	GenerateDefaultRoute bool
+	// GenerateRandomRoute is returns true if the app should receive a random route if a route doesn't already exist
+	GenerateRandomRoute bool
 	// Output is the io.Writer to write output such as build logs
 	Output io.Writer
-	// RandomRouteDomain is Domain for a random route. Only used if a route doesn't already exist
-	RandomRouteDomain string
 	// Routes is routes for the app
-	Routes []v1alpha1.RouteSpecFields
+	Routes []v1alpha1.RouteWeightBinding
 	// ServiceBindings is a list of Services to bind to the app
-	ServiceBindings []v1alpha1.AppSpecServiceBinding
-	// SourceImage is the source code as a container image
-	SourceImage string
-	// Stack is the builder stack to use for buildpack based apps
-	Stack string
+	ServiceBindings []v1alpha1.ServiceInstanceBinding
+	// SourcePath is the path to the source code directory
+	SourcePath string
+	// Space is the Space to use
+	Space string
 }
 
 // PushOption is a single option for configuring a pushConfig
@@ -78,16 +83,40 @@ func (opts PushOptions) Extend(other PushOptions) PushOptions {
 	return out
 }
 
+// ADXBuild returns the last set value for ADXBuild or the empty value
+// if not set.
+func (opts PushOptions) ADXBuild() bool {
+	return opts.toConfig().ADXBuild
+}
+
+// ADXContainerRegistry returns the last set value for ADXContainerRegistry or the empty value
+// if not set.
+func (opts PushOptions) ADXContainerRegistry() string {
+	return opts.toConfig().ADXContainerRegistry
+}
+
+// ADXDockerfile returns the last set value for ADXDockerfile or the empty value
+// if not set.
+func (opts PushOptions) ADXDockerfile() string {
+	return opts.toConfig().ADXDockerfile
+}
+
+// ADXStack returns the last set value for ADXStack or the empty value
+// if not set.
+func (opts PushOptions) ADXStack() config.StackV3Definition {
+	return opts.toConfig().ADXStack
+}
+
 // AppSpecInstances returns the last set value for AppSpecInstances or the empty value
 // if not set.
 func (opts PushOptions) AppSpecInstances() v1alpha1.AppSpecInstances {
 	return opts.toConfig().AppSpecInstances
 }
 
-// Buildpack returns the last set value for Buildpack or the empty value
+// Build returns the last set value for Build or the empty value
 // if not set.
-func (opts PushOptions) Buildpack() string {
-	return opts.toConfig().Buildpack
+func (opts PushOptions) Build() *v1alpha1.BuildSpec {
+	return opts.toConfig().Build
 }
 
 // Container returns the last set value for Container or the empty value
@@ -98,26 +127,20 @@ func (opts PushOptions) Container() corev1.Container {
 
 // ContainerImage returns the last set value for ContainerImage or the empty value
 // if not set.
-func (opts PushOptions) ContainerImage() string {
+func (opts PushOptions) ContainerImage() *string {
 	return opts.toConfig().ContainerImage
 }
 
-// DefaultRouteDomain returns the last set value for DefaultRouteDomain or the empty value
+// GenerateDefaultRoute returns the last set value for GenerateDefaultRoute or the empty value
 // if not set.
-func (opts PushOptions) DefaultRouteDomain() string {
-	return opts.toConfig().DefaultRouteDomain
+func (opts PushOptions) GenerateDefaultRoute() bool {
+	return opts.toConfig().GenerateDefaultRoute
 }
 
-// DockerfilePath returns the last set value for DockerfilePath or the empty value
+// GenerateRandomRoute returns the last set value for GenerateRandomRoute or the empty value
 // if not set.
-func (opts PushOptions) DockerfilePath() string {
-	return opts.toConfig().DockerfilePath
-}
-
-// Namespace returns the last set value for Namespace or the empty value
-// if not set.
-func (opts PushOptions) Namespace() string {
-	return opts.toConfig().Namespace
+func (opts PushOptions) GenerateRandomRoute() bool {
+	return opts.toConfig().GenerateRandomRoute
 }
 
 // Output returns the last set value for Output or the empty value
@@ -126,34 +149,56 @@ func (opts PushOptions) Output() io.Writer {
 	return opts.toConfig().Output
 }
 
-// RandomRouteDomain returns the last set value for RandomRouteDomain or the empty value
-// if not set.
-func (opts PushOptions) RandomRouteDomain() string {
-	return opts.toConfig().RandomRouteDomain
-}
-
 // Routes returns the last set value for Routes or the empty value
 // if not set.
-func (opts PushOptions) Routes() []v1alpha1.RouteSpecFields {
+func (opts PushOptions) Routes() []v1alpha1.RouteWeightBinding {
 	return opts.toConfig().Routes
 }
 
 // ServiceBindings returns the last set value for ServiceBindings or the empty value
 // if not set.
-func (opts PushOptions) ServiceBindings() []v1alpha1.AppSpecServiceBinding {
+func (opts PushOptions) ServiceBindings() []v1alpha1.ServiceInstanceBinding {
 	return opts.toConfig().ServiceBindings
 }
 
-// SourceImage returns the last set value for SourceImage or the empty value
+// SourcePath returns the last set value for SourcePath or the empty value
 // if not set.
-func (opts PushOptions) SourceImage() string {
-	return opts.toConfig().SourceImage
+func (opts PushOptions) SourcePath() string {
+	return opts.toConfig().SourcePath
 }
 
-// Stack returns the last set value for Stack or the empty value
+// Space returns the last set value for Space or the empty value
 // if not set.
-func (opts PushOptions) Stack() string {
-	return opts.toConfig().Stack
+func (opts PushOptions) Space() string {
+	return opts.toConfig().Space
+}
+
+// WithPushADXBuild creates an Option that sets use AppDevExperience for builds
+func WithPushADXBuild(val bool) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.ADXBuild = val
+	}
+}
+
+// WithPushADXContainerRegistry creates an Option that sets the container registry configured on the Space
+func WithPushADXContainerRegistry(val string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.ADXContainerRegistry = val
+	}
+}
+
+// WithPushADXDockerfile creates an Option that sets the path to the dockerfile to us with the AppDevExperience build
+func WithPushADXDockerfile(val string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.ADXDockerfile = val
+	}
+}
+
+// WithPushADXStack creates an Option that sets the stack to use with the AppDevExperience build
+func WithPushADXStack(val config.StackV3Definition) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.ADXStack = val
+	}
 }
 
 // WithPushAppSpecInstances creates an Option that sets Scaling information for the service
@@ -163,10 +208,10 @@ func WithPushAppSpecInstances(val v1alpha1.AppSpecInstances) PushOption {
 	}
 }
 
-// WithPushBuildpack creates an Option that sets skip the detect buildpack step and use the given name
-func WithPushBuildpack(val string) PushOption {
+// WithPushBuild creates an Option that sets a custom Tekton task used for the build
+func WithPushBuild(val *v1alpha1.BuildSpec) PushOption {
 	return func(cfg *pushConfig) {
-		cfg.Buildpack = val
+		cfg.Build = val
 	}
 }
 
@@ -178,30 +223,23 @@ func WithPushContainer(val corev1.Container) PushOption {
 }
 
 // WithPushContainerImage creates an Option that sets the container to deploy
-func WithPushContainerImage(val string) PushOption {
+func WithPushContainerImage(val *string) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.ContainerImage = val
 	}
 }
 
-// WithPushDefaultRouteDomain creates an Option that sets Domain for a defaultroute. Only used if a route doesn't already exist
-func WithPushDefaultRouteDomain(val string) PushOption {
+// WithPushGenerateDefaultRoute creates an Option that sets returns true if the app should receive a default route if a route does not already exist
+func WithPushGenerateDefaultRoute(val bool) PushOption {
 	return func(cfg *pushConfig) {
-		cfg.DefaultRouteDomain = val
+		cfg.GenerateDefaultRoute = val
 	}
 }
 
-// WithPushDockerfilePath creates an Option that sets the path to a Dockerfile to build
-func WithPushDockerfilePath(val string) PushOption {
+// WithPushGenerateRandomRoute creates an Option that sets returns true if the app should receive a random route if a route doesn't already exist
+func WithPushGenerateRandomRoute(val bool) PushOption {
 	return func(cfg *pushConfig) {
-		cfg.DockerfilePath = val
-	}
-}
-
-// WithPushNamespace creates an Option that sets the Kubernetes namespace to use
-func WithPushNamespace(val string) PushOption {
-	return func(cfg *pushConfig) {
-		cfg.Namespace = val
+		cfg.GenerateRandomRoute = val
 	}
 }
 
@@ -212,45 +250,38 @@ func WithPushOutput(val io.Writer) PushOption {
 	}
 }
 
-// WithPushRandomRouteDomain creates an Option that sets Domain for a random route. Only used if a route doesn't already exist
-func WithPushRandomRouteDomain(val string) PushOption {
-	return func(cfg *pushConfig) {
-		cfg.RandomRouteDomain = val
-	}
-}
-
 // WithPushRoutes creates an Option that sets routes for the app
-func WithPushRoutes(val []v1alpha1.RouteSpecFields) PushOption {
+func WithPushRoutes(val []v1alpha1.RouteWeightBinding) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.Routes = val
 	}
 }
 
 // WithPushServiceBindings creates an Option that sets a list of Services to bind to the app
-func WithPushServiceBindings(val []v1alpha1.AppSpecServiceBinding) PushOption {
+func WithPushServiceBindings(val []v1alpha1.ServiceInstanceBinding) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.ServiceBindings = val
 	}
 }
 
-// WithPushSourceImage creates an Option that sets the source code as a container image
-func WithPushSourceImage(val string) PushOption {
+// WithPushSourcePath creates an Option that sets the path to the source code directory
+func WithPushSourcePath(val string) PushOption {
 	return func(cfg *pushConfig) {
-		cfg.SourceImage = val
+		cfg.SourcePath = val
 	}
 }
 
-// WithPushStack creates an Option that sets the builder stack to use for buildpack based apps
-func WithPushStack(val string) PushOption {
+// WithPushSpace creates an Option that sets the Space to use
+func WithPushSpace(val string) PushOption {
 	return func(cfg *pushConfig) {
-		cfg.Stack = val
+		cfg.Space = val
 	}
 }
 
 // PushOptionDefaults gets the default values for Push.
 func PushOptionDefaults() PushOptions {
 	return PushOptions{
-		WithPushNamespace("default"),
 		WithPushOutput(os.Stdout),
+		WithPushSpace("default"),
 	}
 }

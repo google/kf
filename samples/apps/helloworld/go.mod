@@ -1,3 +1,3 @@
-module github.com/google/kf/samples/apps/helloworld
+module github.com/google/kf/v2/samples/apps/helloworld
 
-go 1.12
+go 1.15

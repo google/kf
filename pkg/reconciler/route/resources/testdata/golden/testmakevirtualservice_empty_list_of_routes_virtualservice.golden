@@ -1,0 +1,8 @@
+# Test:	TestMakeVirtualService/empty_list_of_routes
+# routeBindings: null
+# routeServiceBindings: null
+# routes: null
+# spaceDomain:
+#   domain: ""
+
+null

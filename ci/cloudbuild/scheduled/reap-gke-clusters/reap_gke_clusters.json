@@ -1,0 +1,74 @@
+{
+    "timeout": "18000s",
+    "steps": [
+        {
+            "id": "deployment-manager deployments",
+            "name": "CONTAINER_NAME_PLACEHOLDER",
+            "timeout":"3600s",
+            "entrypoint": "python3",
+            "args": ["/scripts/delete_dm_deployments.py", "${PROJECT_ID}"]
+        },
+        {
+            "id": "GKE clusters",
+            "name": "CONTAINER_NAME_PLACEHOLDER",
+            "timeout":"3600s",
+            "entrypoint": "python3",
+            "args": ["/scripts/delete_gke_clusters.py", "${PROJECT_ID}"]
+        },
+        {
+            "id": "load balancers",
+            "name": "CONTAINER_NAME_PLACEHOLDER",
+            "timeout":"3600s",
+            "entrypoint": "python3",
+            "args": ["/scripts/cleanup_load_balancers.py", "${PROJECT_ID}"]
+        },
+        {
+            "id": "firewall rules",
+            "name": "CONTAINER_NAME_PLACEHOLDER",
+            "timeout":"3600s",
+            "entrypoint": "python3",
+            "args": ["/scripts/cleanup_firewall_rules.py", "${PROJECT_ID}"]
+        },
+        {
+            "id": "disks",
+            "name": "CONTAINER_NAME_PLACEHOLDER",
+            "timeout":"3600s",
+            "entrypoint": "python3",
+            "args": ["/scripts/delete_disks.py", "${PROJECT_ID}"]
+        },
+        {
+            "id": "container images",
+            "name": "CONTAINER_NAME_PLACEHOLDER",
+            "timeout":"3600s",
+            "entrypoint": "python3",
+            "args": ["/scripts/reap_gcr_containers.py", "${PROJECT_ID}"]
+        },
+        {
+            "id": "IAM policy bindings",
+            "name": "CONTAINER_NAME_PLACEHOLDER",
+            "timeout": "3600s",
+            "entrypoint": "python3",
+            "args": ["/scripts/reap_iam_bindings.py", "${PROJECT_ID}"]
+        },
+        {
+            "id": "Hub memberships",
+            "name": "CONTAINER_NAME_PLACEHOLDER",
+            "timeout": "3600s",
+            "entrypoint": "python3",
+            "args": ["/scripts/reap_hub_memberships.py", "${PROJECT_ID}"]
+        },
+        {
+            "id": "Service keys",
+            "name": "CONTAINER_NAME_PLACEHOLDER",
+            "timeout": "3600s",
+            "entrypoint": "python3",
+            "args": ["/scripts/reap_service_keys.py", "${PROJECT_ID}", "onprem-integ-sa@kf-int.iam.gserviceaccount.com"]
+        },
+        {
+            "id": "success",
+            "name": "CONTAINER_NAME_PLACEHOLDER",
+            "entrypoint": "echo",
+            "args": ["successfully reaped all GKE clusters and GC'd load balancers!"]
+        }
+    ]
+}

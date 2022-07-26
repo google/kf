@@ -1,0 +1,45 @@
+# Test:	TestMakeRoleBindingForClusterRole/developer
+# roleName: space-developer
+# space:
+#   metadata:
+#     creationTimestamp: null
+#     name: test
+#   spec:
+#     buildConfig:
+#       defaultToV3Stack: null
+#     networkConfig:
+#       appNetworkPolicy: {}
+#       buildNetworkPolicy: {}
+#     runtimeConfig: {}
+#   status:
+#     buildConfig:
+#       defaultToV3Stack: false
+#     ingressGateways: null
+#     networkConfig: {}
+#     runtimeConfig: {}
+
+{
+    "metadata": {
+        "name": "test-space-developer",
+        "namespace": "test",
+        "creationTimestamp": null,
+        "labels": {
+            "app.kubernetes.io/managed-by": "kf"
+        },
+        "ownerReferences": [
+            {
+                "apiVersion": "kf.dev/v1alpha1",
+                "kind": "Space",
+                "name": "test",
+                "uid": "",
+                "controller": true,
+                "blockOwnerDeletion": true
+            }
+        ]
+    },
+    "roleRef": {
+        "apiGroup": "rbac.authorization.k8s.io",
+        "kind": "ClusterRole",
+        "name": "space-developer"
+    }
+}

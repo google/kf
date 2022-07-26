@@ -1,0 +1,105 @@
+# Test:	TestMakeVirtualService/wildcard_domain
+# routeBindings:
+# - destination:
+#     port: 80
+#     serviceName: app-1
+#     weight: 1
+#   source:
+#     domain: example.com
+#     hostname: '*'
+# routeServiceBindings: null
+# routes:
+# - metadata:
+#     creationTimestamp: null
+#     name: fake-route---example-com7a52c5604bdcf9d85deee339b1b9bf96
+#     namespace: some-namespace
+#   spec:
+#     domain: example.com
+#     hostname: '*'
+#   status:
+#     routeService: {}
+#     virtualservice: {}
+# spaceDomain:
+#   domain: example.com
+#   gatewayName: kf/some-gateway
+
+{
+    "kind": "VirtualService",
+    "apiVersion": "networking.istio.io/v1alpha3",
+    "metadata": {
+        "name": "example-com5ababd603b22780302dd8d83498e5172",
+        "namespace": "some-namespace",
+        "creationTimestamp": null,
+        "labels": {
+            "app.kubernetes.io/component": "virtualservice",
+            "app.kubernetes.io/managed-by": "kf"
+        },
+        "annotations": {
+            "kf.dev/domain": "example.com"
+        },
+        "ownerReferences": [
+            {
+                "apiVersion": "kf.dev/v1alpha1",
+                "kind": "Route",
+                "name": "fake-route---example-com7a52c5604bdcf9d85deee339b1b9bf96",
+                "uid": ""
+            }
+        ]
+    },
+    "spec": {
+        "hosts": [
+            "*.example.com",
+            "example.com"
+        ],
+        "gateways": [
+            "kf/some-gateway"
+        ],
+        "http": [
+            {
+                "match": [
+                    {
+                        "uri": {
+                            "regex": "^(/.*)?"
+                        },
+                        "headers": {
+                            "x-kf-app": {
+                                "exact": "app-1"
+                            }
+                        }
+                    }
+                ],
+                "route": [
+                    {
+                        "destination": {
+                            "host": "app-1",
+                            "port": {
+                                "number": 80
+                            }
+                        },
+                        "weight": 100
+                    }
+                ]
+            },
+            {
+                "match": [
+                    {
+                        "uri": {
+                            "regex": "^(/.*)?"
+                        }
+                    }
+                ],
+                "route": [
+                    {
+                        "destination": {
+                            "host": "app-1",
+                            "port": {
+                                "number": 80
+                            }
+                        },
+                        "weight": 100
+                    }
+                ]
+            }
+        ]
+    }
+}

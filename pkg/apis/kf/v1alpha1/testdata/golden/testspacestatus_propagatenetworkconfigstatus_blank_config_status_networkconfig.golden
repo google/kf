@@ -1,0 +1,23 @@
+# Test:	TestSpaceStatus_PropagateNetworkConfigStatus/blank_config
+# config.defaults:
+#   spaceClusterDomains:
+#   - domain: $(SPACE_NAME).$(CLUSTER_INGRESS_IP).example.com
+#   - domain: example.com
+# space.spec.networkConfig:
+#   appNetworkPolicy: {}
+#   buildNetworkPolicy: {}
+# space.status.ingressGateways:
+# - ip: 192.168.0.1
+
+{
+    "domains": [
+        {
+            "domain": "test-space.192.168.0.1.example.com",
+            "gatewayName": "kf/external-gateway"
+        },
+        {
+            "domain": "example.com",
+            "gatewayName": "kf/external-gateway"
+        }
+    ]
+}

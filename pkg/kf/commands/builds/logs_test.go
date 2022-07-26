@@ -23,13 +23,17 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/sources/fake"
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/kf/builds/fake"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 )
 
 func TestNewBuildLogsCommand(t *testing.T) {
 	t.Parallel()
+
+	// Setup a context that has a value so that we can assert on the fact that
+	// we are using the right context.
+	someContext := context.WithValue(context.Background(), "some-key", "some-value")
 
 	cases := map[string]struct {
 		args      []string
@@ -45,7 +49,7 @@ func TestNewBuildLogsCommand(t *testing.T) {
 		},
 		"missing namespace": {
 			args:    []string{"my-build"},
-			wantErr: errors.New("no space targeted, use 'kf target --space SPACE' to target a space"),
+			wantErr: errors.New(config.EmptySpaceError),
 		},
 		"calls with right args": {
 			args:      []string{"my-build"},
@@ -53,7 +57,7 @@ func TestNewBuildLogsCommand(t *testing.T) {
 			setup: func(t *testing.T, fakeSources *fake.FakeClient) {
 				fakeSources.
 					EXPECT().
-					Tail(gomock.Any(), "my-ns", "my-build", gomock.Any()).
+					Tail(someContext, "my-ns", "my-build", gomock.Any()).
 					Return(nil)
 			},
 		},
@@ -84,15 +88,15 @@ func TestNewBuildLogsCommand(t *testing.T) {
 
 			buffer := &bytes.Buffer{}
 
-			c := NewBuildLogsCommand(&config.KfParams{Namespace: tc.namespace}, fakeSources)
+			c := NewBuildLogsCommand(&config.KfParams{Space: tc.namespace}, fakeSources)
 			c.SetOutput(buffer)
 			c.SetArgs(tc.args)
+			c.SetContext(someContext)
 
 			gotErr := c.Execute()
 			testutil.AssertErrorsEqual(t, tc.wantErr, gotErr)
 			testutil.AssertContainsAll(t, buffer.String(), tc.expectedStrings)
 
-			ctrl.Finish()
 		})
 	}
 }

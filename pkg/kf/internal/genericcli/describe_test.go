@@ -16,51 +16,22 @@ package genericcli
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"testing"
 
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	configlogging "github.com/google/kf/v2/pkg/kf/commands/config/logging"
+	fakeinjection "github.com/google/kf/v2/pkg/kf/injection/fake"
+	"github.com/google/kf/v2/pkg/kf/testutil"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	fakedynamic "k8s.io/client-go/dynamic/fake"
+	fakedynamicclient "knative.dev/pkg/injection/clients/dynamicclient/fake"
 )
 
 type genericType struct {
-	NsScoped bool
-	Group    string
-	Version  string
-	Kind     string
-	Resource string
-	KfName   string
-}
-
-var _ Type = (*genericType)(nil)
-
-func (g *genericType) Namespaced() bool {
-	return g.NsScoped
-}
-
-func (g *genericType) GroupVersionResource() schema.GroupVersionResource {
-	return schema.GroupVersionResource{
-		Group:    g.Group,
-		Version:  g.Version,
-		Resource: g.Resource,
-	}
-}
-
-func (g *genericType) GroupVersionKind() schema.GroupVersionKind {
-	return schema.GroupVersionKind{
-		Group:   g.Group,
-		Version: g.Version,
-		Kind:    g.Kind,
-	}
-}
-
-func (g *genericType) FriendlyName() string {
-	return g.KfName
+	KubernetesType
 }
 
 func (g *genericType) NewUnstructured(ns, name string) *unstructured.Unstructured {
@@ -89,48 +60,88 @@ func (g *genericType) NewTable(name string) *metav1beta1.Table {
 
 func TestNewDescribeCommand_docs(t *testing.T) {
 	typ := &genericType{
-		NsScoped: true,
-		Group:    "kf.dev",
-		Version:  "v1alpha1",
-		Kind:     "App",
-		Resource: "apps",
-		KfName:   "KfApp",
+		KubernetesType: KubernetesType{
+			NsScoped: true,
+			Group:    "kf.dev",
+			Version:  "v1alpha1",
+			Kind:     "App",
+			Resource: "apps",
+			KfName:   "KfApp",
+		},
 	}
 
-	cmd := NewDescribeCommand(typ, nil, nil)
-	testutil.AssertEqual(t, "use", "kfapp NAME", cmd.Use)
-	testutil.AssertEqual(t, "short", "Print information about the given KfApp", cmd.Short)
-	testutil.AssertEqual(t, "long", "Print information about the given KfApp", cmd.Long)
+	cases := map[string]struct {
+		genericType *genericType
+		opts        []DescribeOption
+
+		wantUse     string
+		wantShort   string
+		wantLong    string
+		wantAliases []string
+	}{
+		"general": {
+			genericType: typ,
+
+			wantUse:   "kfapp NAME",
+			wantShort: "Print information about the given KfApp.",
+			wantLong:  "Print information about the given KfApp.",
+		},
+
+		"overrides": {
+			genericType: typ,
+			opts: []DescribeOption{
+				WithDescribeCommandName("some-name"),
+				WithDescribeAliases([]string{"abc"}),
+			},
+			wantUse:     "some-name NAME",
+			wantShort:   "Print information about the given KfApp.",
+			wantLong:    "Print information about the given KfApp.",
+			wantAliases: []string{"abc"},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			cmd := NewDescribeCommand(tc.genericType, nil, tc.opts...)
+			testutil.AssertEqual(t, "use", tc.wantUse, cmd.Use)
+			testutil.AssertEqual(t, "short", tc.wantShort, cmd.Short)
+			testutil.AssertEqual(t, "long", tc.wantLong, cmd.Long)
+			testutil.AssertEqual(t, "aliases", tc.wantAliases, cmd.Aliases)
+		})
+	}
 }
 
 func TestNewDescribeCommand(t *testing.T) {
 	nsType := &genericType{
-		NsScoped: true,
-		Group:    "kf.dev",
-		Version:  "v1alpha1",
-		Kind:     "App",
-		Resource: "apps",
-		KfName:   "App",
+		KubernetesType: KubernetesType{
+			NsScoped: true,
+			Group:    "kf.dev",
+			Version:  "v1alpha1",
+			Kind:     "App",
+			Resource: "apps",
+			KfName:   "App",
+		},
 	}
 
 	clusterType := &genericType{
-		NsScoped: false,
-		Group:    "kf.dev",
-		Version:  "v1alpha1",
-		Kind:     "Space",
-		Resource: "spaces",
-		KfName:   "Space",
+		KubernetesType: KubernetesType{
+			NsScoped: false,
+			Group:    "kf.dev",
+			Version:  "v1alpha1",
+			Kind:     "Space",
+			Resource: "spaces",
+			KfName:   "Space",
+		},
 	}
 
 	type mocks struct {
-		p      *config.KfParams
-		client *fakedynamic.FakeDynamicClient
+		p *config.KfParams
 	}
 
 	cases := map[string]struct {
 		t       Type
 		args    []string
-		setup   func(*testing.T, *mocks)
+		setup   func(context.Context, *testing.T, *mocks)
 		wantOut string
 		wantErr error
 	}{
@@ -142,17 +153,19 @@ func TestNewDescribeCommand(t *testing.T) {
 		"namespace no target": {
 			t:    nsType,
 			args: []string{"name"},
-			setup: func(t *testing.T, mocks *mocks) {
-				mocks.p.Namespace = ""
+			setup: func(ctx context.Context, t *testing.T, mocks *mocks) {
+				mocks.p.Space = ""
 			},
-			wantErr: errors.New("no space targeted, use 'kf target --space SPACE' to target a space"),
+			wantErr: errors.New(config.EmptySpaceError),
 		},
 		"cluster good": {
 			t:    clusterType,
 			args: []string{"some-object-name"},
-			setup: func(t *testing.T, mocks *mocks) {
+			setup: func(ctx context.Context, t *testing.T, mocks *mocks) {
 				obj := clusterType.NewUnstructured("", "some-object-name")
-				mocks.client = fakedynamic.NewSimpleDynamicClient(runtime.NewScheme(), obj)
+				fakedynamicclient.Get(ctx).
+					Resource(clusterType.GroupVersionResource(context.Background())).
+					Create(ctx, obj, metav1.CreateOptions{})
 			},
 			wantOut: `Getting Space some-object-name
 API Version:  kf.dev/v1alpha1
@@ -170,12 +183,15 @@ Metadata:
 		"namespace good": {
 			t:    nsType,
 			args: []string{"some-object-name"},
-			setup: func(t *testing.T, mocks *mocks) {
-				mocks.p.Namespace = "my-ns"
+			setup: func(ctx context.Context, t *testing.T, mocks *mocks) {
+				mocks.p.Space = "my-ns"
 				obj := nsType.NewUnstructured("my-ns", "some-object-name")
-				mocks.client = fakedynamic.NewSimpleDynamicClient(runtime.NewScheme(), obj)
+				fakedynamicclient.Get(ctx).
+					Resource(nsType.GroupVersionResource(context.Background())).
+					Namespace("my-ns").
+					Create(ctx, obj, metav1.CreateOptions{})
 			},
-			wantOut: `Getting App some-object-name in namespace: my-ns
+			wantOut: `Getting App some-object-name in Space: my-ns
 API Version:  kf.dev/v1alpha1
 Kind:         App
 Metadata:
@@ -186,9 +202,11 @@ Metadata:
 		"custom output": {
 			t:    clusterType,
 			args: []string{"some-object-name", "-o", "name"},
-			setup: func(t *testing.T, mocks *mocks) {
+			setup: func(ctx context.Context, t *testing.T, mocks *mocks) {
 				obj := clusterType.NewUnstructured("", "some-object-name")
-				mocks.client = fakedynamic.NewSimpleDynamicClient(runtime.NewScheme(), obj)
+				fakedynamicclient.Get(ctx).
+					Resource(clusterType.GroupVersionResource(context.Background())).
+					Create(ctx, obj, metav1.CreateOptions{})
 			},
 			wantOut: `Getting Space some-object-name
 space.kf.dev/some-object-name
@@ -199,21 +217,24 @@ space.kf.dev/some-object-name
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
 
+			buf := new(bytes.Buffer)
+			ctx := fakeinjection.WithInjection(context.Background(), t)
+			ctx = configlogging.SetupLogger(ctx, buf)
+
 			mocks := &mocks{
 				p: &config.KfParams{
-					Namespace: "default",
+					Space: "default",
 				},
-				client: fakedynamic.NewSimpleDynamicClient(runtime.NewScheme()),
 			}
 
 			if tc.setup != nil {
-				tc.setup(t, mocks)
+				tc.setup(ctx, t, mocks)
 			}
 
-			buf := new(bytes.Buffer)
-			cmd := NewDescribeCommand(tc.t, mocks.p, mocks.client)
+			cmd := NewDescribeCommand(tc.t, mocks.p)
 			cmd.SetOutput(buf)
 			cmd.SetArgs(tc.args)
+			cmd.SetContext(ctx)
 
 			_, actualErr := cmd.ExecuteC()
 			if tc.wantErr != nil || actualErr != nil {

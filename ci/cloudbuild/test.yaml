@@ -1,0 +1,589 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+# # Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This can be ran by doing the following:
+# gcloud builds submit . \
+# --config=ci/cloudbuild/test.yaml \
+# --ignore-file=ci/cloudbuild/test.ignore \
+# --substitutions='_CLOUDSDK_COMPUTE_ZONE=<ZONE>,_CLOUDSDK_CONTAINER_CLUSTER=<CLUSTER-NAME>'
+#
+# NOTE: Be sure to replace <ZONE> and <CLUSTER-NAME> accordingly.
+#
+# If you want the test to create and delete its own cluster, do the following:
+# gcloud builds submit . \
+# --config=ci/cloudbuild/test.yaml \
+# --ignore-file=ci/cloudbuild/test.ignore \
+# --substitutions='_FULL_RELEASE_BUCKET=<RELEASE-BUCKET>,_DELETE_CLUSTER=true'
+#
+# NOTE: Be sure to replace <RELEASE-BUCKET>. A <RELEASE-BUCKET> is the same
+# used when creating a release. It is the gs:// URI that contains
+# cloud-build/fresh-cluster.yaml and cloud-build/delete-cluster.yaml.
+
+timeout: 7200s
+options:
+  machineType: 'N1_HIGHCPU_8'
+substitutions:
+  # _CLOUDSDK_COMPUTE_ZONE sets the GCP Zone the GKE cluster can be found or
+  # will be created in. If it's set to 'random', then a random value will be
+  # selected.
+  _CLOUDSDK_COMPUTE_ZONE: 'random'
+
+  # _CLOUDSDK_CONTAINER_CLUSTER is the name of the cluster that is created. If
+  # it's set to 'random', then a random value will be selected.
+  _CLOUDSDK_CONTAINER_CLUSTER: 'random'
+
+  # _FULL_RELEASE_BUCKET is a GS URI (e.g, gs://bucket-name/version) where the
+  # cloud-build/fresh-cluster.yaml and cloud-build/delete-cluster.yaml will be
+  # grabbed and used. If empty, then the GKE cluster has to already be
+  # created.
+  _FULL_RELEASE_BUCKET: ''
+
+  # _MACHINE_TYPE is the name of a Google Compute Engine machine type (if a
+  # GKE cluster is created).
+  _MACHINE_TYPE: n2-highmem-4
+
+  # _NODE_COUNT is the initial number of nodes desired in the cluster (if a
+  # GKE cluster is created).
+  _NODE_COUNT: '6'
+
+  # _DELETE_CLUSTER when set to true and _FULL_RELEASE_BUCKET is set, the
+  # cluster will be deleted after a successful run. It defaults to false.
+  _DELETE_CLUSTER: 'false'
+
+  # _SKIP_UNIT_TESTS when set to 'true' will not run the unit tests.
+  _SKIP_UNIT_TESTS: 'false'
+
+  # _INTEGRATION_TEST_RUNS is number of times the integration tests should be
+  # ran.
+  _INTEGRATION_TEST_RUNS: '1'
+
+  # _STRESS_TEST_BASELOAD_FACTOR is the multiplier for how many sets of the
+  # stress test app are deployed.
+  _STRESS_TEST_BASELOAD_FACTOR: '0'
+
+  # _SKIP_ACCEPTANCE_TESTS when set to 'true' will not run the acceptance
+  # tests.
+  _SKIP_ACCEPTANCE_TESTS: 'true'
+
+  # _RELEASE_CHANNEL is the GKE release channel to use when deploying the GKE
+  # cluster.
+  _RELEASE_CHANNEL: 'REGULAR'
+
+  # _KEEP_TEST_SPACES instructs the integration/acceptance tests to not delete
+  # the spaces.
+  _KEEP_TEST_SPACES: 'false'
+
+  # _SKIP_DOWNLOAD_KF_CLI will prevent the Kf CLI from being downloaded and
+  # used in tests.
+  _SKIP_DOWNLOAD_KF_CLI: 'false'
+
+  # _ASM_MANAGED when set to 'true' will install the Google-manage control plane
+  # version of ASM
+  _ASM_MANAGED: 'false'
+
+  # _EXTRA_CERTS_URL when set will install the certs found at the given URL.
+  # The value must be a gs:// URL.
+  _EXTRA_CERTS_URL: ''
+
+  # _SELF_SIGNED_CERTS_BROKER_URL turns on the integration test that asserts
+  # that the Kf controller uses the certs found in _EXTRA_CERTS_URL and can
+  # connect to the broker. The test assumes that the username and password are
+  # both 'broker'.
+  _SELF_SIGNED_CERTS_BROKER_URL: ''
+
+  _KO_IMAGE: 'gcr.io/kf-build-images/ko:latest'
+  _CLOUDSDK_IMAGE: 'gcr.io/kf-build-images/cloud-sdk:alpine'
+  _GOLANG_IMAGE: 'gcr.io/kf-build-images/golang:1.17'
+
+steps:
+- id: check substitutions
+  waitFor: ['-']
+  entrypoint: bash
+  name: "${_CLOUDSDK_IMAGE}"
+  args:
+  - '-c'
+  - |
+    set -eu
+
+    if [ -z "${_CLOUDSDK_COMPUTE_ZONE}" ]; then
+      echo "_CLOUDSDK_COMPUTE_ZONE is empty"
+      exit 1
+    fi
+    if [ -z "${_CLOUDSDK_CONTAINER_CLUSTER}" ]; then
+      echo "_CLOUDSDK_CONTAINER_CLUSTER is empty"
+      exit 1
+    fi
+    if [ -z "${_FULL_RELEASE_BUCKET}" ]; then
+      if [ "${_CLOUDSDK_COMPUTE_ZONE}" == "random" ] || [ "${_CLOUDSDK_CONTAINER_CLUSTER}" == "random" ]; then
+        echo "_FULL_RELEASE_BUCKET is empty but _CLOUDSDK_CONTAINER_CLUSTER and/or _CLOUDSDK_COMPUTE_ZONE are set to random"
+        exit 1
+      fi
+    fi
+
+    echo '_CLOUDSDK_COMPUTE_ZONE="${_CLOUDSDK_COMPUTE_ZONE}"'
+    echo '_CLOUDSDK_CONTAINER_CLUSTER="${_CLOUDSDK_CONTAINER_CLUSTER}"'
+    echo '_FULL_RELEASE_BUCKET="${_FULL_RELEASE_BUCKET}"'
+    echo '_DELETE_CLUSTER="${_DELETE_CLUSTER}"'
+
+- id: default values
+  waitFor:
+  - check substitutions
+  name: "${_CLOUDSDK_IMAGE}"
+  dir: /workspace
+  entrypoint: bash
+  args:
+  - '-c'
+  - |
+    set -euxo pipefail
+
+    rand () {
+      # NOTE: We can't use the normal way of doing random ints as GCB will try
+      # to replace the RANDOM variable and fail.
+      od -A n -t d -N 4 /dev/urandom | tr -d '[:space:]'
+    }
+
+    # Store this in a place where there won't be a risk collisions with
+    # anything else stored in /workspace (e.g., the source code).
+    mkdir -p /workspace/${BUILD_ID}/
+
+    # _CLOUDSDK_COMPUTE_ZONE
+    if [ "${_CLOUDSDK_COMPUTE_ZONE}" == "random" ]; then
+      python3 ./ci/cloudbuild/scripts/find_zone.py "${_MACHINE_TYPE}" | tee /workspace/${BUILD_ID}/_CLOUDSDK_COMPUTE_ZONE
+    else
+      echo "${_CLOUDSDK_COMPUTE_ZONE}" > /workspace/${BUILD_ID}/_CLOUDSDK_COMPUTE_ZONE
+    fi
+
+    # _CLOUDSDK_CONTAINER_CLUSTER
+    if [ "${_CLOUDSDK_CONTAINER_CLUSTER}" == "random" ]; then
+      randNum=$(rand)
+      echo "int-${randNum:1}" > /workspace/${BUILD_ID}/_CLOUDSDK_CONTAINER_CLUSTER
+    else
+      echo "${_CLOUDSDK_CONTAINER_CLUSTER}" > /workspace/${BUILD_ID}/_CLOUDSDK_CONTAINER_CLUSTER
+    fi
+
+- id: download Kf CLI and YAML files
+  waitFor:
+  - default values
+  timeout: 1800s
+  name: "${_CLOUDSDK_IMAGE}"
+  entrypoint: bash
+  args:
+  - '-c'
+  - |
+    set -eux
+
+    if [ -z "${_FULL_RELEASE_BUCKET}" ]; then
+      echo "_FULL_RELEASE_BUCKET is not set. Not downloading Kf CLI or YAML files..."
+      exit 0
+    fi
+
+    if [ "${_SKIP_DOWNLOAD_KF_CLI}" == "true" ]; then
+      echo "_SKIP_DOWNLOAD_KF_CLI is set to true. Not downloading CLI..."
+    else
+      echo "Downloading Kf CLI..."
+      gsutil cp ${_FULL_RELEASE_BUCKET}/kf-linux /workspace/${BUILD_ID}/kf
+      chmod +x /workspace/${BUILD_ID}/kf
+    fi
+
+    gsutil cp ${_FULL_RELEASE_BUCKET}/cloud-build/fresh-cluster.yaml /workspace/${BUILD_ID}/fresh-cluster.yaml
+    gsutil cp ${_FULL_RELEASE_BUCKET}/cloud-build/delete-cluster.yaml /workspace/${BUILD_ID}/delete-cluster.yaml
+
+- id: unit tests
+  waitFor: ['-']
+  timeout: 900s
+  name: "${_GOLANG_IMAGE}"
+  env:
+  - "GO111MODULE=on"
+  - "GOPROXY=https://proxy.golang.org"
+  - "GOSUMDB=sum.golang.org"
+  entrypoint: bash
+  args:
+  - '-c'
+  - |
+    set -eu
+
+    if [ "${_SKIP_UNIT_TESTS}" == "true" ]; then
+      echo "Skipping unit tests..."
+      exit 0
+    fi
+
+    hack/unit-test.sh
+
+- id: create GKE cluster
+  waitFor:
+  - default values
+  - download Kf CLI and YAML files
+  - unit tests
+  timeout: 1800s
+  name: "${_CLOUDSDK_IMAGE}"
+  entrypoint: bash
+  args:
+  - '-c'
+  - |
+    set -eux
+
+    if [ -z "${_FULL_RELEASE_BUCKET}" ]; then
+      echo "_FULL_RELEASE_BUCKET is not set. Skipping GKE cluster creation..."
+      exit 0
+    fi
+
+    gcloud builds submit \
+    --no-source \
+    --config=/workspace/${BUILD_ID}/fresh-cluster.yaml \
+    --substitutions=_CLOUDSDK_COMPUTE_ZONE=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_COMPUTE_ZONE),_CLOUDSDK_CONTAINER_CLUSTER=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_CONTAINER_CLUSTER),_NODE_COUNT=${_NODE_COUNT},_MACHINE_TYPE=${_MACHINE_TYPE},_RELEASE_CHANNEL=${_RELEASE_CHANNEL},_ASM_MANAGED=${_ASM_MANAGED}
+
+    if [ ! -z "${_EXTRA_CERTS_URL}" ]; then
+      gsutil cp "${_EXTRA_CERTS_URL}" /workspace/certs.pem
+    fi
+
+- id: deploy certs
+  name: "${_KO_IMAGE}"
+  waitFor:
+  - create GKE cluster
+  entrypoint: bash
+  args:
+  - '-c'
+  - |
+    set -euxo pipefail
+
+    export CLOUDSDK_COMPUTE_ZONE=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_COMPUTE_ZONE)
+    export CLOUDSDK_CONTAINER_CLUSTER=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_CONTAINER_CLUSTER)
+    export CLOUDSDK_CORE_PROJECT=${PROJECT_ID}
+
+    if [ -z "${_EXTRA_CERTS_URL}" ]; then
+      echo "_EXTRA_CERTS_URL not set. Skipping..."
+      exit 0
+    fi
+
+    echo "Creating secret from certs"
+    /builder/kubectl.bash create secret generic cacerts -nkf --from-file /workspace/certs.pem
+    echo "Make the secret immutable"
+    /builder/kubectl.bash patch -nkf secret cacerts \
+    --type='json' \
+    -p="[{'op':'add','path':'/immutable','value':true}]"
+
+    echo "Patching kfsystem to point at secret"
+    /builder/kubectl.bash patch \
+    kfsystem kfsystem \
+    --type='json' \
+    -p="[{'op':'add','path':'/spec/kf/config/secrets','value':{'controllerCACerts':{'name':'cacerts'}}}]"
+
+- id: deploy stress tests
+  name: "${_KO_IMAGE}"
+  waitFor:
+  - deploy certs
+  - download Kf CLI and YAML files
+  env:
+  - "GO111MODULE=on"
+  - "GOPROXY=https://proxy.golang.org"
+  - "GOSUMDB=sum.golang.org"
+  - "CGO_ENABLED=0"
+  - "EGRESS_TEST_RESULTS=true"
+  - "INTEGRATION_TEST_ID=${BUILD_ID}"
+  entrypoint: bash
+  args:
+  - '-c'
+  - |
+    set -eux
+
+    if [ "${_STRESS_TEST_BASELOAD_FACTOR}" -le "0" ]; then
+      echo "_STRESS_TEST_BASELOAD_FACTOR is set to ${_STRESS_TEST_BASELOAD_FACTOR}. Skipping..."
+      exit 0
+    fi
+
+    # Clone stress test app
+    git clone \
+      https://github.com/poy/diego-stress-tests \
+      /workspace/${BUILD_ID}/stress-test
+
+    if ! ls /workspace/${BUILD_ID}/kf &> /dev/null; then
+      echo "kf CLI was not downloaded... Installing..."
+      go install ./cmd/kf
+    else
+      echo "using kf CLI that was downloaded"
+      PATH=/workspace/${BUILD_ID}:$$PATH
+    fi
+
+    export CLOUDSDK_COMPUTE_ZONE=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_COMPUTE_ZONE)
+    export CLOUDSDK_CONTAINER_CLUSTER=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_CONTAINER_CLUSTER)
+    export CLOUDSDK_CORE_PROJECT=${PROJECT_ID}
+
+    # Authenticate
+    /builder/kubectl.bash
+
+    space_name=stress-test-$(date +%s)
+
+    kf create-space ${space_name}
+    kf target -s ${space_name}
+
+    domain=$(kf space ${space_name} -o jsonpath="{.status.networkConfig.domains[]['domain']}")
+
+    for i in $(seq 1 "${_STRESS_TEST_BASELOAD_FACTOR}"); do
+      # Light group
+      kf push light-group \
+      -i 4 \
+      -p /workspace/${BUILD_ID}/stress-test/cedar/assets/stress-app \
+      -m 32Mi \
+      -e LOGS_PER_SECOND=0 \
+      -e REQUESTS_PER_SECOND=0.03 \
+      -e ENDPOINT_TO_HIT="light-group.${domain}" &
+
+      # Light
+      for i in $(seq 1 9); do
+        kf push light-${i} \
+        -i 1 \
+        -p /workspace/${BUILD_ID}/stress-test/cedar/assets/stress-app \
+        -m 32Mi \
+        -e LOGS_PER_SECOND=0 \
+        -e REQUESTS_PER_SECOND=0.03 \
+        -e ENDPOINT_TO_HIT="light-${i}.${domain}" &
+      done
+
+      # Medium group
+      kf push medium-group \
+      -i 3 \
+      -p /workspace/${BUILD_ID}/stress-test/cedar/assets/stress-app \
+      -m 128Mi \
+      -e LOGS_PER_SECOND=0 \
+      -e REQUESTS_PER_SECOND=0.06 \
+      -e ENDPOINT_TO_HIT="medium-group.${domain}" &
+
+      # Medium
+      for i in $(seq 1 6); do
+        kf push medium-${i} \
+        -i 1 \
+        -p /workspace/${BUILD_ID}/stress-test/cedar/assets/stress-app \
+        -m 128Mi \
+        -e LOGS_PER_SECOND=0 \
+        -e REQUESTS_PER_SECOND=0.06 \
+        -e ENDPOINT_TO_HIT="medium-${i}.${domain}" &
+      done
+
+      # Heavy
+      kf push heavy \
+      -i 1 \
+      -p /workspace/${BUILD_ID}/stress-test/cedar/assets/stress-app \
+      -m 1024Mi \
+      -e LOGS_PER_SECOND=0 \
+      -e REQUESTS_PER_SECOND=0.07 \
+      -e ENDPOINT_TO_HIT="heavy.${domain}" &
+
+      # Crashing
+      for i in $(seq 1 6); do
+        kf push heavy-${i} \
+        -i 1 \
+        -p /workspace/${BUILD_ID}/stress-test/cedar/assets/stress-app \
+        -m 128Mi \
+        -e LOGS_PER_SECOND=0 \
+        -e REQUESTS_PER_SECOND=0.07 \
+        -e ENDPOINT_TO_HIT="heavy.${domain}" \
+        -e MIN_SECONDS_TIL_CRASH="30s" \
+        -e MAX_SECONDS_TIL_CRASH="360s" &
+      done
+    done
+
+    wait
+
+- id: acceptance tests
+  name: "${_KO_IMAGE}"
+  timeout: 3600s
+  waitFor:
+  - deploy certs
+  - download Kf CLI and YAML files
+  env:
+  - "GO111MODULE=on"
+  - "GOPROXY=https://proxy.golang.org"
+  - "GOSUMDB=sum.golang.org"
+  - "CGO_ENABLED=0"
+  - "EGRESS_TEST_RESULTS=true"
+  - "INTEGRATION_TEST_ID=${BUILD_ID}"
+  - "KEEP_SPACES=${_KEEP_TEST_SPACES}"
+  entrypoint: bash
+  args:
+  - '-c'
+  - |
+    set -eu
+
+    if [ "${_SKIP_ACCEPTANCE_TESTS}" == "true" ]; then
+      echo "Skipping acceptance tests..."
+      exit 0
+    fi
+
+    if ls /workspace/${BUILD_ID}/kf &> /dev/null; then
+      # Use Kf CLI from release.
+      export KF_CLI_PATH=/workspace/${BUILD_ID}/kf
+    fi
+
+    export CLOUDSDK_COMPUTE_ZONE=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_COMPUTE_ZONE)
+    export CLOUDSDK_CONTAINER_CLUSTER=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_CONTAINER_CLUSTER)
+    export CLOUDSDK_CORE_PROJECT=${PROJECT_ID}
+
+    # Authenticate
+    /builder/kubectl.bash
+
+    ./hack/acceptance-test.sh
+
+- id: integration tests
+  name: "${_KO_IMAGE}"
+  waitFor:
+  - deploy stress tests
+  - acceptance tests
+  timeout: 3600s
+  env:
+  - "GO111MODULE=on"
+  - "GOPROXY=https://proxy.golang.org"
+  - "GOSUMDB=sum.golang.org"
+  - "CGO_ENABLED=0"
+  - "EGRESS_TEST_RESULTS=true"
+  - "INTEGRATION_TEST_ID=${BUILD_ID}"
+  - "KEEP_SPACES=${_KEEP_TEST_SPACES}"
+  entrypoint: bash
+  args:
+  - '-c'
+  - |
+    set -eu
+
+    cleanup() {
+      echo $? > /workspace/${BUILD_ID}/_INTEGRATION_EXIT_CODE
+      exit 0
+    }
+    trap cleanup EXIT
+
+    if [ "${_INTEGRATION_TEST_RUNS}" -le "0" ]; then
+      echo "_INTEGRATION_TEST_RUNS is set to ${_INTEGRATION_TEST_RUNS}. Skipping..."
+      exit 0
+    fi
+
+    export CLOUDSDK_COMPUTE_ZONE=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_COMPUTE_ZONE)
+    export CLOUDSDK_CONTAINER_CLUSTER=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_CONTAINER_CLUSTER)
+    export CLOUDSDK_CORE_PROJECT=${PROJECT_ID}
+
+    # TODO: Consider creating a container with all this pre-baked.
+    # Install Pack for the wrap-v2-buildpack tests.
+    # This is pulled from https://buildpacks.io/docs/tools/pack/
+    (curl -sSL "https://github.com/buildpacks/pack/releases/download/v0.22.0/pack-v0.22.0-linux.tgz" | tar -C /usr/local/bin/ --no-same-owner -xzv pack)
+    apt-get update
+    apt-get install zip -y
+
+    # Authenticate
+    /builder/kubectl.bash
+
+    if ls /workspace/${BUILD_ID}/kf &> /dev/null; then
+      # Use Kf CLI from release.
+      export KF_CLI_PATH=/workspace/${BUILD_ID}/kf
+
+      # We can save some time by running doctor now and only once instead of
+      # once per integration test try.
+      $${KF_CLI_PATH} doctor --retries 60 --delay 5s
+
+      export SKIP_DOCTOR=true
+    fi
+
+    # To better enable any retries to work, we don't want runs interfering.
+    # Therefore, use a random space each time.
+    export RANDOM_SPACE_NAMES=true
+
+    # Setup the custom metric labels to help the data show what kind of
+    # conditions the tests were running under.
+    export CUSTOM_METRIC_LABELS="stress_test_baseload_factor=${_STRESS_TEST_BASELOAD_FACTOR},integration_test_runs=${_INTEGRATION_TEST_RUNS},machine_type=${_MACHINE_TYPE},node_count=${_NODE_COUNT},git_sha=$(git rev-parse HEAD)"
+
+    export SELF_SIGNED_CERTS_BROKER_URL="${_SELF_SIGNED_CERTS_BROKER_URL}"
+
+    # Don't fail the step. This ensures the delete GKE cluster can always run.
+    # The last step reports success/failure.
+    set +e
+    for i in $(seq 1 "${_INTEGRATION_TEST_RUNS}"); do
+      KUBECTL=/builder/kubectl.bash ./hack/integration-test.sh
+    done
+
+- id: delete GKE cluster
+  waitFor:
+  - integration tests
+  timeout: 1800s
+  name: "${_CLOUDSDK_IMAGE}"
+  entrypoint: bash
+  args:
+  - '-c'
+  - |
+    set -eux
+
+    if [ "${_DELETE_CLUSTER}" != "true" ] || [ -z "${_FULL_RELEASE_BUCKET}" ]; then
+      echo "_DELETE_CLUSTER set to ${_DELETE_CLUSTER} or _FULL_RELEASE_BUCKET is not set. Not deleting..."
+
+      # Simplify the reporting process and just write success.
+      echo 0 > /workspace/${BUILD_ID}/_DELETE_CLUSTER_EXIT_CODE
+      exit 0
+    fi
+
+    cluster_name=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_CONTAINER_CLUSTER)
+    cluster_zone=$$(cat /workspace/${BUILD_ID}/_CLOUDSDK_COMPUTE_ZONE)
+
+    echo "_DELETE_CLUSTER set to ${_DELETE_CLUSTER}. Deleting ${cluster_name} in ${cluster_zone}..."
+
+    # Don't fail the step. The last step reports success/failure.
+    set +x
+    gcloud builds submit \
+    --no-source \
+    --config=/workspace/${BUILD_ID}/delete-cluster.yaml \
+    --substitutions=_CLOUDSDK_COMPUTE_ZONE=${cluster_zone},_CLOUDSDK_CONTAINER_CLUSTER=${cluster_name}
+    echo $? > /workspace/${BUILD_ID}/_DELETE_CLUSTER_EXIT_CODE
+
+- id: report test results
+  waitFor:
+  - delete GKE cluster
+  timeout: 1800s
+  name: "${_CLOUDSDK_IMAGE}"
+  entrypoint: bash
+  args:
+  - '-c'
+  - |
+    set -eu
+
+    function green {
+        echo -e "\033[32m$1\033[0m"
+    }
+
+    function bold_green {
+        echo -e "\033[1;32m$1\033[0m"
+    }
+
+    function red {
+        echo -e "\033[31m$1\033[0m"
+    }
+
+    function bold_red {
+        echo -e "\033[1;31m$1\033[0m"
+    }
+
+    failures=0
+    total=0
+
+    function check {
+        total=$((total+1))
+        if [ $(cat $1) == 0 ]; then
+            green "$2 succeeded"
+        else
+            red "$2 failed"
+            failures=$((failures+1))
+        fi
+    }
+
+    check /workspace/${BUILD_ID}/_INTEGRATION_EXIT_CODE "Integration tests"
+    check /workspace/${BUILD_ID}/_DELETE_CLUSTER_EXIT_CODE "Delete GKE cluster"
+
+    if [ ${failures} == 0 ]; then
+        bold_green "${total} of ${total} succeeded"
+    else
+        bold_red "${failures} of ${total} failed"
+        exit 1
+    fi

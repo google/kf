@@ -20,48 +20,48 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/kf/pkg/kf/apps/fake"
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/kf/apps/fake"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 )
 
 func TestRestart(t *testing.T) {
 	t.Parallel()
 
 	cases := map[string]struct {
-		Namespace       string
+		Space           string
 		Args            []string
 		ExpectedStrings []string
 		ExpectedErr     error
 		Setup           func(t *testing.T, fake *fake.FakeClient)
 	}{
 		"restarts app": {
-			Namespace: "default",
-			Args:      []string{"my-app"},
+			Space: "default",
+			Args:  []string{"my-app"},
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Restart("default", "my-app")
+				fake.EXPECT().Restart(gomock.Any(), "default", "my-app")
 				fake.EXPECT().WaitForConditionKnativeServiceReadyTrue(gomock.Any(), "default", "my-app", gomock.Any())
 			},
 		},
 		"async call does not wait": {
-			Namespace: "default",
-			Args:      []string{"my-app", "--async"},
+			Space: "default",
+			Args:  []string{"my-app", "--async"},
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Restart(gomock.Any(), gomock.Any())
+				fake.EXPECT().Restart(gomock.Any(), gomock.Any(), gomock.Any())
 			},
 		},
 		"no app name": {
-			Namespace:   "default",
+			Space:       "default",
 			Args:        []string{},
 			ExpectedErr: errors.New("accepts 1 arg(s), received 0"),
 		},
 		"restart app fails": {
-			Namespace:   "default",
+			Space:       "default",
 			Args:        []string{"my-app"},
-			ExpectedErr: errors.New("failed to restart app: some-error"),
+			ExpectedErr: errors.New("failed to restart App: some-error"),
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().
-					Restart(gomock.Any(), gomock.Any()).
+					Restart(gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(errors.New("some-error"))
 			},
 		},
@@ -78,7 +78,7 @@ func TestRestart(t *testing.T) {
 
 			buf := new(bytes.Buffer)
 			p := &config.KfParams{
-				Namespace: tc.Namespace,
+				Space: tc.Space,
 			}
 
 			cmd := NewRestartCommand(p, fake)
@@ -93,7 +93,6 @@ func TestRestart(t *testing.T) {
 			testutil.AssertContainsAll(t, buf.String(), tc.ExpectedStrings)
 			testutil.AssertEqual(t, "SilenceUsage", true, cmd.SilenceUsage)
 
-			ctrl.Finish()
 		})
 	}
 }

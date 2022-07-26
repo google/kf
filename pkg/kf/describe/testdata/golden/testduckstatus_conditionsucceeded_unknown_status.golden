@@ -1,0 +1,6 @@
+Status:
+  Succeeded:
+    Ready:    Unknown
+    Message:  condition-succeeded-message
+  Conditions:
+    Type  Status  Updated  Message  Reason

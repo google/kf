@@ -1,0 +1,150 @@
+# Test:	TestMakeSource/buildpack
+# app:
+#   metadata:
+#     creationTimestamp: null
+#     name: mybuildpackapp
+#     namespace: myspace
+#   spec:
+#     build:
+#       spec:
+#         env:
+#         - name: some-env-var
+#           value: cool-env-value
+#         params:
+#         - name: some-param
+#           value: cool-value
+#         sourcePackage: {}
+#       updateRequests: 37
+#     instances:
+#       autoscaling: {}
+#     template:
+#       spec:
+#         containers:
+#         - name: ""
+#           resources: {}
+#       updateRequests: 0
+#   status:
+#     instances:
+#       labelSelector: ""
+#     serviceBindingConditions: null
+#     tasks:
+#       updateRequests: 0
+# space:
+#   metadata:
+#     creationTimestamp: null
+#   spec:
+#     buildConfig:
+#       defaultToV3Stack: null
+#     networkConfig:
+#       appNetworkPolicy: {}
+#       buildNetworkPolicy: {}
+#     runtimeConfig: {}
+#   status:
+#     buildConfig:
+#       defaultToV3Stack: false
+#     ingressGateways: null
+#     networkConfig: {}
+#     runtimeConfig: {}
+
+{
+    "metadata": {
+        "name": "mybuildpackapp-37",
+        "namespace": "myspace",
+        "creationTimestamp": null,
+        "labels": {
+            "app.kubernetes.io/component": "build",
+            "app.kubernetes.io/managed-by": "kf",
+            "app.kubernetes.io/name": "mybuildpackapp"
+        },
+        "ownerReferences": [
+            {
+                "apiVersion": "kf.dev/v1alpha1",
+                "kind": "App",
+                "name": "mybuildpackapp",
+                "uid": "",
+                "controller": true,
+                "blockOwnerDeletion": true
+            }
+        ]
+    },
+    "spec": {
+        "sourcePackage": {},
+        "params": [
+            {
+                "name": "some-param",
+                "value": "cool-value"
+            }
+        ],
+        "env": [
+            {
+                "name": "CF_INSTANCE_IP",
+                "valueFrom": {
+                    "fieldRef": {
+                        "fieldPath": "status.podIP"
+                    }
+                }
+            },
+            {
+                "name": "CF_INSTANCE_INTERNAL_IP",
+                "value": "$(CF_INSTANCE_IP)"
+            },
+            {
+                "name": "VCAP_APP_HOST",
+                "value": "$(CF_INSTANCE_IP)"
+            },
+            {
+                "name": "CF_INSTANCE_PORT",
+                "value": "8080"
+            },
+            {
+                "name": "CF_INSTANCE_ADDR",
+                "value": "$(CF_INSTANCE_IP):$(CF_INSTANCE_PORT)"
+            },
+            {
+                "name": "MEMORY_LIMIT",
+                "valueFrom": {
+                    "resourceFieldRef": {
+                        "resource": "limits.memory",
+                        "divisor": "1Mi"
+                    }
+                }
+            },
+            {
+                "name": "DISK_LIMIT",
+                "valueFrom": {
+                    "resourceFieldRef": {
+                        "resource": "limits.ephemeral-storage",
+                        "divisor": "1Mi"
+                    }
+                }
+            },
+            {
+                "name": "LANG",
+                "value": "en_US.UTF-8"
+            },
+            {
+                "name": "VCAP_APPLICATION",
+                "value": "{\"application_id\":\"\",\"application_name\":\"mybuildpackapp\",\"application_uris\":[],\"limits\":{\"disk\":$(DISK_LIMIT),\"mem\":$(MEMORY_LIMIT)},\"name\":\"mybuildpackapp\",\"process_id\":\"\",\"process_type\":\"web\",\"space_name\":\"myspace\",\"uris\":[]}"
+            },
+            {
+                "name": "VCAP_SERVICES",
+                "valueFrom": {
+                    "secretKeyRef": {
+                        "name": "kf-injected-envs-mybuildpackapp",
+                        "key": "VCAP_SERVICES",
+                        "optional": false
+                    }
+                }
+            },
+            {
+                "name": "MEMORY_LIMIT",
+                "value": "$(MEMORY_LIMIT)M"
+            },
+            {
+                "name": "some-env-var",
+                "value": "cool-env-value"
+            }
+        ]
+    },
+    "status": {}
+}

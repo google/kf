@@ -15,75 +15,19 @@
 package resources
 
 import (
-	"path"
-	"regexp"
-
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
-	"knative.dev/pkg/kmeta"
-)
-
-var (
-	regexpRouteLabels = regexp.MustCompile(`[a-zA-Z-0-9._-]`)
+	"k8s.io/apimachinery/pkg/util/sets"
+	"knative.dev/pkg/ptr"
 )
 
 // MakeRouteLabels creates Labels that can be used to tie a Route to a
 // VirtualService.
-func MakeRouteLabels(spec v1alpha1.RouteSpecFields) map[string]string {
+func MakeRouteLabels() map[string]string {
 	return map[string]string{
 		v1alpha1.ManagedByLabel: "kf",
 		v1alpha1.ComponentLabel: "route",
-		v1alpha1.RouteHostname:  spec.Hostname,
-		v1alpha1.RouteDomain:    spec.Domain,
-		v1alpha1.RoutePath:      v1alpha1.ToBase36(path.Join("/", spec.Path)),
 	}
-}
-
-// MakeRouteAppLabels creates Labels that can be used to lookup the Route for
-// the app.
-func MakeRouteAppLabels(app *v1alpha1.App) map[string]string {
-	return map[string]string{
-		v1alpha1.RouteAppName: app.Name,
-	}
-}
-
-func mustRequirement(key string, op selection.Operator, val string) labels.Requirement {
-	r, err := labels.NewRequirement(key, op, []string{val})
-	if err != nil {
-		panic(err)
-	}
-	return *r
-}
-
-// MakeRouteSelector creates a labels.Selector for listing all the
-// corresponding Routes excluding Path.
-func MakeRouteSelectorNoPath(spec v1alpha1.RouteSpecFields) labels.Selector {
-	return labels.NewSelector().Add(
-		mustRequirement(v1alpha1.ManagedByLabel, selection.Equals, "kf"),
-		mustRequirement(v1alpha1.RouteHostname, selection.Equals, spec.Hostname),
-		mustRequirement(v1alpha1.RouteDomain, selection.Equals, spec.Domain),
-	)
-}
-
-// MakeRouteSelector creates a labels.Selector for listing all the
-// corresponding Routes.
-func MakeRouteSelector(spec v1alpha1.RouteSpecFields) labels.Selector {
-	return labels.NewSelector().Add(
-		mustRequirement(v1alpha1.RouteHostname, selection.Equals, spec.Hostname),
-		mustRequirement(v1alpha1.RouteDomain, selection.Equals, spec.Domain),
-		mustRequirement(v1alpha1.RoutePath, selection.Equals, v1alpha1.ToBase36(path.Join("/", spec.Path))),
-	)
-}
-
-// MakeRouteAppSelector creates a labels.Selector for listing all the Routes
-// for the given App.
-func MakeRouteAppSelector(app *v1alpha1.App) labels.Selector {
-	return labels.NewSelector().Add(
-		mustRequirement(v1alpha1.ManagedByLabel, selection.Equals, "kf"),
-		mustRequirement(v1alpha1.RouteAppName, selection.Equals, app.Name),
-	)
 }
 
 // MakeRoutes creates a Route for the given application.
@@ -91,59 +35,48 @@ func MakeRoutes(
 	app *v1alpha1.App,
 	space *v1alpha1.Space,
 ) (
-	[]v1alpha1.Route,
-	[]v1alpha1.RouteClaim,
-	error,
+	claims []v1alpha1.Route,
+	bindings []v1alpha1.QualifiedRouteBinding,
+	err error,
 ) {
-	var (
-		routes []v1alpha1.Route
-		claims []v1alpha1.RouteClaim
-	)
-	for _, appRoute := range app.Spec.Routes {
-		appRoute := appRoute.DeepCopy()
-		appRoute.SetSpaceDefaults(space)
+	for _, binding := range app.Spec.Routes {
+		binding := binding.DeepCopy()
+		if app.Spec.Instances.Stopped == true {
+			binding.Weight = ptr.Int32(0)
+		}
 
-		routes = append(routes, v1alpha1.Route{
+		bindings = append(bindings, binding.Qualify(space.DefaultDomainOrBlank(), app.Name))
+	}
+
+	// Merge bindings so after the default domain has been applied any that are
+	// now equal get merged.
+	bindings = v1alpha1.MergeQualifiedBindings(bindings)
+
+	// Build claims, only one claim per name will be built
+	claimNames := sets.NewString()
+	for _, binding := range bindings {
+		name := v1alpha1.GenerateRouteName(
+			binding.Source.Hostname,
+			binding.Source.Domain,
+			binding.Source.Path,
+		)
+
+		if claimNames.Has(name) {
+			continue
+		}
+		claimNames.Insert(name)
+
+		claims = append(claims, v1alpha1.Route{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: v1alpha1.GenerateRouteName(
-					appRoute.Hostname,
-					appRoute.Domain,
-					appRoute.Path,
-					app.Name,
-				),
+				Labels:    MakeRouteLabels(),
+				Name:      name,
 				Namespace: space.Name,
-				Labels: v1alpha1.UnionMaps(
-					app.GetLabels(),
-					MakeRouteLabels(*appRoute),
-					MakeRouteAppLabels(app),
-					app.ComponentLabels("route"),
-				),
-				OwnerReferences: []metav1.OwnerReference{
-					*kmeta.NewControllerRef(app),
-				},
 			},
 			Spec: v1alpha1.RouteSpec{
-				AppName:         app.Name,
-				RouteSpecFields: *appRoute,
-			},
-		})
-
-		// Claim route
-		claims = append(claims, v1alpha1.RouteClaim{
-			ObjectMeta: metav1.ObjectMeta{
-				Labels: MakeRouteLabels(*appRoute),
-				Name: v1alpha1.GenerateRouteClaimName(
-					appRoute.Hostname,
-					appRoute.Domain,
-					appRoute.Path,
-				),
-				Namespace: space.Name,
-			},
-			Spec: v1alpha1.RouteClaimSpec{
-				RouteSpecFields: *appRoute,
+				RouteSpecFields: binding.Source,
 			},
 		})
 	}
 
-	return routes, claims, nil
+	return claims, bindings, nil
 }

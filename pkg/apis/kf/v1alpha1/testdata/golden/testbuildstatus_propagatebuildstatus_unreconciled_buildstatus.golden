@@ -1,0 +1,37 @@
+# Test:	TestBuildStatus_PropagateBuildStatus/unreconciled
+# TaskRun:
+#   metadata:
+#     creationTimestamp: null
+#     name: some-build-name
+#   spec:
+#     resources:
+#       outputs:
+#       - name: IMAGE
+#         resourceSpec:
+#           params:
+#           - name: url
+#             value: some-container-image
+#           type: image
+#     serviceAccountName: ""
+#   status:
+#     podName: ""
+
+{
+    "conditions": [
+        {
+            "type": "Succeeded",
+            "status": "Unknown",
+            "lastTransitionTime": null,
+            "reason": "Unknown",
+            "message": "status not yet reconciled"
+        },
+        {
+            "type": "TaskRunReady",
+            "status": "Unknown",
+            "lastTransitionTime": null,
+            "reason": "Unknown",
+            "message": "status not yet reconciled"
+        }
+    ],
+    "buildName": "some-build-name"
+}

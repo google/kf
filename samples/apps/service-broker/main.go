@@ -46,17 +46,35 @@ const (
 	creds = `{
 		"credentials": {
 			"username": "fake-user",
-			"password": "fake-pw"
+			"password": "fake-pw",
+			"somearray": ["a", 2],
+			"someint": 1,
+			"somebool": true,
+			"quotes": "\"quoted\"",
+			"quotesinside": "abc\"d"
 		}
 	}`
+	validUsername = "valid-user"
+	validPassword = "valid-pw"
 )
 
 func fakeJsonResponse(status int, body string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(status)
+		// first check basic auth on every request
+		username, password, ok := r.BasicAuth()
+		if !ok || !(username == validUsername && password == validPassword) {
+			handleUnauthorizedRequest(w)
+		} else {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(status)
+		}
 		fmt.Fprint(w, body)
 	}
+}
+
+func handleUnauthorizedRequest(w http.ResponseWriter) {
+	w.Header().Add("WWW-Authenticate", fmt.Sprintf(`Basic realm="Authorization required"`))
+	w.WriteHeader(http.StatusUnauthorized)
 }
 
 func methodMapper(mapping map[string]http.HandlerFunc) http.HandlerFunc {
@@ -85,6 +103,15 @@ func logRequest(handler http.Handler) http.HandlerFunc {
 
 func main() {
 	r := mux.NewRouter()
+
+	// health check
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "ok")
+	})
+
+	// OSB
 	r.HandleFunc("/v2/catalog", fakeJsonResponse(http.StatusOK, catalog))
 
 	r.HandleFunc("/v2/service_instances/{instance_id}", methodMapper(map[string]http.HandlerFunc{

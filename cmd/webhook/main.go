@@ -16,127 +16,155 @@ package main
 
 import (
 	"context"
-	"flag"
-	"log"
 
-	"k8s.io/client-go/tools/clientcmd"
-
-	"go.uber.org/zap"
-
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/system"
-	apiconfig "github.com/google/kf/third_party/knative-serving/pkg/apis/config"
-	"github.com/google/kf/third_party/knative-serving/pkg/apis/serving/v1beta1"
-	routecfg "github.com/google/kf/third_party/knative-serving/pkg/reconciler/route/config"
+	kfvalidation "github.com/google/kf/v2/pkg/admission/validation"
+	apiconfig "github.com/google/kf/v2/pkg/apis/kf/config"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	appinformer "github.com/google/kf/v2/pkg/client/kf/injection/informers/kf/v1alpha1/app"
+	serviceinstanceinformer "github.com/google/kf/v2/pkg/client/kf/injection/informers/kf/v1alpha1/serviceinstance"
+	serviceinstancebindinginformer "github.com/google/kf/v2/pkg/client/kf/injection/informers/kf/v1alpha1/serviceinstancebinding"
+	spaceinformer "github.com/google/kf/v2/pkg/client/kf/injection/informers/kf/v1alpha1/space"
+	buildconfig "github.com/google/kf/v2/pkg/reconciler/build/config"
+	v1 "k8s.io/api/admission/v1"
+	autoscaling "k8s.io/api/autoscaling/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/kubernetes"
-	cv1alpha3 "knative.dev/pkg/client/clientset/versioned/typed/istio/v1alpha3"
 	"knative.dev/pkg/configmap"
+	"knative.dev/pkg/controller"
+	"knative.dev/pkg/injection/sharedmain"
 	"knative.dev/pkg/logging"
-	"knative.dev/pkg/logging/logkey"
+	"knative.dev/pkg/metrics"
 	"knative.dev/pkg/signals"
-	"knative.dev/pkg/version"
 	"knative.dev/pkg/webhook"
+	"knative.dev/pkg/webhook/certificates"
+	"knative.dev/pkg/webhook/configmaps"
+	"knative.dev/pkg/webhook/resourcesemantics"
+	"knative.dev/pkg/webhook/resourcesemantics/defaulting"
+	"knative.dev/pkg/webhook/resourcesemantics/validation"
 )
 
-const (
-	component = "webhook"
-)
+var types = map[schema.GroupVersionKind]resourcesemantics.GenericCRD{
+	v1alpha1.SchemeGroupVersion.WithKind("Space"):                  &v1alpha1.Space{},
+	v1alpha1.SchemeGroupVersion.WithKind("App"):                    &v1alpha1.App{},
+	v1alpha1.SchemeGroupVersion.WithKind("Build"):                  &v1alpha1.Build{},
+	v1alpha1.SchemeGroupVersion.WithKind("Route"):                  &v1alpha1.Route{},
+	v1alpha1.SchemeGroupVersion.WithKind("ClusterServiceBroker"):   &v1alpha1.ClusterServiceBroker{},
+	v1alpha1.SchemeGroupVersion.WithKind("ServiceBroker"):          &v1alpha1.ServiceBroker{},
+	v1alpha1.SchemeGroupVersion.WithKind("ServiceInstance"):        &v1alpha1.ServiceInstance{},
+	v1alpha1.SchemeGroupVersion.WithKind("ServiceInstanceBinding"): &v1alpha1.ServiceInstanceBinding{},
+	autoscaling.SchemeGroupVersion.WithKind("Scale"):               &v1alpha1.Scale{},
+	v1alpha1.SchemeGroupVersion.WithKind("Task"):                   &v1alpha1.Task{},
+	v1alpha1.SchemeGroupVersion.WithKind("TaskSchedule"):           &v1alpha1.TaskSchedule{},
+	v1alpha1.SchemeGroupVersion.WithKind("SourcePackage"):          &v1alpha1.SourcePackage{},
+}
 
-var (
-	masterURL  = flag.String("master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
-	kubeconfig = flag.String("kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
-)
+var callbacks = map[schema.GroupVersionKind]validation.Callback{
+	v1alpha1.SchemeGroupVersion.WithKind("ClusterServiceBroker"):   validation.NewCallback(kfvalidation.ClusterServiceBrokerValidationCallback, v1.Delete),
+	v1alpha1.SchemeGroupVersion.WithKind("ServiceBroker"):          validation.NewCallback(kfvalidation.ServiceBrokerValidationCallback, v1.Delete),
+	v1alpha1.SchemeGroupVersion.WithKind("ServiceInstance"):        validation.NewCallback(kfvalidation.ServiceInstanceValidationCallback, v1.Delete),
+	v1alpha1.SchemeGroupVersion.WithKind("ServiceInstanceBinding"): validation.NewCallback(kfvalidation.ServiceInstanceBindingValidationCallback, v1.Create, v1.Update),
+	v1alpha1.SchemeGroupVersion.WithKind("App"):                    validation.NewCallback(kfvalidation.AppValidationCallback, v1.Create, v1.Update),
+	v1alpha1.SchemeGroupVersion.WithKind("Route"):                  validation.NewCallback(kfvalidation.RouteValidationCallback, v1.Create),
+}
+
+func newDefaultingAdmissionController(ctx context.Context, cmw configmap.Watcher) *controller.Impl {
+	// Decorate contexts with the current state of the config.
+	store := apiconfig.NewStore(logging.FromContext(ctx).Named("config-store"))
+	store.WatchConfigs(cmw)
+
+	return defaulting.NewAdmissionController(ctx,
+
+		// Name of the resource webhook.
+		"webhook.kf.dev",
+
+		// The path on which to serve the webhook.
+		"/defaulting",
+
+		// The resources to validate and default.
+		types,
+
+		// A function that infuses the context passed to Validate/SetDefaults
+		// with custom metadata.
+		func(ctx context.Context) context.Context {
+			return store.ToContext(ctx)
+		},
+
+		// Whether to disallow unknown fields.
+		true,
+	)
+}
+
+func newValidationAdmissionController(controllerCtx context.Context, cmw configmap.Watcher) *controller.Impl {
+	// Decorate contexts with the current state of the config.
+	store := apiconfig.NewStore(logging.FromContext(controllerCtx).Named("config-store"))
+	store.WatchConfigs(cmw)
+
+	// The context passed to the controller is different from the per-request context that is passed to validation requests.
+	// Explicitly add the informers to the context passed to requests.
+	serviceInstanceBindingInformer := serviceinstancebindinginformer.Get(controllerCtx)
+	spaceInformer := spaceinformer.Get(controllerCtx)
+	appInformer := appinformer.Get(controllerCtx)
+	serviceInstanceInformer := serviceinstanceinformer.Get(controllerCtx)
+	return validation.NewAdmissionController(controllerCtx,
+
+		// Name of the resource webhook.
+		"validation.webhook.kf.dev",
+
+		// The path on which to serve the webhook.
+		"/resource-validation",
+
+		// The resources to validate and default.
+		types,
+
+		// A function that infuses the context passed to Validate/SetDefaults
+		// with custom metadata.
+		func(ctx context.Context) context.Context {
+			// Add informers to the context used in validation requests.
+			ctx = context.WithValue(ctx, kfvalidation.ServiceInstanceBindingInformerKey{}, serviceInstanceBindingInformer)
+			ctx = context.WithValue(ctx, kfvalidation.SpaceInformerKey{}, spaceInformer)
+			ctx = context.WithValue(ctx, kfvalidation.AppInformerKey{}, appInformer)
+			ctx = context.WithValue(ctx, kfvalidation.ServiceInstanceInformerKey{}, serviceInstanceInformer)
+			return store.ToContext(ctx)
+		},
+
+		// Whether to disallow unknown fields.
+		true,
+
+		// Callback functions that are called after initial validation.
+		callbacks,
+	)
+}
+
+func newConfigValidationController(ctx context.Context, cmw configmap.Watcher) *controller.Impl {
+	return configmaps.NewAdmissionController(ctx,
+
+		// Name of the configmap webhook.
+		"config.webhook.kf.dev",
+
+		// The path on which to serve the webhook.
+		"/config-validation",
+
+		// The configmaps to validate.
+		configmap.Constructors{
+			apiconfig.DefaultsConfigName:  apiconfig.NewDefaultsConfigFromConfigMap,
+			buildconfig.SecretsConfigName: buildconfig.NewSecretsConfigFromConfigMap,
+			metrics.ConfigMapName():       metrics.NewObservabilityConfigFromConfigMap,
+			logging.ConfigMapName():       logging.NewConfigFromConfigMap,
+		},
+	)
+}
 
 func main() {
-	flag.Parse()
-	cm, err := configmap.Load("/etc/config-logging")
-	if err != nil {
-		log.Fatal("Error loading logging configuration:", err)
-	}
-	config, err := logging.NewConfigFromMap(cm)
-	if err != nil {
-		log.Fatal("Error parsing logging configuration:", err)
-	}
-	logger, atomicLevel := logging.NewLoggerFromConfig(config, component)
-	defer logger.Sync()
-	logger = logger.With(zap.String(logkey.ControllerType, component))
+	// Set up a signal context with our webhook options
+	ctx := webhook.WithOptions(signals.NewContext(), webhook.Options{
+		ServiceName: "webhook",
+		Port:        8443,
+		SecretName:  "webhook-certs",
+	})
 
-	logger.Info("Starting the Configuration Webhook")
-
-	// Set up signals so we handle the first shutdown signal gracefully.
-	stopCh := signals.SetupSignalHandler()
-
-	clusterConfig, err := clientcmd.BuildConfigFromFlags(*masterURL, *kubeconfig)
-	if err != nil {
-		logger.Fatalw("Failed to get cluster config", zap.Error(err))
-	}
-
-	kubeClient, err := kubernetes.NewForConfig(clusterConfig)
-	if err != nil {
-		logger.Fatalw("Failed to get the client set", zap.Error(err))
-	}
-
-	if err := version.CheckMinimumVersion(kubeClient.Discovery()); err != nil {
-		logger.Fatalw("Version check failed", err)
-	}
-
-	istioClient, err := cv1alpha3.NewForConfig(clusterConfig)
-	if err != nil {
-		logger.Fatalw("Failed to get the istio client set", zap.Error(err))
-	}
-
-	// Watch the logging config map and dynamically update logging levels.
-	configMapWatcher := configmap.NewInformedWatcher(kubeClient, system.Namespace())
-	configMapWatcher.Watch(logging.ConfigMapName(), logging.UpdateLevelFromConfigMap(logger, atomicLevel, component))
-
-	store := apiconfig.NewStore(logger.Named("config-store"))
-	store.WatchConfigs(configMapWatcher)
-
-	if err := configMapWatcher.Start(stopCh); err != nil {
-		logger.Fatalw("Failed to start the ConfigMap watcher", zap.Error(err))
-	}
-
-	knativeConfigMapWatcher := configmap.NewInformedWatcher(kubeClient, system.KnativeServingNamespace())
-	routeStore := routecfg.NewStore(logger.Named("domain-store"), 0)
-	routeStore.WatchConfigs(knativeConfigMapWatcher)
-
-	if err := knativeConfigMapWatcher.Start(stopCh); err != nil {
-		logger.Fatalw("Failed to start the Knative ConfigMap watcher", zap.Error(err))
-	}
-
-	options := webhook.ControllerOptions{
-		ServiceName:    "webhook",
-		DeploymentName: "webhook",
-		Namespace:      system.Namespace(),
-		Port:           8443,
-		SecretName:     "webhook-certs",
-		WebhookName:    "webhook.kf.dev",
-	}
-	controller := webhook.AdmissionController{
-		Client:  kubeClient,
-		Options: options,
-		Handlers: map[schema.GroupVersionKind]webhook.GenericCRD{
-			v1alpha1.SchemeGroupVersion.WithKind("Space"):      &v1alpha1.Space{},
-			v1alpha1.SchemeGroupVersion.WithKind("App"):        &v1alpha1.App{},
-			v1alpha1.SchemeGroupVersion.WithKind("Route"):      &v1alpha1.Route{},
-			v1alpha1.SchemeGroupVersion.WithKind("RouteClaim"): &v1alpha1.RouteClaim{},
-		},
-		Logger:                logger,
-		DisallowUnknownFields: true,
-
-		// Decorate contexts with the current state of the config.
-		WithContext: func(ctx context.Context) context.Context {
-			// XXX: Route webhook needs to look at what VirtualServices are
-			// deployed.
-			ctx = v1alpha1.SetupIstioClient(ctx, istioClient)
-
-			ctx = routeStore.ToContext(ctx)
-
-			return v1beta1.WithUpgradeViaDefaulting(store.ToContext(ctx))
-		},
-	}
-	if err = controller.Run(stopCh); err != nil {
-		logger.Fatalw("Failed to start the admission controller", zap.Error(err))
-	}
+	sharedmain.WebhookMainWithContext(ctx, "webhook",
+		certificates.NewController,
+		newDefaultingAdmissionController,
+		newValidationAdmissionController,
+		newConfigValidationController,
+	)
 }

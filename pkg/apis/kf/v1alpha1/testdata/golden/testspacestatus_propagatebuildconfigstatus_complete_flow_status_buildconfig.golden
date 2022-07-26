@@ -1,0 +1,23 @@
+{
+    "buildpacksV2": [
+        {
+            "name": "java_buildpack",
+            "url": "path/to/java",
+            "disabled": false
+        }
+    ],
+    "stacksV2": [
+        {
+            "name": "legacy-buildpacks",
+            "image": "gcr.io/legacy/buildpacks"
+        }
+    ],
+    "stacksV3": [
+        {
+            "name": "google-slim",
+            "buildImage": "gcr.io/google/google-slim",
+            "runImage": "gcr.io/google/google-slim"
+        }
+    ],
+    "defaultToV3Stack": false
+}

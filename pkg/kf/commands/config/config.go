@@ -16,90 +16,178 @@ package config
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
 	"os"
 	"path"
-	"path/filepath"
+	"sync"
 
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	kf "github.com/google/kf/pkg/client/clientset/versioned/typed/kf/v1alpha1"
-	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
-	"github.com/google/kf/pkg/kf/internal/tableclient"
-	"github.com/google/kf/pkg/kf/marketplace"
-	serving "github.com/google/kf/third_party/knative-serving/pkg/client/clientset/versioned/typed/serving/v1alpha1"
-	tektonclient "github.com/google/kf/third_party/tektoncd-pipeline/pkg/client/clientset/versioned"
+	kfconfig "github.com/google/kf/v2/pkg/apis/kf/config"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	kf "github.com/google/kf/v2/pkg/client/kf/clientset/versioned/typed/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/injection"
+	utils "github.com/google/kf/v2/pkg/kf/internal/utils/cli"
 	"github.com/imdario/mergo"
-	svcatclient "github.com/poy/service-catalog/pkg/client/clientset_generated/clientset"
-	"github.com/poy/service-catalog/pkg/svcat"
-	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	k8sclient "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/transport"
 	"k8s.io/client-go/util/homedir"
+	kubeclient "knative.dev/pkg/client/injection/kube/client"
+	"knative.dev/pkg/logging"
 	"sigs.k8s.io/yaml"
 )
 
-// KfParams stores everything needed to interact with the user and Knative.
+const (
+	// EmptySpaceError is the message returned if the user hasn't targed a space.
+	EmptySpaceError = "no space targeted, use 'kf target --space SPACE' to target a space"
+
+	// SkipVersionCheckAnnotation can be set on commands to prevent the version
+	// check from running.
+	SkipVersionCheckAnnotation = "skip-version-check"
+)
+
+// KfParams stores user settings.
 type KfParams struct {
 	// Config holds the path to the configuration.
 	// This field isn't serialized when the config is saved.
 	Config string `json:"-"`
 
-	// Namespace holds the namespace kf should connect to by default.
-	Namespace string `json:"space"`
+	// Space holds the namespace kf should connect to by default.
+	Space string `json:"space"`
 
 	// KubeCfgFile holds the path to the kubeconfig.
-	KubeCfgFile string `json:"kubeconfig"`
+	KubeCfgFile string `json:"-"`
 
 	// LogHTTP enables HTTP tracing for all Kubernetes calls.
 	LogHTTP bool `json:"logHTTP"`
 
-	// TargetSpace caches the space specified by Namespace to prevent it from
+	// TargetSpace caches the space specified by Space to prevent it from
 	// being computed multiple times.
-	// Prefer using GetSpaceOrDefault instead of accessing this value directly.
+	// Prefer using GetSpaceOrDefault instead of accessing this value
+	// directly.
 	TargetSpace *v1alpha1.Space `json:"-"`
+
+	// featureFlags is a map of each feature flag name to a bool
+	// indicating whether the feature is enabled or not.
+	featureFlags     kfconfig.FeatureFlagToggles `json:"-"`
+	featureFlagsOnce sync.Once                   `json:"-"`
+
+	// Impersonate is the config that will be used to impersonate a user in
+	// REST requests.
+	Impersonate transport.ImpersonationConfig `json:"-"`
 }
 
-// GetTargetSpaceOrDefault gets the space specified by Namespace or a default
-// space with minimal configuration.
+// ConfigFlags constructs a new ConfigFlags from KfParams that can be used
+// to initialize a RestConfig in the same way that Kubectl does it.
+func (p *KfParams) ConfigFlags() (flags *genericclioptions.ConfigFlags) {
+
+	// The ConfigFlags object handles overiding kubeconfig paths in a consistent
+	// way for all Kubernetes clients. It will correctly choose when to parse
+	// environment variables, etc.
+	flags = genericclioptions.NewConfigFlags(false)
+
+	// Override default values based on flags Kf supplies.
+	flags.Namespace = &p.Space
+	flags.KubeConfig = &p.KubeCfgFile
+
+	return
+}
+
+// FeatureFlags returns a map of each feature flag name to a bool
+// indicating whether hte feature is enabled or not.
+func (p *KfParams) FeatureFlags(ctx context.Context) kfconfig.FeatureFlagToggles {
+	p.featureFlagsOnce.Do(func() {
+		logger := logging.FromContext(ctx)
+		kubeClient := kubeclient.Get(ctx)
+		ns, err := kubeClient.
+			CoreV1().
+			Namespaces().
+			Get(ctx, v1alpha1.KfNamespace, metav1.GetOptions{})
+		if err != nil {
+			logger.Warnf(
+				"Error getting %s namespace for CLI warnings: %s",
+				v1alpha1.KfNamespace,
+				err,
+			)
+			return
+		}
+
+		featureFlagsMap := make(map[string]bool)
+		if featureFlagJSON, ok := ns.Annotations[v1alpha1.FeatureFlagsAnnotation]; ok {
+			if err := json.Unmarshal([]byte(featureFlagJSON), &featureFlagsMap); err != nil {
+				logger.Warnf("Invalid feature flag config: %v", err)
+				return
+			}
+		} else {
+			logger.Warn("Unable to read feature flags from server.")
+			return
+		}
+		p.featureFlags = featureFlagsMap
+	})
+
+	return p.featureFlags
+}
+
+func suggestBadSpaceNextActions() {
+	utils.SuggestNextAction(utils.NextAction{
+		Description: "List known spaces",
+		Commands: []string{
+			"kf spaces",
+			"kubectl get spaces",
+		},
+	})
+	utils.SuggestNextAction(utils.NextAction{
+		Description: "Target a space",
+		Commands: []string{
+			"kf target -s SPACENAME",
+		},
+	})
+
+}
+
+// ValidateSpaceTargeted returns an error if a Space isn't targeted.
+func (p *KfParams) ValidateSpaceTargeted() error {
+	if p.Space == "" {
+		suggestBadSpaceNextActions()
+		return errors.New(EmptySpaceError)
+	}
+	return nil
+}
+
+// GetTargetSpace gets the space specified by Space. If the space
+// doesn't exist, an error is returned
 //
-// This function caches a space once retrieved in CurrentSpace.
-func (p *KfParams) GetTargetSpaceOrDefault() (*v1alpha1.Space, error) {
+// This function caches a space once retrieved in TargetSpace.
+func (p *KfParams) GetTargetSpace(ctx context.Context) (*v1alpha1.Space, error) {
 	if p.TargetSpace != nil {
 		return p.TargetSpace, nil
 	}
 
-	res, err := GetKfClient(p).Spaces().Get(p.Namespace, metav1.GetOptions{})
+	res, err := GetKfClient(p).Spaces().Get(ctx, p.Space, metav1.GetOptions{})
 	return p.cacheSpace(res, err)
 }
 
-// cacheSpace updates the cached space retartieved by GetSpaceOrDefault()
+// cacheSpace updates the cached space retrieved by GetTargetSpace()
 func (p *KfParams) cacheSpace(space *v1alpha1.Space, err error) (*v1alpha1.Space, error) {
-	if err == nil {
+	switch {
+	case err == nil:
 		p.TargetSpace = space
 		return space, nil
+
+	case apierrors.IsNotFound(err):
+		suggestBadSpaceNextActions()
+		return nil, fmt.Errorf("Space %q doesn't exist", p.Space)
+
+	default:
+		return nil, fmt.Errorf("couldn't get the Space %q: %v", p.Space, err)
 	}
-
-	if apierrors.IsNotFound(err) {
-		p.SetTargetSpaceToDefault()
-		return p.TargetSpace, nil
-	}
-
-	return nil, fmt.Errorf("couldn't get the Space %q: %v", p.Namespace, err)
-}
-
-// SetTargetSpaceToDefault sets TargetSpace to the default, overwriting
-// any existing values.
-func (p *KfParams) SetTargetSpaceToDefault() {
-	out := &v1alpha1.Space{}
-	out.SetDefaults(context.Background())
-	p.TargetSpace = out
 }
 
 // paramsPath gets the path we should read the config from/write it to.
@@ -140,7 +228,7 @@ func NewKfParamsFromFile(cfgPath string) (*KfParams, error) {
 
 // NewDefaultKfParams creates a KfParams with default values.
 func NewDefaultKfParams() *KfParams {
-	defaultParams := initKubeConfig()
+	defaultParams := KfParams{}
 
 	return &defaultParams
 }
@@ -174,128 +262,44 @@ func Load(cfgPath string, overrides *KfParams) (*KfParams, error) {
 	return out, nil
 }
 
-// GetServingClient returns a Serving interface.
-func GetServingClient(p *KfParams) serving.ServingV1alpha1Interface {
-	config := getRestConfig(p)
-	client, err := serving.NewForConfig(config)
-	if err != nil {
-		log.Fatalf("failed to create a Serving client: %s", err)
-	}
-	return client
-}
+var (
+	kubernetesOnce   sync.Once
+	kubernetesClient k8sclient.Interface
+)
 
 // GetKubernetes returns a K8s client.
 func GetKubernetes(p *KfParams) k8sclient.Interface {
-	config := getRestConfig(p)
-	c, err := k8sclient.NewForConfig(config)
-	if err != nil {
-		log.Fatalf("failed to create a K8s client: %s", err)
-	}
-
-	return c
-}
-
-// GetKfClient returns a kf client.
-func GetKfClient(p *KfParams) kf.KfV1alpha1Interface {
-	config := getRestConfig(p)
-	c, err := kf.NewForConfig(config)
-	if err != nil {
-		log.Fatalf("failed to create a kf client: %s", err)
-	}
-	return c
-}
-
-// GetServiceCatalogClient returns a ServiceCatalogClient.
-func GetServiceCatalogClient(p *KfParams) servicecatalogclient.Interface {
-	config := getRestConfig(p)
-
-	cs, err := servicecatalogclient.NewForConfig(config)
-	if err != nil {
-		log.Fatalf("failed to build clientset: %s", err)
-	}
-
-	return cs
-}
-
-// GetTektonClient returns a Tekton Client.
-func GetTektonClient(p *KfParams) tektonclient.Interface {
-	config := getRestConfig(p)
-	c, err := tektonclient.NewForConfig(config)
-	if err != nil {
-		log.Fatalf("failed to create a Tekton client: %v", err)
-	}
-
-	return c
-}
-
-// GetDynamicClient gets a dynamic Kubernetes client. Dynamic clients can work
-// on any type of Kubernetes object, but only support the common fields.
-//
-// Dynamic clients can be used to get alternative representations of objects
-// like tables, or traverse multiple types of object in a single pass e.g. to
-// construct a tree based on OwnerReferences.
-func GetDynamicClient(p *KfParams) dynamic.Interface {
-	config := getRestConfig(p)
-
-	dyn, err := dynamic.NewForConfig(config)
-	if err != nil {
-		log.Fatalf("failed to create a dynamic client: %s", err)
-	}
-
-	return dyn
-}
-
-// GetSvcatApp returns a SvcatClient.
-func GetSvcatApp(p *KfParams) marketplace.SClientFactory {
-	return func(namespace string) servicecatalog.SvcatClient {
+	kubernetesOnce.Do(func() {
 		config := getRestConfig(p)
-
-		k8sClient, err := k8sclient.NewForConfig(config)
+		c, err := k8sclient.NewForConfig(config)
 		if err != nil {
 			log.Fatalf("failed to create a K8s client: %s", err)
 		}
-
-		catalogClient, err := svcatclient.NewForConfig(config)
-		if err != nil {
-			log.Fatalf("failed to create a svcatclient: %s", err)
-		}
-
-		c, err := svcat.NewApp(k8sClient, catalogClient, namespace)
-		if err != nil {
-			log.Fatalf("failed to create a svcat App: %s", err)
-		}
-		return c
-	}
+		kubernetesClient = c
+	})
+	return kubernetesClient
 }
 
-// GetTableClient creates a generic client for fetching server-side rendered
-// tables.
-func GetTableClient(p *KfParams) tableclient.Interface {
-	c, err := tableclient.New(getRestConfig(p))
-	if err != nil {
-		log.Fatalf("failed to create a table client: %s", err)
-	}
-	return c
+var (
+	kfOnce   sync.Once
+	kfClient kf.KfV1alpha1Interface
+)
+
+// GetKfClient returns a kf client.
+func GetKfClient(p *KfParams) kf.KfV1alpha1Interface {
+	kfOnce.Do(func() {
+		config := getRestConfig(p)
+		c, err := kf.NewForConfig(config)
+		if err != nil {
+			log.Fatalf("failed to create a kf client: %s", err)
+		}
+		kfClient = c
+	})
+	return kfClient
 }
 
 func getRestConfig(p *KfParams) *rest.Config {
-	config, err := rest.InClusterConfig()
-	if err == nil {
-		return config
-	}
-
-	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
-	if p.KubeCfgFile != "" {
-		fileList := filepath.SplitList(p.KubeCfgFile)
-		if len(fileList) > 1 {
-			loadingRules.Precedence = fileList
-		} else {
-			loadingRules.ExplicitPath = p.KubeCfgFile
-		}
-	}
-
-	clientCfg := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, &clientcmd.ConfigOverrides{})
-	restCfg, err := clientCfg.ClientConfig()
+	restCfg, err := p.ConfigFlags().ToRESTConfig()
 	if err != nil {
 		return &rest.Config{
 			Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
@@ -304,20 +308,20 @@ func getRestConfig(p *KfParams) *rest.Config {
 		}
 	}
 
-	restCfg.WrapTransport = LoggingRoundTripperWrapper(p)
+	// NOTE: because Kf uses wire to initialize components on startup, any
+	// RoundTrippers added here MUST be reactive to changes in KfParams rather
+	// than assuming the initial configuration passed is the final one.
+
+	restCfg.Wrap(LoggingRoundTripperWrapper(p))
+
+	restCfg.Wrap(NewImpersonatingRoundTripperWrapper(p))
 
 	return restCfg
 }
 
-func initKubeConfig() KfParams {
-	p := KfParams{}
-
-	p.KubeCfgFile = clientcmd.RecommendedHomeFile
-
-	// Override path to Kube config if env var is set
-	if configPathEnv, ok := os.LookupEnv(clientcmd.RecommendedConfigPathEnvVar); ok {
-		p.KubeCfgFile = configPathEnv
-	}
-
-	return p
+// SetupInjection sets up the injection context.
+// XXX: This function is only necessary while we have a huge dependency on
+// KfParams. Once that is removed, this function will no longer be necessary.
+func SetupInjection(ctx context.Context, p *KfParams) context.Context {
+	return injection.WithInjection(ctx, getRestConfig(p))
 }

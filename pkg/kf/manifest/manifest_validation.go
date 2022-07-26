@@ -16,8 +16,17 @@ package manifest
 
 import (
 	"context"
+	"fmt"
 
+	kfapis "github.com/google/kf/v2/pkg/apis/kf"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"knative.dev/pkg/apis"
+)
+
+const (
+	protocolHTTP2 = "http2"
+	protocolHTTP  = "http"
+	protocolTCP   = "tcp"
 )
 
 // Validate checks for errors in the Application's fields.
@@ -40,13 +49,49 @@ func (app *Application) Validate(ctx context.Context) (errs *apis.FieldError) {
 		}
 	}
 
-	if app.Instances != nil {
-		if app.KfApplicationExtension.MinScale != nil {
-			errs = errs.Also(apis.ErrMultipleOneOf("min-scale", "instances"))
+	errs = errs.Also(app.Ports.Validate(ctx).ViaField("ports"))
+
+	okRoutePorts := sets.NewInt(0) // 0 means default
+	for _, port := range app.Ports {
+		okRoutePorts.Insert(int(port.Port))
+	}
+	for i, route := range app.Routes {
+		if !okRoutePorts.Has(int(route.AppPort)) {
+			errs = errs.Also(apis.ErrInvalidValue("must match a declared port", "appPort").ViaFieldIndex("routes", i))
 		}
-		if app.KfApplicationExtension.MaxScale != nil {
-			errs = errs.Also(apis.ErrMultipleOneOf("max-scale", "instances"))
+	}
+
+	return
+}
+
+// Validate implements apis.Validatable
+func (a AppPortList) Validate(ctx context.Context) (errs *apis.FieldError) {
+	seen := sets.NewInt()
+
+	for i, port := range a {
+		errs = errs.Also(port.Validate(ctx).ViaIndex(i))
+
+		// ensure there are no duplicate port entries
+		portInt := int(port.Port)
+		if seen.Has(portInt) {
+			errs = errs.Also(kfapis.ErrDuplicateValue(portInt, "port").ViaIndex(i))
 		}
+		seen.Insert(portInt)
+	}
+
+	return
+}
+
+// Validate implements apis.Validatable
+func (a *AppPort) Validate(ctx context.Context) (errs *apis.FieldError) {
+	// Validate port number
+	errs = errs.Also(kfapis.ValidatePortNumberBounds(a.Port, "port"))
+
+	// Validate protocol
+	validProtocols := sets.NewString(protocolHTTP, protocolTCP, protocolHTTP2)
+	if !validProtocols.Has(a.Protocol) {
+		msg := fmt.Sprintf("must be one of: %v", validProtocols.List())
+		errs = errs.Also(apis.ErrInvalidValue(msg, "protocol"))
 	}
 
 	return

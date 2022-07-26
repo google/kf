@@ -18,18 +18,12 @@ import (
 	// populate environment variables
 	"fmt"
 
-	"github.com/google/kf/pkg/system"
-	_ "github.com/google/kf/pkg/system/testing"
+	"github.com/google/kf/v2/pkg/system"
+	_ "github.com/google/kf/v2/pkg/system/testing"
 )
 
 func ExampleNamespace() {
 	fmt.Println(system.Namespace())
 
 	// Output: kf-testing
-}
-
-func ExampleKnativeServingNamespace() {
-	fmt.Println(system.KnativeServingNamespace())
-
-	// Output: knative-serving-testing
 }

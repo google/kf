@@ -15,6 +15,7 @@
 package stream
 
 import (
+	"context"
 	"io"
 
 	corev1 "k8s.io/api/core/v1"
@@ -23,7 +24,7 @@ import (
 
 // Streamer provides Stream method
 type Streamer interface {
-	Stream() (io.ReadCloser, error)
+	Stream(ctx context.Context) (io.ReadCloser, error)
 }
 
 // NewStreamerFunc must return and Streamer given the pod details

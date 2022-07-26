@@ -21,10 +21,12 @@ import (
 	"path"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
@@ -41,7 +43,7 @@ func TestPropagateCondition(t *testing.T) {
 	}{
 		"nil source": {
 			source:        nil,
-			expectMessage: "source status is nil",
+			expectMessage: "status not yet reconciled",
 			expectStatus:  "Unknown",
 			expectReason:  "Unknown",
 			expectReturn:  false,
@@ -88,62 +90,62 @@ func TestPropagateCondition(t *testing.T) {
 }
 
 func ExampleSingleConditionManager_MarkChildNotOwned() {
-	manager := apis.NewLivingConditionSet("DummyReady").Manage(&duckv1beta1.Status{})
-	scm := NewSingleConditionManager(manager, "DummyReady", "Dummy")
+	manager := apis.NewLivingConditionSet("SampleReady").Manage(&duckv1beta1.Status{})
+	scm := NewSingleConditionManager(manager, "SampleReady", "Sample")
 
-	err := scm.MarkChildNotOwned("dummy-123")
+	err := scm.MarkChildNotOwned("sample-123")
 
-	result := manager.GetCondition("DummyReady")
+	result := manager.GetCondition("SampleReady")
 	fmt.Println("Status:", result.Status)
 	fmt.Println("Message:", result.Message)
 	fmt.Println("Reason:", result.Reason)
 	fmt.Println("Error:", err)
 
 	// Output: Status: False
-	// Message: There is an existing Dummy "dummy-123" that we do not own.
+	// Message: There is an existing Sample "sample-123" that we do not own.
 	// Reason: NotOwned
-	// Error: There is an existing Dummy "dummy-123" that we do not own.
+	// Error: There is an existing Sample "sample-123" that we do not own.
 }
 
 func ExampleSingleConditionManager_MarkTemplateError() {
-	manager := apis.NewLivingConditionSet("DummyReady").Manage(&duckv1beta1.Status{})
-	scm := NewSingleConditionManager(manager, "DummyReady", "Dummy")
+	manager := apis.NewLivingConditionSet("SampleReady").Manage(&duckv1beta1.Status{})
+	scm := NewSingleConditionManager(manager, "SampleReady", "Sample")
 
 	err := scm.MarkTemplateError(errors.New("tmpl-err"))
 
-	result := manager.GetCondition("DummyReady")
+	result := manager.GetCondition("SampleReady")
 	fmt.Println("Status:", result.Status)
 	fmt.Println("Message:", result.Message)
 	fmt.Println("Reason:", result.Reason)
 	fmt.Println("Error:", err)
 
 	// Output: Status: False
-	// Message: Couldn't populate the Dummy template: tmpl-err
+	// Message: Couldn't populate the Sample template: tmpl-err
 	// Reason: TemplateError
-	// Error: Couldn't populate the Dummy template: tmpl-err
+	// Error: Couldn't populate the Sample template: tmpl-err
 }
 
 func ExampleSingleConditionManager_MarkReconciliationError() {
-	manager := apis.NewLivingConditionSet("DummyReady").Manage(&duckv1beta1.Status{})
-	scm := NewSingleConditionManager(manager, "DummyReady", "Dummy")
+	manager := apis.NewLivingConditionSet("SampleReady").Manage(&duckv1beta1.Status{})
+	scm := NewSingleConditionManager(manager, "SampleReady", "Sample")
 
 	err := scm.MarkReconciliationError("updating", errors.New("update err"))
 
-	result := manager.GetCondition("DummyReady")
+	result := manager.GetCondition("SampleReady")
 	fmt.Println("Status:", result.Status)
 	fmt.Println("Message:", result.Message)
 	fmt.Println("Reason:", result.Reason)
 	fmt.Println("Error:", err)
 
 	// Output: Status: False
-	// Message: Error occurred while updating Dummy: update err
+	// Message: Error occurred while updating Sample: update err
 	// Reason: ReconciliationError
-	// Error: Error occurred while updating Dummy: update err
+	// Error: Error occurred while updating Sample: update err
 }
 
 func ExampleSingleConditionManager_MarkReconciliationError_conflict() {
-	manager := apis.NewLivingConditionSet("DummyReady").Manage(&duckv1beta1.Status{})
-	scm := NewSingleConditionManager(manager, "DummyReady", "Dummy")
+	manager := apis.NewLivingConditionSet("SampleReady").Manage(&duckv1beta1.Status{})
+	scm := NewSingleConditionManager(manager, "SampleReady", "Sample")
 
 	conflict := apierrs.NewConflict(
 		schema.GroupResource{
@@ -155,16 +157,72 @@ func ExampleSingleConditionManager_MarkReconciliationError_conflict() {
 	)
 	err := scm.MarkReconciliationError("updating", conflict)
 
-	result := manager.GetCondition("DummyReady")
+	result := manager.GetCondition("SampleReady")
 	fmt.Println("Status:", result.Status)
 	fmt.Println("Message:", result.Message)
 	fmt.Println("Reason:", result.Reason)
 	fmt.Println("Error:", err)
 
 	// Output: Status: Unknown
-	// Message: Error occurred while updating Dummy: Operation cannot be fulfilled on services.serving.knative.dev "MyService": the object has been modified; please apply your changes to the latest version and try again
+	// Message: Error occurred while updating Sample: Operation cannot be fulfilled on services.serving.knative.dev "MyService": the object has been modified; please apply your changes to the latest version and try again
 	// Reason: CacheOutdated
-	// Error: Error occurred while updating Dummy: Operation cannot be fulfilled on services.serving.knative.dev "MyService": the object has been modified; please apply your changes to the latest version and try again
+	// Error: Error occurred while updating Sample: Operation cannot be fulfilled on services.serving.knative.dev "MyService": the object has been modified; please apply your changes to the latest version and try again
+}
+
+func ExampleSingleConditionManager_MarkUnknown() {
+	manager := apis.NewLivingConditionSet("SampleReady").Manage(&duckv1beta1.Status{})
+	scm := NewSingleConditionManager(manager, "SampleReady", "Sample")
+
+	scm.MarkUnknown("FetchError", "couldn't fetch value: %v", errors.New("some err"))
+
+	result := manager.GetCondition("SampleReady")
+	fmt.Println("Status:", result.Status)
+	fmt.Println("Message:", result.Message)
+	fmt.Println("Reason:", result.Reason)
+
+	// Output: Status: Unknown
+	// Message: couldn't fetch value: some err
+	// Reason: FetchError
+}
+
+func TestGenerateName(t *testing.T) {
+	cases := map[string]struct {
+		input          []string
+		expectedOutput string
+	}{
+		"short": {
+			input:          []string{"my-app"},
+			expectedOutput: "my-app",
+		},
+		"multiple entries": {
+			input:          []string{"a", "b", "c"},
+			expectedOutput: "a-b-c",
+		},
+		"invalid prefix/suffix chars": {
+			input:          []string{"---abc---"},
+			expectedOutput: "abc75b6fb067496dbcc888ccce24201eddd",
+		},
+		"too long": {
+			input: []string{
+				"integration-push-spring-music",
+				"1582060202119043190",
+				"ro3jy6g1eheb",
+				"38n6dgwh9kx7h",
+				"c0pljctl1vq7",
+			},
+			expectedOutput: "integration-push-spring-music-1b532b669f9f4360daad57088be0aee0d",
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			output := GenerateName(tc.input...)
+			testutil.AssertEqual(t, "output", tc.expectedOutput, output)
+
+			// Kubernetes names and labels must be <= 63 characters
+			testutil.AssertTrue(t, "length <= 63", len(output) <= 63)
+		})
+	}
 }
 
 func TestGenerateName_Deterministic(t *testing.T) {
@@ -203,7 +261,7 @@ func TestGenerateName_ValidDNS(t *testing.T) {
 
 	validDNS := func(r string) {
 		testutil.AssertRegexp(t, "valid DNS", `^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`, r)
-		testutil.AssertEqual(t, fmt.Sprintf("len: %d", len(r)), true, len(r) <= 64)
+		testutil.AssertEqual(t, fmt.Sprintf("len: %d", len(r)), true, len(r) < 64)
 		testutil.AssertEqual(t, "collison", false, history[r])
 	}
 
@@ -212,12 +270,6 @@ func TestGenerateName_ValidDNS(t *testing.T) {
 		validDNS(r)
 		history[r] = true
 	}
-
-	// Empty name
-	validDNS(GenerateName())
-
-	// Only non-alphanumeric characters
-	validDNS(GenerateName(".", "-", "$"))
 }
 
 func TestIsStatusFinal(t *testing.T) {
@@ -290,4 +342,149 @@ func ExampleUnionMaps() {
 	// b: 2
 	// c: 3
 	// d: 4
+}
+
+func ExampleManagedByKfRequirement() {
+	requirement := ManagedByKfRequirement()
+	selector := labels.NewSelector().Add(requirement).String()
+	fmt.Println(selector)
+
+	// Output: app.kubernetes.io/managed-by=kf
+}
+
+func TestSummarizeChildConditions(t *testing.T) {
+	cases := map[string]struct {
+		conditions  []apis.Condition
+		wantOverall apis.Condition
+	}{
+		"empty conditions": {
+			conditions: []apis.Condition{},
+			wantOverall: apis.Condition{
+				Type:   apis.ConditionReady,
+				Status: corev1.ConditionTrue,
+			},
+		},
+		"nil conditions": {
+			conditions: nil,
+			wantOverall: apis.Condition{
+				Type:   apis.ConditionReady,
+				Status: corev1.ConditionTrue,
+			},
+		},
+		"ready false": {
+			conditions: []apis.Condition{
+				{Type: "subresource1", Status: corev1.ConditionFalse, Reason: "reason", Message: "message"},
+			},
+			wantOverall: apis.Condition{
+				Type:    apis.ConditionReady,
+				Status:  corev1.ConditionFalse,
+				Reason:  "reason",
+				Message: "message",
+			},
+		},
+		"ready unknown": {
+			conditions: []apis.Condition{
+				{Type: "subresource1", Status: corev1.ConditionUnknown, Reason: "reason", Message: "message"},
+			},
+			wantOverall: apis.Condition{
+				Type:    apis.ConditionReady,
+				Status:  corev1.ConditionUnknown,
+				Reason:  "reason",
+				Message: "message",
+			},
+		},
+		"ready true": {
+			conditions: []apis.Condition{
+				{Type: "subresource1", Status: corev1.ConditionTrue, Reason: "reason", Message: "message"},
+			},
+			wantOverall: apis.Condition{
+				Type:   apis.ConditionReady,
+				Status: corev1.ConditionTrue,
+				// TODO: support reasons/messages for True conditions when Knative does
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			gotOverall, _ := SummarizeChildConditions(tc.conditions)
+
+			testutil.AssertNotNil(t, "overall", gotOverall)
+			// remove time because it's nondeterministic
+			gotOverall.LastTransitionTime = apis.VolatileTime{}
+			testutil.AssertEqual(t, "overall", tc.wantOverall, *gotOverall)
+		})
+	}
+}
+
+func TestCopyMap(t *testing.T) {
+	cases := map[string]struct {
+		input          map[string]string
+		expectedOutput map[string]string
+	}{
+		"nil": {
+			input:          nil,
+			expectedOutput: nil,
+		},
+		"empty": {
+			input:          map[string]string{},
+			expectedOutput: map[string]string{},
+		},
+		"valid": {
+			input: map[string]string{
+				"disktype": "ssd",
+				"cpu":      "amd64",
+			},
+			expectedOutput: map[string]string{
+				"disktype": "ssd",
+				"cpu":      "amd64",
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			output := CopyMap(tc.input)
+			testutil.AssertEqual(t, "output", tc.expectedOutput, output)
+		})
+	}
+}
+
+func ExampleSingleConditionManager_String() {
+	manager := apis.NewLivingConditionSet("SampleReady").Manage(&duckv1beta1.Status{})
+	scm := NewSingleConditionManager(manager, "SampleReady", "Sample")
+	scm.MarkFalse("BadState", "Some message here")
+
+	fmt.Println(scm.String())
+
+	// Output: condition: SampleReady status: "False" reason: "BadState" message: "Some message here"
+}
+
+func ExampleSingleConditionManager_TimeSinceTransition() {
+	manager := apis.NewLivingConditionSet("SampleReady").Manage(&duckv1beta1.Status{})
+
+	// Force a state transition to initialize the time
+	scm := NewSingleConditionManager(manager, "SampleReady", "Sample")
+	scm.MarkFalse("BadState", "Some message here")
+
+	a := scm.TimeSinceTransition()
+	time.Sleep(100 * time.Millisecond)
+	b := scm.TimeSinceTransition()
+	fmt.Println("Increasing Time:", b > a)
+
+	// Output: Increasing Time: true
+}
+
+func ExampleSingleConditionManager_ErrorIfTimeout() {
+	manager := apis.NewLivingConditionSet("SampleReady").Manage(&duckv1beta1.Status{})
+
+	// Force a state transition to initialize the time
+	scm := NewSingleConditionManager(manager, "SampleReady", "Sample")
+	scm.MarkUnknown("UnknownState", "Some message here")
+
+	fmt.Println("Timeout not reached err:", scm.ErrorIfTimeout(1*time.Hour))
+	fmt.Println("Timeout reached err:", scm.ErrorIfTimeout(-1*time.Second))
+
+	// Output: Timeout not reached err: <nil>
+	// Timeout reached err: timed out, no progress was made in -1 seconds, previous status: "condition: SampleReady status: \"Unknown\" reason: \"UnknownState\" message: \"Some message here\""
 }

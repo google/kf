@@ -1,0 +1,8 @@
+Buildpacks for V2 Stacks:
+  Name            Position  URL
+  java-buildpack  0         https://path/to/java-buildpack
+  go-buildpack    1         https://path/to/go-buildpack
+V3 Stack: custom-stack:
+  Name  Position  Version  Latest
+  bp-1  0                  false
+  bp-2  1                  false

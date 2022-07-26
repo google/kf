@@ -31,9 +31,13 @@ import (
 var LicenseNames = []string{
 	"LICENCE",
 	"LICENSE",
+	"License",
 	"LICENSE.code",
 	"LICENSE.md",
+	"license.md",
 	"LICENSE.txt",
+	"LICENSE.MIT",
+	"LICENSE-APACHE-2.0.txt",
 	"COPYING",
 	"copyright",
 }
@@ -94,7 +98,6 @@ func (lt *LicenseFile) CSVRow(site string, classifier *licenseclassifier.License
 
 func findLicense(mod Module) (*LicenseFile, error) {
 	dir := mod.Source()
-
 	for {
 		// When we reach the root of our workspace, stop searching.
 		if dir == WorkingDir {
@@ -161,7 +164,7 @@ func (lc LicenseCollection) GroupedEntries() (string, error) {
 	for text := range grouped {
 		texts = append(texts, text)
 	}
-	sort.Strings(texts)
+	sort.Stable((sort.StringSlice(texts)))
 
 	// Many licenses are exact duplicates of one another. Grouping by these
 	// cuts down the size by ~2/3.
@@ -192,12 +195,54 @@ func CollectLicenses(packages []Module) (LicenseCollection, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		licenseFiles = append(licenseFiles, lf)
 	}
 
-	sort.Slice(licenseFiles, func(i, j int) bool {
-		return licenseFiles[i].Mod.Module < licenseFiles[j].Mod.Module
+	sort.SliceStable(licenseFiles, func(i, j int) bool {
+		return licenseFiles[i].Mod.IsLessThan(licenseFiles[j].Mod)
 	})
 
 	return LicenseCollection(licenseFiles), nil
+}
+
+func ScanForMetadataLicenses(path string) (LicenseCollection, error) {
+	log.Printf("  scanning path %s for METADATA files\n", WorkingDir)
+
+	var collection LicenseCollection
+	err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+		if info == nil {
+			return nil
+		}
+		if !info.IsDir() {
+			return nil
+		}
+		_, err = os.Stat(filepath.Join(path, "METADATA"))
+		if os.IsNotExist(err) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
+		module := Module{
+			ModuleVersion: path,
+		}
+
+		l, err := findLicense(module)
+		if err != nil {
+			return err
+		}
+
+		if l != nil {
+			collection = append(collection, l)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return collection, nil
 }

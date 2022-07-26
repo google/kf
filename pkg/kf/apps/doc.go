@@ -16,5 +16,4 @@
 // cf apps.
 package apps
 
-//go:generate go run ../internal/tools/option-builder/option-builder.go --pkg apps ../internal/tools/clientgen/common-options.yml zz_generated.clientoptions.go
 //go:generate go run ../internal/tools/clientgen/genclient.go client.yml

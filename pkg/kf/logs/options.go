@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,12 +21,18 @@ import (
 )
 
 type tailConfig struct {
+	// ComponentName is Name of the component to pull logs from.
+	ComponentName string
+	// ContainerName is Container name to pull logs from.
+	ContainerName string
 	// Follow is stream the logs
 	Follow bool
-	// Namespace is the Kubernetes namespace to use
-	Namespace string
+	// Labels is Labels to filter the Pods when tailing logs.
+	Labels map[string]string
 	// NumberLines is number of lines
 	NumberLines int
+	// Space is the Space to use
+	Space string
 	// Timeout is How much time to wait before giving up when not following.
 	Timeout time.Duration
 }
@@ -57,16 +63,28 @@ func (opts TailOptions) Extend(other TailOptions) TailOptions {
 	return out
 }
 
+// ComponentName returns the last set value for ComponentName or the empty value
+// if not set.
+func (opts TailOptions) ComponentName() string {
+	return opts.toConfig().ComponentName
+}
+
+// ContainerName returns the last set value for ContainerName or the empty value
+// if not set.
+func (opts TailOptions) ContainerName() string {
+	return opts.toConfig().ContainerName
+}
+
 // Follow returns the last set value for Follow or the empty value
 // if not set.
 func (opts TailOptions) Follow() bool {
 	return opts.toConfig().Follow
 }
 
-// Namespace returns the last set value for Namespace or the empty value
+// Labels returns the last set value for Labels or the empty value
 // if not set.
-func (opts TailOptions) Namespace() string {
-	return opts.toConfig().Namespace
+func (opts TailOptions) Labels() map[string]string {
+	return opts.toConfig().Labels
 }
 
 // NumberLines returns the last set value for NumberLines or the empty value
@@ -75,10 +93,30 @@ func (opts TailOptions) NumberLines() int {
 	return opts.toConfig().NumberLines
 }
 
+// Space returns the last set value for Space or the empty value
+// if not set.
+func (opts TailOptions) Space() string {
+	return opts.toConfig().Space
+}
+
 // Timeout returns the last set value for Timeout or the empty value
 // if not set.
 func (opts TailOptions) Timeout() time.Duration {
 	return opts.toConfig().Timeout
+}
+
+// WithTailComponentName creates an Option that sets Name of the component to pull logs from.
+func WithTailComponentName(val string) TailOption {
+	return func(cfg *tailConfig) {
+		cfg.ComponentName = val
+	}
+}
+
+// WithTailContainerName creates an Option that sets Container name to pull logs from.
+func WithTailContainerName(val string) TailOption {
+	return func(cfg *tailConfig) {
+		cfg.ContainerName = val
+	}
 }
 
 // WithTailFollow creates an Option that sets stream the logs
@@ -88,10 +126,10 @@ func WithTailFollow(val bool) TailOption {
 	}
 }
 
-// WithTailNamespace creates an Option that sets the Kubernetes namespace to use
-func WithTailNamespace(val string) TailOption {
+// WithTailLabels creates an Option that sets Labels to filter the Pods when tailing logs.
+func WithTailLabels(val map[string]string) TailOption {
 	return func(cfg *tailConfig) {
-		cfg.Namespace = val
+		cfg.Labels = val
 	}
 }
 
@@ -99,6 +137,13 @@ func WithTailNamespace(val string) TailOption {
 func WithTailNumberLines(val int) TailOption {
 	return func(cfg *tailConfig) {
 		cfg.NumberLines = val
+	}
+}
+
+// WithTailSpace creates an Option that sets the Space to use
+func WithTailSpace(val string) TailOption {
+	return func(cfg *tailConfig) {
+		cfg.Space = val
 	}
 }
 
@@ -112,8 +157,8 @@ func WithTailTimeout(val time.Duration) TailOption {
 // TailOptionDefaults gets the default values for Tail.
 func TailOptionDefaults() TailOptions {
 	return TailOptions{
-		WithTailNamespace("default"),
-		WithTailNumberLines(10),
+		WithTailNumberLines(0),
+		WithTailSpace("default"),
 		WithTailTimeout(time.Second),
 	}
 }

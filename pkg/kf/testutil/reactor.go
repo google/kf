@@ -24,8 +24,6 @@ import (
 	"k8s.io/client-go/testing"
 )
 
-//go:generate mockgen --package=testutil --copyright_file ../internal/tools/option-builder/LICENSE_HEADER --destination=fake_api_server.go --mock_names=TestApiServer=FakeApiServer github.com/google/kf/pkg/kf/testutil TestApiServer
-
 type Reactable interface {
 	AddReactor(verb, resource string, reaction testing.ReactionFunc)
 }

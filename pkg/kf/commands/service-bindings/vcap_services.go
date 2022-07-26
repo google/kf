@@ -18,9 +18,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/google/kf/pkg/kf/commands/completion"
-	"github.com/google/kf/pkg/kf/commands/config"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/v2/pkg/kf/commands/completion"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -33,23 +32,22 @@ func NewVcapServicesCommand(
 ) *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:     "vcap-services APP_NAME",
-		Short:   "Print the VCAP_SERVICES environment variable for an app",
-		Example: `kf vcap-services my-app`,
-		Args:    cobra.ExactArgs(1),
+		Use:               "vcap-services APP_NAME",
+		Short:             "Print the VCAP_SERVICES environment variable for an App.",
+		Example:           `kf vcap-services my-app`,
+		Args:              cobra.ExactArgs(1),
+		ValidArgsFunction: completion.AppCompletionFn(p),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			appName := args[0]
 
-			cmd.SilenceUsage = true
-
-			if err := utils.ValidateNamespace(p); err != nil {
+			if err := p.ValidateSpaceTargeted(); err != nil {
 				return err
 			}
 
 			secret, err := client.
 				CoreV1().
-				Secrets(p.Namespace).
-				Get(fmt.Sprintf("kf-injected-envs-%s", appName), metav1.GetOptions{})
+				Secrets(p.Space).
+				Get(cmd.Context(), fmt.Sprintf("kf-injected-envs-%s", appName), metav1.GetOptions{})
 			if err != nil {
 				return err
 			}
@@ -62,9 +60,8 @@ func NewVcapServicesCommand(
 			fmt.Fprintln(cmd.OutOrStdout(), string(vcapServices))
 			return nil
 		},
+		SilenceUsage: true,
 	}
-
-	completion.MarkArgCompletionSupported(cmd, completion.AppCompletion)
 
 	return cmd
 }

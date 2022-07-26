@@ -16,25 +16,37 @@ package v1alpha1
 
 import (
 	"context"
+	"strings"
 	"testing"
 
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
 )
 
 func TestSpaceValidation(t *testing.T) {
-	goodBuildpackBuild := SpaceSpecBuildpackBuild{
-		BuilderImage:      DefaultBuilderImage,
+	goodBuildConfig := SpaceSpecBuildConfig{
 		ContainerRegistry: "gcr.io/test",
+		ServiceAccount:    DefaultBuildServiceAccountName,
 	}
-	goodExecuton := SpaceSpecExecution{
-		Domains: []SpaceDomain{{Domain: "example.com", Default: true}},
+
+	goodNetworkPolicy := SpaceSpecNetworkConfigPolicy{
+		Ingress: DenyAllNetworkPolicy,
+		Egress:  DenyAllNetworkPolicy,
+	}
+
+	goodNetworkConfig := SpaceSpecNetworkConfig{
+		Domains:            []SpaceDomain{{Domain: "example.com", GatewayName: "kf/some-gateway"}},
+		AppNetworkPolicy:   goodNetworkPolicy,
+		BuildNetworkPolicy: goodNetworkPolicy,
 	}
 
 	goodSpaceSpec := SpaceSpec{
-		BuildpackBuild: goodBuildpackBuild,
-		Execution:      goodExecuton,
+		BuildConfig:   goodBuildConfig,
+		NetworkConfig: goodNetworkConfig,
+	}
+	badMeta := metav1.ObjectMeta{
+		Name: strings.Repeat("A", 64), // Too long
 	}
 
 	cases := map[string]struct {
@@ -47,12 +59,12 @@ func TestSpaceValidation(t *testing.T) {
 				Spec:       goodSpaceSpec,
 			},
 		},
-		"missing name": {
+		"invalid ObjectMeta": {
 			space: &Space{
-				ObjectMeta: metav1.ObjectMeta{Name: ""},
+				ObjectMeta: badMeta,
 				Spec:       goodSpaceSpec,
 			},
-			want: apis.ErrMissingField("name"),
+			want: apis.ValidateObjectMetadata(badMeta.GetObjectMeta()).ViaField("metadata"),
 		},
 		"reserved name: kf": {
 			space: &Space{
@@ -72,80 +84,251 @@ func TestSpaceValidation(t *testing.T) {
 			space: &Space{
 				ObjectMeta: metav1.ObjectMeta{Name: "valid"},
 				Spec: SpaceSpec{
-					Execution: goodExecuton,
-					BuildpackBuild: SpaceSpecBuildpackBuild{
-						BuilderImage: DefaultBuilderImage,
+					NetworkConfig: goodNetworkConfig,
+					BuildConfig: SpaceSpecBuildConfig{
+						ServiceAccount: DefaultBuildServiceAccountName,
 					},
 				},
 			},
-			want: apis.ErrMissingField("spec.buildpackBuild.containerRegistry"),
+			want: apis.ErrMissingField("spec.buildConfig.containerRegistry"),
 		},
-		"no builder image": {
+		"no service account": {
 			space: &Space{
 				ObjectMeta: metav1.ObjectMeta{Name: "valid"},
 				Spec: SpaceSpec{
-					Execution: goodExecuton,
-					BuildpackBuild: SpaceSpecBuildpackBuild{
+					NetworkConfig: goodNetworkConfig,
+					BuildConfig: SpaceSpecBuildConfig{
 						ContainerRegistry: "gcr.io/test",
 					},
 				},
 			},
-			want: apis.ErrMissingField("spec.buildpackBuild.builderImage"),
+			want: apis.ErrMissingField("spec.buildConfig.serviceAccount"),
 		},
 		"no domains": {
 			space: &Space{
 				ObjectMeta: metav1.ObjectMeta{Name: "valid"},
 				Spec: SpaceSpec{
-					BuildpackBuild: SpaceSpecBuildpackBuild{
-						ContainerRegistry: "gcr.io/test",
-						BuilderImage:      DefaultBuilderImage,
+					BuildConfig: goodBuildConfig,
+					NetworkConfig: SpaceSpecNetworkConfig{
+						AppNetworkPolicy:   goodNetworkPolicy,
+						BuildNetworkPolicy: goodNetworkPolicy,
 					},
 				},
 			},
-			want: apis.ErrMissingField("spec.execution.domains"),
+			// no domains is okay
 		},
-		"no default domain": {
+		"no duplicated domains": {
 			space: &Space{
 				ObjectMeta: metav1.ObjectMeta{Name: "valid"},
 				Spec: SpaceSpec{
-					Execution: SpaceSpecExecution{
+					NetworkConfig: SpaceSpecNetworkConfig{
 						Domains: []SpaceDomain{
-							{Domain: "example.com"},
+							{
+								Domain:      "example.com",
+								GatewayName: "kf/some-gateway",
+							},
+							{
+								Domain:      "example2.com",
+								GatewayName: "kf/some-gateway",
+							},
 						},
+						AppNetworkPolicy:   goodNetworkPolicy,
+						BuildNetworkPolicy: goodNetworkPolicy,
 					},
-					BuildpackBuild: SpaceSpecBuildpackBuild{
-						ContainerRegistry: "gcr.io/test",
-						BuilderImage:      DefaultBuilderImage,
-					},
+					BuildConfig: goodBuildConfig,
 				},
 			},
-			want: &apis.FieldError{
-				Paths:   []string{"spec.execution.domains"},
-				Message: "multiple defaults",
-				Details: "one domain must be set to default",
-			},
+			// should be okay
 		},
-		"multiple default domains": {
+		"duplicate domains": {
 			space: &Space{
 				ObjectMeta: metav1.ObjectMeta{Name: "valid"},
 				Spec: SpaceSpec{
-					Execution: SpaceSpecExecution{
+					NetworkConfig: SpaceSpecNetworkConfig{
 						Domains: []SpaceDomain{
-							{Domain: "example.com", Default: true},
-							{Domain: "other-example.com", Default: true},
+							{
+								Domain:      "example.com",
+								GatewayName: "kf/some-gateway",
+							},
+							{
+								Domain:      "google.com",
+								GatewayName: "kf/some-gateway",
+							},
+							{
+								Domain:      "example.com",
+								GatewayName: "kf/some-gateway",
+							},
 						},
+						AppNetworkPolicy:   goodNetworkPolicy,
+						BuildNetworkPolicy: goodNetworkPolicy,
 					},
-					BuildpackBuild: SpaceSpecBuildpackBuild{
-						ContainerRegistry: "gcr.io/test",
-						BuilderImage:      DefaultBuilderImage,
+					BuildConfig: goodBuildConfig,
+				},
+			},
+			want: errDuplicateValue("example.com", "spec.networkConfig.domains[2].domain"),
+		},
+		"bad network policy": {
+			space: &Space{
+				ObjectMeta: metav1.ObjectMeta{Name: "valid"},
+				Spec: SpaceSpec{
+					BuildConfig: goodBuildConfig,
+					NetworkConfig: SpaceSpecNetworkConfig{
+						AppNetworkPolicy: SpaceSpecNetworkConfigPolicy{
+							Ingress: "badappingress",
+							Egress:  "badappegress",
+						},
+						BuildNetworkPolicy: SpaceSpecNetworkConfigPolicy{
+							Ingress: "badbldingress",
+							Egress:  "badbldegress",
+						},
 					},
 				},
 			},
-			want: &apis.FieldError{
-				Paths:   []string{"spec.execution.domains"},
-				Message: "multiple defaults",
-				Details: "one domain must be set to default",
+			want: (*apis.FieldError)(nil).Also(
+				ErrInvalidEnumValue("badappegress", "spec.networkConfig.appNetworkPolicy.egress", []string{DenyAllNetworkPolicy, PermitAllNetworkPolicy}),
+				ErrInvalidEnumValue("badappingress", "spec.networkConfig.appNetworkPolicy.ingress", []string{DenyAllNetworkPolicy, PermitAllNetworkPolicy}),
+				ErrInvalidEnumValue("badbldegress", "spec.networkConfig.buildNetworkPolicy.egress", []string{DenyAllNetworkPolicy, PermitAllNetworkPolicy}),
+				ErrInvalidEnumValue("badbldingress", "spec.networkConfig.buildNetworkPolicy.ingress", []string{DenyAllNetworkPolicy, PermitAllNetworkPolicy}),
+			),
+		},
+		"custom gateways": {
+			space: &Space{
+				ObjectMeta: metav1.ObjectMeta{Name: "valid"},
+				Spec: SpaceSpec{
+					NetworkConfig: SpaceSpecNetworkConfig{
+						Domains: []SpaceDomain{
+							{
+								Domain:      "example.com",
+								GatewayName: "kf/some-gateway",
+							},
+						},
+						AppNetworkPolicy:   goodNetworkPolicy,
+						BuildNetworkPolicy: goodNetworkPolicy,
+					},
+					BuildConfig: goodBuildConfig,
+				},
 			},
+		},
+		"custom gateways missing gatewayName": {
+			space: &Space{
+				ObjectMeta: metav1.ObjectMeta{Name: "valid"},
+				Spec: SpaceSpec{
+					NetworkConfig: SpaceSpecNetworkConfig{
+						Domains: []SpaceDomain{
+							{
+								Domain:      "example.com",
+								GatewayName: "",
+							},
+						},
+						AppNetworkPolicy:   goodNetworkPolicy,
+						BuildNetworkPolicy: goodNetworkPolicy,
+					},
+					BuildConfig: goodBuildConfig,
+				},
+			},
+			want: (*apis.FieldError)(nil).Also(
+				apis.ErrMissingField("gatewayName").ViaFieldIndex("spec.networkConfig.domains", 0),
+			),
+		},
+		"custom gateways missing namespace": {
+			space: &Space{
+				ObjectMeta: metav1.ObjectMeta{Name: "valid"},
+				Spec: SpaceSpec{
+					NetworkConfig: SpaceSpecNetworkConfig{
+						Domains: []SpaceDomain{
+							{
+								Domain:      "example.com",
+								GatewayName: "some-gateway-namespace-assumed-kf",
+							},
+						},
+						AppNetworkPolicy:   goodNetworkPolicy,
+						BuildNetworkPolicy: goodNetworkPolicy,
+					},
+					BuildConfig: goodBuildConfig,
+				},
+			},
+			want: (*apis.FieldError)(nil).Also(
+				(&apis.FieldError{
+					Message: "Invalid gatewayName",
+					Paths:   []string{"gatewayName"},
+					Details: "Namespace prefix is missing",
+				}).ViaFieldIndex("spec.networkConfig.domains", 0),
+			),
+		},
+		"custom gateways invalid namespace prefix": {
+			space: &Space{
+				ObjectMeta: metav1.ObjectMeta{Name: "valid"},
+				Spec: SpaceSpec{
+					NetworkConfig: SpaceSpecNetworkConfig{
+						Domains: []SpaceDomain{
+							{
+								Domain:      "example.com",
+								GatewayName: "/broken",
+							},
+						},
+						AppNetworkPolicy:   goodNetworkPolicy,
+						BuildNetworkPolicy: goodNetworkPolicy,
+					},
+					BuildConfig: goodBuildConfig,
+				},
+			},
+			want: (*apis.FieldError)(nil).Also(
+				(&apis.FieldError{
+					Message: "Invalid gatewayName",
+					Paths:   []string{"gatewayName"},
+					Details: "Gateway Namespace was missing",
+				}).ViaFieldIndex("spec.networkConfig.domains", 0),
+			),
+		},
+		"custom gateways invalid name suffix": {
+			space: &Space{
+				ObjectMeta: metav1.ObjectMeta{Name: "valid"},
+				Spec: SpaceSpec{
+					NetworkConfig: SpaceSpecNetworkConfig{
+						Domains: []SpaceDomain{
+							{
+								Domain:      "example.com",
+								GatewayName: "kf/",
+							},
+						},
+						AppNetworkPolicy:   goodNetworkPolicy,
+						BuildNetworkPolicy: goodNetworkPolicy,
+					},
+					BuildConfig: goodBuildConfig,
+				},
+			},
+			want: (*apis.FieldError)(nil).Also(
+				(&apis.FieldError{
+					Message: "Invalid gatewayName",
+					Paths:   []string{"gatewayName"},
+					Details: "Gateway name was missing",
+				}).ViaFieldIndex("spec.networkConfig.domains", 0),
+			),
+		},
+		"custom gateways invalid namespace not kf": {
+			space: &Space{
+				ObjectMeta: metav1.ObjectMeta{Name: "valid"},
+				Spec: SpaceSpec{
+					NetworkConfig: SpaceSpecNetworkConfig{
+						Domains: []SpaceDomain{
+							{
+								Domain:      "example.com",
+								GatewayName: "not-kf/gateway",
+							},
+						},
+						AppNetworkPolicy:   goodNetworkPolicy,
+						BuildNetworkPolicy: goodNetworkPolicy,
+					},
+					BuildConfig: goodBuildConfig,
+				},
+			},
+			want: (*apis.FieldError)(nil).Also(
+				(&apis.FieldError{
+					Message: "Invalid namespace for gatewayName",
+					Paths:   []string{"gatewayName"},
+					Details: "Only the kf namespace is allowed",
+				}).ViaFieldIndex("spec.networkConfig.domains", 0),
+			),
 		},
 	}
 

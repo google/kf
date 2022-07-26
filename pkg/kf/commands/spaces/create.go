@@ -17,12 +17,15 @@ package spaces
 import (
 	"context"
 	"fmt"
+	"io"
 	"time"
 
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/describe"
-	"github.com/google/kf/pkg/kf/spaces"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/internal/envutil"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/describe"
+	utils "github.com/google/kf/v2/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/v2/pkg/kf/spaces"
 
 	"github.com/spf13/cobra"
 )
@@ -33,28 +36,42 @@ func NewCreateSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		containerRegistry   string
 		buildServiceAccount string
 		domains             []string
+		runningEnvVars      map[string]string
+		stagingEnvVars      map[string]string
 	)
 
 	cmd := &cobra.Command{
-		Use:     "create-space SPACE",
-		Short:   "Create a space",
-		Example: `kf create-space my-space --container-registry gcr.io/my-project --domain myspace.example.com --build-service-account myserviceaccount`,
-		Args:    cobra.ExactArgs(1),
+		Use:   "create-space NAME",
+		Short: "Create a Space with the given name.",
+		Example: `
+		# Create a Space with custom domains.
+		kf create-space my-space --domain my-space.my-company.com
+
+		# Create a Space that uses unique storage and service accounts.
+		kf create-space my-space --container-registry gcr.io/my-project --build-service-account myserviceaccount
+
+		# Set running and staging environment variables for Apps and Builds.
+		kf create-space my-space --run-env=ENVIRONMENT=nonprod --stage-env=ENVIRONMENT=nonprod,JDK_VERSION=8
+		`,
+		Args:         cobra.ExactArgs(1),
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cmd.SilenceUsage = true
 
 			name := args[0]
 
-			toCreate := spaces.NewKfSpace()
-			toCreate.SetName(name)
-			toCreate.SetContainerRegistry(containerRegistry)
-			toCreate.SetBuildServiceAccount(buildServiceAccount)
+			toCreate := &v1alpha1.Space{}
+			toCreate.Name = name
+			toCreate.Spec.BuildConfig.ContainerRegistry = containerRegistry
+			toCreate.Spec.BuildConfig.ServiceAccount = buildServiceAccount
+			toCreate.Spec.BuildConfig.Env = envutil.MapToEnvVars(stagingEnvVars)
 
-			for i, domain := range domains {
-				toCreate.AppendDomains(v1alpha1.SpaceDomain{Domain: domain, Default: i == 0})
+			for _, domain := range domains {
+				toCreate.Spec.NetworkConfig.Domains = append(toCreate.Spec.NetworkConfig.Domains, v1alpha1.SpaceDomain{Domain: domain})
 			}
 
-			if _, err := client.Create(toCreate.ToSpace()); err != nil {
+			toCreate.Spec.RuntimeConfig.Env = envutil.MapToEnvVars(runningEnvVars)
+
+			if _, err := client.Create(cmd.Context(), toCreate); err != nil {
 				return err
 			}
 
@@ -78,22 +95,61 @@ func NewCreateSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Comm
 		&containerRegistry,
 		"container-registry",
 		"",
-		"Container registry built apps and sources will be stored in.",
+		"Container registry built Apps and source code will be stored in.",
 	)
 
 	cmd.Flags().StringVar(
 		&buildServiceAccount,
 		"build-service-account",
 		"",
-		"Service account that the build pipeline will use to build containers.",
+		"Service account that Builds will use.",
 	)
 
 	cmd.Flags().StringArrayVar(
 		&domains,
 		"domain",
 		nil,
-		"Sets the valid domains for the space. The first provided domain will be the default.",
+		"Sets the valid domains for the Space. The first provided domain is the default.",
+	)
+
+	cmd.Flags().StringToStringVar(
+		&runningEnvVars,
+		"run-env",
+		nil,
+		"Sets the running environment variables for all Apps in the Space.",
+	)
+
+	cmd.Flags().StringToStringVar(
+		&stagingEnvVars,
+		"stage-env",
+		nil,
+		"Sets the staging environment variables for all Builds in the Space.",
 	)
 
 	return cmd
+}
+
+func printAdditionalCommands(w io.Writer, spaceName string) {
+	utils.SuggestNextAction(utils.NextAction{
+		Description: "Get space info",
+		Commands: []string{
+			fmt.Sprintf("kf space %s", spaceName),
+			fmt.Sprintf("kubectl get space %s", spaceName),
+		},
+	})
+
+	utils.SuggestNextAction(utils.NextAction{
+		Description: "Target space",
+		Commands: []string{
+			fmt.Sprintf("kf target -s %s", spaceName),
+		},
+	})
+
+	utils.SuggestNextAction(utils.NextAction{
+		Description: "Set space config",
+		Commands: []string{
+			"kf configure-space",
+		},
+	})
+
 }

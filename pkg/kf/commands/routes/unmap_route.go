@@ -17,15 +17,13 @@ package routes
 import (
 	"context"
 	"fmt"
-	"io"
-	"path"
 	"time"
 
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/algorithms"
-	"github.com/google/kf/pkg/kf/apps"
-	"github.com/google/kf/pkg/kf/commands/config"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/apps"
+	"github.com/google/kf/v2/pkg/kf/commands/completion"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	utils "github.com/google/kf/v2/pkg/kf/internal/utils/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -35,89 +33,85 @@ func NewUnmapRouteCommand(
 	appsClient apps.Client,
 ) *cobra.Command {
 	var async utils.AsyncFlags
-	var hostname, urlPath string
+	var bindingFlags routeBindingFlags
 
 	cmd := &cobra.Command{
 		Use:   "unmap-route APP_NAME DOMAIN [--hostname HOSTNAME] [--path PATH]",
-		Short: "Unmap a route from an app",
-		Example: `
-  kf unmap-route myapp example.com --hostname myapp # myapp.example.com
-  kf unmap-route --namespace myspace myapp example.com --hostname myapp # myapp.example.com
-  kf unmap-route myapp example.com --hostname myapp --path /mypath # myapp.example.com/mypath
-  `,
-		Args: cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cmd.SilenceUsage = true
+		Short: "Revoke an App's access to receive traffic from the Route.",
+		Long: `
+		Unmapping an App from a Route will cause traffic matching the Route to no
+		longer be forwarded to the App.
 
-			if err := utils.ValidateNamespace(p); err != nil {
+		The App may still receive traffic from an unmapped Route for a small period
+		of time while the traffic rules on the gateways are propagated.
+
+		The Route will re-balance its routing weights so other Apps mapped to it
+		will receive the traffic. If no other Apps are bound the Route will return
+		a 404 HTTP status code.
+		`,
+		Example: `
+		# Unmap myapp.example.com from myapp in the targeted Space
+		kf unmap-route myapp example.com --hostname myapp
+
+		# Unmap the Route in a specific Space
+		kf unmap-route --space myspace myapp example.com --hostname myapp
+
+		# Unmap a Route with a path
+		kf unmap-route myapp example.com --hostname myapp --path /mypath
+		`,
+		Args:              cobra.ExactArgs(2),
+		ValidArgsFunction: completion.AppCompletionFn(p),
+		SilenceUsage:      true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			if err := p.ValidateSpaceTargeted(); err != nil {
 				return err
 			}
 			appName, domain := args[0], args[1]
 
-			route := v1alpha1.RouteSpecFields{
-				Hostname: hostname,
-				Domain:   domain,
-				Path:     path.Join("/", urlPath),
-			}
+			binding := bindingFlags.RouteWeightBinding(domain)
 
-			if err := unmapApp(p.Namespace, appName, route, appsClient, cmd.OutOrStdout()); err != nil {
+			// Load the space so we can get the default domain
+			space, err := p.GetTargetSpace(cmd.Context())
+			if err != nil {
 				return err
 			}
 
-			action := fmt.Sprintf("Unmapping route to app %q in space %q", appName, p.Namespace)
+			ctx := v1alpha1.WithRouteDefaultDomain(
+				context.Background(),
+				space.DefaultDomainOrBlank(),
+			)
+
+			if _, err := appsClient.Transform(cmd.Context(), p.Space, appName, func(app *v1alpha1.App) error {
+				foundRoute := false
+				for _, route := range app.Status.Routes {
+					routeBinding := route.ToUnqualified()
+					if routeBinding.EqualsBinding(ctx, binding) {
+						foundRoute = true
+						break
+					}
+				}
+
+				if !foundRoute {
+					return fmt.Errorf("Route %s not mapped to App %s", binding.String(), appName)
+				}
+
+				apps.NewFromApp(app).RemoveRoute(ctx, binding)
+				return nil
+			}); err != nil {
+				return fmt.Errorf("failed to unmap Route: %s", err)
+			}
+
+			action := fmt.Sprintf("Unmapping Route to App %q in Space %q", appName, p.Space)
 			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
-				_, err := appsClient.WaitForConditionRoutesReadyTrue(context.Background(), p.Namespace, appName, 1*time.Second)
+				_, err := appsClient.WaitForConditionRoutesReadyTrue(context.Background(), p.Space, appName, 1*time.Second)
 				return err
 			})
 		},
 	}
 
 	async.Add(cmd)
-
-	cmd.Flags().StringVar(
-		&hostname,
-		"hostname",
-		"",
-		"Hostname for the route",
-	)
-	cmd.Flags().StringVar(
-		&urlPath,
-		"path",
-		"",
-		"URL Path for the route",
-	)
+	bindingFlags.Add(cmd)
 
 	return cmd
-}
-
-func unmapApp(
-	namespace string,
-	appName string,
-	route v1alpha1.RouteSpecFields,
-	appsClient apps.Client,
-	w io.Writer,
-) error {
-	mutator := apps.Mutator(func(app *v1alpha1.App) error {
-		// Ensure the App has the Route, if not return an error.
-		if !algorithms.Search(
-			0,
-			v1alpha1.RouteSpecFieldsSlice{route},
-			v1alpha1.RouteSpecFieldsSlice(app.Spec.Routes),
-		) {
-			return fmt.Errorf("App %s not found", app.Name)
-		}
-
-		app.Spec.Routes = []v1alpha1.RouteSpecFields(
-			(algorithms.Delete(
-				v1alpha1.RouteSpecFieldsSlice(app.Spec.Routes),
-				v1alpha1.RouteSpecFieldsSlice{route},
-			)).(v1alpha1.RouteSpecFieldsSlice))
-		return nil
-	})
-
-	if _, err := appsClient.Transform(namespace, appName, mutator); err != nil {
-		return fmt.Errorf("failed to unmap Route: %s", err)
-	}
-
-	return nil
 }

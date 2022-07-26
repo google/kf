@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//go:build ignore
 // +build ignore
 
 package main
@@ -22,7 +23,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/google/kf/pkg/kf/internal/tools/clientgen"
+	"github.com/google/kf/v2/pkg/kf/internal/tools/clientgen"
 	"sigs.k8s.io/yaml"
 )
 

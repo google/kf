@@ -16,12 +16,12 @@ package v1alpha1
 
 import (
 	"context"
-	"encoding/json"
 
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"knative.dev/pkg/apis"
+	"knative.dev/pkg/ptr"
 )
 
 var (
@@ -58,51 +58,60 @@ func (k *App) SetDefaults(ctx context.Context) {
 
 // SetDefaults implements apis.Defaultable
 func (k *AppSpec) SetDefaults(ctx context.Context) {
-	k.SetSourceDefaults(ctx)
-	k.Template.SetDefaults(ctx)
-	k.SetServiceBindingDefaults(ctx)
+	k.SetBuildDefaults(ctx)
+	k.Template.SetDefaults(ctx, k)
+	k.Instances.SetDefaults(ctx)
+	k.SetRouteDefaults(ctx)
 }
 
-// SetSourceDefaults implements apis.Defaultable for the embedded SourceSpec.
-func (k *AppSpec) SetSourceDefaults(ctx context.Context) {
+// SetBuildDefaults implements apis.Defaultable for the embedded BuildSpec.
+func (k *AppSpec) SetBuildDefaults(ctx context.Context) {
 
-	// If the app source has changed without changing the UpdateRequests,
+	// If the app build has changed without changing the UpdateRequests,
 	// update it.
 	if base := apis.GetBaseline(ctx); base != nil {
 		if old, ok := base.(*App); ok {
 			// If the update is a post rather than a patch, pick up where the last
-			// source left off.
-			if k.Source.UpdateRequests == 0 {
-				k.Source.UpdateRequests = old.Spec.Source.UpdateRequests
+			// build left off.
+			if k.Build.UpdateRequests == 0 {
+				k.Build.UpdateRequests = old.Spec.Build.UpdateRequests
 			}
 
-			if k.Source.NeedsUpdateRequestsIncrement(old.Spec.Source) {
-				k.Source.UpdateRequests++
+			if k.Build.NeedsUpdateRequestsIncrement(old.Spec.Build) {
+				k.Build.UpdateRequests++
 			}
 		}
 	}
 }
 
-// SetServiceBindingDefaults sets the defaults for an AppSpec's ServiceBindings.
-func (k *AppSpec) SetServiceBindingDefaults(ctx context.Context) {
-	for i := range k.ServiceBindings {
-		binding := &k.ServiceBindings[i]
-		binding.SetDefaults(ctx)
+// SetRouteDefaults sets the defaults for an AppSpec's Routes.
+func (k *AppSpec) SetRouteDefaults(ctx context.Context) {
+	for i := range k.Routes {
+		route := &k.Routes[i]
+		route.SetDefaults(ctx)
 	}
+
+	// Deduplicate routes with default properties.
+	k.Routes = MergeBindings(k.Routes)
 }
 
-// SetDefaults sets the defaults for an AppSpecServiceBinding.
-func (k *AppSpecServiceBinding) SetDefaults(ctx context.Context) {
-	if k.BindingName == "" {
-		k.BindingName = k.Instance
-	}
-	if string(k.Parameters) == "" {
-		k.Parameters = json.RawMessage("null")
-	}
-}
+// SetDefaults implements apis.Defaultable.
+func (k *AppSpecTemplate) SetDefaults(ctx context.Context, spec *AppSpec) {
 
-// SetDefaults implements apis.Defaultable
-func (k *AppSpecTemplate) SetDefaults(ctx context.Context) {
+	// If the app has changed without changing the UpdateRequests, update it.
+	if base := apis.GetBaseline(ctx); base != nil {
+		if old, ok := base.(*App); ok {
+			// If the update is a post rather than a patch, pick up where the
+			// last template left off.
+			if k.UpdateRequests == 0 {
+				k.UpdateRequests = old.Spec.Template.UpdateRequests
+			}
+
+			if spec.NeedsUpdateRequestsIncrement(old.Spec) {
+				k.UpdateRequests++
+			}
+		}
+	}
 
 	// We require at least one container, so if there isn't one, set a blank
 	// one.
@@ -114,21 +123,74 @@ func (k *AppSpecTemplate) SetDefaults(ctx context.Context) {
 	SetKfAppContainerDefaults(ctx, container)
 }
 
+// SetDefaults implements apis.Defaultable.
+func (k *AppSpecInstances) SetDefaults(ctx context.Context) {
+	defer func() {
+		k.DeprecatedExactly = nil
+	}()
+
+	switch {
+	case k.Replicas != nil:
+		// Replicas already set, move on.
+	case k.DeprecatedExactly == nil:
+		// Nothing is set, default to 1
+		k.Replicas = ptr.Int32(1)
+	default:
+		// Promote DeprecatedExactly
+		k.Replicas = k.DeprecatedExactly
+	}
+
+	k.Autoscaling.SetAutoscalingDefaults(ctx)
+}
+
+// SetAutoscalingDefaults set the defaults for AppSpecAutoscaling
+func (as *AppSpecAutoscaling) SetAutoscalingDefaults(_ context.Context) {
+	if as.MaxReplicas != nil && as.MinReplicas == nil {
+		as.MinReplicas = ptr.Int32(1)
+	}
+}
+
+// SetDefaults implements apis.Defaultable.
+func (s *Scale) SetDefaults(ctx context.Context) {
+	// No defaults
+}
+
 // SetKfAppContainerDefaults sets the defaults for an application container.
 // This function MAY be context sensitive in the future.
 func SetKfAppContainerDefaults(_ context.Context, container *corev1.Container) {
 	if container.Name == "" {
-		container.Name = "user-container"
+		container.Name = DefaultUserContainerName
 	}
 
-	// Default the probe to a TCP connection if unspecified
+	setContainerReadinessProbe(container)
+
+	// Set default disk, RAM, and CPU limits on the application if they have not been custom set
+	if container.Resources.Requests == nil {
+		container.Resources.Requests = v1.ResourceList{}
+	}
+
+	if _, exists := container.Resources.Requests[corev1.ResourceMemory]; !exists {
+		container.Resources.Requests[corev1.ResourceMemory] = defaultMem
+	}
+
+	if _, exists := container.Resources.Requests[corev1.ResourceEphemeralStorage]; !exists {
+		container.Resources.Requests[corev1.ResourceEphemeralStorage] = defaultStorage
+	}
+
+	if _, exists := container.Resources.Requests[corev1.ResourceCPU]; !exists {
+		container.Resources.Requests[corev1.ResourceCPU] = defaultCPU
+	}
+}
+
+func setContainerReadinessProbe(container *corev1.Container) {
+	// Container.ReadinessProbe is set at client side
+	// based on App's health check type (http/port/process/none).
+	// If container.ReadinessProbe == nil, it means health check type == "process" or "none",
+	// it shouldn't be default at the Webhook where App's health check type can't be determined,
+	// it could result in incorrect configuration if setting container.ReadinessProbe for "process"
+	// or "none" health check types (see b/173615950).
 	if container.ReadinessProbe == nil {
-		container.ReadinessProbe = &corev1.Probe{
-			SuccessThreshold: 1,
-			Handler: corev1.Handler{
-				TCPSocket: &corev1.TCPSocketAction{},
-			},
-		}
+		return
 	}
 
 	readinessProbe := container.ReadinessProbe
@@ -153,22 +215,5 @@ func SetKfAppContainerDefaults(_ context.Context, container *corev1.Container) {
 		if http.Path == "" {
 			http.Path = DefaultHealthCheckProbeEndpoint
 		}
-	}
-
-	// Set default disk, RAM, and CPU limits on the application if they have not been custom set
-	if container.Resources.Requests == nil {
-		container.Resources.Requests = v1.ResourceList{}
-	}
-
-	if _, exists := container.Resources.Requests[corev1.ResourceMemory]; !exists {
-		container.Resources.Requests[corev1.ResourceMemory] = defaultMem
-	}
-
-	if _, exists := container.Resources.Requests[corev1.ResourceEphemeralStorage]; !exists {
-		container.Resources.Requests[corev1.ResourceEphemeralStorage] = defaultStorage
-	}
-
-	if _, exists := container.Resources.Requests[corev1.ResourceCPU]; !exists {
-		container.Resources.Requests[corev1.ResourceCPU] = defaultCPU
 	}
 }

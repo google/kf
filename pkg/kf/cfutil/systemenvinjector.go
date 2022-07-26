@@ -15,47 +15,49 @@
 package cfutil
 
 import (
-	"errors"
+	"context"
+	"encoding/json"
 	"fmt"
 
-	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned"
-	"github.com/google/kf/pkg/internal/envutil"
-	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/internal/envutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+)
+
+const (
+	// DatabaseURLEnvVarName is the environment variable expected by
+	// applications looking for a CF style database URI.
+	DatabaseURLEnvVarName = "DATABASE_URL"
+
+	// VcapServicesEnvVarName is the environment variable expected by
+	// applications looking CF style service injection details.
+	VcapServicesEnvVarName = "VCAP_SERVICES"
 )
 
 // SystemEnvInjector is a utility used to update v1alpha1.Apps with
 // CF style system environment variables like VCAP_SERVICES.
 type SystemEnvInjector interface {
 	// GetVcapServices gets a VCAP_SERVICES compatible environment variable.
-	GetVcapServices(appName string, bindings []servicecatalogv1beta1.ServiceBinding) ([]VcapService, error)
+	GetVcapServices(ctx context.Context, appName string, bindings []v1alpha1.ServiceInstanceBinding) ([]VcapService, error)
 
 	// GetVcapService gets a VCAP_SERVICES service entry.
-	GetVcapService(appName string, binding *servicecatalogv1beta1.ServiceBinding) (VcapService, error)
+	GetVcapService(ctx context.Context, appName string, binding v1alpha1.ServiceInstanceBinding) (VcapService, error)
 
 	// ComputeSystemEnv computes the environment variables that should be injected
 	// on a given service.
-	ComputeSystemEnv(app *v1alpha1.App, serviceBindings []servicecatalogv1beta1.ServiceBinding) (computed []corev1.EnvVar, err error)
-
-	// GetClassFromInstance gets the service class for the given instance.
-	GetClassFromInstance(instance *servicecatalogv1beta1.ServiceInstance) (*servicecatalogv1beta1.CommonServiceClassSpec, error)
+	ComputeSystemEnv(ctx context.Context, app *v1alpha1.App, serviceBindings []v1alpha1.ServiceInstanceBinding) (computed []corev1.EnvVar, err error)
 }
 
 type systemEnvInjector struct {
-	client    servicecatalogclient.Interface
 	k8sclient kubernetes.Interface
 }
 
 // NewSystemEnvInjector creates a utility used to update v1alpha1.Apps with
 // CF style system environment variables like VCAP_SERVICES.
-func NewSystemEnvInjector(
-	client servicecatalogclient.Interface,
-	k8sclient kubernetes.Interface) SystemEnvInjector {
+func NewSystemEnvInjector(k8sclient kubernetes.Interface) SystemEnvInjector {
 	return &systemEnvInjector{
-		client:    client,
 		k8sclient: k8sclient,
 	}
 }
@@ -68,66 +70,22 @@ func GetVcapServicesMap(appName string, services []VcapService) (VcapServicesMap
 	return out, nil
 }
 
-func (s *systemEnvInjector) GetVcapService(appName string, binding *servicecatalogv1beta1.ServiceBinding) (VcapService, error) {
-
+// GetVcapService gets a VCAP_SERVICES entry for a service instance binding.
+func (s *systemEnvInjector) GetVcapService(ctx context.Context, appName string, binding v1alpha1.ServiceInstanceBinding) (VcapService, error) {
 	secret, err := s.k8sclient.
 		CoreV1().
 		Secrets(binding.Namespace).
-		Get(binding.Spec.SecretName, metav1.GetOptions{})
+		Get(ctx, binding.Status.CredentialsSecretRef.Name, metav1.GetOptions{})
 	if err != nil {
 		return VcapService{}, fmt.Errorf("couldn't create VCAP_SERVICES, the secret for binding %s couldn't be fetched: %v", binding.Name, err)
 	}
 
-	serviceInstance, err := s.client.
-		ServicecatalogV1beta1().
-		ServiceInstances(binding.Namespace).
-		Get(binding.Spec.InstanceRef.Name, metav1.GetOptions{})
-	if err != nil {
-		return VcapService{}, fmt.Errorf("couldn't get instance: %v", err)
-	}
-
-	class, err := s.GetClassFromInstance(serviceInstance)
-	if err != nil {
-		return VcapService{}, fmt.Errorf("couldn't get instance: %v", err)
-	}
-
-	return NewVcapService(*class, *serviceInstance, *binding, secret), nil
+	return NewVcapService(binding, *secret), nil
 }
 
-// GetClassFromInstance gets the service class for the given instance.
-func (s *systemEnvInjector) GetClassFromInstance(instance *servicecatalogv1beta1.ServiceInstance) (*servicecatalogv1beta1.CommonServiceClassSpec, error) {
-	if ref := instance.Spec.ClusterServiceClassRef; ref != nil {
-		plan, err := s.client.
-			ServicecatalogV1beta1().
-			ClusterServiceClasses().
-			Get(ref.Name, metav1.GetOptions{})
-
-		if err != nil {
-			return nil, err
-		}
-
-		return &plan.Spec.CommonServiceClassSpec, nil
-	}
-
-	if ref := instance.Spec.ServiceClassRef; ref != nil {
-		plan, err := s.client.
-			ServicecatalogV1beta1().
-			ServiceClasses(instance.Namespace).
-			Get(ref.Name, metav1.GetOptions{})
-
-		if err != nil {
-			return nil, err
-		}
-
-		return &plan.Spec.CommonServiceClassSpec, nil
-	}
-
-	return nil, errors.New("neither ClusterServiceClassRef nor ServiceClassRef were provided")
-}
-
-func (s *systemEnvInjector) GetVcapServices(appName string, bindings []servicecatalogv1beta1.ServiceBinding) (services []VcapService, err error) {
+func (s *systemEnvInjector) GetVcapServices(ctx context.Context, appName string, bindings []v1alpha1.ServiceInstanceBinding) (services []VcapService, err error) {
 	for _, binding := range bindings {
-		service, err := s.GetVcapService(appName, &binding)
+		service, err := s.GetVcapService(ctx, appName, binding)
 		if err != nil {
 			return nil, err
 		}
@@ -137,16 +95,30 @@ func (s *systemEnvInjector) GetVcapServices(appName string, bindings []serviceca
 	return services, nil
 }
 
-func (s *systemEnvInjector) ComputeSystemEnv(app *v1alpha1.App, serviceBindings []servicecatalogv1beta1.ServiceBinding) (computed []corev1.EnvVar, err error) {
-	va, err := CreateVcapApplication(app)
+// ComputeSystemEnv gets the env vars for an app and its associated service bindings.
+func (s *systemEnvInjector) ComputeSystemEnv(ctx context.Context, app *v1alpha1.App, serviceBindings []v1alpha1.ServiceInstanceBinding) (computed []corev1.EnvVar, err error) {
+	services, err := s.GetVcapServices(ctx, app.Name, serviceBindings)
 	if err != nil {
 		return nil, err
 	}
-	computed = append(computed, va)
 
-	services, err := s.GetVcapServices(app.Name, serviceBindings)
-	if err != nil {
-		return nil, err
+	// Set DATABASE_URL
+	// https://docs.cloudfoundry.org/devguide/deploy-apps/environment-variable.html#DATABASE-URL
+	for _, svc := range services {
+		if uri, ok := svc.Credentials["uri"]; ok {
+			// Cloud Foundry doesn't check whether the value at the "uri" key is a valid string, but we check that the
+			// value can be unmarshaled into a string. Unmarshaling returns the desired uri string rather than the JSON encoded string.
+			// https://github.com/cloudfoundry/cloud_controller_ng/blob/25bd86e7ddcd12ca045836ce648ae48af4f07534/lib/cloud_controller/database_uri_generator.rb
+			var uriStr string
+			err := json.Unmarshal(uri, &uriStr)
+			if err == nil {
+				computed = append(computed, corev1.EnvVar{
+					Name:  DatabaseURLEnvVarName,
+					Value: uriStr,
+				})
+				break
+			}
+		}
 	}
 
 	serviceMap, err := GetVcapServicesMap(app.Name, services)
@@ -154,7 +126,7 @@ func (s *systemEnvInjector) ComputeSystemEnv(app *v1alpha1.App, serviceBindings 
 		return nil, err
 	}
 
-	vsVar, err := envutil.NewJSONEnvVar("VCAP_SERVICES", serviceMap)
+	vsVar, err := envutil.NewJSONEnvVar(VcapServicesEnvVarName, serviceMap)
 	if err != nil {
 		return nil, err
 	}

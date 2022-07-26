@@ -15,14 +15,15 @@
 package taskrun
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
-	"github.com/google/kf/third_party/tektoncd-cli/pkg/cli"
-	"github.com/google/kf/third_party/tektoncd-cli/pkg/helper/pods"
-	"github.com/google/kf/third_party/tektoncd-cli/pkg/helper/pods/stream"
-	"github.com/google/kf/third_party/tektoncd-pipeline/pkg/apis/pipeline/v1alpha1"
+	"github.com/google/kf/v2/third_party/tektoncd-cli/pkg/cli"
+	"github.com/google/kf/v2/third_party/tektoncd-cli/pkg/helper/pods"
+	"github.com/google/kf/v2/third_party/tektoncd-cli/pkg/helper/pods/stream"
 	"github.com/pkg/errors"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -54,39 +55,39 @@ type LogReader struct {
 	Follow   bool
 	AllSteps bool
 
-	// BlacklistSteps prvents steps from being displated when AllSteps is
+	// DenylistSteps prvents steps from being displated when AllSteps is
 	// enabled.
 	//
-	// NOTE: BlacklistSteps doesn't exist in the normal tektoncd code.
+	// NOTE: DenylistSteps doesn't exist in the normal tektoncd code.
 	// However, istio is SOO chatty that it is distracting. So I want to be
 	// able to mute it.
-	BlacklistSteps []string
+	DenylistSteps []string
 }
 
 const (
 	msgTRNotFoundErr = "Unable to get Taskrun"
 )
 
-func (lr *LogReader) Read() (<-chan Log, <-chan error, error) {
+func (lr *LogReader) Read(ctx context.Context) (<-chan Log, <-chan error, error) {
 	tkn := lr.Clients.Tekton
-	tr, err := tkn.TektonV1alpha1().TaskRuns(lr.Ns).Get(lr.Run, metav1.GetOptions{})
+	tr, err := tkn.TektonV1beta1().TaskRuns(lr.Ns).Get(ctx, lr.Run, metav1.GetOptions{})
 	if err != nil {
 		return nil, nil, fmt.Errorf("%s : %s", msgTRNotFoundErr, err)
 	}
 
 	lr.formTaskName(tr)
 
-	return lr.readLogs(tr)
+	return lr.readLogs(ctx, tr)
 }
 
-func (lr *LogReader) readLogs(tr *v1alpha1.TaskRun) (<-chan Log, <-chan error, error) {
+func (lr *LogReader) readLogs(ctx context.Context, tr *v1beta1.TaskRun) (<-chan Log, <-chan error, error) {
 	if lr.Follow {
-		return lr.readLiveLogs(tr)
+		return lr.readLiveLogs(ctx, tr)
 	}
-	return lr.readAvailableLogs(tr)
+	return lr.readAvailableLogs(ctx, tr)
 }
 
-func (lr *LogReader) formTaskName(tr *v1alpha1.TaskRun) {
+func (lr *LogReader) formTaskName(tr *v1beta1.TaskRun) {
 	if lr.Task != "" {
 		return
 	}
@@ -104,24 +105,24 @@ func (lr *LogReader) formTaskName(tr *v1alpha1.TaskRun) {
 	lr.Task = fmt.Sprintf("Task %d", lr.Number)
 }
 
-func (lr *LogReader) readLiveLogs(tr *v1alpha1.TaskRun) (<-chan Log, <-chan error, error) {
+func (lr *LogReader) readLiveLogs(ctx context.Context, tr *v1beta1.TaskRun) (<-chan Log, <-chan error, error) {
 	var (
 		podName = tr.Status.PodName
 		kube    = lr.Clients.Kube
 	)
 
 	p := pods.New(podName, lr.Ns, kube, lr.Streamer)
-	pod, err := p.Wait()
+	pod, err := p.Wait(ctx)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, fmt.Sprintf("task %s failed", lr.Task))
 	}
 
-	steps := filterSteps(pod, lr.AllSteps, lr.BlacklistSteps)
-	logC, errC := lr.readStepsLogs(steps, p, lr.Follow)
+	steps := filterSteps(pod, lr.AllSteps, lr.DenylistSteps)
+	logC, errC := lr.readStepsLogs(ctx, steps, p, lr.Follow)
 	return logC, errC, err
 }
 
-func (lr *LogReader) readAvailableLogs(tr *v1alpha1.TaskRun) (<-chan Log, <-chan error, error) {
+func (lr *LogReader) readAvailableLogs(ctx context.Context, tr *v1beta1.TaskRun) (<-chan Log, <-chan error, error) {
 	var (
 		kube    = lr.Clients.Kube
 		podName = tr.Status.PodName
@@ -132,17 +133,17 @@ func (lr *LogReader) readAvailableLogs(tr *v1alpha1.TaskRun) (<-chan Log, <-chan
 	}
 
 	p := pods.New(podName, lr.Ns, kube, lr.Streamer)
-	pod, err := p.Get()
+	pod, err := p.Get(ctx)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, fmt.Sprintf("task %s failed", lr.Task))
 	}
 
-	steps := filterSteps(pod, lr.AllSteps, lr.BlacklistSteps)
-	logC, errC := lr.readStepsLogs(steps, p, lr.Follow)
+	steps := filterSteps(pod, lr.AllSteps, lr.DenylistSteps)
+	logC, errC := lr.readStepsLogs(ctx, steps, p, lr.Follow)
 	return logC, errC, nil
 }
 
-func (lr *LogReader) readStepsLogs(steps []*step, pod *pods.Pod, follow bool) (<-chan Log, <-chan error) {
+func (lr *LogReader) readStepsLogs(ctx context.Context, steps []*step, pod *pods.Pod, follow bool) (<-chan Log, <-chan error) {
 	logC := make(chan Log)
 	errC := make(chan error)
 
@@ -156,7 +157,7 @@ func (lr *LogReader) readStepsLogs(steps []*step, pod *pods.Pod, follow bool) (<
 			}
 
 			container := pod.Container(step.container)
-			podC, perrC, err := container.LogReader(follow).Read()
+			podC, perrC, err := container.LogReader(follow).Read(ctx)
 			if err != nil {
 				errC <- fmt.Errorf("error in getting logs for step %s : %s", step.name, err)
 				continue
@@ -182,7 +183,7 @@ func (lr *LogReader) readStepsLogs(steps []*step, pod *pods.Pod, follow bool) (<
 				}
 			}
 
-			if err := container.Status(); err != nil {
+			if err := container.Status(ctx); err != nil {
 				errC <- err
 				return
 			}
@@ -192,7 +193,7 @@ func (lr *LogReader) readStepsLogs(steps []*step, pod *pods.Pod, follow bool) (<
 	return logC, errC
 }
 
-func filterSteps(pod *corev1.Pod, allSteps bool, blacklistSteps []string) []*step {
+func filterSteps(pod *corev1.Pod, allSteps bool, denylistSteps []string) []*step {
 	steps := []*step{}
 
 	if allSteps {
@@ -201,16 +202,16 @@ func filterSteps(pod *corev1.Pod, allSteps bool, blacklistSteps []string) []*ste
 
 	steps = append(steps, getSteps(pod)...)
 
-	// Remove blacklisted steps
+	// Remove denylisted steps
 	bs := map[string]bool{}
-	for _, s := range blacklistSteps {
+	for _, s := range denylistSteps {
 		bs[s] = true
 	}
 
 	var idx int
 	for i := range steps {
 		if bs[steps[i].name] {
-			// blacklisted
+			// denylisted
 			continue
 		}
 		steps[idx] = steps[i]

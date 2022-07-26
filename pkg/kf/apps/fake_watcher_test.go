@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2020 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,35 +20,36 @@
 package apps_test
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	watch "k8s.io/apimachinery/pkg/watch"
-	reflect "reflect"
 )
 
-// FakeWatcher is a mock of Interface interface
+// FakeWatcher is a mock of Interface interface.
 type FakeWatcher struct {
 	ctrl     *gomock.Controller
 	recorder *FakeWatcherMockRecorder
 }
 
-// FakeWatcherMockRecorder is the mock recorder for FakeWatcher
+// FakeWatcherMockRecorder is the mock recorder for FakeWatcher.
 type FakeWatcherMockRecorder struct {
 	mock *FakeWatcher
 }
 
-// NewFakeWatcher creates a new mock instance
+// NewFakeWatcher creates a new mock instance.
 func NewFakeWatcher(ctrl *gomock.Controller) *FakeWatcher {
 	mock := &FakeWatcher{ctrl: ctrl}
 	mock.recorder = &FakeWatcherMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *FakeWatcher) EXPECT() *FakeWatcherMockRecorder {
 	return m.recorder
 }
 
-// ResultChan mocks base method
+// ResultChan mocks base method.
 func (m *FakeWatcher) ResultChan() <-chan watch.Event {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ResultChan")
@@ -56,19 +57,19 @@ func (m *FakeWatcher) ResultChan() <-chan watch.Event {
 	return ret0
 }
 
-// ResultChan indicates an expected call of ResultChan
+// ResultChan indicates an expected call of ResultChan.
 func (mr *FakeWatcherMockRecorder) ResultChan() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResultChan", reflect.TypeOf((*FakeWatcher)(nil).ResultChan))
 }
 
-// Stop mocks base method
+// Stop mocks base method.
 func (m *FakeWatcher) Stop() {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Stop")
 }
 
-// Stop indicates an expected call of Stop
+// Stop indicates an expected call of Stop.
 func (mr *FakeWatcherMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*FakeWatcher)(nil).Stop))

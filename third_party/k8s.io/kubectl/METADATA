@@ -1,0 +1,21 @@
+name: "Kubernetes Kubectl"
+description:
+  "The CLI for Kubernetes"
+
+third_party: {
+  type: PACKAGE
+  url {
+    type: HOMEPAGE
+    value: "https://k8s.io/kubectl"
+  }
+  url {
+    type: GIT
+    value: "https://github.com/kubernetes/kubectl"
+  }
+  version: "1db573e84edc2713fc4a74f67c9ed933ef5bb4a7"
+  last_upgrade_date {
+    year: 2020
+    month: 03
+    day: 05
+  }
+}

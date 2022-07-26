@@ -15,15 +15,59 @@
 package builds
 
 import (
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/internal/genericcli"
-	"github.com/google/kf/pkg/kf/internal/tableclient"
-	"github.com/google/kf/pkg/kf/sources"
+	"context"
+
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/builds"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/internal/genericcli"
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // NewBuildsCommand allows users to get builds.
-func NewBuildsCommand(p *config.KfParams, client dynamic.Interface, tc tableclient.Interface) *cobra.Command {
-	return genericcli.NewListCommand(sources.NewResourceInfo(), p, client, tc)
+func NewBuildsCommand(p *config.KfParams) *cobra.Command {
+	return genericcli.NewListCommand(&adxBuildResourceInfo{
+		p:   p,
+		old: builds.NewResourceInfo(),
+	}, p, genericcli.WithListLabelFilters(map[string]string{
+		"app": v1alpha1.NameLabel,
+	}))
+}
+
+type adxBuildResourceInfo struct {
+	p   *config.KfParams
+	old genericcli.Type
+}
+
+func (a *adxBuildResourceInfo) Namespaced() bool {
+	return true
+}
+
+func (a *adxBuildResourceInfo) GroupVersionResource(ctx context.Context) schema.GroupVersionResource {
+	if a.p.FeatureFlags(ctx).AppDevExperienceBuilds().IsDisabled() {
+		return a.old.GroupVersionResource(ctx)
+	}
+
+	return schema.GroupVersionResource{
+		Group:    "builds.appdevexperience.dev",
+		Version:  "v1alpha1",
+		Resource: "builds",
+	}
+}
+
+func (a *adxBuildResourceInfo) GroupVersionKind(ctx context.Context) schema.GroupVersionKind {
+	if a.p.FeatureFlags(ctx).AppDevExperienceBuilds().IsDisabled() {
+		return a.old.GroupVersionKind(ctx)
+	}
+
+	return schema.GroupVersionKind{
+		Group:   "builds.appdevexperience.dev",
+		Version: "v1alpha1",
+		Kind:    "Build",
+	}
+}
+
+func (a *adxBuildResourceInfo) FriendlyName() string {
+	return "Build"
 }

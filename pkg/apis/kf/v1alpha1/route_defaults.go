@@ -16,10 +16,10 @@ package v1alpha1
 
 import (
 	"context"
-	"hash/crc64"
 	"path"
-	"strconv"
 )
+
+var defaultRouteWeight int32 = 1
 
 const (
 	// RouteHostname is the hostname of a route.
@@ -30,94 +30,86 @@ const (
 	RoutePath = "route.kf.dev/path"
 	// RouteAppName is the App's name that owns the Route.
 	RouteAppName = "route.kf.dev/appname"
+
+	// DefaultRouteDestinationPort holds the default port route traffic is sent to.
+	DefaultRouteDestinationPort = 80
 )
 
-// GenerateRouteClaimName creates the deterministic name for a Route claim.
-func GenerateRouteClaimName(hostname, domain, urlPath string) string {
-	return GenerateRouteName(hostname, domain, urlPath, "")
+type routeDefaultDomain struct{}
+
+var routeDefaultDomainKey = routeDefaultDomain{}
+
+// WithRouteDefaultDomain sets the default domain for a route.
+func WithRouteDefaultDomain(ctx context.Context, defaultDomain string) context.Context {
+	return context.WithValue(ctx, routeDefaultDomainKey, defaultDomain)
+}
+
+func getRouteDefaultDomain(ctx context.Context) *string {
+	if typed, ok := ctx.Value(routeDefaultDomainKey).(string); ok {
+		return &typed
+	}
+
+	return nil
+}
+
+type defaultDestPort struct{}
+
+var defaultDestPortKey = defaultDestPort{}
+
+// WithRouteDefaultDestinationPort sets the default destination port for the context
+func WithRouteDefaultDestinationPort(ctx context.Context, port int32) context.Context {
+	return context.WithValue(ctx, defaultDestPortKey, port)
+}
+
+func getRouteDefaultDestinationPort(ctx context.Context) *int32 {
+	if typed, ok := ctx.Value(defaultDestPortKey).(int32); ok {
+		return &typed
+	}
+
+	return nil
 }
 
 // GenerateRouteName creates the deterministic name for a Route.
-func GenerateRouteName(hostname, domain, urlPath, appName string) string {
-	return GenerateName(hostname, domain, path.Join("/", urlPath), appName)
-}
-
-// GenerateRouteNameFromSpec creates the deterministic name for a Route.
-func GenerateRouteNameFromSpec(spec RouteSpecFields, appName string) string {
-	return GenerateName(spec.Hostname, spec.Domain, spec.Path, appName)
+func GenerateRouteName(hostname, domain, urlPath string) string {
+	return GenerateName(hostname, domain, path.Join("/", urlPath), "")
 }
 
 // SetDefaults implements apis.Defaultable
-func (k *Route) SetDefaults(ctx context.Context) {
-	k.Spec.SetDefaults(ctx)
-	k.Labels = UnionMaps(k.Labels, k.Spec.RouteSpecFields.labels())
-}
+func (k *RouteWeightBinding) SetDefaults(ctx context.Context) {
+	if k.Weight == nil {
+		k.Weight = &defaultRouteWeight
+	}
 
-// SetDefaults implements apis.Defaultable
-func (k *RouteSpec) SetDefaults(ctx context.Context) {
+	if defaultPort := getRouteDefaultDestinationPort(ctx); k.DestinationPort == nil && defaultPort != nil {
+		k.DestinationPort = defaultPort
+	}
+
 	k.RouteSpecFields.SetDefaults(ctx)
 }
 
 // SetDefaults implements apis.Defaultable
 func (k *RouteSpecFields) SetDefaults(ctx context.Context) {
 	k.Path = path.Join("/", k.Path)
+
+	if defaultDomain := getRouteDefaultDomain(ctx); k.Domain == "" && defaultDomain != nil {
+		k.Domain = *defaultDomain
+	}
 }
 
-func (k *RouteSpecFields) labels() map[string]string {
+func defaultRouteLabels() map[string]string {
 	return map[string]string{
 		ManagedByLabel: "kf",
 		ComponentLabel: "route",
-		RouteHostname:  k.Hostname,
-		RouteDomain:    k.Domain,
-		RoutePath:      ToBase36(k.Path),
 	}
 }
 
-// SetSpaceDefaults sets the default values for the Route based on the space's
-// settings.
-func (k *Route) SetSpaceDefaults(space *Space) {
-	k.Spec.SetSpaceDefaults(space)
-}
-
-// SetSpaceDefaults sets the default values for the RouteSpec based on the
-// space's settings.
-func (k *RouteSpec) SetSpaceDefaults(space *Space) {
-	k.RouteSpecFields.SetSpaceDefaults(space)
-}
-
-// SetSpaceDefaults sets the default values for the RouteSpec based on the
-// space's settings.
-func (k *RouteSpecFields) SetSpaceDefaults(space *Space) {
-	if k.Domain == "" {
-		// Use space's default domain
-		for _, domain := range space.Spec.Execution.Domains {
-			if !domain.Default {
-				continue
-			}
-			k.Domain = domain.Domain
-			break
-		}
-	}
-}
-
-// SetDefaults sets the defaults for a RouteClaim.
-func (k *RouteClaim) SetDefaults(ctx context.Context) {
+// SetDefaults sets the defaults for a Route.
+func (k *Route) SetDefaults(ctx context.Context) {
 	k.Spec.SetDefaults(ctx)
-	k.Labels = UnionMaps(k.Labels, k.Spec.RouteSpecFields.labels())
+	k.Labels = UnionMaps(k.Labels, defaultRouteLabels())
 }
 
 // SetDefaults implements apis.Defaultable
-func (k *RouteClaimSpec) SetDefaults(ctx context.Context) {
+func (k *RouteSpec) SetDefaults(ctx context.Context) {
 	k.RouteSpecFields.SetDefaults(ctx)
-}
-
-// ToBase36 is a helpful function that converts a string into something that
-// is encoded and safe for URLs, names etc... Base 36 uses 0-9a-z
-func ToBase36(s string) string {
-	return strconv.FormatUint(
-		crc64.Checksum(
-			[]byte(s),
-			crc64.MakeTable(crc64.ECMA),
-		),
-		36)
 }

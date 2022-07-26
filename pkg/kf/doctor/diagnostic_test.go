@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     https://www.apache.org/licenses/LICENSE-2.0
+//	https://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,21 +13,34 @@
 // limitations under the License.
 package doctor
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+	"testing"
+)
 
 func ExampleDiagnostic_Run() {
 	d := NewDefaultDiagnostic()
 
-	d.Run("sub-test-good", func(d *Diagnostic) {
+	d.Run(context.Background(), "sub-test-good", func(ctx context.Context, d *Diagnostic) {
 		d.Log("no output")
 	})
 
-	d.Run("sub-test-bad", func(d *Diagnostic) {
+	d.Run(context.Background(), "sub-test-warn", func(ctx context.Context, d *Diagnostic) {
+		d.Warn("warning output")
+	})
+
+	d.Run(context.Background(), "sub-test-bad", func(ctx context.Context, d *Diagnostic) {
 		d.Error("output")
 	})
 
 	// Output: === RUN	doctor/sub-test-good
 	// --- PASS: doctor/sub-test-good
+	// === RUN	doctor/sub-test-warn
+	// === LOG	doctor/sub-test-warn
+	// warning output
+	//
+	// --- WARN: doctor/sub-test-warn
 	// === RUN	doctor/sub-test-bad
 	// === LOG	doctor/sub-test-bad
 	// output
@@ -38,11 +51,11 @@ func ExampleDiagnostic_Run() {
 func ExampleDiagnostic_GatedRun() {
 	d := NewDefaultDiagnostic()
 
-	d.GatedRun("validate-db-creds", func(d *Diagnostic) {
+	d.GatedRun(context.Background(), "validate-db-creds", func(ctx context.Context, d *Diagnostic) {
 		d.Error("bad creds")
 	})
 
-	d.GatedRun("validate-db-version", func(d *Diagnostic) {
+	d.GatedRun(context.Background(), "validate-db-version", func(ctx context.Context, d *Diagnostic) {
 		// never reached because the previous run failed
 	})
 
@@ -56,7 +69,7 @@ func ExampleDiagnostic_GatedRun() {
 func ExampleDiagnostic_Fatal() {
 	d := NewDefaultDiagnostic()
 
-	d.Run("example", func(d *Diagnostic) {
+	d.Run(context.Background(), "example", func(ctx context.Context, d *Diagnostic) {
 		d.Log("before")
 		d.Fatal("immediate exit")
 		d.Log("after")
@@ -72,7 +85,7 @@ func ExampleDiagnostic_Fatal() {
 func ExampleDiagnostic_Fatalf() {
 	d := NewDefaultDiagnostic()
 
-	d.Run("example", func(d *Diagnostic) {
+	d.Run(context.Background(), "example", func(ctx context.Context, d *Diagnostic) {
 		d.Fatalf("%d", 42)
 		d.Log("after")
 	})
@@ -86,7 +99,7 @@ func ExampleDiagnostic_Fatalf() {
 func ExampleDiagnostic_Errorf() {
 	d := NewDefaultDiagnostic()
 
-	d.Run("example", func(d *Diagnostic) {
+	d.Run(context.Background(), "example", func(ctx context.Context, d *Diagnostic) {
 		d.Errorf("%d", 42)
 		d.Log("after")
 	})
@@ -101,7 +114,7 @@ func ExampleDiagnostic_Errorf() {
 func ExampleDiagnostic_Logf() {
 	d := NewDefaultDiagnostic()
 
-	d.Run("example", func(d *Diagnostic) {
+	d.Run(context.Background(), "example", func(ctx context.Context, d *Diagnostic) {
 		d.Logf("only printed on failure %d", 42)
 	})
 
@@ -109,16 +122,31 @@ func ExampleDiagnostic_Logf() {
 	// --- PASS: doctor/example
 }
 
+func ExampleDiagnostic_Warnf() {
+	d := NewDefaultDiagnostic()
+
+	d.Run(context.Background(), "example", func(ctx context.Context, d *Diagnostic) {
+		d.Warnf("%d", 42)
+		d.Log("after")
+	})
+
+	// Output: === RUN	doctor/example
+	// === LOG	doctor/example
+	// 42
+	// after
+	// --- WARN: doctor/example
+}
+
 func ExampleDiagnostic_Report() {
 	d := NewDefaultDiagnostic()
 
-	d.Run("good", func(d *Diagnostic) {
+	d.Run(context.Background(), "good", func(ctx context.Context, d *Diagnostic) {
 		d.Logf("only printed on failure %d", 42)
 	})
 
-	d.Run("bad", func(d *Diagnostic) {
-		d.Run("no-issue", func(d *Diagnostic) {})
-		d.Run("fails", func(d *Diagnostic) {
+	d.Run(context.Background(), "bad", func(ctx context.Context, d *Diagnostic) {
+		d.Run(context.Background(), "no-issue", func(ctx context.Context, d *Diagnostic) {})
+		d.Run(context.Background(), "fails", func(ctx context.Context, d *Diagnostic) {
 			d.Fail()
 		})
 	})
@@ -142,4 +170,23 @@ func ExampleDiagnostic_Report() {
 	//     --- FAIL: doctor/bad
 	//         --- PASS: doctor/bad/no-issue
 	//         --- FAIL: doctor/bad/fails
+}
+
+func TestStatusInvariant(t *testing.T) {
+	var emptyStatus diagnosticStatus
+	if statusPass != emptyStatus {
+		t.Error("expected empty status to be statusPass")
+	}
+
+	// XXX: For readability, don't refactor these expressions;
+	// they should be in strictly increasing order to assert the
+	// transitive property.
+
+	if !(statusWarn > statusPass) {
+		t.Errorf("expected warn %v > pass %v", statusWarn, statusPass)
+	}
+
+	if !(statusFail > statusWarn) {
+		t.Errorf("expected fail %v > warn %v", statusFail, statusWarn)
+	}
 }

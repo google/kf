@@ -18,51 +18,69 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/google/kf/pkg/kf/buildpacks"
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/describe"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/v2/pkg/kf/buildpacks"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/describe"
 	"github.com/spf13/cobra"
+	"knative.dev/pkg/logging"
 )
 
 // NewBuildpacksCommand creates a Buildpacks command.
 func NewBuildpacksCommand(p *config.KfParams, l buildpacks.Client) *cobra.Command {
 	var buildpacksCmd = &cobra.Command{
 		Use:     "buildpacks",
-		Short:   "List buildpacks in current builder",
+		Short:   "List buildpacks in the targeted Space.",
 		Args:    cobra.ExactArgs(0),
 		Example: "kf buildpacks",
-		Long: `List the buildpacks available in the space to applications being built
-		with buildpacks.
+		Long: `
+		List the buildpacks available in the Space to Apps being built with
+		buildpacks.
 
-		Buildpack support is determined by the buildpack builder image and can
-		change from one space to the next.
+		The buildpacks available to an App depend on the Stack it uses.
+		To ensure reproducibility in Builds, Apps should explicitly declare the
+		Stack they use.
 		`,
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := utils.ValidateNamespace(p); err != nil {
+			ctx := cmd.Context()
+			if err := p.ValidateSpaceTargeted(); err != nil {
 				return err
 			}
 
-			space, err := p.GetTargetSpaceOrDefault()
+			space, err := p.GetTargetSpace(ctx)
 			if err != nil {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Getting buildpacks in space: %s\n", p.Namespace)
+			logging.FromContext(ctx).Infof("Getting buildpacks in Space: %s", p.Space)
 
-			bps, err := l.List(space.Spec.BuildpackBuild.BuilderImage)
-			if err != nil {
-				cmd.SilenceUsage = !utils.ConfigError(err)
-				return err
+			if p.FeatureFlags(ctx).AppDevExperienceBuilds().IsDisabled() {
+				describe.SectionWriter(cmd.OutOrStdout(), "Buildpacks for V2 Stacks", func(w io.Writer) {
+					fmt.Fprintln(w, "Name\tPosition\tURL")
+
+					for i, bp := range space.Status.BuildConfig.BuildpacksV2 {
+						fmt.Fprintf(w, "%s\t%d\t%s\n", bp.Name, i, bp.URL)
+					}
+				})
 			}
 
-			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
-				fmt.Fprintln(w, "Name\tPosition\tVersion\tLatest")
+			for _, stack := range space.Status.BuildConfig.StacksV3 {
+				describe.SectionWriter(cmd.OutOrStdout(), "V3 Stack: "+stack.Name, func(w io.Writer) {
+					bps, err := l.List(stack.BuildImage)
+					if err != nil {
+						fmt.Fprintf(w, "error fetching stacks for image %s: %s\n", stack.BuildImage, err)
+						return
+					}
 
-				for i, bp := range bps {
-					fmt.Fprintf(w, "%s\t%d\t%s\t%v\n", bp.ID, i, bp.Version, bp.Latest)
-				}
-			})
+					describe.TabbedWriter(w, func(w io.Writer) {
+						fmt.Fprintln(w, "Name\tPosition\tVersion\tLatest")
+
+						for i, bp := range bps {
+							fmt.Fprintf(w, "%s\t%d\t%s\t%v\n", bp.ID, i, bp.Version, bp.Latest)
+						}
+					})
+				})
+			}
 
 			return nil
 		},

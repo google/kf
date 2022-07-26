@@ -17,38 +17,21 @@ package services_test
 import (
 	"bytes"
 	"testing"
-	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/services"
-	"github.com/google/kf/pkg/kf/services/fake"
-	"github.com/google/kf/pkg/kf/testutil"
-	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/serviceinstances"
+	"github.com/google/kf/v2/pkg/kf/serviceinstances/fake"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 	"github.com/spf13/cobra"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type commandFactory func(p *config.KfParams, client services.Client) *cobra.Command
-
-func dummyServerInstance(instanceName string) *v1beta1.ServiceInstance {
-	instance := v1beta1.ServiceInstance{}
-	instance.Name = instanceName
-	instance.Spec = v1beta1.ServiceInstanceSpec{}
-	instance.Status = v1beta1.ServiceInstanceStatus{
-		Conditions: []v1beta1.ServiceInstanceCondition{
-			{LastTransitionTime: metav1.Time{Time: time.Now()}, Reason: "WrongStatus"},
-			{LastTransitionTime: metav1.Time{Time: time.Now().Add(time.Second)}, Reason: "CorrectStatus"},
-		},
-	}
-
-	return &instance
-}
+type commandFactory func(p *config.KfParams, client serviceinstances.Client) *cobra.Command
 
 type serviceTest struct {
-	Args      []string
-	Setup     func(t *testing.T, f *fake.FakeClient)
-	Namespace string
+	Args  []string
+	Setup func(t *testing.T, f *fake.FakeClient)
+	Space string
 
 	ExpectedErr     error
 	ExpectedStrings []string
@@ -57,7 +40,6 @@ type serviceTest struct {
 func runTest(t *testing.T, tc serviceTest, newCommand commandFactory) {
 	t.Helper()
 	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
 
 	client := fake.NewFakeClient(ctrl)
 	if tc.Setup != nil {
@@ -66,7 +48,7 @@ func runTest(t *testing.T, tc serviceTest, newCommand commandFactory) {
 
 	buf := new(bytes.Buffer)
 	p := &config.KfParams{
-		Namespace: tc.Namespace,
+		Space: tc.Space,
 	}
 
 	cmd := newCommand(p, client)

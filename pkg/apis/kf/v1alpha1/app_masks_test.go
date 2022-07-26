@@ -17,54 +17,54 @@ package v1alpha1
 import (
 	"testing"
 
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func TestAppSpecSourceMask(t *testing.T) {
-	want := SourceSpec{
-		UpdateRequests: 10,
-		ServiceAccount: "",
-		BuildpackBuild: SourceSpecBuildpackBuild{
-			Buildpack:        "custom-buildpack",
-			BuildpackBuilder: "",
-			Env:              []corev1.EnvVar{{Name: "env-key", Value: "env-value"}},
-			Image:            "",
-			Source:           "gcr.io/custom-source:mysource",
-			Stack:            "cflinuxfs3",
+func TestAppSpecBuildMask(t *testing.T) {
+	want := BuildSpec{
+		SourcePackage: corev1.LocalObjectReference{
+			Name: "some-name",
 		},
-		ContainerImage: SourceSpecContainerImage{
-			Image: "mysql/mysql",
+		BuildTaskRef: buildpackV3BuildTaskRef(),
+		Params: []BuildParam{
+			{
+				Name: "IMAGE",
+			},
+			{
+				Name: "NOT_IMAGE",
+			},
 		},
-		Dockerfile: SourceSpecDockerfile{
-			Image:  "",
-			Path:   "path/to/Dockerfile",
-			Source: "gcr.io/custom-source:dockerfilesource",
-		},
-	}
-
-	input := SourceSpec{
-		UpdateRequests: 10,
-		ServiceAccount: "custom-sa",
-		BuildpackBuild: SourceSpecBuildpackBuild{
-			Buildpack:        "custom-buildpack",
-			BuildpackBuilder: "custom-builder",
-			Env:              []corev1.EnvVar{{Name: "env-key", Value: "env-value"}},
-			Image:            "gcr.io/custom-image:label",
-			Source:           "gcr.io/custom-source:mysource",
-			Stack:            "cflinuxfs3",
-		},
-		ContainerImage: SourceSpecContainerImage{
-			Image: "mysql/mysql",
-		},
-		Dockerfile: SourceSpecDockerfile{
-			Image:  "gcr.io/custom-image:label",
-			Path:   "path/to/Dockerfile",
-			Source: "gcr.io/custom-source:dockerfilesource",
+		Env: []corev1.EnvVar{
+			{
+				Name:  "key",
+				Value: "val",
+			},
 		},
 	}
 
-	actual := AppSpecSourceMask(input)
+	input := BuildSpec{
+		SourcePackage: corev1.LocalObjectReference{
+			Name: "some-name",
+		},
+		BuildTaskRef: buildpackV3BuildTaskRef(),
+		Params: []BuildParam{
+			{
+				Name: "IMAGE",
+			},
+			{
+				Name: "NOT_IMAGE",
+			},
+		},
+		Env: []corev1.EnvVar{
+			{
+				Name:  "key",
+				Value: "val",
+			},
+		},
+	}
+
+	actual := AppSpecBuildMask(input)
 
 	testutil.AssertEqual(t, "masked values", want, actual)
 }

@@ -15,61 +15,32 @@
 package spaces
 
 import (
-	"context"
-	"fmt"
-	"time"
-
-	"github.com/google/kf/pkg/kf/commands/completion"
-	"github.com/google/kf/pkg/kf/commands/config"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	"github.com/google/kf/pkg/kf/spaces"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/internal/genericcli"
+	"github.com/google/kf/v2/pkg/kf/spaces"
 	"github.com/spf13/cobra"
 )
 
 // NewDeleteSpaceCommand allows users to delete spaces.
-func NewDeleteSpaceCommand(p *config.KfParams, client spaces.Client) *cobra.Command {
-	var async utils.AsyncFlags
-
-	cmd := &cobra.Command{
-		Use:     "delete-space SPACE",
-		Short:   "Delete a space",
-		Example: `kf delete-space my-space`,
-		Long: `Delete a space and all its contents.
-
-		This will delete a space's:
+func NewDeleteSpaceCommand(p *config.KfParams) *cobra.Command {
+	cmd := genericcli.NewDeleteByNameCommand(
+		spaces.NewResourceInfo(),
+		p,
+		genericcli.WithDeleteByNameAdditionalLongText(`
+		Deleting a Space will also delete its:
 
 		* Apps
+		* Build history
 		* Service bindings
 		* Service instances
-		* RBAC roles
 		* Routes
-		* The backing Kubernetes namespace
-		* Anything else in that namespace
+		* The backing Kubernetes Namespace
+		* Kubernetes resources in the Namespace
 
-		You will be unable to make changes to resources in the space once deletion
+		You will be unable to make changes to resources in the Space once deletion
 		has begun.
-		`,
-		Args: cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cmd.SilenceUsage = true
-
-			name := args[0]
-
-			if err := client.Delete(name); err != nil {
-				return fmt.Errorf("failed to delete space: %s", err)
-			}
-
-			action := fmt.Sprintf("Deleting space %q", name)
-			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
-				_, err := client.WaitForDeletion(context.Background(), name, 1*time.Second)
-				return err
-			})
-		},
-	}
-
-	async.Add(cmd)
-
-	completion.MarkArgCompletionSupported(cmd, completion.SpaceCompletion)
+		`),
+	)
 
 	return cmd
 }

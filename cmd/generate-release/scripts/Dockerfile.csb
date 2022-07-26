@@ -1,0 +1,17 @@
+FROM gcr.io/kf-build-images/golang:1.16 AS build
+WORKDIR /app
+ADD . /app
+RUN CGO_ENABLED=0 GOOS=linux go build -o ./build/cloud-service-broker
+
+FROM gcr.io/distroless/static:latest
+
+COPY --from=build /app/build/cloud-service-broker /bin/cloud-service-broker
+COPY --from=build /app/gcp-services-*.brokerpak /bin
+COPY --from=build /app/VENDOR-LICENSE licenses.txt
+
+ENV PORT 8080
+EXPOSE 8080/tcp
+
+WORKDIR /bin
+ENTRYPOINT ["/bin/cloud-service-broker"]
+CMD ["help"]

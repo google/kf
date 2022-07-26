@@ -1,0 +1,59 @@
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+package: genericcli
+imports:
+  "k8s.io/apimachinery/pkg/apis/meta/v1": "metav1"
+  "k8s.io/apimachinery/pkg/labels": "labels"
+common:
+- name: Aliases
+  type: '[]string'
+  description: an array of aliases that can be used instead of the command name.
+- name: CommandName
+  type: 'string'
+  description: the name to use for the command.
+- name: Example
+  type: 'string'
+  description: the example to use for the command.
+- name: Short
+  type: 'string'
+  description: the short description to use for the command.
+- name: Long
+  type: 'string'
+  description: the long description to use for the command.
+configs:
+- name: List
+  options:
+  - name: PluralFriendlyName
+    type: 'string'
+    description: the plural object name to display for this resource.
+  - name: LabelFilters
+    type: "map[string]string"
+    description: flag name to label pairs to use as list filters.
+  - name: LabelRequirements
+    type: "[]labels.Requirement"
+    description: label requirements to filter resources.
+  - name: ArgumentFilters
+    type: "[]ListArgumentFilter"
+    description: callbacks that can modify the lister.
+- name: Describe
+- name: Stub
+- name: DeleteByName
+  options:
+  - name: AdditionalLongText
+    type: 'string'
+    description: additional text to append to long.
+  - name: PropagationPolicy
+    type: "metav1.DeletionPropagation"
+    description: propagation policy for deleting an object.

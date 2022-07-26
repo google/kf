@@ -18,50 +18,68 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"time"
 
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/describe"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	"github.com/google/kf/pkg/kf/marketplace"
-	"github.com/google/kf/pkg/kf/services"
-	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/describe"
+	utils "github.com/google/kf/v2/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/v2/pkg/kf/marketplace"
+	"github.com/google/kf/v2/pkg/kf/secrets"
+	"github.com/google/kf/v2/pkg/kf/serviceinstances"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
+	logging "knative.dev/pkg/logging"
 )
 
 // NewCreateServiceCommand allows users to create service instances.
-func NewCreateServiceCommand(p *config.KfParams, client services.Client, marketplaceClient marketplace.ClientInterface) *cobra.Command {
+func NewCreateServiceCommand(p *config.KfParams, client serviceinstances.Client, secretsClient secrets.Client, marketplaceClient marketplace.ClientInterface) *cobra.Command {
 	var (
 		configAsJSON string
 		broker       string
+		tags         string
 		async        utils.AsyncFlags
+		timeout      time.Duration
 	)
 
 	createCmd := &cobra.Command{
-		Use:     "create-service SERVICE PLAN SERVICE_INSTANCE [-c PARAMETERS_AS_JSON] [-b service-broker]",
+		Use:     "create-service SERVICE PLAN SERVICE_INSTANCE [-c PARAMETERS_AS_JSON] [-b service-broker] [-t TAGS]",
 		Aliases: []string{"cs"},
-		Short:   "Create a service instance",
+		Short:   "Create a service instance from a marketplace template.",
+		Long: `
+		Create service creates a new ServiceInstance using a template from the
+		marketplace.
+		`,
 		Example: `
-  # Creates a new instance of a db-service with the name mydb, plan silver, and provisioning configuration
-  kf create-service db-service silver mydb -c '{"ram_gb":4}'
+		# Creates a new instance of a db-service with the name mydb, plan silver, and provisioning configuration
+		kf create-service db-service silver mydb -c '{"ram_gb":4}'
 
-  # Creates a new instance of a db-service from the broker named local-broker
-  kf create-service db-service silver mydb -c ~/workspace/tmp/instance_config.json -b local-broker`,
-		Args: cobra.ExactArgs(3),
+		# Creates a new instance of a db-service from the broker named local-broker
+		kf create-service db-service silver mydb -c ~/workspace/tmp/instance_config.json -b local-broker
+
+		# Creates a new instance of a db-service with the name mydb and override tags
+		kf create-service db-service silver mydb -t "list, of, tags"`,
+		Args:         cobra.ExactArgs(3),
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
 			serviceName := args[0]
 			planName := args[1]
 			instanceName := args[2]
 
-			cmd.SilenceUsage = true
-
-			if err := utils.ValidateNamespace(p); err != nil {
+			if err := p.ValidateSpaceTargeted(); err != nil {
 				return err
 			}
 
-			paramBytes, err := services.ParseJSONOrFile(configAsJSON)
+			paramBytes, err := utils.ParseJSONOrFile(configAsJSON)
+			if err != nil {
+				return err
+			}
+
+			catalog, err := marketplaceClient.Marketplace(cmd.Context(), p.Space)
 			if err != nil {
 				return err
 			}
@@ -72,69 +90,90 @@ func NewCreateServiceCommand(p *config.KfParams, client services.Client, marketp
 				BrokerName:  broker,
 			}
 
-			matchingClusterPlans, err := marketplaceClient.ListClusterPlans(planFilters)
-			if err != nil {
-				return err
-			}
-			hasClusterPlans := len(matchingClusterPlans) > 0
+			matchingClusterPlans := catalog.ListClusterPlans(planFilters)
+			matchingNamespacedPlans := catalog.ListNamespacedPlans(p.Space, planFilters)
 
-			matchingNamespacedPlans, err := marketplaceClient.ListNamespacedPlans(p.Namespace, planFilters)
-			if err != nil {
-				return err
-			}
-			hasNamespacedPlans := len(matchingNamespacedPlans) > 0
-
-			var planRef servicecatalogv1beta1.PlanReference
+			var namespaceScoped bool
+			var lineage marketplace.PlanLineage
 
 			switch {
-			case hasClusterPlans && hasNamespacedPlans:
+			case len(matchingClusterPlans)+len(matchingNamespacedPlans) > 1:
 				return errors.New("plans matched from multiple brokers, specify a broker with --broker")
-
-			case hasClusterPlans:
-				planRef = servicecatalogv1beta1.PlanReference{
-					ClusterServicePlanExternalName:  planName,
-					ClusterServiceClassExternalName: serviceName,
-				}
-
-			case hasNamespacedPlans:
-				planRef = servicecatalogv1beta1.PlanReference{
-					ServicePlanExternalName:  planName,
-					ServiceClassExternalName: serviceName,
-				}
-
-			// No plans match
+			case len(matchingClusterPlans) == 1:
+				namespaceScoped = false
+				lineage = matchingClusterPlans[0]
+			case len(matchingNamespacedPlans) == 1:
+				namespaceScoped = true
+				lineage = matchingNamespacedPlans[0]
 			case broker != "":
 				return fmt.Errorf("no plan %s found for class %s for the service-broker %s", planName, serviceName, broker)
 			default:
 				return fmt.Errorf("no plan %s found for class %s for all service-brokers", planName, serviceName)
 			}
 
-			created, err := client.Create(p.Namespace, &servicecatalogv1beta1.ServiceInstance{
+			tagSet := sets.NewString(lineage.ServiceOffering.Tags...)
+			tagSet.Insert(utils.SplitTags(tags)...)
+			mergedTags := tagSet.List()
+
+			osbInstance := &v1alpha1.OSBInstance{
+				BrokerName:              lineage.Broker.GetName(),
+				ClassName:               lineage.ServiceOffering.DisplayName,
+				ClassUID:                lineage.ServiceOffering.UID,
+				PlanName:                lineage.ServicePlan.DisplayName,
+				PlanUID:                 lineage.ServicePlan.UID,
+				Namespaced:              namespaceScoped,
+				ProgressDeadlineSeconds: int64(timeout / time.Second),
+			}
+
+			var serviceType v1alpha1.ServiceType
+			if lineage.Broker.GetKind() == v1alpha1.VolumeBrokerKind {
+				serviceType = v1alpha1.ServiceType{
+					Volume: osbInstance,
+				}
+			} else {
+				serviceType = v1alpha1.ServiceType{
+					OSB: osbInstance,
+				}
+			}
+
+			paramsSecretName := v1alpha1.GenerateName("serviceinstance", instanceName, "params")
+			desiredInstance := &v1alpha1.ServiceInstance{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      instanceName,
-					Namespace: p.Namespace,
+					Namespace: p.Space,
 				},
-				Spec: servicecatalogv1beta1.ServiceInstanceSpec{
-					PlanReference: planRef,
-					Parameters: &runtime.RawExtension{
-						Raw: paramBytes,
+				Spec: v1alpha1.ServiceInstanceSpec{
+					ServiceType: serviceType,
+					Tags:        mergedTags,
+					ParametersFrom: corev1.LocalObjectReference{
+						Name: paramsSecretName,
 					},
 				},
+			}
+
+			logger := logging.FromContext(ctx)
+			logger.Infof("Creating ServiceInstance %q in Space %q\n", instanceName, p.Space)
+
+			describe.SectionWriter(cmd.ErrOrStderr(), "ServiceInstance Parameters", func(w io.Writer) {
+				if err := describe.UnstructuredStruct(w, desiredInstance.Spec); err != nil {
+					fmt.Fprintln(w, err.Error())
+				}
 			})
+
+			actualInstance, err := client.Create(ctx, p.Space, desiredInstance)
 			if err != nil {
 				return err
 			}
 
-			action := fmt.Sprintf("Creating service instance %q in space %q", instanceName, p.Namespace)
-			if err := async.AwaitAndLog(cmd.OutOrStdout(), action, func() (err error) {
-				created, err = client.WaitForProvisionSuccess(context.Background(), p.Namespace, instanceName, 1*time.Second)
-				return
-			}); err != nil {
+			logger.Infof("Creating parameters Secret %q in Space %q\n", paramsSecretName, p.Space)
+			if _, err := secretsClient.CreateParamsSecret(ctx, actualInstance, paramsSecretName, paramBytes); err != nil {
 				return err
 			}
 
-			describe.ServiceInstance(cmd.OutOrStdout(), created)
-			return nil
+			return async.AwaitAndLog(cmd.ErrOrStderr(), "Waiting for ServiceInstance to become ready", func() (err error) {
+				_, err = client.WaitForConditionReadyTrue(context.Background(), p.Space, instanceName, 1*time.Second)
+				return
+			})
 		},
 	}
 
@@ -142,17 +181,31 @@ func NewCreateServiceCommand(p *config.KfParams, client services.Client, marketp
 
 	createCmd.Flags().StringVarP(
 		&configAsJSON,
-		"config",
+		"parameters",
 		"c",
 		"{}",
-		"Valid JSON object containing service-specific configuration parameters, provided in-line or in a file.")
+		"JSON object or path to a JSON file containing configuration parameters.")
 
 	createCmd.Flags().StringVarP(
 		&broker,
 		"broker",
 		"b",
 		"",
-		"Service broker to use.")
+		"Name of the service broker that will create the instance.")
+
+	createCmd.Flags().StringVarP(
+		&tags,
+		"tags",
+		"t",
+		"",
+		"User-defined tags to differentiate services during injection.")
+
+	createCmd.Flags().DurationVar(
+		&timeout,
+		"timeout",
+		time.Duration(v1alpha1.DefaultServiceInstanceProgressDeadlineSeconds)*time.Second,
+		`Amount of time to wait for the operation to complete. Valid units are "s", "m", "h".`,
+	)
 
 	return createCmd
 }

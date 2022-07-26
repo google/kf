@@ -19,42 +19,27 @@ import (
 	"fmt"
 )
 
-func ExampleRoute_SetDefaults_prefixRoutes() {
-	r := &Route{}
-	r.Spec.Path = "some-path"
-	r.SetDefaults(context.Background())
+func ExampleGenerateRouteName() {
+	name := GenerateRouteName("some-host", "myns.example.com", "/some/path")
+	fmt.Println(name)
 
-	fmt.Println("Route:", r.Spec.Path)
+	// Output: some-host-myns-example-com--som8ced772f07d7bf61215b525c64ed18bf
+}
 
-	// Output: Route: /some-path
+func ExampleGenerateRouteName_wildcards() {
+	name := GenerateRouteName("*", "myns.example.com", "/some/path")
+	fmt.Println(name)
+
+	// Output: myns-example-com--some-path4fb7bf8f09018c34a5d240e8398cb069
 }
 
 func ExampleRoute_SetDefaults_labels() {
 	r := &Route{}
-	r.Spec.Hostname = "some-hostname"
-	r.Spec.Domain = "example.com"
 	r.SetDefaults(context.Background())
 
-	fmt.Println("Hostname:", r.Labels[RouteHostname])
-	fmt.Println("Domain:", r.Labels[RouteDomain])
-	fmt.Println("Path:", r.Labels[RoutePath])
+	fmt.Println("ManagedBy:", r.Labels[ManagedByLabel])
+	fmt.Println("Component:", r.Labels[ComponentLabel])
 
-	// Output: Hostname: some-hostname
-	// Domain: example.com
-	// Path: pvdf1ls1w14a
-}
-
-func ExampleRouteClaim_SetDefaults_labels() {
-	r := &RouteClaim{}
-	r.Spec.Hostname = "some-hostname"
-	r.Spec.Domain = "example.com"
-	r.SetDefaults(context.Background())
-
-	fmt.Println("Hostname:", r.Labels[RouteHostname])
-	fmt.Println("Domain:", r.Labels[RouteDomain])
-	fmt.Println("Path:", r.Labels[RoutePath])
-
-	// Output: Hostname: some-hostname
-	// Domain: example.com
-	// Path: pvdf1ls1w14a
+	// Output: ManagedBy: kf
+	// Component: route
 }

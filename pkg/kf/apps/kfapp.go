@@ -15,9 +15,11 @@
 package apps
 
 import (
-	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
+	"context"
 
-	"github.com/google/kf/pkg/internal/envutil"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+
+	"github.com/google/kf/v2/pkg/internal/envutil"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -28,65 +30,23 @@ import (
 // values.
 type KfApp v1alpha1.App
 
-// GetName retrieves the name of the app.
-func (k *KfApp) GetName() string {
-	return k.Name
-}
-
-// SetName sets the name of the app.
-func (k *KfApp) SetName(name string) {
-	k.Name = name
-}
-
-// SetNamespace sets the namespace for the app.
-func (k *KfApp) SetNamespace(namespace string) {
-	k.Namespace = namespace
-}
-
-// GetNamespace gets the namespace for the app.
-func (k *KfApp) GetNamespace() string {
-	return k.Namespace
-}
-
-func (k *KfApp) getOrCreateRevisionTemplateSpec() *v1alpha1.AppSpecTemplate {
-	return &k.Spec.Template
-}
-
-func (k *KfApp) getRevisionTemplateSpecOrNil() *v1alpha1.AppSpecTemplate {
-	if k == nil {
-		return nil
-	}
-	return &k.Spec.Template
-}
-
 func (k *KfApp) getOrCreateContainer() *corev1.Container {
-	rl := k.getOrCreateRevisionTemplateSpec()
+	rl := &k.Spec.Template
 	if len(rl.Spec.Containers) == 0 {
 		rl.Spec.Containers = []v1.Container{{}}
 	}
 
-	return &k.getOrCreateRevisionTemplateSpec().Spec.Containers[0]
-}
-
-func (k *KfApp) getContainerOrNil() *corev1.Container {
-	if rl := k.getRevisionTemplateSpecOrNil(); rl != nil {
-		if len(rl.Spec.Containers) != 0 {
-			return &rl.Spec.Containers[0]
-		}
-	}
-
-	return nil
-}
-
-// GetContainer returns the container of the app or nil if it's blank.
-func (k *KfApp) GetContainer() *corev1.Container {
-	return k.getContainerOrNil()
+	return &k.Spec.Template.Spec.Containers[0]
 }
 
 // GetEnvVars reads the environment variables off an app.
 func (k *KfApp) GetEnvVars() []corev1.EnvVar {
-	if container := k.getContainerOrNil(); container != nil {
-		return container.Env
+	if k == nil {
+		return nil
+	}
+
+	if rl := &k.Spec.Template; rl != nil && len(rl.Spec.Containers) != 0 {
+		return rl.Spec.Containers[0].Env
 	}
 
 	return nil
@@ -125,34 +85,47 @@ func (k *KfApp) setResourceRequest(r v1.ResourceName, quantity *resource.Quantit
 	container.Resources.Requests = resourceRequests
 }
 
-// GetHealthCheck gets the readiness probe or nil if one doesn't exist.
-func (k *KfApp) GetHealthCheck() *corev1.Probe {
-	if cont := k.getContainerOrNil(); cont != nil {
-		return cont.ReadinessProbe
+// MergeRoute adds a route to the App, removing any duplicates that already
+// exist.
+func (k *KfApp) MergeRoute(route v1alpha1.RouteWeightBinding) {
+	k.RemoveRoute(context.Background(), route)
+	k.Spec.Routes = append(k.Spec.Routes, route)
+}
+
+// RemoveRoute removes any routes matching the binding.
+func (k *KfApp) RemoveRoute(ctx context.Context, toRemove v1alpha1.RouteWeightBinding) {
+	k.deleteMatchingRoutes(func(route v1alpha1.RouteWeightBinding) bool {
+		return route.EqualsBinding(ctx, toRemove)
+	})
+}
+
+// HasMatchingRoutes checks if any of the listed routes point to the claim.
+func (k *KfApp) HasMatchingRoutes(claim v1alpha1.RouteSpecFields) bool {
+	for _, route := range k.Spec.Routes {
+		if route.RouteSpecFields.Equals(claim) {
+			return true
+		}
 	}
 
-	return nil
+	return false
 }
 
-func (k *KfApp) GetServiceBindings() []v1alpha1.AppSpecServiceBinding {
-	return k.Spec.ServiceBindings
+// RemoveRoutesForClaim removes all routes matching the given claim.
+func (k *KfApp) RemoveRoutesForClaim(claim v1alpha1.RouteSpecFields) {
+	k.deleteMatchingRoutes(func(route v1alpha1.RouteWeightBinding) bool {
+		return route.RouteSpecFields.Equals(claim)
+	})
 }
 
-// SetContainer sets the container for the app.
-func (k *KfApp) SetContainer(container corev1.Container) {
-	k.Spec.Template.Spec.Containers = []corev1.Container{container}
-}
-
-// GetClusterURL gets the internal address of the app or the empty string if
-// unset.
-func (k *KfApp) GetClusterURL() string {
-	clusterURL := ""
-
-	if k.Status.Address != nil && k.Status.Address.URL != nil {
-		clusterURL = k.Status.Address.URL.String()
+func (k *KfApp) deleteMatchingRoutes(matcher func(v1alpha1.RouteWeightBinding) bool) {
+	var notMatching []v1alpha1.RouteWeightBinding
+	for _, binding := range k.Spec.Routes {
+		if !matcher(binding) {
+			notMatching = append(notMatching, binding)
+		}
 	}
 
-	return clusterURL
+	k.Spec.Routes = notMatching
 }
 
 // ToApp casts this alias back into an App.

@@ -15,142 +15,13 @@
 package v1alpha1
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
-	"github.com/google/kf/pkg/kf/testutil"
-	"github.com/google/kf/third_party/knative-serving/pkg/apis/autoscaling"
+	"github.com/google/kf/v2/pkg/kf/testutil"
+	"knative.dev/pkg/ptr"
 )
-
-func intPtr(val int) *int {
-	return &val
-}
-
-func TestAppSpecInstances_MinAnnotationValue(t *testing.T) {
-	cases := map[string]struct {
-		instances AppSpecInstances
-		expected  string
-	}{
-		"stopped": {
-			instances: AppSpecInstances{Stopped: true},
-			expected:  "0",
-		},
-		"min defined": {
-			instances: AppSpecInstances{Min: intPtr(3)},
-			expected:  "3",
-		},
-		"exactly defined": {
-			instances: AppSpecInstances{Exactly: intPtr(33)},
-			expected:  "33",
-		},
-		"empty": {
-			instances: AppSpecInstances{},
-			expected:  "",
-		},
-	}
-
-	for tn, tc := range cases {
-		t.Run(tn, func(t *testing.T) {
-			actual := tc.instances.MinAnnotationValue()
-
-			testutil.AssertEqual(t, "annotation", tc.expected, actual)
-		})
-	}
-}
-
-func TestAppSpecInstances_MaxAnnotationValue(t *testing.T) {
-	cases := map[string]struct {
-		instances AppSpecInstances
-		expected  string
-	}{
-		"stopped": {
-			instances: AppSpecInstances{Stopped: true},
-			expected:  "0",
-		},
-		"max defined": {
-			instances: AppSpecInstances{Max: intPtr(3)},
-			expected:  "3",
-		},
-		"exactly defined": {
-			instances: AppSpecInstances{Exactly: intPtr(33)},
-			expected:  "33",
-		},
-		"empty": {
-			instances: AppSpecInstances{},
-			expected:  "",
-		},
-	}
-
-	for tn, tc := range cases {
-		t.Run(tn, func(t *testing.T) {
-			actual := tc.instances.MaxAnnotationValue()
-
-			testutil.AssertEqual(t, "annotation", tc.expected, actual)
-		})
-	}
-}
-
-func TestAppSpecInstances_ScalingAnnotations(t *testing.T) {
-	cases := map[string]struct {
-		instances AppSpecInstances
-		expected  map[string]string
-	}{
-		"stopped": {
-			instances: AppSpecInstances{Stopped: true, Exactly: intPtr(10)},
-			expected: map[string]string{
-				autoscaling.MinScaleAnnotationKey: "0",
-				autoscaling.MaxScaleAnnotationKey: "0",
-			},
-		},
-		"max defined": {
-			instances: AppSpecInstances{Max: intPtr(30)},
-			expected: map[string]string{
-				autoscaling.MaxScaleAnnotationKey: "30",
-			},
-		},
-		"min defined": {
-			instances: AppSpecInstances{Min: intPtr(3)},
-			expected: map[string]string{
-				autoscaling.MinScaleAnnotationKey: "3",
-			},
-		},
-		"range defined": {
-			instances: AppSpecInstances{Min: intPtr(3), Max: intPtr(5)},
-			expected: map[string]string{
-				autoscaling.MinScaleAnnotationKey: "3",
-				autoscaling.MaxScaleAnnotationKey: "5",
-			},
-		},
-		"exactly defined": {
-			instances: AppSpecInstances{Exactly: intPtr(4)},
-			expected: map[string]string{
-				autoscaling.MinScaleAnnotationKey: "4",
-				autoscaling.MaxScaleAnnotationKey: "4",
-			},
-		},
-		"empty": {
-			instances: AppSpecInstances{},
-			expected:  map[string]string{},
-		},
-		"exactly takes precidence": {
-			// If the webhook fails somehow and exactly gets defined alongside min and
-			// max, then exactly takes precedence.
-			instances: AppSpecInstances{Exactly: intPtr(4), Min: intPtr(3), Max: intPtr(5)},
-			expected: map[string]string{
-				autoscaling.MinScaleAnnotationKey: "4",
-				autoscaling.MaxScaleAnnotationKey: "4",
-			},
-		},
-	}
-
-	for tn, tc := range cases {
-		t.Run(tn, func(t *testing.T) {
-			actual := tc.instances.ScalingAnnotations()
-
-			testutil.AssertEqual(t, "annotations", tc.expected, actual)
-		})
-	}
-}
 
 func ExampleApp_ComponentLabels() {
 	app := App{}
@@ -169,6 +40,76 @@ func ExampleApp_ComponentLabels() {
 	// component: database
 }
 
+func ExampleAppComponentLabels() {
+	labels := AppComponentLabels("my-app", "database")
+
+	fmt.Println("label count:", len(labels))
+	fmt.Println("name:", labels[NameLabel])
+	fmt.Println("managed-by:", labels[ManagedByLabel])
+	fmt.Println("component:", labels[ComponentLabel])
+
+	// Output: label count: 3
+	// name: my-app
+	// managed-by: kf
+	// component: database
+}
+
+func TestBuildSpec_NeedsUpdateRequestsIncrement(t *testing.T) {
+
+	buildpackBuildSpec := &BuildSpec{
+		BuildTaskRef: buildpackV3BuildTaskRef(),
+	}
+	dockerfileBuildSpec := &BuildSpec{
+		BuildTaskRef: dockerfileBuildTaskRef(),
+	}
+	current := AppSpec{
+		Build: AppSpecBuild{
+			UpdateRequests: 33,
+			Spec:           buildpackBuildSpec,
+		},
+	}
+
+	cases := map[string]struct {
+		old                  AppSpec
+		expectNeedsIncrement bool
+	}{
+		"matches exactly": {
+			old: AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 33,
+					Spec:           buildpackBuildSpec,
+				},
+			},
+			expectNeedsIncrement: false,
+		},
+		"increment already done": {
+			old: AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 34,
+					Spec:           dockerfileBuildSpec,
+				},
+			},
+			expectNeedsIncrement: false,
+		},
+		"needs increment": {
+			old: AppSpec{
+				Build: AppSpecBuild{
+					UpdateRequests: 33,
+					Spec:           dockerfileBuildSpec,
+				},
+			},
+			expectNeedsIncrement: true,
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			actual := current.Build.NeedsUpdateRequestsIncrement(tc.old.Build)
+
+			testutil.AssertEqual(t, "needsIncrement", tc.expectNeedsIncrement, actual)
+		})
+	}
+}
 func TestAppSpecInstances_Status(t *testing.T) {
 	tests := map[string]struct {
 		instances AppSpecInstances
@@ -176,61 +117,107 @@ func TestAppSpecInstances_Status(t *testing.T) {
 	}{
 		"stopped": {
 			instances: AppSpecInstances{
-				Min:     intPtr(3),
-				Max:     intPtr(5),
 				Stopped: true,
 			},
 			want: InstanceStatus{
-				EffectiveMin:   "0",
-				EffectiveMax:   "0",
+				Replicas:       0,
 				Representation: "stopped",
 			},
 		},
-		"ranged": {
+		"stopped, with autoscaling enabled": {
 			instances: AppSpecInstances{
-				Min: intPtr(3),
-				Max: intPtr(5),
+				Stopped: true,
+				Autoscaling: AppSpecAutoscaling{
+					Enabled:     true,
+					MinReplicas: ptr.Int32(1),
+					MaxReplicas: ptr.Int32(3),
+					Rules: []AppAutoscalingRule{
+						{
+							RuleType: CPURuleType,
+							Target:   ptr.Int32(30),
+						},
+					},
+				},
 			},
 			want: InstanceStatus{
-				EffectiveMin:   "3",
-				EffectiveMax:   "5",
-				Representation: "3-5",
-			},
-		},
-		"no min": {
-			instances: AppSpecInstances{
-				Max: intPtr(5),
-			},
-			want: InstanceStatus{
-				EffectiveMin:   "",
-				EffectiveMax:   "5",
-				Representation: "0-5",
-			},
-		},
-		"no max": {
-			instances: AppSpecInstances{
-				Min: intPtr(5),
-			},
-			want: InstanceStatus{
-				EffectiveMin:   "5",
-				EffectiveMax:   "",
-				Representation: "5-∞",
+				Replicas:       0,
+				Representation: "stopped",
 			},
 		},
 		"exactly": {
 			instances: AppSpecInstances{
-				Exactly: intPtr(3),
+				Replicas: ptr.Int32(3),
 			},
 			want: InstanceStatus{
-				EffectiveMin:   "3",
-				EffectiveMax:   "3",
+				Replicas:       3,
 				Representation: "3",
+			},
+		},
+		"missing": {
+			instances: AppSpecInstances{},
+			want: InstanceStatus{
+				Replicas:       1,
+				Representation: "1",
+			},
+		},
+		"autoscaled": {
+			instances: AppSpecInstances{
+				Autoscaling: AppSpecAutoscaling{
+					Enabled:     true,
+					MinReplicas: ptr.Int32(1),
+					MaxReplicas: ptr.Int32(3),
+					Rules: []AppAutoscalingRule{
+						{
+							RuleType: CPURuleType,
+							Target:   ptr.Int32(30),
+						},
+					},
+				},
+			},
+			want: InstanceStatus{
+				Replicas:       1,
+				Representation: "1 (autoscaled 1 to 3)",
 			},
 		},
 	}
 	for tn, tc := range tests {
 		t.Run(tn, func(t *testing.T) {
 			testutil.AssertEqual(t, "status", tc.want, tc.instances.Status())
+		})
+	}
+}
+
+func TestAppSpecInstances_DeploymentReplicas(t *testing.T) {
+	tests := map[string]struct {
+		instances     AppSpecInstances
+		wantInstances int32
+		wantErr       error
+	}{
+		"stopped": {
+			instances: AppSpecInstances{
+				Stopped: true,
+			},
+			wantInstances: 0,
+			wantErr:       nil,
+		},
+		"exactly": {
+			instances: AppSpecInstances{
+				Replicas: ptr.Int32(3),
+			},
+			wantInstances: 3,
+			wantErr:       nil,
+		},
+		"empty": {
+			instances:     AppSpecInstances{},
+			wantInstances: 0,
+			wantErr:       errors.New("Exact scale required for deployment based setup"),
+		},
+	}
+	for tn, tc := range tests {
+		t.Run(tn, func(t *testing.T) {
+			instances, err := tc.instances.DeploymentReplicas()
+			testutil.AssertEqual(t, "count", tc.wantInstances, instances)
+			testutil.AssertEqual(t, "error", tc.wantErr, err)
 		})
 	}
 }

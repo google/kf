@@ -15,52 +15,59 @@
 package buildpacks
 
 import (
+	"context"
 	"fmt"
 	"io"
 
-	"github.com/google/kf/pkg/kf/buildpacks"
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/describe"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/describe"
 	"github.com/spf13/cobra"
+	"knative.dev/pkg/logging"
 )
 
 // NewStacksCommand creates a Stacks command.
-func NewStacksCommand(p *config.KfParams, l buildpacks.Client) *cobra.Command {
-	var buildpacksCmd = &cobra.Command{
+func NewStacksCommand(p *config.KfParams) *cobra.Command {
+	cmd := &cobra.Command{
 		Use:     "stacks",
-		Short:   "List stacks available in the space",
+		Short:   "List stacks in the targeted Space.",
 		Example: `kf stacks`,
 		Args:    cobra.ExactArgs(0),
-		Long: `List the stacks available in the space to applications being built
-		with buildpacks.
+		Long: `
+		Stacks contain information about how to build and run an App.
+		Each stack contains:
 
-		Stack support is determined by the buildpack builder image so they can
-		change from one space to the next.
+		*  A unique name to identify it.
+		*  A build image, the image used to build the App, this usually contains
+			 things like compilers, libraries, sources and build frameworks.
+		*  A run image, the image App instances will run within. These images
+			 are usually lightweight and contain just enough to run an App.
+		*  A list of applicable buildpacks available via the bulidpacks command.
 		`,
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := utils.ValidateNamespace(p); err != nil {
+			ctx := cmd.Context()
+			if err := p.ValidateSpaceTargeted(); err != nil {
 				return err
 			}
 
-			space, err := p.GetTargetSpaceOrDefault()
+			space, err := p.GetTargetSpace(context.Background())
 			if err != nil {
 				return err
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Getting stacks in space: %s\n", p.Namespace)
-
-			stacks, err := l.Stacks(space.Spec.BuildpackBuild.BuilderImage)
-			if err != nil {
-				cmd.SilenceUsage = !utils.ConfigError(err)
-				return err
-			}
+			logging.FromContext(ctx).Infof("Getting stacks in Space: %s", p.Space)
 
 			describe.TabbedWriter(cmd.OutOrStdout(), func(w io.Writer) {
-				fmt.Fprintln(w, "Name")
+				fmt.Fprintln(w, "Version\tName\tBuild Image\tRun Image\tDescription")
 
-				for _, s := range stacks {
-					fmt.Fprintf(w, "%s\n", s)
+				if p.FeatureFlags(ctx).AppDevExperienceBuilds().IsDisabled() {
+					for _, s := range space.Status.BuildConfig.StacksV2 {
+						fmt.Fprintf(w, "V2\t%s\t%s\t%s\t%s\n", s.Name, s.Image, s.Image, s.Description)
+					}
+				}
+
+				for _, s := range space.Status.BuildConfig.StacksV3 {
+					fmt.Fprintf(w, "V3\t%s\t%s\t%s\t%s\n", s.Name, s.BuildImage, s.RunImage, s.Description)
 				}
 			})
 
@@ -68,5 +75,5 @@ func NewStacksCommand(p *config.KfParams, l buildpacks.Client) *cobra.Command {
 		},
 	}
 
-	return buildpacksCmd
+	return cmd
 }

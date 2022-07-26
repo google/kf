@@ -24,7 +24,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/kf/testutil/integration"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -95,15 +96,16 @@ func TestLoadTests(t *testing.T) {
 }
 
 func TestIntegration_ApplyDefaults(t *testing.T) {
-	if testutil.ShouldSkipIntegration(t) {
-		return
-	}
+	t.Skip("b/187452966")
 
 	for _, tc := range loadTests(t) {
-		testutil.RunKubeAPITest(t, func(ctx context.Context, t *testing.T) {
+		// Shadow to avoid closure issues.
+		tc := tc
+
+		integration.RunKubeAPITest(context.Background(), t, func(ctx context.Context, t *testing.T) {
 			t.Run(tc.Path, func(t *testing.T) {
-				testutil.WithNamespace(ctx, t, func(namespace string) {
-					testutil.WithDynamicClient(ctx, t, func(client dynamic.Interface) {
+				integration.WithSpace(ctx, t, func(namespace string) {
+					integration.WithDynamicClient(ctx, t, func(client dynamic.Interface) {
 
 						dyn := client.Resource(tc.GetGVR()).Namespace(namespace)
 
@@ -111,7 +113,7 @@ func TestIntegration_ApplyDefaults(t *testing.T) {
 						obj.SetNamespace(namespace)
 						expected := obj.DeepCopy()
 
-						actual, err := dyn.Create(obj, metav1.CreateOptions{})
+						actual, err := dyn.Create(context.Background(), obj, metav1.CreateOptions{})
 						testutil.AssertNil(t, "creation error", err)
 
 						// Individual paths are tested because Kubernetes doesn't have a

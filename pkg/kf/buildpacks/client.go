@@ -18,22 +18,16 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	gcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"github.com/google/kf/pkg/kf/doctor"
+	"github.com/google/kf/v2/pkg/dockerutil"
 )
 
 // Client is the main interface for interacting with Buildpacks.
 type Client interface {
-	doctor.Diagnosable
-
 	// List lists the buildpacks available on the given builder image.
 	List(builderImage string) ([]Buildpack, error)
-
-	// Stacks lists the stacks available on the given builder image.
-	Stacks(builderImage string) ([]string, error)
 }
 
 // Buildpack has the information from a Buildpack Builder.
@@ -45,7 +39,7 @@ type Buildpack struct {
 
 // RemoteImageFetcher is implemented by
 // github.com/google/go-containerregistry/pkg/v1/remote.Image
-type RemoteImageFetcher func(ref name.Reference, options ...remote.ImageOption) (gcrv1.Image, error)
+type RemoteImageFetcher func(ref name.Reference, options ...remote.Option) (gcrv1.Image, error)
 
 type client struct {
 	imageFetcher RemoteImageFetcher
@@ -79,35 +73,13 @@ func (c *client) List(builderImage string) ([]Buildpack, error) {
 	return order.Buildpacks, nil
 }
 
-// Stacks lists the stacks available.
-func (c *client) Stacks(builderImage string) ([]string, error) {
-	cfg, err := c.fetchConfig(builderImage)
-	if err != nil || cfg == nil {
-		return nil, err
-	}
-
-	var stack struct {
-		Stack struct {
-			RunImage struct {
-				Image string `json:"image"`
-			} `json:"runImage"`
-		} `json:"stack"`
-	}
-
-	if err := json.NewDecoder(strings.NewReader(cfg.Config.Labels[metadataLabel])).Decode(&stack); err != nil {
-		return nil, err
-	}
-
-	return []string{stack.Stack.RunImage.Image}, nil
-}
-
 func (c *client) fetchConfig(builderImage string) (*gcrv1.ConfigFile, error) {
 	imageRef, err := name.ParseReference(builderImage, name.WeakValidation)
 	if err != nil {
 		return nil, err
 	}
 
-	image, err := c.imageFetcher(imageRef, remote.WithAuth(authn.Anonymous))
+	image, err := c.imageFetcher(imageRef, dockerutil.GetAuthKeyChain())
 	if err != nil {
 		return nil, err
 	}
@@ -118,8 +90,4 @@ func (c *client) fetchConfig(builderImage string) (*gcrv1.ConfigFile, error) {
 	}
 
 	return cfg, nil
-}
-
-// Diagnose checks to validate the cluster's buildpacks.
-func (c *client) Diagnose(d *doctor.Diagnostic) {
 }

@@ -1,11 +1,25 @@
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 # This file contains options for option-builder.go
 ---
 package: logs
 imports: {"time":"time"}
 common:
-- name: Namespace
+- name: Space
   type: string
-  description: the Kubernetes namespace to use
+  description: the Space to use
   default: '"default"'
 configs:
 - name: Tail
@@ -13,11 +27,20 @@ configs:
   - name: NumberLines
     type: int
     description: number of lines
-    default: 10
+    default: 0 # 0 = all logs
   - name: Follow
     type: bool
     description: stream the logs
+  - name: ContainerName
+    type: string
+    description: Container name to pull logs from.
+  - name: ComponentName
+    type: string
+    description: Name of the component to pull logs from.
   - name: Timeout
     type: time.Duration
     description: How much time to wait before giving up when not following.
     default: time.Second
+  - name: Labels
+    type: map[string]string
+    description: Labels to filter the Pods when tailing logs.

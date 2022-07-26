@@ -1,14 +1,32 @@
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 ---
 applications:
 - name: instances-app
   instances: 9
 - name: autoscaling-instances-app
-  min-scale: 9
-  max-scale: 11
 - name: docker-app
   docker:
     image: gcr.io/docker-app
 - name: buildpack-app
+  buildpacks:
+  - java
+  - tomcat
+  path: example-app
+- name: buildpack-app-with-stack
+  stack: "v3stack"
   buildpacks:
   - java
   - tomcat
@@ -22,6 +40,13 @@ applications:
   - route: example.com
   - route: www.example.com/foo
   - route: https://host.example.com/foo
+- name: wildcard-routes-app
+  no-route: false
+  random-route: false
+  routes:
+  - route: "*.example.com"
+  - route: "*.host.example.com/foo"
+  - route: "https://*.shost.example.com/bar"
 - name: random-route-app
   no-route: false
   random-route: true
@@ -47,3 +72,5 @@ applications:
   path: dockerfile-app
   dockerfile:
     path: Dockerfile
+- name: bad-stack-app
+  stack: foo

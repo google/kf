@@ -1,0 +1,3 @@
+MODE        SIZE  NAME
+-rwxr-xr-x  0     /var/run/kontext
+-rwxr-xr-x  589   /var/run/kontext/Dockerfile

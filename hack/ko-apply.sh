@@ -18,21 +18,21 @@ set -eu
 
 cd "${0%/*}"/..
 
-# ko requires a proper go path and deps to be vendored
-# TODO remove this once https://github.com/google/ko/issues/7 is
-# resolved.
-echo "Vendoring from: `pwd`"
-go mod vendor
+source ./hack/util.sh
 
-readonly kfpath="$GOPATH/src/github.com/google/kf"
+tempfile="$(mktemp)"
+trap 'rm -f $tempfile' EXIT
 
-echo "Checking that $kfpath exists"
-if [[ ! -d "$kfpath" ]]; then
-  echo "Linking $kfpath"
-  mkdir -p $GOPATH/src/github.com/google/
-  ln -s $PWD $kfpath
-fi
+VERSION="${VERSION:-$(version)}"
 
-pushd $kfpath
-ko apply -f config
-popd
+# This is necessary as of ko v0.6.0. They updated the default base image to
+# use nonroot and therefore broke our Build pipeline which currently requires
+# root. This may not be necessary after b/160025670 is fixed.
+export KO_DEFAULTBASEIMAGE="gcr.io/distroless/static:latest"
+
+export KO_DOCKER_REPO="${KO_DOCKER_REPO:-gcr.io/$(gcloud config get-value project)}"
+
+./hack/generate-lifecycle-artifacts.sh
+
+ko resolve --filename config | sed "s/VERSION_PLACEHOLDER/${VERSION}/" >"$tempfile"
+kubectl apply -f "$tempfile"

@@ -18,7 +18,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/kf/pkg/kf/testutil"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -67,21 +67,21 @@ func ExampleUnstructured() {
 
 	resource := &unstructured.Unstructured{
 		Object: map[string]interface{}{
-			"apiVersion":        "v1",
-			"kind":              "Test",
-			"dummyDummy":        "present",
-			"dummy/dummy":       "present",
-			"dummy-dummy@dummy": "present",
-			"dummy-dummy":       "present",
-			"dummy1":            "present",
-			"dummy2":            "present",
+			"apiVersion":           "v1",
+			"kind":                 "Test",
+			"sampleSample":         "present",
+			"sample/sample":        "present",
+			"sample-sample@sample": "present",
+			"sample-sample":        "present",
+			"sample1":              "present",
+			"sample2":              "present",
 			"metadata": map[string]interface{}{
 				"name":              "MyName",
 				"namespace":         "MyNamespace",
 				"creationTimestamp": "2017-04-01T00:00:00Z",
 				"resourceVersion":   123,
 				"uid":               "00000000-0000-0000-0000-000000000001",
-				"dummy3":            "present",
+				"sample3":           "present",
 			},
 			"items": []interface{}{
 				map[string]interface{}{
@@ -96,24 +96,61 @@ func ExampleUnstructured() {
 
 	Unstructured(os.Stdout, resource)
 
-	// Output: API Version:        v1
-	// dummy-dummy:        present
-	// dummy-dummy@dummy:  present
-	// dummy/dummy:        present
-	// Dummy 1:            present
-	// Dummy 2:            present
-	// Dummy Dummy:        present
+	// Output: API Version:  v1
 	// Items:
 	//   Item Bool:  true
 	//   Item Int:   42
 	// Kind:  Test
 	// Metadata:
 	//   Creation Timestamp:  2017-04-01T00:00:00Z
-	//   Dummy 3:             present
 	//   Name:                MyName
 	//   Namespace:           MyNamespace
 	//   Resource Version:    123
+	//   Sample 3:            present
 	//   UID:                 00000000-0000-0000-0000-000000000001
-	// Status:  ok
-	// URL:     http://localhost
+	// sample-sample:         present
+	// sample-sample@sample:  present
+	// sample/sample:         present
+	// Sample 1:              present
+	// Sample 2:              present
+	// Sample Sample:         present
+	// Status:                ok
+	// URL:                   http://localhost
+}
+
+func ExampleUnstructuredStruct_nil() {
+	UnstructuredStruct(os.Stdout, nil)
+
+	// Output:
+}
+
+func ExampleUnstructuredStruct() {
+	example := struct {
+		IntField int            `json:"intField"`
+		StrField string         `json:"strField"`
+		ArrField []string       `json:"arrField"`
+		MapField map[string]int `json:"strToInt"`
+	}{
+		IntField: 10,
+		StrField: "some string",
+		ArrField: []string{"one", "two", "three"},
+		MapField: map[string]int{
+			"a": 1,
+			"b": 2,
+			"c": 3,
+		},
+	}
+
+	UnstructuredStruct(os.Stdout, example)
+
+	// Output: Arr Field:
+	//   one
+	//   two
+	//   three
+	// Int Field:  10
+	// Str Field:  some string
+	// Str To Int:
+	//   A:  1
+	//   B:  2
+	//   C:  3
 }

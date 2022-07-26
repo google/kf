@@ -15,109 +15,105 @@
 package routes
 
 import (
-	"errors"
+	"context"
 	"fmt"
-	"path"
+	"time"
 
-	"github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/commands/config"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	"github.com/google/kf/pkg/kf/routeclaims"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	utils "github.com/google/kf/v2/pkg/kf/internal/utils/cli"
+	"github.com/google/kf/v2/pkg/kf/routes"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"knative.dev/pkg/logging"
 )
 
 // NewCreateRouteCommand creates a CreateRoute command.
 func NewCreateRouteCommand(
 	p *config.KfParams,
-	c routeclaims.Client,
+	c routes.Client,
 ) *cobra.Command {
-	var hostname, urlPath string
+	var (
+		routeFlags RouteFlags
+		async      utils.AsyncFlags
+	)
 
 	cmd := &cobra.Command{
 		Use:   "create-route DOMAIN [--hostname HOSTNAME] [--path PATH]",
-		Short: "Create a route",
-		Example: `
-  # Using namespace (instead of SPACE)
-  kf create-route example.com --hostname myapp # myapp.example.com
-  kf create-route --namespace myspace example.com --hostname myapp # myapp.example.com
-  kf create-route example.com --hostname myapp --path /mypath # myapp.example.com/mypath
+		Short: "Create a traffic routing rule for a host+path pair.",
+		Long: `
+		Creating a Route allows Apps to declare they want to receive traffic on
+		the same host/domain/path combination.
 
-  # [DEPRECATED] Using SPACE to match 'cf'
-  kf create-route myspace example.com --hostname myapp # myapp.example.com
-  kf create-route myspace example.com --hostname myapp --path /mypath # myapp.example.com/mypath
-  `,
-		Args: cobra.RangeArgs(1, 2),
+		Routes without any bound Apps (or with only stopped Apps) will return a 404
+		HTTP status code.
+
+		Kf doesn't enforce Route uniqueness between Spaces. It's recommended
+		to provide each Space with its own subdomain instead.
+		`,
+		Example: `
+		kf create-route example.com --hostname myapp # myapp.example.com
+		kf create-route --space myspace example.com --hostname myapp # myapp.example.com
+		kf create-route example.com --hostname myapp --path /mypath # myapp.example.com/mypath
+		kf create-route --space myspace myapp.example.com # myapp.example.com
+
+		# Using SPACE to match 'cf'
+		kf create-route myspace example.com --hostname myapp # myapp.example.com
+		kf create-route myspace example.com --hostname myapp --path /mypath # myapp.example.com/mypath
+		`,
+		Args:         cobra.RangeArgs(1, 2),
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := utils.ValidateNamespace(p); err != nil {
+			ctx := cmd.Context()
+
+			if err := p.ValidateSpaceTargeted(); err != nil {
 				return err
 			}
 
-			space, domain := p.Namespace, args[0]
+			space, domain := p.Space, args[0]
 			if len(args) == 2 {
 				space = args[0]
 				domain = args[1]
-				fmt.Fprintln(cmd.OutOrStderr(), `
-[WARN]: passing the SPACE as an argument is deprecated.
-Use the --namespace flag instead.`)
 			}
 
-			if p.Namespace != "" && p.Namespace != "default" && p.Namespace != space {
-				return fmt.Errorf("SPACE (argument=%q) and namespace (flag=%q) (if provided) must match", space, p.Namespace)
+			if p.Space != "" && p.Space != "default" && p.Space != space {
+				return fmt.Errorf("SPACE (argument=%q) and space (flag=%q) (if provided) must match", space, p.Space)
 			}
 
-			if hostname == "" {
-				return errors.New("--hostname is required")
-			}
+			fields := routeFlags.RouteSpecFields(domain)
 
-			cmd.SilenceUsage = true
+			instanceName := v1alpha1.GenerateRouteName(
+				fields.Hostname,
+				fields.Domain,
+				fields.Path,
+			)
 
-			urlPath = path.Join("/", urlPath)
-
-			r := &v1alpha1.RouteClaim{
+			r := &v1alpha1.Route{
 				TypeMeta: metav1.TypeMeta{
-					Kind: "RouteClaim",
+					Kind: "Route",
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: space,
-					Name: v1alpha1.GenerateRouteClaimName(
-						hostname,
-						domain,
-						urlPath,
-					),
+					Name:      instanceName,
 				},
-				Spec: v1alpha1.RouteClaimSpec{
-					RouteSpecFields: v1alpha1.RouteSpecFields{
-						Hostname: hostname,
-						Domain:   domain,
-						Path:     urlPath,
-					},
+				Spec: v1alpha1.RouteSpec{
+					RouteSpecFields: fields,
 				},
 			}
 
-			if _, err := c.Create(space, r); err != nil {
+			if _, err := c.Create(ctx, space, r); err != nil {
 				return fmt.Errorf("failed to create Route: %s", err)
 			}
 
-			// NOTE: RouteClaims don't have a status so there's nothing to wait on
-			// after creation.
-			fmt.Fprintln(cmd.OutOrStdout(), "Creating route...")
-			return nil
+			logging.FromContext(ctx).Infof("Creating Route %q in space %q", instanceName, p.Space)
+			return async.AwaitAndLog(cmd.ErrOrStderr(), "Waiting for Route to become ready", func() (err error) {
+				_, err = c.WaitForConditionReadyTrue(context.Background(), space, instanceName, 1*time.Second)
+				return
+			})
 		},
 	}
-
-	cmd.Flags().StringVar(
-		&hostname,
-		"hostname",
-		"",
-		"Hostname for the route",
-	)
-	cmd.Flags().StringVar(
-		&urlPath,
-		"path",
-		"",
-		"URL Path for the route",
-	)
+	async.Add(cmd)
+	routeFlags.Add(cmd)
 
 	return cmd
 }

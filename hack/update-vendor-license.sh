@@ -14,15 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -ex
 
 cd "${0%/*}"/..
 
 echo "Vendoring code"
 go mod vendor
 
+pushd operator
+	go mod vendor
+popd
+
 echo "Tidying gomod"
 go mod tidy
 
 echo "Generating third party licenses"
-go run third_party/forked/gomod-collector/*.go . > third_party/VENDOR-LICENSE
+go run third_party/forked/gomod-collector/*.go . operator > third_party/VENDOR-LICENSE

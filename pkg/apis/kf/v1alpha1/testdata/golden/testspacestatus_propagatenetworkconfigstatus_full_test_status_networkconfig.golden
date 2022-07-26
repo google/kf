@@ -1,0 +1,50 @@
+# Test:	TestSpaceStatus_PropagateNetworkConfigStatus/full_test
+# config.defaults:
+#   spaceClusterDomains:
+#   - domain: $(SPACE_NAME).example.com
+#   - domain: $(CLUSTER_INGRESS_IP).example.com
+#   - domain: $(NO_REPLACE).example.com
+#   - domain: example.com
+#   - domain: $(SPACE_NAME)-apps.internal
+#     gatewayName: kf/internal-gateway
+# space.spec.networkConfig:
+#   appNetworkPolicy: {}
+#   buildNetworkPolicy: {}
+#   domains:
+#   - domain: $(SPACE_NAME).shell-company.com
+#   - domain: $(CLUSTER_INGRESS_IP).prod.shell-company.com
+# space.status.ingressGateways:
+# - ip: 192.168.0.1
+
+{
+    "domains": [
+        {
+            "domain": "test-space.shell-company.com",
+            "gatewayName": "kf/external-gateway"
+        },
+        {
+            "domain": "192.168.0.1.prod.shell-company.com",
+            "gatewayName": "kf/external-gateway"
+        },
+        {
+            "domain": "test-space.example.com",
+            "gatewayName": "kf/external-gateway"
+        },
+        {
+            "domain": "192.168.0.1.example.com",
+            "gatewayName": "kf/external-gateway"
+        },
+        {
+            "domain": "$(NO_REPLACE).example.com",
+            "gatewayName": "kf/external-gateway"
+        },
+        {
+            "domain": "example.com",
+            "gatewayName": "kf/external-gateway"
+        },
+        {
+            "domain": "test-space-apps.internal",
+            "gatewayName": "kf/internal-gateway"
+        }
+    ]
+}

@@ -15,6 +15,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  annotations:
+    operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: VERSION_PLACEHOLDER
   name: controller
   namespace: kf
 spec:
@@ -28,19 +32,18 @@ spec:
         sidecar.istio.io/inject: "false"
       labels:
         app: controller
+        kf.dev/release: VERSION_PLACEHOLDER
     spec:
       serviceAccountName: controller
-      initContainers:
-      - name: controller-init
-        image: github.com/google/kf/cmd/controller-init
-        volumeMounts:
-        - name: config-logging
-          mountPath: /etc/config-logging
       containers:
       - name: controller
         # This is the Go import path for the binary that is containerized
         # and substituted here.
-        image: github.com/google/kf/cmd/controller
+        image: ko://github.com/google/kf/v2/cmd/controller
+        args:
+          # TODO(b/178107014): This flag will be deprecated at some point. We
+          # should try to get our controllers to work with HA before that.
+        - --disable-ha=true
         resources:
           requests:
             cpu: 256m
@@ -48,6 +51,17 @@ spec:
           limits:
             cpu: 1000m
             memory: 1000Mi
+        # We use a livenessProbe instead of a readinessProbe because if the
+        # health check fails, then it will restart the pod (instead of not
+        # signaling it at all). This is necessary for Workload Identity.
+        # Without the pod restarting, if WI wasn't working at the beginning of
+        # the pod starting, it would never work.
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 10000
+          initialDelaySeconds: 3
+          periodSeconds: 3
         ports:
         - name: metrics
           containerPort: 9090
@@ -65,8 +79,8 @@ spec:
           value: config-observability
         - name: METRICS_DOMAIN
           value: kf.dev
-        - name: KNATIVE_SERVING_NAMESPACE
-          value: knative-serving
+        - name: KUBERNETES_MIN_VERSION
+          value: v1.21.0
       volumes:
         - name: config-logging
           configMap:

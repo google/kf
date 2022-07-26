@@ -15,76 +15,76 @@
 package cfutil_test
 
 import (
-	"errors"
+	"context"
+	"encoding/json"
 	"testing"
 
-	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	servicecatalogclient "github.com/google/kf/pkg/client/servicecatalog/clientset/versioned/fake"
-	"github.com/google/kf/pkg/kf/cfutil"
-	"github.com/google/kf/pkg/kf/testutil"
-	servicecatalogv1beta1 "github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/cfutil"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sfake "k8s.io/client-go/kubernetes/fake"
 )
 
 var (
+	appName               = "my-app"
+	instanceName          = "my-instance"
+	bindingGeneratedName  = "my-binding-generated-name"
+	customBindingName     = "my-custom-binding"
+	credentialsSecretName = "binding-secret"
+	tags                  = []string{"tag1", "tag2"}
+	className             = "my-class"
+	planName              = "my-plan"
+	credsMap              = map[string][]byte{
+		"uri": json.RawMessage(`"postgres://user:pass@mydbinstance:5432/mydb"`),
+	}
 	app = &v1alpha1.App{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "my-app",
+			Name: appName,
 		},
 	}
 
-	serviceClass = &servicecatalogv1beta1.ClusterServiceClass{
+	credentialsSecret = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "my-class-k8s-name",
+			Name: credentialsSecretName,
 		},
-		Spec: servicecatalogv1beta1.ClusterServiceClassSpec{
-			CommonServiceClassSpec: servicecatalogv1beta1.CommonServiceClassSpec{
-				Tags: []string{"database"},
-			},
-		},
+		Data: credsMap,
 	}
 
-	serviceInstance = &servicecatalogv1beta1.ServiceInstance{
+	serviceBinding = v1alpha1.ServiceInstanceBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "my-instance",
+			Name: bindingGeneratedName,
 		},
-		Spec: servicecatalogv1beta1.ServiceInstanceSpec{
-			PlanReference: servicecatalogv1beta1.PlanReference{
-				ClusterServiceClassExternalName: "my-class",
-				ClusterServicePlanExternalName:  "my-plan",
+		Spec: v1alpha1.ServiceInstanceBindingSpec{
+			BindingType: v1alpha1.BindingType{
+				App: &v1alpha1.AppRef{
+					Name: appName,
+				},
 			},
-			ClusterServiceClassRef: &servicecatalogv1beta1.ClusterObjectReference{
-				Name: "my-class-k8s-name",
+			InstanceRef: corev1.LocalObjectReference{
+				Name: instanceName,
 			},
+			BindingNameOverride: customBindingName,
 		},
-	}
-
-	serviceBinding = &servicecatalogv1beta1.ServiceBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   "my-binding",
-			Labels: app.ComponentLabels("my-binding-name"),
-		},
-		Spec: servicecatalogv1beta1.ServiceBindingSpec{
-			InstanceRef: servicecatalogv1beta1.LocalObjectReference{
-				Name: "my-instance",
+		Status: v1alpha1.ServiceInstanceBindingStatus{
+			BindingName: customBindingName,
+			CredentialsSecretRef: corev1.LocalObjectReference{
+				Name: credentialsSecretName,
 			},
-		},
-	}
-
-	secret = &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "binding-secret",
+			ServiceFields: v1alpha1.ServiceFields{
+				Tags:      tags,
+				ClassName: className,
+				PlanName:  planName,
+			},
 		},
 	}
 )
 
 func Test_GetVcapServices(t *testing.T) {
-	servicecatalogClient := servicecatalogclient.NewSimpleClientset(serviceInstance, serviceBinding, serviceClass)
-	k8sClient := k8sfake.NewSimpleClientset(secret)
+	k8sClient := k8sfake.NewSimpleClientset(credentialsSecret)
 
-	systemEnvInjector := cfutil.NewSystemEnvInjector(servicecatalogClient, k8sClient)
+	systemEnvInjector := cfutil.NewSystemEnvInjector(k8sClient)
 
 	cases := map[string]struct {
 		Run func(t *testing.T, systemEnvInjector cfutil.SystemEnvInjector)
@@ -92,15 +92,17 @@ func Test_GetVcapServices(t *testing.T) {
 		"happy": {
 			Run: func(t *testing.T, systemEnvInjector cfutil.SystemEnvInjector) {
 
-				vcapService, err := systemEnvInjector.GetVcapService(app.Name, serviceBinding)
+				vcapService, err := systemEnvInjector.GetVcapService(context.Background(), app.Name, serviceBinding)
 				testutil.AssertNil(t, "error", err)
-				testutil.AssertEqual(t, "name", "my-binding-name", vcapService.Name)
-				testutil.AssertEqual(t, "instance name", "my-instance", vcapService.InstanceName)
-				testutil.AssertEqual(t, "label", "my-class", vcapService.Label)
-				testutil.AssertEqual(t, "tags", []string{"database"}, vcapService.Tags)
-				testutil.AssertEqual(t, "plan", "my-plan", vcapService.Plan)
-				testutil.AssertEqual(t, "credentials", map[string]string{}, vcapService.Credentials)
-				testutil.AssertEqual(t, "binding name", "my-binding-name", vcapService.BindingName)
+				testutil.AssertEqual(t, "name", customBindingName, vcapService.Name)
+				testutil.AssertEqual(t, "instance name", instanceName, vcapService.InstanceName)
+				testutil.AssertEqual(t, "label", className, vcapService.Label)
+				testutil.AssertEqual(t, "tags", tags, vcapService.Tags)
+				testutil.AssertEqual(t, "plan", planName, vcapService.Plan)
+				testutil.AssertEqual(t, "credentials", map[string]json.RawMessage{
+					"uri": json.RawMessage(`"postgres://user:pass@mydbinstance:5432/mydb"`),
+				}, vcapService.Credentials)
+				testutil.AssertEqual(t, "binding name", customBindingName, *vcapService.BindingName)
 			},
 		},
 	}
@@ -113,10 +115,9 @@ func Test_GetVcapServices(t *testing.T) {
 func TestSystemEnvInjector(t *testing.T) {
 	t.Parallel()
 
-	servicecatalogClient := servicecatalogclient.NewSimpleClientset(serviceInstance, serviceClass)
-	k8sClient := k8sfake.NewSimpleClientset(secret)
+	k8sClient := k8sfake.NewSimpleClientset(credentialsSecret)
 
-	systemEnvInjector := cfutil.NewSystemEnvInjector(servicecatalogClient, k8sClient)
+	systemEnvInjector := cfutil.NewSystemEnvInjector(k8sClient)
 
 	cases := map[string]struct {
 		Run func(t *testing.T, systemEnvInjector cfutil.SystemEnvInjector)
@@ -124,17 +125,20 @@ func TestSystemEnvInjector(t *testing.T) {
 		"happy": {
 			Run: func(t *testing.T, systemEnvInjector cfutil.SystemEnvInjector) {
 
-				env, err := systemEnvInjector.ComputeSystemEnv(app, []servicecatalogv1beta1.ServiceBinding{*serviceBinding})
+				env, err := systemEnvInjector.ComputeSystemEnv(context.Background(), app, []v1alpha1.ServiceInstanceBinding{serviceBinding})
 				testutil.AssertNil(t, "error", err)
 				testutil.AssertEqual(t, "env count", 2, len(env))
-				hasVcapApplication := false
+
 				hasVcapServices := false
+				hasDbURL := false
+
 				for _, envVar := range env {
-					if envVar.Name == "VCAP_APPLICATION" {
-						hasVcapApplication = true
-					}
-					if envVar.Name == "VCAP_SERVICES" {
+					if envVar.Name == cfutil.VcapServicesEnvVarName {
 						hasVcapServices = true
+					}
+					if envVar.Name == cfutil.DatabaseURLEnvVarName {
+						hasDbURL = true
+						testutil.AssertEqual(t, "db url", "postgres://user:pass@mydbinstance:5432/mydb", envVar.Value)
 					}
 				}
 
@@ -142,8 +146,8 @@ func TestSystemEnvInjector(t *testing.T) {
 					t.Fatal("Expected map to contain VCAP_SERVICES")
 				}
 
-				if !hasVcapApplication {
-					t.Fatal("Expected map to contain VCAP_APPLICATION")
+				if !hasDbURL {
+					t.Fatal("Expected map to contain DATABASE_URL")
 				}
 			},
 		},
@@ -151,82 +155,5 @@ func TestSystemEnvInjector(t *testing.T) {
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) { tc.Run(t, systemEnvInjector) })
-	}
-}
-
-func TestSystemEnvInjector_GetClassFromInstance(t *testing.T) {
-	clusterClass := &servicecatalogv1beta1.ClusterServiceClass{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "cluster-class",
-		},
-		Spec: servicecatalogv1beta1.ClusterServiceClassSpec{
-			CommonServiceClassSpec: servicecatalogv1beta1.CommonServiceClassSpec{
-				ExternalID: "cluster-class-ext",
-			},
-		},
-	}
-
-	serviceClass := &servicecatalogv1beta1.ServiceClass{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "ns-class",
-			Namespace: "service-ns",
-		},
-		Spec: servicecatalogv1beta1.ServiceClassSpec{
-			CommonServiceClassSpec: servicecatalogv1beta1.CommonServiceClassSpec{
-				ExternalID: "ns-class-ext",
-			},
-		},
-	}
-
-	servicecatalogClient := servicecatalogclient.NewSimpleClientset(clusterClass, serviceClass)
-	k8sClient := k8sfake.NewSimpleClientset()
-	systemEnvInjector := cfutil.NewSystemEnvInjector(servicecatalogClient, k8sClient)
-
-	cases := map[string]struct {
-		instance           servicecatalogv1beta1.ServiceInstance
-		expectedErr        error
-		expectedExternalID string
-	}{
-		"cluster": {
-			instance: servicecatalogv1beta1.ServiceInstance{
-				Spec: servicecatalogv1beta1.ServiceInstanceSpec{
-					ClusterServiceClassRef: &servicecatalogv1beta1.ClusterObjectReference{
-						Name: "cluster-class",
-					},
-				},
-			},
-			expectedExternalID: "cluster-class-ext",
-		},
-		"namespaced": {
-			instance: servicecatalogv1beta1.ServiceInstance{
-				Spec: servicecatalogv1beta1.ServiceInstanceSpec{
-					ServiceClassRef: &servicecatalogv1beta1.LocalObjectReference{
-						Name: "ns-class",
-					},
-				},
-			},
-			expectedExternalID: "ns-class-ext",
-		},
-		"no references": {
-			instance: servicecatalogv1beta1.ServiceInstance{
-				Spec: servicecatalogv1beta1.ServiceInstanceSpec{
-					// no references specified
-				},
-			},
-			expectedErr: errors.New("neither ClusterServiceClassRef nor ServiceClassRef were provided"),
-		},
-	}
-
-	for tn, tc := range cases {
-		t.Run(tn, func(t *testing.T) {
-			class, err := systemEnvInjector.GetClassFromInstance(&tc.instance)
-
-			if err != nil || tc.expectedErr != nil {
-				testutil.AssertErrorsEqual(t, tc.expectedErr, err)
-				return
-			}
-
-			testutil.AssertEqual(t, "externalID", tc.expectedExternalID, class.ExternalID)
-		})
 	}
 }

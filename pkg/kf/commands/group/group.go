@@ -62,7 +62,7 @@ func rpad(s string, padding int) string {
 	return fmt.Sprintf(template, s)
 }
 
-/// trimRightSpace trims tailing whitespace.
+// trimRightSpace trims tailing whitespace.
 func trimRightSpace(s string) string {
 	return strings.TrimRightFunc(s, unicode.IsSpace)
 }
@@ -124,7 +124,9 @@ func CommandGroupHelpFunc(rootCommand *cobra.Command, groups CommandGroups, temp
 		for _, group := range groups {
 			fmt.Fprintln(out, group.Name)
 			for _, c := range group.Commands {
-				fmt.Fprintf(out, "  %s %s\n", rpad(c.Name(), minWidth), c.Short)
+				if !c.Hidden {
+					fmt.Fprintf(out, "  %s %s\n", rpad(c.Name(), minWidth), c.Short)
+				}
 			}
 			fmt.Fprintln(out)
 		}

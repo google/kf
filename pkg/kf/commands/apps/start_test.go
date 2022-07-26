@@ -16,34 +16,35 @@ package apps
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	v1alpha1 "github.com/google/kf/pkg/apis/kf/v1alpha1"
-	"github.com/google/kf/pkg/kf/apps"
-	"github.com/google/kf/pkg/kf/apps/fake"
-	"github.com/google/kf/pkg/kf/commands/config"
-	"github.com/google/kf/pkg/kf/testutil"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/apps"
+	"github.com/google/kf/v2/pkg/kf/apps/fake"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 )
 
 func TestStart(t *testing.T) {
 	t.Parallel()
 
 	cases := map[string]struct {
-		Namespace       string
+		Space           string
 		Args            []string
 		ExpectedStrings []string
 		ExpectedErr     error
 		Setup           func(t *testing.T, fake *fake.FakeClient)
 	}{
 		"starts app": {
-			Namespace: "default",
-			Args:      []string{"my-app"},
+			Space: "default",
+			Args:  []string{"my-app"},
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().
-					Transform("default", "my-app", gomock.Any()).
-					Do(func(_, _ string, mutator apps.Mutator) {
+					Transform(gomock.Any(), "default", "my-app", gomock.Any()).
+					Do(func(_ context.Context, _, _ string, mutator apps.Mutator) {
 						var app v1alpha1.App
 						mutator(&app)
 						testutil.AssertEqual(t, "app.spec.instances.stopped", false, app.Spec.Instances.Stopped)
@@ -52,24 +53,24 @@ func TestStart(t *testing.T) {
 			},
 		},
 		"async does not wait": {
-			Namespace: "default",
-			Args:      []string{"my-app", "--async"},
+			Space: "default",
+			Args:  []string{"my-app", "--async"},
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
-				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any())
+				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 			},
 		},
 		"no app name": {
-			Namespace:   "default",
+			Space:       "default",
 			Args:        []string{},
 			ExpectedErr: errors.New("accepts 1 arg(s), received 0"),
 		},
 		"starting app fails": {
-			Namespace:   "default",
+			Space:       "default",
 			Args:        []string{"my-app"},
 			ExpectedErr: errors.New("failed to start app: some-error"),
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().
-					Transform(gomock.Any(), gomock.Any(), gomock.Any()).
+					Transform(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil, errors.New("some-error"))
 			},
 		},
@@ -86,7 +87,7 @@ func TestStart(t *testing.T) {
 
 			buf := new(bytes.Buffer)
 			p := &config.KfParams{
-				Namespace: tc.Namespace,
+				Space: tc.Space,
 			}
 
 			cmd := NewStartCommand(p, fake)
@@ -101,7 +102,6 @@ func TestStart(t *testing.T) {
 			testutil.AssertContainsAll(t, buf.String(), tc.ExpectedStrings)
 			testutil.AssertEqual(t, "SilenceUsage", true, cmd.SilenceUsage)
 
-			ctrl.Finish()
 		})
 	}
 }

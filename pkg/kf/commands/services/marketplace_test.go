@@ -16,26 +16,46 @@ package services_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"bytes"
 
 	"github.com/golang/mock/gomock"
-	"github.com/google/kf/pkg/kf/commands/config"
-	servicescmd "github.com/google/kf/pkg/kf/commands/services"
-	utils "github.com/google/kf/pkg/kf/internal/utils/cli"
-	"github.com/google/kf/pkg/kf/marketplace"
-	"github.com/google/kf/pkg/kf/marketplace/fake"
-	"github.com/google/kf/pkg/kf/testutil"
-	"github.com/poy/service-catalog/pkg/apis/servicecatalog/v1beta1"
-	servicecatalog "github.com/poy/service-catalog/pkg/svcat/service-catalog"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/commands/config"
+	servicescmd "github.com/google/kf/v2/pkg/kf/commands/services"
+	"github.com/google/kf/v2/pkg/kf/marketplace"
+	"github.com/google/kf/v2/pkg/kf/marketplace/fake"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 )
 
 func TestNewMarketplaceCommand(t *testing.T) {
+
+	longDescription := strings.Repeat("X", 500)
+	mockClusterBroker := &v1alpha1.ClusterServiceBroker{}
+	mockClusterBroker.Name = "fake-broker"
+	mockClusterBroker.Status = v1alpha1.CommonServiceBrokerStatus{
+		Services: []v1alpha1.ServiceOffering{
+			{
+				DisplayName: "fake-service",
+				Description: "fake-description",
+				UID:         "00000000-0000-0000-0000-000000000000",
+				Plans: []v1alpha1.ServicePlan{
+					{DisplayName: "fake-plan", Description: "description"},
+					{DisplayName: "long-plan", Description: longDescription},
+				},
+			},
+		},
+	}
+
+	mockMarketplace := &marketplace.KfMarketplace{}
+	mockMarketplace.Brokers = append(mockMarketplace.Brokers, mockClusterBroker)
+
 	cases := map[string]struct {
-		Args      []string
-		Setup     func(t *testing.T, f *fake.FakeClientInterface)
-		Namespace string
+		Args  []string
+		Setup func(t *testing.T, f *fake.FakeClientInterface)
+		Space string
 
 		ExpectedErr     error
 		ExpectedStrings []string
@@ -45,68 +65,53 @@ func TestNewMarketplaceCommand(t *testing.T) {
 			ExpectedErr: errors.New("accepts 0 arg(s), received 1"),
 		},
 		"command params get passed correctly": {
-			Args:      []string{},
-			Namespace: "custom-ns",
+			Args:  []string{},
+			Space: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-				f.EXPECT().Marketplace("custom-ns").Return(&marketplace.KfMarketplace{}, nil)
+				f.EXPECT().Marketplace(gomock.Any(), "custom-ns").Return(&marketplace.KfMarketplace{}, nil)
 			},
 		},
 		"empty namespace": {
 			Args:        []string{},
-			ExpectedErr: errors.New(utils.EmptyNamespaceError),
+			ExpectedErr: errors.New(config.EmptySpaceError),
 		},
 		"command output outputs instance info": {
-			Args:      []string{},
-			Namespace: "custom-ns",
+			Args:  []string{},
+			Space: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-				fakeService := &v1beta1.ClusterServiceClass{}
-				fakeService.Name = "00000000-0000-0000-0000-000000000000"
-				fakeService.Spec.ExternalName = "fake-service"
-				fakeService.Spec.Description = "fake-description"
-				fakeService.Spec.ClusterServiceBrokerName = "fake-broker"
-
-				f.EXPECT().Marketplace(gomock.Any()).Return(&marketplace.KfMarketplace{
-					Services: []servicecatalog.Class{fakeService},
-					Plans:    []servicecatalog.Plan{},
-				}, nil)
+				f.EXPECT().Marketplace(gomock.Any(), gomock.Any()).Return(mockMarketplace, nil)
 			},
 			ExpectedStrings: []string{"fake-service", "fake-description", "fake-broker"},
 		},
 		"command output outputs plan info": {
-			Args:      []string{"--service=fake-service"},
-			Namespace: "custom-ns",
+			Args:  []string{"--service=fake-service"},
+			Space: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-				fakeService := &v1beta1.ClusterServiceClass{}
-				fakeService.Name = "00000000-0000-0000-0000-000000000000"
-				fakeService.Spec.ExternalName = "fake-service"
-
-				fakePlan := &v1beta1.ClusterServicePlan{}
-				fakePlan.Name = "fake-plan"
-				fakePlan.Spec.ExternalName = "fake-plan"
-				fakePlan.Spec.Description = "description"
-				fakePlan.Spec.ClusterServiceClassRef.Name = fakeService.Name
-				fakePlan.Spec.CommonServicePlanSpec.ExternalName = fakePlan.Name
-
-				f.EXPECT().Marketplace(gomock.Any()).Return(&marketplace.KfMarketplace{
-					Services: []servicecatalog.Class{fakeService},
-					Plans:    []servicecatalog.Plan{fakePlan},
-				}, nil)
+				f.EXPECT().Marketplace(gomock.Any(), gomock.Any()).Return(mockMarketplace, nil)
 			},
 			ExpectedStrings: []string{"fake-plan", "description"},
 		},
-		"blank marketplace": {
-			Args:      []string{},
-			Namespace: "custom-ns",
+		"command output outputs plan info for long description": {
+			Args:  []string{"--service=fake-service"},
+			Space: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-				f.EXPECT().Marketplace(gomock.Any()).Return(&marketplace.KfMarketplace{}, nil)
+				f.EXPECT().Marketplace(gomock.Any(), gomock.Any()).Return(mockMarketplace, nil)
+			},
+			ExpectedStrings: []string{"long-plan", longDescription},
+		},
+		"blank marketplace": {
+			Args:  []string{},
+			Space: "custom-ns",
+			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
+				f.EXPECT().Marketplace(gomock.Any(), gomock.Any()).Return(&marketplace.KfMarketplace{}, nil)
 			},
 			ExpectedStrings: []string{},
 		},
 		"bad server call": {
-			Args:      []string{},
-			Namespace: "custom-ns",
+			Args:  []string{},
+			Space: "custom-ns",
 			Setup: func(t *testing.T, f *fake.FakeClientInterface) {
-				f.EXPECT().Marketplace(gomock.Any()).Return(nil, errors.New("server-call-error"))
+				f.EXPECT().Marketplace(gomock.Any(), gomock.Any()).Return(nil, errors.New("server-call-error"))
 			},
 			ExpectedErr: errors.New("server-call-error"),
 		},
@@ -115,7 +120,6 @@ func TestNewMarketplaceCommand(t *testing.T) {
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
 
 			client := fake.NewFakeClientInterface(ctrl)
 			if tc.Setup != nil {
@@ -124,7 +128,7 @@ func TestNewMarketplaceCommand(t *testing.T) {
 
 			buf := new(bytes.Buffer)
 			p := &config.KfParams{
-				Namespace: tc.Namespace,
+				Space: tc.Space,
 			}
 
 			cmd := servicescmd.NewMarketplaceCommand(p, client)
