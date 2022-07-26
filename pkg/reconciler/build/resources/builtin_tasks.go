@@ -56,16 +56,6 @@ func FindBuiltinTask(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, g
 	return nil
 }
 
-func defaultStringParam(name, description, defaultValue string) tektonv1beta1.ParamSpec {
-	out := tektonutil.StringParam(name, description)
-	out.Default = &tektonv1beta1.ArrayOrString{
-		Type:      tektonv1beta1.ParamTypeString,
-		StringVal: defaultValue,
-	}
-
-	return out
-}
-
 func imageOutput() *tektonv1beta1.TaskResources {
 	return &tektonv1beta1.TaskResources{
 		Outputs: []tektonv1beta1.TaskResource{
@@ -79,15 +69,6 @@ func imageOutput() *tektonv1beta1.TaskResources {
 	}
 }
 
-func emptyVolume(name string) corev1.Volume {
-	return corev1.Volume{
-		Name: name,
-		VolumeSource: corev1.VolumeSource{
-			EmptyDir: &corev1.EmptyDirVolumeSource{},
-		},
-	}
-}
-
 func buildpackV2Task(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 	var resources corev1.ResourceRequirements
 	if cfg.BuildPodResources != nil {
@@ -96,14 +77,14 @@ func buildpackV2Task(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 
 	return &tektonv1beta1.TaskSpec{
 		Params: []tektonv1beta1.ParamSpec{
-			defaultStringParam("BUILD_NAME", "The name of the Build to push destination image for.", ""),
-			defaultStringParam("SOURCE_IMAGE", "The image that contains the app's source code.", ""),
-			defaultStringParam("SOURCE_PACKAGE_NAMESPACE", "The namespace of the source package.", ""),
-			defaultStringParam("SOURCE_PACKAGE_NAME", "The name of the source package.", ""),
+			tektonutil.DefaultStringParam("BUILD_NAME", "The name of the Build to push destination image for.", ""),
+			tektonutil.DefaultStringParam("SOURCE_IMAGE", "The image that contains the app's source code.", ""),
+			tektonutil.DefaultStringParam("SOURCE_PACKAGE_NAMESPACE", "The namespace of the source package.", ""),
+			tektonutil.DefaultStringParam("SOURCE_PACKAGE_NAME", "The name of the source package.", ""),
 			tektonutil.StringParam("BUILDPACKS", "Ordered list of comma separated builtpacks to attempt."),
 			tektonutil.StringParam("RUN_IMAGE", "The run image apps will use as the base for IMAGE (output)."),
 			tektonutil.StringParam("BUILDER_IMAGE", "The image on which builds will run."),
-			defaultStringParam("SKIP_DETECT", "Skip the detect phase", "false"),
+			tektonutil.DefaultStringParam("SKIP_DETECT", "Skip the detect phase", "false"),
 		},
 		Resources: imageOutput(),
 		Steps: []tektonv1beta1.Step{
@@ -241,8 +222,8 @@ EOF
 			},
 		},
 		Volumes: []corev1.Volume{
-			emptyVolume("cache-dir"),
-			emptyVolume("staging-tmp-dir"),
+			tektonutil.EmptyVolume("cache-dir"),
+			tektonutil.EmptyVolume("staging-tmp-dir"),
 		},
 	}
 }
@@ -259,11 +240,11 @@ func dockerfileBuildTask(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 
 	return &tektonv1beta1.TaskSpec{
 		Params: []tektonv1beta1.ParamSpec{
-			defaultStringParam("BUILD_NAME", "The name of the Build to push destination image for.", ""),
-			defaultStringParam("SOURCE_IMAGE", "The image that contains the app's source code.", ""),
-			defaultStringParam("SOURCE_PACKAGE_NAMESPACE", "The namespace of the source package.", ""),
-			defaultStringParam("SOURCE_PACKAGE_NAME", "The name of the source package.", ""),
-			defaultStringParam("DOCKERFILE", "Path to the Dockerfile to build.", "./Dockerfile"),
+			tektonutil.DefaultStringParam("BUILD_NAME", "The name of the Build to push destination image for.", ""),
+			tektonutil.DefaultStringParam("SOURCE_IMAGE", "The image that contains the app's source code.", ""),
+			tektonutil.DefaultStringParam("SOURCE_PACKAGE_NAMESPACE", "The namespace of the source package.", ""),
+			tektonutil.DefaultStringParam("SOURCE_PACKAGE_NAME", "The name of the source package.", ""),
+			tektonutil.DefaultStringParam("DOCKERFILE", "Path to the Dockerfile to build.", "./Dockerfile"),
 		},
 		Resources: imageOutput(),
 		Steps: []tektonv1beta1.Step{
@@ -318,7 +299,7 @@ func dockerfileBuildTask(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 			},
 		},
 		Volumes: []corev1.Volume{
-			emptyVolume("layers-dir"),
+			tektonutil.EmptyVolume("layers-dir"),
 		},
 	}
 }
@@ -343,10 +324,10 @@ func buildpackV3Build(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, 
 
 	return &tektonv1beta1.TaskSpec{
 		Params: []tektonv1beta1.ParamSpec{
-			defaultStringParam("SOURCE_IMAGE", "The image that contains the app's source code.", ""),
-			defaultStringParam("SOURCE_PACKAGE_NAMESPACE", "The namespace of the source package.", ""),
-			defaultStringParam("SOURCE_PACKAGE_NAME", "The name of the source package.", ""),
-			defaultStringParam("BUILDPACK", "When set, skip the detect step and use the given buildpack.", ""),
+			tektonutil.DefaultStringParam("SOURCE_IMAGE", "The image that contains the app's source code.", ""),
+			tektonutil.DefaultStringParam("SOURCE_PACKAGE_NAMESPACE", "The namespace of the source package.", ""),
+			tektonutil.DefaultStringParam("SOURCE_PACKAGE_NAME", "The name of the source package.", ""),
+			tektonutil.DefaultStringParam("BUILDPACK", "When set, skip the detect step and use the given buildpack.", ""),
 			tektonutil.StringParam("RUN_IMAGE", "The run image buildpacks will use as the base for IMAGE (output)."),
 			tektonutil.StringParam("BUILDER_IMAGE", "The image on which builds will run (must include v3 lifecycle and compatible buildpacks)."),
 		},
@@ -570,9 +551,9 @@ done
 			},
 		},
 		Volumes: []corev1.Volume{
-			emptyVolume("cache-dir"),
-			emptyVolume("layers-dir"),
-			emptyVolume("platform-dir"),
+			tektonutil.EmptyVolume("cache-dir"),
+			tektonutil.EmptyVolume("layers-dir"),
+			tektonutil.EmptyVolume("platform-dir"),
 		},
 	}
 }

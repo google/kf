@@ -12,7 +12,13 @@ import (
 
 func TestExportsToK8sCommand_sanity(t *testing.T) {
 
-	pipelinespec := getPipelineSpec("https://github.com/cloudfoundry-samples/test-app")
+	pipelinespec := getPipelineSpec(pipelineYamlOptions{
+		url:              "https://github.com/cloudfoundry-samples/test-app",
+		buildPack:        "https://github.com/cloudfoundry/go-buildpack",
+		skipDetect:       "true",
+		imageDestination: "gcr.io/kf-source/testbuild",
+	})
+
 	pipeline := tektonv1beta1.Pipeline{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Pipeline",
