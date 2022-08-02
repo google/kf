@@ -1,6 +1,7 @@
 package exporttok8s
 
 import (
+	"bytes"
 	"errors"
 	"os"
 
@@ -8,21 +9,22 @@ import (
 	"github.com/google/kf/v2/pkg/kf/tektonutil"
 	"github.com/spf13/cobra"
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
 
 const (
-	//this image is taken from the image of kf stack v2 build task, used here because
-	//we are using the similar logic to create the image url.
-	RunAndBuildImage = "cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5"
+	//runAndBuildImage is taken from the image of kf stack v2 build task
+	runAndBuildImage = "cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5"
 
-	//EmptyUrlError is the message returned if the user didn't give a url of the source package
-	EmptyUrlError = "url of source package could not be empty"
+	//emptyUrlError is the message returned if the user didn't give a url of the source package
+	emptyUrlError = "url of source package should not be empty"
 
-	//EmptyDestinationError is the message returned if the user didn't give a image destination
-	EmptyDestinationError = "destination of image could not be empty"
+	//emptyDestinationError is the message returned if the user didn't give an image destination
+	emptyDestinationError = "destination of image should not be empty"
 )
 
 type pipelineYamlOptions struct {
@@ -53,7 +55,7 @@ func NewExportToK8s(cfg *config.KfParams) *cobra.Command {
 				return err
 			}
 
-			pipelinespec := getPipelineSpec(*opts)
+			pipelinespec := makePipelineSpec(*opts)
 
 			pipeline := tektonv1beta1.Pipeline{
 				TypeMeta: metav1.TypeMeta{
@@ -66,12 +68,33 @@ func NewExportToK8s(cfg *config.KfParams) *cobra.Command {
 				Spec: *pipelinespec,
 			}
 
-			pipelineYaml, err := yaml.Marshal(&pipeline)
+			pipelinerun := makePipelineRun(pipelinespec)
+
+			deployment := makeDeployment()
+
+			pipelineYaml, err := yaml.Marshal(pipeline)
 			if err != nil {
 				return err
 			}
 
-			if err := os.WriteFile(exportPath, pipelineYaml, os.ModePerm); err != nil {
+			pipelinerunYaml, err := yaml.Marshal(pipelinerun)
+			if err != nil {
+				return err
+			}
+
+			yamls := [][]byte{pipelineYaml, pipelinerunYaml}
+			pipelineAndPipelinerunYaml := bytes.Join(yamls, []byte("---\n"))
+
+			deploymentYaml, err := yaml.Marshal(deployment)
+			if err != nil {
+				return err
+			}
+
+			if err := os.WriteFile(exportPath+"/pipeline_pipelinerun.yaml", pipelineAndPipelinerunYaml, os.ModePerm); err != nil {
+				return err
+			}
+
+			if err := os.WriteFile(exportPath+"/deployment.yaml", deploymentYaml, os.ModePerm); err != nil {
 				return err
 			}
 
@@ -81,16 +104,14 @@ func NewExportToK8s(cfg *config.KfParams) *cobra.Command {
 	return cmd
 }
 
-func getPipelineSpec(opts pipelineYamlOptions) *tektonv1beta1.PipelineSpec {
+func makePipelineSpec(opts pipelineYamlOptions) *tektonv1beta1.PipelineSpec {
 	pipelineSpec := tektonv1beta1.PipelineSpec{
 		Workspaces: []tektonv1beta1.PipelineWorkspaceDeclaration{
 			{
 				Name: "output",
 			},
 		},
-		Params: []tektonv1beta1.ParamSpec{
-			tektonutil.StringParam("GITHUB_URL", "The url of the source package."),
-		},
+
 		Tasks: []tektonv1beta1.PipelineTask{
 			// this task is to clone the github url which users upload their source package
 			{
@@ -115,7 +136,7 @@ func getPipelineSpec(opts pipelineYamlOptions) *tektonv1beta1.PipelineSpec {
 			{
 				Name: "push",
 				RunAfter: []string{
-					"clone-code",
+					"source-upload",
 				},
 				TaskSpec: &tektonv1beta1.EmbeddedTask{
 					TaskSpec: tektonv1beta1.TaskSpec{
@@ -129,12 +150,12 @@ func getPipelineSpec(opts pipelineYamlOptions) *tektonv1beta1.PipelineSpec {
 							tektonutil.StringParam("RUN_IMAGE", "The run image apps will use as the base for IMAGE (output)."),
 							tektonutil.StringParam("BUILDER_IMAGE", "The image on which builds will run."),
 							tektonutil.DefaultStringParam("SKIP_DETECT", "Skip the detect phase", "false"),
-							tektonutil.StringParam("DESTINATION", "The destination of the image."),
+							tektonutil.StringParam("IMAGE_DESTINATION", "The destination of the image."),
 						},
 						Steps: []tektonv1beta1.Step{
 							{
 								Name:    "copy-lifecycle",
-								Image:   "ko://code.cloudfoundry.org/buildpackapplifecycle/installer",
+								Image:   "gcr.io/kf-releases/installer-d148684b3032e4386ff76c190d42c7d0:latest",
 								Command: []string{"/ko-app/installer"},
 								VolumeMounts: []corev1.VolumeMount{
 									{Name: "staging-tmp-dir", MountPath: "/staging"},
@@ -249,11 +270,11 @@ EOF
 					},
 					{
 						Name:  "RUN_IMAGE",
-						Value: *tektonv1beta1.NewArrayOrString(RunAndBuildImage),
+						Value: *tektonv1beta1.NewArrayOrString(runAndBuildImage),
 					},
 					{
 						Name:  "BUILDER_IMAGE",
-						Value: *tektonv1beta1.NewArrayOrString(RunAndBuildImage),
+						Value: *tektonv1beta1.NewArrayOrString(runAndBuildImage),
 					},
 					{
 						Name:  "SKIP_DETECT",
@@ -267,7 +288,41 @@ EOF
 			},
 		},
 	}
+
 	return &pipelineSpec
+}
+
+func makePipelineRun(pipelineSpec *tektonv1beta1.PipelineSpec) *tektonv1beta1.PipelineRun {
+	pipelineRun := tektonv1beta1.PipelineRun{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "pipelinerun",
+			APIVersion: "tekton.dev/v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "build-and-publish-run",
+		},
+		Spec: tektonv1beta1.PipelineRunSpec{
+			PipelineSpec: pipelineSpec,
+			Workspaces: []tektonv1beta1.WorkspaceBinding{
+				{
+					Name: "output",
+					VolumeClaimTemplate: &corev1.PersistentVolumeClaim{
+						Spec: corev1.PersistentVolumeClaimSpec{
+							AccessModes: []corev1.PersistentVolumeAccessMode{
+								corev1.ReadWriteOnce,
+							},
+							Resources: corev1.ResourceRequirements{
+								Requests: corev1.ResourceList{
+									"storage": resource.MustParse("1Gi"),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	return &pipelineRun
 }
 
 func ValidateOptions(args []string) (string, *pipelineYamlOptions, error) {
@@ -277,11 +332,11 @@ func ValidateOptions(args []string) (string, *pipelineYamlOptions, error) {
 		if err != nil {
 			return "", nil, err
 		}
-		exportPath = path + "/pipeline.yaml"
+		exportPath = path
 	}
 
 	if url == "" {
-		return url, nil, errors.New(EmptyUrlError)
+		return url, nil, errors.New(emptyUrlError)
 	}
 
 	if buildPack == "" {
@@ -293,7 +348,7 @@ func ValidateOptions(args []string) (string, *pipelineYamlOptions, error) {
 	}
 
 	if imageDestination == "" {
-		return url, nil, errors.New(EmptyDestinationError)
+		return url, nil, errors.New(emptyDestinationError)
 	}
 
 	opts := pipelineYamlOptions{
@@ -304,4 +359,41 @@ func ValidateOptions(args []string) (string, *pipelineYamlOptions, error) {
 	}
 
 	return exportPath, &opts, nil
+}
+
+func makeDeployment() *appsv1.Deployment {
+	labelMap := make(map[string]string)
+	labelMap["type"] = "app"
+
+	return &appsv1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Deployment",
+			APIVersion: "apps/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "deploy-app",
+			Namespace: "default",
+		},
+		Spec: appsv1.DeploymentSpec{
+			Selector: metav1.SetAsLabelSelector(labelMap),
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: labelMap,
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:  "app",
+							Image: "placeholder",
+							Ports: []corev1.ContainerPort{
+								{
+									ContainerPort: 8080,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
 }

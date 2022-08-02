@@ -1,7 +1,7 @@
 package exporttok8s
 
 import (
-	"fmt"
+	"bytes"
 	"testing"
 
 	"github.com/google/kf/v2/pkg/kf/testutil"
@@ -12,7 +12,7 @@ import (
 
 func TestExportsToK8sCommand_sanity(t *testing.T) {
 
-	pipelinespec := getPipelineSpec(pipelineYamlOptions{
+	pipelinespec := makePipelineSpec(pipelineYamlOptions{
 		url:              "https://github.com/cloudfoundry-samples/test-app",
 		buildPack:        "https://github.com/cloudfoundry/go-buildpack",
 		skipDetect:       "true",
@@ -29,11 +29,20 @@ func TestExportsToK8sCommand_sanity(t *testing.T) {
 		},
 		Spec: *pipelinespec,
 	}
-	pipelineYaml, err := yaml.Marshal(&pipeline)
 
-	if err != nil {
-		fmt.Printf("Error while Marshaling pipelineYaml. %v", err)
-	}
+	pipelinerun := makePipelineRun(pipelinespec)
 
-	testutil.AssertGolden(t, "yaml is correct", pipelineYaml)
+	deployment := makeDeployment()
+
+	pipelineYaml, _ := yaml.Marshal(pipeline)
+
+	pipelinerunYaml, _ := yaml.Marshal(pipelinerun)
+
+	str := [][]byte{pipelineYaml, pipelinerunYaml}
+	pipelineAndPipelinerunYaml := bytes.Join(str, []byte("---\n"))
+
+	deploymentYaml, _ := yaml.Marshal(deployment)
+
+	testutil.AssertGolden(t, "pipeline_pipelinerun yaml", pipelineAndPipelinerunYaml)
+	testutil.AssertGolden(t, "deployment yaml", deploymentYaml)
 }
