@@ -2,10 +2,14 @@ package exporttok8s
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"os"
 
+	kfconfig "github.com/google/kf/v2/pkg/apis/kf/config"
+	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/kf/commands/config"
+	"github.com/google/kf/v2/pkg/kf/manifest"
 	"github.com/google/kf/v2/pkg/kf/tektonutil"
 	"github.com/spf13/cobra"
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
@@ -16,21 +20,10 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-const (
-	//runAndBuildImage is taken from the image of kf stack v2 build task
-	runAndBuildImage = "cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5"
-
-	//emptyUrlError is the message returned if the user didn't give a url of the source package
-	emptyUrlError = "url of source package should not be empty"
-
-	//emptyDestinationError is the message returned if the user didn't give an image destination
-	emptyDestinationError = "destination of image should not be empty"
-)
-
-type pipelineYamlOptions struct {
+type options struct {
+	appName          string
+	exportPath       string
 	url              string
-	buildPack        string
-	skipDetect       string
 	imageDestination string
 }
 
@@ -40,7 +33,7 @@ func NewExportToK8s(cfg *config.KfParams) *cobra.Command {
 		Use:     "export-to-k8s",
 		Short:   "export yaml files for the app",
 		Example: `kf export-to-k8s`,
-		Args:    cobra.ExactArgs(5),
+		Args:    cobra.ExactArgs(4),
 		Long: `
 		The export-to-k8s command allows operators to export the Tekton Pipeline, PipelineRun
 		and App deployment files.
@@ -50,12 +43,17 @@ func NewExportToK8s(cfg *config.KfParams) *cobra.Command {
 		exported image URL, and execute the deployment file to deploy their App.
 		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			exportPath, opts, err := ValidateOptions(args)
+			opts, err := ValidateOptions(args)
 			if err != nil {
 				return err
 			}
 
-			pipelinespec := makePipelineSpec(*opts)
+			params, err := getParams(opts.imageDestination, opts.appName)
+			if err != nil {
+				return err
+			}
+
+			pipelinespec := makePipelineSpec(opts.url, params)
 
 			pipeline := tektonv1beta1.Pipeline{
 				TypeMeta: metav1.TypeMeta{
@@ -70,7 +68,7 @@ func NewExportToK8s(cfg *config.KfParams) *cobra.Command {
 
 			pipelinerun := makePipelineRun(pipelinespec)
 
-			deployment := makeDeployment()
+			deployment := makeDeployment(opts.appName)
 
 			pipelineYaml, err := yaml.Marshal(pipeline)
 			if err != nil {
@@ -83,18 +81,18 @@ func NewExportToK8s(cfg *config.KfParams) *cobra.Command {
 			}
 
 			yamls := [][]byte{pipelineYaml, pipelinerunYaml}
-			pipelineAndPipelinerunYaml := bytes.Join(yamls, []byte("---\n"))
+			buildImageYaml := bytes.Join(yamls, []byte("---\n"))
 
 			deploymentYaml, err := yaml.Marshal(deployment)
 			if err != nil {
 				return err
 			}
 
-			if err := os.WriteFile(exportPath+"/pipeline_pipelinerun.yaml", pipelineAndPipelinerunYaml, os.ModePerm); err != nil {
+			if err := os.WriteFile(opts.exportPath+"/build_image.yaml", buildImageYaml, os.ModePerm); err != nil {
 				return err
 			}
 
-			if err := os.WriteFile(exportPath+"/deployment.yaml", deploymentYaml, os.ModePerm); err != nil {
+			if err := os.WriteFile(opts.exportPath+"/deployment.yaml", deploymentYaml, os.ModePerm); err != nil {
 				return err
 			}
 
@@ -104,7 +102,7 @@ func NewExportToK8s(cfg *config.KfParams) *cobra.Command {
 	return cmd
 }
 
-func makePipelineSpec(opts pipelineYamlOptions) *tektonv1beta1.PipelineSpec {
+func makePipelineSpec(url string, params []tektonv1beta1.Param) *tektonv1beta1.PipelineSpec {
 	pipelineSpec := tektonv1beta1.PipelineSpec{
 		Workspaces: []tektonv1beta1.PipelineWorkspaceDeclaration{
 			{
@@ -128,7 +126,7 @@ func makePipelineSpec(opts pipelineYamlOptions) *tektonv1beta1.PipelineSpec {
 				Params: []tektonv1beta1.Param{
 					{
 						Name:  "url",
-						Value: *tektonv1beta1.NewArrayOrString(opts.url),
+						Value: *tektonv1beta1.NewArrayOrString(url),
 					},
 				},
 			},
@@ -263,28 +261,7 @@ EOF
 					},
 				},
 
-				Params: []tektonv1beta1.Param{
-					{
-						Name:  "BUILDPACKS",
-						Value: *tektonv1beta1.NewArrayOrString(opts.buildPack),
-					},
-					{
-						Name:  "RUN_IMAGE",
-						Value: *tektonv1beta1.NewArrayOrString(runAndBuildImage),
-					},
-					{
-						Name:  "BUILDER_IMAGE",
-						Value: *tektonv1beta1.NewArrayOrString(runAndBuildImage),
-					},
-					{
-						Name:  "SKIP_DETECT",
-						Value: *tektonv1beta1.NewArrayOrString(opts.skipDetect),
-					},
-					{
-						Name:  "IMAGE_DESTINATION",
-						Value: *tektonv1beta1.NewArrayOrString(opts.imageDestination),
-					},
-				},
+				Params: params,
 			},
 		},
 	}
@@ -325,43 +302,39 @@ func makePipelineRun(pipelineSpec *tektonv1beta1.PipelineSpec) *tektonv1beta1.Pi
 	return &pipelineRun
 }
 
-func ValidateOptions(args []string) (string, *pipelineYamlOptions, error) {
-	exportPath, url, buildPack, skipDetect, imageDestination := args[0], args[1], args[2], args[3], args[4]
+func ValidateOptions(args []string) (*options, error) {
+	appName, exportPath, url, imageDestination := args[0], args[1], args[2], args[3]
+	if appName == "" {
+		return nil, errors.New("app name should not be empty")
+	}
+
 	if exportPath == "" {
 		path, err := os.Getwd()
 		if err != nil {
-			return "", nil, err
+			return nil, err
 		}
 		exportPath = path
 	}
 
 	if url == "" {
-		return url, nil, errors.New(emptyUrlError)
-	}
-
-	if buildPack == "" {
-		buildPack = "https://github.com/cloudfoundry/go-buildpack"
-	}
-
-	if skipDetect == "" {
-		skipDetect = "true"
+		return nil, errors.New("url of source package should not be empty")
 	}
 
 	if imageDestination == "" {
-		return url, nil, errors.New(emptyDestinationError)
+		return nil, errors.New("destination of image should not be empty")
 	}
 
-	opts := pipelineYamlOptions{
+	opts := options{
+		appName:          appName,
+		exportPath:       exportPath,
 		url:              url,
-		buildPack:        buildPack,
-		skipDetect:       skipDetect,
 		imageDestination: imageDestination,
 	}
 
-	return exportPath, &opts, nil
+	return &opts, nil
 }
 
-func makeDeployment() *appsv1.Deployment {
+func makeDeployment(appName string) *appsv1.Deployment {
 	labelMap := make(map[string]string)
 	labelMap["type"] = "app"
 
@@ -371,7 +344,7 @@ func makeDeployment() *appsv1.Deployment {
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "deploy-app",
+			Name:      appName,
 			Namespace: "default",
 		},
 		Spec: appsv1.DeploymentSpec{
@@ -383,7 +356,7 @@ func makeDeployment() *appsv1.Deployment {
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "app",
+							Name:  appName,
 							Image: "placeholder",
 							Ports: []corev1.ContainerPort{
 								{
@@ -396,4 +369,123 @@ func makeDeployment() *appsv1.Deployment {
 			},
 		},
 	}
+}
+
+func getParams(destination string, appName string) ([]tektonv1beta1.Param, error) {
+	var params []tektonv1beta1.Param
+	var buildpack *tektonv1beta1.ArrayOrString
+
+	defaultBuildspec, err := getBuildSpec()
+	if err != nil {
+		return nil, err
+	}
+
+	defaultParams := defaultBuildspec.Params
+	for _, v := range defaultParams {
+		if v.Name == "BUILDPACKS" {
+			buildpack = tektonv1beta1.NewArrayOrString(v.Value)
+			continue
+		}
+
+		if v.Name != "SOURCE_IMAGE" {
+			params = append(params, tektonv1beta1.Param{Name: v.Name, Value: *tektonv1beta1.NewArrayOrString(v.Value)})
+		}
+	}
+
+	params = append(params, tektonv1beta1.Param{Name: "IMAGE_DESTINATION", Value: *tektonv1beta1.NewArrayOrString(destination)})
+
+	appManifest, err := manifest.CheckForManifest(context.Background(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if appManifest != nil && len(appManifest.Applications) > 0 {
+		for _, v := range appManifest.Applications {
+			if v.Name == appName {
+				findBuildpack := v.Buildpacks
+				if len(findBuildpack) > 0 {
+					buildpack = tektonv1beta1.NewArrayOrString(findBuildpack[0], findBuildpack[1:]...)
+				}
+				break
+			}
+		}
+	}
+	params = append(params, tektonv1beta1.Param{Name: "BUILDPACKS", Value: *buildpack})
+
+	return params, nil
+}
+
+//set Skip-Detect parameter to false and get all the default Buildpacks
+func getBuildSpec() (*v1alpha1.BuildSpec, error) {
+	app := manifest.Application{}
+
+	BuildSpecBuilder, _, err := app.DetectBuildType(v1alpha1.SpaceStatusBuildConfig{
+		BuildpacksV2: []kfconfig.BuildpackV2Definition{
+			{
+				Disabled: false,
+				Name:     "staticfile_buildpack",
+				URL:      "https://github.com/cloudfoundry/staticfile-buildpack",
+			},
+			{
+				Disabled: false,
+				Name:     "java_buildpack",
+				URL:      "https://github.com/cloudfoundry/java-buildpack",
+			},
+			{
+				Disabled: false,
+				Name:     "ruby_buildpack",
+				URL:      "https://github.com/cloudfoundry/ruby-buildpack",
+			},
+			{
+				Disabled: false,
+				Name:     "dotnet_core_buildpack",
+				URL:      "https://github.com/cloudfoundry/dotnet-core-buildpack",
+			},
+			{
+				Disabled: false,
+				Name:     "nodejs_buildpack",
+				URL:      "https://github.com/cloudfoundry/nodejs-buildpack",
+			},
+			{
+				Disabled: false,
+				Name:     "go_buildpack",
+				URL:      "https://github.com/cloudfoundry/go-buildpack",
+			},
+			{
+				Disabled: false,
+				Name:     "python_buildpack",
+				URL:      "https://github.com/cloudfoundry/python-buildpack",
+			},
+			{
+				Disabled: false,
+				Name:     "php_buildpack",
+				URL:      "https://github.com/cloudfoundry/php-buildpack",
+			},
+			{
+				Disabled: false,
+				Name:     "binary_buildpack",
+				URL:      "https://github.com/cloudfoundry/binary-buildpack",
+			},
+			{
+				Disabled: false,
+				Name:     "nginx_buildpack",
+				URL:      "https://github.com/cloudfoundry/nginx-buildpack",
+			},
+		},
+		StacksV2: kfconfig.StackV2List{
+			{
+				Image: "cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5",
+				Name:  "cflinuxfs3",
+			},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	buildspec, err := BuildSpecBuilder("")
+	if err != nil {
+		return nil, err
+	}
+	return buildspec, nil
 }

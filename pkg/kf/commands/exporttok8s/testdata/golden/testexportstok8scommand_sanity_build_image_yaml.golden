@@ -16,16 +16,16 @@ spec:
       workspace: output
   - name: push
     params:
-    - name: BUILDPACKS
-      value: https://github.com/cloudfoundry/go-buildpack
     - name: RUN_IMAGE
       value: cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5
     - name: BUILDER_IMAGE
       value: cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5
     - name: SKIP_DETECT
-      value: "true"
+      value: "false"
     - name: IMAGE_DESTINATION
       value: gcr.io/kf-source/testbuild
+    - name: BUILDPACKS
+      value: https://github.com/cloudfoundry/staticfile-buildpack,https://github.com/cloudfoundry/java-buildpack,https://github.com/cloudfoundry/ruby-buildpack,https://github.com/cloudfoundry/dotnet-core-buildpack,https://github.com/cloudfoundry/nodejs-buildpack,https://github.com/cloudfoundry/go-buildpack,https://github.com/cloudfoundry/python-buildpack,https://github.com/cloudfoundry/php-buildpack,https://github.com/cloudfoundry/binary-buildpack,https://github.com/cloudfoundry/nginx-buildpack
     runAfter:
     - source-upload
     taskSpec:
@@ -170,16 +170,16 @@ spec:
         workspace: output
     - name: push
       params:
-      - name: BUILDPACKS
-        value: https://github.com/cloudfoundry/go-buildpack
       - name: RUN_IMAGE
         value: cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5
       - name: BUILDER_IMAGE
         value: cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5
       - name: SKIP_DETECT
-        value: "true"
+        value: "false"
       - name: IMAGE_DESTINATION
         value: gcr.io/kf-source/testbuild
+      - name: BUILDPACKS
+        value: https://github.com/cloudfoundry/staticfile-buildpack,https://github.com/cloudfoundry/java-buildpack,https://github.com/cloudfoundry/ruby-buildpack,https://github.com/cloudfoundry/dotnet-core-buildpack,https://github.com/cloudfoundry/nodejs-buildpack,https://github.com/cloudfoundry/go-buildpack,https://github.com/cloudfoundry/python-buildpack,https://github.com/cloudfoundry/php-buildpack,https://github.com/cloudfoundry/binary-buildpack,https://github.com/cloudfoundry/nginx-buildpack
       runAfter:
       - source-upload
       taskSpec:

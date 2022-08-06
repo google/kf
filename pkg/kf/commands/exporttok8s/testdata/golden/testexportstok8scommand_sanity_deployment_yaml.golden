@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   creationTimestamp: null
-  name: deploy-app
+  name: test
   namespace: default
 spec:
   selector:
@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - image: placeholder
-        name: app
+        name: test
         ports:
         - containerPort: 8080
         resources: {}
