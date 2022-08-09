@@ -144,6 +144,7 @@ func (source *Application) ToContainer() (corev1.Container, error) {
 			Requests: resourceRequests,
 		},
 		ReadinessProbe: healthCheck,
+		LivenessProbe:  healthCheck,
 	}
 
 	if len(source.Env) > 0 {

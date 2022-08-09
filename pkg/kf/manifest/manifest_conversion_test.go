@@ -234,6 +234,12 @@ func TestApplication_ToContainer(t *testing.T) {
 			TCPSocket: &corev1.TCPSocketAction{},
 		},
 	}
+	httpHealthCheck := &corev1.Probe{
+		SuccessThreshold: 1,
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{},
+		},
+	}
 
 	cases := map[string]struct {
 		app             Application
@@ -244,6 +250,7 @@ func TestApplication_ToContainer(t *testing.T) {
 			app: Application{},
 			expectContainer: corev1.Container{
 				ReadinessProbe: defaultHealthCheck,
+				LivenessProbe:  defaultHealthCheck,
 			},
 		},
 		"bad resource requests": {
@@ -274,14 +281,10 @@ func TestApplication_ToContainer(t *testing.T) {
 				},
 			},
 			expectContainer: corev1.Container{
-				Args:    []string{"foo", "bar"},
-				Command: []string{"bash"},
-				ReadinessProbe: &corev1.Probe{
-					SuccessThreshold: 1,
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{},
-					},
-				},
+				Args:           []string{"foo", "bar"},
+				Command:        []string{"bash"},
+				ReadinessProbe: httpHealthCheck,
+				LivenessProbe:  httpHealthCheck,
 				Env: []corev1.EnvVar{
 					{Name: "KEYMASTER", Value: "GATEKEEPER"},
 				},
