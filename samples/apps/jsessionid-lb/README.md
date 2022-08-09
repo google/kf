@@ -92,3 +92,44 @@ For each request, it will also log the request URL, the number of healthy backen
 proxy 2022/08/08 03:00:53.407454 main.go:133: GET /
 proxy 2022/08/08 03:00:53.422316 main.go:175: - 3 healthy backends, forwarding to "http://10.68.0.29:8080/"
 ```
+
+## Performance
+
+The proxy has good performance, but you should always test with a representative workload.
+
+Attemting 10000 connections with 10 in flight over 10 seconds to a backend with 3 instances:
+
+```
+h2load -n 10000 -c 10 -D 10 <proxy/app url>
+```
+
+Direct application results:
+
+```
+finished in 10.00s, 207.60 req/s, 24.35KB/s
+requests: 2076 total, 2086 started, 2076 done, 2076 succeeded, 0 failed, 0 errored, 0 timeout
+status codes: 2076 2xx, 0 3xx, 0 4xx, 0 5xx
+traffic: 243.54KB (249383) total, 101.09KB (103513) headers (space savings 75.07%), 87.18KB (89268) data
+                     min         max         mean         sd        +/- sd
+time for request:    45.49ms     62.57ms     47.78ms      1.37ms    76.49%
+time for connect:    45.57ms     48.26ms     46.56ms       916us    50.00%
+time to 1st byte:    97.97ms    108.68ms    104.34ms      4.24ms    80.00%
+req/s           :      20.10       21.30       20.76        0.44    60.00%
+```
+
+Same application behind proxy results:
+
+```
+finished in 10.00s, 176.70 req/s, 25.63KB/s
+requests: 1767 total, 1777 started, 1767 done, 1767 succeeded, 0 failed, 0 errored, 0 timeout
+status codes: 1767 2xx, 0 3xx, 0 4xx, 0 5xx
+traffic: 256.36KB (262508) total, 135.03KB (138268) headers (space savings 67.71%), 74.20KB (75981) data
+                     min         max         mean         sd        +/- sd
+time for request:    50.09ms     71.53ms     56.18ms      2.09ms    80.42%
+time for connect:    45.61ms     48.28ms     47.29ms       887us    60.00%
+time to 1st byte:   115.35ms    119.84ms    117.57ms      1.35ms    60.00%
+req/s           :      17.60       17.70       17.67        0.05    70.00%
+```
+
+In this test the proxy introduces about a 20ms slowdown in time to first byte and increases
+request time about 10ms total.
