@@ -726,7 +726,7 @@ func (r *Reconciler) reconcileNetworkPolicy(ctx context.Context, desired, actual
 	// Check for differences, if none we don't need to reconcile.
 	if reconciler.NewSemanticEqualityBuilder(logger, "NetworkPolicy").
 		Append("metadata.labels", desired.ObjectMeta.Labels, actual.ObjectMeta.Labels).
-		Append("spec", desired.Spec, actual.Labels).
+		Append("spec", desired.Spec, actual.Spec).
 		IsSemanticallyEqual() {
 		return actual, nil
 	}

@@ -46,6 +46,7 @@ func MakeNamespace(space *v1alpha1.Space, asmRev string) (*v1.Namespace, error) 
 				space.GetLabels(), map[string]string{
 					networking.IstioInjectionLabel: asmRev,
 					managedByLabel:                 "kf",
+					v1.LabelMetadataName:           NamespaceName(space),
 				}),
 		},
 	}, nil

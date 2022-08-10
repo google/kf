@@ -63,6 +63,7 @@ func MakeService(app *kfv1alpha1.App) *corev1.Service {
 		Spec: corev1.ServiceSpec{
 			Ports:    makeServicePorts(app),
 			Selector: PodLabels(app),
+			Type:     corev1.ServiceTypeClusterIP,
 		},
 	}
 }

@@ -38,6 +38,7 @@ func MakeKfInjectedEnvSecret(ctx context.Context, app *v1alpha1.App, space *v1al
 	}
 
 	secret := &v1.Secret{
+		Type: v1.SecretTypeOpaque,
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      KfInjectedEnvSecretName(app),
 			Namespace: space.Name,

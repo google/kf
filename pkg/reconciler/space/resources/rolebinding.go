@@ -56,8 +56,9 @@ func MakeSourceBuilderRoleBinding(space *v1alpha1.Space) *rbacv1.RoleBinding {
 		},
 
 		RoleRef: rbacv1.RoleRef{
-			Kind: roleKind,
-			Name: buildRoleName(space),
+			APIGroup: rbacv1.SchemeGroupVersion.Group,
+			Kind:     roleKind,
+			Name:     buildRoleName(space),
 		},
 	}
 }

@@ -57,7 +57,8 @@
             "app.kubernetes.io/component": "app-server",
             "app.kubernetes.io/managed-by": "kf",
             "app.kubernetes.io/name": "test"
-        }
+        },
+        "type": "ClusterIP"
     },
     "status": {
         "loadBalancer": {}

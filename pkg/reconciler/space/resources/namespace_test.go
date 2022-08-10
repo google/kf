@@ -19,6 +19,7 @@ import (
 
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/apis/networking"
+	v1 "k8s.io/api/core/v1"
 )
 
 func ExampleNamespaceName() {
@@ -42,10 +43,12 @@ func ExampleMakeNamespace() {
 	fmt.Println("Name:", NamespaceName(space))
 	fmt.Println("Label Count:", len(ns.Labels))
 	fmt.Println("Managed By:", ns.Labels[managedByLabel])
+	fmt.Println("Metadata name:", ns.Labels[v1.LabelMetadataName])
 	fmt.Println("Istio Injection:", ns.Labels[networking.IstioInjectionLabel])
 
 	// Output: Name: my-space
-	// Label Count: 2
+	// Label Count: 3
 	// Managed By: kf
+	// Metadata name: my-space
 	// Istio Injection: some-asm-rev
 }
