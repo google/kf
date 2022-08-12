@@ -159,7 +159,7 @@ spec:
           jsonPath: .status.lastScheduleTime
         - name: ConcurrencyPolicy
           type: string
-          jsonPath: .spec.ConcurrencyPolicy
+          jsonPath: .spec.concurrencyPolicy
         - name: Age
           type: date
           jsonPath: .metadata.creationTimestamp

@@ -141,8 +141,9 @@ func getUserContainer(
 	if err := overrideResourceRequests(userContainer, task); err != nil {
 		return nil, err
 	}
-	// Task does not have readiness probe.
+	// Task does not have readiness or liveness probe.
 	userContainer.ReadinessProbe = nil
+	userContainer.LivenessProbe = nil
 
 	return userContainer, nil
 }
