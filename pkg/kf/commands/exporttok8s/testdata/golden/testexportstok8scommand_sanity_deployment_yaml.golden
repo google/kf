@@ -5,20 +5,22 @@ metadata:
   name: test
   namespace: default
 spec:
+  replicas: 1
   selector:
     matchLabels:
-      type: app
+      app: test
   strategy: {}
   template:
     metadata:
       creationTimestamp: null
       labels:
-        type: app
+        app: test
     spec:
       containers:
       - image: placeholder
         name: test
         ports:
         - containerPort: 8080
+          name: http-user-port
         resources: {}
 status: {}

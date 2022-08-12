@@ -3,22 +3,29 @@ package exporttok8s
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"errors"
 	"os"
+	"strings"
 
 	kfconfig "github.com/google/kf/v2/pkg/apis/kf/config"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/kf/commands/config"
 	"github.com/google/kf/v2/pkg/kf/manifest"
 	"github.com/google/kf/v2/pkg/kf/tektonutil"
+	"github.com/google/kf/v2/pkg/reconciler/app/resources"
 	"github.com/spf13/cobra"
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/yaml"
 )
+
+//go:embed resource/clone-code.yaml
+var cloneTaskYaml []byte
 
 type options struct {
 	appName          string
@@ -48,7 +55,24 @@ func NewExportToK8s(cfg *config.KfParams) *cobra.Command {
 				return err
 			}
 
-			params, err := getParams(opts.imageDestination, opts.appName)
+			var app *manifest.Application
+			appManifest, err := manifest.CheckForManifest(context.Background(), nil)
+			if err != nil {
+				return err
+			}
+
+			if appManifest == nil {
+				app = &manifest.Application{
+					Name: opts.appName,
+				}
+			} else {
+				app, err = appManifest.App(opts.appName)
+				if err != nil {
+					return err
+				}
+			}
+
+			params, err := getParams(opts.imageDestination, app)
 			if err != nil {
 				return err
 			}
@@ -68,7 +92,10 @@ func NewExportToK8s(cfg *config.KfParams) *cobra.Command {
 
 			pipelinerun := makePipelineRun(pipelinespec)
 
-			deployment := makeDeployment(opts.appName)
+			deployment, err := makeDeployment(app)
+			if err != nil {
+				return err
+			}
 
 			pipelineYaml, err := yaml.Marshal(pipeline)
 			if err != nil {
@@ -80,7 +107,7 @@ func NewExportToK8s(cfg *config.KfParams) *cobra.Command {
 				return err
 			}
 
-			yamls := [][]byte{pipelineYaml, pipelinerunYaml}
+			yamls := [][]byte{cloneTaskYaml, pipelineYaml, pipelinerunYaml}
 			buildImageYaml := bytes.Join(yamls, []byte("---\n"))
 
 			deploymentYaml, err := yaml.Marshal(deployment)
@@ -334,9 +361,16 @@ func ValidateOptions(args []string) (*options, error) {
 	return &opts, nil
 }
 
-func makeDeployment(appName string) *appsv1.Deployment {
+func makeDeployment(app *manifest.Application) (*appsv1.Deployment, error) {
 	labelMap := make(map[string]string)
-	labelMap["type"] = "app"
+	labelMap["app"] = app.Name
+
+	container, err := getContainer(app)
+	if err != nil {
+		return nil, err
+	}
+
+	replicas := getReplicas(app)
 
 	return &appsv1.Deployment{
 		TypeMeta: metav1.TypeMeta{
@@ -344,10 +378,11 @@ func makeDeployment(appName string) *appsv1.Deployment {
 			APIVersion: "apps/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      appName,
+			Name:      app.Name,
 			Namespace: "default",
 		},
 		Spec: appsv1.DeploymentSpec{
+			Replicas: replicas,
 			Selector: metav1.SetAsLabelSelector(labelMap),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -355,23 +390,15 @@ func makeDeployment(appName string) *appsv1.Deployment {
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
-						{
-							Name:  appName,
-							Image: "placeholder",
-							Ports: []corev1.ContainerPort{
-								{
-									ContainerPort: 8080,
-								},
-							},
-						},
+						*container,
 					},
 				},
 			},
 		},
-	}
+	}, nil
 }
 
-func getParams(destination string, appName string) ([]tektonv1beta1.Param, error) {
+func getParams(destination string, app *manifest.Application) ([]tektonv1beta1.Param, error) {
 	var params []tektonv1beta1.Param
 	var buildpack *tektonv1beta1.ArrayOrString
 
@@ -394,21 +421,9 @@ func getParams(destination string, appName string) ([]tektonv1beta1.Param, error
 
 	params = append(params, tektonv1beta1.Param{Name: "IMAGE_DESTINATION", Value: *tektonv1beta1.NewArrayOrString(destination)})
 
-	appManifest, err := manifest.CheckForManifest(context.Background(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	if appManifest != nil && len(appManifest.Applications) > 0 {
-		for _, v := range appManifest.Applications {
-			if v.Name == appName {
-				findBuildpack := v.Buildpacks
-				if len(findBuildpack) > 0 {
-					buildpack = tektonv1beta1.NewArrayOrString(findBuildpack[0], findBuildpack[1:]...)
-				}
-				break
-			}
-		}
+	findBuildpack := app.Buildpacks
+	if len(findBuildpack) > 0 {
+		buildpack = tektonv1beta1.NewArrayOrString(strings.Join(findBuildpack, ","))
 	}
 	params = append(params, tektonv1beta1.Param{Name: "BUILDPACKS", Value: *buildpack})
 
@@ -488,4 +503,50 @@ func getBuildSpec() (*v1alpha1.BuildSpec, error) {
 		return nil, err
 	}
 	return buildspec, nil
+}
+
+func getContainer(app *manifest.Application) (*corev1.Container, error) {
+	var container corev1.Container
+
+	container, err := app.ToContainer()
+	if err != nil {
+		return nil, err
+	}
+
+	probe := container.ReadinessProbe
+	if len(container.Ports) == 0 {
+		rewriteProbe(probe, resources.DefaultUserPort)
+		container.Ports = append(container.Ports, corev1.ContainerPort{
+			Name:          resources.UserPortName,
+			ContainerPort: resources.DefaultUserPort,
+		})
+	} else {
+		rewriteProbe(probe, container.Ports[0].ContainerPort)
+	}
+
+	container.Name = app.Name
+	container.Image = "placeholder"
+
+	return &container, nil
+}
+
+func getReplicas(app *manifest.Application) *int32 {
+	replicas := int32(1)
+
+	if app.Instances != nil {
+		replicas = *app.Instances
+	}
+
+	return &replicas
+}
+
+func rewriteProbe(p *corev1.Probe, defaultPort int32) {
+	switch {
+	case p == nil:
+		return
+	case p.HTTPGet != nil:
+		p.HTTPGet.Port = intstr.FromInt(int(defaultPort))
+	case p.TCPSocket != nil:
+		p.TCPSocket.Port = intstr.FromInt(int(defaultPort))
+	}
 }
