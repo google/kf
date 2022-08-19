@@ -30,10 +30,10 @@ substitutions:
   _EXTRA_TAG: ''      # Defaults to _VERSION
   _RELEASE_BUCKET: '' # Required
   _RELEASE_FOLDER: '' # Defaults to _VERSION
-  _KO_IMAGE: 'gcr.io/kf-build-images/ko:latest'
-  _CLOUDSDK_IMAGE: 'gcr.io/kf-build-images/cloud-sdk:alpine'
-  _GOLANG_IMAGE: 'gcr.io/kf-build-images/golang:1.17'
-  _BUILDPACK_WRAPPER_GOLANG_IMAGE: 'gcr.io/kf-build-images/golang:1.15'
+  _KO_IMAGE: 'gcr.io/kf-releases/ko:latest'
+  _CLOUDSDK_IMAGE: 'gcr.io/google.com/cloudsdktool/cloud-sdk:alpine'
+  _GOLANG_IMAGE: 'golang:1.17'
+  _BUILDPACK_WRAPPER_GOLANG_IMAGE: 'golang:1.15'
 
 timeout: '1800s'
 

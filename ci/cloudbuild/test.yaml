@@ -101,9 +101,9 @@ substitutions:
   # both 'broker'.
   _SELF_SIGNED_CERTS_BROKER_URL: ''
 
-  _KO_IMAGE: 'gcr.io/kf-build-images/ko:latest'
-  _CLOUDSDK_IMAGE: 'gcr.io/kf-build-images/cloud-sdk:alpine'
-  _GOLANG_IMAGE: 'gcr.io/kf-build-images/golang:1.17'
+  _KO_IMAGE: 'gcr.io/kf-releases/ko:latest'
+  _CLOUDSDK_IMAGE: 'gcr.io/google.com/cloudsdktool/cloud-sdk:alpine'
+  _GOLANG_IMAGE: 'golang:1.17'
 
 steps:
 - id: check substitutions
