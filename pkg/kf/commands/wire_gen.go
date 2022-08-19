@@ -18,6 +18,7 @@ import (
 	cluster2 "github.com/google/kf/v2/pkg/kf/commands/cluster"
 	"github.com/google/kf/v2/pkg/kf/commands/config"
 	"github.com/google/kf/v2/pkg/kf/commands/dependencies"
+	"github.com/google/kf/v2/pkg/kf/commands/exporttok8s"
 	logs2 "github.com/google/kf/v2/pkg/kf/commands/logs"
 	"github.com/google/kf/v2/pkg/kf/commands/networkpolicies"
 	"github.com/google/kf/v2/pkg/kf/commands/routes"
@@ -665,6 +666,11 @@ func InjectDeleteJobSchedule(p *config.KfParams) *cobra.Command {
 
 func InjectDependencyCommand(p *config.KfParams) *cobra.Command {
 	command := dependencies.NewDependencyCommand()
+	return command
+}
+
+func InjectExportToK8sCommand(p *config.KfParams) *cobra.Command {
+	command := exporttok8s.NewExportToK8s(p)
 	return command
 }
 

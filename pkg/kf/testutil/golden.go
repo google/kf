@@ -41,7 +41,7 @@ func goldenPath(name, subtest string) string {
 func cleanName(name string) string {
 	lower := strings.ToLower(name)
 
-	// Strip out anythiing that could be used by the filesystem and replace with
+	// Strip out anything that could be used by the filesystem and replace with
 	// underscores.
 	split := strings.FieldsFunc(lower, func(r rune) bool {
 		okay := unicode.IsDigit(r) || unicode.IsLower(r)
