@@ -29,8 +29,8 @@
 
 substitutions:
   _VERSION: '' # Required
-  _CLOUDSDK_IMAGE: 'gcr.io/kf-build-images/cloud-sdk:alpine'
-  _GOLANG_IMAGE: 'gcr.io/kf-build-images/golang:1.16'
+  _CLOUDSDK_IMAGE: 'gcr.io/google.com/cloudsdktool/cloud-sdk:alpine'
+  _GOLANG_IMAGE: 'golang:1.16'
   _DOCKER_IMAGE: 'gcr.io/cloud-builders/docker'
   _RELEASE_BUCKET: '' # Required
   _CSB_SHA: '1f4b0b8d51409ff040786949ef407a235c3120c5'

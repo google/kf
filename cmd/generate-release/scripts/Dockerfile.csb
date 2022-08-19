@@ -1,4 +1,4 @@
-FROM gcr.io/kf-build-images/golang:1.16 AS build
+FROM golang:1.16 AS build
 WORKDIR /app
 ADD . /app
 RUN CGO_ENABLED=0 GOOS=linux go build -o ./build/cloud-service-broker
