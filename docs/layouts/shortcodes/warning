@@ -1,0 +1,5 @@
+{{ $_hugo_config := `{ "version": 1 }` }}
+<aside class="alert alert-danger" style="border-width: 1px 1px 1px 4px;">
+<i class="fa-solid fa-triangle-exclamation"></i> <strong>Warning:</strong> {{.Inner | markdownify}}
+</aside>
+

@@ -1,0 +1,4 @@
+{{ $_hugo_config := `{ "version": 1 }` }}
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> {{.Inner | markdownify}}
+</aside>
