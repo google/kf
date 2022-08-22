@@ -1,0 +1,324 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Kf – Develop Applications on Kf</title>
+    <link>/docs/v2.11/developer/</link>
+    <description>Recent content in Develop Applications on Kf on Kf</description>
+    <generator>Hugo -- gohugo.io</generator>
+    
+	  <atom:link href="/docs/v2.11/developer/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>Docs: Build and deploy applications</title>
+      <link>/docs/v2.11/developer/build-and-deploy/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/developer/build-and-deploy/</guid>
+      <description>
+        
+        
+        
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Backing services</title>
+      <link>/docs/v2.11/developer/backing-services/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/developer/backing-services/</guid>
+      <description>
+        
+        
+        
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Scaling</title>
+      <link>/docs/v2.11/developer/scaling/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/developer/scaling/</guid>
+      <description>
+        
+        
+        
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Service discovery</title>
+      <link>/docs/v2.11/developer/service-discovery/service-discovery/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/developer/service-discovery/service-discovery/</guid>
+      <description>
+        
+        
+        &lt;p&gt;This document is an overview of Kubernetes DNS-based service discovery
+and how it can be used with Kf.&lt;/p&gt;
+&lt;h2 id=&#34;when-to-use-kubernetes-service-discovery-with-kf&#34;&gt;When to use Kubernetes service discovery with Kf&lt;/h2&gt;
+&lt;p&gt;Kubernetes service discovery can be used by applications that need to locate
+backing services in a consistent way regardless of where the application is
+deployed. For example, a team might want to use a common URI in their
+configuration that always points at the local SMTP gateway to decouple code from
+the environment it ran in.&lt;/p&gt;
+&lt;p&gt;Service discovery helps application teams by:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Reducing the amount of per-environment configuration.&lt;/li&gt;
+&lt;li&gt;Decoupling client and server applications.&lt;/li&gt;
+&lt;li&gt;Allowing applications to be portable to new environments.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;You can use Kubernetes service discovery when:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Applications use their container&amp;rsquo;s DNS configurations to resolve hosts.&lt;/li&gt;
+&lt;li&gt;Applications are deployed with their backing services in the same Kubernetes cluster or namespace.&lt;/li&gt;
+&lt;li&gt;Backing services have an associated
+&lt;a href=&#34;https://kubernetes.io/docs/concepts/services-networking/service/&#34;&gt;Kubernetes service&lt;/a&gt;.
+Kf creates these for each app.&lt;/li&gt;
+&lt;li&gt;Kubernetes NetworkPolicies allow traffic between an application and the
+Kubernetes service it needs to communicate with. Kf
+creates these policies in each Kf space.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;You &lt;strong&gt;should not&lt;/strong&gt; use Kubernetes service discovery if:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Applications need to failover between multiple clusters.&lt;/li&gt;
+&lt;li&gt;You override the DNS resolver used by your application.&lt;/li&gt;
+&lt;li&gt;Applications need specific types of load balancing.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;how-kubernetes-service-discovery-works&#34;&gt;How Kubernetes service discovery works&lt;/h2&gt;
+&lt;p&gt;Kubernetes service discovery works by
+&lt;a href=&#34;https://cloud.google.com/kubernetes-engine/docs/concepts/service-discovery&#34;&gt;modifying the DNS configuration&lt;/a&gt;
+of containers running on a Kubernetes node. When an application looks up an
+unqualified domain name, the local DNS resolver will first attempt to resolve
+the name in the local cluster.&lt;/p&gt;
+&lt;p&gt;Domains without multiple parts will be resolved against the names of Kubernetes
+services in the container&amp;rsquo;s namespace. Each Kf app
+creates a Kubernetes service with the same name. If two
+Kf apps &lt;code&gt;ping&lt;/code&gt; and &lt;code&gt;pong&lt;/code&gt; were deployed in the same
+Kf space, then &lt;code&gt;ping&lt;/code&gt; could use the URL &lt;code&gt;http://pong&lt;/code&gt; to
+send traffic to the other service.&lt;/p&gt;
+&lt;p&gt;Domains with a single dot will be resolved against the Kubernetes services in
+the Kubernetes namespace with the same name as the label after the dot. For
+example, if there was a PostgreSQL database with a &lt;code&gt;customers&lt;/code&gt; service in the
+&lt;code&gt;database&lt;/code&gt; namespace, an application in another namespace could
+resolve it using &lt;code&gt;postgres://customers.database&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id=&#34;how-to-use-service-discovery-with-kf&#34;&gt;How to use service discovery with Kf&lt;/h2&gt;
+&lt;p&gt;Kubernetes DNS based service discovery can be used in any
+Kf app. Each Kf app creates a
+Kubernetes service of the same name, and each Kf
+space creates a Kubernetes namespace with the same name.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Refer to a Kf app in the current space using
+&lt;code&gt;&lt;var&gt;protocol&lt;/var&gt;://&lt;var&gt;app-name&lt;/var&gt;&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Refer to a Kf app in a different space using
+&lt;code&gt;&lt;var&gt;protocol&lt;/var&gt;://&lt;var&gt;app-name&lt;/var&gt;.&lt;var&gt;space-name&lt;/var&gt;&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Refer to a Kf app in the current space listening on
+a custom port using
+&lt;code&gt;&lt;var&gt;protocol&lt;/var&gt;://&lt;var&gt;app-name&lt;/var&gt;:&lt;var&gt;port&lt;/var&gt;&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Refer to a Kf app in a different space listening
+a custom port using
+&lt;code&gt;&lt;var&gt;protocol&lt;/var&gt;://&lt;var&gt;app-name&lt;/var&gt;.&lt;var&gt;space-name&lt;/var&gt;:&lt;var&gt;port&lt;/var&gt;&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; For Kubernetes services managed by Kf, TCP port 80
+always maps to the same port in the app&amp;rsquo;s &lt;code&gt;PORT&lt;/code&gt; environment variable. This is
+even true if the Kf app doesn&amp;rsquo;t serve HTTP traffic.
+&lt;/aside&gt;
+
+&lt;h2 id=&#34;best-practices&#34;&gt;Best practices&lt;/h2&gt;
+&lt;p&gt;Applications that are going to be the target of DNS based service discovery
+should have frequent &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/manifest/#health_check_types&#34;&gt;health checks&lt;/a&gt;
+to ensure they are rapidly added and removed from the pool of hosts that accept
+connections.&lt;/p&gt;
+&lt;p&gt;Applications using DNS based service discovery should not cache the IP addresses
+of the resolved services because they are not guaranteed to be stable.&lt;/p&gt;
+&lt;p&gt;If environment specific services exist outside of the cluster, they can be
+resolved using Kubernetes DNS if you set up
+&lt;a href=&#34;https://kubernetes.io/docs/concepts/services-networking/service/#externalname&#34;&gt;ExternalName Kubernetes services&lt;/a&gt;.
+These Kubernetes services provide the same resolution capabilities, but return a
+CNAME record to redirect requests to an external authority.&lt;/p&gt;
+&lt;h2 id=&#34;comparison-to-eureka&#34;&gt;Comparison to Eureka&lt;/h2&gt;
+&lt;p&gt;Eureka is an open source client-side load-balancer created by Netflix. It is
+commonly used as part of the
+&lt;a href=&#34;https://docs.pivotal.io/spring-cloud-services/3-1/common/service-registry/index.html&#34;&gt;Spring Cloud Services&lt;/a&gt;
+service broker. Eureka was
+&lt;a href=&#34;https://github.com/Netflix/eureka/wiki/Eureka-at-a-glance#what-is-eureka&#34;&gt;built to be a regional load balancer and service discovery mechanism&lt;/a&gt;
+for services running in an environment that caused frequent disruptions to
+workloads leading to unstable IP addresses.&lt;/p&gt;
+&lt;p&gt;Eureka is designed as a client/server model. Clients register themselves with
+the server indicating which names they want to be associated with and
+periodically send the server heartbeats. The server allows all connected clients
+to resolve names.&lt;/p&gt;
+&lt;p&gt;In general, you should use Kubernetes DNS rather than Eureka in Kubernetes for
+the following reasons:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;DNS works with all programming languages and applications without the need for libraries.&lt;/li&gt;
+&lt;li&gt;Your application&amp;rsquo;s existing health check will be reused reducing combinations of errors.&lt;/li&gt;
+&lt;li&gt;Kubernetes manages the DNS server, allowing you to rely on fewer dependencies.&lt;/li&gt;
+&lt;li&gt;Kubernetes DNS respects the same policy and RBAC constraints as the rest of Kubernetes.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;There are a few times when deploying a Eureka server would be advantageous:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;You need service discovery across Kubernetes and VM based applications.&lt;/li&gt;
+&lt;li&gt;You need client based load-balancing.&lt;/li&gt;
+&lt;li&gt;You need independent health checks.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;whats-next&#34;&gt;What&amp;rsquo;s next&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://cloud.google.com/kubernetes-engine/docs/concepts/service-discovery&#34;&gt;Read more about service discovery in GKE&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;Learn about &lt;a href=&#34;https://cloud.google.com/service-directory&#34;&gt;Service Directory&lt;/a&gt;, a managed offering similar to Eureka.&lt;/li&gt;
+&lt;/ul&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Configure routes and domains</title>
+      <link>/docs/v2.11/developer/routes-and-domains/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/developer/routes-and-domains/</guid>
+      <description>
+        
+        
+        &lt;p&gt;This page describes how routes and domains work in Kf, and how developers and administrators configure routes and domains for an App deployed on Kf cluster.&lt;/p&gt;
+&lt;p&gt;You must create domain and routes to give external access to your application.&lt;/p&gt;
+&lt;h2 id=&#34;internal-routing&#34;&gt;Internal routing&lt;/h2&gt;
+&lt;p&gt;Kf apps can communicate internally with other apps in the cluster directly using a service mesh without leaving the cluster network. By default, all traffic on the service mesh is encrypted using mutual TLS.&lt;/p&gt;
+&lt;p&gt;All apps deployed in the Kf cluster come with an internal endpoint configured by default. You can use the address &lt;code&gt;&lt;var&gt;app-name&lt;/var&gt;.&lt;var&gt;space-name&lt;/var&gt;.svc.cluster.local&lt;/code&gt; for internal communication between apps. To use this internal address no extra steps are required. Mutual TLS is enabled by default for internal routes. Note that this internal address is only accessible from the pods running the apps and not accessible from outside the cluster.&lt;/p&gt;
+&lt;h3 id=&#34;app-load-balancing&#34;&gt;App load balancing&lt;/h3&gt;
+&lt;p&gt;Traffic is routed by Istio to healthy instances of an App using a
+&lt;a href=&#34;https://en.wikipedia.org/wiki/Round-robin_DNS&#34;&gt;round-robin&lt;/a&gt;
+policy. Currently, this policy can&amp;rsquo;t be changed.&lt;/p&gt;
+&lt;h2 id=&#34;route-capabilities&#34;&gt;Route capabilities&lt;/h2&gt;
+&lt;p&gt;Routes tell the cluster&amp;rsquo;s ingress gateway where to deliver traffic and what to
+do if no Apps are available on the given address.
+By default, if no App is available on a Route and the Route receives a request
+it returns an &lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503&#34;&gt;HTTP 503 status code&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Routes are comprised of three parts: host, domain, and path. For example, in
+the URI &lt;code&gt;payroll.mydatacenter.example.com/login&lt;/code&gt;:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;The host is &lt;code&gt;payroll&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;The domain is &lt;code&gt;mydatacenter.example.com&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;The path is &lt;code&gt;/login&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Routes &lt;em&gt;must&lt;/em&gt; contain a domain, but the host and path is optional. Multiple
+Routes can share the same host and domain if they specify different paths.
+Multiple Apps can share the same Route and traffic will be split between them.
+This is useful if you need to support legacy blue/green deployments. If
+multiple Apps are bound to different paths, the priority is longest to
+shortest path.&lt;/p&gt;
+&lt;p&gt;Warning: Kf doesn&amp;rsquo;t currently support TCP port-based routing. You must use a
+&lt;a href=&#34;https://kubernetes.io/docs/tutorials/stateless-application/expose-external-ip-address/&#34;&gt;Kubernetes LoadBalancer&lt;/a&gt;
+if you want to expose a TCP port to the Internet. Ports are available on the cluster internal App address &lt;code&gt;&amp;lt;app-name&amp;gt;.&amp;lt;space&amp;gt;&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id=&#34;manage-routes&#34;&gt;Manage routes&lt;/h2&gt;
+&lt;p&gt;The following sections describe how to use the &lt;code&gt;kf&lt;/code&gt; CLI to manage Routes.&lt;/p&gt;
+&lt;h3 id=&#34;list-routes&#34;&gt;List routes&lt;/h3&gt;
+&lt;p&gt;Developers can list Routes for the current Space using the &lt;code&gt;kf routes&lt;/code&gt;
+command.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-.sh&#34; data-lang=&#34;.sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;$ kf routes
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Getting Routes in Space: my-space
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Found &lt;span style=&#34;color:#0000cf;font-weight:bold&#34;&gt;2&lt;/span&gt; Routes in Space my-space
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;HOST    DOMAIN       PATH    APPS
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#204a87&#34;&gt;echo&lt;/span&gt;    example.com  /       &lt;span style=&#34;color:#204a87&#34;&gt;echo&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;*       example.com  /login  uaa
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;create-a-route&#34;&gt;Create a route&lt;/h3&gt;
+&lt;p&gt;Developers can create Routes using the &lt;code&gt;kf create-route&lt;/code&gt; command.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-.sh&#34; data-lang=&#34;.sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;# Create a Route in the targeted Space to match traffic for myapp.example.com/*&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;$ kf create-route example.com --hostname myapp
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;# Create a Route in the Space myspace to match traffic for myapp.example.com/*&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;$ kf create-route -n myspace example.com --hostname myapp
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;# Create a Route in the targeted Space to match traffic for myapp.example.com/mypath*&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;$ kf create-route example.com --hostname myapp --path /mypath
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;# You can also supply the Space name as the first parameter if you have&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;# scripts that rely on the old cf style API.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;$ kf create-route myspace example.com --hostname myapp &lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;# myapp.example.com&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;After a Route is created, if no Apps are bound to it then an &lt;a href=&#34;https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503&#34;&gt;HTTP 503 status code&lt;/a&gt;
+is returned for any matching requests.&lt;/p&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; Routes that share the same host and domain must be in the same Space.
+&lt;/aside&gt;
+
+&lt;h3 id=&#34;map-a-route-to-your-app&#34;&gt;Map a route to your app&lt;/h3&gt;
+&lt;p&gt;Developers can make their App accessible on a Route using the &lt;code&gt;kf map-route&lt;/code&gt;
+command.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-.sh&#34; data-lang=&#34;.sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;$ kf map-route MYAPP mycluster.example.com --host myapp --path mypath
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; &lt;code&gt;map-route&lt;/code&gt; creates the Route if it doesn&amp;rsquo;t exist yet.
+&lt;/aside&gt;
+
+&lt;h3 id=&#34;unmap-a-route&#34;&gt;Unmap a route&lt;/h3&gt;
+&lt;p&gt;Developers can remove their App from being accessible on a Route using the &lt;code&gt;kf unmap-route&lt;/code&gt; command.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-.sh&#34; data-lang=&#34;.sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;$ kf unmap-route MYAPP mycluster.example.com --host myapp --path mypath
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;delete-a-route&#34;&gt;Delete a route&lt;/h3&gt;
+&lt;p&gt;Developers can delete a Route using the &lt;code&gt;kf delete-route&lt;/code&gt; command.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-.sh&#34; data-lang=&#34;.sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;$ kf delete-route mycluster.example.com --host myapp --path mypath
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Deleting a Route will stop traffic from being routed to all Apps listening on
+the Route.&lt;/p&gt;
+&lt;h3 id=&#34;manage-routes-declaratively-in-your-app-manifest&#34;&gt;Manage routes declaratively in your app manifest&lt;/h3&gt;
+&lt;p&gt;Routes can be managed declaratively in your app manifest file. They will be
+created if they do not yet exist.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-.yaml&#34; data-lang=&#34;.yaml&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#000&#34;&gt;---&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;applications&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;&lt;/span&gt;- &lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;name&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;my-app&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;  &lt;/span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;# ...&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;  &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;routes&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;  &lt;/span&gt;- &lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;route&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;example.com&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;  &lt;/span&gt;- &lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;route&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;www.example.com/path&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You can read more about the supported
+route properties in the &lt;a href=&#34;manifest&#34;&gt;manifest documentation&lt;/a&gt;.&lt;/p&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; Declaring Routes in your manifest file only creates new Routes, it
+does not delete Routes you created manually or as part of a previous push.
+&lt;/aside&gt;
+
+&lt;h2 id=&#34;routing-crds&#34;&gt;Routing CRDs&lt;/h2&gt;
+&lt;p&gt;There are four types that are relevant to routing:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;VirtualService&lt;/li&gt;
+&lt;li&gt;Route&lt;/li&gt;
+&lt;li&gt;Service&lt;/li&gt;
+&lt;li&gt;App&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Each App has a Service, which is an abstract name given to all running instances
+of your App. The name of the Service is the same as the App. A Route represents
+a single external URL. Routes constantly watch for changes to Apps, when an App
+requests to be added to a Route, the Route updates its list of Apps and then the
+VirtualService. A VirtualService represents a single domain and merges a list of
+all Routes in a Space that belong to that domain.&lt;/p&gt;
+&lt;p&gt;Istio reads the configuration on VirtualServices to determine how to route
+traffic.&lt;/p&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Tasks</title>
+      <link>/docs/v2.11/developer/tasks/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/developer/tasks/</guid>
+      <description>
+        
+        
+        
+      </description>
+    </item>
+    
+  </channel>
+</rss>

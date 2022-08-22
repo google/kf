@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.101.0" />
+<meta name="robots" content="index, follow">
+
+
+<link rel="shortcut icon" href="/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/favicons/android-192x192.png" sizes="192x192">
+
+<title>Kubernetes Roles | Kf</title>
+<meta name="description" content="Understand how Kf uses Kubernetes&#39; RBAC to assign roles.">
+<meta property="og:title" content="Kubernetes Roles" />
+<meta property="og:description" content="Understand how Kf uses Kubernetes&#39; RBAC to assign roles." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/docs/v2.11/operator/security/kubernetes-roles/" /><meta property="article:section" content="docs" />
+
+<meta property="og:site_name" content="Kf" />
+
+<meta itemprop="name" content="Kubernetes Roles">
+<meta itemprop="description" content="Understand how Kf uses Kubernetes&#39; RBAC to assign roles.">
+
+<meta itemprop="wordCount" content="512">
+<meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Kubernetes Roles"/>
+<meta name="twitter:description" content="Understand how Kf uses Kubernetes&#39; RBAC to assign roles."/>
+
+
+
+
+<link rel="preload" href="/scss/main.scss" as="style">
+<link href="/scss/main.scss" rel="stylesheet" integrity="">
+
+<script
+  src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"
+  crossorigin="anonymous"></script>
+<script
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+
+  </head>
+  <body class="td-page">
+    <header>
+      
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="/">
+		<span class="navbar-logo"></span><span class="font-weight-bold">Kf</span>
+	</a>
+	<div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+		<ul class="navbar-nav mt-2 mt-lg-0">
+			
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/developer/" ><span>Developer Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link active" href="/docs/v2.11/operator/" ><span class="active">Operator Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/troubleshooting/" ><span>Troubleshooting</span></a>
+			</li>
+			
+			
+			
+		</ul>
+	</div>
+	<div class="navbar-nav d-none d-lg-block"><input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="/offline-search-index.8271768637bdb31d52e7c162697e4315.json"
+  data-offline-search-base-href="/"
+  data-offline-search-max-results="10"
+>
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <aside class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none">
+            
+<div id="td-sidebar-menu" class="td-sidebar__inner">
+  <form class="td-sidebar__search d-flex align-items-center">
+    <input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="/offline-search-index.8271768637bdb31d52e7c162697e4315.json"
+  data-offline-search-base-href="/"
+  data-offline-search-max-results="10"
+>
+
+    <button class="btn btn-link td-sidebar__toggle d-md-none p-0 ml-3 fas fa-bars" type="button" data-toggle="collapse" data-target="#td-section-nav" aria-controls="td-docs-nav" aria-expanded="false" aria-label="Toggle section navigation">
+    </button>
+  </form>
+  <nav class="collapse td-sidebar-nav foldable-nav" id="td-section-nav">
+    <ul class="td-sidebar-nav__section pr-md-3 ul-0">
+      <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-docs-li">
+  <a href="/docs/" class="align-left pl-0 td-sidebar-link td-sidebar-link__section tree-root" id="m-docs"><span class="">Docs</span></a>
+  <ul class="ul-1">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-docsv211-li">
+  <input type="checkbox" id="m-docsv211-check" checked/>
+  <label for="m-docsv211-check"><a href="/docs/v2.11/" title="Documentation" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211"><span class="">Kf Documentation</span></a></label>
+  
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211getting-started-li">
+  <input type="checkbox" id="m-docsv211getting-started-check"/>
+  <label for="m-docsv211getting-started-check"><a href="/docs/v2.11/getting-started/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211getting-started"><span class="">Getting Started</span></a></label>
+  
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211getting-startedoverview-li">
+  <input type="checkbox" id="m-docsv211getting-startedoverview-check"/>
+  <label for="m-docsv211getting-startedoverview-check"><a href="/docs/v2.11/getting-started/overview/" title="Getting Started Overview" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211getting-startedoverview"><span class="">Overview</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211getting-startedquickstart-li">
+  <input type="checkbox" id="m-docsv211getting-startedquickstart-check"/>
+  <label for="m-docsv211getting-startedquickstart-check"><a href="/docs/v2.11/getting-started/quickstart/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211getting-startedquickstart"><span class="">Quickstart</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211getting-startedcompare-services-li">
+  <input type="checkbox" id="m-docsv211getting-startedcompare-services-check"/>
+  <label for="m-docsv211getting-startedcompare-services-check"><a href="/docs/v2.11/getting-started/compare-services/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211getting-startedcompare-services"><span class="">Compare Cloud Foundry and Kf services</span></a></label>
+  
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211developer-li">
+  <input type="checkbox" id="m-docsv211developer-check"/>
+  <label for="m-docsv211developer-check"><a href="/docs/v2.11/developer/" title="Develop Applications on Kf" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211developer"><span class="">Developer Guide</span></a></label>
+  
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211developerbuild-and-deploy-li">
+  <input type="checkbox" id="m-docsv211developerbuild-and-deploy-check"/>
+  <label for="m-docsv211developerbuild-and-deploy-check"><a href="/docs/v2.11/developer/build-and-deploy/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211developerbuild-and-deploy"><span class="">Build and deploy applications</span></a></label>
+  
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbuild-and-deploydeploying-an-app-li">
+  <input type="checkbox" id="m-docsv211developerbuild-and-deploydeploying-an-app-check"/>
+  <label for="m-docsv211developerbuild-and-deploydeploying-an-app-check"><a href="/docs/v2.11/developer/build-and-deploy/deploying-an-app/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbuild-and-deploydeploying-an-app"><span class="">Deploy an application</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbuild-and-deploybuildpacks-getting-started-li">
+  <input type="checkbox" id="m-docsv211developerbuild-and-deploybuildpacks-getting-started-check"/>
+  <label for="m-docsv211developerbuild-and-deploybuildpacks-getting-started-check"><a href="/docs/v2.11/developer/build-and-deploy/buildpacks-getting-started/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbuild-and-deploybuildpacks-getting-started"><span class="">Get started with buildpacks</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbuild-and-deployhowto-blue-green-li">
+  <input type="checkbox" id="m-docsv211developerbuild-and-deployhowto-blue-green-check"/>
+  <label for="m-docsv211developerbuild-and-deployhowto-blue-green-check"><a href="/docs/v2.11/developer/build-and-deploy/howto-blue-green/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbuild-and-deployhowto-blue-green"><span class="">Reduce deployment risk with blue-green deployments</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbuild-and-deployv2-vs-v3-buildpacks-li">
+  <input type="checkbox" id="m-docsv211developerbuild-and-deployv2-vs-v3-buildpacks-check"/>
+  <label for="m-docsv211developerbuild-and-deployv2-vs-v3-buildpacks-check"><a href="/docs/v2.11/developer/build-and-deploy/v2-vs-v3-buildpacks/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbuild-and-deployv2-vs-v3-buildpacks"><span class="">Compare V2 and V3 Buildpacks</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbuild-and-deploymanifest-li">
+  <input type="checkbox" id="m-docsv211developerbuild-and-deploymanifest-check"/>
+  <label for="m-docsv211developerbuild-and-deploymanifest-check"><a href="/docs/v2.11/developer/build-and-deploy/manifest/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbuild-and-deploymanifest"><span class="">App Manifest</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbuild-and-deployapp-runtime-li">
+  <input type="checkbox" id="m-docsv211developerbuild-and-deployapp-runtime-check"/>
+  <label for="m-docsv211developerbuild-and-deployapp-runtime-check"><a href="/docs/v2.11/developer/build-and-deploy/app-runtime/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbuild-and-deployapp-runtime"><span class="">App runtime</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbuild-and-deploybuild-runtime-li">
+  <input type="checkbox" id="m-docsv211developerbuild-and-deploybuild-runtime-check"/>
+  <label for="m-docsv211developerbuild-and-deploybuild-runtime-check"><a href="/docs/v2.11/developer/build-and-deploy/build-runtime/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbuild-and-deploybuild-runtime"><span class="">Build runtime</span></a></label>
+  
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211developerbacking-services-li">
+  <input type="checkbox" id="m-docsv211developerbacking-services-check"/>
+  <label for="m-docsv211developerbacking-services-check"><a href="/docs/v2.11/developer/backing-services/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211developerbacking-services"><span class="">Backing services</span></a></label>
+  
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbacking-servicesoverview-li">
+  <input type="checkbox" id="m-docsv211developerbacking-servicesoverview-check"/>
+  <label for="m-docsv211developerbacking-servicesoverview-check"><a href="/docs/v2.11/developer/backing-services/overview/" title="Backing Services Overview" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbacking-servicesoverview"><span class="">Overview</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbacking-servicesmanaged-services-li">
+  <input type="checkbox" id="m-docsv211developerbacking-servicesmanaged-services-check"/>
+  <label for="m-docsv211developerbacking-servicesmanaged-services-check"><a href="/docs/v2.11/developer/backing-services/managed-services/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbacking-servicesmanaged-services"><span class="">Use managed services</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbacking-servicesuser-provided-services-li">
+  <input type="checkbox" id="m-docsv211developerbacking-servicesuser-provided-services-check"/>
+  <label for="m-docsv211developerbacking-servicesuser-provided-services-check"><a href="/docs/v2.11/developer/backing-services/user-provided-services/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbacking-servicesuser-provided-services"><span class="">Configure user-provided services</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbacking-servicesups-templates-li">
+  <input type="checkbox" id="m-docsv211developerbacking-servicesups-templates-check"/>
+  <label for="m-docsv211developerbacking-servicesups-templates-check"><a href="/docs/v2.11/developer/backing-services/ups-templates/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbacking-servicesups-templates"><span class="">User Provided Service Templates</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbacking-servicesnfs-getting-started-li">
+  <input type="checkbox" id="m-docsv211developerbacking-servicesnfs-getting-started-check"/>
+  <label for="m-docsv211developerbacking-servicesnfs-getting-started-check"><a href="/docs/v2.11/developer/backing-services/nfs-getting-started/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbacking-servicesnfs-getting-started"><span class="">Configure NFS volumes</span></a></label>
+  
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211developerscaling-li">
+  <input type="checkbox" id="m-docsv211developerscaling-check"/>
+  <label for="m-docsv211developerscaling-check"><a href="/docs/v2.11/developer/scaling/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211developerscaling"><span class="">Scaling</span></a></label>
+  
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerscalingautoscaling-li">
+  <input type="checkbox" id="m-docsv211developerscalingautoscaling-check"/>
+  <label for="m-docsv211developerscalingautoscaling-check"><a href="/docs/v2.11/developer/scaling/autoscaling/" title="Scaling overview" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerscalingautoscaling"><span class="">Overview</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerscalingmanage-autoscaling-li">
+  <input type="checkbox" id="m-docsv211developerscalingmanage-autoscaling-check"/>
+  <label for="m-docsv211developerscalingmanage-autoscaling-check"><a href="/docs/v2.11/developer/scaling/manage-autoscaling/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerscalingmanage-autoscaling"><span class="">Manage Autoscaling</span></a></label>
+  
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerservice-discoveryservice-discovery-li">
+  <input type="checkbox" id="m-docsv211developerservice-discoveryservice-discovery-check"/>
+  <label for="m-docsv211developerservice-discoveryservice-discovery-check"><a href="/docs/v2.11/developer/service-discovery/service-discovery/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerservice-discoveryservice-discovery"><span class="">Service discovery</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerroutes-and-domains-li">
+  <input type="checkbox" id="m-docsv211developerroutes-and-domains-check"/>
+  <label for="m-docsv211developerroutes-and-domains-check"><a href="/docs/v2.11/developer/routes-and-domains/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerroutes-and-domains"><span class="">Configure routes and domains</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211developertasks-li">
+  <input type="checkbox" id="m-docsv211developertasks-check"/>
+  <label for="m-docsv211developertasks-check"><a href="/docs/v2.11/developer/tasks/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211developertasks"><span class="">Tasks</span></a></label>
+  
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developertaskstask-li">
+  <input type="checkbox" id="m-docsv211developertaskstask-check"/>
+  <label for="m-docsv211developertaskstask-check"><a href="/docs/v2.11/developer/tasks/task/" title="Tasks Overview" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developertaskstask"><span class="">Overview</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developertasksrun-task-li">
+  <input type="checkbox" id="m-docsv211developertasksrun-task-check"/>
+  <label for="m-docsv211developertasksrun-task-check"><a href="/docs/v2.11/developer/tasks/run-task/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developertasksrun-task"><span class="">Run Tasks</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developertasksscheduling-tasks-li">
+  <input type="checkbox" id="m-docsv211developertasksscheduling-tasks-check"/>
+  <label for="m-docsv211developertasksscheduling-tasks-check"><a href="/docs/v2.11/developer/tasks/scheduling-tasks/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developertasksscheduling-tasks"><span class="">Schedule Tasks</span></a></label>
+  
+</li>
+  </ul>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-docsv211operator-li">
+  <input type="checkbox" id="m-docsv211operator-check" checked/>
+  <label for="m-docsv211operator-check"><a href="/docs/v2.11/operator/" title="Operate and Maintain Kf" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operator"><span class="">Operator Guide</span></a></label>
+  
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211operatorservice-brokers-li">
+  <input type="checkbox" id="m-docsv211operatorservice-brokers-check"/>
+  <label for="m-docsv211operatorservice-brokers-check"><a href="/docs/v2.11/operator/service-brokers/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operatorservice-brokers"><span class="">Service brokers</span></a></label>
+  
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorservice-brokersabout-service-brokers-li">
+  <input type="checkbox" id="m-docsv211operatorservice-brokersabout-service-brokers-check"/>
+  <label for="m-docsv211operatorservice-brokersabout-service-brokers-check"><a href="/docs/v2.11/operator/service-brokers/about-service-brokers/" title="Service Brokers Overview" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorservice-brokersabout-service-brokers"><span class="">Overview</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorservice-brokerscloud-sb-overview-li">
+  <input type="checkbox" id="m-docsv211operatorservice-brokerscloud-sb-overview-check"/>
+  <label for="m-docsv211operatorservice-brokerscloud-sb-overview-check"><a href="/docs/v2.11/operator/service-brokers/cloud-sb-overview/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operatorservice-brokerscloud-sb-overview"><span class="">About Kf Cloud Service Broker</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorservice-brokersdeploying-cloud-sb-li">
+  <input type="checkbox" id="m-docsv211operatorservice-brokersdeploying-cloud-sb-check"/>
+  <label for="m-docsv211operatorservice-brokersdeploying-cloud-sb-check"><a href="/docs/v2.11/operator/service-brokers/deploying-cloud-sb/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorservice-brokersdeploying-cloud-sb"><span class="">Deploy Kf Cloud Service Broker</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorservice-brokersnfs-platform-setup-li">
+  <input type="checkbox" id="m-docsv211operatorservice-brokersnfs-platform-setup-check"/>
+  <label for="m-docsv211operatorservice-brokersnfs-platform-setup-check"><a href="/docs/v2.11/operator/service-brokers/nfs-platform-setup/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorservice-brokersnfs-platform-setup"><span class="">Set up NFS platform</span></a></label>
+  
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211operatorcustomizing-li">
+  <input type="checkbox" id="m-docsv211operatorcustomizing-check"/>
+  <label for="m-docsv211operatorcustomizing-check"><a href="/docs/v2.11/operator/customizing/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operatorcustomizing"><span class="">Customizing Kf</span></a></label>
+  
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorcustomizingabout-customizing-kf-li">
+  <input type="checkbox" id="m-docsv211operatorcustomizingabout-customizing-kf-check"/>
+  <label for="m-docsv211operatorcustomizingabout-customizing-kf-check"><a href="/docs/v2.11/operator/customizing/about-customizing-kf/" title="Customizing Overview" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorcustomizingabout-customizing-kf"><span class="">Overview</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorcustomizingcluster-configuration-li">
+  <input type="checkbox" id="m-docsv211operatorcustomizingcluster-configuration-check"/>
+  <label for="m-docsv211operatorcustomizingcluster-configuration-check"><a href="/docs/v2.11/operator/customizing/cluster-configuration/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorcustomizingcluster-configuration"><span class="">Cluster Configuration</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorcustomizingcustomizing-features-li">
+  <input type="checkbox" id="m-docsv211operatorcustomizingcustomizing-features-check"/>
+  <label for="m-docsv211operatorcustomizingcustomizing-features-check"><a href="/docs/v2.11/operator/customizing/customizing-features/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorcustomizingcustomizing-features"><span class="">Customizing Kf Features</span></a></label>
+  
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorkf-dependencies-li">
+  <input type="checkbox" id="m-docsv211operatorkf-dependencies-check"/>
+  <label for="m-docsv211operatorkf-dependencies-check"><a href="/docs/v2.11/operator/kf-dependencies/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operatorkf-dependencies"><span class="">Kf dependencies and architecture</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorreference-architecture-li">
+  <input type="checkbox" id="m-docsv211operatorreference-architecture-check"/>
+  <label for="m-docsv211operatorreference-architecture-check"><a href="/docs/v2.11/operator/reference-architecture/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operatorreference-architecture"><span class="">Kf reference architecture diagrams</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211operatorlogging-monitoring-li">
+  <input type="checkbox" id="m-docsv211operatorlogging-monitoring-check"/>
+  <label for="m-docsv211operatorlogging-monitoring-check"><a href="/docs/v2.11/operator/logging-monitoring/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operatorlogging-monitoring"><span class="">Logging and Monitoring</span></a></label>
+  
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorlogging-monitoringmonitoring-dashboard-li">
+  <input type="checkbox" id="m-docsv211operatorlogging-monitoringmonitoring-dashboard-check"/>
+  <label for="m-docsv211operatorlogging-monitoringmonitoring-dashboard-check"><a href="/docs/v2.11/operator/logging-monitoring/monitoring-dashboard/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorlogging-monitoringmonitoring-dashboard"><span class="">Create and user monitoring dashboards.</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorlogging-monitoringlogging-monitoring-li">
+  <input type="checkbox" id="m-docsv211operatorlogging-monitoringlogging-monitoring-check"/>
+  <label for="m-docsv211operatorlogging-monitoringlogging-monitoring-check"><a href="/docs/v2.11/operator/logging-monitoring/logging-monitoring/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorlogging-monitoringlogging-monitoring"><span class="">Logging and monitoring</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorlogging-monitoringmonitoring-overview-li">
+  <input type="checkbox" id="m-docsv211operatorlogging-monitoringmonitoring-overview-check"/>
+  <label for="m-docsv211operatorlogging-monitoringmonitoring-overview-check"><a href="/docs/v2.11/operator/logging-monitoring/monitoring-overview/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorlogging-monitoringmonitoring-overview"><span class="">Logging and monitoring overview</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorlogging-monitoringmonitoring-logging-li">
+  <input type="checkbox" id="m-docsv211operatorlogging-monitoringmonitoring-logging-check"/>
+  <label for="m-docsv211operatorlogging-monitoringmonitoring-logging-check"><a href="/docs/v2.11/operator/logging-monitoring/monitoring-logging/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorlogging-monitoringmonitoring-logging"><span class="">View logs</span></a></label>
+  
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211operatornetworking-li">
+  <input type="checkbox" id="m-docsv211operatornetworking-check"/>
+  <label for="m-docsv211operatornetworking-check"><a href="/docs/v2.11/operator/networking/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operatornetworking"><span class="">Networking</span></a></label>
+  
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatornetworkingsetting-up-a-custom-domain-li">
+  <input type="checkbox" id="m-docsv211operatornetworkingsetting-up-a-custom-domain-check"/>
+  <label for="m-docsv211operatornetworkingsetting-up-a-custom-domain-check"><a href="/docs/v2.11/operator/networking/setting-up-a-custom-domain/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatornetworkingsetting-up-a-custom-domain"><span class="">Set up a custom domain</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatornetworkingsetting-up-https-ingress-li">
+  <input type="checkbox" id="m-docsv211operatornetworkingsetting-up-https-ingress-check"/>
+  <label for="m-docsv211operatornetworkingsetting-up-https-ingress-check"><a href="/docs/v2.11/operator/networking/setting-up-https-ingress/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatornetworkingsetting-up-https-ingress"><span class="">Set up HTTPS ingress</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatornetworkingsetting-up-networkpolicies-li">
+  <input type="checkbox" id="m-docsv211operatornetworkingsetting-up-networkpolicies-check"/>
+  <label for="m-docsv211operatornetworkingsetting-up-networkpolicies-check"><a href="/docs/v2.11/operator/networking/setting-up-networkpolicies/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatornetworkingsetting-up-networkpolicies"><span class="">Set up network policies</span></a></label>
+  
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-docsv211operatorsecurity-li">
+  <input type="checkbox" id="m-docsv211operatorsecurity-check" checked/>
+  <label for="m-docsv211operatorsecurity-check"><a href="/docs/v2.11/operator/security/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operatorsecurity"><span class="">Security</span></a></label>
+  
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorsecuritysecurity-overview-li">
+  <input type="checkbox" id="m-docsv211operatorsecuritysecurity-overview-check"/>
+  <label for="m-docsv211operatorsecuritysecurity-overview-check"><a href="/docs/v2.11/operator/security/security-overview/" title="Security Overview" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operatorsecuritysecurity-overview"><span class="">Overview</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorsecurityrole-based-access-control-li">
+  <input type="checkbox" id="m-docsv211operatorsecurityrole-based-access-control-check"/>
+  <label for="m-docsv211operatorsecurityrole-based-access-control-check"><a href="/docs/v2.11/operator/security/role-based-access-control/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorsecurityrole-based-access-control"><span class="">Role-based access control</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorsecurityrbac-li">
+  <input type="checkbox" id="m-docsv211operatorsecurityrbac-check"/>
+  <label for="m-docsv211operatorsecurityrbac-check"><a href="/docs/v2.11/operator/security/rbac/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorsecurityrbac"><span class="">Configure role-based access control</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorsecuritycompute-isolation-li">
+  <input type="checkbox" id="m-docsv211operatorsecuritycompute-isolation-check"/>
+  <label for="m-docsv211operatorsecuritycompute-isolation-check"><a href="/docs/v2.11/operator/security/compute-isolation/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorsecuritycompute-isolation"><span class="">Enable compute isolation</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorsecuritykubernetes-roles-li">
+  <input type="checkbox" id="m-docsv211operatorsecuritykubernetes-roles-check"/>
+  <label for="m-docsv211operatorsecuritykubernetes-roles-check"><a href="/docs/v2.11/operator/security/kubernetes-roles/" class="align-left pl-0  active td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorsecuritykubernetes-roles"><span class="td-sidebar-nav-active-item">Kubernetes Roles</span></a></label>
+  
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211operatorbuildpacks-li">
+  <input type="checkbox" id="m-docsv211operatorbuildpacks-check"/>
+  <label for="m-docsv211operatorbuildpacks-check"><a href="/docs/v2.11/operator/buildpacks/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operatorbuildpacks"><span class="">Stacks and Buildpacks</span></a></label>
+  
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorbuildpacksconfigure-stacks-li">
+  <input type="checkbox" id="m-docsv211operatorbuildpacksconfigure-stacks-check"/>
+  <label for="m-docsv211operatorbuildpacksconfigure-stacks-check"><a href="/docs/v2.11/operator/buildpacks/configure-stacks/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorbuildpacksconfigure-stacks"><span class="">Customize stacks</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorbuildpackscustomizing-buildpacks-li">
+  <input type="checkbox" id="m-docsv211operatorbuildpackscustomizing-buildpacks-check"/>
+  <label for="m-docsv211operatorbuildpackscustomizing-buildpacks-check"><a href="/docs/v2.11/operator/buildpacks/customizing-buildpacks/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorbuildpackscustomizing-buildpacks"><span class="">Customize stacks and buildpacks</span></a></label>
+  
+</li>
+  </ul>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211troubleshooting-li">
+  <input type="checkbox" id="m-docsv211troubleshooting-check"/>
+  <label for="m-docsv211troubleshooting-check"><a href="/docs/v2.11/troubleshooting/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211troubleshooting"><span class="">Troubleshooting</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211examples-li">
+  <input type="checkbox" id="m-docsv211examples-check"/>
+  <label for="m-docsv211examples-check"><a href="/docs/v2.11/examples/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211examples"><span class="">Examples</span></a></label>
+  
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211examplesdeploying-spring-cloud-config-li">
+  <input type="checkbox" id="m-docsv211examplesdeploying-spring-cloud-config-check"/>
+  <label for="m-docsv211examplesdeploying-spring-cloud-config-check"><a href="/docs/v2.11/examples/deploying-spring-cloud-config/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211examplesdeploying-spring-cloud-config"><span class="">Deploy Spring Cloud Config</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211examplesspring-music-li">
+  <input type="checkbox" id="m-docsv211examplesspring-music-check"/>
+  <label for="m-docsv211examplesspring-music-check"><a href="/docs/v2.11/examples/spring-music/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211examplesspring-music"><span class="">Deploy Spring Music</span></a></label>
+  
+</li>
+  </ul>
+</li>
+  </ul>
+</li>
+  </ul>
+</li>
+    </ul>
+  </nav>
+</div>
+
+          </aside>
+          <aside class="d-none d-xl-block col-xl-2 td-sidebar-toc d-print-none">
+            
+<div class="td-page-meta ml-2 pb-1 pt-2 mb-0">
+<a href="https://github.com/google/kf/tree/master/content/en/docs/v2.11/operator/security/kubernetes-roles.md" class="td-page-meta--view" target="_blank" rel="noopener"><i class="fa fa-file-alt fa-fw"></i> View page source</a>
+  <a href="https://github.com/google/kf/edit/master/content/en/docs/v2.11/operator/security/kubernetes-roles.md" class="td-page-meta--edit" target="_blank" rel="noopener"><i class="fa fa-edit fa-fw"></i> Edit this page</a>
+  <a href="https://github.com/google/kf/new/master/content/en/docs/v2.11/operator/security/kubernetes-roles.md?filename=change-me.md&amp;value=---%0Atitle%3A&#43;%22Long&#43;Page&#43;Title%22%0AlinkTitle%3A&#43;%22Short&#43;Nav&#43;Title%22%0Aweight%3A&#43;100%0Adescription%3A&#43;%3E-%0A&#43;&#43;&#43;&#43;&#43;Page&#43;description&#43;for&#43;heading&#43;and&#43;indexes.%0A---%0A%0A%23%23&#43;Heading%0A%0AEdit&#43;this&#43;template&#43;to&#43;create&#43;your&#43;new&#43;page.%0A%0A%2A&#43;Give&#43;it&#43;a&#43;good&#43;name%2C&#43;ending&#43;in&#43;%60.md%60&#43;-&#43;e.g.&#43;%60getting-started.md%60%0A%2A&#43;Edit&#43;the&#43;%22front&#43;matter%22&#43;section&#43;at&#43;the&#43;top&#43;of&#43;the&#43;page&#43;%28weight&#43;controls&#43;how&#43;its&#43;ordered&#43;amongst&#43;other&#43;pages&#43;in&#43;the&#43;same&#43;directory%3B&#43;lowest&#43;number&#43;first%29.%0A%2A&#43;Add&#43;a&#43;good&#43;commit&#43;message&#43;at&#43;the&#43;bottom&#43;of&#43;the&#43;page&#43;%28%3C80&#43;characters%3B&#43;use&#43;the&#43;extended&#43;description&#43;field&#43;for&#43;more&#43;detail%29.%0A%2A&#43;Create&#43;a&#43;new&#43;branch&#43;so&#43;you&#43;can&#43;preview&#43;your&#43;new&#43;file&#43;and&#43;request&#43;a&#43;review&#43;via&#43;Pull&#43;Request.%0A" class="td-page-meta--child" target="_blank" rel="noopener"><i class="fa fa-edit fa-fw"></i> Create child page</a>
+  <a href="https://github.com/google/kf/issues/new?title=Kubernetes%20Roles" class="td-page-meta--issue" target="_blank" rel="noopener"><i class="fab fa-github fa-fw"></i> Create documentation issue</a>
+  <a href="https://github.com/google/kf/issues/new" class="td-page-meta--project-issue" target="_blank" rel="noopener"><i class="fas fa-tasks fa-fw"></i> Create project issue</a>
+  <a id="print" href="/docs/v2.11/operator/security/_print/"><i class="fa fa-print fa-fw"></i> Print entire section</a>
+
+</div>
+
+            
+
+
+<div class="td-toc"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#space-developer">Space developer role</a></li>
+    <li><a href="#space-auditor">Space auditor role</a></li>
+    <li><a href="#space-manager">Space manager role</a></li>
+    <li><a href="#dynamic-space-manager">Dynamic Space manager role</a></li>
+    <li><a href="#kf-cluster-reader">Kf cluster reader role</a></li>
+  </ul>
+</nav></div>
+
+
+
+            
+
+	
+		
+			
+				
+			
+			
+
+
+
+  
+  
+
+		
+			
+				
+			
+			
+
+
+
+  
+  
+
+		
+	
+
+          </aside>
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+  
+
+            <nav aria-label="breadcrumb" class="td-breadcrumbs">
+  <ol class="breadcrumb">
+  <li class="breadcrumb-item">
+    <a href="/docs/">Docs</a>
+  </li>
+  <li class="breadcrumb-item">
+    <a href="/docs/v2.11/">Kf Documentation</a>
+  </li>
+  <li class="breadcrumb-item">
+    <a href="/docs/v2.11/operator/">Operator Guide</a>
+  </li>
+  <li class="breadcrumb-item">
+    <a href="/docs/v2.11/operator/security/">Security</a>
+  </li>
+  <li class="breadcrumb-item active" aria-current="page">
+    <a href="/docs/v2.11/operator/security/kubernetes-roles/">Kubernetes Roles</a>
+  </li>
+  </ol>
+</nav>
+            
+<div class="td-content">
+	<h1>Kubernetes Roles</h1>
+	<div class="lead">Understand how Kf uses Kubernetes&rsquo; RBAC to assign roles.</div>
+	<header class="article-meta">
+		
+
+  
+    
+      
+
+
+    
+      
+
+
+    
+  
+
+		
+	</header>    
+	<p>The following sections describe the <a href="https://kubernetes.io/docs/reference/access-authn-authz/rbac/">Kubernetes ClusterRoles</a>
+that are created by Kf and lists the permissions that are
+contained in each ClusterRole.</p>
+<h2 id="space-developer">Space developer role</h2>
+<p>The Space developer role aggregates permissions application developers use
+to deploy and manage applications within a Kf Space.</p>
+<p>You can retrieve the permissions granted to Space developers on your cluster
+using the following command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kubectl describe clusterrole space-developer
+</span></span></code></pre></div><p>The default installation of Kf provides the following
+permissions:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">PolicyRule:
+  Resources                               Non-Resource URLs  Resource Names  Verbs
+  ---------                               -----------------  --------------  -----
+  events                                  []                 []              [*]
+  secrets                                 []                 []              [*]
+  *.kf.dev                                []                 []              [*]
+  networkpolicies.networking.k8s.io       []                 []              [*]
+  pods/exec                               []                 []              [create]
+  *.upload.kf.dev                         []                 []              [create]
+  pods/log                                []                 []              [get list watch]
+  pods                                    []                 []              [get list watch]
+  rolebindings.rbac.authorization.k8s.io  []                 []              [get list watch]
+</code></pre><h2 id="space-auditor">Space auditor role</h2>
+<p>The Space auditor role aggregates read-only permissions that auditors and
+automated tools use to validate applications within a
+Kf Space.</p>
+<p>You can retrieve the permissions granted to Space auditors on your cluster
+using the following command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kubectl describe clusterrole space-auditor
+</span></span></code></pre></div><p>The default installation of Kf provides the following
+permissions:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">PolicyRule:
+  Resources                               Non-Resource URLs  Resource Names  Verbs
+  ---------                               -----------------  --------------  -----
+  events                                  []                 []              [*]
+  apps.kf.dev                             []                 []              [get list watch]
+  rolebindings.rbac.authorization.k8s.io  []                 []              [get list watch]
+</code></pre><h2 id="space-manager">Space manager role</h2>
+<p>The Space manager role aggregates permissions that allow delegation of duties to
+others within a Kf Space.</p>
+<p>You can retrieve the permissions granted to Space managers on your cluster
+using the following command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kubectl describe clusterrole space-manager
+</span></span></code></pre></div><p>The default installation of Kf provides the following
+permissions:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">PolicyRule:
+  Resources                               Non-Resource URLs  Resource Names     Verbs
+  ---------                               -----------------  --------------     -----
+  clusterroles.rbac.authorization.k8s.io  []                 [space-auditor]    [bind]
+  clusterroles.rbac.authorization.k8s.io  []                 [space-developer]  [bind]
+  clusterroles.rbac.authorization.k8s.io  []                 [space-manager]    [bind]
+  rolebindings.rbac.authorization.k8s.io  []                 []                 [get list update patch watch]
+  apps.kf.dev                             []                 []                 [get list watch]
+</code></pre>
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Subjects bound to the <code>space-manager</code> ClusterRole within a
+Kf Space are also granted write access to that Space.
+</aside>
+
+<h2 id="dynamic-space-manager">Dynamic Space manager role</h2>
+<p>Each Kf Space creates a ClusterRole with the name
+<code>SPACE_NAME-manager</code>, where
+<code>SPACE_NAME-manager</code> is called the dynamic manager role.</p>
+<p>Kf
+automatically grants all subjects with the <code>space-manager</code> role within the
+Space the dynamic manager role at the cluster scope. The permissions for the
+dynamic manager role allow Space managers to update settings on the Space with
+the given name.</p>
+<p>You can retrieve the permissions granted to the dynamic manager role for any
+Space on your cluster using the following command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kubectl describe clusterrole SPACE_NAME-manager
+</span></span></code></pre></div><p>The default installation of Kf provides the following
+permissions:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">PolicyRule:
+  Resources      Non-Resource URLs  Resource Names  Verbs
+  ---------      -----------------  --------------  -----
+  spaces.kf.dev  []                 [SPACE_NAME]    [get list watch update patch]
+</code></pre><h2 id="kf-cluster-reader">Kf cluster reader role</h2>
+<p>Kf automatically grants the <code>kf-cluster-reader</code> role to all users on a
+cluster that already have the <code>space-developer</code>, <code>space-auditor</code>, or <code>space-manager</code>
+role within a Space.</p>
+<p>You can retrieve the permissions granted to Space Kf
+cluster readers on your cluster using the following command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kubectl describe clusterrole kf-cluster-reader
+</span></span></code></pre></div><p>The default installation of Kf provides the following
+permissions:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">PolicyRule:
+  Resources                     Non-Resource URLs  Resource Names  Verbs
+  ---------                     -----------------  --------------  -----
+  namespaces                    []                 [kf]            [get list watch]
+  clusterservicebrokers.kf.dev  []                 []              [get list watch]
+  spaces.kf.dev                 []                 []              [get list watch]
+</code></pre>
+	
+	
+	
+</div>
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-4 text-xs-center order-sm-2">
+        
+        
+        
+      </div>
+      <div class="col-6 col-sm-4 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" target="_blank" rel="noopener" href="https://github.com/google/kf" aria-label="GitHub">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Security mailing list" aria-label="Security mailing list">
+    <a class="text-white" target="_blank" rel="noopener" href="mailto:kf-security@google.com" aria-label="Security mailing list">
+      <i class="fa fa-envelope"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-4 text-center py-2 order-sm-2">
+        <small class="text-white">&copy; 2022 The Kf Authors All Rights Reserved</small>
+        
+	
+		
+	
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+    integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js"
+    integrity="sha512-UR25UO94eTnCVwjbXozyeVd6ZqpaAE9naiEUBK/A+QDbfSTQFhPGj5lOR6d8tsgbBk84Ggb5A3EkjsOgPRPcKA=="
+    crossorigin="anonymous"></script>
+
+
+
+
+
+<script src='/js/tabpane-persist.js'></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/js/main.min.91798a335c881f1b6b805085ba4aa22d1dbd2b0b18d105d05189fa104ddae350.js" integrity="sha256-kXmKM1yIHxtrgFCFukqiLR29KwsY0QXQUYn6EE3a41A=" crossorigin="anonymous"></script>
+
+
+
+
+  </body>
+</html>

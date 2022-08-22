@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.101.0" />
+<link rel="canonical" type="text/html" href="/docs/v2.11/developer/tasks/">
+<link rel="alternate" type="application/rss&#43;xml" href="/docs/v2.11/developer/tasks/index.xml">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/favicons/android-192x192.png" sizes="192x192">
+
+<title>Tasks | Kf</title>
+<meta name="description" content="Learn how to run one-off jobs using Kf.
+">
+<meta property="og:title" content="Tasks" />
+<meta property="og:description" content="Learn how to run one-off jobs using Kf.
+" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/v2.11/developer/tasks/" /><meta property="og:site_name" content="Kf" />
+
+<meta itemprop="name" content="Tasks">
+<meta itemprop="description" content="Learn how to run one-off jobs using Kf.
+"><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Tasks"/>
+<meta name="twitter:description" content="Learn how to run one-off jobs using Kf.
+"/>
+
+
+
+
+<link rel="preload" href="/scss/main.scss" as="style">
+<link href="/scss/main.scss" rel="stylesheet" integrity="">
+
+<script
+  src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"
+  crossorigin="anonymous"></script>
+<script
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="/">
+		<span class="navbar-logo"></span><span class="font-weight-bold">Kf</span>
+	</a>
+	<div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+		<ul class="navbar-nav mt-2 mt-lg-0">
+			
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link active" href="/docs/v2.11/developer/" ><span class="active">Developer Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/operator/" ><span>Operator Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/troubleshooting/" ><span>Troubleshooting</span></a>
+			</li>
+			
+			
+			
+		</ul>
+	</div>
+	<div class="navbar-nav d-none d-lg-block"><input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="/offline-search-index.8271768637bdb31d52e7c162697e4315.json"
+  data-offline-search-base-href="/"
+  data-offline-search-max-results="10"
+>
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/docs/v2.11/developer/tasks/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Tasks</h1>
+<div class="lead">Learn how to run one-off jobs using Kf.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-fc8abef5d8b8b4cd00451c7fbf42f60e">Tasks Overview</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-1fe7b60117f61a59570dc9806b2e2128">Run Tasks</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-52b92bfa0949442cec57f0a34cd75406">Schedule Tasks</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-fc8abef5d8b8b4cd00451c7fbf42f60e">1 - Tasks Overview</h1>
+    <div class="lead">Understand how tasks work in Kf.</div>
+	<h2 id="about-tasks">About Tasks</h2>
+<p>Unlike Apps which run indefinitely and restart if the process terminates, Tasks run a process until it completes and then stop.
+Tasks are run in their own containers and are based on the configuration and binary of an existing App.</p>
+<p>Tasks are not accessible from routes, and should be used for one-off or scheduled recurring work necessary for the health of an
+application.</p>
+<h2 id="use-cases-for-tasks">Use cases for Tasks</h2>
+<ul>
+<li>Migrating a database</li>
+<li>Running a batch job (scheduled/unscheduled)</li>
+<li>Sending an email</li>
+<li>Transforming data (ETL)</li>
+<li>Processing data (upload/backup/download)</li>
+</ul>
+<h2 id="how-tasks-work">How Tasks work</h2>
+<p>Tasks are executed asynchronously and run independently from the parent App or other Tasks running on the same App. An App created for running Tasks does not have routes created or assigned, and the <strong>Run</strong> lifecycle is skipped. The <strong>Source code upload</strong> and <strong>Build</strong> lifecycles still proceed and result in a container image used for running Tasks after pushing the App (see App lifecycles at <a href="/docs/v2.11/developer/build-and-deploy/deploying-an-app/">Deploying an Application</a>).</p>
+<p>The lifecycle of a Task is as follows:</p>
+<ol>
+<li>You push an App for running tasks with the <code>kf push APP_NAME --task</code> command.</li>
+<li>You run a Task on the App with the <code>kf run-task APP_NAME</code> command. Task inherits the environment variables, service bindings, resource allocation, start-up command, and security groups bound to the App.</li>
+<li>Kf creates a Tekton <a href="https://github.com/tektoncd/pipeline/blob/master/docs/pipelineruns.md">PipelineRun</a> with values from the App and parameters from the <code>run-task</code> command.</li>
+<li>The Tekton PipelineRun creates a Kubernetes Pod which launches a container based on the configurations on the App and Task.</li>
+<li>Task execution stops (Task exits or is terminated manually), the underlying Pod is either stopped or terminated. Pods of stopped Tasks are preserved and thus Task logs are accessible via the <code>kf logs APP_NAME --task</code> command.</li>
+<li>If you terminate a Task before it stops, the Tekton PipelineRun is cancelled (see <a href="https://github.com/tektoncd/pipeline/blob/master/docs/pipelineruns.md#cancelling-a-pipelinerun">Cancelling a PipelineRun</a>), the underlying Pod together with the logs are deleted. The logs of termianted Tasks are delivered to the cluster level logging streams if configured (e.g. Stackdriver, Fluentd).</li>
+<li>If the number of Tasks run on an App is greater than 500, the oldest Tasks are automatically deleted.</li>
+</ol>
+<h2 id="tasks-retention-policy">Tasks retention policy</h2>
+<p>Tasks are created as custom resources in the Kubernetes cluster, therefore, it is important not to exhaust the space of the underlying <code>etcd</code> database. By default, Kf only keeps the latest 500 Tasks per each App. Once the number of Tasks reach 500, the oldest Tasks (together with the underlying Pods and logs) will be automatically deleted.</p>
+<h2 id="task-logging-and-execution-history">Task logging and execution history</h2>
+<p>Any data or messages the Task outputs to STDOUT or STDERR is available by using the <code>kf logs APP_NAME --task</code> command. Cluster level logging mechanism (such as Stackdriver, Fluentd) will deliver the Task logs to the configured logging destination.</p>
+<h2 id="scheduling-tasks">Scheduling Tasks</h2>
+<p>As described above, Tasks can be run asynchronously by using the <code>kf run-task APP_NAME</code> command.
+Alternatively, you can schedule Tasks for execution by first creating a Job using
+the <code>kf create-job</code> command, and then scheduling it with the
+<code>kf schedule-job JOB_NAME</code> command. You can schedule that Job to automatically
+run Tasks on a specified <a href="https://man7.org/linux/man-pages/man5/crontab.5.html">unix-cron</a> schedule.</p>
+<h3 id="how-tasks-are-scheduled">How Tasks are scheduled</h3>
+<p>Create and schedule a Job to run the Task. A Job describes the Task to execute
+and automatically manages Task creation.</p>
+<p>Tasks are created on the schedule even if previous executions of the Task are still running.
+If any executions are missed for any reason, only the most recently missed execution
+are executed when the system recovers.</p>
+<p>Deleting a Job deletes all associated Tasks. If any associated Tasks were still
+in progress, they are forcefully deleted without running to completion.</p>
+<p>Tasks created by a scheduled Job are still subject to the
+<a href="#tasks_retention_policy">Task retention policy</a>.</p>
+<h3 id="differences-from-pcf-scheduler">Differences from PCF Scheduler</h3>
+<p>PCF Scheduler allows multiple schedules for a single Job while Kf
+only supports a single schedule per Job. You can replicate the PCF Scheduler
+behavior by creating multiple Jobs, one for each schedule.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-1fe7b60117f61a59570dc9806b2e2128">2 - Run Tasks</h1>
+    <div class="lead">Learn how to use tasks to run one-off jobs.</div>
+	<p>You can execute short-lived workflows by running them as Tasks in
+Kf. Tasks are run under Apps, meaning that each Task must
+have an associated App. Each Task execution uses the build artifacts from the
+parent App. Because Tasks are short-lived, the App is not deployed as a
+long-running application, and no routes should be created for the App or the Task.</p>
+<h2 id="push-an-app-for-running-tasks">Push an App for running Tasks</h2>
+<ol>
+<li>
+<p>Clone the <a href="https://github.com/cloudfoundry-samples/test-app">test-app repo</a> repo:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>git clone https://github.com/cloudfoundry-samples/test-app test-app
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87">cd</span> test-app
+</span></span></code></pre></div></li>
+<li>
+<p>Push the App.</p>
+<p>Push the App with the <code>kf push APP_NAME --task</code> command. The <code>--task</code> flag
+indicates that the App is meant to be used for running Tasks, and thus no
+routes are created on the App, and it is not deployed as a long-running
+application:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push test-app --task
+</span></span></code></pre></div></li>
+<li>
+<p>Confirm that no App instances or routes were created by listing the App:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf apps
+</span></span></code></pre></div><p>Notice that the App is not started and has no URLs:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">Listing Apps in Space: test-space
+Name                     Instances  Memory  Disk  CPU   URLs
+test-app                 stopped    1Gi     1Gi   100m  &lt;nil&gt;
+</code></pre></li>
+</ol>
+<h2 id="run-a-task-on-the-app">Run a Task on the App</h2>
+<p>When you run a Task on the App, you can optionally specify a start command by
+using the <code>--command</code> flag. If no start command is specified, it uses the start
+command specified on the App. If the App doesn&rsquo;t have a start command specified,
+it looks up the CMD configuration of the container image. A start command must
+exist in order to run the Task successfully.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf run-task test-app --command <span style="color:#4e9a06">&#34;printenv&#34;</span>
+</span></span></code></pre></div><p>You see something similar to this, confirming that the Task was submitted:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">Task test-app-gd8dv is submitted successfully for execution.
+</code></pre><p>The Task name is automatically generated, prefixed with the App name, and
+suffixed with an arbitrary string. The Task name is a unique identifier for
+Tasks within the same cluster.</p>
+<h2 id="specify-task-resource-limits">Specify Task resource limits</h2>
+<p>Resource limits (such as CPU cores/Memory limit/Disk quota) can be specified in
+the App (during <code>kf push</code>) or during the <code>kf run-task</code> command. The limits
+specified in the <code>kf run-task</code> command take prededence over the limits specified
+on the App.</p>
+<p>To specify resource limits in an App, you can use the <code>--cpu-cores</code>,
+<code>--memory-limit</code>, and <code>--disk-quota</code> flags in the <code>kf push</code> command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push test-app --command <span style="color:#4e9a06">&#34;printenv&#34;</span> --cpu-cores<span style="color:#ce5c00;font-weight:bold">=</span>0.5 --memory-limit<span style="color:#ce5c00;font-weight:bold">=</span>2G --disk-quota<span style="color:#ce5c00;font-weight:bold">=</span>5G --task
+</span></span></code></pre></div><p>To override these limits in the App, you can use the <code>--cpu-cores</code>,
+<code>--memory-limit</code>, and <code>--disk-quota</code> flags in the <code>kf run-task</code> command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf run-task test-app --command <span style="color:#4e9a06">&#34;printenv&#34;</span> --cpu-cores<span style="color:#ce5c00;font-weight:bold">=</span>0.5 --memory-limit<span style="color:#ce5c00;font-weight:bold">=</span>2G --disk-quota<span style="color:#ce5c00;font-weight:bold">=</span>5G
+</span></span></code></pre></div><h2 id="specify-a-custom-display-name-for-a-task">Specify a custom display name for a Task</h2>
+<p>You can optionally use the <code>--name</code> flag to specify a custom display name for a
+Task for easier identification/grouping:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kf run-task test-app --command &#34;printenv&#34; --name foo
+Task test-app-6swct is submitted successfully for execution.
+
+$ kf tasks test-app
+Listing Tasks in Space: test space
+Name              ID  DisplayName        Age    Duration  Succeeded  Reason
+test-app-6swct    3   foo                1m     21s       True       &lt;nil&gt;
+</code></pre><h2 id="manage-tasks">Manage Tasks</h2>
+<p>View all Tasks of an App with the <code>kf tasks APP_NAME</code> command:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kf tasks test-app
+Listing Tasks in Space: test space
+Name              ID  DisplayName        Age    Duration  Succeeded  Reason
+test-app-gd8dv    1   test-app-gd8dv     1m     21s       True       &lt;nil&gt;
+</code></pre><h2 id="cancel-a-task">Cancel a Task</h2>
+<p>Cancel an active Task by using the <code>kf terminate-task</code> command:</p>
+<ul>
+<li>
+<p>Cancel a Task by Task name:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kf terminate-task test-app-6w6mz
+Task &#34;test-app-6w6mz&#34; is successfully submitted for termination
+</code></pre></li>
+<li>
+<p>Or cancel a Task by <code><var>APP_NAME</var></code> + Task ID:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kf terminate-task test-app 2
+Task &#34;test-app-6w6mz&#34; is successfully submitted for termination
+</code></pre></li>
+</ul>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> You can only cancel Tasks that are pending/running. Completed Tasks are not cancellable.
+</aside>
+
+<p>Cancelled Tasks have <code>PipelineRunCancelled</code> status.</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kf tasks test-app
+Listing Tasks in Space: test space
+Name              ID  DisplayName        Age    Duration  Succeeded  Reason
+test-app-gd8dv    1   test-app-gd8dv     1m     21s       True       &lt;nil&gt;
+test-app-6w6mz    2   test-app-6w6mz     38s    11s       False      PipelineRunCancelled
+</code></pre><h2 id="view-task-logs">View Task logs</h2>
+<p>View logs of a Task by using the <code>kf logs APP_NAME --task</code> command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>$ kf logs test-app --task
+</span></span></code></pre></div>
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-52b92bfa0949442cec57f0a34cd75406">3 - Schedule Tasks</h1>
+    <div class="lead">Learn how to schedule tasks to run periodic jobs.</div>
+	<p>You can execute short-lived workflows by running them as <a href="/docs/v2.11/developer/tasks/task/">Tasks</a>.
+<a href="/docs/v2.11/developer/tasks/run-task/#push_an_app_for_running_tasks">Running Tasks</a>
+describes how to run Tasks under Apps.</p>
+<p>You can also schedule Tasks to run at recurring intervals
+specified using the <a href="https://man7.org/linux/man-pages/man5/crontab.5.html">unix-cron</a> format.
+With scheduled Tasks, you first push an App running the Task as you do with an unscheduled Task,
+and then create a Job to schedule the Task.</p>
+<p>You can define a schedule so that your Task runs multiple times a day or on specific
+days and months.</p>
+<h2 id="push-an-app-for-running-scheduled-tasks">Push an App for running scheduled Tasks</h2>
+<ol>
+<li>Clone the <a href="https://github.com/cloudfoundry-samples/test-app">test-app repo</a>:</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>git clone https://github.com/cloudfoundry-samples/test-app test-app
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87">cd</span> test-app
+</span></span></code></pre></div><ol>
+<li>
+<p>Push the App.</p>
+<p>Push the App with the <code>kf push APP_NAME --task</code> command. The <code>--task</code> flag indicates that the App is meant to be used for running Tasks, and thus no routes will be created on the App and it will not be deployed as a long-running application.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push test-app --task
+</span></span></code></pre></div></li>
+<li>
+<p>Confirm that no App instances or routes were created by listing the App:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf apps
+</span></span></code></pre></div><p>Notice that the App is not started and has no URLs:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">Listing Apps in Space: test-space
+Name                     Instances  Memory  Disk  CPU   URLs
+test-app                 stopped    1Gi     1Gi   100m  &lt;nil&gt;
+</code></pre></li>
+</ol>
+<h2 id="create-a-job">Create a Job</h2>
+<p>To run a Task on a schedule, you must first create a Job that describes the Task:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf create-job test-app test-job <span style="color:#4e9a06">&#34;printenv&#34;</span>
+</span></span></code></pre></div><p>The Job starts suspended or unscheduled, and does not create Tasks until it is
+manually executed by <code>kf run-job</code> or scheduled by <code>kf schedule-task</code>.</p>
+<h3 id="run-a-job-manually">Run a Job manually</h3>
+<p>Jobs can be run ad hoc similar to running Tasks by <code>kf run-task</code>. This option
+can be useful for testing the Job before scheduling or running as needed in addition
+to the schedule.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf run-job test-job
+</span></span></code></pre></div><p>This command runs the Task defined by the Job a single time immediately.</p>
+<h2 id="schedule-a-job">Schedule a Job</h2>
+<p>To schedule the Job for execution, you must provide a unix-cron schedule in the
+<code>kf schedule-job</code> command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf schedule-job test-job <span style="color:#4e9a06">&#34;* * * * *&#34;</span>
+</span></span></code></pre></div><p>This command triggers the Job to automatically create Tasks on the specified schedule.
+In this example a Task runs every minute.</p>
+<p>You can update a Job&rsquo;s schedule by running <code>kf schedule-task</code> with a new schedule.
+Jobs in Kf can only have a single cron schedule. This differs
+from the PCF Scheduler, which allows multiple schedules for a single Job.
+If you require multiple cron schedules, then you can achieve that with multiple Jobs.</p>
+<h2 id="manage-jobs-and-schedules">Manage Jobs and schedules</h2>
+<p>View all Jobs, both scheduled and unscheduled, in the current Space by using
+the <code>kf jobs</code> command:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kf jobs
+Listing Jobs in Space: test space
+Name               Schedule    Suspend  LastSchedule  Age  Ready  Reason
+test-job           * * * * *   &lt;nil&gt;    16s           2m   True   &lt;nil&gt;
+unscheduled-job    0 0 30 2 *  true     16s           2m   True   &lt;nil&gt;
+</code></pre>
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> The <code>unscheduled-job</code> has a default schedule set (<code>0 0 30 2 *</code>).
+This schedule is not active because the Job is suspended and is only present as a
+placeholder schedule for unscheduled Jobs.
+</aside>
+
+<p>Additionally, you can view only Jobs that are actively scheduled with
+the <code>kf job-schedules</code> command.</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kf job-schedules
+Listing job schedules in Space: test space
+Name           Schedule   Suspend  LastSchedule  Age  Ready  Reason
+test-job       * * * * *  &lt;nil&gt;    16s           2m   True   &lt;nil&gt;
+</code></pre><p>Notice how the <code>unscheduled-job</code> is not listed in the <code>kf job-schedules</code> output.</p>
+<h3 id="cancel-a-jobs-schedule">Cancel a Job&rsquo;s schedule</h3>
+<p>You can stop a scheduled Job with the <code>kf delete-job-schedule</code> command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf delete-job-schedule test-job
+</span></span></code></pre></div><p>This command suspends the Job and stops it from creating Tasks on the previous schedule.
+The Job is not deleted and can be scheduled again by <code>kf schedule-job</code> to continue execution.</p>
+<h3 id="delete-a-job">Delete a Job</h3>
+<p>The entire Job can be deleted with the <code>kf delete-job</code> command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf delete-job test-job
+</span></span></code></pre></div><p>This command deletes the Job and all Tasks that were created by the Job,
+both scheduled and manual executions. If any Tasks are still running, this command
+forcefully deletes them.</p>
+<p>If you want to ensure that running Tasks are not interrupted, then first delete
+the Jobs schedule with <code>kf delete-job-schedule</code>, wait for all Tasks to complete,
+and then delete the job by calling <code>kf delete-job</code>.</p>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-4 text-xs-center order-sm-2">
+        
+        
+        
+      </div>
+      <div class="col-6 col-sm-4 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" target="_blank" rel="noopener" href="https://github.com/google/kf" aria-label="GitHub">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Security mailing list" aria-label="Security mailing list">
+    <a class="text-white" target="_blank" rel="noopener" href="mailto:kf-security@google.com" aria-label="Security mailing list">
+      <i class="fa fa-envelope"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-4 text-center py-2 order-sm-2">
+        <small class="text-white">&copy; 2022 The Kf Authors All Rights Reserved</small>
+        
+	
+		
+	
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+    integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js"
+    integrity="sha512-UR25UO94eTnCVwjbXozyeVd6ZqpaAE9naiEUBK/A+QDbfSTQFhPGj5lOR6d8tsgbBk84Ggb5A3EkjsOgPRPcKA=="
+    crossorigin="anonymous"></script>
+
+
+
+
+
+<script src='/js/tabpane-persist.js'></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/js/main.min.91798a335c881f1b6b805085ba4aa22d1dbd2b0b18d105d05189fa104ddae350.js" integrity="sha256-kXmKM1yIHxtrgFCFukqiLR29KwsY0QXQUYn6EE3a41A=" crossorigin="anonymous"></script>
+
+
+
+
+  </body>
+</html>

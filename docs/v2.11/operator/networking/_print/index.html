@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.101.0" />
+<link rel="canonical" type="text/html" href="/docs/v2.11/operator/networking/">
+<link rel="alternate" type="application/rss&#43;xml" href="/docs/v2.11/operator/networking/index.xml">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/favicons/android-192x192.png" sizes="192x192">
+
+<title>Networking | Kf</title>
+<meta name="description" content="Learn about common cluster networking setups.
+">
+<meta property="og:title" content="Networking" />
+<meta property="og:description" content="Learn about common cluster networking setups.
+" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/v2.11/operator/networking/" /><meta property="og:site_name" content="Kf" />
+
+<meta itemprop="name" content="Networking">
+<meta itemprop="description" content="Learn about common cluster networking setups.
+"><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Networking"/>
+<meta name="twitter:description" content="Learn about common cluster networking setups.
+"/>
+
+
+
+
+<link rel="preload" href="/scss/main.scss" as="style">
+<link href="/scss/main.scss" rel="stylesheet" integrity="">
+
+<script
+  src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"
+  crossorigin="anonymous"></script>
+<script
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="/">
+		<span class="navbar-logo"></span><span class="font-weight-bold">Kf</span>
+	</a>
+	<div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+		<ul class="navbar-nav mt-2 mt-lg-0">
+			
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/developer/" ><span>Developer Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link active" href="/docs/v2.11/operator/" ><span class="active">Operator Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/troubleshooting/" ><span>Troubleshooting</span></a>
+			</li>
+			
+			
+			
+		</ul>
+	</div>
+	<div class="navbar-nav d-none d-lg-block"><input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="/offline-search-index.8271768637bdb31d52e7c162697e4315.json"
+  data-offline-search-base-href="/"
+  data-offline-search-max-results="10"
+>
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/docs/v2.11/operator/networking/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Networking</h1>
+<div class="lead">Learn about common cluster networking setups.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-7a417b00bb28a3931ab1fd45e7c32f1a">Set up a custom domain</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-02e4f4812df4620e950d845e9b74bf7c">Set up HTTPS ingress</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-73a1d3010499b813fad95f898bb1d8a8">Set up network policies</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-7a417b00bb28a3931ab1fd45e7c32f1a">1 - Set up a custom domain</h1>
+    <div class="lead">Learn to set up a DNS domain apps can use on your cluster.</div>
+	<p>All Kf Apps that serve HTTP traffic to users or applications
+outside of the cluster must be associated with a domain name.</p>
+<p>Kf has three locations where domains can be configured.
+Ordered by precedence, they are:</p>
+<ol>
+<li>Apps</li>
+<li>Spaces</li>
+<li>The <code>config-defaults</code> ConfigMap in the <code>kf</code> Namespace</li>
+</ol>
+<h2 id="edit-the-config-defaults-configmap">Edit the <code>config-defaults</code> ConfigMap</h2>
+<p>The <code>config-defaults</code> ConfigMap holds cluster-wide settings for Kf and can be edited by cluster administrators.
+The values in the ConfigMap are read by the Spaces controller and modify their configuration.
+Domain values are reflected in the Space&rsquo;s <code>status.networkConfig.domains</code> field.</p>
+<p>To modify Kf cluster&rsquo;s domain, edit the <code>config-defaults</code> ConfigMap in the <code>kf</code> Namespace:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kubectl edit configmap config-defaults -n kf
+</span></span></code></pre></div><p>Add or update the entry for the <code>spaceClusterDomain</code> key like the following:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">spaceClusterDomain</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">my-domain.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><p>To validate the configuration was updated correctly, check the domain value in a Space:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf space SPACE_NAME -o <span style="color:#4e9a06">&#34;jsonpath={.status.networkConfig.domains[][&#39;domain&#39;]}&#34;</span>
+</span></span></code></pre></div><p>The output will look similar to:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">Getting Space some-space
+some-space.my-domain.com
+</code></pre><p>Each Space prefixes the cluster domains with its own name.
+This prevents conflicts between Apps.</p>
+
+<aside class="alert alert-danger" style="border-width: 1px 1px 1px 4px;">
+<i class="fa-solid fa-triangle-exclamation"></i> <strong>Warning:</strong> Updating the <code>spaceClusterDomain</code> in <code>config-defaults</code> will immediately be
+reflected on all Spaces and Apps that haven&rsquo;t overridden the domain.
+</aside>
+
+
+<h2 id="assign-space-domains">Assign Space domains</h2>
+<p>Spaces are the authoritative location for domain configuration.
+You can assign domains and sub-domains to each Space for developers to use.
+The field for configuring domains is <code>spec.networkConfig.domains</code>.</p>
+<p>Use <code>kf space</code> to view the domains assigned to a Space:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf space SPACE_NAME
+</span></span></code></pre></div><p>In the output, the <code>Spec</code> field contains specific configuration for the Space
+and the <code>Status</code> field reflects configuration for the Space with cluster-wide
+defaults appended to the end:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">...
+Spec:
+  Network Config:
+    Domains:
+      Domain: my-space.mycompany.com
+...
+Status:
+  Network Config:
+    Domains:
+      Domain: my-space.mycompany.com
+      Domain: my-space.prod.us-east1.kf.mycompany.com
+</code></pre>
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Apps will use the <strong>first</strong> domain the status if developers don&rsquo;t specify a domain.
+</aside>
+
+<h3 id="add-or-remove-domains-using-the-cli">Add or remove domains using the CLI</h3>
+<p>The <code>kf</code> CLI supports mutations on Space domains. Each command outputs
+a diff between the old and new configurations.</p>
+<p>Add a new domain with <code>kf configure-space append-domain</code>:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf configure-space append-domain SPACE_NAME myspace.mycompany.com
+</span></span></code></pre></div><p>Add or make an existing domain the default with <code>kf configure-space set-default-domain</code>:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf configure-space set-default-domain SPACE_NAME myspace.mycompany.com
+</span></span></code></pre></div><p>And finally, remove a domain:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf configure-space remove-domain SPACE_NAME myspace.mycompany.com
+</span></span></code></pre></div>
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> You can override a cluster domains by inserting a new domain on the <code>spec</code> with the same <code>domain</code>.
+This ensures the space won&rsquo;t be updated if the cluster domain changes.
+</aside>
+
+<h2 id="use-apps-to-specify-domains">Use Apps to specify domains</h2>
+<p>Apps can specify domains as part of their configuration.
+Routes are mapped to Apps during <code>kf push</code> using the following logic:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">let current_routes  = The set of routes already on the app
+let manifest_routes = The set of routes defined by the manifest
+let flag_routes     = The set of routes supplied by the --route flag(s)
+let no_route        = Whether the manifest has no-route:true or --no-route is set
+let random_route    = Whether the manifest has random-route:true or --random-route is set
+
+let new_routes = Union(current_routes, manifest_routes, flag_routes)
+
+if new_routes.IsEmpty() then
+  if random_route then
+    new_routes.Add(CreateRandomRoute())
+  else
+    new_routes.Add(CreateDefaultRoute())
+  end
+end
+
+if no_route then
+  new_routes.RemoveAll()
+end
+
+return new_routes
+</code></pre><p>If an App doesn&rsquo;t specify a Route, or requests a random Route, the first domain
+on the Space is used. If the first domain on a Space changes, all Apps in the
+Space using the default domain are updated to reflect it.</p>
+<h2 id="customize-domain-templates">Customize domain templates</h2>
+<p>Kf supports variable substitution in domains. Substitution allows a single
+cluster-wide domain to be customized per-Space and to react to changes to the
+ingress IP. Substitution is performed on variables with the syntax <code>$(VARIABLE_NAME)</code>
+that occur in a domain.</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CLUSTER_INGRESS_IP</code></td>
+<td>The IPV4 address of the cluster ingress.</td>
+</tr>
+<tr>
+<td><code>SPACE_NAME</code></td>
+<td>The name of the Space.</td>
+</tr>
+</tbody>
+</table>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Use the <code>SPACE_NAME</code> variable in domains to allow developers in different
+Spaces to avoid DNS conflicts if they push Apps with the same name.
+</aside>
+
+<h3 id="examples">Examples</h3>
+<p>The following examples demonstrate how domain variables can be used to support
+a variety of different organizational structures and cluster patterns.</p>
+<ul>
+<li>
+<p>Using a wildcard DNS service like <a href="https://nip.io/">nip.io</a>:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$(SPACE_NAME).$(CLUSTER_INGRESS_IP).nip.io
+</code></pre></li>
+<li>
+<p>Domain for an organization with centrally managed DNS:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$(SPACE_NAME).cluster-name.example.com
+</code></pre></li>
+<li>
+<p>Domain for teams who manage their own DNS:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">cluster-name.$(SPACE_NAME).example.com
+</code></pre></li>
+<li>
+<p>Domain for a cluster with warm failover and external circuit breaker:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$(SPACE_NAME)-failover.cluster-name.example.com
+</code></pre></li>
+</ul>
+<h2 id="differences-between-kf-and-cf">Differences between Kf and CF</h2>
+<ul>
+<li>Kf Spaces prefix the cluster-wide domain with the Space name.</li>
+<li>Kf does not check for domain conflicts on user-specified routes.</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-02e4f4812df4620e950d845e9b74bf7c">2 - Set up HTTPS ingress</h1>
+    <div class="lead">Learn to set up a TLS certificate to enable HTTPS.</div>
+	<p>You can secure the ingress gateway with HTTPS by using simple TLS, and enable HTTPS connections to specific webpages. In addition, you can redirect HTTP connections to HTTPS.</p>
+<p>HTTPS creates a secure channel over an insecure network, protecting against man-in-the-middle attacks and encrypting traffic between the client and server. To prepare a web server to accept HTTPS connections, an administrator must create a public key certificate for the server. This certificate must be signed by a trusted certificate authority for a web browser to accept it without warning.</p>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> These instructions supplement the Istio instructions to <a href="https://istio.io/latest/docs/tasks/traffic-management/ingress/secure-ingress">configure a TLS ingress gateway</a>, and assume that a valid certificate and private key for the server have already been created.
+</aside>
+
+<p>Edit the gateway named external-gateway in the <code>kf</code> namespace using the built-in Kubernetes editor:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kubectl edit gateway -n kf external-gateway
+</span></span></code></pre></div><ol>
+<li>Assuming you have a certificate and key for your service, create a Kubernetes secret for the ingress gateway. Make sure the secret name does not begin with <code>istio</code> or <code>prometheus</code>. For this example, the secret is named <code>myapp-https-credential</code>.</li>
+<li>Under <code>servers:</code></li>
+<li>Add a section for port 443.</li>
+<li>Under <code>tls:</code>, set the <code>credentialName</code> to the name of the secret you just created.</li>
+<li>Under <code>hosts:</code>, add the host name of the service you want to secure with HTTPS. This can be set to an entire domain using a wildcard (e.g. <code>*.example.com</code>) or scoped to just one hostname (e.g. <code>myapp.example.com</code>).</li>
+<li>There should already be a section under <code>servers:</code> for port 80 HTTP. Keep this section in the Gateway definition if you would like all traffic to come in as HTTP.</li>
+<li>To redirect HTTP to HTTPS, add the value <code>httpsRedirect: true</code> under <code>tls</code> in the HTTP server section. See the <a href="https://istio.io/latest/docs/reference/config/networking/gateway/">Istio Gateway documentation</a> for reference. Note that adding this in the section where <code>hosts</code> is set to <code>*</code> means that <strong>all</strong> traffic is redirected to HTTPS. If you only want to redirect HTTP to HTTPS for a single app/domain, add a separate HTTP section specifying the redirect.</li>
+</ol>
+<p>Shown below is an example of a Gateway <code>spec</code> that sets up HTTPS for <code>myapp.example.com</code> and redirects HTTP to HTTPS for that host:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">spec</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">selector</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">istio</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">ingressgateway</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">servers</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">hosts</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span>- <span style="color:#000">myapp.example.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">port</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">https</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">number</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">443</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">HTTPS</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">tls</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">credentialName</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">myapp-https-credential</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">mode</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">SIMPLE</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">hosts</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span>- <span style="color:#000">myapp.example.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">port</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http-my-app</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">number</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">80</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">HTTP</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">tls</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">httpsRedirect</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#204a87;font-weight:bold">true</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">hosts</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span>- <span style="color:#4e9a06">&#39;*&#39;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">port</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">number</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">80</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">      </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">HTTP</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div>
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-73a1d3010499b813fad95f898bb1d8a8">3 - Set up network policies</h1>
+    <div class="lead">Learn to set up a Kubernetes NetworkPolicies to configure traffic.</div>
+	<p>Kf integrates tightly with Kubernetes and Istio to
+provide robust network policy enforcement.</p>
+<p>By default, Kf workloads are run in the Kubernetes cluster and resolve addresses
+using <a href="https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/">Kubernetes DNS</a>.
+This DNS resolver will first attempt to resolve addresses within the cluster,
+and only if none are found will attempt external resolution.</p>
+<p>Each Kf App gets run with an Envoy sidecar injected by <a href="https://istio.io/">Istio</a>
+or the <a href="https://cloud.google.com/anthos/service-mesh">Anthos Service Mesh</a> (ASM).
+This sidecar proxies all network traffic in and out of the Kubernetes Pod.</p>
+<p>Each Kubernetes Pod is executed on a Node, a physical or virtual machine
+responsible for managing the container images that make up a Pod. Nodes exist on
+a physical or virtual network.</p>
+<p>Together, these form a hierarchy of systems you can apply network policies.
+These are listed below from least to most granular.</p>
+<h2 id="network-level-policies">Network level policies</h2>
+<p>Workload protection starts with the network your GKE cluster is installed on.</p>
+<p>If you&rsquo;re running Kf on a GKE cluster on GCP, Kf recommends:</p>
+<ul>
+<li>Placing your GKE cluster on a <a href="https://cloud.google.com/vpc/docs">Virtual Private Cloud</a> (VPC) network.
+<ul>
+<li>With <a href="https://cloud.google.com/vpc/docs/configure-private-google-access">Private Google Access</a> enabled.</li>
+</ul>
+</li>
+<li>Using <a href="https://cloud.google.com/nat">Cloud NAT</a> to control egress.</li>
+</ul>
+<h2 id="node-level-policies">Node level policies</h2>
+<p>You can set up policies for containers running on the Node using Kubernetes NetworkPolicies.
+These are the closest mapping to Cloud Foundry network policies that exist in Kubernetes.</p>
+<p>NetworkPolicies are backed by a Kubernetes add-on. If you set up your own GKE
+cluster, you will need to <a href="https://cloud.google.com/kubernetes-engine/docs/how-to/network-policy">enable NetworkPolicy enforcement</a>.</p>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> NetworkPolicies applied by <a href="https://www.projectcalico.org/">Project Calico</a>
+filter on a per-connection basis. On Linux they are backed by <a href="https://en.wikipedia.org/wiki/Iptables">iptables</a>.
+Like any firewall, <strong>they are not a substitute of authentication and authorization</strong>.
+</aside>
+
+<p>Kf labels Apps with <code>kf.dev/networkpolicy=app</code> and builds with <code>kf.dev/networkpolicy=build</code>.
+This allows you to target NetworkPolicies directly at Pods running Apps or Builds.</p>
+<p>Each Kf Space creates two NetworkPolicies to start with, one targeting Apps and
+one targeting Builds. You can change the configuration on the Space&rsquo;s
+<code>spec.networkConfig.(app|build)NetworkPolicy.(in|e)gress</code> fields.
+These fields can be set to one of the following values:</p>
+<table>
+<thead>
+<tr>
+<th>Enum Value</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>PermitAll</code></td>
+<td>Allows all traffic.</td>
+</tr>
+<tr>
+<td><code>DenyAll</code></td>
+<td>Denies all traffic.</td>
+</tr>
+</tbody>
+</table>
+<p>By default Kf uses a permissive network policy. This allows the following
+functionality that Kf uses:</p>
+<ul>
+<li>North/South routing to the cluster ingress gateway</li>
+<li>Egress to the Internet e.g. to fetch Buildpacks</li>
+<li>East/West routing between Apps</li>
+<li>Access to the Kubernetes DNS server</li>
+<li>Access to container registries</li>
+<li>Direct access to the VPC network</li>
+<li>Access to Google services like Cloud Logging</li>
+<li>Access to the Workload Identity server for automatic rotating credentials</li>
+</ul>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Setting a default <code>DenyAll</code> policy will break existing and new Apps and Builds
+unless you create additional NetworkPolicies to add back the connections listed
+above.
+</aside>
+
+<h2 id="service-mesh-policies">Service mesh policies</h2>
+<p>If you need fine-grained networking control, authentication, authorization, and
+observability you can apply policies using <a href="https://cloud.google.com/service-mesh/docs/overview">Anthos Service Mesh</a>.</p>
+<p>A service mesh is an infrastructure layer that enables managed, observable and
+secure communication across your services, letting you create robust enterprise
+applications made up of many microservices on your chosen infrastructure.</p>
+<p>You can see the <a href="https://cloud.google.com/service-mesh/docs/supported-features">list of supported features here</a>.</p>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-4 text-xs-center order-sm-2">
+        
+        
+        
+      </div>
+      <div class="col-6 col-sm-4 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" target="_blank" rel="noopener" href="https://github.com/google/kf" aria-label="GitHub">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Security mailing list" aria-label="Security mailing list">
+    <a class="text-white" target="_blank" rel="noopener" href="mailto:kf-security@google.com" aria-label="Security mailing list">
+      <i class="fa fa-envelope"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-4 text-center py-2 order-sm-2">
+        <small class="text-white">&copy; 2022 The Kf Authors All Rights Reserved</small>
+        
+	
+		
+	
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+    integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js"
+    integrity="sha512-UR25UO94eTnCVwjbXozyeVd6ZqpaAE9naiEUBK/A+QDbfSTQFhPGj5lOR6d8tsgbBk84Ggb5A3EkjsOgPRPcKA=="
+    crossorigin="anonymous"></script>
+
+
+
+
+
+<script src='/js/tabpane-persist.js'></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/js/main.min.91798a335c881f1b6b805085ba4aa22d1dbd2b0b18d105d05189fa104ddae350.js" integrity="sha256-kXmKM1yIHxtrgFCFukqiLR29KwsY0QXQUYn6EE3a41A=" crossorigin="anonymous"></script>
+
+
+
+
+  </body>
+</html>

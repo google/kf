@@ -1,0 +1,266 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Kf – Getting Started</title>
+    <link>/docs/v2.11/getting-started/</link>
+    <description>Recent content in Getting Started on Kf</description>
+    <generator>Hugo -- gohugo.io</generator>
+    
+	  <atom:link href="/docs/v2.11/getting-started/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>Docs: Getting Started Overview</title>
+      <link>/docs/v2.11/getting-started/overview/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/getting-started/overview/</guid>
+      <description>
+        
+        
+        &lt;p&gt;With Kf, you can migrate your Cloud Foundry apps to
+Kubernetes without changing your developer workflows.&lt;/p&gt;
+&lt;p&gt;Use the following sections to get started deploying Cloud Foundry apps
+to Kf.&lt;/p&gt;
+&lt;h2 id=&#34;get-started-with-a-quickstart&#34;&gt;Get started with a quickstart&lt;/h2&gt;
+&lt;p&gt;Use the &lt;a href=&#34;/docs/v2.11/getting-started/quickstart/&#34;&gt;quickstart&lt;/a&gt; to install Kf and deploy a
+simple test Cloud Foundry app. This introduces you to the basic steps you&amp;rsquo;d
+perform for most app deployments.&lt;/p&gt;
+&lt;h2 id=&#34;get-an-introduction-to-key-concepts&#34;&gt;Get an introduction to key concepts&lt;/h2&gt;
+&lt;p&gt;For an introduction to the value of Kf, as well as
+high-level overviews of the technology, see the following documents:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;To learn more about how Kf works, see
+&lt;a href=&#34;/docs/v2.11/operator/kf-dependencies/&#34;&gt;Kf dependencies and architecture&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;For a side-by-side comparison of Cloud Foundry and Kf
+components, see
+&lt;a href=&#34;/docs/v2.11/getting-started/compare-services/&#34;&gt;Compare Cloud Foundry and Kf services&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;To learn how to use service brokers with Kf,
+see &lt;a href=&#34;/docs/v2.11/operator/service-brokers/about-service-brokers/&#34;&gt;Service brokers&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;For more information about Kf security design, see the
+&lt;a href=&#34;/docs/v2.11/operator/security/security-overview/&#34;&gt;Security overview&lt;/a&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Quickstart</title>
+      <link>/docs/v2.11/getting-started/quickstart/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/getting-started/quickstart/</guid>
+      <description>
+        
+        
+        &lt;p&gt;In this quickstart, you will deploy a sample Cloud Foundry app on an existing Kf cluster.&lt;/p&gt;
+&lt;h2 id=&#34;push-an-application&#34;&gt;Push an application&lt;/h2&gt;
+&lt;h3 id=&#34;prerequisites&#34;&gt;Prerequisites&lt;/h3&gt;
+&lt;p&gt;The following are required to complete this section:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;The &lt;code&gt;kf&lt;/code&gt; CLI installed and in your path.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;You have connected to the Kf Kubernetes cluster:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;gcloud container clusters get-credentials CLUSTER_NAME &lt;span style=&#34;color:#4e9a06&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;&lt;/span&gt;    --project&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;=&lt;/span&gt;CLUSTER_PROJECT_ID &lt;span style=&#34;color:#4e9a06&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;&lt;/span&gt;    --zone&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;=&lt;/span&gt;CLUSTER_LOCATION
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;The &lt;code&gt;git&lt;/code&gt; CLI installed and in your path.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;prepare-space&#34;&gt;Prepare space&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Create new space:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf create-space test-space
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Target the space:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf target -s test-space
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;push-the-cloud-foundry-test-app&#34;&gt;Push the Cloud Foundry test app&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Clone the &lt;a href=&#34;https://github.com/cloudfoundry-samples/test-app&#34;&gt;test-app repo&lt;/a&gt;.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;git clone https://github.com/cloudfoundry-samples/test-app go-test-app
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#204a87&#34;&gt;cd&lt;/span&gt; go-test-app
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Push the app.&lt;/p&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; It will take a few minutes for the build to complete.
+&lt;/aside&gt;
+
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf push test-app
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Get the application&amp;rsquo;s URL.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf apps
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; The app will have a random route by default.
+&lt;/aside&gt;
+
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Open the URL in your browser where you should see the app running.&lt;/p&gt;
+
+    &lt;figure&gt;
+        &lt;img src=&#34;./app-quickstart-success.png&#34;/&gt; &lt;figcaption&gt;
+                &lt;h4&gt;Successful app push on Kf&lt;/h4&gt;
+            &lt;/figcaption&gt;
+    &lt;/figure&gt;
+
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;clean-up&#34;&gt;Clean up&lt;/h2&gt;
+&lt;p&gt;These steps should return the cluster to the starting state.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Delete the application.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf delete test-app
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Delete the Space.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf delete-space test-space
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Compare Cloud Foundry and Kf services</title>
+      <link>/docs/v2.11/getting-started/compare-services/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/getting-started/compare-services/</guid>
+      <description>
+        
+        
+        &lt;p&gt;This document provides a side-by-side comparison of the various services
+available on Cloud Foundry (CF) and those that Kf integrates
+with on Google Cloud.&lt;/p&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; This guide does not attempt to compare the syntax or semantics of the SDK,
+APIs, or command-line tools provided by CF and Kf.
+&lt;/aside&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Service category&lt;/th&gt;
+      &lt;th&gt;Service&lt;/th&gt;
+      &lt;th&gt;CF&lt;/th&gt;
+      &lt;th&gt;Kf&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+  &lt;!-- Only include Service Category for the first row of each type --&gt;
+  &lt;!-- Platform Components --&gt;
+  &lt;tr&gt;
+    &lt;td&gt;Platform&lt;/td&gt;
+    &lt;td&gt;Infrastructure Orchestrator&lt;/td&gt;
+    &lt;td&gt;BOSH&lt;/td&gt;
+    &lt;td&gt;Kubernetes&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;td&gt;&lt;/td&gt;
+    &lt;td&gt;PaaS&lt;/td&gt;
+    &lt;td&gt;CF Application Runtime (CFAR)&lt;/td&gt;
+    &lt;td&gt;Kf&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;!-- Data Management --&gt;
+  &lt;tr&gt;
+    &lt;td&gt;Data management&lt;/td&gt;
+    &lt;td&gt;Service Broker&lt;/td&gt;
+    &lt;td&gt;Service Broker Tile&lt;/td&gt;
+    &lt;td&gt;Kubernetes Deployed Service Brokers&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;td&gt;&lt;/td&gt;
+    &lt;td&gt;MySQL&lt;/td&gt;
+    &lt;td&gt;MySQL Tile&lt;/td&gt;
+    &lt;td&gt;Kf Cloud Service Broker&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;td&gt;&lt;/td&gt;
+    &lt;td&gt;MongoDB&lt;/td&gt;
+    &lt;td&gt;MongoDB Tile&lt;/td&gt;
+    &lt;td&gt;Kf Cloud Service Broker&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;td&gt;&lt;/td&gt;
+    &lt;td&gt;RabbitMQ&lt;/td&gt;
+    &lt;td&gt;RabbitMQ Tile&lt;/td&gt;
+    &lt;td&gt;Kf Cloud Service Broker&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;td&gt;&lt;/td&gt;
+    &lt;td&gt;Redis&lt;/td&gt;
+    &lt;td&gt;Redis Tile&lt;/td&gt;
+    &lt;td&gt;Kf Cloud Service Broker&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;td&gt;&lt;/td&gt;
+    &lt;td&gt;Eureka&lt;/td&gt;
+    &lt;td&gt;Spring Cloud Services Tile&lt;/td&gt;
+    &lt;td&gt;&lt;a href=&#34;{{docs_path}}concepts/service-discovery&#34;&gt;Service Discovery&lt;/a&gt;&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;td&gt;&lt;/td&gt;
+    &lt;td&gt;Spring Cloud Config&lt;/td&gt;
+    &lt;td&gt;Spring Cloud Services Tile&lt;/td&gt;
+    &lt;td&gt;&lt;a href=&#34;{{docs_path}}how-to/deploying-spring-cloud-config&#34;&gt;Spring Cloud Config&lt;/a&gt;&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;!-- Operations tooling --&gt;
+  &lt;tr&gt;
+    &lt;td&gt;Operations tooling&lt;/td&gt;
+    &lt;td&gt;Continuous Integration (CI)&lt;/td&gt;
+    &lt;td&gt;Concourse Tile&lt;/td&gt;
+    &lt;td&gt;&lt;a href=&#34;https://github.com/concourse/concourse-chart&#34; target=&#34;_blank&#34; class=&#34;external&#34;&gt;Concourse Helm Chart&lt;/a&gt;&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;!-- Logging --&gt;
+  &lt;tr&gt;
+    &lt;td&gt;Logging&lt;/td&gt;
+    &lt;td&gt;Google Cloud&lt;/td&gt;
+    &lt;td&gt;Google Cloud Firehose Nozzle&lt;/td&gt;
+    &lt;td&gt;&lt;a href=&#34;https://cloud.google.com/blog/products/management-tools/using-logging-your-apps-running-kubernetes-engine&#34; target=&#34;_blank&#34; class=&#34;external&#34;&gt;Google Cloud Logging Kubernetes Agent&lt;/a&gt;&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;td&gt;&lt;/td&gt;
+    &lt;td&gt;Elastic&lt;/td&gt;
+    &lt;td&gt;Elastic Firehose Nozzle&lt;/td&gt;
+    &lt;td&gt;&lt;a href=&#34;https://cloud.google.com/solutions/partners/monitoring-gke-on-prem-with-the-elastic-stack&#34;&gt;Elastic Stack Agent&lt;/a&gt;&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;td&gt;&lt;/td&gt;
+    &lt;td&gt;Splunk&lt;/td&gt;
+    &lt;td&gt;Splunk Firehose Nozzle&lt;/td&gt;
+    &lt;td&gt;&lt;a href=&#34;https://cloud.google.com/solutions/logging-anthos-with-splunk-connect&#34;&gt;Splunk Connect&lt;/a&gt;&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+    &lt;td&gt;&lt;/td&gt;
+    &lt;td&gt;Metrics&lt;/td&gt;
+    &lt;td&gt;CF App Metrics&lt;/td&gt;
+    &lt;td&gt;&lt;a href=&#34;https://cloud.google.com/monitoring/&#34;&gt;Google Cloud Monitoring Kubernetes AGent&lt;/a&gt;&lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+      </description>
+    </item>
+    
+  </channel>
+</rss>

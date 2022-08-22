@@ -1,0 +1,306 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Kf – Examples</title>
+    <link>/docs/v2.11/examples/</link>
+    <description>Recent content in Examples on Kf</description>
+    <generator>Hugo -- gohugo.io</generator>
+    
+	  <atom:link href="/docs/v2.11/examples/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>Docs: Deploy Spring Cloud Config</title>
+      <link>/docs/v2.11/examples/deploying-spring-cloud-config/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/examples/deploying-spring-cloud-config/</guid>
+      <description>
+        
+        
+        &lt;p&gt;This document shows how to deploy Spring Cloud Config in a Kf cluster.&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://cloud.spring.io/spring-cloud-config/reference/html/&#34;&gt;Spring Cloud Config&lt;/a&gt;
+provides a way to decouple application code from its runtime configuration.
+The Spring Cloud Config configuration server can read configuration files from Git
+repositories, the local filesystem, &lt;a href=&#34;https://www.vaultproject.io/&#34;&gt;HashiCorp Vault servers&lt;/a&gt;,
+or &lt;a href=&#34;https://docs.cloudfoundry.org/credhub/&#34;&gt;Cloud Foundry CredHub&lt;/a&gt;.
+Once the configuration server has read the configuration, it can format and serve
+that configuration as YAML, &lt;a href=&#34;https://docs.oracle.com/cd/E23095_01/Platform.93/ATGProgGuide/html/s0204propertiesfileformat01.html&#34;&gt;Java Properties&lt;/a&gt;,
+or JSON over HTTP.&lt;/p&gt;
+&lt;h2 id=&#34;before-you-begin&#34;&gt;Before you begin&lt;/h2&gt;
+&lt;p&gt;You will need a cluster with Kf installed and access to the Kf CLI.&lt;/p&gt;
+&lt;p&gt;Additionally, you will need the following software:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;&lt;code&gt;git&lt;/code&gt;&lt;/strong&gt;: Git is required to clone a repository.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;download-the-spring-cloud-config-configuration-server&#34;&gt;Download the Spring Cloud Config configuration server&lt;/h2&gt;
+&lt;p&gt;To download the configuration server source:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Open a terminal.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Clone the source for the configuration server:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;git clone --depth &lt;span style=&#34;color:#0000cf;font-weight:bold&#34;&gt;1&lt;/span&gt; &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;https://github.com/google/kf&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;configure-and-deploy-a-configuration-server&#34;&gt;Configure and deploy a configuration server&lt;/h2&gt;
+&lt;p&gt;To update the settings for the instance:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Change directory to &lt;code&gt;spring-cloud-config-server&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#204a87&#34;&gt;cd&lt;/span&gt; kf/spring-cloud-config-server
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Open &lt;code&gt;manifest.yaml&lt;/code&gt;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Change the &lt;code&gt;GIT_URI&lt;/code&gt; environment variable to the URI of your Git configuration server.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Optionally, change the name of the application in the manifest.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Optionally, &lt;a href=&#34;https://cloud.spring.io/spring-cloud-config/reference/html/#_environment_repository&#34;&gt;configure additional properties or alternative property sources&lt;/a&gt;
+by editing &lt;code&gt;src/main/resources/application.properties&lt;/code&gt;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Deploy the configuration server without an external route. If you changed
+the name of the application in the manifest, update it here:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf push --no-route spring-cloud-config
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; The default configuration is not production ready. The &lt;code&gt;README.md&lt;/code&gt; file contains
+additional steps to take if you want to deploy the application to production.
+&lt;/aside&gt;
+
+&lt;h2 id=&#34;bind-applications-to-the-configuration-server&#34;&gt;Bind applications to the configuration server&lt;/h2&gt;
+&lt;p&gt;You can create a &lt;a href=&#34;/docs/v2.11/developer/backing-services/user-provided-services/&#34;&gt;user provided service&lt;/a&gt;
+to bind the deployed configuration server to other Kf
+applications in the same cluster or namespace.&lt;/p&gt;
+&lt;p&gt;How you configure them will depend on the library you use:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Applications using Pivotal&amp;rsquo;s Spring Cloud services client library&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Existing PCF applications that use &lt;a href=&#34;https://github.com/pivotal-cf/spring-cloud-services-starters&#34;&gt;Pivotal&amp;rsquo;s Spring Cloud Services client library&lt;/a&gt;
+can be bound using the following method:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Create a user provided service named &lt;var&gt;config-server&lt;/var&gt;. This step
+only has to be done once per configuration server:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf cups config-server -p &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;{&amp;#34;uri&amp;#34;:&amp;#34;http://spring-cloud-config&amp;#34;}&amp;#39;&lt;/span&gt; -t configuration
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; If you want to use a configuration server in a different space,
+change the URI &lt;a href=&#34;/docs/v2.11/developer/service-discovery/service-discovery/#how_to_use_service_discovery_with&#34;&gt;to include the space&lt;/a&gt;.
+&lt;/aside&gt;
+
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;For each application that needs get credentials, run:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf bind-service application-name config-server
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf restart application-name
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This will create an entry into the &lt;code&gt;VCAP_SERVICES&lt;/code&gt; environment variable for
+the configuration server.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;ul&gt;
+&lt;li&gt;Other applications&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Applications that can connect directly to a Spring Cloud Config configuration
+server should be configured to access it using its cluster internal URI:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;http://spring-cloud-config
+&lt;/code&gt;&lt;/pre&gt;
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; If you want to use a configuration server in a different space, change the URI
+&lt;a href=&#34;/docs/v2.11/developer/service-discovery/service-discovery/#how_to_use_service_discovery_with&#34;&gt;to include the space name&lt;/a&gt;.
+&lt;/aside&gt;
+
+&lt;ul&gt;
+&lt;li&gt;For Spring applications that use the &lt;a href=&#34;https://cloud.spring.io/spring-cloud-config/multi/multi__spring_cloud_config_client.html&#34;&gt;Spring Cloud Config client library&lt;/a&gt;
+can set the &lt;code&gt;spring.cloud.config.uri&lt;/code&gt; property in the appropriate location
+for your application. This is usually an &lt;code&gt;application.properties&lt;/code&gt; or
+&lt;code&gt;application.yaml&lt;/code&gt; file.&lt;/li&gt;
+&lt;li&gt;For other frameworks, see your library&amp;rsquo;s reference information.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;delete-the-configuration-server&#34;&gt;Delete the configuration server&lt;/h2&gt;
+&lt;p&gt;To remove a configuration server:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Remove all bindings to the configuration server running the following commands for each bound application:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf unbind-service application-name config-server
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf restart application-name
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Remove the service entry for the configuration server:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf delete-service config-server
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Delete the configuration server application:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf delete spring-cloud-config
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;whats-next&#34;&gt;What&amp;rsquo;s next&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Read more about the &lt;a href=&#34;https://cloud.spring.io/spring-cloud-config/reference/html/#_environment_repository&#34;&gt;types of configuration sources&lt;/a&gt;
+Spring Cloud Config supports.&lt;/li&gt;
+&lt;li&gt;Learn about &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices&#34;&gt;the structure of the &lt;code&gt;VCAP_SERVICES&lt;/code&gt; environment variable&lt;/a&gt;
+to understand how it can be used for service discovery.&lt;/li&gt;
+&lt;/ul&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Deploy Spring Music</title>
+      <link>/docs/v2.11/examples/spring-music/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/examples/spring-music/</guid>
+      <description>
+        
+        
+        &lt;p&gt;These instructions will walk you through deploying the &lt;a href=&#34;https://github.com/cloudfoundry-samples/spring-music&#34;&gt;Cloud Foundry Spring
+Music&lt;/a&gt; reference App using the Kf Cloud Service Broker.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Building Java Apps from source&lt;/strong&gt;: The Spring Music source will be built on
+the cluster, not locally.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Service broker integration&lt;/strong&gt;: You will create a database using the Kf Cloud Service Broker and bind the Spring Music App to it.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Spring Cloud Connectors&lt;/strong&gt;: &lt;a href=&#34;https://cloud.spring.io/spring-cloud-connectors/&#34;&gt;Spring Cloud
+Connectors&lt;/a&gt; are used by the Spring Music App to
+detect things like bound CF services. They work seamlessly with Kf.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Configuring the Java version&lt;/strong&gt;: You will specify the version of Java you
+want the buildpack to use.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;prerequisites&#34;&gt;Prerequisites&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;/docs/v2.11/operator/service-brokers/deploying-cloud-sb/&#34;&gt;Install and configure the Kf Cloud Service Broker&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&#34;deploy-spring-music&#34;&gt;Deploy Spring Music&lt;/h2&gt;
+&lt;h3 id=&#34;clone-source&#34;&gt;Clone source&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Clone the &lt;a href=&#34;https://github.com/cloudfoundry-samples/spring-music&#34;&gt;Spring Music repo&lt;/a&gt;.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;git clone https://github.com/cloudfoundry-samples/spring-music.git spring-music
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#204a87&#34;&gt;cd&lt;/span&gt; spring-music
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Edit &lt;code&gt;manifest.yml&lt;/code&gt;, and replace &lt;code&gt;path: build/libs/spring-music-1.0.jar&lt;/code&gt; with &lt;code&gt;stack: org.cloudfoundry.stacks.cflinuxfs3&lt;/code&gt;. This instructs Kf to build from source using &lt;a href=&#34;https://cloud.google.com/blog/products/containers-kubernetes/google-cloud-now-supports-buildpacks&#34;&gt;cloud native buildpacks&lt;/a&gt; so you don&amp;rsquo;t have to compile locally.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;---
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;applications:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;- name: spring-music
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  memory: 1G
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  random-route: &lt;span style=&#34;color:#204a87&#34;&gt;true&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  stack: org.cloudfoundry.stacks.cflinuxfs3
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  env:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    JBP_CONFIG_SPRING_AUTO_RECONFIGURATION: &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;{enabled: false}&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;#    JBP_CONFIG_OPEN_JDK_JRE: &amp;#39;{ jre: { version: 11.+ } }&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;push-spring-music-with-no-bindings&#34;&gt;Push Spring Music with no bindings&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Create and target a Space.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf create-space &lt;span style=&#34;color:#204a87&#34;&gt;test&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf target -s &lt;span style=&#34;color:#204a87&#34;&gt;test&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Deploy Spring Music.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf push spring-music
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Use the proxy feature to access the deployed App.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Start the proxy:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf proxy spring-music
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Open &lt;code&gt;http://localhost:8080&lt;/code&gt; in your browser:&lt;/p&gt;
+
+      &lt;figure&gt;
+          &lt;img src=&#34;./sm1.png&#34;
+               alt=&#34;Screenshot of Spring Music showing no profile.&#34;/&gt; 
+      &lt;/figure&gt;
+
+&lt;p&gt;The deployed App includes a UI element showing which (if any) Spring profile is being used. No profile is being used here, indicating an in-memory database is in use.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h3 id=&#34;create-and-bind-a-database&#34;&gt;Create and bind a database&lt;/h3&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Create a PostgresSQL database from the marketplace.&lt;/p&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; You must set the &lt;code&gt;COMPUTE_REGION&lt;/code&gt; and &lt;code&gt;VPC_NAME&lt;/code&gt; variables so Kf Cloud Service Broker knows where to provision your instance, and authorize the VPC Kf Apps run on to access it.
+&lt;/aside&gt;
+
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf create-service csb-google-postgres small spring-music-postgres-db -c &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;{&amp;#34;region&amp;#34;:&amp;#34;COMPUTE_REGION&amp;#34;,&amp;#34;authorized_network&amp;#34;:&amp;#34;VPC_NAME&amp;#34;}&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Bind the Service with the App.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf bind-service spring-music spring-music-postgres-db
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Restart the App to make the service binding available via the VCAP_SERVICES environment variable.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf restart spring-music
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;(Optional) View the binding details.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf bindings
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Verify the App is using the new binding.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Start the proxy:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf proxy spring-music
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Open &lt;code&gt;http://localhost:8080&lt;/code&gt; in your browser:&lt;/p&gt;
+
+        &lt;figure&gt;
+            &lt;img src=&#34;./sm2.png&#34;
+                 alt=&#34;Screenshot of Spring Music showing a profile.&#34;/&gt; 
+        &lt;/figure&gt;
+
+&lt;p&gt;You now see the Postgres profile is being used, and we see the name of our Service we bound the App to.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;clean-up&#34;&gt;Clean up&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Unbind and delete the PostgreSQL service:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf unbind-service spring-music spring-music-db
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf delete-service spring-music-db
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Delete the App:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf delete spring-music
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+      </description>
+    </item>
+    
+  </channel>
+</rss>

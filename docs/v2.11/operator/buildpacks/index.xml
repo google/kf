@@ -1,0 +1,341 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Kf – Stacks and Buildpacks</title>
+    <link>/docs/v2.11/operator/buildpacks/</link>
+    <description>Recent content in Stacks and Buildpacks on Kf</description>
+    <generator>Hugo -- gohugo.io</generator>
+    
+	  <atom:link href="/docs/v2.11/operator/buildpacks/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>Docs: Customize stacks</title>
+      <link>/docs/v2.11/operator/buildpacks/configure-stacks/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/operator/buildpacks/configure-stacks/</guid>
+      <description>
+        
+        
+        &lt;p&gt;The Stack configuration can be updated by editing the &lt;code&gt;kfsystem&lt;/code&gt; Custom Resource:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl edit kfsystem kfsystem
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This example sets the Google Cloud buildpacks a V3 Stack:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;spec:
+  kf:
+    config:
+      spaceStacksV3:
+      - name: google
+        description: Google buildpacks (https://github.com/GoogleCloudPlatform/buildpacks)
+        buildImage: gcr.io/buildpacks/builder:v1
+        runImage: gcr.io/buildpacks/gcp/run:v1
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This new Stack can now be pushed:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf push myapp --stack google
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This example configures the Ruby V2 buildpack and sets the build pipeline defaults to use V2 Stacks:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;spec:
+  kf:
+    config:
+      spaceDefaultToV3Stack: false
+      spaceBuildpacksV2:
+      - name: ruby_buildpack
+        url: https://github.com/cloudfoundry/ruby-buildpack
+      spaceStacksV2:
+      - name: cflinuxfs3
+        image: cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5
+&lt;/code&gt;&lt;/pre&gt;
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Customize stacks and buildpacks</title>
+      <link>/docs/v2.11/operator/buildpacks/customizing-buildpacks/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/operator/buildpacks/customizing-buildpacks/</guid>
+      <description>
+        
+        
+        &lt;p&gt;Buildpacks are used by Kf to turn an application&amp;rsquo;s source
+code into an executable image. Cloud Native buildpacks use the latest
+&lt;a href=&#34;https://github.com/buildpack/spec&#34;&gt;Buildpack API v3&lt;/a&gt;.
+Companies are actively adding v3 support to existing buildpacks.&lt;/p&gt;
+&lt;p&gt;Kf supports buildpacks that conform to both &lt;a href=&#34;https://docs.cloudfoundry.org/buildpacks/understand-buildpacks.html&#34;&gt;V2&lt;/a&gt;
+and &lt;a href=&#34;https://docs.cloudfoundry.org/buildpacks/understand-buildpacks.html&#34;&gt;V3&lt;/a&gt;
+of the Buildpack API specification.&lt;/p&gt;
+&lt;h2 id=&#34;compare-v2-and-v3-buildpacks&#34;&gt;Compare V2 and V3 buildpacks&lt;/h2&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;V2 buildpacks&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;V3 buildpacks&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;Alternate names&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;Cloud Foundry buildpacks&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;Cloud Native buildpacks (CNB), Builder Images&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;Status&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;Being replaced&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;Current&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;Ownership&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;Cloud Foundry&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;&lt;a href=&#34;https://buildpacks.io&#34;&gt;Buildpacks.io&lt;/a&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;Stack&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;Shared by builder and runtime&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;Optionally different for builder and runtime&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;Local development&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;Not possible&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;Yes, with the &lt;a href=&#34;https://buildpacks.io&#34;&gt;&lt;code&gt;pack&lt;/code&gt; CLI&lt;/a&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;Custom buildpacks&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;Available at runtime&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;Must be built into the builder&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h2 id=&#34;buildpack-lifecycle&#34;&gt;Buildpack lifecycle&lt;/h2&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Step&lt;/th&gt;
+&lt;th&gt;Cloud Foundry&lt;/th&gt;
+&lt;th&gt;Kf with buildpacks V2&lt;/th&gt;
+&lt;th&gt;Kf with buildpacks V3&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Source location&lt;/td&gt;
+&lt;td&gt;BITS service&lt;/td&gt;
+&lt;td&gt;Container registry&lt;/td&gt;
+&lt;td&gt;Container registry&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Buildpack location&lt;/td&gt;
+&lt;td&gt;BOSH/HTTP&lt;/td&gt;
+&lt;td&gt;HTTP&lt;/td&gt;
+&lt;td&gt;Container registry&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Stack location&lt;/td&gt;
+&lt;td&gt;BOSH&lt;/td&gt;
+&lt;td&gt;Container registry&lt;/td&gt;
+&lt;td&gt;Container registry&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Result&lt;/td&gt;
+&lt;td&gt;Droplet (App binary without stack)&lt;/td&gt;
+&lt;td&gt;Image (Droplet on a stack)&lt;/td&gt;
+&lt;td&gt;Image&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Runtime&lt;/td&gt;
+&lt;td&gt;Droplet glued on top of stack and run&lt;/td&gt;
+&lt;td&gt;Run produced image&lt;/td&gt;
+&lt;td&gt;Run produced image&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Kf &lt;em&gt;always&lt;/em&gt; produces a full, executable image as a result of its build process.
+Cloud Foundry, on the other hand, produces parts of an executable image at build time and the rest is added at runtime.&lt;/p&gt;
+&lt;p&gt;Kf chose to follow the model of always producing a full image for the following reasons:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Images can be exported, run locally, and inspected statically&lt;/li&gt;
+&lt;li&gt;Better security and auditing with tools like &lt;a href=&#34;https://cloud.google.com/binary-authorization/&#34;&gt;binary authorization&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;App deployments are reproducible&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;kf-and-buildpacks&#34;&gt;Kf and buildpacks&lt;/h2&gt;
+&lt;p&gt;Kf stores its global list of buildpacks and stacks in the
+&lt;code&gt;config-defaults&lt;/code&gt; ConfigMap in the &lt;code&gt;kf&lt;/code&gt; Namespace. Modification of the buildpacks and stacks properties should be done at the &lt;code&gt;kfsystem&lt;/code&gt; Custom Resource, the Kf operator automatically updates the &lt;code&gt;config-defaults&lt;/code&gt; ConfigMap based on the values set at &lt;code&gt;kfsystem&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Each Space reflects these buildpacks in its status field.
+For a Space named &lt;code&gt;buildpack-docs&lt;/code&gt; you could run the following to see the full
+Space configuration:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf space buildpack-docs
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Getting Space buildpack-docs
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;API Version:  kf.dev/v1alpha1
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Kind:         Space
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Metadata:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  Creation Timestamp:  2020-02-14T15:09:52Z
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  Name:                buildpack-docs
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  Self Link:           /apis/kf.dev/v1alpha1/spaces/buildpack-docs
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  UID:                 0cf1e196-4f3c-11ea-91a4-42010a80008d
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Status:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  Build Config:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Buildpacks V2:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    - Name:      staticfile_buildpack
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      URL:       https://github.com/cloudfoundry/staticfile-buildpack
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      Disabled:  &lt;span style=&#34;color:#204a87&#34;&gt;false&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    - Name:      java_buildpack
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      URL:       https://github.com/cloudfoundry/java-buildpack
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      Disabled:  &lt;span style=&#34;color:#204a87&#34;&gt;false&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Stacks V2:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    - Image:  cloudfoundry/cflinuxfs3
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      Name:   cflinuxfs3
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Stacks V3:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    - Build Image:  cloudfoundry/cnb:cflinuxfs3
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      Description:  A large Cloud Foundry stack based on Ubuntu 18.04
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      Name:         org.cloudfoundry.stacks.cflinuxfs3
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      Run Image:    cloudfoundry/run:full-cnb
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Under the &lt;code&gt;Build Config&lt;/code&gt; section there are three fields to look at:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Buildpacks V2 contains a list of V2 compatible buildpacks in the order they&amp;rsquo;ll be run&lt;/li&gt;
+&lt;li&gt;Stacks V2 indicates the stacks that can be chosen to trigger a V2 buildpack build&lt;/li&gt;
+&lt;li&gt;Stacks V3 indicates the stacks that can be chosen to trigger a V3 buildpack build&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;You can also list the stacks with &lt;code&gt;kf stacks&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf stacks
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Getting stacks in Space: buildpack-docs
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Version  Name                                Build Image                  Run Image                  Description
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;V2       cflinuxfs3                          cloudfoundry/cflinuxfs3      cloudfoundry/cflinuxfs3
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;V3       org.cloudfoundry.stacks.cflinuxfs3  cloudfoundry/cnb:cflinuxfs3  cloudfoundry/run:full-cnb  A large Cloud Foundry stack based on Ubuntu 18.04
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Because V3 build images already have their buildpacks built-in, you must use &lt;code&gt;kf buildpacks&lt;/code&gt; to get the list:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf buildpacks
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Getting buildpacks in Space: buildpack-docs
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Buildpacks &lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;for&lt;/span&gt; V2 stacks:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  Name                   Position  URL
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  staticfile_buildpack   &lt;span style=&#34;color:#0000cf;font-weight:bold&#34;&gt;0&lt;/span&gt;         https://github.com/cloudfoundry/staticfile-buildpack
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  java_buildpack         &lt;span style=&#34;color:#0000cf;font-weight:bold&#34;&gt;1&lt;/span&gt;         https://github.com/cloudfoundry/java-buildpack
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;V3 Stack: org.cloudfoundry.stacks.cflinuxfs3:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  Name                                        Position  Version     Latest
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  org.cloudfoundry.jdbc                       &lt;span style=&#34;color:#0000cf;font-weight:bold&#34;&gt;0&lt;/span&gt;         v1.0.179    &lt;span style=&#34;color:#204a87&#34;&gt;true&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  org.cloudfoundry.jmx                        &lt;span style=&#34;color:#0000cf;font-weight:bold&#34;&gt;1&lt;/span&gt;         v1.0.180    &lt;span style=&#34;color:#204a87&#34;&gt;true&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  org.cloudfoundry.go                         &lt;span style=&#34;color:#0000cf;font-weight:bold&#34;&gt;2&lt;/span&gt;         v0.0.2      &lt;span style=&#34;color:#204a87&#34;&gt;true&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  org.cloudfoundry.tomcat                     &lt;span style=&#34;color:#0000cf;font-weight:bold&#34;&gt;3&lt;/span&gt;         v1.1.102    &lt;span style=&#34;color:#204a87&#34;&gt;true&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  org.cloudfoundry.distzip                    &lt;span style=&#34;color:#0000cf;font-weight:bold&#34;&gt;4&lt;/span&gt;         v1.0.171    &lt;span style=&#34;color:#204a87&#34;&gt;true&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  org.cloudfoundry.springboot                 &lt;span style=&#34;color:#0000cf;font-weight:bold&#34;&gt;5&lt;/span&gt;         v1.1.2      &lt;span style=&#34;color:#204a87&#34;&gt;true&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  ...
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;customize-v3-buildpacks&#34;&gt;Customize V3 buildpacks&lt;/h2&gt;
+&lt;p&gt;You can customize the buildpacks that are available to your developers by
+creating your own builder image with exactly the buildpacks they should have
+access to. You can also use builder images published by other authors.&lt;/p&gt;
+&lt;h3 id=&#34;use-a-third-party-builder-image&#34;&gt;Use a third-party builder image&lt;/h3&gt;
+&lt;p&gt;A list of published CNB stacks is available from the
+&lt;a href=&#34;https://buildpacks.io/docs/install-pack/&#34;&gt;Buildpack CLI &lt;code&gt;pack&lt;/code&gt;&lt;/a&gt;.
+As of this writing, &lt;code&gt;pack suggest-stacks&lt;/code&gt; outputs:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;pack suggest-stacks
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Stacks maintained by the community:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Stack ID: heroku-18
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Description: The official Heroku stack based on Ubuntu 18.04
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Maintainer: Heroku
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Build Image: heroku/pack:18-build
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Run Image: heroku/pack:18
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Stack ID: io.buildpacks.stacks.bionic
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Description: A minimal Cloud Foundry stack based on Ubuntu 18.04
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Maintainer: Cloud Foundry
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Build Image: cloudfoundry/build:base-cnb
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Run Image: cloudfoundry/run:base-cnb
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Stack ID: org.cloudfoundry.stacks.cflinuxfs3
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Description: A large Cloud Foundry stack based on Ubuntu 18.04
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Maintainer: Cloud Foundry
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Build Image: cloudfoundry/build:full-cnb
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Run Image: cloudfoundry/run:full-cnb
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Stack ID: org.cloudfoundry.stacks.tiny
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Description: A tiny Cloud Foundry stack based on Ubuntu 18.04, similar to distroless
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Maintainer: Cloud Foundry
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Build Image: cloudfoundry/build:tiny-cnb
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    Run Image: cloudfoundry/run:tiny-cnb
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;To modify Kf to use the stack published by Heroku, edit
+&lt;code&gt;kfsystem&lt;/code&gt; Custom Resource, which automatically updates the &lt;code&gt;config-defaults&lt;/code&gt; ConfigMap in the &lt;code&gt;kf&lt;/code&gt; Namespace.
+Add an entry to the &lt;code&gt;spaceStacksV3&lt;/code&gt; key like the following:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl edit kfsystem kfsystem
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;spaceStacksV3: &lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;|&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  - name: org.cloudfoundry.stacks.cflinuxfs3
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    description: A large Cloud Foundry stack based on Ubuntu 18.04
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    buildImage: cloudfoundry/cnb:cflinuxfs3
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    runImage: cloudfoundry/run:full-cnb
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  - name: heroku-18
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    description: The official Heroku stack based on Ubuntu 18.04
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    buildImage: heroku/pack:18-build
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    runImage: heroku/pack:18
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Then, run &lt;code&gt;stacks&lt;/code&gt; again:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf stacks
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Getting stacks in Space: buildpack-docs
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Version  Name                                Build Image                  Run Image                  Description
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;V2       cflinuxfs3                          cloudfoundry/cflinuxfs3      cloudfoundry/cflinuxfs3
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;V3       org.cloudfoundry.stacks.cflinuxfs3  cloudfoundry/cnb:cflinuxfs3  cloudfoundry/run:full-cnb  A large Cloud Foundry stack based on Ubuntu 18.04
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;V3       heroku-18                           heroku/pack:18-build         heroku/pack:18             The official Heroku stack based on Ubuntu 18.04
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;create-your-own-builder-image&#34;&gt;Create your own builder image&lt;/h3&gt;
+&lt;p&gt;The &lt;a href=&#34;https://buildpacks.io/docs/install-pack/&#34;&gt;Buildpack CLI &lt;code&gt;pack&lt;/code&gt;&lt;/a&gt;
+is used to create your own builder image. You can follow &lt;code&gt;pack&lt;/code&gt;&amp;rsquo;s
+&lt;a href=&#34;https://buildpacks.io/docs/using-pack/working-with-builders/&#34;&gt;Working with builders using &lt;code&gt;create-builder&lt;/code&gt;&lt;/a&gt;
+documentation to create your own builder image. After it&amp;rsquo;s created, push it to a
+container registry and add it to the &lt;code&gt;kfsystem&lt;/code&gt; Custom Resource.&lt;/p&gt;
+&lt;h2 id=&#34;set-a-default-stack&#34;&gt;Set a default stack&lt;/h2&gt;
+&lt;p&gt;Apps will be assigned a default stack if one isn&amp;rsquo;t supplied in their manifest.
+The default stack is the first in the V2 or V3 stacks list. Unless overridden,
+a V2 stack is chosen for compatibility with Cloud Foundry.&lt;/p&gt;
+&lt;p&gt;You can force Kf to use a V3 stack instead of a V2 by setting the
+&lt;code&gt;spaceDefaultToV3Stack&lt;/code&gt; field in the &lt;code&gt;kfsystem&lt;/code&gt; Custom Resource to be &lt;code&gt;&amp;quot;true&amp;quot;&lt;/code&gt; (&lt;code&gt;kfsystem&lt;/code&gt; automatically updates corresonding &lt;code&gt;spaceDefaultToV3Stack&lt;/code&gt; field in the &lt;code&gt;config-defaults&lt;/code&gt; ConfigMap):&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl edit kfsystem kfsystem
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;spaceDefaultToV3Stack: &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;true&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This option can also be modified on a per-Space basis by changing setting the
+&lt;code&gt;spec.buildConfig.defaultToV3Stack&lt;/code&gt; field to be &lt;code&gt;true&lt;/code&gt; or &lt;code&gt;false&lt;/code&gt;. If unset,
+the value from the &lt;code&gt;config-defaults&lt;/code&gt; ConfigMap is used.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;&lt;code&gt;config-defaults&lt;/code&gt; value for &lt;code&gt;spaceDefaultToV3Stack&lt;/code&gt;&lt;/th&gt;
+&lt;th&gt;Space&amp;rsquo;s &lt;code&gt;spec.buildConfig.defaultToV3Stack&lt;/code&gt;&lt;/th&gt;
+&lt;th&gt;Default stack&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;em&gt;unset&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;&lt;em&gt;unset&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;V2&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;&amp;quot;false&amp;quot;&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;em&gt;unset&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;V2&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;&amp;quot;true&amp;quot;&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;em&gt;unset&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;V3&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;em&gt;any&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;false&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;V2&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;em&gt;any&lt;/em&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;true&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;V3&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+      </description>
+    </item>
+    
+  </channel>
+</rss>

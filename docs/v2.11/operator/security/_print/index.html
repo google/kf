@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.101.0" />
+<link rel="canonical" type="text/html" href="/docs/v2.11/operator/security/">
+<link rel="alternate" type="application/rss&#43;xml" href="/docs/v2.11/operator/security/index.xml">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/favicons/android-192x192.png" sizes="192x192">
+
+<title>Security | Kf</title>
+<meta name="description" content="Learn about security considerations for your Kf cluster.">
+<meta property="og:title" content="Security" />
+<meta property="og:description" content="Learn about security considerations for your Kf cluster." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/v2.11/operator/security/" /><meta property="og:site_name" content="Kf" />
+
+<meta itemprop="name" content="Security">
+<meta itemprop="description" content="Learn about security considerations for your Kf cluster."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Security"/>
+<meta name="twitter:description" content="Learn about security considerations for your Kf cluster."/>
+
+
+
+
+<link rel="preload" href="/scss/main.scss" as="style">
+<link href="/scss/main.scss" rel="stylesheet" integrity="">
+
+<script
+  src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"
+  crossorigin="anonymous"></script>
+<script
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="/">
+		<span class="navbar-logo"></span><span class="font-weight-bold">Kf</span>
+	</a>
+	<div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+		<ul class="navbar-nav mt-2 mt-lg-0">
+			
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/developer/" ><span>Developer Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link active" href="/docs/v2.11/operator/" ><span class="active">Operator Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/troubleshooting/" ><span>Troubleshooting</span></a>
+			</li>
+			
+			
+			
+		</ul>
+	</div>
+	<div class="navbar-nav d-none d-lg-block"><input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="/offline-search-index.8271768637bdb31d52e7c162697e4315.json"
+  data-offline-search-base-href="/"
+  data-offline-search-max-results="10"
+>
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/docs/v2.11/operator/security/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Security</h1>
+<div class="lead">Learn about security considerations for your Kf cluster.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-618739ac86f5ed17603f48ea81584abf">Security Overview</a></li>
+
+
+    
+    <ul>
+        
+  
+  
+  
+  
+
+  
+
+    </ul>
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-304425574fd6e3f21a7dd1619983268f">Role-based access control</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-40ff7467b86eb5796edbb4944e3340fe">Configure role-based access control</a></li>
+
+
+    
+  
+    
+    
+	
+<li>4: <a href="#pg-4497b76abb619113621471039e747061">Enable compute isolation</a></li>
+
+
+    
+  
+    
+    
+	
+<li>5: <a href="#pg-f4376724fa27ad233014070cf3e62b66">Kubernetes Roles</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-618739ac86f5ed17603f48ea81584abf">1 - Security Overview</h1>
+    <div class="lead">Unerstand Kf&rsquo;s security posture.</div>
+	<p>Kf aims to provide a similar developer experience to Cloud Foundry, replicating the build, push, and deploy lifecycle. It does this by building a developer UX layer on top of widely-known, broadly used and adopted technologies like Kubernetes, Istio, and container registries rather than by implementing all the pieces from the ground up.</p>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Kf should be used in a GCP Project dedicated to your evaluation. See <a href="#important-considerations">Important considerations</a> for more information.
+</aside>
+
+<p>When making security decisions, Kf aims to provide complete solutions that are native to their respective components and can be augmented with other mechanisms. Breaking that down:</p>
+<ul>
+<li><strong>Complete solutions</strong> means that Kf tries not to provide partial solutions that can lead to a false sense of security.</li>
+<li><strong>Native</strong> means that the solutions should be a part of the component rather than a Kf construct to prevent breaking changes.</li>
+<li><strong>Can be augmented</strong> means the approach Kf takes should work seamlessly with other Kubernetes and Google Cloud tooling for defense in depth.</li>
+</ul>
+<h2 id="important-considerations">Important considerations</h2>
+<p>In addition to the <a href="#current-limitations">Current limitations</a> described below, it is important that you read through and understand the items outlined in this section.</p>
+<h3 id="workload-identity">Workload Identity</h3>
+<p>By default, Kf uses <a href="https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity">Workload Identity</a> to provide secure delivery and rotation of the Service Account credentials used by Kf to interact with your Google Cloud Project. Workload Identity achieves this by mapping a Kubernetes Service Account (KSA) to a Google Service Account (GSA). The Kf controller runs in the <code>kf</code> namespace and uses a KSA named <code>controller</code> mapped to your GSA to do the following things:</p>
+<ol>
+<li>Write metrics to Stackdriver</li>
+<li>When a new Kf space is created (<code>kf create-space</code>), the Kf controller creates a new KSA named <code>kf-builder</code> in the new space and maps it to the same GSA.</li>
+<li>The <code>kf-builder</code> KSA is used by Tekton to push and pull container images to Google Container Registry (gcr.io)</li>
+</ol>
+<p>This diagram illustrates those interactions:</p>
+
+<figure>
+    <img src="./wi_overview.svg"
+         alt="Workload identity overview diagram"/> 
+</figure>
+
+<h3 id="current-limitations">Current limitations</h3>
+<ul>
+<li>
+<p>Kf doesn&rsquo;t provide pre-built RBAC roles. Until
+Kf provides this, use
+<a href="https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control">RBAC</a>.</p>
+</li>
+<li>
+<p>A developer pushing an app with Kf can also create
+Pods (with <code>kubectl</code>) that can use the <code>kf-builder</code> KSA with the permissions
+of its associated GSA.</p>
+</li>
+<li>
+<p>Deploying to Kf requires write access to a container
+registry. Deploy Kf in a dedicated project without
+access to production resources. Grant developers access to push code to the
+Artifact Repository by
+<a href="https://cloud.google.com/container-registry/docs/access-control">granting them <code>roles/storage.admin</code></a>
+on the project or buckets that Artifact Repository uses.</p>
+</li>
+<li>
+<p>Kf uses the same Pod to fetch, build, and store images.
+Assume that any credentials that you provide can be known by the authors and
+publishers of the buildpacks you use.</p>
+</li>
+<li>
+<p>Kf doesn&rsquo;t support quotas to protect against noisy
+neighbors. Use Kubernetes
+<a href="https://kubernetes.io/docs/concepts/policy/resource-quotas/">resource quotas</a>.</p>
+</li>
+</ul>
+<h2 id="other-resources">Other resources</h2>
+<h3 id="google-cloud">Google Cloud</h3>
+<h4 id="general">General</h4>
+<ul>
+<li><a href="https://cloud.google.com/kubernetes-engine/docs/concepts/security-overview">GKE security overview</a></li>
+<li><a href="https://cloud.google.com/kubernetes-engine/docs/concepts/multitenancy-overview">GKE cluster multi-tenancy</a></li>
+<li><a href="https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity">Workload Identity</a></li>
+<li><a href="https://cloud.google.com/kubernetes-engine/docs/how-to/iam">GKE and Cloud IAM policies</a></li>
+</ul>
+<h4 id="recommended-protections">Recommended protections</h4>
+<ul>
+<li><a href="https://cloud.google.com/kubernetes-engine/docs/how-to/protecting-cluster-metadata">Protecting cluster metadata</a></li>
+<li><a href="https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control">Role-based access control</a></li>
+</ul>
+<h4 id="advanced-protections">Advanced protections</h4>
+<ul>
+<li><a href="https://cloud.google.com/kubernetes-engine/docs/how-to/sandbox-pods">GKE Sandbox</a></li>
+<li><a href="https://cloud.google.com/kubernetes-engine/docs/how-to/network-policy">Network policies</a></li>
+</ul>
+
+</div>
+
+
+
+    
+      
+  
+  
+  
+  
+
+  
+  
+
+  
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-304425574fd6e3f21a7dd1619983268f">2 - Role-based access control</h1>
+    <div class="lead">Learn about how to share a Kf cluster using roles.</div>
+	<p>Kf provides a set of Kubernetes roles that allow multiple teams to share a Kf cluster.
+This page describes the roles and best practices to follow when using them.</p>
+<h2 id="when-to-use-kf-roles">When to use Kf roles</h2>
+<p>Kf roles allow multiple teams to share a Kubernetes
+cluster with Kf installed. The roles provide access to
+individual Kf Spaces.</p>
+<p>Use Kf roles to share access to a cluster if the
+following are true:</p>
+<ul>
+<li>The cluster is used by trusted teams.</li>
+<li>Workloads on the cluster share the same assumptions about the level of
+security provided by the environment.</li>
+<li>The cluster exists in a Google Cloud project that is tightly controlled.</li>
+</ul>
+<p>Kf roles will not:</p>
+<ul>
+<li>Protect your cluster from untrusted developers or workloads. See the
+<a href="https://cloud.google.com/blog/products/containers-kubernetes/exploring-container-security-the-shared-responsibility-model-in-gke-container-security-shared-responsibility-model-gke">GKE shared responsibility model</a>
+for more information.</li>
+<li>Provide isolation for your workloads. See the
+<a href="https://cloud.google.com/kubernetes-engine/docs/how-to/hardening-your-cluster">guide to harden your cluster</a>
+for more information.</li>
+<li>Prevent
+<a href="https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control">additional Kubernetes roles</a>
+from being defined that interact with Kf.</li>
+<li>Prevent access from <a href="https://cloud.google.com/kubernetes-engine/docs/how-to/iam">administrators who have access to the Google Cloud project or cluster</a>.</li>
+</ul>
+<h2 id="roles">Kf roles</h2>
+<p>The following sections describe the Kubernetes RBAC Roles provided by
+Kf and how they interact with GKE IAM.</p>
+<h3 id="predefined_roles">Predefined roles</h3>
+<p>Kf provides several predefined Kubernetes roles to help
+you provide access to different subjects that perform different roles. Each
+predefined role can be bound to a subject within a Kubernetes Namespace managed
+by a Kf Space.</p>
+<p>When a subject is bound to a role within a Kubernetes Namespace, their access is
+limited to objects that exist in the Namespace that match the grants listed in
+the role. In Kf, some resources are defined at the cluster
+scope. Kf watches for changes to subjects in the Namespace
+and grants additional, limited, roles at the cluster scope.</p>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Title</th>
+<th>Description</th>
+<th>Scope</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>space-auditor</code></td>
+<td>Space Auditor</td>
+<td>Allows read-only access to a Space.</td>
+<td>Space</td>
+</tr>
+<tr>
+<td><code>space-developer</code></td>
+<td>Space Developer</td>
+<td>Allows application developers to deploy and manage applications within a Space.</td>
+<td>Space</td>
+</tr>
+<tr>
+<td><code>space-manager</code></td>
+<td>Space Manager</td>
+<td>Allows administration and the ability to manage auditors, developers, and managers in a Space.</td>
+<td>Space</td>
+</tr>
+<tr>
+<td><code>SPACE_NAME-manager</code></td>
+<td>Dynamic Space Manager</td>
+<td>Provides write access to a single Space object, automatically granted to all subjects with the <code>space-manager</code> role within the named Space.</td>
+<td>Cluster</td>
+</tr>
+<tr>
+<td><code>kf-cluster-reader</code></td>
+<td>Cluster Reader</td>
+<td>Allows read-only access to cluster-scoped Kf objects, automatically granted to all <code>space-auditor</code>, <code>space-developer</code>, and <code>space-manager</code>.</td>
+<td>Cluster</td>
+</tr>
+</tbody>
+</table>
+<p>Information about the policy rules that make up each predefined role can be found in the
+<a href="/docs/v2.11/operator/security/kubernetes-roles/">Kf roles reference documentation</a>.</p>
+<h3 id="interaction_with_iam">Google Cloud IAM roles</h3>
+<p>Kf roles provide access control for objects within a
+Kubernetes cluster. Subjects must also be granted an Cloud IAM role to
+authenticate to the cluster:</p>
+<ul>
+<li>
+<p><strong>Platform administrators</strong> should be granted the <code>roles/container.admin</code> Cloud IAM role.
+This will allow them to install, upgrade, and delete Kf as well as create, and delete
+cluster scoped Kf objects like <a href="kf-dependencies#custom-resources">Spaces or ClusterServiceBrokers</a>.</p>
+</li>
+<li>
+<p><strong>Kf end-users</strong> should be granted the <code>roles/container.viewer</code> Cloud IAM role.
+This role will allow them to authenticate to a cluster with limited permissions that can be expanded using
+Kf roles.</p>
+</li>
+</ul>
+<p>Google Cloud IAM offers additional <a href="https://cloud.google.com/iam/docs/understanding-roles#predefined_roles">predefined Roles</a>
+for GKE to solve more advanced use cases.</p>
+<h2 id="map-cloud-foundry-roles-to-kf">Map Cloud Foundry roles to Kf</h2>
+<p><a href="https://docs.cloudfoundry.org/concepts/roles.html">Cloud Foundry provides roles</a>
+are similar to Kf&rsquo;s <a href="#predefined_roles">predefined roles</a>.
+Cloud Foundry has two major types of roles:</p>
+<ul>
+<li>Roles assigned by the User Account and Authentication (UAA) subsystem that provide
+coarse-grained OAuth scopes applicable to all Cloud Foundry API endpoints.</li>
+<li>Roles granted within the Cloud Controller API (CAPI) that provide fine-grained
+access to API resources.</li>
+</ul>
+<h3 id="uaa-roles">UAA roles</h3>
+<p>Roles provided by UAA are most similar to project scoped Google Cloud IAM roles:</p>
+<ul>
+<li><strong>Admin</strong> users in Cloud Foundry can perform administrative activities for all
+Cloud Foundry organizations and spaces. The role is most similar to the
+<code>roles/container.admin</code> Google Cloud IAM role.</li>
+<li><strong>Admin read-only</strong> users in Cloud Foundry can access all Cloud Foundry API
+endpoints. The role is most similar to the <code>roles/container.admin</code>
+Google Cloud IAM role.</li>
+<li><strong>Global auditor</strong> users in Cloud Foundry have read access to all Cloud Foundry API
+endpoints except for secrets.
+There is no equivalent Google Cloud IAM role, but you can create a
+<a href="https://cloud.google.com/iam/docs/creating-custom-roles">custom role</a> with similar permissions.</li>
+</ul>
+<h3 id="cloud-controller-api-roles">Cloud Controller API roles</h3>
+<p>Roles provided by CAPI are most similar to Kf roles granted within a cluster
+to subjects that have the <code>roles/container.viewer</code> Google Cloud IAM role on the owning project:</p>
+<ul>
+<li><strong>Space auditors</strong> in Cloud Foundry have read-access to resources in a CF space.
+The role is most similar to the <code>space-auditor</code> Kf role.</li>
+<li><strong>Space developers</strong> in Cloud Foundry have the ability to deploy and manage
+applications in a CF space.
+The role is most similar to the <code>space-developer</code> Kf role.</li>
+<li><strong>Space managers</strong> in Cloud Foundry can modify settings for the CF space and
+assign users to roles.
+The role is most similar to the <code>space-manager</code> Kf role.</li>
+</ul>
+<h2 id="whats-next">What&rsquo;s next</h2>
+<ul>
+<li>Learn more about <a href="https://cloud.google.com/kubernetes-engine/docs/concepts/security-overview">GKE security in the Security Overview</a>.</li>
+<li>Make sure you understand the <a href="https://cloud.google.com/blog/products/containers-kubernetes/exploring-container-security-the-shared-responsibility-model-in-gke-container-security-shared-responsibility-model-gke">GKE shared responsibility
+model</a>.</li>
+<li>Learn more about <a href="https://cloud.google.com/kubernetes-engine/docs/concepts/access-control">access control</a> in GKE.</li>
+<li>Read the <a href="https://cloud.google.com/kubernetes-engine/docs/concepts/multitenancy-overview">GKE multi-tenancy overview</a>.</li>
+<li>Learn about <a href="https://cloud.google.com/kubernetes-engine/docs/how-to/hardening-your-cluster">hardening your GKE cluster</a>.</li>
+<li>Understand the <a href="/docs/v2.11/operator/security/kubernetes-roles/">Kubernetes permissions that make up each Kf predefined role</a>.</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-40ff7467b86eb5796edbb4944e3340fe">3 - Configure role-based access control</h1>
+    <div class="lead">Learn to grant users different roles on a cluster.</div>
+	<p>The following steps guide you through configuring role-based access control (RBAC) in a Kf Space.</p>
+<h2 id="before-you-begin">Before you begin</h2>
+<p>Please follow the <a href="https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control">GKE RBAC guide</a> before continuing with the following steps.</p>
+<h2 id="configure-identity-and-access-management-iam">Configure Identity and Access Management (IAM)</h2>
+<p>In addition to permissions granted through Kf RBAC, users, groups, or service accounts must also be authenticated to view GKE clusers at the project level. This requirement is the same as for configuring GKE RBAC, meaning users/groups must have at least the <code>container.clusters.get</code> IAM permission in the project containing the cluster. This permission is included by the <code>container.clusterViewer</code> role, and other more privilleged roles. For more information, review <a href="https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-interaction">Interaction with Identity and Access Management</a>.</p>
+<p>Assign <code>container.clusterViewer</code> to a user or group.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>gcloud projects add-iam-policy-binding <span style="color:#4e9a06">${</span><span style="color:#000">CLUSTER_PROJECT_ID</span><span style="color:#4e9a06">}</span> <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  --role<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;container.clusterViewer&#34;</span> <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  --member<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;</span><span style="color:#4e9a06">${</span><span style="color:#000">MEMBER</span><span style="color:#4e9a06">}</span><span style="color:#4e9a06">&#34;</span>
+</span></span></code></pre></div><p>Example member values are:</p>
+<ul>
+<li>user:test-user@gmail.com</li>
+<li>group:admins@example.com</li>
+<li>serviceAccount:test123@example.domain.com</li>
+</ul>
+<h2 id="manage-space-membership-as-spacemanager">Manage Space membership as SpaceManager</h2>
+<p>The cluster admin role, or members with <strong>SpaceManager</strong> role, can assign role to a user, group or service account.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf set-space-role MEMBER -t <span style="color:#ce5c00;font-weight:bold">[</span>Group<span style="color:#000;font-weight:bold">|</span>ServiceAccount<span style="color:#000;font-weight:bold">|</span>User<span style="color:#ce5c00;font-weight:bold">]</span>
+</span></span></code></pre></div><p>The cluster admin role, or members with <strong>SpaceManager</strong> role, can remove a member from a role.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf unset-space-role MEMBER -t <span style="color:#ce5c00;font-weight:bold">[</span>Group<span style="color:#000;font-weight:bold">|</span>ServiceAccount<span style="color:#000;font-weight:bold">|</span>User<span style="color:#ce5c00;font-weight:bold">]</span>
+</span></span></code></pre></div><p>You can view members and their roles within a Space.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf space-users
+</span></span></code></pre></div><h3 id="examples">Examples</h3>
+<p>Assign <strong>SpaceDeveloper</strong> role to a user.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf set-space-role alice@example.com SpaceDeveloper
+</span></span></code></pre></div><p>Assign <strong>SpaceDeveloper</strong> role to a group.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf set-space-role devs@example.com SpaceDeveloper -t Group
+</span></span></code></pre></div><p>Assign <strong>SpaceDeveloper</strong> role to a Service Account.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf set-space-role sa-dev@example.domain.com SpaceDeveloper -t ServiceAccount
+</span></span></code></pre></div><h2 id="app-development-as-spacedeveloper">App development as SpaceDeveloper</h2>
+<p>Members with <strong>SpaceDeveloper</strong> role can perform Kf App development operations within the Space.</p>
+<p>To push an App:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push app_name -p <span style="color:#ce5c00;font-weight:bold">[</span>PATH_TO_APP_ROOT_DIRECTORY<span style="color:#ce5c00;font-weight:bold">]</span>
+</span></span></code></pre></div><p>To view logs of an App:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf logs app_name
+</span></span></code></pre></div><p>SSH into a Kubernetes Pod running the App:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf ssh app_name
+</span></span></code></pre></div><p>View available service brokers:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf marketplace
+</span></span></code></pre></div><h2 id="view-apps-as-spacemanager-or-spaceauditor">View Apps as SpaceManager or SpaceAuditor</h2>
+<p>Members with <strong>SpaceManager</strong> or <strong>SpaceAuditor</strong> role could view available Apps within the Space:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf apps
+</span></span></code></pre></div><h2 id="view-kf-spaces-within-a-cluster">View Kf Spaces within a cluster</h2>
+<p>All roles (<strong>SpaceManager</strong>, <strong>SpaceDeveloper</strong>, and <strong>SpaceAuditor</strong>) can view available Kf Spaces within a cluster:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf spaces
+</span></span></code></pre></div><p>View Space members and their roles within a Space.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf space-users
+</span></span></code></pre></div><h2 id="impersonation-flags">Impersonation flags</h2>
+<p>To verify a member&rsquo;s permission, a member with more priviliaged permission can test another member&rsquo;s permissions using the impersonation flags: <code>--as</code> and <code>--as-group</code>.</p>
+<p>For example, as a cluster admin, you can verify if a user (username: bob) has permission to push an App.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push APP_NAME --as bob
+</span></span></code></pre></div><p>Verify a group (<code>manager-group@example.com</code>) has permission to assign permission to other members.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf set-space-role bob SpaceDeveloper --as-group manager-group@example.com
+</span></span></code></pre></div>
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-4497b76abb619113621471039e747061">4 - Enable compute isolation</h1>
+    <div class="lead">Isolate the underlying nodes certain apps or builds are scheuled onto.</div>
+	<p>Kf Apps can be deployed on dedicated nodes in the cluster.
+This feature is required if you have the circumstances where you might want more
+control on a node where an App Pod lands. For example:</p>
+<ul>
+<li>If you are sharing the same cluster for different Apps but want dedicated
+nodes for a particular App.</li>
+<li>If you want dedicated nodes for a given organization (Kf Space).</li>
+<li>If you want to target a specific operating system like Windows.</li>
+<li>If you want to co-locate Pods from two different services that frequently
+communicate.</li>
+</ul>
+<p>To enable compute isolation, Kf uses the Kubernetes <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node">nodeSelector</a>. To
+use this feature, first add labels on the nodes or node pools where you want
+your App Pods to land and then add the same qualifying labels on the Kf Space.
+All the Apps installed in this Space then land on the nodes with matching labels.</p>
+<p>Kf creates a Kubernetes pod to execute each Kf Build, the buildNodeSelector feature can be used to isolate compute resources to execute only the Build pods. One use case is to isolate Build pods to run on nodes with SSD, while running the App pods on other nodes. The BuildNodeSelectors feature provides compute resource optimization and flexibility in the cluster. Please refer to chapter &lsquo;Configure BuildNodeSelectors and a build node pool&rsquo; on this page.</p>
+<h2 id="configure-nodeselector-in-a-kf-cluster">Configure nodeSelector in a Kf cluster</h2>
+<p>By default, compute isolation is disabled. Use the following procedure
+to configure labels and nodeSelector.</p>
+<ol>
+<li>
+<p>Add a label (<code>distype=ssd</code>) on the node where you want your application pods to
+land.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kubectl label nodes nodeid <span style="color:#000">disktype</span><span style="color:#ce5c00;font-weight:bold">=</span>ssd
+</span></span></code></pre></div></li>
+<li>
+<p>Add the same label on the Kf Space. All Apps deployed in this Space
+will then land on the qualifying nodes.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf configure-space set-nodeselector space-name disktype ssd
+</span></span></code></pre></div><p>You can add multiple labels by running the same command again.</p>
+</li>
+<li>
+<p>Check the label is configured.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf configure-space get-nodeselector space-name
+</span></span></code></pre></div></li>
+<li>
+<p>Delete the label from the space.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf configure-space unset-nodeselector space-name disktype
+</span></span></code></pre></div></li>
+</ol>
+<h2 id="override-nodeselector-for-kf-stacks">Override nodeSelector for Kf stacks</h2>
+<p>Deployment of Kf Apps can be further targeted based
+on what stack is being used to build and package the App. For
+example, if you want your applications built with <code>spaceStacksV2</code> to land on
+nodes with Linux kernel 4.4.1., <code>nodeSelector</code> values on a stack override the
+values configured on the Space.</p>
+<p>To configure the <code>nodeSelector</code> on a stack:</p>
+<ol>
+<li>
+<p>Edit the <code>config-defaults</code> of your Kf cluster and add the labels.</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kubectl -n kf edit configmaps config-defaults
+</code></pre></li>
+<li>
+<p>Add <code>nodeSelector</code> to the stacks definition.</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">.....
+.....
+spaceStacksV2: |
+- name:  cflinuxfs3
+        image: cloudfoundry/cflinuxfs3
+        nodeSelector:
+              OS_KERNEL: LINUX_4.4.1 
+.....
+.....
+</code></pre></li>
+</ol>
+<h2 id="configure-buildnodeselectors-and-a-build-node-pool">Configure BuildNodeSelectors and a Build node pool</h2>
+<p>Build node selectors are only effective at overriding the node selectors for the Build pods, they do not affect App pods. For example, if you specify both the node selectors on the Space and the Build node selectors in Kfsystem, App pods will have the Space node selectors while the Build pods will have the Build node selectors from Kfsystem; if node selectors are only specified in the Space, both the App and Build pods will have the node selector from the Space.</p>
+<ol>
+<li>
+<p>Add labels (<code>disktype:ssd</code> for example) on the nodes that you want your Build pods to be assigned to.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kubectl label nodes nodeid <span style="color:#000">disktype</span><span style="color:#ce5c00;font-weight:bold">=</span>ssd
+</span></span></code></pre></div></li>
+<li>
+<p>Add/update Build node selectors (in the format of <code>key:value</code> pairs) by patching KfSystem CR.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kubectl patch kfsystem kfsystem --type<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#39;json&#39;</span> -p<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#39;[{&#39;</span>op<span style="color:#4e9a06">&#39;: &#39;</span>replace<span style="color:#4e9a06">&#39;, &#39;</span>path<span style="color:#4e9a06">&#39;: &#39;</span>/spec/kf/config/buildNodeSelectors<span style="color:#4e9a06">&#39;, &#39;</span>value<span style="color:#4e9a06">&#39;: {&lt;key&gt;:&lt;value&gt;}}]&#39;</span>
+</span></span></code></pre></div><p>For example, to add <code>disktype=ssd</code> as the Build node selector:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kubectl patch kfsystem kfsystem --type<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#39;json&#39;</span> -p<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#39;[{&#39;</span>op<span style="color:#4e9a06">&#39;: &#39;</span>replace<span style="color:#4e9a06">&#39;, &#39;</span>path<span style="color:#4e9a06">&#39;: &#39;</span>/spec/kf/config/buildNodeSelectors<span style="color:#4e9a06">&#39;, &#39;</span>value<span style="color:#4e9a06">&#39;: {&#34;disktype&#34;:&#34;ssd&#34;}}]&#39;</span>
+</span></span></code></pre></div></li>
+</ol>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-f4376724fa27ad233014070cf3e62b66">5 - Kubernetes Roles</h1>
+    <div class="lead">Understand how Kf uses Kubernetes&rsquo; RBAC to assign roles.</div>
+	<p>The following sections describe the <a href="https://kubernetes.io/docs/reference/access-authn-authz/rbac/">Kubernetes ClusterRoles</a>
+that are created by Kf and lists the permissions that are
+contained in each ClusterRole.</p>
+<h2 id="space-developer">Space developer role</h2>
+<p>The Space developer role aggregates permissions application developers use
+to deploy and manage applications within a Kf Space.</p>
+<p>You can retrieve the permissions granted to Space developers on your cluster
+using the following command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kubectl describe clusterrole space-developer
+</span></span></code></pre></div><p>The default installation of Kf provides the following
+permissions:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">PolicyRule:
+  Resources                               Non-Resource URLs  Resource Names  Verbs
+  ---------                               -----------------  --------------  -----
+  events                                  []                 []              [*]
+  secrets                                 []                 []              [*]
+  *.kf.dev                                []                 []              [*]
+  networkpolicies.networking.k8s.io       []                 []              [*]
+  pods/exec                               []                 []              [create]
+  *.upload.kf.dev                         []                 []              [create]
+  pods/log                                []                 []              [get list watch]
+  pods                                    []                 []              [get list watch]
+  rolebindings.rbac.authorization.k8s.io  []                 []              [get list watch]
+</code></pre><h2 id="space-auditor">Space auditor role</h2>
+<p>The Space auditor role aggregates read-only permissions that auditors and
+automated tools use to validate applications within a
+Kf Space.</p>
+<p>You can retrieve the permissions granted to Space auditors on your cluster
+using the following command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kubectl describe clusterrole space-auditor
+</span></span></code></pre></div><p>The default installation of Kf provides the following
+permissions:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">PolicyRule:
+  Resources                               Non-Resource URLs  Resource Names  Verbs
+  ---------                               -----------------  --------------  -----
+  events                                  []                 []              [*]
+  apps.kf.dev                             []                 []              [get list watch]
+  rolebindings.rbac.authorization.k8s.io  []                 []              [get list watch]
+</code></pre><h2 id="space-manager">Space manager role</h2>
+<p>The Space manager role aggregates permissions that allow delegation of duties to
+others within a Kf Space.</p>
+<p>You can retrieve the permissions granted to Space managers on your cluster
+using the following command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kubectl describe clusterrole space-manager
+</span></span></code></pre></div><p>The default installation of Kf provides the following
+permissions:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">PolicyRule:
+  Resources                               Non-Resource URLs  Resource Names     Verbs
+  ---------                               -----------------  --------------     -----
+  clusterroles.rbac.authorization.k8s.io  []                 [space-auditor]    [bind]
+  clusterroles.rbac.authorization.k8s.io  []                 [space-developer]  [bind]
+  clusterroles.rbac.authorization.k8s.io  []                 [space-manager]    [bind]
+  rolebindings.rbac.authorization.k8s.io  []                 []                 [get list update patch watch]
+  apps.kf.dev                             []                 []                 [get list watch]
+</code></pre>
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Subjects bound to the <code>space-manager</code> ClusterRole within a
+Kf Space are also granted write access to that Space.
+</aside>
+
+<h2 id="dynamic-space-manager">Dynamic Space manager role</h2>
+<p>Each Kf Space creates a ClusterRole with the name
+<code>SPACE_NAME-manager</code>, where
+<code>SPACE_NAME-manager</code> is called the dynamic manager role.</p>
+<p>Kf
+automatically grants all subjects with the <code>space-manager</code> role within the
+Space the dynamic manager role at the cluster scope. The permissions for the
+dynamic manager role allow Space managers to update settings on the Space with
+the given name.</p>
+<p>You can retrieve the permissions granted to the dynamic manager role for any
+Space on your cluster using the following command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kubectl describe clusterrole SPACE_NAME-manager
+</span></span></code></pre></div><p>The default installation of Kf provides the following
+permissions:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">PolicyRule:
+  Resources      Non-Resource URLs  Resource Names  Verbs
+  ---------      -----------------  --------------  -----
+  spaces.kf.dev  []                 [SPACE_NAME]    [get list watch update patch]
+</code></pre><h2 id="kf-cluster-reader">Kf cluster reader role</h2>
+<p>Kf automatically grants the <code>kf-cluster-reader</code> role to all users on a
+cluster that already have the <code>space-developer</code>, <code>space-auditor</code>, or <code>space-manager</code>
+role within a Space.</p>
+<p>You can retrieve the permissions granted to Space Kf
+cluster readers on your cluster using the following command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kubectl describe clusterrole kf-cluster-reader
+</span></span></code></pre></div><p>The default installation of Kf provides the following
+permissions:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">PolicyRule:
+  Resources                     Non-Resource URLs  Resource Names  Verbs
+  ---------                     -----------------  --------------  -----
+  namespaces                    []                 [kf]            [get list watch]
+  clusterservicebrokers.kf.dev  []                 []              [get list watch]
+  spaces.kf.dev                 []                 []              [get list watch]
+</code></pre>
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-4 text-xs-center order-sm-2">
+        
+        
+        
+      </div>
+      <div class="col-6 col-sm-4 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" target="_blank" rel="noopener" href="https://github.com/google/kf" aria-label="GitHub">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Security mailing list" aria-label="Security mailing list">
+    <a class="text-white" target="_blank" rel="noopener" href="mailto:kf-security@google.com" aria-label="Security mailing list">
+      <i class="fa fa-envelope"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-4 text-center py-2 order-sm-2">
+        <small class="text-white">&copy; 2022 The Kf Authors All Rights Reserved</small>
+        
+	
+		
+	
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+    integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js"
+    integrity="sha512-UR25UO94eTnCVwjbXozyeVd6ZqpaAE9naiEUBK/A+QDbfSTQFhPGj5lOR6d8tsgbBk84Ggb5A3EkjsOgPRPcKA=="
+    crossorigin="anonymous"></script>
+
+
+
+
+
+<script src='/js/tabpane-persist.js'></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/js/main.min.91798a335c881f1b6b805085ba4aa22d1dbd2b0b18d105d05189fa104ddae350.js" integrity="sha256-kXmKM1yIHxtrgFCFukqiLR29KwsY0QXQUYn6EE3a41A=" crossorigin="anonymous"></script>
+
+
+
+
+  </body>
+</html>

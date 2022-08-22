@@ -1,0 +1,429 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Kf – Customizing Kf</title>
+    <link>/docs/v2.11/operator/customizing/</link>
+    <description>Recent content in Customizing Kf on Kf</description>
+    <generator>Hugo -- gohugo.io</generator>
+    
+	  <atom:link href="/docs/v2.11/operator/customizing/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>Docs: Customizing Overview</title>
+      <link>/docs/v2.11/operator/customizing/about-customizing-kf/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/operator/customizing/about-customizing-kf/</guid>
+      <description>
+        
+        
+        &lt;p&gt;Kf supports customizing some cluster wide configurations by manipulating the &lt;code&gt;kfsystem&lt;/code&gt; custom rsource.&lt;/p&gt;
+
+&lt;aside class=&#34;alert alert-danger&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fa-solid fa-triangle-exclamation&#34;&gt;&lt;/i&gt; &lt;strong&gt;Warning:&lt;/strong&gt; Changes will be instantly pushed to all Kf resources, test any customization options before using them in production.
+&lt;/aside&gt;
+
+
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Cluster Configuration</title>
+      <link>/docs/v2.11/operator/customizing/cluster-configuration/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/operator/customizing/cluster-configuration/</guid>
+      <description>
+        
+        
+        
+&lt;aside class=&#34;alert alert-danger&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fa-solid fa-triangle-exclamation&#34;&gt;&lt;/i&gt; &lt;strong&gt;Warning:&lt;/strong&gt; Changes will be instantly pushed to all Kf resources, test any customization options before using them in production.
+&lt;/aside&gt;
+
+
+&lt;p&gt;Kf uses a Kubernetes configmap named &lt;code&gt;config-defaults&lt;/code&gt; in
+the &lt;code&gt;kf&lt;/code&gt; namespace to store cluster wide configuration settings.
+This document explains its structure and fields.&lt;/p&gt;
+&lt;h2 id=&#34;structure-of-the-config-defaults-configmap&#34;&gt;Structure of the config-defaults configmap&lt;/h2&gt;
+&lt;p&gt;The configmap contains three types of key/value pairs in the &lt;code&gt;.data&lt;/code&gt; field:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Comment keys prefixed by &lt;code&gt;_&lt;/code&gt; contain examples, notes, and warnings.&lt;/li&gt;
+&lt;li&gt;String keys contain plain text values.&lt;/li&gt;
+&lt;li&gt;Object keys contain a JSON or YAML value that has been encoded as a string.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Example:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;_note&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;This is some note&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;stringKey&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;This is a string key that&amp;#39;s not encoded as JSON or YAML.&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;objectKey&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;|&lt;/span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;  - &amp;#34;These keys contain nested YAML or JSON.&amp;#34;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;  - true
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;  - 123.45&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;  
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; Kubernetes requires all configmap values to be strings.
+Kf validates the structure of the fields before the
+object is updated.
+&lt;/aside&gt;
+
+&lt;h2 id=&#34;example-section&#34;&gt;Example section&lt;/h2&gt;
+&lt;p&gt;The example section under the &lt;code&gt;_example&lt;/code&gt; key contains explanations for other
+fields and examples. Changes to this section have no effect.&lt;/p&gt;
+&lt;h2 id=&#34;space-container-registry&#34;&gt;Space container registry&lt;/h2&gt;
+&lt;p&gt;The &lt;code&gt;spaceContainerRegistry&lt;/code&gt; property is a plain text value that specifies the
+default container registry each space uses to store built images.&lt;/p&gt;
+&lt;p&gt;Example:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;spaceContainerRegistry&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;gcr.io/my-project&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;space-cluster-domains&#34;&gt;Space cluster domains&lt;/h2&gt;
+&lt;p&gt;The &lt;code&gt;spaceClusterDomains&lt;/code&gt; property is a string encoded YAML array of domain objects.&lt;/p&gt;
+&lt;p&gt;Each space in the cluster adds all items in the array to its list of
+domains that developers can bind their apps to.&lt;/p&gt;
+&lt;table class=&#34;properties responsive&#34;&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th colspan=&#34;2&#34;&gt;Fields&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code&gt;domain&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;
+        &lt;p&gt;&lt;code class=&#34;apitype&#34;&gt;string&lt;/code&gt;&lt;/p&gt;
+        &lt;p&gt;The domain name to make available. May contain one of the following substitutions:&lt;/p&gt;
+        &lt;ul&gt;
+          &lt;li&gt;&lt;code&gt;$(SPACE_NAME)&lt;/code&gt; - Replaced in each space with the name of the space.&lt;/li&gt;
+          &lt;li&gt;&lt;code&gt;$(CLUSTER_INGRESS_IP)&lt;/code&gt; - The IP address of the cluster ingress gateway.&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code&gt;gatewayName&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;
+        &lt;p&gt;&lt;code class=&#34;apitype&#34;&gt;string&lt;/code&gt;&lt;/p&gt;
+        &lt;p&gt;(Optional)&lt;/p&gt;
+        &lt;p&gt;
+          Overrides the Istio gateway routes will be bound to.
+          Defaults to &lt;code&gt;kf/external-gateway&lt;/code&gt;, but any
+          other gateway in the &lt;code&gt;kf&lt;/code&gt; namespace may be used.
+        &lt;/p&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; All domains should contain the &lt;code&gt;$(SPACE_NAME)&lt;/code&gt; substitution to prevent
+Apps in different namespaces from listening to the same hostname which causes
+undefined behavior.
+&lt;/aside&gt;
+
+&lt;p&gt;Example:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;spaceClusterDomains&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;|&lt;/span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;  # Support canonical and vanity domains
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;  - domain: $(SPACE_NAME).prod.example.com
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;  - domain: $(SPACE_NAME).kf.us-east1.prod.example.com
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;  # Using a dynamic DNS resolver
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;  - domain: $(SPACE_NAME).$(CLUSTER_INGRESS_IP).nip.io
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;  # Creating an internal domain only visible within the cluster
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;  - domain: $(SPACE_NAME)-apps.internal
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;    gatewayName: kf/internal-gateway&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;  
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;buildpacks-v2-lifecycle-builder&#34;&gt;Buildpacks V2 lifecycle builder&lt;/h2&gt;
+&lt;p&gt;The &lt;code&gt;buildpacksV2LifecycleBuilder&lt;/code&gt; property contains the version of the Cloud Foundry
+&lt;code&gt;builder&lt;/code&gt; binary used execute buildpack v2 builds.&lt;/p&gt;
+&lt;p&gt;The value is a Git reference. To use a specific version, append an &lt;code&gt;@&lt;/code&gt; symbol
+followed by a Git SHA to the end.&lt;/p&gt;
+&lt;p&gt;Example:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;buildpacksV2LifecycleBuilder&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;code.cloudfoundry.org/buildpackapplifecycle/builder@GIT_SHA&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;buildpacks-v2-lifecycle-launcher&#34;&gt;Buildpacks V2 lifecycle launcher&lt;/h2&gt;
+&lt;p&gt;The &lt;code&gt;buildpacksV2LifecycleLauncher&lt;/code&gt; property contains the version of the Cloud Foundry
+&lt;code&gt;launcher&lt;/code&gt; binary built into every buildpack V2 application.&lt;/p&gt;
+&lt;p&gt;The value is a Git reference. To use a specific version, append an &lt;code&gt;@&lt;/code&gt; symbol
+followed by a Git SHA to the end.&lt;/p&gt;
+&lt;p&gt;Example:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;buildpacksV2LifecycleLauncher&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;code.cloudfoundry.org/buildpackapplifecycle/launcher@GIT_SHA&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;buildpacks-v2-list&#34;&gt;Buildpacks V2 list&lt;/h2&gt;
+&lt;p&gt;The &lt;code&gt;spaceBuildpacksV2&lt;/code&gt; property is a string encoded YAML array that holds an ordered
+list of default buildpacks that are used to build applications compatible with
+the V2 buildpacks process.&lt;/p&gt;
+&lt;table class=&#34;properties responsive&#34;&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th colspan=&#34;2&#34;&gt;Fields&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code&gt;name&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;
+        &lt;p&gt;&lt;code class=&#34;apitype&#34;&gt;string&lt;/code&gt;&lt;/p&gt;
+        &lt;p&gt;A short name developers can use to reference the buildpack by in their application manifests.&lt;/p&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code&gt;url&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;
+        &lt;p&gt;&lt;code class=&#34;apitype&#34;&gt;string&lt;/code&gt;&lt;/p&gt;
+        &lt;p&gt;The URL used to fetch the buildpack.&lt;/p&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code&gt;disabled&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;
+        &lt;p&gt;&lt;code class=&#34;apitype&#34;&gt;boolean&lt;/code&gt;&lt;/p&gt;
+        &lt;p&gt;Used to prevent this buildpack from executing.&lt;/p&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h2 id=&#34;stacks-v2-list&#34;&gt;Stacks V2 list&lt;/h2&gt;
+&lt;p&gt;The &lt;code&gt;spaceBuildpacksV2&lt;/code&gt; property is a string encoded YAML array that holds an
+ordered list of stacks that can be used with Cloud Foundry compatible builds.&lt;/p&gt;
+&lt;table class=&#34;properties responsive&#34;&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th colspan=&#34;2&#34;&gt;Fields&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code&gt;name&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;
+        &lt;p&gt;&lt;code class=&#34;apitype&#34;&gt;string&lt;/code&gt;&lt;/p&gt;
+        &lt;p&gt;A short name developers can use to reference the stack by in their application manifests.&lt;/p&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code&gt;image&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;
+        &lt;p&gt;&lt;code class=&#34;apitype&#34;&gt;string&lt;/code&gt;&lt;/p&gt;
+        &lt;p&gt;
+          URL of the container image to use as the stack.
+          For more information, see &lt;a href=&#34;https://kubernetes.io/docs/concepts/containers/images&#34;&gt;https://kubernetes.io/docs/concepts/containers/images&lt;/a&gt;.
+        &lt;/p&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; Use images tagged with SHAs to improve caching.
+&lt;/aside&gt;
+
+&lt;h2 id=&#34;stacks-v3-list&#34;&gt;Stacks V3 list&lt;/h2&gt;
+&lt;p&gt;The &lt;code&gt;spaceStacksV3&lt;/code&gt; property is a string encoded YAML array that holds an ordered
+list of stacks that can be used with
+&lt;a href=&#34;https://buildpacks.io/&#34;&gt;Cloud Native Buildpack&lt;/a&gt;
+builds.&lt;/p&gt;
+&lt;table class=&#34;properties responsive&#34;&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th colspan=&#34;2&#34;&gt;Fields&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code&gt;name&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;
+        &lt;p&gt;&lt;code class=&#34;apitype&#34;&gt;string&lt;/code&gt;&lt;/p&gt;
+        &lt;p&gt;A short name developers can use to reference the stack by in their application manifests.&lt;/p&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code&gt;description&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;
+        &lt;p&gt;&lt;code class=&#34;apitype&#34;&gt;string&lt;/code&gt;&lt;/p&gt;
+        &lt;p&gt;A short description of the stack shown when running &lt;code&gt;kf stacks&lt;/code&gt;.&lt;/p&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code&gt;buildImage&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;
+        &lt;p&gt;&lt;code class=&#34;apitype&#34;&gt;string&lt;/code&gt;&lt;/p&gt;
+        &lt;p&gt;
+          URL of the container image to use as the builder.
+          For more information, see &lt;a href=&#34;https://kubernetes.io/docs/concepts/containers/images&#34;&gt;https://kubernetes.io/docs/concepts/containers/images&lt;/a&gt;.
+        &lt;/p&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code&gt;runImage&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;
+        &lt;p&gt;&lt;code class=&#34;apitype&#34;&gt;string&lt;/code&gt;&lt;/p&gt;
+        &lt;p&gt;
+          URL of the container image to use as the base for all apps built with .
+          For more information, see &lt;a href=&#34;https://kubernetes.io/docs/concepts/containers/images&#34;&gt;https://kubernetes.io/docs/concepts/containers/images&lt;/a&gt;.
+        &lt;/p&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;code&gt;nodeSelector&lt;/code&gt;&lt;/td&gt;
+      &lt;td&gt;
+        &lt;p&gt;&lt;code class=&#34;apitype&#34;&gt;map (key: string, value: string)&lt;/code&gt;&lt;/p&gt;
+        &lt;p&gt;(Optional)&lt;/p&gt;
+        &lt;p&gt;
+          A NodeSelector used to indicate which nodes applications built with
+          this stack can run on.
+        &lt;/p&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; Use images tagged with SHAs to improve caching.
+&lt;/aside&gt;
+
+&lt;p&gt;Example:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;spaceStacksV3&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;|&lt;/span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;  - name: heroku-18
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;    description: The official Heroku stack based on Ubuntu 18.04
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;    buildImage: heroku/pack:18-build
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;    runImage: heroku/pack:18
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;    nodeSelector:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;       kubernetes.io/os: windows&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;  
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;default-to-v3-stack&#34;&gt;Default to V3 Stack&lt;/h2&gt;
+&lt;p&gt;The &lt;code&gt;spaceDefaultToV3Stack&lt;/code&gt; property contains a quoted value &lt;code&gt;true&lt;/code&gt; or &lt;code&gt;false&lt;/code&gt;
+indicating whether spaces should use V3 stacks if a user doesn&amp;rsquo;t specify one.&lt;/p&gt;
+&lt;h2 id=&#34;feature-flags&#34;&gt;Feature flags&lt;/h2&gt;
+&lt;p&gt;The &lt;code&gt;featureFlags&lt;/code&gt; property contains a string encoded YAML map of feature flags
+that can enable and disable features of Kf.&lt;/p&gt;
+&lt;p&gt;Flag names that aren&amp;rsquo;t supported by Kf will be ignored.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Flag Name&lt;/th&gt;
+&lt;th&gt;Default&lt;/th&gt;
+&lt;th&gt;Purpose&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;disable_custom_builds&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;false&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Disable developer access to arbitrary Tekton build pipelines.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;enable_dockerfile_builds&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;true&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Allow developers to build source code from dockerfiles.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;enable_custom_buildpacks&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;true&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Allow developers to specify external buildpacks in their applications.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;enable_custom_stacks&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;true&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Allow developers to specify custom stacks in their applications.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Example:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;featureFlags&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;|&lt;/span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;  disable_custom_builds: false
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;  enable_dockerfile_builds: true
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#8f5902;font-style:italic&#34;&gt;  enable_some_feature: true&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;  
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Customizing Kf Features</title>
+      <link>/docs/v2.11/operator/customizing/customizing-features/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/operator/customizing/customizing-features/</guid>
+      <description>
+        
+        
+        
+&lt;aside class=&#34;alert alert-danger&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fa-solid fa-triangle-exclamation&#34;&gt;&lt;/i&gt; &lt;strong&gt;Warning:&lt;/strong&gt; Changes will be instantly pushed to all Kf resources, test any customization options before using them in production.
+&lt;/aside&gt;
+
+
+&lt;h2 id=&#34;build-retention&#34;&gt;Build Retention&lt;/h2&gt;
+&lt;p&gt;You can control how many Kf Builds are kept before being garbage collected.&lt;/p&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; This example sets the retention to 1 Build. Change the value as needed.
+&lt;/aside&gt;
+
+&lt;pre class=&#34;devsite-terminal devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+kubectl patch \
+kfsystem kfsystem \
+--type=&#39;json&#39; \
+-p=&#34;[{&#39;op&#39;: &#39;replace&#39;, &#39;path&#39;: &#39;/spec/kf/config/buildRetentionCount&#39;, &#39;value&#39;: &lt;var&gt;1&lt;/var&gt;}]&#34;
+&lt;/pre&gt;
+&lt;h2 id=&#34;enable-or-disable-the-istio-sidecar&#34;&gt;Enable or Disable the Istio Sidecar&lt;/h2&gt;
+&lt;p&gt;If you do not require the Istio sidecar for the Build pods, then they can be disabled by setting the value to &lt;code&gt;true&lt;/code&gt;. Enable by setting the value to &lt;code&gt;false&lt;/code&gt;.&lt;/p&gt;
+&lt;pre class=&#34;devsite-terminal devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+kubectl patch \
+kfsystem kfsystem \
+--type=&#39;json&#39; \
+-p=&#34;[{&#39;op&#39;: &#39;replace&#39;, &#39;path&#39;: &#39;/spec/kf/config/buildDisableIstioSidecar&#39;, &#39;value&#39;: &lt;var&gt;true&lt;/var&gt;}]&#34;
+&lt;/pre&gt;
+&lt;h2 id=&#34;build-pod-resource-limits&#34;&gt;Build Pod Resource Limits&lt;/h2&gt;
+&lt;p&gt;The default pod resource size can be increased from the default to accommodate very large builds. The units for the value are in &lt;code&gt;Mi&lt;/code&gt; or &lt;code&gt;Gi&lt;/code&gt;.&lt;/p&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; This is only applicable for built-in Tasks (which is normal for a &lt;code&gt;kf push&lt;/code&gt; build). For V2 buildpack builds, this will be set on two steps and one for V3 buildpacks or Dockerfiles. This means that for a V2 build the required Pod size will be double the limit. For example, if the memory limit is 1Gi, then the pod will require 2Gi.
+&lt;/aside&gt;
+
+&lt;pre class=&#34;devsite-terminal devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+kubectl patch \
+kfsystem kfsystem \
+--type=&#39;json&#39; \
+-p=&#34;[{&#39;op&#39;: &#39;replace&#39;, &#39;path&#39;: &#39;/spec/kf/config/buildPodResources&#39;, &#39;value&#39;: {&#39;limits&#39;: {&#39;memory&#39;: &#39;&lt;var&gt;234Mi&lt;/var&gt;&#39;}}}]&#34;
+&lt;/pre&gt;
+&lt;p&gt;Read &lt;a href=&#34;https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/&#34;&gt;Kubernetes container resource docs&lt;/a&gt;  for more information about container resource management.&lt;/p&gt;
+&lt;h2 id=&#34;self-signed-certificates-for-service-brokers&#34;&gt;Self Signed Certificates for Service Brokers&lt;/h2&gt;
+&lt;p&gt;If you want to use self signed certificates for TLS (&lt;code&gt;https&lt;/code&gt; instead of &lt;code&gt;http&lt;/code&gt;) for the service broker URL, the Kf controller requires the CA certificate. To configure Kf for this scenario, create an immutable Kubernetes secret in the &lt;code&gt;kf&lt;/code&gt; namespace and update the &lt;code&gt;kfsystem.spec.kf.config.secrets.controllerCACerts.name&lt;/code&gt; object to point to it.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Create a secret to store the self-signed certificate.&lt;/p&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; Customize the secret name if desired, or leave the default name of &lt;code&gt;cacerts&lt;/code&gt;. Replace &lt;code&gt;/path/to/cert/certs.pem&lt;/code&gt; with the path to the self-signed certificate.
+&lt;/aside&gt;
+
+ &lt;pre class=&#34;devsite-terminal devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+ kubectl create secret generic &lt;var&gt;cacerts&lt;/var&gt; -nkf --from-file &lt;var&gt;/path/to/cert/certs.pem&lt;/var&gt;
+ &lt;/pre&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Make the secret immutable.&lt;/p&gt;
+ &lt;pre class=&#34;devsite-terminal devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+ kubectl patch -nkf secret &lt;var&gt;cacerts&lt;/var&gt; \
+     --type=&#39;json&#39; \
+     -p=&#34;[{&#39;op&#39;:&#39;add&#39;,&#39;path&#39;:&#39;/immutable&#39;,&#39;value&#39;:true}]&#34;
+ &lt;/pre&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Update kfsystem to point to the secret.&lt;/p&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; This will cause the controller pod to be re-deployed with the certs mounted as a volume.
+&lt;/aside&gt;
+
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl patch &lt;span style=&#34;color:#4e9a06&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;&lt;/span&gt;  kfsystem kfsystem &lt;span style=&#34;color:#4e9a06&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;&lt;/span&gt;  --type&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;json&amp;#39;&lt;/span&gt; &lt;span style=&#34;color:#4e9a06&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;&lt;/span&gt;  -p&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;[{&amp;#39;op&amp;#39;:&amp;#39;add&amp;#39;,&amp;#39;path&amp;#39;:&amp;#39;/spec/kf/config/secrets&amp;#39;,&amp;#39;value&amp;#39;:{&amp;#39;controllerCACerts&amp;#39;:{&amp;#39;name&amp;#39;:&amp;#39;&amp;lt;var&amp;gt;cacerts&amp;lt;/var&amp;gt;&amp;#39;}}}]&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+      </description>
+    </item>
+    
+  </channel>
+</rss>

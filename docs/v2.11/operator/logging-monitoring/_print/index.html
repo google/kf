@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.101.0" />
+<link rel="canonical" type="text/html" href="/docs/v2.11/operator/logging-monitoring/">
+<link rel="alternate" type="application/rss&#43;xml" href="/docs/v2.11/operator/logging-monitoring/index.xml">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/favicons/android-192x192.png" sizes="192x192">
+
+<title>Logging and Monitoring | Kf</title>
+<meta name="description" content="">
+<meta property="og:title" content="Logging and Monitoring" />
+<meta property="og:description" content="A Cloud Foundry inspired MicroPAAS for Kubernetes." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/v2.11/operator/logging-monitoring/" /><meta property="og:site_name" content="Kf" />
+
+<meta itemprop="name" content="Logging and Monitoring">
+<meta itemprop="description" content="A Cloud Foundry inspired MicroPAAS for Kubernetes."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Logging and Monitoring"/>
+<meta name="twitter:description" content="A Cloud Foundry inspired MicroPAAS for Kubernetes."/>
+
+
+
+
+<link rel="preload" href="/scss/main.scss" as="style">
+<link href="/scss/main.scss" rel="stylesheet" integrity="">
+
+<script
+  src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"
+  crossorigin="anonymous"></script>
+<script
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="/">
+		<span class="navbar-logo"></span><span class="font-weight-bold">Kf</span>
+	</a>
+	<div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+		<ul class="navbar-nav mt-2 mt-lg-0">
+			
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/developer/" ><span>Developer Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link active" href="/docs/v2.11/operator/" ><span class="active">Operator Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/troubleshooting/" ><span>Troubleshooting</span></a>
+			</li>
+			
+			
+			
+		</ul>
+	</div>
+	<div class="navbar-nav d-none d-lg-block"><input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="/offline-search-index.8271768637bdb31d52e7c162697e4315.json"
+  data-offline-search-base-href="/"
+  data-offline-search-max-results="10"
+>
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/docs/v2.11/operator/logging-monitoring/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Logging and Monitoring</h1>
+
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-dbee04d71aa54a688f7ea60028e06371">Create and user monitoring dashboards.</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-5a85a7965fdcfe4cf8ad48fec38d5940">Logging and monitoring</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-feab5808045e2631f70969b913fafe31">Logging and monitoring overview</a></li>
+
+
+    
+  
+    
+    
+	
+<li>4: <a href="#pg-ca8fa32dfcb17c91cbd11356f47a4f4f">View logs</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-dbee04d71aa54a688f7ea60028e06371">1 - Create and user monitoring dashboards.</h1>
+    
+	<p>You can use <a href="https://cloud.google.com/monitoring/dashboards">Google Cloud Monitoring dashboards</a> to create custom dashboards and charts. Kf comes with a default template which can be used to create dashboards to monitor the performance of your applications.</p>
+<h2 id="application-performance-dashboard">Application performance dashboard</h2>
+<p>Run the following commands to deploy a dashboard in your monitoring workspace in <a href="https://cloud.google.com/monitoring/dashboards">Cloud monitoring dashboards</a> to monitor performance of your apps. This dashboard has application performance metrics like requests/sec, round trip latency, HTTP error codes, and more.</p>
+<pre class="devsite-terminal" suppresswarning="true" translate="no">
+<code class="devsite-terminal">git clone https://github.com/google/kf</code>
+<code class="devsite-terminal">cd ./kf/dashboards</code>
+<code class="devsite-terminal">./create-dashboard.py my-dashboard my-cluster my-space</code>
+</pre>
+<h2 id="system-resources-and-performance-dashboard">System resources and performance dashboard</h2>
+<p>You can view all the system resources and performance metrics such as list of nodes, pods, containers and much more using a built-in dashboard. Click the link below to access the system dashboard.</p>
+  <a href="https://console.cloud.google.com/monitoring/dashboards/resourceList/kubernetes" target="_blank" class="button button-primary" track-type="tasks" track-name="consoleLink" track-metadata-position="body" track-metadata-end-goal="connectToSerialConsole" >
+    System dashboard</a></p></li>
+</ol>
+<p>More details about this dashboard can be found <a href="https://cloud.google.com/stackdriver/docs/solutions/gke/observing">here</a>.</p>
+<h2 id="create-slo-and-alerts">Create SLO and alerts</h2>
+<p>You can create <a href="https://cloud.google.com/stackdriver/docs/solutions/slo-monitoring/ui/create-slo">SLOs</a> and <a href="https://cloud.google.com/stackdriver/docs/solutions/slo-monitoring/ui/create-alert">Alerts</a> on available metrics to monitor performance and availability of both system and applications. For example, you can use the metrics <code>istio.io/service/server/response_latencies</code> to setup an alert on the application roundtrip latency.</p>
+<h2 id="configure-dashboard-access-control">Configure dashboard access control</h2>
+<p>Follow <a href="https://cloud.google.com/monitoring/access-control">these instructions</a> to provide dashboard access to developers and other members on the team. The role <code>roles/monitoring.dashboardViewer</code> provides read-only access to dashboards.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-5a85a7965fdcfe4cf8ad48fec38d5940">2 - Logging and monitoring</h1>
+    
+	<p>Kf can use GKE&rsquo;s Google Cloud integrations
+to send a log of events to your Cloud Monitoring and Cloud Logging project for observability. For more information, see
+<a href="https://cloud.google.com/monitoring/kubernetes-engine">Overview of GKE operations</a>.</p>
+<p>Kf deploys two server side components:</p>
+<ol>
+<li>Controller</li>
+<li>Webhook</li>
+</ol>
+<p>To view the logs for these components, use the following Cloud Logging query:</p>
+<pre tabindex="0"><code>resource.type=&#34;k8s_container&#34;
+resource.labels.project_id=&lt;PROJECT ID&gt;
+resource.labels.location=&lt;GCP ZONE&gt;
+resource.labels.cluster_name=&lt;CLUSTER NAME&gt;
+resource.labels.namespace_name=&#34;kf&#34;
+labels.k8s-pod/app=&lt;controller OR webhook&gt;
+</code></pre>
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Replace the values inside the &lt;&gt; with the correct values.
+</aside>
+
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-feab5808045e2631f70969b913fafe31">3 - Logging and monitoring overview</h1>
+    
+	<p>By default, Kf includes native integration with <a href="https://cloud.google.com/monitoring">Cloud Monitoring</a> and <a href="https://cloud.google.com/logging/docs">Cloud Logging</a>. When you create a cluster, both Monitoring and Cloud Logging are enabled by default. This integration lets you monitor your running clusters and help analyze your system and application performance using advanced profiling and tracing
+capabilities.</p>
+<p>Application level performance metrics is provided by <a href="https://cloud.google.com/service-mesh/docs/proxy-injection">Istio sidecar injection</a> which is injected alongside applications deployed via Kf. You can also create <a href="https://cloud.google.com/stackdriver/docs/solutions/slo-monitoring/ui/create-slo">SLO</a> and <a href="https://cloud.google.com/stackdriver/docs/solutions/slo-monitoring/ui/create-alert">Alerts</a> using this default integration to monitor performance and availability of both system and applications.</p>
+<p>Ensure the following are setup on your cluster:</p>
+<ul>
+<li>
+<p><a href="https://cloud.google.com/monitoring">Cloud Monitoring</a> and <a href="https://cloud.google.com/logging/docs">Cloud Logging</a> are enabled on the Kf cluster by default unless you disabled them explicitly, so no extra step is required.</p>
+</li>
+<li>
+<p><a href="https://cloud.google.com/service-mesh/docs/proxy-injection">Istio sidecar injection</a> is enabled.  Sidecar proxy will inject application level <a href="https://cloud.google.com/monitoring/api/metrics_istio">performance metrics</a>.</p>
+</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-ca8fa32dfcb17c91cbd11356f47a4f4f">4 - View logs</h1>
+    
+	<p>Kf provides you with several types of logs. This document describes these logs and how to access them.</p>
+<h2 id="application-logs">Application logs</h2>
+<p>All logs written to standard output <code>stdout</code> and standard error <code>stderr</code>, are uploaded to <a href="https://cloud.google.com/logging">Cloud Logging</a> and stored under the log name <code>user-container</code>.</p>
+<p>Open <a href="https://cloud.google.com/logging/docs/view/logs-explorer-interface">Cloud Logging</a> and run the following query:</p>
+<pre class="devsite-click-to-copy" translate="no">
+resource.type="k8s_container"
+log_name="projects/<var>YOUR_PROJECT_ID</var>/logs/user-container"
+resource.labels.project_id=<var>YOUR_PROJECT_ID</var>
+resource.labels.location=<var>GCP_COMPUTE_ZONE (e.g. us-central1-a)</var>
+resource.labels.cluster_name=<var>YOUR_CLUSTER_NAME</var>
+resource.labels.namespace_name=<var>YOUR_KF_SPACE_NAME</var>
+resource.labels.pod_name:<var>YOUR_KF_APP_NAME</var></pre>
+<p>You should see all your application logs written on standard <code>stdout</code> and standard error <code>stderr</code>.</p>
+<h2 id="access-logs-for-your-applications">Access logs for your applications</h2>
+<p>Kf provides access logs using <a href="https://cloud.google.com/service-mesh/docs/proxy-injection">Istio sidecar injection</a>. Access logs are stored under the log name <code>server-accesslog-stackdriver</code>.</p>
+<p>Open <a href="https://cloud.google.com/logging/docs/view/logs-explorer-interface">Cloud Logging</a> and run the following query:</p>
+<pre class="devsite-click-to-copy" translate="no">
+resource.type="k8s_container"
+log_name="projects/<var>YOUR_PROJECT_ID</var>/logs/server-accesslog-stackdriver"
+resource.labels.project_id=<var>YOUR_PROJECT_ID</var>
+resource.labels.location=<var>GCP_COMPUTE_ZONE (e.g. us-central1-a)</var>
+resource.labels.cluster_name=<var>YOUR_CLUSTER_NAME</var>
+resource.labels.namespace_name=<var>YOUR_KF_SPACE_NAME</var>
+resource.labels.pod_name:<var>YOUR_KF_APP_NAME</var></pre>
+<p>You should see access logs for your application. Sample access log:</p>
+<pre class="devsite-click-to-copy" translate="no">
+{
+  "insertId": "166tsrsg273q5mf",
+  "httpRequest": {
+    "requestMethod": "GET",
+    "requestUrl": "http://test-app-38n6dgwh9kx7h-c72edc13nkcm.***. ***.nip.io/",
+    "requestSize": "738",
+    "status": 200,
+    "responseSize": "3353",
+    "remoteIp": "10.128.0.54:0",
+    "serverIp": "10.48.0.18:8080",
+    "latency": "0.000723777s",
+    "protocol": "http"
+  },
+  "resource": {
+    "type": "k8s_container",
+    "labels": {
+      "container_name": "user-container",
+      "project_id": ***,
+      "namespace_name": ***,
+      "pod_name": "test-app-85888b9796-bqg7b",
+      "location": "us-central1-a",
+      "cluster_name": ***
+    }
+  },
+  "timestamp": "2020-11-19T20:09:21.721815Z",
+  "severity": "INFO",
+  "labels": {
+    "source_canonical_service": "istio-ingressgateway",
+    "source_principal": "spiffe://***.svc.id.goog/ns/istio-system/sa/istio-ingressgateway-service-account",
+    "request_id": "0e3bac08-ab68-408f-9b14-0aec671845bf",
+    "source_app": "istio-ingressgateway",
+    "response_flag": "-",
+    "route_name": "default",
+    "upstream_cluster": "inbound|80|http-user-port|test-app.***.svc.cluster.local",
+    "destination_name": "test-app-85888b9796-bqg7b",
+    "destination_canonical_revision": "latest",
+    "destination_principal": "spiffe://***.svc.id.goog/ns/***/sa/sa-test-app",
+    "connection_id": "82261",
+    "destination_workload": "test-app",
+    "destination_namespace": ***,
+    "destination_canonical_service": "test-app",
+    "upstream_host": "127.0.0.1:8080",
+    "log_sampled": "false",
+    "mesh_uid": "proj-228179605852",
+    "source_namespace": "istio-system",
+    "requested_server_name": "outbound_.80_._.test-app.***.svc.cluster.local",
+    "source_canonical_revision": "asm-173-6",
+    "x-envoy-original-dst-host": "",
+    "destination_service_host": "test-app.***.svc.cluster.local",
+    "source_name": "istio-ingressgateway-5469f77856-4n2pw",
+    "source_workload": "istio-ingressgateway",
+    "x-envoy-original-path": "",
+    "service_authentication_policy": "MUTUAL_TLS",
+    "protocol": "http"
+  },
+  "logName": "projects/*/logs/server-accesslog-stackdriver",
+  "receiveTimestamp": "2020-11-19T20:09:24.627065813Z"
+}
+</pre>
+<h2 id="audit-logs">Audit logs</h2>
+<p><a href="https://cloud.google.com/kubernetes-engine/docs/how-to/audit-logging">Audit Logs</a> provides a
+chronological record of calls that have been made to the Kubernetes API Server. Kubernetes audit log entries are useful for investigating suspicious API requests, for collecting statistics, or for creating monitoring alerts for unwanted API calls.</p>
+<p>Open <a href="https://cloud.google.com/logging/docs/view/logs-explorer-interface">Cloud Logging</a> and run the following query:</p>
+<pre class="devsite-click-to-copy" translate="no">
+resource.type="k8s_container"
+log_name="projects/<var>YOUR_PROJECT_ID</var>/logs/cloudaudit.googleapis.com%2Factivity"
+resource.labels.project_id=<var>YOUR_PROJECT_ID</var>
+resource.labels.location=<var>GCP_COMPUTE_ZONE (e.g. us-central1-a)</var>
+resource.labels.cluster_name=<var>YOUR_CLUSTER_NAME</var>
+protoPayload.request.metadata.name=<var>YOUR_APP_NAME</var>
+protoPayload.methodName:"deployments."</pre>
+<p>You should see a trace of calls being made to the Kubernetes API server.</p>
+<h2 id="configure-logging-access-control">Configure logging access control</h2>
+<p>Follow <a href="https://cloud.google.com/logging/docs/access-control">these instructions</a> to provide logs access to developers and other members on the team. The role <code>roles/logging.viewer</code> provides read-only access to logs.</p>
+<h2 id="use-logs-router">Use Logs Router</h2>
+<p>You can also use <a href="https://cloud.google.com/logging/docs/routing/overview">Logs Router</a> to route the logs to supported destinations.</p>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-4 text-xs-center order-sm-2">
+        
+        
+        
+      </div>
+      <div class="col-6 col-sm-4 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" target="_blank" rel="noopener" href="https://github.com/google/kf" aria-label="GitHub">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Security mailing list" aria-label="Security mailing list">
+    <a class="text-white" target="_blank" rel="noopener" href="mailto:kf-security@google.com" aria-label="Security mailing list">
+      <i class="fa fa-envelope"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-4 text-center py-2 order-sm-2">
+        <small class="text-white">&copy; 2022 The Kf Authors All Rights Reserved</small>
+        
+	
+		
+	
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+    integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js"
+    integrity="sha512-UR25UO94eTnCVwjbXozyeVd6ZqpaAE9naiEUBK/A+QDbfSTQFhPGj5lOR6d8tsgbBk84Ggb5A3EkjsOgPRPcKA=="
+    crossorigin="anonymous"></script>
+
+
+
+
+
+<script src='/js/tabpane-persist.js'></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/js/main.min.91798a335c881f1b6b805085ba4aa22d1dbd2b0b18d105d05189fa104ddae350.js" integrity="sha256-kXmKM1yIHxtrgFCFukqiLR29KwsY0QXQUYn6EE3a41A=" crossorigin="anonymous"></script>
+
+
+
+
+  </body>
+</html>

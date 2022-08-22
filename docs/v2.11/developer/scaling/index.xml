@@ -1,0 +1,113 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Kf – Scaling</title>
+    <link>/docs/v2.11/developer/scaling/</link>
+    <description>Recent content in Scaling on Kf</description>
+    <generator>Hugo -- gohugo.io</generator>
+    
+	  <atom:link href="/docs/v2.11/developer/scaling/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>Docs: Scaling overview</title>
+      <link>/docs/v2.11/developer/scaling/autoscaling/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/developer/scaling/autoscaling/</guid>
+      <description>
+        
+        
+        &lt;p&gt;Kf leverages the Kubernetes Horizontal Pod Autoscaler (HPA)
+to automatically scale the number of Pods in a App. When autoscaling is enabled
+for an App, an HPA object is created and bound to the App object. It then dynamically
+calculates the target scale and sets it for the App.&lt;/p&gt;
+&lt;h2 id=&#34;how-kf-scaling-works&#34;&gt;How Kf scaling works&lt;/h2&gt;
+&lt;p&gt;The number of Pods that are deployed for a Kf App is
+controlled by its underlying Deployment object&amp;rsquo;s &lt;code&gt;replicas&lt;/code&gt; field. The target
+number of Deployment replicas is set through the App&amp;rsquo;s &lt;code&gt;replicas&lt;/code&gt; field.&lt;/p&gt;
+&lt;p&gt;Scaling can be done manually with the &lt;code&gt;kf scale&lt;/code&gt; command.
+This command is disabled when autoscaling is enabled to avoid conflicting targets.&lt;/p&gt;
+&lt;h2 id=&#34;how-the-kubernetes-horizontal-pod-autoscaler-works&#34;&gt;How the Kubernetes Horizontal Pod Autoscaler works&lt;/h2&gt;
+&lt;p&gt;The Horizontal Pod Autoscaler (HPA) is implemented as a Kubernetes API resource
+(the HPA object) and a control loop (the HPA controller) which periodically
+calculates the number of desired replicas based on current resource utilization.
+The HPA controller then passes the number to the target object that implements the
+Scale subresource. The actual scaling is delegated to the underlying object and
+its controller. You can find more information in the &lt;a href=&#34;https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/&#34;&gt;Kubernetes documentation&lt;/a&gt;.&lt;/p&gt;
+&lt;h3 id=&#34;how-the-autoscaler-determines-when-to-scale&#34;&gt;How the Autoscaler determines when to scale&lt;/h3&gt;
+&lt;p&gt;Periodically, the HPA controller queries the resource utilization against
+the metrics specified in each HorizontalPodAutoscaler definition. The controller
+obtains the metrics from the resource metrics API for each Pod. Then the
+controller calculates the utilization value as a percentage of the equivalent
+resource request. The desired number of replicas is then calculated based on the
+ratio of current percentage and desired percentage. You can read more about the
+&lt;a href=&#34;https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#algorithm-details&#34;&gt;autoscaling algorithm&lt;/a&gt; in the Kubernetes documentation.&lt;/p&gt;
+&lt;h3 id=&#34;metrics&#34;&gt;Metrics&lt;/h3&gt;
+&lt;p&gt;Kf uses HPA v1 which only supports CPU as the target metric.&lt;/p&gt;
+&lt;h2 id=&#34;how-the-kubernetes-horizontal-autoscaler-works-with-kf&#34;&gt;How the Kubernetes Horizontal Autoscaler works with Kf&lt;/h2&gt;
+&lt;p&gt;When autoscaling is enabled for a Kf App, the Kf
+controller will create an HPA object based on the scaling limits and rules
+specified on the App. Then the HPA controller fetches the specs from the HPA
+object and scales the App accordingly.&lt;/p&gt;
+&lt;p&gt;The HPA object will be deleted if Autoscaling is disabled or if the
+corresponding App is deleted.&lt;/p&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Manage Autoscaling</title>
+      <link>/docs/v2.11/developer/scaling/manage-autoscaling/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/developer/scaling/manage-autoscaling/</guid>
+      <description>
+        
+        
+        &lt;p&gt;Kf Apps can be automatically scaled based on CPU usage.
+You can configure autoscaling limits for your Apps and the target CPU usage for
+each App instance. Kf automatically scales your Apps up
+and down in response to demand.&lt;/p&gt;
+&lt;p&gt;By default, autoscaling is disabled. Follow the steps below to enable autoscaling.&lt;/p&gt;
+&lt;h2 id=&#34;view-apps&#34;&gt;View Apps&lt;/h2&gt;
+&lt;p&gt;You can view the autoscaling status for an App using the &lt;code&gt;kf apps&lt;/code&gt;
+command. If autoscaling is enabled for an App, &lt;code&gt;Instances&lt;/code&gt; includes the
+autoscaling status.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;$ kf apps
+
+Name   Instances              Memory  Disk  CPU
+app1   4 (autoscaled 4 to 5)  256Mi   1Gi   100m
+app2   1                      256Mi   1Gi   100m
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Autoscaling is enabled for &lt;code&gt;app1&lt;/code&gt; with &lt;code&gt;min-instances&lt;/code&gt; set to 4 and
+&lt;code&gt;max-instances&lt;/code&gt; set to 5. Autoscaling is disabled for &lt;code&gt;app2&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id=&#34;update-autoscaling-limits&#34;&gt;Update autoscaling limits&lt;/h2&gt;
+&lt;p&gt;You can update the instance limits using the &lt;code&gt;kf update-autoscaling-limits&lt;/code&gt;
+command.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf update-autoscaling-limits app-name min-instances max-instances
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;create-autoscaling-rule&#34;&gt;Create autoscaling rule&lt;/h2&gt;
+&lt;p&gt;You can create autoscaling rules using the &lt;code&gt;kf create-autoscaling-rule&lt;/code&gt;
+command.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf create-autoscaling-rule app-name CPU min-threshold max-threshold
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;delete-autoscaling-rules&#34;&gt;Delete autoscaling rules&lt;/h2&gt;
+&lt;p&gt;You can delete all autoscaling rules with the
+&lt;code&gt;kf delete-autoscaling-rule&lt;/code&gt; command. Kf only supports
+one autoscaling rule.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf delete-autoscaling-rules app-name
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;enable-and-disable-autoscaling&#34;&gt;Enable and disable autoscaling&lt;/h2&gt;
+&lt;p&gt;Autoscaling can be enabled by using &lt;code&gt;enable-autoscaling&lt;/code&gt; and
+disabled by using &lt;code&gt;disable-autoscaling&lt;/code&gt;. When it is disabled, the
+configurations, including limits and rules, are preserved.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf enable-autoscaling app-name
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf disable-autoscaling app-name
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+      </description>
+    </item>
+    
+  </channel>
+</rss>

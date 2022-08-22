@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.101.0" />
+<link rel="canonical" type="text/html" href="/docs/v2.11/developer/scaling/">
+<link rel="alternate" type="application/rss&#43;xml" href="/docs/v2.11/developer/scaling/index.xml">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/favicons/android-192x192.png" sizes="192x192">
+
+<title>Scaling | Kf</title>
+<meta name="description" content="Learn to scale apps up or down.
+">
+<meta property="og:title" content="Scaling" />
+<meta property="og:description" content="Learn to scale apps up or down.
+" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/v2.11/developer/scaling/" /><meta property="og:site_name" content="Kf" />
+
+<meta itemprop="name" content="Scaling">
+<meta itemprop="description" content="Learn to scale apps up or down.
+"><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Scaling"/>
+<meta name="twitter:description" content="Learn to scale apps up or down.
+"/>
+
+
+
+
+<link rel="preload" href="/scss/main.scss" as="style">
+<link href="/scss/main.scss" rel="stylesheet" integrity="">
+
+<script
+  src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"
+  crossorigin="anonymous"></script>
+<script
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="/">
+		<span class="navbar-logo"></span><span class="font-weight-bold">Kf</span>
+	</a>
+	<div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+		<ul class="navbar-nav mt-2 mt-lg-0">
+			
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link active" href="/docs/v2.11/developer/" ><span class="active">Developer Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/operator/" ><span>Operator Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/troubleshooting/" ><span>Troubleshooting</span></a>
+			</li>
+			
+			
+			
+		</ul>
+	</div>
+	<div class="navbar-nav d-none d-lg-block"><input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="/offline-search-index.8271768637bdb31d52e7c162697e4315.json"
+  data-offline-search-base-href="/"
+  data-offline-search-max-results="10"
+>
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/docs/v2.11/developer/scaling/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Scaling</h1>
+<div class="lead">Learn to scale apps up or down.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-b382e70e5bab4b7f5eb676e75ffdd352">Scaling overview</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-8412b2ccff3bf6d3216d6875e40cd997">Manage Autoscaling</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-b382e70e5bab4b7f5eb676e75ffdd352">1 - Scaling overview</h1>
+    <div class="lead">Learn about how Kf scales apps.</div>
+	<p>Kf leverages the Kubernetes Horizontal Pod Autoscaler (HPA)
+to automatically scale the number of Pods in a App. When autoscaling is enabled
+for an App, an HPA object is created and bound to the App object. It then dynamically
+calculates the target scale and sets it for the App.</p>
+<h2 id="how-kf-scaling-works">How Kf scaling works</h2>
+<p>The number of Pods that are deployed for a Kf App is
+controlled by its underlying Deployment object&rsquo;s <code>replicas</code> field. The target
+number of Deployment replicas is set through the App&rsquo;s <code>replicas</code> field.</p>
+<p>Scaling can be done manually with the <code>kf scale</code> command.
+This command is disabled when autoscaling is enabled to avoid conflicting targets.</p>
+<h2 id="how-the-kubernetes-horizontal-pod-autoscaler-works">How the Kubernetes Horizontal Pod Autoscaler works</h2>
+<p>The Horizontal Pod Autoscaler (HPA) is implemented as a Kubernetes API resource
+(the HPA object) and a control loop (the HPA controller) which periodically
+calculates the number of desired replicas based on current resource utilization.
+The HPA controller then passes the number to the target object that implements the
+Scale subresource. The actual scaling is delegated to the underlying object and
+its controller. You can find more information in the <a href="https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/">Kubernetes documentation</a>.</p>
+<h3 id="how-the-autoscaler-determines-when-to-scale">How the Autoscaler determines when to scale</h3>
+<p>Periodically, the HPA controller queries the resource utilization against
+the metrics specified in each HorizontalPodAutoscaler definition. The controller
+obtains the metrics from the resource metrics API for each Pod. Then the
+controller calculates the utilization value as a percentage of the equivalent
+resource request. The desired number of replicas is then calculated based on the
+ratio of current percentage and desired percentage. You can read more about the
+<a href="https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#algorithm-details">autoscaling algorithm</a> in the Kubernetes documentation.</p>
+<h3 id="metrics">Metrics</h3>
+<p>Kf uses HPA v1 which only supports CPU as the target metric.</p>
+<h2 id="how-the-kubernetes-horizontal-autoscaler-works-with-kf">How the Kubernetes Horizontal Autoscaler works with Kf</h2>
+<p>When autoscaling is enabled for a Kf App, the Kf
+controller will create an HPA object based on the scaling limits and rules
+specified on the App. Then the HPA controller fetches the specs from the HPA
+object and scales the App accordingly.</p>
+<p>The HPA object will be deleted if Autoscaling is disabled or if the
+corresponding App is deleted.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-8412b2ccff3bf6d3216d6875e40cd997">2 - Manage Autoscaling</h1>
+    <div class="lead">Learn to use autoscaling for your app.</div>
+	<p>Kf Apps can be automatically scaled based on CPU usage.
+You can configure autoscaling limits for your Apps and the target CPU usage for
+each App instance. Kf automatically scales your Apps up
+and down in response to demand.</p>
+<p>By default, autoscaling is disabled. Follow the steps below to enable autoscaling.</p>
+<h2 id="view-apps">View Apps</h2>
+<p>You can view the autoscaling status for an App using the <code>kf apps</code>
+command. If autoscaling is enabled for an App, <code>Instances</code> includes the
+autoscaling status.</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kf apps
+
+Name   Instances              Memory  Disk  CPU
+app1   4 (autoscaled 4 to 5)  256Mi   1Gi   100m
+app2   1                      256Mi   1Gi   100m
+</code></pre><p>Autoscaling is enabled for <code>app1</code> with <code>min-instances</code> set to 4 and
+<code>max-instances</code> set to 5. Autoscaling is disabled for <code>app2</code>.</p>
+<h2 id="update-autoscaling-limits">Update autoscaling limits</h2>
+<p>You can update the instance limits using the <code>kf update-autoscaling-limits</code>
+command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf update-autoscaling-limits app-name min-instances max-instances
+</span></span></code></pre></div><h2 id="create-autoscaling-rule">Create autoscaling rule</h2>
+<p>You can create autoscaling rules using the <code>kf create-autoscaling-rule</code>
+command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf create-autoscaling-rule app-name CPU min-threshold max-threshold
+</span></span></code></pre></div><h2 id="delete-autoscaling-rules">Delete autoscaling rules</h2>
+<p>You can delete all autoscaling rules with the
+<code>kf delete-autoscaling-rule</code> command. Kf only supports
+one autoscaling rule.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf delete-autoscaling-rules app-name
+</span></span></code></pre></div><h2 id="enable-and-disable-autoscaling">Enable and disable autoscaling</h2>
+<p>Autoscaling can be enabled by using <code>enable-autoscaling</code> and
+disabled by using <code>disable-autoscaling</code>. When it is disabled, the
+configurations, including limits and rules, are preserved.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf enable-autoscaling app-name
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kf disable-autoscaling app-name
+</span></span></code></pre></div>
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-4 text-xs-center order-sm-2">
+        
+        
+        
+      </div>
+      <div class="col-6 col-sm-4 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" target="_blank" rel="noopener" href="https://github.com/google/kf" aria-label="GitHub">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Security mailing list" aria-label="Security mailing list">
+    <a class="text-white" target="_blank" rel="noopener" href="mailto:kf-security@google.com" aria-label="Security mailing list">
+      <i class="fa fa-envelope"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-4 text-center py-2 order-sm-2">
+        <small class="text-white">&copy; 2022 The Kf Authors All Rights Reserved</small>
+        
+	
+		
+	
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+    integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js"
+    integrity="sha512-UR25UO94eTnCVwjbXozyeVd6ZqpaAE9naiEUBK/A+QDbfSTQFhPGj5lOR6d8tsgbBk84Ggb5A3EkjsOgPRPcKA=="
+    crossorigin="anonymous"></script>
+
+
+
+
+
+<script src='/js/tabpane-persist.js'></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/js/main.min.91798a335c881f1b6b805085ba4aa22d1dbd2b0b18d105d05189fa104ddae350.js" integrity="sha256-kXmKM1yIHxtrgFCFukqiLR29KwsY0QXQUYn6EE3a41A=" crossorigin="anonymous"></script>
+
+
+
+
+  </body>
+</html>

@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.101.0" />
+<link rel="canonical" type="text/html" href="/docs/v2.11/operator/security/security-overview/">
+<link rel="alternate" type="application/rss&#43;xml" href="/docs/v2.11/operator/security/security-overview/index.xml">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/favicons/android-192x192.png" sizes="192x192">
+
+<title>Security Overview | Kf</title>
+<meta name="description" content="Unerstand Kf&#39;s security posture.">
+<meta property="og:title" content="Security Overview" />
+<meta property="og:description" content="Unerstand Kf&#39;s security posture." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/v2.11/operator/security/security-overview/" /><meta property="og:site_name" content="Kf" />
+
+<meta itemprop="name" content="Security Overview">
+<meta itemprop="description" content="Unerstand Kf&#39;s security posture."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Security Overview"/>
+<meta name="twitter:description" content="Unerstand Kf&#39;s security posture."/>
+
+
+
+
+<link rel="preload" href="/scss/main.scss" as="style">
+<link href="/scss/main.scss" rel="stylesheet" integrity="">
+
+<script
+  src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"
+  crossorigin="anonymous"></script>
+<script
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="/">
+		<span class="navbar-logo"></span><span class="font-weight-bold">Kf</span>
+	</a>
+	<div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+		<ul class="navbar-nav mt-2 mt-lg-0">
+			
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/developer/" ><span>Developer Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link active" href="/docs/v2.11/operator/" ><span class="active">Operator Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/troubleshooting/" ><span>Troubleshooting</span></a>
+			</li>
+			
+			
+			
+		</ul>
+	</div>
+	<div class="navbar-nav d-none d-lg-block"><input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="/offline-search-index.8271768637bdb31d52e7c162697e4315.json"
+  data-offline-search-base-href="/"
+  data-offline-search-max-results="10"
+>
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/docs/v2.11/operator/security/security-overview/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Security Overview</h1>
+<div class="lead">Unerstand Kf&rsquo;s security posture.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+
+    </ul>
+
+
+<div class="content">
+      <p>Kf aims to provide a similar developer experience to Cloud Foundry, replicating the build, push, and deploy lifecycle. It does this by building a developer UX layer on top of widely-known, broadly used and adopted technologies like Kubernetes, Istio, and container registries rather than by implementing all the pieces from the ground up.</p>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Kf should be used in a GCP Project dedicated to your evaluation. See <a href="#important-considerations">Important considerations</a> for more information.
+</aside>
+
+<p>When making security decisions, Kf aims to provide complete solutions that are native to their respective components and can be augmented with other mechanisms. Breaking that down:</p>
+<ul>
+<li><strong>Complete solutions</strong> means that Kf tries not to provide partial solutions that can lead to a false sense of security.</li>
+<li><strong>Native</strong> means that the solutions should be a part of the component rather than a Kf construct to prevent breaking changes.</li>
+<li><strong>Can be augmented</strong> means the approach Kf takes should work seamlessly with other Kubernetes and Google Cloud tooling for defense in depth.</li>
+</ul>
+<h2 id="important-considerations">Important considerations</h2>
+<p>In addition to the <a href="#current-limitations">Current limitations</a> described below, it is important that you read through and understand the items outlined in this section.</p>
+<h3 id="workload-identity">Workload Identity</h3>
+<p>By default, Kf uses <a href="https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity">Workload Identity</a> to provide secure delivery and rotation of the Service Account credentials used by Kf to interact with your Google Cloud Project. Workload Identity achieves this by mapping a Kubernetes Service Account (KSA) to a Google Service Account (GSA). The Kf controller runs in the <code>kf</code> namespace and uses a KSA named <code>controller</code> mapped to your GSA to do the following things:</p>
+<ol>
+<li>Write metrics to Stackdriver</li>
+<li>When a new Kf space is created (<code>kf create-space</code>), the Kf controller creates a new KSA named <code>kf-builder</code> in the new space and maps it to the same GSA.</li>
+<li>The <code>kf-builder</code> KSA is used by Tekton to push and pull container images to Google Container Registry (gcr.io)</li>
+</ol>
+<p>This diagram illustrates those interactions:</p>
+
+<figure>
+    <img src="./wi_overview.svg"
+         alt="Workload identity overview diagram"/> 
+</figure>
+
+<h3 id="current-limitations">Current limitations</h3>
+<ul>
+<li>
+<p>Kf doesn&rsquo;t provide pre-built RBAC roles. Until
+Kf provides this, use
+<a href="https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control">RBAC</a>.</p>
+</li>
+<li>
+<p>A developer pushing an app with Kf can also create
+Pods (with <code>kubectl</code>) that can use the <code>kf-builder</code> KSA with the permissions
+of its associated GSA.</p>
+</li>
+<li>
+<p>Deploying to Kf requires write access to a container
+registry. Deploy Kf in a dedicated project without
+access to production resources. Grant developers access to push code to the
+Artifact Repository by
+<a href="https://cloud.google.com/container-registry/docs/access-control">granting them <code>roles/storage.admin</code></a>
+on the project or buckets that Artifact Repository uses.</p>
+</li>
+<li>
+<p>Kf uses the same Pod to fetch, build, and store images.
+Assume that any credentials that you provide can be known by the authors and
+publishers of the buildpacks you use.</p>
+</li>
+<li>
+<p>Kf doesn&rsquo;t support quotas to protect against noisy
+neighbors. Use Kubernetes
+<a href="https://kubernetes.io/docs/concepts/policy/resource-quotas/">resource quotas</a>.</p>
+</li>
+</ul>
+<h2 id="other-resources">Other resources</h2>
+<h3 id="google-cloud">Google Cloud</h3>
+<h4 id="general">General</h4>
+<ul>
+<li><a href="https://cloud.google.com/kubernetes-engine/docs/concepts/security-overview">GKE security overview</a></li>
+<li><a href="https://cloud.google.com/kubernetes-engine/docs/concepts/multitenancy-overview">GKE cluster multi-tenancy</a></li>
+<li><a href="https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity">Workload Identity</a></li>
+<li><a href="https://cloud.google.com/kubernetes-engine/docs/how-to/iam">GKE and Cloud IAM policies</a></li>
+</ul>
+<h4 id="recommended-protections">Recommended protections</h4>
+<ul>
+<li><a href="https://cloud.google.com/kubernetes-engine/docs/how-to/protecting-cluster-metadata">Protecting cluster metadata</a></li>
+<li><a href="https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control">Role-based access control</a></li>
+</ul>
+<h4 id="advanced-protections">Advanced protections</h4>
+<ul>
+<li><a href="https://cloud.google.com/kubernetes-engine/docs/how-to/sandbox-pods">GKE Sandbox</a></li>
+<li><a href="https://cloud.google.com/kubernetes-engine/docs/how-to/network-policy">Network policies</a></li>
+</ul>
+
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-4 text-xs-center order-sm-2">
+        
+        
+        
+      </div>
+      <div class="col-6 col-sm-4 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" target="_blank" rel="noopener" href="https://github.com/google/kf" aria-label="GitHub">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Security mailing list" aria-label="Security mailing list">
+    <a class="text-white" target="_blank" rel="noopener" href="mailto:kf-security@google.com" aria-label="Security mailing list">
+      <i class="fa fa-envelope"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-4 text-center py-2 order-sm-2">
+        <small class="text-white">&copy; 2022 The Kf Authors All Rights Reserved</small>
+        
+	
+		
+	
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+    integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js"
+    integrity="sha512-UR25UO94eTnCVwjbXozyeVd6ZqpaAE9naiEUBK/A+QDbfSTQFhPGj5lOR6d8tsgbBk84Ggb5A3EkjsOgPRPcKA=="
+    crossorigin="anonymous"></script>
+
+
+
+
+
+<script src='/js/tabpane-persist.js'></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/js/main.min.91798a335c881f1b6b805085ba4aa22d1dbd2b0b18d105d05189fa104ddae350.js" integrity="sha256-kXmKM1yIHxtrgFCFukqiLR29KwsY0QXQUYn6EE3a41A=" crossorigin="anonymous"></script>
+
+
+
+
+  </body>
+</html>

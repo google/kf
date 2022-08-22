@@ -1,0 +1,1445 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.101.0" />
+<link rel="canonical" type="text/html" href="/docs/v2.11/developer/build-and-deploy/">
+<link rel="alternate" type="application/rss&#43;xml" href="/docs/v2.11/developer/build-and-deploy/index.xml">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/favicons/android-192x192.png" sizes="192x192">
+
+<title>Build and deploy applications | Kf</title>
+<meta name="description" content="Learn how to build and deploy applications in Kf.">
+<meta property="og:title" content="Build and deploy applications" />
+<meta property="og:description" content="Learn how to build and deploy applications in Kf." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/v2.11/developer/build-and-deploy/" /><meta property="og:site_name" content="Kf" />
+
+<meta itemprop="name" content="Build and deploy applications">
+<meta itemprop="description" content="Learn how to build and deploy applications in Kf."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Build and deploy applications"/>
+<meta name="twitter:description" content="Learn how to build and deploy applications in Kf."/>
+
+
+
+
+<link rel="preload" href="/scss/main.scss" as="style">
+<link href="/scss/main.scss" rel="stylesheet" integrity="">
+
+<script
+  src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"
+  crossorigin="anonymous"></script>
+<script
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="/">
+		<span class="navbar-logo"></span><span class="font-weight-bold">Kf</span>
+	</a>
+	<div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+		<ul class="navbar-nav mt-2 mt-lg-0">
+			
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link active" href="/docs/v2.11/developer/" ><span class="active">Developer Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/operator/" ><span>Operator Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/troubleshooting/" ><span>Troubleshooting</span></a>
+			</li>
+			
+			
+			
+		</ul>
+	</div>
+	<div class="navbar-nav d-none d-lg-block"><input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="/offline-search-index.8271768637bdb31d52e7c162697e4315.json"
+  data-offline-search-base-href="/"
+  data-offline-search-max-results="10"
+>
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/docs/v2.11/developer/build-and-deploy/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Build and deploy applications</h1>
+<div class="lead">Learn how to build and deploy applications in Kf.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-0e8cd33d006c97b252697a9cfd07f2c7">Deploy an application</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-8ea3d94dc554a1582b70703a82fca49f">Get started with buildpacks</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-f1392c0da56cd744e3f2a431f5b31ef1">Reduce deployment risk with blue-green deployments</a></li>
+
+
+    
+  
+    
+    
+	
+<li>4: <a href="#pg-b2c95f335af52e4210d54a7a32f7f710">Compare V2 and V3 Buildpacks</a></li>
+
+
+    
+  
+    
+    
+	
+<li>5: <a href="#pg-149d70341c8f45f4db5d853c1df8199c">App Manifest</a></li>
+
+
+    
+  
+    
+    
+	
+<li>6: <a href="#pg-f9a54f404531eb77094696e5deff4f90">App runtime</a></li>
+
+
+    
+  
+    
+    
+	
+<li>7: <a href="#pg-9e253740257aaf5fafb8377b39e5e3f3">Build runtime</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-0e8cd33d006c97b252697a9cfd07f2c7">1 - Deploy an application</h1>
+    <div class="lead">Guide to deploying applications with Kf.</div>
+	<p>When pushing an app (via <code>kf push</code>) to Kf, there are
+three lifecycles that Kf uses to take your source code
+and allow it to handle traffic:</p>
+<ol>
+<li>Source code upload</li>
+<li>Build</li>
+<li>Run</li>
+</ol>
+<h2 id="source-code-upload">Source code upload</h2>
+<p>The first thing that happens when you <code>kf push</code> is the Kf CLI (<code>kf</code>) packages
+up your directory (either current or <code>--path/-p</code>) into a container and
+publishes it to the container registry configured for the Space. This is
+called the source container. The Kf CLI then creates an <code>App</code> type in Kubernetes
+that contains both the source image and configuration from the App manifest and
+push flags.</p>
+<h3 id="ignore-files-during-push">Ignore files during push</h3>
+<p>In many cases, you will not want to upload certain files during <code>kf push</code> (i.e., &ldquo;ignore&rdquo; them).
+This is where a <code>.kfignore</code> (or <code>.cfignore</code>) file can be used.
+Similar to a <code>.gitignore</code> file, this file instructs the Kf CLI which
+files to not include in the source code container.</p>
+<p>To create a <code>.kfignore</code> file, create a text file named <code>.kfignore</code> in the base
+directory of your app (similar to where you would store the manifest
+file). Then populate it with a newline delimited list of files and directories
+you don&rsquo;t want published. For example:</p>
+<pre tabindex="0"><code>bin
+.idea
+</code></pre><p>This will tell the Kf CLI to not include anything in the <code>bin</code> or <code>.idea</code>
+directories.</p>
+<p>Kf supports <a href="https://git-scm.com/docs/gitignore">gitignore</a> style syntax.</p>
+<h2 id="build">Build</h2>
+<p>The Build lifecycle is handled by a Tekton
+<a href="https://github.com/tektoncd/pipeline/blob/master/docs/taskruns.md">TaskRun</a>.
+Depending on the flags that you provide while pushing, it will choose a specific
+Tekton <a href="https://github.com/tektoncd/pipeline/blob/master/docs/tasks.md">Task</a>.
+Kf currently has the following Tekton Tasks:</p>
+<ul>
+<li>buildpackv2</li>
+<li>buildpackv3</li>
+<li>kaniko</li>
+</ul>
+<p>Kf tracks each TaskRun as a Build. If a Build succeeds, the resulting
+container image is then deployed via the Run lifecycle (described below).</p>
+<p>More information can be found at <a href="/docs/v2.11/developer/build-and-deploy/build-runtime/">Build runtime</a>.</p>
+<h2 id="run">Run</h2>
+<p>The Run lifecycle is responsible for taking a container image and creating a
+<a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">Kubernetes Deployment</a>.</p>
+<p>It also creates:</p>
+<ul>
+<li><a href="https://istio.io/docs/reference/config/networking/virtual-service/">Istio Virtual Services</a></li>
+<li><a href="https://kubernetes.io/docs/concepts/configuration/secret/">Kubernetes Secrets</a></li>
+</ul>
+<p>More information can be found at <a href="/docs/v2.11/developer/build-and-deploy/build-runtime/">Build runtime</a>.</p>
+<h2 id="push-timeouts">Push timeouts</h2>
+<p>Kf supports setting an environment variable to instruct the CLI to time out
+while pushing apps. If set, the variables <code>KF_STARTUP_TIMEOUT</code> or
+<code>CF_STARTUP_TIMEOUT</code> are parsed as a golang style duration (for example <code>15m</code>,
+<code>1h</code>). If a value is not set, the push timeout defaults to 15 minutes.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-8ea3d94dc554a1582b70703a82fca49f">2 - Get started with buildpacks</h1>
+    <div class="lead">How to use built-in buildpacks for various languages.</div>
+	<p>Kf supports a variety of buildpacks. This document
+covers some starter examples for using them.</p>
+<h2 id="before-you-begin">Before you begin</h2>
+<ul>
+<li>You should have Kf running on a cluster.</li>
+<li>You should have run <code>kf target -s &lt;space-name&gt;</code> to target your space.</li>
+</ul>
+<h2 id="java-v2-buildpack">Java (v2) buildpack</h2>
+<p>Use <a href="https://start.spring.io/">spring initializr</a> to create a Java 8 maven project with a spring web dependency and JAR packaging. Download it, extract it, and once extracted you can generate a JAR.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>./mvnw package
+</span></span></code></pre></div><p>Push the JAR to Kf with the Java v2 buildpack.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push java-v2 --path target/helloworld-0.0.1-SNAPSHOT.jar
+</span></span></code></pre></div><h2 id="java-v3-buildpack">Java (v3) buildpack</h2>
+<p>Use <a href="https://start.spring.io/">spring initializr</a> to create a Java 8 maven project with a spring web dependency and JAR packaging. Download it, extract it, and once extracted, push to Kf with the cloud native buildpack.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push java-v3 --stack org.cloudfoundry.stacks.cflinuxfs3
+</span></span></code></pre></div><h2 id="python-v2-buildpack">Python (v2) buildpack</h2>
+<p>Create a new directory with files as shown in the following structure.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>tree
+</span></span><span style="display:flex;"><span>.
+</span></span><span style="display:flex;"><span>├── Procfile
+</span></span><span style="display:flex;"><span>├── requirements.txt
+</span></span><span style="display:flex;"><span>└── server.py
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>cat Procfile
+</span></span><span style="display:flex;"><span>web: python server.py
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>cat requirements.txt
+</span></span><span style="display:flex;"><span>Flask
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>cat server.py
+</span></span><span style="display:flex;"><span>from flask import Flask
+</span></span><span style="display:flex;"><span>import os
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000">app</span> <span style="color:#ce5c00;font-weight:bold">=</span> Flask<span style="color:#ce5c00;font-weight:bold">(</span>__name__<span style="color:#ce5c00;font-weight:bold">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>@app.route<span style="color:#ce5c00;font-weight:bold">(</span><span style="color:#4e9a06">&#39;/&#39;</span><span style="color:#ce5c00;font-weight:bold">)</span>
+</span></span><span style="display:flex;"><span>def hello_world<span style="color:#ce5c00;font-weight:bold">()</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">return</span> <span style="color:#4e9a06">&#39;Hello, World!&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">if</span> <span style="color:#000">__name__</span> <span style="color:#ce5c00;font-weight:bold">==</span> <span style="color:#4e9a06">&#34;__main__&#34;</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#000">port</span> <span style="color:#ce5c00;font-weight:bold">=</span> int<span style="color:#ce5c00;font-weight:bold">(</span>os.getenv<span style="color:#ce5c00;font-weight:bold">(</span><span style="color:#4e9a06">&#34;PORT&#34;</span>, 8080<span style="color:#ce5c00;font-weight:bold">))</span>
+</span></span><span style="display:flex;"><span>  app.run<span style="color:#ce5c00;font-weight:bold">(</span><span style="color:#000">host</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#39;0.0.0.0&#39;</span>, <span style="color:#000">port</span><span style="color:#ce5c00;font-weight:bold">=</span>port<span style="color:#ce5c00;font-weight:bold">)</span>
+</span></span></code></pre></div><p>Push the Python flask app using v2 buildpacks.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push python --buildpack python<span style="color:#4e9a06">\_</span>buildpack
+</span></span></code></pre></div><h2 id="python-v3-buildpack">Python (v3) buildpack</h2>
+<p>(same as above)</p>
+<p>Push the Python flask app using cloud native buildpacks.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push pythonv3 --stack org.cloudfoundry.stacks.cflinuxfs3
+</span></span></code></pre></div><h2 id="staticfile-v2-buildpack">Staticfile (v2) buildpack</h2>
+<p>Create a new directory that holds your source code.</p>
+<p>Add an <code>index.html</code> file with this content.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-html" data-lang="html"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">&lt;!DOCTYPE html&gt;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">&lt;</span><span style="color:#204a87;font-weight:bold">html</span> <span style="color:#c4a000">lang</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;en&#34;</span><span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">&lt;</span><span style="color:#204a87;font-weight:bold">head</span><span style="color:#000;font-weight:bold">&gt;&lt;</span><span style="color:#204a87;font-weight:bold">title</span><span style="color:#000;font-weight:bold">&gt;</span>Hello, world!<span style="color:#000;font-weight:bold">&lt;/</span><span style="color:#204a87;font-weight:bold">title</span><span style="color:#000;font-weight:bold">&gt;&lt;/</span><span style="color:#204a87;font-weight:bold">head</span><span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">&lt;</span><span style="color:#204a87;font-weight:bold">body</span><span style="color:#000;font-weight:bold">&gt;&lt;</span><span style="color:#204a87;font-weight:bold">h1</span><span style="color:#000;font-weight:bold">&gt;</span>Hello, world!<span style="color:#000;font-weight:bold">&lt;/</span><span style="color:#204a87;font-weight:bold">h1</span><span style="color:#000;font-weight:bold">&gt;&lt;/</span><span style="color:#204a87;font-weight:bold">body</span><span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">&lt;/</span><span style="color:#204a87;font-weight:bold">html</span><span style="color:#000;font-weight:bold">&gt;</span>
+</span></span></code></pre></div><p>Push the static content with the staticfile buildpack.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push staticsite --buildpack staticfile<span style="color:#4e9a06">\_</span>buildpack
+</span></span></code></pre></div>
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-f1392c0da56cd744e3f2a431f5b31ef1">3 - Reduce deployment risk with blue-green deployments</h1>
+    <div class="lead">How to deploy highly available applications.</div>
+	
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Kf will perform rolling deployments by default if you upgrade an app in place by starting
+an extra instance of it, waiting for it to become healthy, and then replacing an existing
+instance.
+</aside>
+
+<p>This page shows you how to deploy a new version of your application and migrate
+traffic over from an old to a new version.</p>
+<h2 id="push-the-initial-app">Push the initial App</h2>
+<p>Use the Kf CLI to push the initial version of your App
+with any routes:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>$ kf push app-v1 --route my-app.my-space.example.com
+</span></span></code></pre></div><h2 id="push-the-updated-app">Push the updated App</h2>
+<p>Use the Kf CLI to push a new version of your App without
+any routes:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>$ kf push app-v2 --no-route
+</span></span></code></pre></div><h2 id="add-routes-to-the-updated-app">Add routes to the updated App</h2>
+<p>Use the Kf CLI to bind all existing routes to the updated
+App with a weight of 0 to ensure that they don&rsquo;t get any requests:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>$ kf map-route app-v2 my-space.example.com --hostname my-app --weight <span style="color:#0000cf;font-weight:bold">0</span>
+</span></span></code></pre></div><h2 id="shift-traffic">Shift traffic</h2>
+<p>Start shifting traffic from the old App to the updated App by updating the
+weights on the routes:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>$ kf map-route app-v1 my-space.example.com --hostname my-app --weight <span style="color:#0000cf;font-weight:bold">80</span>
+</span></span><span style="display:flex;"><span>$ kf map-route app-v2 my-space.example.com --hostname my-app --weight <span style="color:#0000cf;font-weight:bold">20</span>
+</span></span></code></pre></div><p>If the deployment is going well, you can shift more traffic by updating the
+weights again:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>$ kf map-route app-v1 my-space.example.com --hostname my-app --weight <span style="color:#0000cf;font-weight:bold">50</span>
+</span></span><span style="display:flex;"><span>$ kf map-route app-v2 my-space.example.com --hostname my-app --weight <span style="color:#0000cf;font-weight:bold">50</span>
+</span></span></code></pre></div>
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Weights split traffic proportionally to the sum of the weights of all
+Apps mapped to the route. It&rsquo;s a common practice to treat weights as percentages.
+</aside>
+
+<h2 id="complete-traffic-shifting">Complete traffic shifting</h2>
+<p>After you&rsquo;re satisfied that the new service hasn&rsquo;t introduced regressions,
+complete the rollout by shifting all traffic to the new instance:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>$ kf map-route app-v1 my-space.example.com --hostname my-app --weight <span style="color:#0000cf;font-weight:bold">0</span>
+</span></span><span style="display:flex;"><span>$ kf map-route app-v2 my-space.example.com --hostname my-app --weight <span style="color:#0000cf;font-weight:bold">100</span>
+</span></span></code></pre></div><h2 id="turn-down-the-original-app">Turn down the original App</h2>
+<p>After you&rsquo;re satisfied that quick rollbacks aren&rsquo;t needed, remove the original
+route and stop the App:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>$ kf unmap-route app-v1 myspace.example.com --hostname my-app
+</span></span><span style="display:flex;"><span>$ kf stop app-v1
+</span></span></code></pre></div><p>Or delete the App and all associated route mappings:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>$ kf delete app-v1
+</span></span></code></pre></div>
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-b2c95f335af52e4210d54a7a32f7f710">4 - Compare V2 and V3 Buildpacks</h1>
+    <div class="lead">Learn how to decide wihch buildpacks to use.</div>
+	<p>A <a href="https://buildpacks.io/">buildpack</a> converts source code into an executable, and is used to deliver a simple, reliable, and repeatable way to create containers. Kf supports both V2 and V3 buildpacks, and it is important to understand the differences between them.</p>
+<h2 id="v2-buildpacks">V2 buildpacks</h2>
+<p>Most Cloud Foundry applications already use V2 buildpacks. When using V2 buildpacks with Kf, the lifecycle binaries and the buildpacks are downloaded and configured from their git URLs. Kf then uses the <code>lifecycle</code> CLI to execute each buildpack against the source code.</p>
+<h3 id="pros">Pros</h3>
+<ul>
+<li>Ready out of the box without pipeline or code changes.</li>
+</ul>
+<h3 id="cons">Cons</h3>
+<ul>
+<li>Legacy buildpack supersceded by V3.</li>
+<li>Weaker performance and reliability. The Kf build pipeline requires more IO for V2 buildpacks.</li>
+<li>Fewer community resources.</li>
+<li>Kf only supports OSS git repos.</li>
+</ul>
+<h2 id="v3-buildpacks">V3 buildpacks</h2>
+<p>V3 buildpacks are a Cloud Native Computing Foundation (CNCF) project with a well defined <a href="https://github.com/buildpacks/spec/blob/main/buildpack.md">spec</a>, a CLI (<a href="https://github.com/buildpacks/pack">pack</a>) and a growing community that is innovating around different languages and frameworks. Google Cloud also has its own set of <a href="https://github.com/GoogleCloudPlatform/buildpacks">OSS buildpacks</a>.</p>
+<p>V3 buildpacks have two overarching OCI containers:</p>
+<ul>
+<li>Builder image</li>
+<li>Run image</li>
+</ul>
+<h3 id="builder-image">Builder image</h3>
+<p>The builder image is used while your source code is being built into a runnable container. The image has the necessary <code>detect</code> scripts and other utilities to compile source code.</p>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Most buildpacks don&rsquo;t package the compilers with the builder image. Instead, they may have the build pipelines download any dependencies required to compile.
+</aside>
+
+<h3 id="run-image">Run image</h3>
+<p>The run image is the base image that a container is built on. This means that it is the base image that will run when the App executes.</p>
+<h3 id="layers">Layers</h3>
+<p>V3 buildpacks use layers to compose the final container. Each buildpack included in a build is given the opportunity to manipulate the file system and environment variables of the App. This layering approach allows for buildpacks to be thinner and more generic.</p>
+<p>V3 buildpacks are built on OCI containers. This requires that the V3 builder image be stored in a container registry that the Kf build pipeline has access to. The build pipeline uses the builder image to apply the underlying scripts to build the source code into a runnable container.</p>
+<h3 id="pros-1">Pros</h3>
+<ul>
+<li>Google supported <a href="https://github.com/GoogleCloudPlatform/buildpacks">builder and run image</a>.</li>
+<li>Works with various CI/CD runtimes like <a href="https://cloud.google.com/functions/docs/building/pack">Cloud Build</a>.</li>
+<li>Growing community and <a href="https://registry.buildpacks.io/">buildpack registry</a>.</li>
+</ul>
+<h3 id="cons-1">Cons</h3>
+<ul>
+<li>May require code/process updates. For example, the Java buildpack requires source code while the V2 buildpack requires a jar file.</li>
+<li>V3 buildpacks are newer and might require additional validation (is using community developed buildpacks).</li>
+</ul>
+<h2 id="kf-stacks">Kf Stacks</h2>
+<h3 id="view-stacks">View Stacks</h3>
+<p>When pushing an App, the build pipeline determines the buildpack based on the selected Stack (specified via the <code>--stack</code> flag or the manifest).</p>
+<p>To see which Stacks are available in a Space first ensure a Space is targeted:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf target -s myspace
+</span></span></code></pre></div><p>The <code>kf stacks</code> subcommand can then be used to list the Stacks:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf stacks
+</span></span></code></pre></div><p>The output shows both V2 and V3 Stacks:</p>
+<pre tabindex="0"><code>Getting stacks in Space: myspace
+Version  Name                                Build Image                                                                                          Run Image
+V2       cflinuxfs3                          cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5      cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5
+V3       kf-v2-to-v3-shim                    gcr.io/kf-releases/v2-to-v3:v2.7.0                                                                   gcr.io/buildpacks/gcp/run:v1                                                                       This is a stack added by the integration tests to assert that v2-&gt;v3 shim works
+V3       google                              gcr.io/buildpacks/builder:v1                                                                         gcr.io/buildpacks/gcp/run:v1                                                                       Google buildpacks (https://github.com/GoogleCloudPlatform/buildpacks)
+V3       org.cloudfoundry.stacks.cflinuxfs3  cloudfoundry/cnb:cflinuxfs3@sha256:f96b6e3528185368dd6af1d9657527437cefdaa5fa135338462f68f9c9db3022  cloudfoundry/run:full-cnb@sha256:dbe17be507b1cc6ffae1e9edf02806fe0e28ffbbb89a6c7ef41f37b69156c3c2  A large Cloud Foundry stack based on Ubuntu 18.04
+</code></pre><h2 id="v2-to-v3-buildpack-migration">V2 to V3 Buildpack Migration</h2>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> This feature is currently experimental and subject to change.
+</aside>
+
+<p>Kf provides a V3 stack to build applications that were built with standard V2 buildpacks, using a stack named  <code>kf-v2-to-v3-shim</code>. The <code>kf-v2-to-v3-shim</code> stack is created following the <a href="https://buildpacks.io/docs/operator-guide/create-a-stack/">standard V3 buildpacks API</a>. A Google maintained builder image is created with each Kf release, following the <a href="https://buildpacks.io/docs/operator-guide/create-a-builder/">standard buildpack process</a>. The builder image aggregates a list of V3 buildpacks created by the same process used with the <code>kf wrap-v2-buildpack</code> command. The V3 buildpack images are created using the standard V2 buildpack images. It&rsquo;s important to note that the V3 buildpacks do not contain the binary of the referenced V2 buildpacks. Instead, the V2 buildpack images are referenced, and the bits are downloaded at App build time (by running <code>kf push</code>).</p>
+<p>At App build time, the V2 buildpack is downloaded from the corresponding git repository. When V3 detection runs, it delegates to the downloaded V2 detection script. For the first buildpack group that passes detection, it proceeds to the build step, which delegates the build execution to the downloaded V2 builder script.</p>
+<p>The following V2 buildpacks are supported in the <code>kf-v2-to-v3-shim</code> stack:</p>
+<table>
+<thead>
+<tr>
+<th>Buildpack</th>
+<th>Git Repository</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>java_buildpack</td>
+<td><a href="https://github.com/cloudfoundry/java-buildpack">https://github.com/cloudfoundry/java-buildpack</a></td>
+</tr>
+<tr>
+<td>dotnet_core_buildpack</td>
+<td><a href="https://github.com/cloudfoundry/dotnet-core-buildpack">https://github.com/cloudfoundry/dotnet-core-buildpack</a></td>
+</tr>
+<tr>
+<td>nodejs_buildpack</td>
+<td><a href="https://github.com/cloudfoundry/nodejs-buildpack">https://github.com/cloudfoundry/nodejs-buildpack</a></td>
+</tr>
+<tr>
+<td>go_buildpack</td>
+<td><a href="https://github.com/cloudfoundry/go-buildpack">https://github.com/cloudfoundry/go-buildpack</a></td>
+</tr>
+<tr>
+<td>python_buildpack</td>
+<td><a href="https://github.com/cloudfoundry/python-buildpack">https://github.com/cloudfoundry/python-buildpack</a></td>
+</tr>
+<tr>
+<td>binary_buildpack</td>
+<td><a href="https://github.com/cloudfoundry/binary-buildpack">https://github.com/cloudfoundry/binary-buildpack</a></td>
+</tr>
+<tr>
+<td>nginx_buildpack</td>
+<td><a href="https://github.com/cloudfoundry/nginx-buildpack">https://github.com/cloudfoundry/nginx-buildpack</a></td>
+</tr>
+</tbody>
+</table>
+<h4 id="option-1-migrate-apps-built-with-standard-v2-buildpacks">Option 1: Migrate Apps built with standard V2 buildpacks</h4>
+<p>To build Apps with the <code>kf-v2-to-v3-shim</code> stack, use the following command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push myapp --stack kf-v2-to-v3-shim
+</span></span></code></pre></div><p>The <code>kf-v2-to-v3-shim</code> stack will automatically detect the runtime with the wrapped V2 buildpacks. The resulting App image is created using the V3 standard and build pipeline, but the builder of the equivalent V2 buildpack.</p>
+<h4 id="option-2-migrate-apps-built-with-custom-v2-buildpacks">Option 2: Migrate Apps built with custom V2 buildpacks</h4>
+<p>Kf has a buildpack migration tool that can take a V2 buildpack and wrap it with a V3 buildpack. The wrapped buildpack can then be used anywhere V3 buildpacks are available.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf wrap-v2-buildpack gcr.io/your-project/v2-go-buildpack https://github.com/cloudfoundry/go-buildpack --publish
+</span></span></code></pre></div><p>This will create a buildpack image named <code>gcr.io/your-project/v2-go-buildpack</code>. It can then be used to create a builder by following the <a href="https://buildpacks.io/docs/operator-guide/create-a-builder/">create a builder</a> docs.</p>
+<p>This subcommand uses the following CLIs transparently:</p>
+<ul>
+<li><code>go</code></li>
+<li><code>git</code></li>
+<li><code>pack</code></li>
+<li><code>unzip</code></li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-149d70341c8f45f4db5d853c1df8199c">5 - App Manifest</h1>
+    <div class="lead">Reference guide for the application manifest.yml format.</div>
+	<p>App manifests provide a way for developers to record their App&rsquo;s execution environment in a declarative way.
+They allow Apps to be deployed consistently and reproducibly.</p>
+<h2 id="format">Format</h2>
+<p>Manifests are YAML files in the root directory of the App. They <strong>must</strong> be named <code>manifest.yml</code> or <code>manifest.yaml</code>.</p>
+<p>Kf App manifests are allowed to have a single top-level element: <code>applications</code>.
+The <code>applications</code> element can contain one or more application entries.</p>
+<h2 id="application-fields">Application fields</h2>
+<p>The following fields are valid for objects under <code>applications</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><code>string</code></td>
+<td>The name of the application. The app name should be lower-case alphanumeric characters and dashes. It must not start with a dash.</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td><code>string</code></td>
+<td>The path to the source of the app. Defaults to the manifest&rsquo;s directory.</td>
+</tr>
+<tr>
+<td><code>buildpacks</code></td>
+<td><code>string[]</code></td>
+<td>A list of buildpacks to apply to the app.</td>
+</tr>
+<tr>
+<td><code>stack</code></td>
+<td><code>string</code></td>
+<td>Base image to use for to use for apps created with a buildpack.</td>
+</tr>
+<tr>
+<td><code>docker</code></td>
+<td><code>object</code></td>
+<td>A docker object. See the Docker Fields section for more information.</td>
+</tr>
+<tr>
+<td><code>env</code></td>
+<td><code>map</code></td>
+<td>Key/value pairs to use as the environment variables for the app and build.</td>
+</tr>
+<tr>
+<td><code>services</code></td>
+<td><code>string[]</code></td>
+<td>A list of service instance names to automatically bind to the app.</td>
+</tr>
+<tr>
+<td><code>disk_quota</code></td>
+<td><code>quantity</code></td>
+<td>The amount of disk the application should get. Defaults to 1GiB.</td>
+</tr>
+<tr>
+<td><code>memory</code></td>
+<td><code>quantity</code></td>
+<td>The amount of RAM to provide the app. Defaults to 1GiB.</td>
+</tr>
+<tr>
+<td><code>cpu</code> †</td>
+<td><code>quantity</code></td>
+<td>The amount of CPU to provide the application. Defaults to 0.1 (1/10th of a CPU).</td>
+</tr>
+<tr>
+<td><code>instances</code></td>
+<td><code>int</code></td>
+<td>The number of instances of the app to run. Defaults to 1.</td>
+</tr>
+<tr>
+<td><code>routes</code></td>
+<td><code>object</code></td>
+<td>A list of routes the app should listen on. See the Route Fields section for more.</td>
+</tr>
+<tr>
+<td><code>no-route</code></td>
+<td><code>boolean</code></td>
+<td>If set to true, the application will not be routable.</td>
+</tr>
+<tr>
+<td><code>random-route</code></td>
+<td><code>boolean</code></td>
+<td>If set to true, the app will be given a random route.</td>
+</tr>
+<tr>
+<td><code>timeout</code></td>
+<td><code>int</code></td>
+<td>The number of seconds to wait for the app to become healthy.</td>
+</tr>
+<tr>
+<td><code>health-check-type</code></td>
+<td><code>string</code></td>
+<td>The type of health-check to use <code>port</code>, <code>process</code>, <code>none</code>, or <code>http</code>. Default: <code>port</code></td>
+</tr>
+<tr>
+<td><code>health-check-http-endpoint</code></td>
+<td><code>string</code></td>
+<td>The endpoint to target as part of the health-check. Only valid if <code>health-check-type</code> is <code>http</code>.</td>
+</tr>
+<tr>
+<td><code>command</code></td>
+<td><code>string</code></td>
+<td>The command that starts the app. If supplied, this will be passed to the container entrypoint.</td>
+</tr>
+<tr>
+<td><code>entrypoint</code> †</td>
+<td><code>string</code></td>
+<td>Overrides the app container&rsquo;s entrypoint.</td>
+</tr>
+<tr>
+<td><code>args</code> †</td>
+<td><code>string[]</code></td>
+<td>Overrides the arguments the app container.</td>
+</tr>
+<tr>
+<td><code>ports</code> †</td>
+<td><code>object</code></td>
+<td>A list of ports to expose on the container. If supplied, the first entry in this list is used as the default port.</td>
+</tr>
+</tbody>
+</table>
+<p>† Unique to Kf</p>
+<h2 id="docker-fields">Docker fields</h2>
+<p>The following fields are valid for <code>application.docker</code> objects:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>image</code></td>
+<td><code>string</code></td>
+<td>The docker image to use.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="route-fields">Route fields</h2>
+<p>The following fields are valid for <code>application.routes</code> objects:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>route</code></td>
+<td><code>string</code></td>
+<td>A route to the app including hostname, domain, and path.</td>
+</tr>
+<tr>
+<td><code>appPort</code></td>
+<td><code>int</code></td>
+<td>(Optional) A custom port on the App the route will send traffic to.</td>
+</tr>
+</tbody>
+</table>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> If you specify an <code>appPort</code>, that port MUST also be declared in the <code>ports</code> field.
+</aside>
+
+<h2 id="port-fields">Port fields</h2>
+<p>The following fields are valid for <code>application.ports</code> objects:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>port</code></td>
+<td><code>int</code></td>
+<td>The port to expose on the App&rsquo;s container.</td>
+</tr>
+<tr>
+<td><code>protocol</code></td>
+<td><code>string</code></td>
+<td>The protocol of the port to expose. Must be <code>tcp</code>, <code>http</code> or <code>http2</code>. Default: <code>tcp</code></td>
+</tr>
+</tbody>
+</table>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> The <code>protocol</code> field is a hint about the traffic that goes over the port.
+The hint is used by the <a href="https://cloud.google.com/service-mesh/docs/overview">service mesh</a> for better tracing and metrics.
+</aside>
+
+
+<aside class="alert alert-danger" style="border-width: 1px 1px 1px 4px;">
+<i class="fa-solid fa-triangle-exclamation"></i> <strong>Warning:</strong> Kf doesn&rsquo;t currently support TCP port-based routing. You must use a
+<a href="https://kubernetes.io/docs/tutorials/stateless-application/expose-external-ip-address/">Kubernetes LoadBalancer</a> if you want to expose a TCP port to the Internet. Ports are available on the cluster internal App address <code>&lt;app-name&gt;.&lt;space&gt;</code>.
+</aside>
+
+
+<h2 id="examples">Examples</h2>
+<h3 id="minimal-app">Minimal App</h3>
+<p>This is a bare-bones manifest that will build an App by auto-detecting
+the buildpack based on the uploaded source, and deploy one instance of it.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">applications</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">my-minimal-application</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><h3 id="simple-app">Simple App</h3>
+<p>This is a full manifest for a more traditional Java App.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">applications</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">account-manager</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># only upload src/ on push</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">path</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">src</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># use the Java buildpack</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">buildpacks</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">java</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">env</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#8f5902;font-style:italic"># manually configure the buildpack&#39;s Java version</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">BP_JAVA_VERSION</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">8</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">ENVIRONMENT</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">PRODUCTION</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># use less disk and memory than default</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">disk_quota</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">512M</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">memory</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">512M</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># bump up the CPU</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">cpu</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">0.2</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">instances</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">3</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># make the app listen on three routes</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">routes</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">route</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">accounts.mycompany.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">route</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">accounts.datacenter.mycompany.internal</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">route</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">mycompany.com/accounts</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># set up a longer timeout and custom endpoint to validate</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># when the app comes up</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">timeout</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">300</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">health-check-type</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">health-check-http-endpoint</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">/healthz</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># attach two services by name</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">services</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">customer-database</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">web-cache</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><h3 id="docker-app">Docker App</h3>
+<p>Kf can deploy Docker containers as well as manifest deployed App.
+These Docker Apps MUST listen on the <code>PORT</code> environment variable.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">applications</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">white-label-app</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># use a pre-built docker image (must listen on $PORT)</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">docker</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">image</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">gcr.io/my-company/white-label-app:123</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">env</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#8f5902;font-style:italic"># add additional environment variables</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">ENVIRONMENT</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">PRODUCTION</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">disk_quota</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">1G</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">memory</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">1G</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">cpu</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">2</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">instances</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">1</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">routes</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">route</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">white-label-app.mycompany.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><h3 id="app-with-multiple-ports">App with multiple ports</h3>
+<p>This App has multiple ports to expose an admin console, website, and SMTP server.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">applications</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">b2b-server</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">ports</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">port</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">8080</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">port</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">9090</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">port</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">2525</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">tcp</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">routes</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">route</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">b2b-admin.mycompany.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">appPort</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">9090</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">route</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">b2b.mycompany.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#8f5902;font-style:italic"># gets the default (first) port</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><h3 id="health-check-types">Health check types</h3>
+<p>Kf supports three different health check types:</p>
+<ol>
+<li><code>port</code> (default)</li>
+<li><code>http</code></li>
+<li><code>process</code> (or <code>none</code>)</li>
+</ol>
+<p><code>port</code> and <code>http</code> set a <a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/">Kubernetes readiness and liveness
+probe</a>
+that ensures the application is ready before sending traffic to it.</p>
+<p>The <code>port</code> health check will ensure the port found at <code>$PORT</code> is being
+listened to. Under the hood Kf uses a TCP probe.</p>
+<p>The <code>http</code> health check will use the configured value in
+<code>health-check-http-endpoint</code> to check the application&rsquo;s health. Under the hood
+Kf uses an HTTP probe.</p>
+<p>A <code>process</code> health check only checks to see if the process running on the
+container is alive. It does NOT set a Kubernetes readiness or liveness probe.</p>
+<h2 id="known-differences">Known differences</h2>
+<p>The following are known differences between Kf manifests and CF manifests:</p>
+<ul>
+<li>Kf does not support deprecated CF manifest fields. This includes all fields at the root-level of the manifest (other than applications) and routing fields.</li>
+<li>Kf is missing support for the following v2 manifest fields:
+<ul>
+<li><code>docker.username</code></li>
+</ul>
+</li>
+<li>Kf does not support auto-detecting ports for Docker containers.</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-f9a54f404531eb77094696e5deff4f90">6 - App runtime</h1>
+    <div class="lead">Reference guide for the application runtime container environment.</div>
+	<p>The app runtime is the environment apps are executed in.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Buildpack Apps</th>
+<th>Container Image Apps</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>System libraries</td>
+<td>Provided by the Stack</td>
+<td>Provided in the container</td>
+</tr>
+<tr>
+<td>Network access</td>
+<td>Full access through Envoy sidecar</td>
+<td>Full access through Envoy sidecar</td>
+</tr>
+<tr>
+<td>File system</td>
+<td>Ephemeral storage</td>
+<td>Ephemeral storage</td>
+</tr>
+<tr>
+<td>Language runtime</td>
+<td>Supplied by the Stack or Buildpack</td>
+<td>Built into the container</td>
+</tr>
+<tr>
+<td>User</td>
+<td>Specified by the Stack</td>
+<td>Specified on the container</td>
+</tr>
+<tr>
+<td>Isolation mechanism</td>
+<td>Kubernetes Pod</td>
+<td>Kubernetes Pod</td>
+</tr>
+<tr>
+<td>DNS</td>
+<td>Provided by Kubernetes</td>
+<td>Provided by Kubernetes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="environment-variables">Environment variables</h2>
+<p>Environment variables are injected into the app at runtime by Kubernetes.
+Variables are added based on the following order, where later values override
+earlier ones with the same name:</p>
+<ol>
+<li>Space (set by administrators)</li>
+<li>App (set by developers)</li>
+<li>System (set by Kf)</li>
+</ol>
+<p>Kf provides the following system environment variables:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CF_INSTANCE_ADDR</code></td>
+<td>The cluster-visible IP:PORT of the App instance.</td>
+</tr>
+<tr>
+<td><code>CF_INSTANCE_GUID</code></td>
+<td>The UUID of the App instance.</td>
+</tr>
+<tr>
+<td><code>INSTANCE_GUID</code></td>
+<td>Alias of <code>CF_INSTANCE_GUID</code>.</td>
+</tr>
+<tr>
+<td><code>CF_INSTANCE_INDEX</code></td>
+<td>The index number of the App instance, this will ALWAYS be 0.</td>
+</tr>
+<tr>
+<td><code>INSTANCE_INDEX</code></td>
+<td>Alias of <code>CF_INSTANCE_INDEX</code>.</td>
+</tr>
+<tr>
+<td><code>CF_INSTANCE_IP</code></td>
+<td>The cluster-visible IP of the App instance.</td>
+</tr>
+<tr>
+<td><code>CF_INSTANCE_INTERNAL_IP</code></td>
+<td>Alias of <code>CF_INSTANCE_IP</code></td>
+</tr>
+<tr>
+<td><code>VCAP_APP_HOST</code></td>
+<td>Alias of <code>CF_INSTANCE_IP</code></td>
+</tr>
+<tr>
+<td><code>CF_INSTANCE_PORT</code></td>
+<td>The cluster-visible port of the App instance. In Kf this is the same as <code>PORT</code>.</td>
+</tr>
+<tr>
+<td><code>DATABASE_URL</code></td>
+<td>The first URI found in a <code>VCAP_SERVICES</code> credential.</td>
+</tr>
+<tr>
+<td><code>LANG</code></td>
+<td>Required by Buildpacks to ensure consistent script load order.</td>
+</tr>
+<tr>
+<td><code>MEMORY_LIMIT</code></td>
+<td>The maximum amount of memory in MB the App can consume.</td>
+</tr>
+<tr>
+<td><code>PORT</code></td>
+<td>The port the App should listen on for requests.</td>
+</tr>
+<tr>
+<td><code>VCAP_APP_PORT</code></td>
+<td>Alias of <code>PORT</code>.</td>
+</tr>
+<tr>
+<td><code>VCAP_APPLICATION</code></td>
+<td>A JSON structure containing App metadata.</td>
+</tr>
+<tr>
+<td><code>VCAP_SERVICES</code></td>
+<td>A JSON structure specifying bound services.</td>
+</tr>
+</tbody>
+</table>
+<p>Service credentials from bound services get injected into Apps via the
+<code>VCAP_SERVICES</code> environment variable. The variable is a valid JSON object with
+the following structure.</p>
+<h3 id="vcapservices">VCAPServices</h3>
+<p>A JSON object where the keys are Service labels and the values are an array of
+<code>VCAPService</code>. The array represents every bound
+service with that label.
+<a href="/docs/v2.11/developer/backing-services/user-provided-services/">User provided services</a>
+are placed under the label <code>user-provided</code>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-.json" data-lang=".json"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;mysql&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span><span style="color:#a40000">...</span><span style="color:#000;font-weight:bold">],</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;postgresql&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span><span style="color:#a40000">...</span><span style="color:#000;font-weight:bold">],</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;user-provided&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span><span style="color:#a40000">...</span><span style="color:#000;font-weight:bold">]</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">}</span>
+</span></span></code></pre></div><h3 id="vcapservice">VCAPService</h3>
+<p>This type represents a single bound service instance.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-.json" data-lang=".json"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;binding_name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#a40000">string</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;instance_name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#a40000">string</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#a40000">string</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;label&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#a40000">string</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;tags&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#a40000">string</span><span style="color:#000;font-weight:bold">[],</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;plan&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#a40000">string</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;credentials&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#a40000">object</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">}</span>
+</span></span></code></pre></div><p><strong>Fields</strong></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>binding_name</code></td>
+<td><code>string</code></td>
+<td>The name assigned to the service binding by the user.</td>
+</tr>
+<tr>
+<td><code>instance_name</code></td>
+<td><code>string</code></td>
+<td>The name assigned to the service instance by the user.</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td><code>string</code></td>
+<td>The <code>binding_name</code> if it exists; otherwise the <code>instance_name</code>.</td>
+</tr>
+<tr>
+<td><code>label</code></td>
+<td><code>string</code></td>
+<td>The name of the service offering.</td>
+</tr>
+<tr>
+<td><code>tags</code></td>
+<td><code>string[]</code></td>
+<td>An array of strings an app can use to identify a service instance.</td>
+</tr>
+<tr>
+<td><code>plan</code></td>
+<td><code>string[]</code></td>
+<td>The service plan selected when the service instance was created.</td>
+</tr>
+<tr>
+<td><code>credentials</code></td>
+<td><code>object</code></td>
+<td>The service-specific credentials needed to access the service instance.</td>
+</tr>
+</tbody>
+</table>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Use the <code>tags</code> field to discover services in your App rather than filtering by
+plan/label so you can swap implementations and providers per environment.
+</aside>
+
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> The <code>credentials</code> field is <em>often</em> an object with string keys and values.
+However, the values are allowed to be <a href="https://github.com/openservicebrokerapi/servicebroker/blob/v2.15/spec.md#body-9">any type</a>.
+</aside>
+
+<h3 id="vcap_application">VCAP_APPLICATION</h3>
+<p>The<code>VCAP_APPLICATION</code> environment variable is a JSON object containing metadata about the App.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-.json" data-lang=".json"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;application_id&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;12345&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;application_name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;my-app&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;application_uris&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span><span style="color:#4e9a06">&#34;my-app.example.com&#34;</span><span style="color:#000;font-weight:bold">],</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;limits&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;disk&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">1024</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;mem&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">256</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#000;font-weight:bold">},</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;my-app&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;process_id&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;12345&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;process_type&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;web&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;space_name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;my-ns&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;uris&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span><span style="color:#4e9a06">&#34;my-app.example.com&#34;</span><span style="color:#000;font-weight:bold">]</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">}</span>
+</span></span></code></pre></div><p><strong>Fields</strong></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>application_id</code></td>
+<td><code>string</code></td>
+<td>The GUID identifying the App.</td>
+</tr>
+<tr>
+<td><code>application_name</code></td>
+<td><code>string</code></td>
+<td>The name assigned to the App when it was pushed.</td>
+</tr>
+<tr>
+<td><code>application_uris</code></td>
+<td><code>string[]</code></td>
+<td>The URIs assigned to the App.</td>
+</tr>
+<tr>
+<td><code>limits</code></td>
+<td><code>object</code></td>
+<td>The limits to disk space, and memory permitted to the App. Memory and disk space limits are supplied when the App is deployed, either on the command line or in the App manifest. Disk and memory limits are represented as integers, with an assumed unit of MB.</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td><code>string</code></td>
+<td>Identical to <code>application_name</code>.</td>
+</tr>
+<tr>
+<td><code>process_id</code></td>
+<td><code>string</code></td>
+<td>The UID identifying the process. Only present in running App containers.</td>
+</tr>
+<tr>
+<td><code>process_type</code></td>
+<td><code>string</code></td>
+<td>The type of process. Only present in running App containers.</td>
+</tr>
+<tr>
+<td><code>space_name</code></td>
+<td><code>string</code></td>
+<td>The human-readable name of the Space where the App is deployed.</td>
+</tr>
+<tr>
+<td><code>uris</code></td>
+<td><code>string[]</code></td>
+<td>Identical to <code>application_uris</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Missing Fields</strong></p>
+<p>Some fields in <code>VCAP_APPLICATION</code> that are in Cloud Foundry are currently not supported in Kf.</p>
+<p>Besides CF-specific and deprecated fields (<code>cf_api</code>, <code>host</code>, <code>users</code>) the fields that are not supported in Kf are:</p>
+<ul>
+<li><code>application_version</code> (identical to <code>version</code>)</li>
+<li><code>organization_id</code></li>
+<li><code>organization_name</code></li>
+<li><code>space_id</code></li>
+<li><code>start</code> (identical to <code>started_at</code>)</li>
+<li><code>started_at_timestamp</code> (identical to <code>state_timestamp</code>)</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-9e253740257aaf5fafb8377b39e5e3f3">7 - Build runtime</h1>
+    <div class="lead">Reference guide for the application build container environment.</div>
+	<p>The Build runtime is the environment Apps are built in.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Buildpack Builds</th>
+<th>Docker Builds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>System libraries</td>
+<td>Provided by the Stack</td>
+<td>User supplied</td>
+</tr>
+<tr>
+<td>Network access</td>
+<td>Full access through Envoy sidecar</td>
+<td>Full access through Envoy sidecar</td>
+</tr>
+<tr>
+<td>File system</td>
+<td>No storage</td>
+<td>No storage</td>
+</tr>
+<tr>
+<td>Language runtime</td>
+<td>Provided by the Stack</td>
+<td>User supplied</td>
+</tr>
+<tr>
+<td>User</td>
+<td>Specified by the Stack</td>
+<td>User supplied</td>
+</tr>
+<tr>
+<td>Isolation mechanism</td>
+<td>Kubernetes Pod</td>
+<td>Kubernetes Pod</td>
+</tr>
+<tr>
+<td>DNS</td>
+<td>Provided by Kubernetes</td>
+<td>Provided by Kubernetes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="environment-variables">Environment variables</h2>
+<p>Environment variables are injected into the Build at runtime.
+Variables are added based on the following order, where later values override
+earlier ones with the same name:</p>
+<ol>
+<li>Space (set by administrators)</li>
+<li>App (set by developers)</li>
+<li>System (set by Kf)</li>
+</ol>
+<p>Kf provides the following system environment variables to Builds:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CF_INSTANCE_ADDR</code></td>
+<td>The cluster-visible IP:PORT of the Build.</td>
+</tr>
+<tr>
+<td><code>INSTANCE_GUID</code></td>
+<td>Alias of <code>CF_INSTANCE_GUID</code>.</td>
+</tr>
+<tr>
+<td><code>CF_INSTANCE_IP</code></td>
+<td>The cluster-visible IP of the Build.</td>
+</tr>
+<tr>
+<td><code>CF_INSTANCE_INTERNAL_IP</code></td>
+<td>Alias of <code>CF_INSTANCE_IP</code></td>
+</tr>
+<tr>
+<td><code>VCAP_APP_HOST</code></td>
+<td>Alias of <code>CF_INSTANCE_IP</code></td>
+</tr>
+<tr>
+<td><code>CF_INSTANCE_PORT</code></td>
+<td>The cluster-visible port of the Build.</td>
+</tr>
+<tr>
+<td><code>LANG</code></td>
+<td>Required by Buildpacks to ensure consistent script load order.</td>
+</tr>
+<tr>
+<td><code>MEMORY_LIMIT</code></td>
+<td>The maximum amount of memory in MB the Build can consume.</td>
+</tr>
+<tr>
+<td><code>VCAP_APPLICATION</code></td>
+<td>A JSON structure containing App metadata.</td>
+</tr>
+<tr>
+<td><code>VCAP_SERVICES</code></td>
+<td>A JSON structure specifying bound services.</td>
+</tr>
+</tbody>
+</table>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> The environment variables Kf provides to Builds are a subset of those provided
+to <a href="/docs/v2.11/developer/build-and-deploy/app-runtime/">App Runtime</a>.
+</aside>
+
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-4 text-xs-center order-sm-2">
+        
+        
+        
+      </div>
+      <div class="col-6 col-sm-4 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" target="_blank" rel="noopener" href="https://github.com/google/kf" aria-label="GitHub">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Security mailing list" aria-label="Security mailing list">
+    <a class="text-white" target="_blank" rel="noopener" href="mailto:kf-security@google.com" aria-label="Security mailing list">
+      <i class="fa fa-envelope"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-4 text-center py-2 order-sm-2">
+        <small class="text-white">&copy; 2022 The Kf Authors All Rights Reserved</small>
+        
+	
+		
+	
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+    integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js"
+    integrity="sha512-UR25UO94eTnCVwjbXozyeVd6ZqpaAE9naiEUBK/A+QDbfSTQFhPGj5lOR6d8tsgbBk84Ggb5A3EkjsOgPRPcKA=="
+    crossorigin="anonymous"></script>
+
+
+
+
+
+<script src='/js/tabpane-persist.js'></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/js/main.min.91798a335c881f1b6b805085ba4aa22d1dbd2b0b18d105d05189fa104ddae350.js" integrity="sha256-kXmKM1yIHxtrgFCFukqiLR29KwsY0QXQUYn6EE3a41A=" crossorigin="anonymous"></script>
+
+
+
+
+  </body>
+</html>

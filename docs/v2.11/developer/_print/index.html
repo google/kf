@@ -1,0 +1,2794 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.101.0" />
+<link rel="canonical" type="text/html" href="/docs/v2.11/developer/">
+<link rel="alternate" type="application/rss&#43;xml" href="/docs/v2.11/developer/index.xml">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/favicons/android-192x192.png" sizes="192x192">
+
+<title>Develop Applications on Kf | Kf</title>
+<meta name="description" content="Learn to use Kf to deploy and maintain applications.">
+<meta property="og:title" content="Develop Applications on Kf" />
+<meta property="og:description" content="Learn to use Kf to deploy and maintain applications." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/v2.11/developer/" /><meta property="og:site_name" content="Kf" />
+
+<meta itemprop="name" content="Develop Applications on Kf">
+<meta itemprop="description" content="Learn to use Kf to deploy and maintain applications."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Develop Applications on Kf"/>
+<meta name="twitter:description" content="Learn to use Kf to deploy and maintain applications."/>
+
+
+
+
+<link rel="preload" href="/scss/main.scss" as="style">
+<link href="/scss/main.scss" rel="stylesheet" integrity="">
+
+<script
+  src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"
+  crossorigin="anonymous"></script>
+<script
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="/">
+		<span class="navbar-logo"></span><span class="font-weight-bold">Kf</span>
+	</a>
+	<div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+		<ul class="navbar-nav mt-2 mt-lg-0">
+			
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link active" href="/docs/v2.11/developer/" ><span class="active">Developer Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/operator/" ><span>Operator Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/troubleshooting/" ><span>Troubleshooting</span></a>
+			</li>
+			
+			
+			
+		</ul>
+	</div>
+	<div class="navbar-nav d-none d-lg-block"><input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="/offline-search-index.8271768637bdb31d52e7c162697e4315.json"
+  data-offline-search-base-href="/"
+  data-offline-search-max-results="10"
+>
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/docs/v2.11/developer/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Develop Applications on Kf</h1>
+<div class="lead">Learn to use Kf to deploy and maintain applications.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-a60b85e1dd5f928d7162ace6696bd931">Build and deploy applications</a></li>
+
+
+    
+    <ul>
+        
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1.1: <a href="#pg-0e8cd33d006c97b252697a9cfd07f2c7">Deploy an application</a></li>
+
+
+    
+  
+    
+    
+	
+<li>1.2: <a href="#pg-8ea3d94dc554a1582b70703a82fca49f">Get started with buildpacks</a></li>
+
+
+    
+  
+    
+    
+	
+<li>1.3: <a href="#pg-f1392c0da56cd744e3f2a431f5b31ef1">Reduce deployment risk with blue-green deployments</a></li>
+
+
+    
+  
+    
+    
+	
+<li>1.4: <a href="#pg-b2c95f335af52e4210d54a7a32f7f710">Compare V2 and V3 Buildpacks</a></li>
+
+
+    
+  
+    
+    
+	
+<li>1.5: <a href="#pg-149d70341c8f45f4db5d853c1df8199c">App Manifest</a></li>
+
+
+    
+  
+    
+    
+	
+<li>1.6: <a href="#pg-f9a54f404531eb77094696e5deff4f90">App runtime</a></li>
+
+
+    
+  
+    
+    
+	
+<li>1.7: <a href="#pg-9e253740257aaf5fafb8377b39e5e3f3">Build runtime</a></li>
+
+
+    
+  
+
+    </ul>
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-83f77835eae3d15dda612e1c86814bd0">Backing services</a></li>
+
+
+    
+    <ul>
+        
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>2.1: <a href="#pg-c2ebc22b9018da19d5d34e6e9c45330c">Backing Services Overview</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2.2: <a href="#pg-aaeb0115cc03519618bc12ca99dd6372">Use managed services</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2.3: <a href="#pg-65eb33ea4f1b06e45c9630828e66567e">Configure user-provided services</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2.4: <a href="#pg-dcb66f5640af578e83d147a64abbd646">User Provided Service Templates</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2.5: <a href="#pg-7c5cfb1597b32604da9ea5cb7a9bb1d5">Configure NFS volumes</a></li>
+
+
+    
+  
+
+    </ul>
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-c16824af8fd2a461ef90c4f8160d9b6c">Scaling</a></li>
+
+
+    
+    <ul>
+        
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>3.1: <a href="#pg-b382e70e5bab4b7f5eb676e75ffdd352">Scaling overview</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3.2: <a href="#pg-8412b2ccff3bf6d3216d6875e40cd997">Manage Autoscaling</a></li>
+
+
+    
+  
+
+    </ul>
+    
+  
+    
+    
+	
+<li>4: <a href="#pg-942fc5a9d62607b3fdeac4fd7cc64e68">Service discovery</a></li>
+
+
+    
+  
+    
+    
+	
+<li>5: <a href="#pg-112457d24a74b66b91a3aad98b695483">Configure routes and domains</a></li>
+
+
+    
+  
+    
+    
+	
+<li>6: <a href="#pg-08ccb5aed1b65bbb79ebfe9a95bdfda5">Tasks</a></li>
+
+
+    
+    <ul>
+        
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>6.1: <a href="#pg-fc8abef5d8b8b4cd00451c7fbf42f60e">Tasks Overview</a></li>
+
+
+    
+  
+    
+    
+	
+<li>6.2: <a href="#pg-1fe7b60117f61a59570dc9806b2e2128">Run Tasks</a></li>
+
+
+    
+  
+    
+    
+	
+<li>6.3: <a href="#pg-52b92bfa0949442cec57f0a34cd75406">Schedule Tasks</a></li>
+
+
+    
+  
+
+    </ul>
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-a60b85e1dd5f928d7162ace6696bd931">1 - Build and deploy applications</h1>
+    <div class="lead">Learn how to build and deploy applications in Kf.</div>
+	
+</div>
+
+
+
+    
+      
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-0e8cd33d006c97b252697a9cfd07f2c7">1.1 - Deploy an application</h1>
+    <div class="lead">Guide to deploying applications with Kf.</div>
+	<p>When pushing an app (via <code>kf push</code>) to Kf, there are
+three lifecycles that Kf uses to take your source code
+and allow it to handle traffic:</p>
+<ol>
+<li>Source code upload</li>
+<li>Build</li>
+<li>Run</li>
+</ol>
+<h2 id="source-code-upload">Source code upload</h2>
+<p>The first thing that happens when you <code>kf push</code> is the Kf CLI (<code>kf</code>) packages
+up your directory (either current or <code>--path/-p</code>) into a container and
+publishes it to the container registry configured for the Space. This is
+called the source container. The Kf CLI then creates an <code>App</code> type in Kubernetes
+that contains both the source image and configuration from the App manifest and
+push flags.</p>
+<h3 id="ignore-files-during-push">Ignore files during push</h3>
+<p>In many cases, you will not want to upload certain files during <code>kf push</code> (i.e., &ldquo;ignore&rdquo; them).
+This is where a <code>.kfignore</code> (or <code>.cfignore</code>) file can be used.
+Similar to a <code>.gitignore</code> file, this file instructs the Kf CLI which
+files to not include in the source code container.</p>
+<p>To create a <code>.kfignore</code> file, create a text file named <code>.kfignore</code> in the base
+directory of your app (similar to where you would store the manifest
+file). Then populate it with a newline delimited list of files and directories
+you don&rsquo;t want published. For example:</p>
+<pre tabindex="0"><code>bin
+.idea
+</code></pre><p>This will tell the Kf CLI to not include anything in the <code>bin</code> or <code>.idea</code>
+directories.</p>
+<p>Kf supports <a href="https://git-scm.com/docs/gitignore">gitignore</a> style syntax.</p>
+<h2 id="build">Build</h2>
+<p>The Build lifecycle is handled by a Tekton
+<a href="https://github.com/tektoncd/pipeline/blob/master/docs/taskruns.md">TaskRun</a>.
+Depending on the flags that you provide while pushing, it will choose a specific
+Tekton <a href="https://github.com/tektoncd/pipeline/blob/master/docs/tasks.md">Task</a>.
+Kf currently has the following Tekton Tasks:</p>
+<ul>
+<li>buildpackv2</li>
+<li>buildpackv3</li>
+<li>kaniko</li>
+</ul>
+<p>Kf tracks each TaskRun as a Build. If a Build succeeds, the resulting
+container image is then deployed via the Run lifecycle (described below).</p>
+<p>More information can be found at <a href="/docs/v2.11/developer/build-and-deploy/build-runtime/">Build runtime</a>.</p>
+<h2 id="run">Run</h2>
+<p>The Run lifecycle is responsible for taking a container image and creating a
+<a href="https://kubernetes.io/docs/concepts/workloads/controllers/deployment/">Kubernetes Deployment</a>.</p>
+<p>It also creates:</p>
+<ul>
+<li><a href="https://istio.io/docs/reference/config/networking/virtual-service/">Istio Virtual Services</a></li>
+<li><a href="https://kubernetes.io/docs/concepts/configuration/secret/">Kubernetes Secrets</a></li>
+</ul>
+<p>More information can be found at <a href="/docs/v2.11/developer/build-and-deploy/build-runtime/">Build runtime</a>.</p>
+<h2 id="push-timeouts">Push timeouts</h2>
+<p>Kf supports setting an environment variable to instruct the CLI to time out
+while pushing apps. If set, the variables <code>KF_STARTUP_TIMEOUT</code> or
+<code>CF_STARTUP_TIMEOUT</code> are parsed as a golang style duration (for example <code>15m</code>,
+<code>1h</code>). If a value is not set, the push timeout defaults to 15 minutes.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-8ea3d94dc554a1582b70703a82fca49f">1.2 - Get started with buildpacks</h1>
+    <div class="lead">How to use built-in buildpacks for various languages.</div>
+	<p>Kf supports a variety of buildpacks. This document
+covers some starter examples for using them.</p>
+<h2 id="before-you-begin">Before you begin</h2>
+<ul>
+<li>You should have Kf running on a cluster.</li>
+<li>You should have run <code>kf target -s &lt;space-name&gt;</code> to target your space.</li>
+</ul>
+<h2 id="java-v2-buildpack">Java (v2) buildpack</h2>
+<p>Use <a href="https://start.spring.io/">spring initializr</a> to create a Java 8 maven project with a spring web dependency and JAR packaging. Download it, extract it, and once extracted you can generate a JAR.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>./mvnw package
+</span></span></code></pre></div><p>Push the JAR to Kf with the Java v2 buildpack.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push java-v2 --path target/helloworld-0.0.1-SNAPSHOT.jar
+</span></span></code></pre></div><h2 id="java-v3-buildpack">Java (v3) buildpack</h2>
+<p>Use <a href="https://start.spring.io/">spring initializr</a> to create a Java 8 maven project with a spring web dependency and JAR packaging. Download it, extract it, and once extracted, push to Kf with the cloud native buildpack.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push java-v3 --stack org.cloudfoundry.stacks.cflinuxfs3
+</span></span></code></pre></div><h2 id="python-v2-buildpack">Python (v2) buildpack</h2>
+<p>Create a new directory with files as shown in the following structure.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>tree
+</span></span><span style="display:flex;"><span>.
+</span></span><span style="display:flex;"><span>├── Procfile
+</span></span><span style="display:flex;"><span>├── requirements.txt
+</span></span><span style="display:flex;"><span>└── server.py
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>cat Procfile
+</span></span><span style="display:flex;"><span>web: python server.py
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>cat requirements.txt
+</span></span><span style="display:flex;"><span>Flask
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>cat server.py
+</span></span><span style="display:flex;"><span>from flask import Flask
+</span></span><span style="display:flex;"><span>import os
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000">app</span> <span style="color:#ce5c00;font-weight:bold">=</span> Flask<span style="color:#ce5c00;font-weight:bold">(</span>__name__<span style="color:#ce5c00;font-weight:bold">)</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>@app.route<span style="color:#ce5c00;font-weight:bold">(</span><span style="color:#4e9a06">&#39;/&#39;</span><span style="color:#ce5c00;font-weight:bold">)</span>
+</span></span><span style="display:flex;"><span>def hello_world<span style="color:#ce5c00;font-weight:bold">()</span>:
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">return</span> <span style="color:#4e9a06">&#39;Hello, World!&#39;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">if</span> <span style="color:#000">__name__</span> <span style="color:#ce5c00;font-weight:bold">==</span> <span style="color:#4e9a06">&#34;__main__&#34;</span>:
+</span></span><span style="display:flex;"><span>  <span style="color:#000">port</span> <span style="color:#ce5c00;font-weight:bold">=</span> int<span style="color:#ce5c00;font-weight:bold">(</span>os.getenv<span style="color:#ce5c00;font-weight:bold">(</span><span style="color:#4e9a06">&#34;PORT&#34;</span>, 8080<span style="color:#ce5c00;font-weight:bold">))</span>
+</span></span><span style="display:flex;"><span>  app.run<span style="color:#ce5c00;font-weight:bold">(</span><span style="color:#000">host</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#39;0.0.0.0&#39;</span>, <span style="color:#000">port</span><span style="color:#ce5c00;font-weight:bold">=</span>port<span style="color:#ce5c00;font-weight:bold">)</span>
+</span></span></code></pre></div><p>Push the Python flask app using v2 buildpacks.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push python --buildpack python<span style="color:#4e9a06">\_</span>buildpack
+</span></span></code></pre></div><h2 id="python-v3-buildpack">Python (v3) buildpack</h2>
+<p>(same as above)</p>
+<p>Push the Python flask app using cloud native buildpacks.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push pythonv3 --stack org.cloudfoundry.stacks.cflinuxfs3
+</span></span></code></pre></div><h2 id="staticfile-v2-buildpack">Staticfile (v2) buildpack</h2>
+<p>Create a new directory that holds your source code.</p>
+<p>Add an <code>index.html</code> file with this content.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-html" data-lang="html"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">&lt;!DOCTYPE html&gt;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">&lt;</span><span style="color:#204a87;font-weight:bold">html</span> <span style="color:#c4a000">lang</span><span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;en&#34;</span><span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">&lt;</span><span style="color:#204a87;font-weight:bold">head</span><span style="color:#000;font-weight:bold">&gt;&lt;</span><span style="color:#204a87;font-weight:bold">title</span><span style="color:#000;font-weight:bold">&gt;</span>Hello, world!<span style="color:#000;font-weight:bold">&lt;/</span><span style="color:#204a87;font-weight:bold">title</span><span style="color:#000;font-weight:bold">&gt;&lt;/</span><span style="color:#204a87;font-weight:bold">head</span><span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">&lt;</span><span style="color:#204a87;font-weight:bold">body</span><span style="color:#000;font-weight:bold">&gt;&lt;</span><span style="color:#204a87;font-weight:bold">h1</span><span style="color:#000;font-weight:bold">&gt;</span>Hello, world!<span style="color:#000;font-weight:bold">&lt;/</span><span style="color:#204a87;font-weight:bold">h1</span><span style="color:#000;font-weight:bold">&gt;&lt;/</span><span style="color:#204a87;font-weight:bold">body</span><span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">&lt;/</span><span style="color:#204a87;font-weight:bold">html</span><span style="color:#000;font-weight:bold">&gt;</span>
+</span></span></code></pre></div><p>Push the static content with the staticfile buildpack.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push staticsite --buildpack staticfile<span style="color:#4e9a06">\_</span>buildpack
+</span></span></code></pre></div>
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-f1392c0da56cd744e3f2a431f5b31ef1">1.3 - Reduce deployment risk with blue-green deployments</h1>
+    <div class="lead">How to deploy highly available applications.</div>
+	
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Kf will perform rolling deployments by default if you upgrade an app in place by starting
+an extra instance of it, waiting for it to become healthy, and then replacing an existing
+instance.
+</aside>
+
+<p>This page shows you how to deploy a new version of your application and migrate
+traffic over from an old to a new version.</p>
+<h2 id="push-the-initial-app">Push the initial App</h2>
+<p>Use the Kf CLI to push the initial version of your App
+with any routes:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>$ kf push app-v1 --route my-app.my-space.example.com
+</span></span></code></pre></div><h2 id="push-the-updated-app">Push the updated App</h2>
+<p>Use the Kf CLI to push a new version of your App without
+any routes:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>$ kf push app-v2 --no-route
+</span></span></code></pre></div><h2 id="add-routes-to-the-updated-app">Add routes to the updated App</h2>
+<p>Use the Kf CLI to bind all existing routes to the updated
+App with a weight of 0 to ensure that they don&rsquo;t get any requests:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>$ kf map-route app-v2 my-space.example.com --hostname my-app --weight <span style="color:#0000cf;font-weight:bold">0</span>
+</span></span></code></pre></div><h2 id="shift-traffic">Shift traffic</h2>
+<p>Start shifting traffic from the old App to the updated App by updating the
+weights on the routes:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>$ kf map-route app-v1 my-space.example.com --hostname my-app --weight <span style="color:#0000cf;font-weight:bold">80</span>
+</span></span><span style="display:flex;"><span>$ kf map-route app-v2 my-space.example.com --hostname my-app --weight <span style="color:#0000cf;font-weight:bold">20</span>
+</span></span></code></pre></div><p>If the deployment is going well, you can shift more traffic by updating the
+weights again:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>$ kf map-route app-v1 my-space.example.com --hostname my-app --weight <span style="color:#0000cf;font-weight:bold">50</span>
+</span></span><span style="display:flex;"><span>$ kf map-route app-v2 my-space.example.com --hostname my-app --weight <span style="color:#0000cf;font-weight:bold">50</span>
+</span></span></code></pre></div>
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Weights split traffic proportionally to the sum of the weights of all
+Apps mapped to the route. It&rsquo;s a common practice to treat weights as percentages.
+</aside>
+
+<h2 id="complete-traffic-shifting">Complete traffic shifting</h2>
+<p>After you&rsquo;re satisfied that the new service hasn&rsquo;t introduced regressions,
+complete the rollout by shifting all traffic to the new instance:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>$ kf map-route app-v1 my-space.example.com --hostname my-app --weight <span style="color:#0000cf;font-weight:bold">0</span>
+</span></span><span style="display:flex;"><span>$ kf map-route app-v2 my-space.example.com --hostname my-app --weight <span style="color:#0000cf;font-weight:bold">100</span>
+</span></span></code></pre></div><h2 id="turn-down-the-original-app">Turn down the original App</h2>
+<p>After you&rsquo;re satisfied that quick rollbacks aren&rsquo;t needed, remove the original
+route and stop the App:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>$ kf unmap-route app-v1 myspace.example.com --hostname my-app
+</span></span><span style="display:flex;"><span>$ kf stop app-v1
+</span></span></code></pre></div><p>Or delete the App and all associated route mappings:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>$ kf delete app-v1
+</span></span></code></pre></div>
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-b2c95f335af52e4210d54a7a32f7f710">1.4 - Compare V2 and V3 Buildpacks</h1>
+    <div class="lead">Learn how to decide wihch buildpacks to use.</div>
+	<p>A <a href="https://buildpacks.io/">buildpack</a> converts source code into an executable, and is used to deliver a simple, reliable, and repeatable way to create containers. Kf supports both V2 and V3 buildpacks, and it is important to understand the differences between them.</p>
+<h2 id="v2-buildpacks">V2 buildpacks</h2>
+<p>Most Cloud Foundry applications already use V2 buildpacks. When using V2 buildpacks with Kf, the lifecycle binaries and the buildpacks are downloaded and configured from their git URLs. Kf then uses the <code>lifecycle</code> CLI to execute each buildpack against the source code.</p>
+<h3 id="pros">Pros</h3>
+<ul>
+<li>Ready out of the box without pipeline or code changes.</li>
+</ul>
+<h3 id="cons">Cons</h3>
+<ul>
+<li>Legacy buildpack supersceded by V3.</li>
+<li>Weaker performance and reliability. The Kf build pipeline requires more IO for V2 buildpacks.</li>
+<li>Fewer community resources.</li>
+<li>Kf only supports OSS git repos.</li>
+</ul>
+<h2 id="v3-buildpacks">V3 buildpacks</h2>
+<p>V3 buildpacks are a Cloud Native Computing Foundation (CNCF) project with a well defined <a href="https://github.com/buildpacks/spec/blob/main/buildpack.md">spec</a>, a CLI (<a href="https://github.com/buildpacks/pack">pack</a>) and a growing community that is innovating around different languages and frameworks. Google Cloud also has its own set of <a href="https://github.com/GoogleCloudPlatform/buildpacks">OSS buildpacks</a>.</p>
+<p>V3 buildpacks have two overarching OCI containers:</p>
+<ul>
+<li>Builder image</li>
+<li>Run image</li>
+</ul>
+<h3 id="builder-image">Builder image</h3>
+<p>The builder image is used while your source code is being built into a runnable container. The image has the necessary <code>detect</code> scripts and other utilities to compile source code.</p>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Most buildpacks don&rsquo;t package the compilers with the builder image. Instead, they may have the build pipelines download any dependencies required to compile.
+</aside>
+
+<h3 id="run-image">Run image</h3>
+<p>The run image is the base image that a container is built on. This means that it is the base image that will run when the App executes.</p>
+<h3 id="layers">Layers</h3>
+<p>V3 buildpacks use layers to compose the final container. Each buildpack included in a build is given the opportunity to manipulate the file system and environment variables of the App. This layering approach allows for buildpacks to be thinner and more generic.</p>
+<p>V3 buildpacks are built on OCI containers. This requires that the V3 builder image be stored in a container registry that the Kf build pipeline has access to. The build pipeline uses the builder image to apply the underlying scripts to build the source code into a runnable container.</p>
+<h3 id="pros-1">Pros</h3>
+<ul>
+<li>Google supported <a href="https://github.com/GoogleCloudPlatform/buildpacks">builder and run image</a>.</li>
+<li>Works with various CI/CD runtimes like <a href="https://cloud.google.com/functions/docs/building/pack">Cloud Build</a>.</li>
+<li>Growing community and <a href="https://registry.buildpacks.io/">buildpack registry</a>.</li>
+</ul>
+<h3 id="cons-1">Cons</h3>
+<ul>
+<li>May require code/process updates. For example, the Java buildpack requires source code while the V2 buildpack requires a jar file.</li>
+<li>V3 buildpacks are newer and might require additional validation (is using community developed buildpacks).</li>
+</ul>
+<h2 id="kf-stacks">Kf Stacks</h2>
+<h3 id="view-stacks">View Stacks</h3>
+<p>When pushing an App, the build pipeline determines the buildpack based on the selected Stack (specified via the <code>--stack</code> flag or the manifest).</p>
+<p>To see which Stacks are available in a Space first ensure a Space is targeted:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf target -s myspace
+</span></span></code></pre></div><p>The <code>kf stacks</code> subcommand can then be used to list the Stacks:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf stacks
+</span></span></code></pre></div><p>The output shows both V2 and V3 Stacks:</p>
+<pre tabindex="0"><code>Getting stacks in Space: myspace
+Version  Name                                Build Image                                                                                          Run Image
+V2       cflinuxfs3                          cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5      cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5
+V3       kf-v2-to-v3-shim                    gcr.io/kf-releases/v2-to-v3:v2.7.0                                                                   gcr.io/buildpacks/gcp/run:v1                                                                       This is a stack added by the integration tests to assert that v2-&gt;v3 shim works
+V3       google                              gcr.io/buildpacks/builder:v1                                                                         gcr.io/buildpacks/gcp/run:v1                                                                       Google buildpacks (https://github.com/GoogleCloudPlatform/buildpacks)
+V3       org.cloudfoundry.stacks.cflinuxfs3  cloudfoundry/cnb:cflinuxfs3@sha256:f96b6e3528185368dd6af1d9657527437cefdaa5fa135338462f68f9c9db3022  cloudfoundry/run:full-cnb@sha256:dbe17be507b1cc6ffae1e9edf02806fe0e28ffbbb89a6c7ef41f37b69156c3c2  A large Cloud Foundry stack based on Ubuntu 18.04
+</code></pre><h2 id="v2-to-v3-buildpack-migration">V2 to V3 Buildpack Migration</h2>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> This feature is currently experimental and subject to change.
+</aside>
+
+<p>Kf provides a V3 stack to build applications that were built with standard V2 buildpacks, using a stack named  <code>kf-v2-to-v3-shim</code>. The <code>kf-v2-to-v3-shim</code> stack is created following the <a href="https://buildpacks.io/docs/operator-guide/create-a-stack/">standard V3 buildpacks API</a>. A Google maintained builder image is created with each Kf release, following the <a href="https://buildpacks.io/docs/operator-guide/create-a-builder/">standard buildpack process</a>. The builder image aggregates a list of V3 buildpacks created by the same process used with the <code>kf wrap-v2-buildpack</code> command. The V3 buildpack images are created using the standard V2 buildpack images. It&rsquo;s important to note that the V3 buildpacks do not contain the binary of the referenced V2 buildpacks. Instead, the V2 buildpack images are referenced, and the bits are downloaded at App build time (by running <code>kf push</code>).</p>
+<p>At App build time, the V2 buildpack is downloaded from the corresponding git repository. When V3 detection runs, it delegates to the downloaded V2 detection script. For the first buildpack group that passes detection, it proceeds to the build step, which delegates the build execution to the downloaded V2 builder script.</p>
+<p>The following V2 buildpacks are supported in the <code>kf-v2-to-v3-shim</code> stack:</p>
+<table>
+<thead>
+<tr>
+<th>Buildpack</th>
+<th>Git Repository</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>java_buildpack</td>
+<td><a href="https://github.com/cloudfoundry/java-buildpack">https://github.com/cloudfoundry/java-buildpack</a></td>
+</tr>
+<tr>
+<td>dotnet_core_buildpack</td>
+<td><a href="https://github.com/cloudfoundry/dotnet-core-buildpack">https://github.com/cloudfoundry/dotnet-core-buildpack</a></td>
+</tr>
+<tr>
+<td>nodejs_buildpack</td>
+<td><a href="https://github.com/cloudfoundry/nodejs-buildpack">https://github.com/cloudfoundry/nodejs-buildpack</a></td>
+</tr>
+<tr>
+<td>go_buildpack</td>
+<td><a href="https://github.com/cloudfoundry/go-buildpack">https://github.com/cloudfoundry/go-buildpack</a></td>
+</tr>
+<tr>
+<td>python_buildpack</td>
+<td><a href="https://github.com/cloudfoundry/python-buildpack">https://github.com/cloudfoundry/python-buildpack</a></td>
+</tr>
+<tr>
+<td>binary_buildpack</td>
+<td><a href="https://github.com/cloudfoundry/binary-buildpack">https://github.com/cloudfoundry/binary-buildpack</a></td>
+</tr>
+<tr>
+<td>nginx_buildpack</td>
+<td><a href="https://github.com/cloudfoundry/nginx-buildpack">https://github.com/cloudfoundry/nginx-buildpack</a></td>
+</tr>
+</tbody>
+</table>
+<h4 id="option-1-migrate-apps-built-with-standard-v2-buildpacks">Option 1: Migrate Apps built with standard V2 buildpacks</h4>
+<p>To build Apps with the <code>kf-v2-to-v3-shim</code> stack, use the following command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push myapp --stack kf-v2-to-v3-shim
+</span></span></code></pre></div><p>The <code>kf-v2-to-v3-shim</code> stack will automatically detect the runtime with the wrapped V2 buildpacks. The resulting App image is created using the V3 standard and build pipeline, but the builder of the equivalent V2 buildpack.</p>
+<h4 id="option-2-migrate-apps-built-with-custom-v2-buildpacks">Option 2: Migrate Apps built with custom V2 buildpacks</h4>
+<p>Kf has a buildpack migration tool that can take a V2 buildpack and wrap it with a V3 buildpack. The wrapped buildpack can then be used anywhere V3 buildpacks are available.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf wrap-v2-buildpack gcr.io/your-project/v2-go-buildpack https://github.com/cloudfoundry/go-buildpack --publish
+</span></span></code></pre></div><p>This will create a buildpack image named <code>gcr.io/your-project/v2-go-buildpack</code>. It can then be used to create a builder by following the <a href="https://buildpacks.io/docs/operator-guide/create-a-builder/">create a builder</a> docs.</p>
+<p>This subcommand uses the following CLIs transparently:</p>
+<ul>
+<li><code>go</code></li>
+<li><code>git</code></li>
+<li><code>pack</code></li>
+<li><code>unzip</code></li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-149d70341c8f45f4db5d853c1df8199c">1.5 - App Manifest</h1>
+    <div class="lead">Reference guide for the application manifest.yml format.</div>
+	<p>App manifests provide a way for developers to record their App&rsquo;s execution environment in a declarative way.
+They allow Apps to be deployed consistently and reproducibly.</p>
+<h2 id="format">Format</h2>
+<p>Manifests are YAML files in the root directory of the App. They <strong>must</strong> be named <code>manifest.yml</code> or <code>manifest.yaml</code>.</p>
+<p>Kf App manifests are allowed to have a single top-level element: <code>applications</code>.
+The <code>applications</code> element can contain one or more application entries.</p>
+<h2 id="application-fields">Application fields</h2>
+<p>The following fields are valid for objects under <code>applications</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><code>string</code></td>
+<td>The name of the application. The app name should be lower-case alphanumeric characters and dashes. It must not start with a dash.</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td><code>string</code></td>
+<td>The path to the source of the app. Defaults to the manifest&rsquo;s directory.</td>
+</tr>
+<tr>
+<td><code>buildpacks</code></td>
+<td><code>string[]</code></td>
+<td>A list of buildpacks to apply to the app.</td>
+</tr>
+<tr>
+<td><code>stack</code></td>
+<td><code>string</code></td>
+<td>Base image to use for to use for apps created with a buildpack.</td>
+</tr>
+<tr>
+<td><code>docker</code></td>
+<td><code>object</code></td>
+<td>A docker object. See the Docker Fields section for more information.</td>
+</tr>
+<tr>
+<td><code>env</code></td>
+<td><code>map</code></td>
+<td>Key/value pairs to use as the environment variables for the app and build.</td>
+</tr>
+<tr>
+<td><code>services</code></td>
+<td><code>string[]</code></td>
+<td>A list of service instance names to automatically bind to the app.</td>
+</tr>
+<tr>
+<td><code>disk_quota</code></td>
+<td><code>quantity</code></td>
+<td>The amount of disk the application should get. Defaults to 1GiB.</td>
+</tr>
+<tr>
+<td><code>memory</code></td>
+<td><code>quantity</code></td>
+<td>The amount of RAM to provide the app. Defaults to 1GiB.</td>
+</tr>
+<tr>
+<td><code>cpu</code> †</td>
+<td><code>quantity</code></td>
+<td>The amount of CPU to provide the application. Defaults to 0.1 (1/10th of a CPU).</td>
+</tr>
+<tr>
+<td><code>instances</code></td>
+<td><code>int</code></td>
+<td>The number of instances of the app to run. Defaults to 1.</td>
+</tr>
+<tr>
+<td><code>routes</code></td>
+<td><code>object</code></td>
+<td>A list of routes the app should listen on. See the Route Fields section for more.</td>
+</tr>
+<tr>
+<td><code>no-route</code></td>
+<td><code>boolean</code></td>
+<td>If set to true, the application will not be routable.</td>
+</tr>
+<tr>
+<td><code>random-route</code></td>
+<td><code>boolean</code></td>
+<td>If set to true, the app will be given a random route.</td>
+</tr>
+<tr>
+<td><code>timeout</code></td>
+<td><code>int</code></td>
+<td>The number of seconds to wait for the app to become healthy.</td>
+</tr>
+<tr>
+<td><code>health-check-type</code></td>
+<td><code>string</code></td>
+<td>The type of health-check to use <code>port</code>, <code>process</code>, <code>none</code>, or <code>http</code>. Default: <code>port</code></td>
+</tr>
+<tr>
+<td><code>health-check-http-endpoint</code></td>
+<td><code>string</code></td>
+<td>The endpoint to target as part of the health-check. Only valid if <code>health-check-type</code> is <code>http</code>.</td>
+</tr>
+<tr>
+<td><code>command</code></td>
+<td><code>string</code></td>
+<td>The command that starts the app. If supplied, this will be passed to the container entrypoint.</td>
+</tr>
+<tr>
+<td><code>entrypoint</code> †</td>
+<td><code>string</code></td>
+<td>Overrides the app container&rsquo;s entrypoint.</td>
+</tr>
+<tr>
+<td><code>args</code> †</td>
+<td><code>string[]</code></td>
+<td>Overrides the arguments the app container.</td>
+</tr>
+<tr>
+<td><code>ports</code> †</td>
+<td><code>object</code></td>
+<td>A list of ports to expose on the container. If supplied, the first entry in this list is used as the default port.</td>
+</tr>
+</tbody>
+</table>
+<p>† Unique to Kf</p>
+<h2 id="docker-fields">Docker fields</h2>
+<p>The following fields are valid for <code>application.docker</code> objects:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>image</code></td>
+<td><code>string</code></td>
+<td>The docker image to use.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="route-fields">Route fields</h2>
+<p>The following fields are valid for <code>application.routes</code> objects:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>route</code></td>
+<td><code>string</code></td>
+<td>A route to the app including hostname, domain, and path.</td>
+</tr>
+<tr>
+<td><code>appPort</code></td>
+<td><code>int</code></td>
+<td>(Optional) A custom port on the App the route will send traffic to.</td>
+</tr>
+</tbody>
+</table>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> If you specify an <code>appPort</code>, that port MUST also be declared in the <code>ports</code> field.
+</aside>
+
+<h2 id="port-fields">Port fields</h2>
+<p>The following fields are valid for <code>application.ports</code> objects:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>port</code></td>
+<td><code>int</code></td>
+<td>The port to expose on the App&rsquo;s container.</td>
+</tr>
+<tr>
+<td><code>protocol</code></td>
+<td><code>string</code></td>
+<td>The protocol of the port to expose. Must be <code>tcp</code>, <code>http</code> or <code>http2</code>. Default: <code>tcp</code></td>
+</tr>
+</tbody>
+</table>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> The <code>protocol</code> field is a hint about the traffic that goes over the port.
+The hint is used by the <a href="https://cloud.google.com/service-mesh/docs/overview">service mesh</a> for better tracing and metrics.
+</aside>
+
+
+<aside class="alert alert-danger" style="border-width: 1px 1px 1px 4px;">
+<i class="fa-solid fa-triangle-exclamation"></i> <strong>Warning:</strong> Kf doesn&rsquo;t currently support TCP port-based routing. You must use a
+<a href="https://kubernetes.io/docs/tutorials/stateless-application/expose-external-ip-address/">Kubernetes LoadBalancer</a> if you want to expose a TCP port to the Internet. Ports are available on the cluster internal App address <code>&lt;app-name&gt;.&lt;space&gt;</code>.
+</aside>
+
+
+<h2 id="examples">Examples</h2>
+<h3 id="minimal-app">Minimal App</h3>
+<p>This is a bare-bones manifest that will build an App by auto-detecting
+the buildpack based on the uploaded source, and deploy one instance of it.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">applications</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">my-minimal-application</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><h3 id="simple-app">Simple App</h3>
+<p>This is a full manifest for a more traditional Java App.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">applications</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">account-manager</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># only upload src/ on push</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">path</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">src</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># use the Java buildpack</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">buildpacks</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">java</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">env</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#8f5902;font-style:italic"># manually configure the buildpack&#39;s Java version</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">BP_JAVA_VERSION</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">8</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">ENVIRONMENT</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">PRODUCTION</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># use less disk and memory than default</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">disk_quota</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">512M</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">memory</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">512M</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># bump up the CPU</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">cpu</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">0.2</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">instances</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">3</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># make the app listen on three routes</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">routes</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">route</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">accounts.mycompany.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">route</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">accounts.datacenter.mycompany.internal</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">route</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">mycompany.com/accounts</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># set up a longer timeout and custom endpoint to validate</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># when the app comes up</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">timeout</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">300</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">health-check-type</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">health-check-http-endpoint</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">/healthz</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># attach two services by name</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">services</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">customer-database</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">web-cache</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><h3 id="docker-app">Docker App</h3>
+<p>Kf can deploy Docker containers as well as manifest deployed App.
+These Docker Apps MUST listen on the <code>PORT</code> environment variable.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">applications</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">white-label-app</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># use a pre-built docker image (must listen on $PORT)</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">docker</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">image</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">gcr.io/my-company/white-label-app:123</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">env</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#8f5902;font-style:italic"># add additional environment variables</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">ENVIRONMENT</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">PRODUCTION</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">disk_quota</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">1G</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">memory</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">1G</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">cpu</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">2</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">instances</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">1</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">routes</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">route</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">white-label-app.mycompany.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><h3 id="app-with-multiple-ports">App with multiple ports</h3>
+<p>This App has multiple ports to expose an admin console, website, and SMTP server.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">applications</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">b2b-server</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">ports</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">port</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">8080</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">port</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">9090</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">port</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">2525</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">tcp</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">routes</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">route</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">b2b-admin.mycompany.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">appPort</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">9090</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">route</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">b2b.mycompany.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#8f5902;font-style:italic"># gets the default (first) port</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><h3 id="health-check-types">Health check types</h3>
+<p>Kf supports three different health check types:</p>
+<ol>
+<li><code>port</code> (default)</li>
+<li><code>http</code></li>
+<li><code>process</code> (or <code>none</code>)</li>
+</ol>
+<p><code>port</code> and <code>http</code> set a <a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/">Kubernetes readiness and liveness
+probe</a>
+that ensures the application is ready before sending traffic to it.</p>
+<p>The <code>port</code> health check will ensure the port found at <code>$PORT</code> is being
+listened to. Under the hood Kf uses a TCP probe.</p>
+<p>The <code>http</code> health check will use the configured value in
+<code>health-check-http-endpoint</code> to check the application&rsquo;s health. Under the hood
+Kf uses an HTTP probe.</p>
+<p>A <code>process</code> health check only checks to see if the process running on the
+container is alive. It does NOT set a Kubernetes readiness or liveness probe.</p>
+<h2 id="known-differences">Known differences</h2>
+<p>The following are known differences between Kf manifests and CF manifests:</p>
+<ul>
+<li>Kf does not support deprecated CF manifest fields. This includes all fields at the root-level of the manifest (other than applications) and routing fields.</li>
+<li>Kf is missing support for the following v2 manifest fields:
+<ul>
+<li><code>docker.username</code></li>
+</ul>
+</li>
+<li>Kf does not support auto-detecting ports for Docker containers.</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-f9a54f404531eb77094696e5deff4f90">1.6 - App runtime</h1>
+    <div class="lead">Reference guide for the application runtime container environment.</div>
+	<p>The app runtime is the environment apps are executed in.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Buildpack Apps</th>
+<th>Container Image Apps</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>System libraries</td>
+<td>Provided by the Stack</td>
+<td>Provided in the container</td>
+</tr>
+<tr>
+<td>Network access</td>
+<td>Full access through Envoy sidecar</td>
+<td>Full access through Envoy sidecar</td>
+</tr>
+<tr>
+<td>File system</td>
+<td>Ephemeral storage</td>
+<td>Ephemeral storage</td>
+</tr>
+<tr>
+<td>Language runtime</td>
+<td>Supplied by the Stack or Buildpack</td>
+<td>Built into the container</td>
+</tr>
+<tr>
+<td>User</td>
+<td>Specified by the Stack</td>
+<td>Specified on the container</td>
+</tr>
+<tr>
+<td>Isolation mechanism</td>
+<td>Kubernetes Pod</td>
+<td>Kubernetes Pod</td>
+</tr>
+<tr>
+<td>DNS</td>
+<td>Provided by Kubernetes</td>
+<td>Provided by Kubernetes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="environment-variables">Environment variables</h2>
+<p>Environment variables are injected into the app at runtime by Kubernetes.
+Variables are added based on the following order, where later values override
+earlier ones with the same name:</p>
+<ol>
+<li>Space (set by administrators)</li>
+<li>App (set by developers)</li>
+<li>System (set by Kf)</li>
+</ol>
+<p>Kf provides the following system environment variables:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CF_INSTANCE_ADDR</code></td>
+<td>The cluster-visible IP:PORT of the App instance.</td>
+</tr>
+<tr>
+<td><code>CF_INSTANCE_GUID</code></td>
+<td>The UUID of the App instance.</td>
+</tr>
+<tr>
+<td><code>INSTANCE_GUID</code></td>
+<td>Alias of <code>CF_INSTANCE_GUID</code>.</td>
+</tr>
+<tr>
+<td><code>CF_INSTANCE_INDEX</code></td>
+<td>The index number of the App instance, this will ALWAYS be 0.</td>
+</tr>
+<tr>
+<td><code>INSTANCE_INDEX</code></td>
+<td>Alias of <code>CF_INSTANCE_INDEX</code>.</td>
+</tr>
+<tr>
+<td><code>CF_INSTANCE_IP</code></td>
+<td>The cluster-visible IP of the App instance.</td>
+</tr>
+<tr>
+<td><code>CF_INSTANCE_INTERNAL_IP</code></td>
+<td>Alias of <code>CF_INSTANCE_IP</code></td>
+</tr>
+<tr>
+<td><code>VCAP_APP_HOST</code></td>
+<td>Alias of <code>CF_INSTANCE_IP</code></td>
+</tr>
+<tr>
+<td><code>CF_INSTANCE_PORT</code></td>
+<td>The cluster-visible port of the App instance. In Kf this is the same as <code>PORT</code>.</td>
+</tr>
+<tr>
+<td><code>DATABASE_URL</code></td>
+<td>The first URI found in a <code>VCAP_SERVICES</code> credential.</td>
+</tr>
+<tr>
+<td><code>LANG</code></td>
+<td>Required by Buildpacks to ensure consistent script load order.</td>
+</tr>
+<tr>
+<td><code>MEMORY_LIMIT</code></td>
+<td>The maximum amount of memory in MB the App can consume.</td>
+</tr>
+<tr>
+<td><code>PORT</code></td>
+<td>The port the App should listen on for requests.</td>
+</tr>
+<tr>
+<td><code>VCAP_APP_PORT</code></td>
+<td>Alias of <code>PORT</code>.</td>
+</tr>
+<tr>
+<td><code>VCAP_APPLICATION</code></td>
+<td>A JSON structure containing App metadata.</td>
+</tr>
+<tr>
+<td><code>VCAP_SERVICES</code></td>
+<td>A JSON structure specifying bound services.</td>
+</tr>
+</tbody>
+</table>
+<p>Service credentials from bound services get injected into Apps via the
+<code>VCAP_SERVICES</code> environment variable. The variable is a valid JSON object with
+the following structure.</p>
+<h3 id="vcapservices">VCAPServices</h3>
+<p>A JSON object where the keys are Service labels and the values are an array of
+<code>VCAPService</code>. The array represents every bound
+service with that label.
+<a href="/docs/v2.11/developer/backing-services/user-provided-services/">User provided services</a>
+are placed under the label <code>user-provided</code>.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-.json" data-lang=".json"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;mysql&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span><span style="color:#a40000">...</span><span style="color:#000;font-weight:bold">],</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;postgresql&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span><span style="color:#a40000">...</span><span style="color:#000;font-weight:bold">],</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;user-provided&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span><span style="color:#a40000">...</span><span style="color:#000;font-weight:bold">]</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">}</span>
+</span></span></code></pre></div><h3 id="vcapservice">VCAPService</h3>
+<p>This type represents a single bound service instance.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-.json" data-lang=".json"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;binding_name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#a40000">string</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;instance_name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#a40000">string</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#a40000">string</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;label&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#a40000">string</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;tags&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#a40000">string</span><span style="color:#000;font-weight:bold">[],</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;plan&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#a40000">string</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;credentials&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#a40000">object</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">}</span>
+</span></span></code></pre></div><p><strong>Fields</strong></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>binding_name</code></td>
+<td><code>string</code></td>
+<td>The name assigned to the service binding by the user.</td>
+</tr>
+<tr>
+<td><code>instance_name</code></td>
+<td><code>string</code></td>
+<td>The name assigned to the service instance by the user.</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td><code>string</code></td>
+<td>The <code>binding_name</code> if it exists; otherwise the <code>instance_name</code>.</td>
+</tr>
+<tr>
+<td><code>label</code></td>
+<td><code>string</code></td>
+<td>The name of the service offering.</td>
+</tr>
+<tr>
+<td><code>tags</code></td>
+<td><code>string[]</code></td>
+<td>An array of strings an app can use to identify a service instance.</td>
+</tr>
+<tr>
+<td><code>plan</code></td>
+<td><code>string[]</code></td>
+<td>The service plan selected when the service instance was created.</td>
+</tr>
+<tr>
+<td><code>credentials</code></td>
+<td><code>object</code></td>
+<td>The service-specific credentials needed to access the service instance.</td>
+</tr>
+</tbody>
+</table>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Use the <code>tags</code> field to discover services in your App rather than filtering by
+plan/label so you can swap implementations and providers per environment.
+</aside>
+
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> The <code>credentials</code> field is <em>often</em> an object with string keys and values.
+However, the values are allowed to be <a href="https://github.com/openservicebrokerapi/servicebroker/blob/v2.15/spec.md#body-9">any type</a>.
+</aside>
+
+<h3 id="vcap_application">VCAP_APPLICATION</h3>
+<p>The<code>VCAP_APPLICATION</code> environment variable is a JSON object containing metadata about the App.</p>
+<p><strong>Example</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-.json" data-lang=".json"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;application_id&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;12345&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;application_name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;my-app&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;application_uris&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span><span style="color:#4e9a06">&#34;my-app.example.com&#34;</span><span style="color:#000;font-weight:bold">],</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;limits&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;disk&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">1024</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#204a87;font-weight:bold">&#34;mem&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">256</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#000;font-weight:bold">},</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;my-app&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;process_id&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;12345&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;process_type&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;web&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;space_name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;my-ns&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;uris&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span><span style="color:#4e9a06">&#34;my-app.example.com&#34;</span><span style="color:#000;font-weight:bold">]</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">}</span>
+</span></span></code></pre></div><p><strong>Fields</strong></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>application_id</code></td>
+<td><code>string</code></td>
+<td>The GUID identifying the App.</td>
+</tr>
+<tr>
+<td><code>application_name</code></td>
+<td><code>string</code></td>
+<td>The name assigned to the App when it was pushed.</td>
+</tr>
+<tr>
+<td><code>application_uris</code></td>
+<td><code>string[]</code></td>
+<td>The URIs assigned to the App.</td>
+</tr>
+<tr>
+<td><code>limits</code></td>
+<td><code>object</code></td>
+<td>The limits to disk space, and memory permitted to the App. Memory and disk space limits are supplied when the App is deployed, either on the command line or in the App manifest. Disk and memory limits are represented as integers, with an assumed unit of MB.</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td><code>string</code></td>
+<td>Identical to <code>application_name</code>.</td>
+</tr>
+<tr>
+<td><code>process_id</code></td>
+<td><code>string</code></td>
+<td>The UID identifying the process. Only present in running App containers.</td>
+</tr>
+<tr>
+<td><code>process_type</code></td>
+<td><code>string</code></td>
+<td>The type of process. Only present in running App containers.</td>
+</tr>
+<tr>
+<td><code>space_name</code></td>
+<td><code>string</code></td>
+<td>The human-readable name of the Space where the App is deployed.</td>
+</tr>
+<tr>
+<td><code>uris</code></td>
+<td><code>string[]</code></td>
+<td>Identical to <code>application_uris</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Missing Fields</strong></p>
+<p>Some fields in <code>VCAP_APPLICATION</code> that are in Cloud Foundry are currently not supported in Kf.</p>
+<p>Besides CF-specific and deprecated fields (<code>cf_api</code>, <code>host</code>, <code>users</code>) the fields that are not supported in Kf are:</p>
+<ul>
+<li><code>application_version</code> (identical to <code>version</code>)</li>
+<li><code>organization_id</code></li>
+<li><code>organization_name</code></li>
+<li><code>space_id</code></li>
+<li><code>start</code> (identical to <code>started_at</code>)</li>
+<li><code>started_at_timestamp</code> (identical to <code>state_timestamp</code>)</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-9e253740257aaf5fafb8377b39e5e3f3">1.7 - Build runtime</h1>
+    <div class="lead">Reference guide for the application build container environment.</div>
+	<p>The Build runtime is the environment Apps are built in.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Buildpack Builds</th>
+<th>Docker Builds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>System libraries</td>
+<td>Provided by the Stack</td>
+<td>User supplied</td>
+</tr>
+<tr>
+<td>Network access</td>
+<td>Full access through Envoy sidecar</td>
+<td>Full access through Envoy sidecar</td>
+</tr>
+<tr>
+<td>File system</td>
+<td>No storage</td>
+<td>No storage</td>
+</tr>
+<tr>
+<td>Language runtime</td>
+<td>Provided by the Stack</td>
+<td>User supplied</td>
+</tr>
+<tr>
+<td>User</td>
+<td>Specified by the Stack</td>
+<td>User supplied</td>
+</tr>
+<tr>
+<td>Isolation mechanism</td>
+<td>Kubernetes Pod</td>
+<td>Kubernetes Pod</td>
+</tr>
+<tr>
+<td>DNS</td>
+<td>Provided by Kubernetes</td>
+<td>Provided by Kubernetes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="environment-variables">Environment variables</h2>
+<p>Environment variables are injected into the Build at runtime.
+Variables are added based on the following order, where later values override
+earlier ones with the same name:</p>
+<ol>
+<li>Space (set by administrators)</li>
+<li>App (set by developers)</li>
+<li>System (set by Kf)</li>
+</ol>
+<p>Kf provides the following system environment variables to Builds:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CF_INSTANCE_ADDR</code></td>
+<td>The cluster-visible IP:PORT of the Build.</td>
+</tr>
+<tr>
+<td><code>INSTANCE_GUID</code></td>
+<td>Alias of <code>CF_INSTANCE_GUID</code>.</td>
+</tr>
+<tr>
+<td><code>CF_INSTANCE_IP</code></td>
+<td>The cluster-visible IP of the Build.</td>
+</tr>
+<tr>
+<td><code>CF_INSTANCE_INTERNAL_IP</code></td>
+<td>Alias of <code>CF_INSTANCE_IP</code></td>
+</tr>
+<tr>
+<td><code>VCAP_APP_HOST</code></td>
+<td>Alias of <code>CF_INSTANCE_IP</code></td>
+</tr>
+<tr>
+<td><code>CF_INSTANCE_PORT</code></td>
+<td>The cluster-visible port of the Build.</td>
+</tr>
+<tr>
+<td><code>LANG</code></td>
+<td>Required by Buildpacks to ensure consistent script load order.</td>
+</tr>
+<tr>
+<td><code>MEMORY_LIMIT</code></td>
+<td>The maximum amount of memory in MB the Build can consume.</td>
+</tr>
+<tr>
+<td><code>VCAP_APPLICATION</code></td>
+<td>A JSON structure containing App metadata.</td>
+</tr>
+<tr>
+<td><code>VCAP_SERVICES</code></td>
+<td>A JSON structure specifying bound services.</td>
+</tr>
+</tbody>
+</table>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> The environment variables Kf provides to Builds are a subset of those provided
+to <a href="/docs/v2.11/developer/build-and-deploy/app-runtime/">App Runtime</a>.
+</aside>
+
+
+</div>
+
+
+
+    
+	
+  
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-83f77835eae3d15dda612e1c86814bd0">2 - Backing services</h1>
+    <div class="lead">Discover, create, and use backing services.</div>
+	
+</div>
+
+
+
+    
+      
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-c2ebc22b9018da19d5d34e6e9c45330c">2.1 - Backing Services Overview</h1>
+    <div class="lead">Learn about how Kf works with backing services.</div>
+	<p>Backing services are any processes that the App contacts over the network during its operation.
+In traditional operating systems, these services could have been accessed over
+the network, a UNIX socket, or could even be a sub-process.
+Examples include the following:</p>
+<ul>
+<li>Databases — for example: MySQL, PostgreSQL</li>
+<li>File storage — for example: NFS, FTP</li>
+<li>Logging services — for example: syslog endpoints</li>
+<li>Traditional HTTP APIs — for example: Google Maps, WikiData, Parcel Tracking APIs</li>
+</ul>
+<p>Connecting to backing services over the network rather than installing them all
+into the same machine allows developers to focus on their App, independent
+security upgrades for different components, and flexibility to swap implementations.</p>
+<h2 id="backing-services-in-kf">Backing services in Kf</h2>
+<p>Kf supports two major types of backing services:</p>
+<ul>
+<li>
+<p><strong>Managed services:</strong> These services are created by a service broker and are tied to the Kf cluster.</p>
+</li>
+<li>
+<p><strong>User-provided services:</strong> These services are created outside of Kf, but get can be bound to apps in the same way
+as managed services.</p>
+</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-aaeb0115cc03519618bc12ca99dd6372">2.2 - Use managed services</h1>
+    <div class="lead">Learn to use the marketplace to find a service, create it, and bind it to an app.</div>
+	<h2 id="find-a-service">Find a service</h2>
+<p>Use the <code>kf marketplace</code> command to find a service you want to use in your App.
+Running the command without arguments will show all the service classes
+available. A <strong>service class</strong> represents a specific type of service e.g. a
+MySQL database or a Postfix SMTP relay.</p>
+<pre tabindex="0"><code>$ kf marketplace
+5 services can be used in Space &#34;test&#34;, use the --service flag to list the plans for a service
+
+Broker      Name        Space      Status  Description
+minibroker  mariadb                Active  Helm Chart for mariadb
+minibroker  mongodb                Active  Helm Chart for mongodb
+minibroker  mysql                  Active  Helm Chart for mysql
+minibroker  postgresql             Active  Helm Chart for postgresql
+minibroker  redis                  Active  Helm Chart for redis
+</code></pre><p>Service classes can have multiple plans available. A <strong>service plan</strong> generally
+corresponds to a version or pricing tier of the software. You can view the plans
+for a specific service by supplying the service name with the marketplace
+command:</p>
+<pre tabindex="0"><code>$ kf marketplace --service mysql
+Name    Free  Status  Description
+5-7-14  true  Active  Fast, reliable, scalable, and easy to use open-source relational database system.
+5-7-27  true  Active  Fast, reliable, scalable, and easy to use open-source relational database system.
+5-7-28  true  Active  Fast, reliable, scalable, and easy to use open-source relational database system.
+</code></pre><h2 id="provision-a-service">Provision a service</h2>
+<p>Once you have identified a service class and plan to provision, you can create
+an instance of the service using <code>kf create-service</code>:</p>
+<pre tabindex="0"><code>$ kf create-service mysql 5-7-28 my-db
+Creating service instance &#34;my-db&#34; in Space &#34;test&#34;
+Waiting for service instance to become ready...
+Success
+</code></pre><p>Services are provisioned into a single Space. You can see the services in the
+current Space by running <code>kf services</code>:</p>
+<pre tabindex="0"><code>$ kf services
+Listing services in Space: &#34;test&#34;
+Name   ClassName  PlanName  Age   Ready  Reason
+my-db  mysql      5-7-28    111s  True   &lt;nil&gt;
+</code></pre><p>You can delete a service using <code>kf delete-service</code>:</p>
+<pre tabindex="0"><code>$ kf delete-service my-db
+</code></pre><h2 id="bind-a-service">Bind a service</h2>
+<p>Once a service has been created, you can <strong>bind</strong> it to an App, which will
+inject credentials into the App so the service can be used. You can create
+the binding using <code>kf bind-service</code>:</p>
+<pre tabindex="0"><code>$ kf bind-service my-app my-db
+Creating service instance binding &#34;binding-my-app-my-db&#34; in Space &#34;test&#34;
+Waiting for service instance binding to become ready...
+Success
+</code></pre><p>You can list all bindings in a Space using the <code>kf bindings</code> command:</p>
+<pre tabindex="0"><code>$ kf bindings
+Listing bindings in Space: &#34;test&#34;
+Name                  App     Service  Age  Ready
+binding-my-app-my-db  my-app  my-db    82s  True
+</code></pre><p>Once a service is bound, restart the App using <code>kf restart</code> and the credentials
+will be in the <a href="/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices"><code>VCAP_SERVICES</code></a> environment variable.</p>
+<p>You can delete a service binding with the <code>kf unbind-service</code> command:</p>
+<pre tabindex="0"><code>$ kf unbind-service my-app my-db
+</code></pre>
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-65eb33ea4f1b06e45c9630828e66567e">2.3 - Configure user-provided services</h1>
+    <div class="lead">Learn how to inject existing services into your app.</div>
+	<p>Users can leverage services that aren&rsquo;t available in the marketplace by creating user-provided service instances.
+Once created, user-provided service instances behave like managed service instances created through <code>kf create-service</code>.
+Creating, listing, updating, deleting, binding, and unbinding user-provided services are all supported in Kf.</p>
+<h2 id="create-a-user-provided-service-instance">Create a user-provided service instance</h2>
+
+<aside class="alert alert-success" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-lightbulb ml-2"></i> <strong>Tip:</strong> The alias for <code>kf create-user-provided-service</code> is <code>kf cups</code>.
+</aside>
+
+<p>The name given to a user-provided service must be unique across all service instances in a Space, including services created through a service broker.</p>
+<h3 id="deliver-service-credentials-to-an-app">Deliver service credentials to an app</h3>
+<p>A user-provided service instance can be used to deliver credentials to an App. For example, a database admin can have a set of credentials for an existing database managed outside of Kf, and these credentials include the URL, port, username, and password used to connect to the database.</p>
+<p>The admin can create a user-provided service with the credentials and the developer can bind the service instance to the App. This allows the credentials to be shared without ever leaving the platform. Binding a service instance to an App has the same effect regardless of whether the service is a user-provided service or a marketplace service.</p>
+<p>The App is configured with the credentials provided by the user, and the App runtime environment variable <a href="/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices"><code>VCAP_SERVICES</code></a> is populated with information about all of the bound services to that App.</p>
+<p>A user-provided service can be created with credentials and/or a list of tags.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf cups my-db -p <span style="color:#4e9a06">&#39;{&#34;username&#34;:&#34;admin&#34;, &#34;password&#34;:&#34;test123&#34;, &#34;some-int-val&#34;: 1, &#34;some-bool&#34;: true}&#39;</span> -t <span style="color:#4e9a06">&#34;comma, separated, tags&#34;</span>
+</span></span></code></pre></div><p>This will create the user-provided service instance <code>my-db</code> with the provided credentials and tags. The credentials passed in to the <code>-p</code> flag must be valid JSON (either inline or loaded from a file path).</p>
+<p>To deliver the credentials to one or more Apps, the user can run <code>kf bind-service</code>.</p>
+<p>Suppose we have an App with one bound service, the user-provided service <code>my-db</code> defined above. The <code>VCAP_SERVICES</code> environment variable for that App will have the following contents:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;user-provided&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;my-db&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&#34;instance_name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;my-db&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&#34;label&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;user-provided&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&#34;tags&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;comma&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;separated&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;tags&#34;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#000;font-weight:bold">],</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&#34;credentials&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&#34;username&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;admin&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&#34;password&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;test123&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&#34;some-int-val&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">1</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&#34;some-bool&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#204a87;font-weight:bold">true</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#000;font-weight:bold">}</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">}</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#000;font-weight:bold">]</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">}</span>
+</span></span></code></pre></div><h2 id="update-a-user-provided-service-instance">Update a user-provided service instance</h2>
+
+<aside class="alert alert-success" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-lightbulb ml-2"></i> <strong>Tip:</strong> The alias for <code>kf update-user-provided-service</code> is <code>kf uups</code>.
+</aside>
+
+<p>A user-provided service can be updated with the <code>uups</code> command. New credentials and/or tags passed in completely overwrite existing ones. For example, if the user created the user-provided service <code>my-db</code> above, called <code>kf bind-service</code> to bind the service to an App, then ran the command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf uups my-db -p <span style="color:#4e9a06">&#39;{&#34;username&#34;:&#34;admin&#34;, &#34;password&#34;:&#34;new-pw&#34;, &#34;new-key&#34;: &#34;new-val&#34;}&#39;</span>
+</span></span></code></pre></div><p>The updated credentials will only be reflected on the App after the user unbinds and rebinds the service to the App. No restart or restage of the App is required. The updated <code>VCAP_SERVICES</code> environment variable will have the following contents:</p>
+<pre tabindex="0"><code>{
+  &#34;user-provided&#34;: [
+    {
+      &#34;name&#34;: &#34;my-db&#34;,
+      &#34;instance_name&#34;: &#34;my-db&#34;,
+      &#34;label&#34;: &#34;user-provided&#34;,
+      &#34;tags&#34;: [
+        &#34;comma&#34;,
+        &#34;separated&#34;,
+        &#34;tags&#34;
+      ],
+      &#34;credentials&#34;: {
+        &#34;username&#34;: &#34;admin&#34;,
+        &#34;password&#34;: &#34;new-pw&#34;,
+        &#34;new-key&#34;: &#34;new-val&#34;
+      }
+    }
+  ]
+}
+</code></pre><p>The new credentials overwrite the old credentials, and the tags are unchanged because they were not specified in the update command.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-dcb66f5640af578e83d147a64abbd646">2.4 - User Provided Service Templates</h1>
+    <div class="lead">Learn how to set up user provided services for MySQL, Redis, and RabbitMQ.</div>
+	
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> You can leverage services that aren&rsquo;t listed in the marketplace by creating user-provided service instances that an App can bind to. Learn more about <a href="/docs/v2.11/developer/backing-services/user-provided-services/">user-provided services</a>.
+</aside>
+
+<h2 id="before-you-begin">Before you begin</h2>
+<ul>
+<li>Ensure your service is running and accessible on the same network running your Kf cluster.</li>
+<li>Ensure you have targeted the Space where you want to create the service.</li>
+</ul>
+<h2 id="create-the-user-provided-instance">Create the user-provided instance</h2>
+<p>The following examples use the most common parameters used by applications to autoconfigure services.
+Most libraries use tags to find the right bound service and a URI to connect.</p>
+<h3 id="mysql">MySQL</h3>
+<p>MySQL libraries usually expect the tag <code>mysql</code> and the following parameters:</p>
+<dl>
+<dt><code>uri</code></dt>
+<dd>Example <code>mysql://username:password@host:port/dbname</code>. The <a href="https://dev.mysql.com/doc/refman/8.0/en/connecting-using-uri-or-key-value-pairs.html">MySQL documentation</a> can help with creating a URI string. The port is usually <code>3306</code>.</dd>
+<dt><code>username</code></dt>
+<dd>The connection username, required by some libraries even if included in <code>uri</code>.</dd>
+<dt><code>password</code></dt>
+<dd>The connection password, required by some libraries even if included in <code>uri</code>.</dd>
+</dl>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf cups service-instance-name <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  -p <span style="color:#4e9a06">&#39;{&#34;username&#34;:&#34;my-username&#34;, &#34;password&#34;:&#34;my-password&#34;, &#34;uri&#34;:&#34;mysql://my-username:my-password@mysql-host:3306/my-db&#34;}&#39;</span> <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  -t <span style="color:#4e9a06">&#34;mysql&#34;</span>
+</span></span></code></pre></div><h3 id="rabbitmq">RabbitMQ</h3>
+<p>RabbitMQ libraries usually expect the tag <code>rabbitmq</code> and the following parameters:</p>
+<dl>
+<dt><code>uri</code></dt>
+<dd>Example <code>amqp://username:password@host:port/vhost?query</code>. The <a href="https://www.rabbitmq.com/uri-spec.html">RabbitMQ documentation</a> can help with creating a URI string. The port is usually <code>5672</code>.</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf cups service-instance-name <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  -p <span style="color:#4e9a06">&#39;{&#34;uri&#34;:&#34;amqp://username:password@host:5672&#34;}&#39;</span> <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  -t <span style="color:#4e9a06">&#34;rabbitmq&#34;</span>
+</span></span></code></pre></div><h3 id="redis">Redis</h3>
+<p>Redis libraries usually expect the tag <code>redis</code> and the following parameters:</p>
+<dl>
+<dt><code>uri</code></dt>
+<dd>Example <code>redis://:password@host:port/uery</code>. The <a href="https://www.iana.org/assignments/uri-schemes/prov/redis">IANA Redis URI documentation</a> can help with creating a URI string. The port is usually <code>6379</code>.</dd>
+</dl>
+<p>Example for Redis with no AUTH configured:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf cups service-instance-name <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  -p <span style="color:#4e9a06">&#39;{&#34;uri&#34;:&#34;redis://redis-host:6379&#34;}&#39;</span> <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  -t <span style="color:#4e9a06">&#34;redis&#34;</span>
+</span></span></code></pre></div><p>Example for Redis with AUTH configured:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf cups service-instance-name <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  -p <span style="color:#4e9a06">&#39;{&#34;uri&#34;:&#34;redis://:password@redis-host:6379&#34;}&#39;</span> <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  -t <span style="color:#4e9a06">&#34;redis&#34;</span>
+</span></span></code></pre></div><h2 id="bind-your-app">Bind your App</h2>
+<p>Once the user-provided service has been created, you can bind your App to the
+user provided service by name, just like a managed service:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf bind-service application-name service-instance-name
+</span></span></code></pre></div><h2 id="whats-next">What&rsquo;s next</h2>
+<ul>
+<li>Learn about <a href="/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices">how the credentials are injected into your app</a>.</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-7c5cfb1597b32604da9ea5cb7a9bb1d5">2.5 - Configure NFS volumes</h1>
+    <div class="lead">Learn how to use an NFS volume as a mounted drive.</div>
+	<p>Kf supports mounting NFS volumes using the <code>kf marketplace</code>.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Your administrator must have <a href="/docs/v2.11/operator/service-brokers/nfs-platform-setup/">completed the NFS platform setup guide</a>.</li>
+</ul>
+<h2 id="create-an-nfs-service-instance">Create an NFS service instance</h2>
+<p>Run <code>kf marketplace</code> to see available services. The built-in NFS service appears on the list if NFS is enabled on the platform.</p>
+<pre tabindex="0"><code>Broker           Name  Namespace  Description
+nfsvolumebroker  nfs              mount nfs shares
+</code></pre><h2 id="mount-an-external-filesystem">Mount an external filesystem</h2>
+<h3 id="create-a-service-instance">Create a service instance</h3>
+<p>To mount to an existing NFS service:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf create-service nfs existing SERVICE-INSTANCE-NAME -c <span style="color:#4e9a06">&#39;{&#34;share&#34;:&#34;SERVER/SHARE&#34;, &#34;capacity&#34;:&#34;CAPACITY&#34;}&#39;</span>
+</span></span></code></pre></div><p>Replace variables with your values.</p>
+<ul>
+<li><var>SERVICE-INSTANCE-NAME</var> is the name you want for this NFS volume service instance.</li>
+<li><var>SERVER/SHARE</var> is the NFS address of your server and share.</li>
+<li><var>CAPACITY</var> uses the <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/">Kubernetes quantity</a> format.</li>
+</ul>
+<p>Confirm that the NFS volume service appears in your list of services. You can expect output similar to this example:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kf services
+...
+Listing services in Space: demo-space
+Name                Type      ClassName         PlanName  Age    Ready  Reason
+filestore-nfs       volume    nfs               existing  6s     True   &lt;nil&gt;
+...
+</code></pre><h3 id="bind-your-service-instance-to-an-app">Bind your service instance to an App</h3>
+<p>To bind an NFS service instance to an App, run:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf bind-service YOUR-APP-NAME SERVICE-NAME -c <span style="color:#4e9a06">&#39;{&#34;uid&#34;:&#34;2000&#34;,&#34;gid&#34;:&#34;2000&#34;,&#34;mount&#34;:&#34;MOUNT-PATH&#34;,&#34;readonly&#34;:true}&#39;</span>
+</span></span></code></pre></div><p>Replace variables with your values.</p>
+<ul>
+<li>
+<p><var>YOUR-APP-NAME</var> is the name of the App for which you want to use the volume service.</p>
+</li>
+<li>
+<p><var>SERVICE-NAME</var> is the name of the volume service instance you created in the previous step.</p>
+</li>
+<li>
+<p><code>uid</code>:<var>UID</var> and <code>gid</code>:<var>GID</var> specify the directory permissions of the mounting share.</p>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> For V2 buildpack Apps, the value for <code>uid</code> and <code>gid</code> is always 2000.
+Otherwise, the user specified by <code>uid</code> and <code>gid</code> should be the <code>uid</code>
+and <code>gid</code> of the running App process.
+</aside>
+
+</li>
+<li>
+<p><var>MOUNT-PATH</var> is the path the volume should be mounted to within your App.</p>
+</li>
+<li>
+<p>(Optional) <code>&quot;readonly&quot;:true</code> is an optional JSON string that creates a read-only mount.
+By default, Volume Services mounts a read-write file system.</p>
+<p>Note: Your App automatically restarts when the NFS binding changes.</p>
+</li>
+</ul>
+<p>You can list all bindings in a Space using the <code>kf bindings</code> command. You will see output similar to this example:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kf bindings
+...
+Listing bindings in Space: demo-space
+Name                                     App           Service             Age  Ready
+binding-spring-music-filestore-nfs       spring-music  filestore-nfs       71s  True
+...
+</code></pre><h3 id="access-the-volume-service-from-your-app">Access the volume service from your App</h3>
+<p>To access the volume service from your App, you must know which file path to use in your code.
+You can view the file path in the details of the service binding, which are visible in the environment variables for your App.</p>
+<p>View environment variables for your App:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf vcap-services YOUR-APP-NAME
+</span></span></code></pre></div><p>Replace <var>YOUR-APP-NAME</var> with the name of your App.</p>
+<p>The following is example output of the <code>kf vcap-services</code> command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>$ kf vcap-services YOUR-APP-NAME
+</span></span><span style="display:flex;"><span><span style="color:#ce5c00;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#4e9a06">&#34;nfs&#34;</span>: <span style="color:#ce5c00;font-weight:bold">[</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ce5c00;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#4e9a06">&#34;instance_name&#34;</span>: <span style="color:#4e9a06">&#34;nfs-instance&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#4e9a06">&#34;name&#34;</span>: <span style="color:#4e9a06">&#34;nfs-instance&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#4e9a06">&#34;label&#34;</span>: <span style="color:#4e9a06">&#34;nfs&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#4e9a06">&#34;tags&#34;</span>: <span style="color:#ce5c00;font-weight:bold">[]</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#4e9a06">&#34;plan&#34;</span>: <span style="color:#4e9a06">&#34;existing&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#4e9a06">&#34;credentials&#34;</span>: <span style="color:#ce5c00;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;capacity&#34;</span>: <span style="color:#4e9a06">&#34;1Gi&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;gid&#34;</span>: 2000,
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;mount&#34;</span>: <span style="color:#4e9a06">&#34;/test/mount&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;share&#34;</span>: <span style="color:#4e9a06">&#34;10.91.208.210/test&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;uid&#34;</span>: <span style="color:#0000cf;font-weight:bold">2000</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#ce5c00;font-weight:bold">}</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#4e9a06">&#34;volume_mounts&#34;</span>: <span style="color:#ce5c00;font-weight:bold">[</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#ce5c00;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#4e9a06">&#34;container_dir&#34;</span>: <span style="color:#4e9a06">&#34;/test/mount&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#4e9a06">&#34;device_type&#34;</span>: <span style="color:#4e9a06">&#34;shared&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#4e9a06">&#34;mode&#34;</span>: <span style="color:#4e9a06">&#34;rw&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#ce5c00;font-weight:bold">}</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#ce5c00;font-weight:bold">]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ce5c00;font-weight:bold">}</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ce5c00;font-weight:bold">]</span>
+</span></span><span style="display:flex;"><span><span style="color:#ce5c00;font-weight:bold">}</span>
+</span></span></code></pre></div><p>Use the properties under <code>volume_mounts</code> for any information required by your App.</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>container_dir</code></td>
+<td>String containing the path to the mounted volume that you bound to your App.</td>
+</tr>
+<tr>
+<td><code>device_type</code></td>
+<td>The NFS volume release. This currently only supports shared devices. A shared device represents a distributed file system that can mount on all App instances simultaneously.</td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td>String that informs what type of access your App has to NFS, either <code>ro</code> (read-only), or <code>rw</code> (read and write).</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+
+
+    
+	
+  
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-c16824af8fd2a461ef90c4f8160d9b6c">3 - Scaling</h1>
+    <div class="lead">Learn to scale apps up or down.</div>
+	
+</div>
+
+
+
+    
+      
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-b382e70e5bab4b7f5eb676e75ffdd352">3.1 - Scaling overview</h1>
+    <div class="lead">Learn about how Kf scales apps.</div>
+	<p>Kf leverages the Kubernetes Horizontal Pod Autoscaler (HPA)
+to automatically scale the number of Pods in a App. When autoscaling is enabled
+for an App, an HPA object is created and bound to the App object. It then dynamically
+calculates the target scale and sets it for the App.</p>
+<h2 id="how-kf-scaling-works">How Kf scaling works</h2>
+<p>The number of Pods that are deployed for a Kf App is
+controlled by its underlying Deployment object&rsquo;s <code>replicas</code> field. The target
+number of Deployment replicas is set through the App&rsquo;s <code>replicas</code> field.</p>
+<p>Scaling can be done manually with the <code>kf scale</code> command.
+This command is disabled when autoscaling is enabled to avoid conflicting targets.</p>
+<h2 id="how-the-kubernetes-horizontal-pod-autoscaler-works">How the Kubernetes Horizontal Pod Autoscaler works</h2>
+<p>The Horizontal Pod Autoscaler (HPA) is implemented as a Kubernetes API resource
+(the HPA object) and a control loop (the HPA controller) which periodically
+calculates the number of desired replicas based on current resource utilization.
+The HPA controller then passes the number to the target object that implements the
+Scale subresource. The actual scaling is delegated to the underlying object and
+its controller. You can find more information in the <a href="https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/">Kubernetes documentation</a>.</p>
+<h3 id="how-the-autoscaler-determines-when-to-scale">How the Autoscaler determines when to scale</h3>
+<p>Periodically, the HPA controller queries the resource utilization against
+the metrics specified in each HorizontalPodAutoscaler definition. The controller
+obtains the metrics from the resource metrics API for each Pod. Then the
+controller calculates the utilization value as a percentage of the equivalent
+resource request. The desired number of replicas is then calculated based on the
+ratio of current percentage and desired percentage. You can read more about the
+<a href="https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#algorithm-details">autoscaling algorithm</a> in the Kubernetes documentation.</p>
+<h3 id="metrics">Metrics</h3>
+<p>Kf uses HPA v1 which only supports CPU as the target metric.</p>
+<h2 id="how-the-kubernetes-horizontal-autoscaler-works-with-kf">How the Kubernetes Horizontal Autoscaler works with Kf</h2>
+<p>When autoscaling is enabled for a Kf App, the Kf
+controller will create an HPA object based on the scaling limits and rules
+specified on the App. Then the HPA controller fetches the specs from the HPA
+object and scales the App accordingly.</p>
+<p>The HPA object will be deleted if Autoscaling is disabled or if the
+corresponding App is deleted.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-8412b2ccff3bf6d3216d6875e40cd997">3.2 - Manage Autoscaling</h1>
+    <div class="lead">Learn to use autoscaling for your app.</div>
+	<p>Kf Apps can be automatically scaled based on CPU usage.
+You can configure autoscaling limits for your Apps and the target CPU usage for
+each App instance. Kf automatically scales your Apps up
+and down in response to demand.</p>
+<p>By default, autoscaling is disabled. Follow the steps below to enable autoscaling.</p>
+<h2 id="view-apps">View Apps</h2>
+<p>You can view the autoscaling status for an App using the <code>kf apps</code>
+command. If autoscaling is enabled for an App, <code>Instances</code> includes the
+autoscaling status.</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kf apps
+
+Name   Instances              Memory  Disk  CPU
+app1   4 (autoscaled 4 to 5)  256Mi   1Gi   100m
+app2   1                      256Mi   1Gi   100m
+</code></pre><p>Autoscaling is enabled for <code>app1</code> with <code>min-instances</code> set to 4 and
+<code>max-instances</code> set to 5. Autoscaling is disabled for <code>app2</code>.</p>
+<h2 id="update-autoscaling-limits">Update autoscaling limits</h2>
+<p>You can update the instance limits using the <code>kf update-autoscaling-limits</code>
+command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf update-autoscaling-limits app-name min-instances max-instances
+</span></span></code></pre></div><h2 id="create-autoscaling-rule">Create autoscaling rule</h2>
+<p>You can create autoscaling rules using the <code>kf create-autoscaling-rule</code>
+command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf create-autoscaling-rule app-name CPU min-threshold max-threshold
+</span></span></code></pre></div><h2 id="delete-autoscaling-rules">Delete autoscaling rules</h2>
+<p>You can delete all autoscaling rules with the
+<code>kf delete-autoscaling-rule</code> command. Kf only supports
+one autoscaling rule.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf delete-autoscaling-rules app-name
+</span></span></code></pre></div><h2 id="enable-and-disable-autoscaling">Enable and disable autoscaling</h2>
+<p>Autoscaling can be enabled by using <code>enable-autoscaling</code> and
+disabled by using <code>disable-autoscaling</code>. When it is disabled, the
+configurations, including limits and rules, are preserved.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf enable-autoscaling app-name
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>kf disable-autoscaling app-name
+</span></span></code></pre></div>
+</div>
+
+
+
+    
+	
+  
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-942fc5a9d62607b3fdeac4fd7cc64e68">4 - Service discovery</h1>
+    <div class="lead">Connect to other Apps in the Kf cluster.</div>
+	<p>This document is an overview of Kubernetes DNS-based service discovery
+and how it can be used with Kf.</p>
+<h2 id="when-to-use-kubernetes-service-discovery-with-kf">When to use Kubernetes service discovery with Kf</h2>
+<p>Kubernetes service discovery can be used by applications that need to locate
+backing services in a consistent way regardless of where the application is
+deployed. For example, a team might want to use a common URI in their
+configuration that always points at the local SMTP gateway to decouple code from
+the environment it ran in.</p>
+<p>Service discovery helps application teams by:</p>
+<ul>
+<li>Reducing the amount of per-environment configuration.</li>
+<li>Decoupling client and server applications.</li>
+<li>Allowing applications to be portable to new environments.</li>
+</ul>
+<p>You can use Kubernetes service discovery when:</p>
+<ul>
+<li>Applications use their container&rsquo;s DNS configurations to resolve hosts.</li>
+<li>Applications are deployed with their backing services in the same Kubernetes cluster or namespace.</li>
+<li>Backing services have an associated
+<a href="https://kubernetes.io/docs/concepts/services-networking/service/">Kubernetes service</a>.
+Kf creates these for each app.</li>
+<li>Kubernetes NetworkPolicies allow traffic between an application and the
+Kubernetes service it needs to communicate with. Kf
+creates these policies in each Kf space.</li>
+</ul>
+<p>You <strong>should not</strong> use Kubernetes service discovery if:</p>
+<ul>
+<li>Applications need to failover between multiple clusters.</li>
+<li>You override the DNS resolver used by your application.</li>
+<li>Applications need specific types of load balancing.</li>
+</ul>
+<h2 id="how-kubernetes-service-discovery-works">How Kubernetes service discovery works</h2>
+<p>Kubernetes service discovery works by
+<a href="https://cloud.google.com/kubernetes-engine/docs/concepts/service-discovery">modifying the DNS configuration</a>
+of containers running on a Kubernetes node. When an application looks up an
+unqualified domain name, the local DNS resolver will first attempt to resolve
+the name in the local cluster.</p>
+<p>Domains without multiple parts will be resolved against the names of Kubernetes
+services in the container&rsquo;s namespace. Each Kf app
+creates a Kubernetes service with the same name. If two
+Kf apps <code>ping</code> and <code>pong</code> were deployed in the same
+Kf space, then <code>ping</code> could use the URL <code>http://pong</code> to
+send traffic to the other service.</p>
+<p>Domains with a single dot will be resolved against the Kubernetes services in
+the Kubernetes namespace with the same name as the label after the dot. For
+example, if there was a PostgreSQL database with a <code>customers</code> service in the
+<code>database</code> namespace, an application in another namespace could
+resolve it using <code>postgres://customers.database</code>.</p>
+<h2 id="how-to-use-service-discovery-with-kf">How to use service discovery with Kf</h2>
+<p>Kubernetes DNS based service discovery can be used in any
+Kf app. Each Kf app creates a
+Kubernetes service of the same name, and each Kf
+space creates a Kubernetes namespace with the same name.</p>
+<ul>
+<li>Refer to a Kf app in the current space using
+<code><var>protocol</var>://<var>app-name</var></code>.</li>
+<li>Refer to a Kf app in a different space using
+<code><var>protocol</var>://<var>app-name</var>.<var>space-name</var></code>.</li>
+<li>Refer to a Kf app in the current space listening on
+a custom port using
+<code><var>protocol</var>://<var>app-name</var>:<var>port</var></code>.</li>
+<li>Refer to a Kf app in a different space listening
+a custom port using
+<code><var>protocol</var>://<var>app-name</var>.<var>space-name</var>:<var>port</var></code>.</li>
+</ul>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> For Kubernetes services managed by Kf, TCP port 80
+always maps to the same port in the app&rsquo;s <code>PORT</code> environment variable. This is
+even true if the Kf app doesn&rsquo;t serve HTTP traffic.
+</aside>
+
+<h2 id="best-practices">Best practices</h2>
+<p>Applications that are going to be the target of DNS based service discovery
+should have frequent <a href="/docs/v2.11/developer/build-and-deploy/manifest/#health_check_types">health checks</a>
+to ensure they are rapidly added and removed from the pool of hosts that accept
+connections.</p>
+<p>Applications using DNS based service discovery should not cache the IP addresses
+of the resolved services because they are not guaranteed to be stable.</p>
+<p>If environment specific services exist outside of the cluster, they can be
+resolved using Kubernetes DNS if you set up
+<a href="https://kubernetes.io/docs/concepts/services-networking/service/#externalname">ExternalName Kubernetes services</a>.
+These Kubernetes services provide the same resolution capabilities, but return a
+CNAME record to redirect requests to an external authority.</p>
+<h2 id="comparison-to-eureka">Comparison to Eureka</h2>
+<p>Eureka is an open source client-side load-balancer created by Netflix. It is
+commonly used as part of the
+<a href="https://docs.pivotal.io/spring-cloud-services/3-1/common/service-registry/index.html">Spring Cloud Services</a>
+service broker. Eureka was
+<a href="https://github.com/Netflix/eureka/wiki/Eureka-at-a-glance#what-is-eureka">built to be a regional load balancer and service discovery mechanism</a>
+for services running in an environment that caused frequent disruptions to
+workloads leading to unstable IP addresses.</p>
+<p>Eureka is designed as a client/server model. Clients register themselves with
+the server indicating which names they want to be associated with and
+periodically send the server heartbeats. The server allows all connected clients
+to resolve names.</p>
+<p>In general, you should use Kubernetes DNS rather than Eureka in Kubernetes for
+the following reasons:</p>
+<ul>
+<li>DNS works with all programming languages and applications without the need for libraries.</li>
+<li>Your application&rsquo;s existing health check will be reused reducing combinations of errors.</li>
+<li>Kubernetes manages the DNS server, allowing you to rely on fewer dependencies.</li>
+<li>Kubernetes DNS respects the same policy and RBAC constraints as the rest of Kubernetes.</li>
+</ul>
+<p>There are a few times when deploying a Eureka server would be advantageous:</p>
+<ul>
+<li>You need service discovery across Kubernetes and VM based applications.</li>
+<li>You need client based load-balancing.</li>
+<li>You need independent health checks.</li>
+</ul>
+<h2 id="whats-next">What&rsquo;s next</h2>
+<ul>
+<li><a href="https://cloud.google.com/kubernetes-engine/docs/concepts/service-discovery">Read more about service discovery in GKE</a>.</li>
+<li>Learn about <a href="https://cloud.google.com/service-directory">Service Directory</a>, a managed offering similar to Eureka.</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-112457d24a74b66b91a3aad98b695483">5 - Configure routes and domains</h1>
+    <div class="lead">Make your app reachable over the network.</div>
+	<p>This page describes how routes and domains work in Kf, and how developers and administrators configure routes and domains for an App deployed on Kf cluster.</p>
+<p>You must create domain and routes to give external access to your application.</p>
+<h2 id="internal-routing">Internal routing</h2>
+<p>Kf apps can communicate internally with other apps in the cluster directly using a service mesh without leaving the cluster network. By default, all traffic on the service mesh is encrypted using mutual TLS.</p>
+<p>All apps deployed in the Kf cluster come with an internal endpoint configured by default. You can use the address <code><var>app-name</var>.<var>space-name</var>.svc.cluster.local</code> for internal communication between apps. To use this internal address no extra steps are required. Mutual TLS is enabled by default for internal routes. Note that this internal address is only accessible from the pods running the apps and not accessible from outside the cluster.</p>
+<h3 id="app-load-balancing">App load balancing</h3>
+<p>Traffic is routed by Istio to healthy instances of an App using a
+<a href="https://en.wikipedia.org/wiki/Round-robin_DNS">round-robin</a>
+policy. Currently, this policy can&rsquo;t be changed.</p>
+<h2 id="route-capabilities">Route capabilities</h2>
+<p>Routes tell the cluster&rsquo;s ingress gateway where to deliver traffic and what to
+do if no Apps are available on the given address.
+By default, if no App is available on a Route and the Route receives a request
+it returns an <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503">HTTP 503 status code</a>.</p>
+<p>Routes are comprised of three parts: host, domain, and path. For example, in
+the URI <code>payroll.mydatacenter.example.com/login</code>:</p>
+<ul>
+<li>The host is <code>payroll</code></li>
+<li>The domain is <code>mydatacenter.example.com</code></li>
+<li>The path is <code>/login</code></li>
+</ul>
+<p>Routes <em>must</em> contain a domain, but the host and path is optional. Multiple
+Routes can share the same host and domain if they specify different paths.
+Multiple Apps can share the same Route and traffic will be split between them.
+This is useful if you need to support legacy blue/green deployments. If
+multiple Apps are bound to different paths, the priority is longest to
+shortest path.</p>
+<p>Warning: Kf doesn&rsquo;t currently support TCP port-based routing. You must use a
+<a href="https://kubernetes.io/docs/tutorials/stateless-application/expose-external-ip-address/">Kubernetes LoadBalancer</a>
+if you want to expose a TCP port to the Internet. Ports are available on the cluster internal App address <code>&lt;app-name&gt;.&lt;space&gt;</code>.</p>
+<h2 id="manage-routes">Manage routes</h2>
+<p>The following sections describe how to use the <code>kf</code> CLI to manage Routes.</p>
+<h3 id="list-routes">List routes</h3>
+<p>Developers can list Routes for the current Space using the <code>kf routes</code>
+command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-.sh" data-lang=".sh"><span style="display:flex;"><span>$ kf routes
+</span></span><span style="display:flex;"><span>Getting Routes in Space: my-space
+</span></span><span style="display:flex;"><span>Found <span style="color:#0000cf;font-weight:bold">2</span> Routes in Space my-space
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>HOST    DOMAIN       PATH    APPS
+</span></span><span style="display:flex;"><span><span style="color:#204a87">echo</span>    example.com  /       <span style="color:#204a87">echo</span>
+</span></span><span style="display:flex;"><span>*       example.com  /login  uaa
+</span></span></code></pre></div><h3 id="create-a-route">Create a route</h3>
+<p>Developers can create Routes using the <code>kf create-route</code> command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-.sh" data-lang=".sh"><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Create a Route in the targeted Space to match traffic for myapp.example.com/*</span>
+</span></span><span style="display:flex;"><span>$ kf create-route example.com --hostname myapp
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Create a Route in the Space myspace to match traffic for myapp.example.com/*</span>
+</span></span><span style="display:flex;"><span>$ kf create-route -n myspace example.com --hostname myapp
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># Create a Route in the targeted Space to match traffic for myapp.example.com/mypath*</span>
+</span></span><span style="display:flex;"><span>$ kf create-route example.com --hostname myapp --path /mypath
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># You can also supply the Space name as the first parameter if you have</span>
+</span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic"># scripts that rely on the old cf style API.</span>
+</span></span><span style="display:flex;"><span>$ kf create-route myspace example.com --hostname myapp <span style="color:#8f5902;font-style:italic"># myapp.example.com</span>
+</span></span></code></pre></div><p>After a Route is created, if no Apps are bound to it then an <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/503">HTTP 503 status code</a>
+is returned for any matching requests.</p>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Routes that share the same host and domain must be in the same Space.
+</aside>
+
+<h3 id="map-a-route-to-your-app">Map a route to your app</h3>
+<p>Developers can make their App accessible on a Route using the <code>kf map-route</code>
+command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-.sh" data-lang=".sh"><span style="display:flex;"><span>$ kf map-route MYAPP mycluster.example.com --host myapp --path mypath
+</span></span></code></pre></div>
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> <code>map-route</code> creates the Route if it doesn&rsquo;t exist yet.
+</aside>
+
+<h3 id="unmap-a-route">Unmap a route</h3>
+<p>Developers can remove their App from being accessible on a Route using the <code>kf unmap-route</code> command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-.sh" data-lang=".sh"><span style="display:flex;"><span>$ kf unmap-route MYAPP mycluster.example.com --host myapp --path mypath
+</span></span></code></pre></div><h3 id="delete-a-route">Delete a route</h3>
+<p>Developers can delete a Route using the <code>kf delete-route</code> command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-.sh" data-lang=".sh"><span style="display:flex;"><span>$ kf delete-route mycluster.example.com --host myapp --path mypath
+</span></span></code></pre></div><p>Deleting a Route will stop traffic from being routed to all Apps listening on
+the Route.</p>
+<h3 id="manage-routes-declaratively-in-your-app-manifest">Manage routes declaratively in your app manifest</h3>
+<p>Routes can be managed declaratively in your app manifest file. They will be
+created if they do not yet exist.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-.yaml" data-lang=".yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">applications</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">my-app</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># ...</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">routes</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">route</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">example.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">route</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">www.example.com/path</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><p>You can read more about the supported
+route properties in the <a href="manifest">manifest documentation</a>.</p>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Declaring Routes in your manifest file only creates new Routes, it
+does not delete Routes you created manually or as part of a previous push.
+</aside>
+
+<h2 id="routing-crds">Routing CRDs</h2>
+<p>There are four types that are relevant to routing:</p>
+<ul>
+<li>VirtualService</li>
+<li>Route</li>
+<li>Service</li>
+<li>App</li>
+</ul>
+<p>Each App has a Service, which is an abstract name given to all running instances
+of your App. The name of the Service is the same as the App. A Route represents
+a single external URL. Routes constantly watch for changes to Apps, when an App
+requests to be added to a Route, the Route updates its list of Apps and then the
+VirtualService. A VirtualService represents a single domain and merges a list of
+all Routes in a Space that belong to that domain.</p>
+<p>Istio reads the configuration on VirtualServices to determine how to route
+traffic.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-08ccb5aed1b65bbb79ebfe9a95bdfda5">6 - Tasks</h1>
+    <div class="lead">Learn how to run one-off jobs using Kf.</div>
+	
+</div>
+
+
+
+    
+      
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-fc8abef5d8b8b4cd00451c7fbf42f60e">6.1 - Tasks Overview</h1>
+    <div class="lead">Understand how tasks work in Kf.</div>
+	<h2 id="about-tasks">About Tasks</h2>
+<p>Unlike Apps which run indefinitely and restart if the process terminates, Tasks run a process until it completes and then stop.
+Tasks are run in their own containers and are based on the configuration and binary of an existing App.</p>
+<p>Tasks are not accessible from routes, and should be used for one-off or scheduled recurring work necessary for the health of an
+application.</p>
+<h2 id="use-cases-for-tasks">Use cases for Tasks</h2>
+<ul>
+<li>Migrating a database</li>
+<li>Running a batch job (scheduled/unscheduled)</li>
+<li>Sending an email</li>
+<li>Transforming data (ETL)</li>
+<li>Processing data (upload/backup/download)</li>
+</ul>
+<h2 id="how-tasks-work">How Tasks work</h2>
+<p>Tasks are executed asynchronously and run independently from the parent App or other Tasks running on the same App. An App created for running Tasks does not have routes created or assigned, and the <strong>Run</strong> lifecycle is skipped. The <strong>Source code upload</strong> and <strong>Build</strong> lifecycles still proceed and result in a container image used for running Tasks after pushing the App (see App lifecycles at <a href="/docs/v2.11/developer/build-and-deploy/deploying-an-app/">Deploying an Application</a>).</p>
+<p>The lifecycle of a Task is as follows:</p>
+<ol>
+<li>You push an App for running tasks with the <code>kf push APP_NAME --task</code> command.</li>
+<li>You run a Task on the App with the <code>kf run-task APP_NAME</code> command. Task inherits the environment variables, service bindings, resource allocation, start-up command, and security groups bound to the App.</li>
+<li>Kf creates a Tekton <a href="https://github.com/tektoncd/pipeline/blob/master/docs/pipelineruns.md">PipelineRun</a> with values from the App and parameters from the <code>run-task</code> command.</li>
+<li>The Tekton PipelineRun creates a Kubernetes Pod which launches a container based on the configurations on the App and Task.</li>
+<li>Task execution stops (Task exits or is terminated manually), the underlying Pod is either stopped or terminated. Pods of stopped Tasks are preserved and thus Task logs are accessible via the <code>kf logs APP_NAME --task</code> command.</li>
+<li>If you terminate a Task before it stops, the Tekton PipelineRun is cancelled (see <a href="https://github.com/tektoncd/pipeline/blob/master/docs/pipelineruns.md#cancelling-a-pipelinerun">Cancelling a PipelineRun</a>), the underlying Pod together with the logs are deleted. The logs of termianted Tasks are delivered to the cluster level logging streams if configured (e.g. Stackdriver, Fluentd).</li>
+<li>If the number of Tasks run on an App is greater than 500, the oldest Tasks are automatically deleted.</li>
+</ol>
+<h2 id="tasks-retention-policy">Tasks retention policy</h2>
+<p>Tasks are created as custom resources in the Kubernetes cluster, therefore, it is important not to exhaust the space of the underlying <code>etcd</code> database. By default, Kf only keeps the latest 500 Tasks per each App. Once the number of Tasks reach 500, the oldest Tasks (together with the underlying Pods and logs) will be automatically deleted.</p>
+<h2 id="task-logging-and-execution-history">Task logging and execution history</h2>
+<p>Any data or messages the Task outputs to STDOUT or STDERR is available by using the <code>kf logs APP_NAME --task</code> command. Cluster level logging mechanism (such as Stackdriver, Fluentd) will deliver the Task logs to the configured logging destination.</p>
+<h2 id="scheduling-tasks">Scheduling Tasks</h2>
+<p>As described above, Tasks can be run asynchronously by using the <code>kf run-task APP_NAME</code> command.
+Alternatively, you can schedule Tasks for execution by first creating a Job using
+the <code>kf create-job</code> command, and then scheduling it with the
+<code>kf schedule-job JOB_NAME</code> command. You can schedule that Job to automatically
+run Tasks on a specified <a href="https://man7.org/linux/man-pages/man5/crontab.5.html">unix-cron</a> schedule.</p>
+<h3 id="how-tasks-are-scheduled">How Tasks are scheduled</h3>
+<p>Create and schedule a Job to run the Task. A Job describes the Task to execute
+and automatically manages Task creation.</p>
+<p>Tasks are created on the schedule even if previous executions of the Task are still running.
+If any executions are missed for any reason, only the most recently missed execution
+are executed when the system recovers.</p>
+<p>Deleting a Job deletes all associated Tasks. If any associated Tasks were still
+in progress, they are forcefully deleted without running to completion.</p>
+<p>Tasks created by a scheduled Job are still subject to the
+<a href="#tasks_retention_policy">Task retention policy</a>.</p>
+<h3 id="differences-from-pcf-scheduler">Differences from PCF Scheduler</h3>
+<p>PCF Scheduler allows multiple schedules for a single Job while Kf
+only supports a single schedule per Job. You can replicate the PCF Scheduler
+behavior by creating multiple Jobs, one for each schedule.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-1fe7b60117f61a59570dc9806b2e2128">6.2 - Run Tasks</h1>
+    <div class="lead">Learn how to use tasks to run one-off jobs.</div>
+	<p>You can execute short-lived workflows by running them as Tasks in
+Kf. Tasks are run under Apps, meaning that each Task must
+have an associated App. Each Task execution uses the build artifacts from the
+parent App. Because Tasks are short-lived, the App is not deployed as a
+long-running application, and no routes should be created for the App or the Task.</p>
+<h2 id="push-an-app-for-running-tasks">Push an App for running Tasks</h2>
+<ol>
+<li>
+<p>Clone the <a href="https://github.com/cloudfoundry-samples/test-app">test-app repo</a> repo:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>git clone https://github.com/cloudfoundry-samples/test-app test-app
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87">cd</span> test-app
+</span></span></code></pre></div></li>
+<li>
+<p>Push the App.</p>
+<p>Push the App with the <code>kf push APP_NAME --task</code> command. The <code>--task</code> flag
+indicates that the App is meant to be used for running Tasks, and thus no
+routes are created on the App, and it is not deployed as a long-running
+application:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push test-app --task
+</span></span></code></pre></div></li>
+<li>
+<p>Confirm that no App instances or routes were created by listing the App:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf apps
+</span></span></code></pre></div><p>Notice that the App is not started and has no URLs:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">Listing Apps in Space: test-space
+Name                     Instances  Memory  Disk  CPU   URLs
+test-app                 stopped    1Gi     1Gi   100m  &lt;nil&gt;
+</code></pre></li>
+</ol>
+<h2 id="run-a-task-on-the-app">Run a Task on the App</h2>
+<p>When you run a Task on the App, you can optionally specify a start command by
+using the <code>--command</code> flag. If no start command is specified, it uses the start
+command specified on the App. If the App doesn&rsquo;t have a start command specified,
+it looks up the CMD configuration of the container image. A start command must
+exist in order to run the Task successfully.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf run-task test-app --command <span style="color:#4e9a06">&#34;printenv&#34;</span>
+</span></span></code></pre></div><p>You see something similar to this, confirming that the Task was submitted:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">Task test-app-gd8dv is submitted successfully for execution.
+</code></pre><p>The Task name is automatically generated, prefixed with the App name, and
+suffixed with an arbitrary string. The Task name is a unique identifier for
+Tasks within the same cluster.</p>
+<h2 id="specify-task-resource-limits">Specify Task resource limits</h2>
+<p>Resource limits (such as CPU cores/Memory limit/Disk quota) can be specified in
+the App (during <code>kf push</code>) or during the <code>kf run-task</code> command. The limits
+specified in the <code>kf run-task</code> command take prededence over the limits specified
+on the App.</p>
+<p>To specify resource limits in an App, you can use the <code>--cpu-cores</code>,
+<code>--memory-limit</code>, and <code>--disk-quota</code> flags in the <code>kf push</code> command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push test-app --command <span style="color:#4e9a06">&#34;printenv&#34;</span> --cpu-cores<span style="color:#ce5c00;font-weight:bold">=</span>0.5 --memory-limit<span style="color:#ce5c00;font-weight:bold">=</span>2G --disk-quota<span style="color:#ce5c00;font-weight:bold">=</span>5G --task
+</span></span></code></pre></div><p>To override these limits in the App, you can use the <code>--cpu-cores</code>,
+<code>--memory-limit</code>, and <code>--disk-quota</code> flags in the <code>kf run-task</code> command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf run-task test-app --command <span style="color:#4e9a06">&#34;printenv&#34;</span> --cpu-cores<span style="color:#ce5c00;font-weight:bold">=</span>0.5 --memory-limit<span style="color:#ce5c00;font-weight:bold">=</span>2G --disk-quota<span style="color:#ce5c00;font-weight:bold">=</span>5G
+</span></span></code></pre></div><h2 id="specify-a-custom-display-name-for-a-task">Specify a custom display name for a Task</h2>
+<p>You can optionally use the <code>--name</code> flag to specify a custom display name for a
+Task for easier identification/grouping:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kf run-task test-app --command &#34;printenv&#34; --name foo
+Task test-app-6swct is submitted successfully for execution.
+
+$ kf tasks test-app
+Listing Tasks in Space: test space
+Name              ID  DisplayName        Age    Duration  Succeeded  Reason
+test-app-6swct    3   foo                1m     21s       True       &lt;nil&gt;
+</code></pre><h2 id="manage-tasks">Manage Tasks</h2>
+<p>View all Tasks of an App with the <code>kf tasks APP_NAME</code> command:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kf tasks test-app
+Listing Tasks in Space: test space
+Name              ID  DisplayName        Age    Duration  Succeeded  Reason
+test-app-gd8dv    1   test-app-gd8dv     1m     21s       True       &lt;nil&gt;
+</code></pre><h2 id="cancel-a-task">Cancel a Task</h2>
+<p>Cancel an active Task by using the <code>kf terminate-task</code> command:</p>
+<ul>
+<li>
+<p>Cancel a Task by Task name:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kf terminate-task test-app-6w6mz
+Task &#34;test-app-6w6mz&#34; is successfully submitted for termination
+</code></pre></li>
+<li>
+<p>Or cancel a Task by <code><var>APP_NAME</var></code> + Task ID:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kf terminate-task test-app 2
+Task &#34;test-app-6w6mz&#34; is successfully submitted for termination
+</code></pre></li>
+</ul>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> You can only cancel Tasks that are pending/running. Completed Tasks are not cancellable.
+</aside>
+
+<p>Cancelled Tasks have <code>PipelineRunCancelled</code> status.</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kf tasks test-app
+Listing Tasks in Space: test space
+Name              ID  DisplayName        Age    Duration  Succeeded  Reason
+test-app-gd8dv    1   test-app-gd8dv     1m     21s       True       &lt;nil&gt;
+test-app-6w6mz    2   test-app-6w6mz     38s    11s       False      PipelineRunCancelled
+</code></pre><h2 id="view-task-logs">View Task logs</h2>
+<p>View logs of a Task by using the <code>kf logs APP_NAME --task</code> command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>$ kf logs test-app --task
+</span></span></code></pre></div>
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-52b92bfa0949442cec57f0a34cd75406">6.3 - Schedule Tasks</h1>
+    <div class="lead">Learn how to schedule tasks to run periodic jobs.</div>
+	<p>You can execute short-lived workflows by running them as <a href="/docs/v2.11/developer/tasks/task/">Tasks</a>.
+<a href="/docs/v2.11/developer/tasks/run-task/#push_an_app_for_running_tasks">Running Tasks</a>
+describes how to run Tasks under Apps.</p>
+<p>You can also schedule Tasks to run at recurring intervals
+specified using the <a href="https://man7.org/linux/man-pages/man5/crontab.5.html">unix-cron</a> format.
+With scheduled Tasks, you first push an App running the Task as you do with an unscheduled Task,
+and then create a Job to schedule the Task.</p>
+<p>You can define a schedule so that your Task runs multiple times a day or on specific
+days and months.</p>
+<h2 id="push-an-app-for-running-scheduled-tasks">Push an App for running scheduled Tasks</h2>
+<ol>
+<li>Clone the <a href="https://github.com/cloudfoundry-samples/test-app">test-app repo</a>:</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>git clone https://github.com/cloudfoundry-samples/test-app test-app
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#204a87">cd</span> test-app
+</span></span></code></pre></div><ol>
+<li>
+<p>Push the App.</p>
+<p>Push the App with the <code>kf push APP_NAME --task</code> command. The <code>--task</code> flag indicates that the App is meant to be used for running Tasks, and thus no routes will be created on the App and it will not be deployed as a long-running application.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push test-app --task
+</span></span></code></pre></div></li>
+<li>
+<p>Confirm that no App instances or routes were created by listing the App:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf apps
+</span></span></code></pre></div><p>Notice that the App is not started and has no URLs:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">Listing Apps in Space: test-space
+Name                     Instances  Memory  Disk  CPU   URLs
+test-app                 stopped    1Gi     1Gi   100m  &lt;nil&gt;
+</code></pre></li>
+</ol>
+<h2 id="create-a-job">Create a Job</h2>
+<p>To run a Task on a schedule, you must first create a Job that describes the Task:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf create-job test-app test-job <span style="color:#4e9a06">&#34;printenv&#34;</span>
+</span></span></code></pre></div><p>The Job starts suspended or unscheduled, and does not create Tasks until it is
+manually executed by <code>kf run-job</code> or scheduled by <code>kf schedule-task</code>.</p>
+<h3 id="run-a-job-manually">Run a Job manually</h3>
+<p>Jobs can be run ad hoc similar to running Tasks by <code>kf run-task</code>. This option
+can be useful for testing the Job before scheduling or running as needed in addition
+to the schedule.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf run-job test-job
+</span></span></code></pre></div><p>This command runs the Task defined by the Job a single time immediately.</p>
+<h2 id="schedule-a-job">Schedule a Job</h2>
+<p>To schedule the Job for execution, you must provide a unix-cron schedule in the
+<code>kf schedule-job</code> command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf schedule-job test-job <span style="color:#4e9a06">&#34;* * * * *&#34;</span>
+</span></span></code></pre></div><p>This command triggers the Job to automatically create Tasks on the specified schedule.
+In this example a Task runs every minute.</p>
+<p>You can update a Job&rsquo;s schedule by running <code>kf schedule-task</code> with a new schedule.
+Jobs in Kf can only have a single cron schedule. This differs
+from the PCF Scheduler, which allows multiple schedules for a single Job.
+If you require multiple cron schedules, then you can achieve that with multiple Jobs.</p>
+<h2 id="manage-jobs-and-schedules">Manage Jobs and schedules</h2>
+<p>View all Jobs, both scheduled and unscheduled, in the current Space by using
+the <code>kf jobs</code> command:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kf jobs
+Listing Jobs in Space: test space
+Name               Schedule    Suspend  LastSchedule  Age  Ready  Reason
+test-job           * * * * *   &lt;nil&gt;    16s           2m   True   &lt;nil&gt;
+unscheduled-job    0 0 30 2 *  true     16s           2m   True   &lt;nil&gt;
+</code></pre>
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> The <code>unscheduled-job</code> has a default schedule set (<code>0 0 30 2 *</code>).
+This schedule is not active because the Job is suspended and is only present as a
+placeholder schedule for unscheduled Jobs.
+</aside>
+
+<p>Additionally, you can view only Jobs that are actively scheduled with
+the <code>kf job-schedules</code> command.</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kf job-schedules
+Listing job schedules in Space: test space
+Name           Schedule   Suspend  LastSchedule  Age  Ready  Reason
+test-job       * * * * *  &lt;nil&gt;    16s           2m   True   &lt;nil&gt;
+</code></pre><p>Notice how the <code>unscheduled-job</code> is not listed in the <code>kf job-schedules</code> output.</p>
+<h3 id="cancel-a-jobs-schedule">Cancel a Job&rsquo;s schedule</h3>
+<p>You can stop a scheduled Job with the <code>kf delete-job-schedule</code> command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf delete-job-schedule test-job
+</span></span></code></pre></div><p>This command suspends the Job and stops it from creating Tasks on the previous schedule.
+The Job is not deleted and can be scheduled again by <code>kf schedule-job</code> to continue execution.</p>
+<h3 id="delete-a-job">Delete a Job</h3>
+<p>The entire Job can be deleted with the <code>kf delete-job</code> command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf delete-job test-job
+</span></span></code></pre></div><p>This command deletes the Job and all Tasks that were created by the Job,
+both scheduled and manual executions. If any Tasks are still running, this command
+forcefully deletes them.</p>
+<p>If you want to ensure that running Tasks are not interrupted, then first delete
+the Jobs schedule with <code>kf delete-job-schedule</code>, wait for all Tasks to complete,
+and then delete the job by calling <code>kf delete-job</code>.</p>
+
+</div>
+
+
+
+    
+	
+  
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-4 text-xs-center order-sm-2">
+        
+        
+        
+      </div>
+      <div class="col-6 col-sm-4 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" target="_blank" rel="noopener" href="https://github.com/google/kf" aria-label="GitHub">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Security mailing list" aria-label="Security mailing list">
+    <a class="text-white" target="_blank" rel="noopener" href="mailto:kf-security@google.com" aria-label="Security mailing list">
+      <i class="fa fa-envelope"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-4 text-center py-2 order-sm-2">
+        <small class="text-white">&copy; 2022 The Kf Authors All Rights Reserved</small>
+        
+	
+		
+	
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+    integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js"
+    integrity="sha512-UR25UO94eTnCVwjbXozyeVd6ZqpaAE9naiEUBK/A+QDbfSTQFhPGj5lOR6d8tsgbBk84Ggb5A3EkjsOgPRPcKA=="
+    crossorigin="anonymous"></script>
+
+
+
+
+
+<script src='/js/tabpane-persist.js'></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/js/main.min.91798a335c881f1b6b805085ba4aa22d1dbd2b0b18d105d05189fa104ddae350.js" integrity="sha256-kXmKM1yIHxtrgFCFukqiLR29KwsY0QXQUYn6EE3a41A=" crossorigin="anonymous"></script>
+
+
+
+
+  </body>
+</html>

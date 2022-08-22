@@ -1,0 +1,713 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.101.0" />
+<link rel="canonical" type="text/html" href="/docs/v2.11/developer/backing-services/">
+<link rel="alternate" type="application/rss&#43;xml" href="/docs/v2.11/developer/backing-services/index.xml">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/favicons/android-192x192.png" sizes="192x192">
+
+<title>Backing services | Kf</title>
+<meta name="description" content="Discover, create, and use backing services.
+">
+<meta property="og:title" content="Backing services" />
+<meta property="og:description" content="Discover, create, and use backing services.
+" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/v2.11/developer/backing-services/" /><meta property="og:site_name" content="Kf" />
+
+<meta itemprop="name" content="Backing services">
+<meta itemprop="description" content="Discover, create, and use backing services.
+"><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Backing services"/>
+<meta name="twitter:description" content="Discover, create, and use backing services.
+"/>
+
+
+
+
+<link rel="preload" href="/scss/main.scss" as="style">
+<link href="/scss/main.scss" rel="stylesheet" integrity="">
+
+<script
+  src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"
+  crossorigin="anonymous"></script>
+<script
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="/">
+		<span class="navbar-logo"></span><span class="font-weight-bold">Kf</span>
+	</a>
+	<div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+		<ul class="navbar-nav mt-2 mt-lg-0">
+			
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link active" href="/docs/v2.11/developer/" ><span class="active">Developer Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/operator/" ><span>Operator Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/troubleshooting/" ><span>Troubleshooting</span></a>
+			</li>
+			
+			
+			
+		</ul>
+	</div>
+	<div class="navbar-nav d-none d-lg-block"><input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="/offline-search-index.8271768637bdb31d52e7c162697e4315.json"
+  data-offline-search-base-href="/"
+  data-offline-search-max-results="10"
+>
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/docs/v2.11/developer/backing-services/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Backing services</h1>
+<div class="lead">Discover, create, and use backing services.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-c2ebc22b9018da19d5d34e6e9c45330c">Backing Services Overview</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-aaeb0115cc03519618bc12ca99dd6372">Use managed services</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-65eb33ea4f1b06e45c9630828e66567e">Configure user-provided services</a></li>
+
+
+    
+  
+    
+    
+	
+<li>4: <a href="#pg-dcb66f5640af578e83d147a64abbd646">User Provided Service Templates</a></li>
+
+
+    
+  
+    
+    
+	
+<li>5: <a href="#pg-7c5cfb1597b32604da9ea5cb7a9bb1d5">Configure NFS volumes</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-c2ebc22b9018da19d5d34e6e9c45330c">1 - Backing Services Overview</h1>
+    <div class="lead">Learn about how Kf works with backing services.</div>
+	<p>Backing services are any processes that the App contacts over the network during its operation.
+In traditional operating systems, these services could have been accessed over
+the network, a UNIX socket, or could even be a sub-process.
+Examples include the following:</p>
+<ul>
+<li>Databases — for example: MySQL, PostgreSQL</li>
+<li>File storage — for example: NFS, FTP</li>
+<li>Logging services — for example: syslog endpoints</li>
+<li>Traditional HTTP APIs — for example: Google Maps, WikiData, Parcel Tracking APIs</li>
+</ul>
+<p>Connecting to backing services over the network rather than installing them all
+into the same machine allows developers to focus on their App, independent
+security upgrades for different components, and flexibility to swap implementations.</p>
+<h2 id="backing-services-in-kf">Backing services in Kf</h2>
+<p>Kf supports two major types of backing services:</p>
+<ul>
+<li>
+<p><strong>Managed services:</strong> These services are created by a service broker and are tied to the Kf cluster.</p>
+</li>
+<li>
+<p><strong>User-provided services:</strong> These services are created outside of Kf, but get can be bound to apps in the same way
+as managed services.</p>
+</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-aaeb0115cc03519618bc12ca99dd6372">2 - Use managed services</h1>
+    <div class="lead">Learn to use the marketplace to find a service, create it, and bind it to an app.</div>
+	<h2 id="find-a-service">Find a service</h2>
+<p>Use the <code>kf marketplace</code> command to find a service you want to use in your App.
+Running the command without arguments will show all the service classes
+available. A <strong>service class</strong> represents a specific type of service e.g. a
+MySQL database or a Postfix SMTP relay.</p>
+<pre tabindex="0"><code>$ kf marketplace
+5 services can be used in Space &#34;test&#34;, use the --service flag to list the plans for a service
+
+Broker      Name        Space      Status  Description
+minibroker  mariadb                Active  Helm Chart for mariadb
+minibroker  mongodb                Active  Helm Chart for mongodb
+minibroker  mysql                  Active  Helm Chart for mysql
+minibroker  postgresql             Active  Helm Chart for postgresql
+minibroker  redis                  Active  Helm Chart for redis
+</code></pre><p>Service classes can have multiple plans available. A <strong>service plan</strong> generally
+corresponds to a version or pricing tier of the software. You can view the plans
+for a specific service by supplying the service name with the marketplace
+command:</p>
+<pre tabindex="0"><code>$ kf marketplace --service mysql
+Name    Free  Status  Description
+5-7-14  true  Active  Fast, reliable, scalable, and easy to use open-source relational database system.
+5-7-27  true  Active  Fast, reliable, scalable, and easy to use open-source relational database system.
+5-7-28  true  Active  Fast, reliable, scalable, and easy to use open-source relational database system.
+</code></pre><h2 id="provision-a-service">Provision a service</h2>
+<p>Once you have identified a service class and plan to provision, you can create
+an instance of the service using <code>kf create-service</code>:</p>
+<pre tabindex="0"><code>$ kf create-service mysql 5-7-28 my-db
+Creating service instance &#34;my-db&#34; in Space &#34;test&#34;
+Waiting for service instance to become ready...
+Success
+</code></pre><p>Services are provisioned into a single Space. You can see the services in the
+current Space by running <code>kf services</code>:</p>
+<pre tabindex="0"><code>$ kf services
+Listing services in Space: &#34;test&#34;
+Name   ClassName  PlanName  Age   Ready  Reason
+my-db  mysql      5-7-28    111s  True   &lt;nil&gt;
+</code></pre><p>You can delete a service using <code>kf delete-service</code>:</p>
+<pre tabindex="0"><code>$ kf delete-service my-db
+</code></pre><h2 id="bind-a-service">Bind a service</h2>
+<p>Once a service has been created, you can <strong>bind</strong> it to an App, which will
+inject credentials into the App so the service can be used. You can create
+the binding using <code>kf bind-service</code>:</p>
+<pre tabindex="0"><code>$ kf bind-service my-app my-db
+Creating service instance binding &#34;binding-my-app-my-db&#34; in Space &#34;test&#34;
+Waiting for service instance binding to become ready...
+Success
+</code></pre><p>You can list all bindings in a Space using the <code>kf bindings</code> command:</p>
+<pre tabindex="0"><code>$ kf bindings
+Listing bindings in Space: &#34;test&#34;
+Name                  App     Service  Age  Ready
+binding-my-app-my-db  my-app  my-db    82s  True
+</code></pre><p>Once a service is bound, restart the App using <code>kf restart</code> and the credentials
+will be in the <a href="/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices"><code>VCAP_SERVICES</code></a> environment variable.</p>
+<p>You can delete a service binding with the <code>kf unbind-service</code> command:</p>
+<pre tabindex="0"><code>$ kf unbind-service my-app my-db
+</code></pre>
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-65eb33ea4f1b06e45c9630828e66567e">3 - Configure user-provided services</h1>
+    <div class="lead">Learn how to inject existing services into your app.</div>
+	<p>Users can leverage services that aren&rsquo;t available in the marketplace by creating user-provided service instances.
+Once created, user-provided service instances behave like managed service instances created through <code>kf create-service</code>.
+Creating, listing, updating, deleting, binding, and unbinding user-provided services are all supported in Kf.</p>
+<h2 id="create-a-user-provided-service-instance">Create a user-provided service instance</h2>
+
+<aside class="alert alert-success" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-lightbulb ml-2"></i> <strong>Tip:</strong> The alias for <code>kf create-user-provided-service</code> is <code>kf cups</code>.
+</aside>
+
+<p>The name given to a user-provided service must be unique across all service instances in a Space, including services created through a service broker.</p>
+<h3 id="deliver-service-credentials-to-an-app">Deliver service credentials to an app</h3>
+<p>A user-provided service instance can be used to deliver credentials to an App. For example, a database admin can have a set of credentials for an existing database managed outside of Kf, and these credentials include the URL, port, username, and password used to connect to the database.</p>
+<p>The admin can create a user-provided service with the credentials and the developer can bind the service instance to the App. This allows the credentials to be shared without ever leaving the platform. Binding a service instance to an App has the same effect regardless of whether the service is a user-provided service or a marketplace service.</p>
+<p>The App is configured with the credentials provided by the user, and the App runtime environment variable <a href="/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices"><code>VCAP_SERVICES</code></a> is populated with information about all of the bound services to that App.</p>
+<p>A user-provided service can be created with credentials and/or a list of tags.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf cups my-db -p <span style="color:#4e9a06">&#39;{&#34;username&#34;:&#34;admin&#34;, &#34;password&#34;:&#34;test123&#34;, &#34;some-int-val&#34;: 1, &#34;some-bool&#34;: true}&#39;</span> -t <span style="color:#4e9a06">&#34;comma, separated, tags&#34;</span>
+</span></span></code></pre></div><p>This will create the user-provided service instance <code>my-db</code> with the provided credentials and tags. The credentials passed in to the <code>-p</code> flag must be valid JSON (either inline or loaded from a file path).</p>
+<p>To deliver the credentials to one or more Apps, the user can run <code>kf bind-service</code>.</p>
+<p>Suppose we have an App with one bound service, the user-provided service <code>my-db</code> defined above. The <code>VCAP_SERVICES</code> environment variable for that App will have the following contents:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#204a87;font-weight:bold">&#34;user-provided&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&#34;name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;my-db&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&#34;instance_name&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;my-db&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&#34;label&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;user-provided&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&#34;tags&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">[</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;comma&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;separated&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;tags&#34;</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#000;font-weight:bold">],</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#204a87;font-weight:bold">&#34;credentials&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&#34;username&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;admin&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&#34;password&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#4e9a06">&#34;test123&#34;</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&#34;some-int-val&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#0000cf;font-weight:bold">1</span><span style="color:#000;font-weight:bold">,</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#204a87;font-weight:bold">&#34;some-bool&#34;</span><span style="color:#000;font-weight:bold">:</span> <span style="color:#204a87;font-weight:bold">true</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#000;font-weight:bold">}</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">}</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#000;font-weight:bold">]</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">}</span>
+</span></span></code></pre></div><h2 id="update-a-user-provided-service-instance">Update a user-provided service instance</h2>
+
+<aside class="alert alert-success" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-lightbulb ml-2"></i> <strong>Tip:</strong> The alias for <code>kf update-user-provided-service</code> is <code>kf uups</code>.
+</aside>
+
+<p>A user-provided service can be updated with the <code>uups</code> command. New credentials and/or tags passed in completely overwrite existing ones. For example, if the user created the user-provided service <code>my-db</code> above, called <code>kf bind-service</code> to bind the service to an App, then ran the command.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf uups my-db -p <span style="color:#4e9a06">&#39;{&#34;username&#34;:&#34;admin&#34;, &#34;password&#34;:&#34;new-pw&#34;, &#34;new-key&#34;: &#34;new-val&#34;}&#39;</span>
+</span></span></code></pre></div><p>The updated credentials will only be reflected on the App after the user unbinds and rebinds the service to the App. No restart or restage of the App is required. The updated <code>VCAP_SERVICES</code> environment variable will have the following contents:</p>
+<pre tabindex="0"><code>{
+  &#34;user-provided&#34;: [
+    {
+      &#34;name&#34;: &#34;my-db&#34;,
+      &#34;instance_name&#34;: &#34;my-db&#34;,
+      &#34;label&#34;: &#34;user-provided&#34;,
+      &#34;tags&#34;: [
+        &#34;comma&#34;,
+        &#34;separated&#34;,
+        &#34;tags&#34;
+      ],
+      &#34;credentials&#34;: {
+        &#34;username&#34;: &#34;admin&#34;,
+        &#34;password&#34;: &#34;new-pw&#34;,
+        &#34;new-key&#34;: &#34;new-val&#34;
+      }
+    }
+  ]
+}
+</code></pre><p>The new credentials overwrite the old credentials, and the tags are unchanged because they were not specified in the update command.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-dcb66f5640af578e83d147a64abbd646">4 - User Provided Service Templates</h1>
+    <div class="lead">Learn how to set up user provided services for MySQL, Redis, and RabbitMQ.</div>
+	
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> You can leverage services that aren&rsquo;t listed in the marketplace by creating user-provided service instances that an App can bind to. Learn more about <a href="/docs/v2.11/developer/backing-services/user-provided-services/">user-provided services</a>.
+</aside>
+
+<h2 id="before-you-begin">Before you begin</h2>
+<ul>
+<li>Ensure your service is running and accessible on the same network running your Kf cluster.</li>
+<li>Ensure you have targeted the Space where you want to create the service.</li>
+</ul>
+<h2 id="create-the-user-provided-instance">Create the user-provided instance</h2>
+<p>The following examples use the most common parameters used by applications to autoconfigure services.
+Most libraries use tags to find the right bound service and a URI to connect.</p>
+<h3 id="mysql">MySQL</h3>
+<p>MySQL libraries usually expect the tag <code>mysql</code> and the following parameters:</p>
+<dl>
+<dt><code>uri</code></dt>
+<dd>Example <code>mysql://username:password@host:port/dbname</code>. The <a href="https://dev.mysql.com/doc/refman/8.0/en/connecting-using-uri-or-key-value-pairs.html">MySQL documentation</a> can help with creating a URI string. The port is usually <code>3306</code>.</dd>
+<dt><code>username</code></dt>
+<dd>The connection username, required by some libraries even if included in <code>uri</code>.</dd>
+<dt><code>password</code></dt>
+<dd>The connection password, required by some libraries even if included in <code>uri</code>.</dd>
+</dl>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf cups service-instance-name <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  -p <span style="color:#4e9a06">&#39;{&#34;username&#34;:&#34;my-username&#34;, &#34;password&#34;:&#34;my-password&#34;, &#34;uri&#34;:&#34;mysql://my-username:my-password@mysql-host:3306/my-db&#34;}&#39;</span> <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  -t <span style="color:#4e9a06">&#34;mysql&#34;</span>
+</span></span></code></pre></div><h3 id="rabbitmq">RabbitMQ</h3>
+<p>RabbitMQ libraries usually expect the tag <code>rabbitmq</code> and the following parameters:</p>
+<dl>
+<dt><code>uri</code></dt>
+<dd>Example <code>amqp://username:password@host:port/vhost?query</code>. The <a href="https://www.rabbitmq.com/uri-spec.html">RabbitMQ documentation</a> can help with creating a URI string. The port is usually <code>5672</code>.</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf cups service-instance-name <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  -p <span style="color:#4e9a06">&#39;{&#34;uri&#34;:&#34;amqp://username:password@host:5672&#34;}&#39;</span> <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  -t <span style="color:#4e9a06">&#34;rabbitmq&#34;</span>
+</span></span></code></pre></div><h3 id="redis">Redis</h3>
+<p>Redis libraries usually expect the tag <code>redis</code> and the following parameters:</p>
+<dl>
+<dt><code>uri</code></dt>
+<dd>Example <code>redis://:password@host:port/uery</code>. The <a href="https://www.iana.org/assignments/uri-schemes/prov/redis">IANA Redis URI documentation</a> can help with creating a URI string. The port is usually <code>6379</code>.</dd>
+</dl>
+<p>Example for Redis with no AUTH configured:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf cups service-instance-name <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  -p <span style="color:#4e9a06">&#39;{&#34;uri&#34;:&#34;redis://redis-host:6379&#34;}&#39;</span> <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  -t <span style="color:#4e9a06">&#34;redis&#34;</span>
+</span></span></code></pre></div><p>Example for Redis with AUTH configured:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf cups service-instance-name <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  -p <span style="color:#4e9a06">&#39;{&#34;uri&#34;:&#34;redis://:password@redis-host:6379&#34;}&#39;</span> <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  -t <span style="color:#4e9a06">&#34;redis&#34;</span>
+</span></span></code></pre></div><h2 id="bind-your-app">Bind your App</h2>
+<p>Once the user-provided service has been created, you can bind your App to the
+user provided service by name, just like a managed service:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf bind-service application-name service-instance-name
+</span></span></code></pre></div><h2 id="whats-next">What&rsquo;s next</h2>
+<ul>
+<li>Learn about <a href="/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices">how the credentials are injected into your app</a>.</li>
+</ul>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-7c5cfb1597b32604da9ea5cb7a9bb1d5">5 - Configure NFS volumes</h1>
+    <div class="lead">Learn how to use an NFS volume as a mounted drive.</div>
+	<p>Kf supports mounting NFS volumes using the <code>kf marketplace</code>.</p>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li>Your administrator must have <a href="/docs/v2.11/operator/service-brokers/nfs-platform-setup/">completed the NFS platform setup guide</a>.</li>
+</ul>
+<h2 id="create-an-nfs-service-instance">Create an NFS service instance</h2>
+<p>Run <code>kf marketplace</code> to see available services. The built-in NFS service appears on the list if NFS is enabled on the platform.</p>
+<pre tabindex="0"><code>Broker           Name  Namespace  Description
+nfsvolumebroker  nfs              mount nfs shares
+</code></pre><h2 id="mount-an-external-filesystem">Mount an external filesystem</h2>
+<h3 id="create-a-service-instance">Create a service instance</h3>
+<p>To mount to an existing NFS service:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf create-service nfs existing SERVICE-INSTANCE-NAME -c <span style="color:#4e9a06">&#39;{&#34;share&#34;:&#34;SERVER/SHARE&#34;, &#34;capacity&#34;:&#34;CAPACITY&#34;}&#39;</span>
+</span></span></code></pre></div><p>Replace variables with your values.</p>
+<ul>
+<li><var>SERVICE-INSTANCE-NAME</var> is the name you want for this NFS volume service instance.</li>
+<li><var>SERVER/SHARE</var> is the NFS address of your server and share.</li>
+<li><var>CAPACITY</var> uses the <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/">Kubernetes quantity</a> format.</li>
+</ul>
+<p>Confirm that the NFS volume service appears in your list of services. You can expect output similar to this example:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kf services
+...
+Listing services in Space: demo-space
+Name                Type      ClassName         PlanName  Age    Ready  Reason
+filestore-nfs       volume    nfs               existing  6s     True   &lt;nil&gt;
+...
+</code></pre><h3 id="bind-your-service-instance-to-an-app">Bind your service instance to an App</h3>
+<p>To bind an NFS service instance to an App, run:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf bind-service YOUR-APP-NAME SERVICE-NAME -c <span style="color:#4e9a06">&#39;{&#34;uid&#34;:&#34;2000&#34;,&#34;gid&#34;:&#34;2000&#34;,&#34;mount&#34;:&#34;MOUNT-PATH&#34;,&#34;readonly&#34;:true}&#39;</span>
+</span></span></code></pre></div><p>Replace variables with your values.</p>
+<ul>
+<li>
+<p><var>YOUR-APP-NAME</var> is the name of the App for which you want to use the volume service.</p>
+</li>
+<li>
+<p><var>SERVICE-NAME</var> is the name of the volume service instance you created in the previous step.</p>
+</li>
+<li>
+<p><code>uid</code>:<var>UID</var> and <code>gid</code>:<var>GID</var> specify the directory permissions of the mounting share.</p>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> For V2 buildpack Apps, the value for <code>uid</code> and <code>gid</code> is always 2000.
+Otherwise, the user specified by <code>uid</code> and <code>gid</code> should be the <code>uid</code>
+and <code>gid</code> of the running App process.
+</aside>
+
+</li>
+<li>
+<p><var>MOUNT-PATH</var> is the path the volume should be mounted to within your App.</p>
+</li>
+<li>
+<p>(Optional) <code>&quot;readonly&quot;:true</code> is an optional JSON string that creates a read-only mount.
+By default, Volume Services mounts a read-write file system.</p>
+<p>Note: Your App automatically restarts when the NFS binding changes.</p>
+</li>
+</ul>
+<p>You can list all bindings in a Space using the <code>kf bindings</code> command. You will see output similar to this example:</p>
+<pre tabindex="0"><code class="language-none" data-lang="none">$ kf bindings
+...
+Listing bindings in Space: demo-space
+Name                                     App           Service             Age  Ready
+binding-spring-music-filestore-nfs       spring-music  filestore-nfs       71s  True
+...
+</code></pre><h3 id="access-the-volume-service-from-your-app">Access the volume service from your App</h3>
+<p>To access the volume service from your App, you must know which file path to use in your code.
+You can view the file path in the details of the service binding, which are visible in the environment variables for your App.</p>
+<p>View environment variables for your App:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf vcap-services YOUR-APP-NAME
+</span></span></code></pre></div><p>Replace <var>YOUR-APP-NAME</var> with the name of your App.</p>
+<p>The following is example output of the <code>kf vcap-services</code> command:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>$ kf vcap-services YOUR-APP-NAME
+</span></span><span style="display:flex;"><span><span style="color:#ce5c00;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#4e9a06">&#34;nfs&#34;</span>: <span style="color:#ce5c00;font-weight:bold">[</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ce5c00;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#4e9a06">&#34;instance_name&#34;</span>: <span style="color:#4e9a06">&#34;nfs-instance&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#4e9a06">&#34;name&#34;</span>: <span style="color:#4e9a06">&#34;nfs-instance&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#4e9a06">&#34;label&#34;</span>: <span style="color:#4e9a06">&#34;nfs&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#4e9a06">&#34;tags&#34;</span>: <span style="color:#ce5c00;font-weight:bold">[]</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#4e9a06">&#34;plan&#34;</span>: <span style="color:#4e9a06">&#34;existing&#34;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#4e9a06">&#34;credentials&#34;</span>: <span style="color:#ce5c00;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;capacity&#34;</span>: <span style="color:#4e9a06">&#34;1Gi&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;gid&#34;</span>: 2000,
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;mount&#34;</span>: <span style="color:#4e9a06">&#34;/test/mount&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;share&#34;</span>: <span style="color:#4e9a06">&#34;10.91.208.210/test&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#4e9a06">&#34;uid&#34;</span>: <span style="color:#0000cf;font-weight:bold">2000</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#ce5c00;font-weight:bold">}</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#4e9a06">&#34;volume_mounts&#34;</span>: <span style="color:#ce5c00;font-weight:bold">[</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#ce5c00;font-weight:bold">{</span>
+</span></span><span style="display:flex;"><span>          <span style="color:#4e9a06">&#34;container_dir&#34;</span>: <span style="color:#4e9a06">&#34;/test/mount&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#4e9a06">&#34;device_type&#34;</span>: <span style="color:#4e9a06">&#34;shared&#34;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#4e9a06">&#34;mode&#34;</span>: <span style="color:#4e9a06">&#34;rw&#34;</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#ce5c00;font-weight:bold">}</span>
+</span></span><span style="display:flex;"><span>      <span style="color:#ce5c00;font-weight:bold">]</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#ce5c00;font-weight:bold">}</span>
+</span></span><span style="display:flex;"><span>  <span style="color:#ce5c00;font-weight:bold">]</span>
+</span></span><span style="display:flex;"><span><span style="color:#ce5c00;font-weight:bold">}</span>
+</span></span></code></pre></div><p>Use the properties under <code>volume_mounts</code> for any information required by your App.</p>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>container_dir</code></td>
+<td>String containing the path to the mounted volume that you bound to your App.</td>
+</tr>
+<tr>
+<td><code>device_type</code></td>
+<td>The NFS volume release. This currently only supports shared devices. A shared device represents a distributed file system that can mount on all App instances simultaneously.</td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td>String that informs what type of access your App has to NFS, either <code>ro</code> (read-only), or <code>rw</code> (read and write).</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-4 text-xs-center order-sm-2">
+        
+        
+        
+      </div>
+      <div class="col-6 col-sm-4 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" target="_blank" rel="noopener" href="https://github.com/google/kf" aria-label="GitHub">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Security mailing list" aria-label="Security mailing list">
+    <a class="text-white" target="_blank" rel="noopener" href="mailto:kf-security@google.com" aria-label="Security mailing list">
+      <i class="fa fa-envelope"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-4 text-center py-2 order-sm-2">
+        <small class="text-white">&copy; 2022 The Kf Authors All Rights Reserved</small>
+        
+	
+		
+	
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+    integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js"
+    integrity="sha512-UR25UO94eTnCVwjbXozyeVd6ZqpaAE9naiEUBK/A+QDbfSTQFhPGj5lOR6d8tsgbBk84Ggb5A3EkjsOgPRPcKA=="
+    crossorigin="anonymous"></script>
+
+
+
+
+
+<script src='/js/tabpane-persist.js'></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/js/main.min.91798a335c881f1b6b805085ba4aa22d1dbd2b0b18d105d05189fa104ddae350.js" integrity="sha256-kXmKM1yIHxtrgFCFukqiLR29KwsY0QXQUYn6EE3a41A=" crossorigin="anonymous"></script>
+
+
+
+
+  </body>
+</html>

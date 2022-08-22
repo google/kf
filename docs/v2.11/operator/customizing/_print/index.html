@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.101.0" />
+<link rel="canonical" type="text/html" href="/docs/v2.11/operator/customizing/">
+<link rel="alternate" type="application/rss&#43;xml" href="/docs/v2.11/operator/customizing/index.xml">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/favicons/android-192x192.png" sizes="192x192">
+
+<title>Customizing Kf | Kf</title>
+<meta name="description" content="Learn about how to configure cluster-wide settings.">
+<meta property="og:title" content="Customizing Kf" />
+<meta property="og:description" content="Learn about how to configure cluster-wide settings." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/v2.11/operator/customizing/" /><meta property="og:site_name" content="Kf" />
+
+<meta itemprop="name" content="Customizing Kf">
+<meta itemprop="description" content="Learn about how to configure cluster-wide settings."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Customizing Kf"/>
+<meta name="twitter:description" content="Learn about how to configure cluster-wide settings."/>
+
+
+
+
+<link rel="preload" href="/scss/main.scss" as="style">
+<link href="/scss/main.scss" rel="stylesheet" integrity="">
+
+<script
+  src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"
+  crossorigin="anonymous"></script>
+<script
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="/">
+		<span class="navbar-logo"></span><span class="font-weight-bold">Kf</span>
+	</a>
+	<div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+		<ul class="navbar-nav mt-2 mt-lg-0">
+			
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/developer/" ><span>Developer Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link active" href="/docs/v2.11/operator/" ><span class="active">Operator Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/troubleshooting/" ><span>Troubleshooting</span></a>
+			</li>
+			
+			
+			
+		</ul>
+	</div>
+	<div class="navbar-nav d-none d-lg-block"><input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="/offline-search-index.8271768637bdb31d52e7c162697e4315.json"
+  data-offline-search-base-href="/"
+  data-offline-search-max-results="10"
+>
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/docs/v2.11/operator/customizing/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Customizing Kf</h1>
+<div class="lead">Learn about how to configure cluster-wide settings.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-b156f3a85a418456ea8aeb7c077af36d">Customizing Overview</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-2de7bc87b8e461d33fe1259e2cf92256">Cluster Configuration</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-3c86bc86c018c6665f7e1bad06988b6f">Customizing Kf Features</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-b156f3a85a418456ea8aeb7c077af36d">1 - Customizing Overview</h1>
+    <div class="lead">Learn about how Kf uses configuration.</div>
+	<p>Kf supports customizing some cluster wide configurations by manipulating the <code>kfsystem</code> custom rsource.</p>
+
+<aside class="alert alert-danger" style="border-width: 1px 1px 1px 4px;">
+<i class="fa-solid fa-triangle-exclamation"></i> <strong>Warning:</strong> Changes will be instantly pushed to all Kf resources, test any customization options before using them in production.
+</aside>
+
+
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-2de7bc87b8e461d33fe1259e2cf92256">2 - Cluster Configuration</h1>
+    <div class="lead">Learn to configure your Kf cluster&rsquo;s settings.</div>
+	
+<aside class="alert alert-danger" style="border-width: 1px 1px 1px 4px;">
+<i class="fa-solid fa-triangle-exclamation"></i> <strong>Warning:</strong> Changes will be instantly pushed to all Kf resources, test any customization options before using them in production.
+</aside>
+
+
+<p>Kf uses a Kubernetes configmap named <code>config-defaults</code> in
+the <code>kf</code> namespace to store cluster wide configuration settings.
+This document explains its structure and fields.</p>
+<h2 id="structure-of-the-config-defaults-configmap">Structure of the config-defaults configmap</h2>
+<p>The configmap contains three types of key/value pairs in the <code>.data</code> field:</p>
+<ul>
+<li>Comment keys prefixed by <code>_</code> contain examples, notes, and warnings.</li>
+<li>String keys contain plain text values.</li>
+<li>Object keys contain a JSON or YAML value that has been encoded as a string.</li>
+</ul>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">_note</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;This is some note&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">stringKey</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;This is a string key that&#39;s not encoded as JSON or YAML.&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">objectKey</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">  - &#34;These keys contain nested YAML or JSON.&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">  - true
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">  - 123.45</span><span style="color:#f8f8f8;text-decoration:underline">  
+</span></span></span></code></pre></div>
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Kubernetes requires all configmap values to be strings.
+Kf validates the structure of the fields before the
+object is updated.
+</aside>
+
+<h2 id="example-section">Example section</h2>
+<p>The example section under the <code>_example</code> key contains explanations for other
+fields and examples. Changes to this section have no effect.</p>
+<h2 id="space-container-registry">Space container registry</h2>
+<p>The <code>spaceContainerRegistry</code> property is a plain text value that specifies the
+default container registry each space uses to store built images.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">spaceContainerRegistry</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">gcr.io/my-project</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><h2 id="space-cluster-domains">Space cluster domains</h2>
+<p>The <code>spaceClusterDomains</code> property is a string encoded YAML array of domain objects.</p>
+<p>Each space in the cluster adds all items in the array to its list of
+domains that developers can bind their apps to.</p>
+<table class="properties responsive">
+  <thead>
+    <tr>
+      <th colspan="2">Fields</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>domain</code></td>
+      <td>
+        <p><code class="apitype">string</code></p>
+        <p>The domain name to make available. May contain one of the following substitutions:</p>
+        <ul>
+          <li><code>$(SPACE_NAME)</code> - Replaced in each space with the name of the space.</li>
+          <li><code>$(CLUSTER_INGRESS_IP)</code> - The IP address of the cluster ingress gateway.</li>
+        </ul>
+      </td>
+    </tr>
+    <tr>
+      <td><code>gatewayName</code></td>
+      <td>
+        <p><code class="apitype">string</code></p>
+        <p>(Optional)</p>
+        <p>
+          Overrides the Istio gateway routes will be bound to.
+          Defaults to <code>kf/external-gateway</code>, but any
+          other gateway in the <code>kf</code> namespace may be used.
+        </p>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> All domains should contain the <code>$(SPACE_NAME)</code> substitution to prevent
+Apps in different namespaces from listening to the same hostname which causes
+undefined behavior.
+</aside>
+
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">spaceClusterDomains</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">  # Support canonical and vanity domains
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">  - domain: $(SPACE_NAME).prod.example.com
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">  - domain: $(SPACE_NAME).kf.us-east1.prod.example.com
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">  # Using a dynamic DNS resolver
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">  - domain: $(SPACE_NAME).$(CLUSTER_INGRESS_IP).nip.io
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">  # Creating an internal domain only visible within the cluster
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">  - domain: $(SPACE_NAME)-apps.internal
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">    gatewayName: kf/internal-gateway</span><span style="color:#f8f8f8;text-decoration:underline">  
+</span></span></span></code></pre></div><h2 id="buildpacks-v2-lifecycle-builder">Buildpacks V2 lifecycle builder</h2>
+<p>The <code>buildpacksV2LifecycleBuilder</code> property contains the version of the Cloud Foundry
+<code>builder</code> binary used execute buildpack v2 builds.</p>
+<p>The value is a Git reference. To use a specific version, append an <code>@</code> symbol
+followed by a Git SHA to the end.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">buildpacksV2LifecycleBuilder</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;code.cloudfoundry.org/buildpackapplifecycle/builder@GIT_SHA&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><h2 id="buildpacks-v2-lifecycle-launcher">Buildpacks V2 lifecycle launcher</h2>
+<p>The <code>buildpacksV2LifecycleLauncher</code> property contains the version of the Cloud Foundry
+<code>launcher</code> binary built into every buildpack V2 application.</p>
+<p>The value is a Git reference. To use a specific version, append an <code>@</code> symbol
+followed by a Git SHA to the end.</p>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">buildpacksV2LifecycleLauncher</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#4e9a06">&#34;code.cloudfoundry.org/buildpackapplifecycle/launcher@GIT_SHA&#34;</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><h2 id="buildpacks-v2-list">Buildpacks V2 list</h2>
+<p>The <code>spaceBuildpacksV2</code> property is a string encoded YAML array that holds an ordered
+list of default buildpacks that are used to build applications compatible with
+the V2 buildpacks process.</p>
+<table class="properties responsive">
+  <thead>
+    <tr>
+      <th colspan="2">Fields</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>name</code></td>
+      <td>
+        <p><code class="apitype">string</code></p>
+        <p>A short name developers can use to reference the buildpack by in their application manifests.</p>
+      </td>
+    </tr>
+    <tr>
+      <td><code>url</code></td>
+      <td>
+        <p><code class="apitype">string</code></p>
+        <p>The URL used to fetch the buildpack.</p>
+      </td>
+    </tr>
+    <tr>
+      <td><code>disabled</code></td>
+      <td>
+        <p><code class="apitype">boolean</code></p>
+        <p>Used to prevent this buildpack from executing.</p>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<h2 id="stacks-v2-list">Stacks V2 list</h2>
+<p>The <code>spaceBuildpacksV2</code> property is a string encoded YAML array that holds an
+ordered list of stacks that can be used with Cloud Foundry compatible builds.</p>
+<table class="properties responsive">
+  <thead>
+    <tr>
+      <th colspan="2">Fields</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>name</code></td>
+      <td>
+        <p><code class="apitype">string</code></p>
+        <p>A short name developers can use to reference the stack by in their application manifests.</p>
+      </td>
+    </tr>
+    <tr>
+      <td><code>image</code></td>
+      <td>
+        <p><code class="apitype">string</code></p>
+        <p>
+          URL of the container image to use as the stack.
+          For more information, see <a href="https://kubernetes.io/docs/concepts/containers/images">https://kubernetes.io/docs/concepts/containers/images</a>.
+        </p>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Use images tagged with SHAs to improve caching.
+</aside>
+
+<h2 id="stacks-v3-list">Stacks V3 list</h2>
+<p>The <code>spaceStacksV3</code> property is a string encoded YAML array that holds an ordered
+list of stacks that can be used with
+<a href="https://buildpacks.io/">Cloud Native Buildpack</a>
+builds.</p>
+<table class="properties responsive">
+  <thead>
+    <tr>
+      <th colspan="2">Fields</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>name</code></td>
+      <td>
+        <p><code class="apitype">string</code></p>
+        <p>A short name developers can use to reference the stack by in their application manifests.</p>
+      </td>
+    </tr>
+    <tr>
+      <td><code>description</code></td>
+      <td>
+        <p><code class="apitype">string</code></p>
+        <p>A short description of the stack shown when running <code>kf stacks</code>.</p>
+      </td>
+    </tr>
+    <tr>
+      <td><code>buildImage</code></td>
+      <td>
+        <p><code class="apitype">string</code></p>
+        <p>
+          URL of the container image to use as the builder.
+          For more information, see <a href="https://kubernetes.io/docs/concepts/containers/images">https://kubernetes.io/docs/concepts/containers/images</a>.
+        </p>
+      </td>
+    </tr>
+    <tr>
+      <td><code>runImage</code></td>
+      <td>
+        <p><code class="apitype">string</code></p>
+        <p>
+          URL of the container image to use as the base for all apps built with .
+          For more information, see <a href="https://kubernetes.io/docs/concepts/containers/images">https://kubernetes.io/docs/concepts/containers/images</a>.
+        </p>
+      </td>
+    </tr>
+    <tr>
+      <td><code>nodeSelector</code></td>
+      <td>
+        <p><code class="apitype">map (key: string, value: string)</code></p>
+        <p>(Optional)</p>
+        <p>
+          A NodeSelector used to indicate which nodes applications built with
+          this stack can run on.
+        </p>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Use images tagged with SHAs to improve caching.
+</aside>
+
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">spaceStacksV3</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">  - name: heroku-18
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">    description: The official Heroku stack based on Ubuntu 18.04
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">    buildImage: heroku/pack:18-build
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">    runImage: heroku/pack:18
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">    nodeSelector:
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">       kubernetes.io/os: windows</span><span style="color:#f8f8f8;text-decoration:underline">  
+</span></span></span></code></pre></div><h2 id="default-to-v3-stack">Default to V3 Stack</h2>
+<p>The <code>spaceDefaultToV3Stack</code> property contains a quoted value <code>true</code> or <code>false</code>
+indicating whether spaces should use V3 stacks if a user doesn&rsquo;t specify one.</p>
+<h2 id="feature-flags">Feature flags</h2>
+<p>The <code>featureFlags</code> property contains a string encoded YAML map of feature flags
+that can enable and disable features of Kf.</p>
+<p>Flag names that aren&rsquo;t supported by Kf will be ignored.</p>
+<table>
+<thead>
+<tr>
+<th>Flag Name</th>
+<th>Default</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>disable_custom_builds</code></td>
+<td><code>false</code></td>
+<td>Disable developer access to arbitrary Tekton build pipelines.</td>
+</tr>
+<tr>
+<td><code>enable_dockerfile_builds</code></td>
+<td><code>true</code></td>
+<td>Allow developers to build source code from dockerfiles.</td>
+</tr>
+<tr>
+<td><code>enable_custom_buildpacks</code></td>
+<td><code>true</code></td>
+<td>Allow developers to specify external buildpacks in their applications.</td>
+</tr>
+<tr>
+<td><code>enable_custom_stacks</code></td>
+<td><code>true</code></td>
+<td>Allow developers to specify custom stacks in their applications.</td>
+</tr>
+</tbody>
+</table>
+<p>Example:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#204a87;font-weight:bold">featureFlags</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000;font-weight:bold">|</span><span style="color:#8f5902;font-style:italic">
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">  disable_custom_builds: false
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">  enable_dockerfile_builds: true
+</span></span></span><span style="display:flex;"><span><span style="color:#8f5902;font-style:italic">  enable_some_feature: true</span><span style="color:#f8f8f8;text-decoration:underline">  
+</span></span></span></code></pre></div>
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-3c86bc86c018c6665f7e1bad06988b6f">3 - Customizing Kf Features</h1>
+    <div class="lead">Learn to configure your Kf cluster&rsquo;s settings.</div>
+	
+<aside class="alert alert-danger" style="border-width: 1px 1px 1px 4px;">
+<i class="fa-solid fa-triangle-exclamation"></i> <strong>Warning:</strong> Changes will be instantly pushed to all Kf resources, test any customization options before using them in production.
+</aside>
+
+
+<h2 id="build-retention">Build Retention</h2>
+<p>You can control how many Kf Builds are kept before being garbage collected.</p>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> This example sets the retention to 1 Build. Change the value as needed.
+</aside>
+
+<pre class="devsite-terminal devsite-click-to-copy" translate="no">
+kubectl patch \
+kfsystem kfsystem \
+--type='json' \
+-p="[{'op': 'replace', 'path': '/spec/kf/config/buildRetentionCount', 'value': <var>1</var>}]"
+</pre>
+<h2 id="enable-or-disable-the-istio-sidecar">Enable or Disable the Istio Sidecar</h2>
+<p>If you do not require the Istio sidecar for the Build pods, then they can be disabled by setting the value to <code>true</code>. Enable by setting the value to <code>false</code>.</p>
+<pre class="devsite-terminal devsite-click-to-copy" translate="no">
+kubectl patch \
+kfsystem kfsystem \
+--type='json' \
+-p="[{'op': 'replace', 'path': '/spec/kf/config/buildDisableIstioSidecar', 'value': <var>true</var>}]"
+</pre>
+<h2 id="build-pod-resource-limits">Build Pod Resource Limits</h2>
+<p>The default pod resource size can be increased from the default to accommodate very large builds. The units for the value are in <code>Mi</code> or <code>Gi</code>.</p>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> This is only applicable for built-in Tasks (which is normal for a <code>kf push</code> build). For V2 buildpack builds, this will be set on two steps and one for V3 buildpacks or Dockerfiles. This means that for a V2 build the required Pod size will be double the limit. For example, if the memory limit is 1Gi, then the pod will require 2Gi.
+</aside>
+
+<pre class="devsite-terminal devsite-click-to-copy" translate="no">
+kubectl patch \
+kfsystem kfsystem \
+--type='json' \
+-p="[{'op': 'replace', 'path': '/spec/kf/config/buildPodResources', 'value': {'limits': {'memory': '<var>234Mi</var>'}}}]"
+</pre>
+<p>Read <a href="https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/">Kubernetes container resource docs</a>  for more information about container resource management.</p>
+<h2 id="self-signed-certificates-for-service-brokers">Self Signed Certificates for Service Brokers</h2>
+<p>If you want to use self signed certificates for TLS (<code>https</code> instead of <code>http</code>) for the service broker URL, the Kf controller requires the CA certificate. To configure Kf for this scenario, create an immutable Kubernetes secret in the <code>kf</code> namespace and update the <code>kfsystem.spec.kf.config.secrets.controllerCACerts.name</code> object to point to it.</p>
+<ol>
+<li>
+<p>Create a secret to store the self-signed certificate.</p>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> Customize the secret name if desired, or leave the default name of <code>cacerts</code>. Replace <code>/path/to/cert/certs.pem</code> with the path to the self-signed certificate.
+</aside>
+
+ <pre class="devsite-terminal devsite-click-to-copy" translate="no">
+ kubectl create secret generic <var>cacerts</var> -nkf --from-file <var>/path/to/cert/certs.pem</var>
+ </pre>
+</li>
+<li>
+<p>Make the secret immutable.</p>
+ <pre class="devsite-terminal devsite-click-to-copy" translate="no">
+ kubectl patch -nkf secret <var>cacerts</var> \
+     --type='json' \
+     -p="[{'op':'add','path':'/immutable','value':true}]"
+ </pre>
+</li>
+<li>
+<p>Update kfsystem to point to the secret.</p>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> This will cause the controller pod to be re-deployed with the certs mounted as a volume.
+</aside>
+
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kubectl patch <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  kfsystem kfsystem <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  --type<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#39;json&#39;</span> <span style="color:#4e9a06">\
+</span></span></span><span style="display:flex;"><span><span style="color:#4e9a06"></span>  -p<span style="color:#ce5c00;font-weight:bold">=</span><span style="color:#4e9a06">&#34;[{&#39;op&#39;:&#39;add&#39;,&#39;path&#39;:&#39;/spec/kf/config/secrets&#39;,&#39;value&#39;:{&#39;controllerCACerts&#39;:{&#39;name&#39;:&#39;&lt;var&gt;cacerts&lt;/var&gt;&#39;}}}]&#34;</span>
+</span></span></code></pre></div></li>
+</ol>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-4 text-xs-center order-sm-2">
+        
+        
+        
+      </div>
+      <div class="col-6 col-sm-4 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" target="_blank" rel="noopener" href="https://github.com/google/kf" aria-label="GitHub">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Security mailing list" aria-label="Security mailing list">
+    <a class="text-white" target="_blank" rel="noopener" href="mailto:kf-security@google.com" aria-label="Security mailing list">
+      <i class="fa fa-envelope"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-4 text-center py-2 order-sm-2">
+        <small class="text-white">&copy; 2022 The Kf Authors All Rights Reserved</small>
+        
+	
+		
+	
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+    integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js"
+    integrity="sha512-UR25UO94eTnCVwjbXozyeVd6ZqpaAE9naiEUBK/A+QDbfSTQFhPGj5lOR6d8tsgbBk84Ggb5A3EkjsOgPRPcKA=="
+    crossorigin="anonymous"></script>
+
+
+
+
+
+<script src='/js/tabpane-persist.js'></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/js/main.min.91798a335c881f1b6b805085ba4aa22d1dbd2b0b18d105d05189fa104ddae350.js" integrity="sha256-kXmKM1yIHxtrgFCFukqiLR29KwsY0QXQUYn6EE3a41A=" crossorigin="anonymous"></script>
+
+
+
+
+  </body>
+</html>

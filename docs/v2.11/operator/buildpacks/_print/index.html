@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.101.0" />
+<link rel="canonical" type="text/html" href="/docs/v2.11/operator/buildpacks/">
+<link rel="alternate" type="application/rss&#43;xml" href="/docs/v2.11/operator/buildpacks/index.xml">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/favicons/android-192x192.png" sizes="192x192">
+
+<title>Stacks and Buildpacks | Kf</title>
+<meta name="description" content="Learn about configuring stacks and buildpacks for your platform.
+">
+<meta property="og:title" content="Stacks and Buildpacks" />
+<meta property="og:description" content="A Cloud Foundry inspired MicroPAAS for Kubernetes." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="/docs/v2.11/operator/buildpacks/" /><meta property="og:site_name" content="Kf" />
+
+<meta itemprop="name" content="Stacks and Buildpacks">
+<meta itemprop="description" content="A Cloud Foundry inspired MicroPAAS for Kubernetes."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Stacks and Buildpacks"/>
+<meta name="twitter:description" content="A Cloud Foundry inspired MicroPAAS for Kubernetes."/>
+
+
+
+
+<link rel="preload" href="/scss/main.scss" as="style">
+<link href="/scss/main.scss" rel="stylesheet" integrity="">
+
+<script
+  src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"
+  crossorigin="anonymous"></script>
+<script
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+
+  </head>
+  <body class="td-section">
+    <header>
+      
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="/">
+		<span class="navbar-logo"></span><span class="font-weight-bold">Kf</span>
+	</a>
+	<div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+		<ul class="navbar-nav mt-2 mt-lg-0">
+			
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/developer/" ><span>Developer Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link active" href="/docs/v2.11/operator/" ><span class="active">Operator Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/troubleshooting/" ><span>Troubleshooting</span></a>
+			</li>
+			
+			
+			
+		</ul>
+	</div>
+	<div class="navbar-nav d-none d-lg-block"><input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="/offline-search-index.8271768637bdb31d52e7c162697e4315.json"
+  data-offline-search-base-href="/"
+  data-offline-search-max-results="10"
+>
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/docs/v2.11/operator/buildpacks/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Stacks and Buildpacks</h1>
+
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-6dc2637a3c7511c15b5eea65056a667c">Customize stacks</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-7b5d652a95409ea35a6e10e2bce40600">Customize stacks and buildpacks</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      <p>Learn about configuring stacks and buildpacks for your platform.</p>
+
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="">
+    
+	<h1 id="pg-6dc2637a3c7511c15b5eea65056a667c">1 - Customize stacks</h1>
+    
+	<p>The Stack configuration can be updated by editing the <code>kfsystem</code> Custom Resource:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kubectl edit kfsystem kfsystem
+</span></span></code></pre></div><p>This example sets the Google Cloud buildpacks a V3 Stack:</p>
+<pre tabindex="0"><code>spec:
+  kf:
+    config:
+      spaceStacksV3:
+      - name: google
+        description: Google buildpacks (https://github.com/GoogleCloudPlatform/buildpacks)
+        buildImage: gcr.io/buildpacks/builder:v1
+        runImage: gcr.io/buildpacks/gcp/run:v1
+</code></pre><p>This new Stack can now be pushed:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf push myapp --stack google
+</span></span></code></pre></div><p>This example configures the Ruby V2 buildpack and sets the build pipeline defaults to use V2 Stacks:</p>
+<pre tabindex="0"><code>spec:
+  kf:
+    config:
+      spaceDefaultToV3Stack: false
+      spaceBuildpacksV2:
+      - name: ruby_buildpack
+        url: https://github.com/cloudfoundry/ruby-buildpack
+      spaceStacksV2:
+      - name: cflinuxfs3
+        image: cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5
+</code></pre>
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-7b5d652a95409ea35a6e10e2bce40600">2 - Customize stacks and buildpacks</h1>
+    
+	<p>Buildpacks are used by Kf to turn an application&rsquo;s source
+code into an executable image. Cloud Native buildpacks use the latest
+<a href="https://github.com/buildpack/spec">Buildpack API v3</a>.
+Companies are actively adding v3 support to existing buildpacks.</p>
+<p>Kf supports buildpacks that conform to both <a href="https://docs.cloudfoundry.org/buildpacks/understand-buildpacks.html">V2</a>
+and <a href="https://docs.cloudfoundry.org/buildpacks/understand-buildpacks.html">V3</a>
+of the Buildpack API specification.</p>
+<h2 id="compare-v2-and-v3-buildpacks">Compare V2 and V3 buildpacks</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align:left"></th>
+<th style="text-align:left">V2 buildpacks</th>
+<th style="text-align:left">V3 buildpacks</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Alternate names</td>
+<td style="text-align:left">Cloud Foundry buildpacks</td>
+<td style="text-align:left">Cloud Native buildpacks (CNB), Builder Images</td>
+</tr>
+<tr>
+<td style="text-align:left">Status</td>
+<td style="text-align:left">Being replaced</td>
+<td style="text-align:left">Current</td>
+</tr>
+<tr>
+<td style="text-align:left">Ownership</td>
+<td style="text-align:left">Cloud Foundry</td>
+<td style="text-align:left"><a href="https://buildpacks.io">Buildpacks.io</a></td>
+</tr>
+<tr>
+<td style="text-align:left">Stack</td>
+<td style="text-align:left">Shared by builder and runtime</td>
+<td style="text-align:left">Optionally different for builder and runtime</td>
+</tr>
+<tr>
+<td style="text-align:left">Local development</td>
+<td style="text-align:left">Not possible</td>
+<td style="text-align:left">Yes, with the <a href="https://buildpacks.io"><code>pack</code> CLI</a></td>
+</tr>
+<tr>
+<td style="text-align:left">Custom buildpacks</td>
+<td style="text-align:left">Available at runtime</td>
+<td style="text-align:left">Must be built into the builder</td>
+</tr>
+</tbody>
+</table>
+<h2 id="buildpack-lifecycle">Buildpack lifecycle</h2>
+<table>
+<thead>
+<tr>
+<th>Step</th>
+<th>Cloud Foundry</th>
+<th>Kf with buildpacks V2</th>
+<th>Kf with buildpacks V3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source location</td>
+<td>BITS service</td>
+<td>Container registry</td>
+<td>Container registry</td>
+</tr>
+<tr>
+<td>Buildpack location</td>
+<td>BOSH/HTTP</td>
+<td>HTTP</td>
+<td>Container registry</td>
+</tr>
+<tr>
+<td>Stack location</td>
+<td>BOSH</td>
+<td>Container registry</td>
+<td>Container registry</td>
+</tr>
+<tr>
+<td>Result</td>
+<td>Droplet (App binary without stack)</td>
+<td>Image (Droplet on a stack)</td>
+<td>Image</td>
+</tr>
+<tr>
+<td>Runtime</td>
+<td>Droplet glued on top of stack and run</td>
+<td>Run produced image</td>
+<td>Run produced image</td>
+</tr>
+</tbody>
+</table>
+<p>Kf <em>always</em> produces a full, executable image as a result of its build process.
+Cloud Foundry, on the other hand, produces parts of an executable image at build time and the rest is added at runtime.</p>
+<p>Kf chose to follow the model of always producing a full image for the following reasons:</p>
+<ul>
+<li>Images can be exported, run locally, and inspected statically</li>
+<li>Better security and auditing with tools like <a href="https://cloud.google.com/binary-authorization/">binary authorization</a></li>
+<li>App deployments are reproducible</li>
+</ul>
+<h2 id="kf-and-buildpacks">Kf and buildpacks</h2>
+<p>Kf stores its global list of buildpacks and stacks in the
+<code>config-defaults</code> ConfigMap in the <code>kf</code> Namespace. Modification of the buildpacks and stacks properties should be done at the <code>kfsystem</code> Custom Resource, the Kf operator automatically updates the <code>config-defaults</code> ConfigMap based on the values set at <code>kfsystem</code>.</p>
+<p>Each Space reflects these buildpacks in its status field.
+For a Space named <code>buildpack-docs</code> you could run the following to see the full
+Space configuration:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf space buildpack-docs
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Getting Space buildpack-docs
+</span></span><span style="display:flex;"><span>API Version:  kf.dev/v1alpha1
+</span></span><span style="display:flex;"><span>Kind:         Space
+</span></span><span style="display:flex;"><span>Metadata:
+</span></span><span style="display:flex;"><span>  Creation Timestamp:  2020-02-14T15:09:52Z
+</span></span><span style="display:flex;"><span>  Name:                buildpack-docs
+</span></span><span style="display:flex;"><span>  Self Link:           /apis/kf.dev/v1alpha1/spaces/buildpack-docs
+</span></span><span style="display:flex;"><span>  UID:                 0cf1e196-4f3c-11ea-91a4-42010a80008d
+</span></span><span style="display:flex;"><span>Status:
+</span></span><span style="display:flex;"><span>  Build Config:
+</span></span><span style="display:flex;"><span>    Buildpacks V2:
+</span></span><span style="display:flex;"><span>    - Name:      staticfile_buildpack
+</span></span><span style="display:flex;"><span>      URL:       https://github.com/cloudfoundry/staticfile-buildpack
+</span></span><span style="display:flex;"><span>      Disabled:  <span style="color:#204a87">false</span>
+</span></span><span style="display:flex;"><span>    - Name:      java_buildpack
+</span></span><span style="display:flex;"><span>      URL:       https://github.com/cloudfoundry/java-buildpack
+</span></span><span style="display:flex;"><span>      Disabled:  <span style="color:#204a87">false</span>
+</span></span><span style="display:flex;"><span>    Stacks V2:
+</span></span><span style="display:flex;"><span>    - Image:  cloudfoundry/cflinuxfs3
+</span></span><span style="display:flex;"><span>      Name:   cflinuxfs3
+</span></span><span style="display:flex;"><span>    Stacks V3:
+</span></span><span style="display:flex;"><span>    - Build Image:  cloudfoundry/cnb:cflinuxfs3
+</span></span><span style="display:flex;"><span>      Description:  A large Cloud Foundry stack based on Ubuntu 18.04
+</span></span><span style="display:flex;"><span>      Name:         org.cloudfoundry.stacks.cflinuxfs3
+</span></span><span style="display:flex;"><span>      Run Image:    cloudfoundry/run:full-cnb
+</span></span></code></pre></div><p>Under the <code>Build Config</code> section there are three fields to look at:</p>
+<ul>
+<li>Buildpacks V2 contains a list of V2 compatible buildpacks in the order they&rsquo;ll be run</li>
+<li>Stacks V2 indicates the stacks that can be chosen to trigger a V2 buildpack build</li>
+<li>Stacks V3 indicates the stacks that can be chosen to trigger a V3 buildpack build</li>
+</ul>
+<p>You can also list the stacks with <code>kf stacks</code>:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf stacks
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Getting stacks in Space: buildpack-docs
+</span></span><span style="display:flex;"><span>Version  Name                                Build Image                  Run Image                  Description
+</span></span><span style="display:flex;"><span>V2       cflinuxfs3                          cloudfoundry/cflinuxfs3      cloudfoundry/cflinuxfs3
+</span></span><span style="display:flex;"><span>V3       org.cloudfoundry.stacks.cflinuxfs3  cloudfoundry/cnb:cflinuxfs3  cloudfoundry/run:full-cnb  A large Cloud Foundry stack based on Ubuntu 18.04
+</span></span></code></pre></div><p>Because V3 build images already have their buildpacks built-in, you must use <code>kf buildpacks</code> to get the list:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf buildpacks
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Getting buildpacks in Space: buildpack-docs
+</span></span><span style="display:flex;"><span>Buildpacks <span style="color:#204a87;font-weight:bold">for</span> V2 stacks:
+</span></span><span style="display:flex;"><span>  Name                   Position  URL
+</span></span><span style="display:flex;"><span>  staticfile_buildpack   <span style="color:#0000cf;font-weight:bold">0</span>         https://github.com/cloudfoundry/staticfile-buildpack
+</span></span><span style="display:flex;"><span>  java_buildpack         <span style="color:#0000cf;font-weight:bold">1</span>         https://github.com/cloudfoundry/java-buildpack
+</span></span><span style="display:flex;"><span>V3 Stack: org.cloudfoundry.stacks.cflinuxfs3:
+</span></span><span style="display:flex;"><span>  Name                                        Position  Version     Latest
+</span></span><span style="display:flex;"><span>  org.cloudfoundry.jdbc                       <span style="color:#0000cf;font-weight:bold">0</span>         v1.0.179    <span style="color:#204a87">true</span>
+</span></span><span style="display:flex;"><span>  org.cloudfoundry.jmx                        <span style="color:#0000cf;font-weight:bold">1</span>         v1.0.180    <span style="color:#204a87">true</span>
+</span></span><span style="display:flex;"><span>  org.cloudfoundry.go                         <span style="color:#0000cf;font-weight:bold">2</span>         v0.0.2      <span style="color:#204a87">true</span>
+</span></span><span style="display:flex;"><span>  org.cloudfoundry.tomcat                     <span style="color:#0000cf;font-weight:bold">3</span>         v1.1.102    <span style="color:#204a87">true</span>
+</span></span><span style="display:flex;"><span>  org.cloudfoundry.distzip                    <span style="color:#0000cf;font-weight:bold">4</span>         v1.0.171    <span style="color:#204a87">true</span>
+</span></span><span style="display:flex;"><span>  org.cloudfoundry.springboot                 <span style="color:#0000cf;font-weight:bold">5</span>         v1.1.2      <span style="color:#204a87">true</span>
+</span></span><span style="display:flex;"><span>  ...
+</span></span></code></pre></div><h2 id="customize-v3-buildpacks">Customize V3 buildpacks</h2>
+<p>You can customize the buildpacks that are available to your developers by
+creating your own builder image with exactly the buildpacks they should have
+access to. You can also use builder images published by other authors.</p>
+<h3 id="use-a-third-party-builder-image">Use a third-party builder image</h3>
+<p>A list of published CNB stacks is available from the
+<a href="https://buildpacks.io/docs/install-pack/">Buildpack CLI <code>pack</code></a>.
+As of this writing, <code>pack suggest-stacks</code> outputs:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>pack suggest-stacks
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Stacks maintained by the community:
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Stack ID: heroku-18
+</span></span><span style="display:flex;"><span>    Description: The official Heroku stack based on Ubuntu 18.04
+</span></span><span style="display:flex;"><span>    Maintainer: Heroku
+</span></span><span style="display:flex;"><span>    Build Image: heroku/pack:18-build
+</span></span><span style="display:flex;"><span>    Run Image: heroku/pack:18
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Stack ID: io.buildpacks.stacks.bionic
+</span></span><span style="display:flex;"><span>    Description: A minimal Cloud Foundry stack based on Ubuntu 18.04
+</span></span><span style="display:flex;"><span>    Maintainer: Cloud Foundry
+</span></span><span style="display:flex;"><span>    Build Image: cloudfoundry/build:base-cnb
+</span></span><span style="display:flex;"><span>    Run Image: cloudfoundry/run:base-cnb
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Stack ID: org.cloudfoundry.stacks.cflinuxfs3
+</span></span><span style="display:flex;"><span>    Description: A large Cloud Foundry stack based on Ubuntu 18.04
+</span></span><span style="display:flex;"><span>    Maintainer: Cloud Foundry
+</span></span><span style="display:flex;"><span>    Build Image: cloudfoundry/build:full-cnb
+</span></span><span style="display:flex;"><span>    Run Image: cloudfoundry/run:full-cnb
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    Stack ID: org.cloudfoundry.stacks.tiny
+</span></span><span style="display:flex;"><span>    Description: A tiny Cloud Foundry stack based on Ubuntu 18.04, similar to distroless
+</span></span><span style="display:flex;"><span>    Maintainer: Cloud Foundry
+</span></span><span style="display:flex;"><span>    Build Image: cloudfoundry/build:tiny-cnb
+</span></span><span style="display:flex;"><span>    Run Image: cloudfoundry/run:tiny-cnb
+</span></span></code></pre></div><p>To modify Kf to use the stack published by Heroku, edit
+<code>kfsystem</code> Custom Resource, which automatically updates the <code>config-defaults</code> ConfigMap in the <code>kf</code> Namespace.
+Add an entry to the <code>spaceStacksV3</code> key like the following:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kubectl edit kfsystem kfsystem
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>spaceStacksV3: <span style="color:#000;font-weight:bold">|</span>
+</span></span><span style="display:flex;"><span>  - name: org.cloudfoundry.stacks.cflinuxfs3
+</span></span><span style="display:flex;"><span>    description: A large Cloud Foundry stack based on Ubuntu 18.04
+</span></span><span style="display:flex;"><span>    buildImage: cloudfoundry/cnb:cflinuxfs3
+</span></span><span style="display:flex;"><span>    runImage: cloudfoundry/run:full-cnb
+</span></span><span style="display:flex;"><span>  - name: heroku-18
+</span></span><span style="display:flex;"><span>    description: The official Heroku stack based on Ubuntu 18.04
+</span></span><span style="display:flex;"><span>    buildImage: heroku/pack:18-build
+</span></span><span style="display:flex;"><span>    runImage: heroku/pack:18
+</span></span></code></pre></div><p>Then, run <code>stacks</code> again:</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kf stacks
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>Getting stacks in Space: buildpack-docs
+</span></span><span style="display:flex;"><span>Version  Name                                Build Image                  Run Image                  Description
+</span></span><span style="display:flex;"><span>V2       cflinuxfs3                          cloudfoundry/cflinuxfs3      cloudfoundry/cflinuxfs3
+</span></span><span style="display:flex;"><span>V3       org.cloudfoundry.stacks.cflinuxfs3  cloudfoundry/cnb:cflinuxfs3  cloudfoundry/run:full-cnb  A large Cloud Foundry stack based on Ubuntu 18.04
+</span></span><span style="display:flex;"><span>V3       heroku-18                           heroku/pack:18-build         heroku/pack:18             The official Heroku stack based on Ubuntu 18.04
+</span></span></code></pre></div><h3 id="create-your-own-builder-image">Create your own builder image</h3>
+<p>The <a href="https://buildpacks.io/docs/install-pack/">Buildpack CLI <code>pack</code></a>
+is used to create your own builder image. You can follow <code>pack</code>&rsquo;s
+<a href="https://buildpacks.io/docs/using-pack/working-with-builders/">Working with builders using <code>create-builder</code></a>
+documentation to create your own builder image. After it&rsquo;s created, push it to a
+container registry and add it to the <code>kfsystem</code> Custom Resource.</p>
+<h2 id="set-a-default-stack">Set a default stack</h2>
+<p>Apps will be assigned a default stack if one isn&rsquo;t supplied in their manifest.
+The default stack is the first in the V2 or V3 stacks list. Unless overridden,
+a V2 stack is chosen for compatibility with Cloud Foundry.</p>
+<p>You can force Kf to use a V3 stack instead of a V2 by setting the
+<code>spaceDefaultToV3Stack</code> field in the <code>kfsystem</code> Custom Resource to be <code>&quot;true&quot;</code> (<code>kfsystem</code> automatically updates corresonding <code>spaceDefaultToV3Stack</code> field in the <code>config-defaults</code> ConfigMap):</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-sh" data-lang="sh"><span style="display:flex;"><span>kubectl edit kfsystem kfsystem
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>spaceDefaultToV3Stack: <span style="color:#4e9a06">&#34;true&#34;</span>
+</span></span></code></pre></div><p>This option can also be modified on a per-Space basis by changing setting the
+<code>spec.buildConfig.defaultToV3Stack</code> field to be <code>true</code> or <code>false</code>. If unset,
+the value from the <code>config-defaults</code> ConfigMap is used.</p>
+<table>
+<thead>
+<tr>
+<th><code>config-defaults</code> value for <code>spaceDefaultToV3Stack</code></th>
+<th>Space&rsquo;s <code>spec.buildConfig.defaultToV3Stack</code></th>
+<th>Default stack</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>unset</em></td>
+<td><em>unset</em></td>
+<td>V2</td>
+</tr>
+<tr>
+<td><code>&quot;false&quot;</code></td>
+<td><em>unset</em></td>
+<td>V2</td>
+</tr>
+<tr>
+<td><code>&quot;true&quot;</code></td>
+<td><em>unset</em></td>
+<td>V3</td>
+</tr>
+<tr>
+<td><em>any</em></td>
+<td><code>false</code></td>
+<td>V2</td>
+</tr>
+<tr>
+<td><em>any</em></td>
+<td><code>true</code></td>
+<td>V3</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-4 text-xs-center order-sm-2">
+        
+        
+        
+      </div>
+      <div class="col-6 col-sm-4 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" target="_blank" rel="noopener" href="https://github.com/google/kf" aria-label="GitHub">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Security mailing list" aria-label="Security mailing list">
+    <a class="text-white" target="_blank" rel="noopener" href="mailto:kf-security@google.com" aria-label="Security mailing list">
+      <i class="fa fa-envelope"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-4 text-center py-2 order-sm-2">
+        <small class="text-white">&copy; 2022 The Kf Authors All Rights Reserved</small>
+        
+	
+		
+	
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+    integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js"
+    integrity="sha512-UR25UO94eTnCVwjbXozyeVd6ZqpaAE9naiEUBK/A+QDbfSTQFhPGj5lOR6d8tsgbBk84Ggb5A3EkjsOgPRPcKA=="
+    crossorigin="anonymous"></script>
+
+
+
+
+
+<script src='/js/tabpane-persist.js'></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/js/main.min.91798a335c881f1b6b805085ba4aa22d1dbd2b0b18d105d05189fa104ddae350.js" integrity="sha256-kXmKM1yIHxtrgFCFukqiLR29KwsY0QXQUYn6EE3a41A=" crossorigin="anonymous"></script>
+
+
+
+
+  </body>
+</html>

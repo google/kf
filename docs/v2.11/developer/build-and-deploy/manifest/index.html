@@ -1,0 +1,966 @@
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.101.0" />
+<meta name="robots" content="index, follow">
+
+
+<link rel="shortcut icon" href="/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/favicons/android-192x192.png" sizes="192x192">
+
+<title>App Manifest | Kf</title>
+<meta name="description" content="Reference guide for the application manifest.yml format.">
+<meta property="og:title" content="App Manifest" />
+<meta property="og:description" content="Reference guide for the application manifest.yml format." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="/docs/v2.11/developer/build-and-deploy/manifest/" /><meta property="article:section" content="docs" />
+
+<meta property="og:site_name" content="Kf" />
+
+<meta itemprop="name" content="App Manifest">
+<meta itemprop="description" content="Reference guide for the application manifest.yml format.">
+
+<meta itemprop="wordCount" content="1015">
+<meta itemprop="keywords" content="" /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="App Manifest"/>
+<meta name="twitter:description" content="Reference guide for the application manifest.yml format."/>
+
+
+
+
+<link rel="preload" href="/scss/main.scss" as="style">
+<link href="/scss/main.scss" rel="stylesheet" integrity="">
+
+<script
+  src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK"
+  crossorigin="anonymous"></script>
+<script
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+
+  </head>
+  <body class="td-page">
+    <header>
+      
+<nav class="js-navbar-scroll navbar navbar-expand navbar-dark flex-column flex-md-row td-navbar">
+        <a class="navbar-brand" href="/">
+		<span class="navbar-logo"></span><span class="font-weight-bold">Kf</span>
+	</a>
+	<div class="td-navbar-nav-scroll ml-md-auto" id="main_navbar">
+		<ul class="navbar-nav mt-2 mt-lg-0">
+			
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link active" href="/docs/v2.11/developer/" ><span class="active">Developer Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/operator/" ><span>Operator Guide</span></a>
+			</li>
+			
+			<li class="nav-item mr-4 mb-2 mb-lg-0">
+				
+				
+				
+				
+				
+				
+				
+				
+				<a class="nav-link" href="/docs/v2.11/troubleshooting/" ><span>Troubleshooting</span></a>
+			</li>
+			
+			
+			
+		</ul>
+	</div>
+	<div class="navbar-nav d-none d-lg-block"><input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="/offline-search-index.8271768637bdb31d52e7c162697e4315.json"
+  data-offline-search-base-href="/"
+  data-offline-search-max-results="10"
+>
+</div>
+</nav>
+
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <aside class="col-12 col-md-3 col-xl-2 td-sidebar d-print-none">
+            
+<div id="td-sidebar-menu" class="td-sidebar__inner">
+  <form class="td-sidebar__search d-flex align-items-center">
+    <input
+  type="search"
+  class="form-control td-search-input"
+  placeholder="&#xf002; Search this site…"
+  aria-label="Search this site…"
+  autocomplete="off"
+  
+  data-offline-search-index-json-src="/offline-search-index.8271768637bdb31d52e7c162697e4315.json"
+  data-offline-search-base-href="/"
+  data-offline-search-max-results="10"
+>
+
+    <button class="btn btn-link td-sidebar__toggle d-md-none p-0 ml-3 fas fa-bars" type="button" data-toggle="collapse" data-target="#td-section-nav" aria-controls="td-docs-nav" aria-expanded="false" aria-label="Toggle section navigation">
+    </button>
+  </form>
+  <nav class="collapse td-sidebar-nav foldable-nav" id="td-section-nav">
+    <ul class="td-sidebar-nav__section pr-md-3 ul-0">
+      <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-docs-li">
+  <a href="/docs/" class="align-left pl-0 td-sidebar-link td-sidebar-link__section tree-root" id="m-docs"><span class="">Docs</span></a>
+  <ul class="ul-1">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-docsv211-li">
+  <input type="checkbox" id="m-docsv211-check" checked/>
+  <label for="m-docsv211-check"><a href="/docs/v2.11/" title="Documentation" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211"><span class="">Kf Documentation</span></a></label>
+  
+  <ul class="ul-2 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211getting-started-li">
+  <input type="checkbox" id="m-docsv211getting-started-check"/>
+  <label for="m-docsv211getting-started-check"><a href="/docs/v2.11/getting-started/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211getting-started"><span class="">Getting Started</span></a></label>
+  
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211getting-startedoverview-li">
+  <input type="checkbox" id="m-docsv211getting-startedoverview-check"/>
+  <label for="m-docsv211getting-startedoverview-check"><a href="/docs/v2.11/getting-started/overview/" title="Getting Started Overview" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211getting-startedoverview"><span class="">Overview</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211getting-startedquickstart-li">
+  <input type="checkbox" id="m-docsv211getting-startedquickstart-check"/>
+  <label for="m-docsv211getting-startedquickstart-check"><a href="/docs/v2.11/getting-started/quickstart/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211getting-startedquickstart"><span class="">Quickstart</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211getting-startedcompare-services-li">
+  <input type="checkbox" id="m-docsv211getting-startedcompare-services-check"/>
+  <label for="m-docsv211getting-startedcompare-services-check"><a href="/docs/v2.11/getting-started/compare-services/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211getting-startedcompare-services"><span class="">Compare Cloud Foundry and Kf services</span></a></label>
+  
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-docsv211developer-li">
+  <input type="checkbox" id="m-docsv211developer-check" checked/>
+  <label for="m-docsv211developer-check"><a href="/docs/v2.11/developer/" title="Develop Applications on Kf" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211developer"><span class="">Developer Guide</span></a></label>
+  
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child active-path" id="m-docsv211developerbuild-and-deploy-li">
+  <input type="checkbox" id="m-docsv211developerbuild-and-deploy-check" checked/>
+  <label for="m-docsv211developerbuild-and-deploy-check"><a href="/docs/v2.11/developer/build-and-deploy/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211developerbuild-and-deploy"><span class="">Build and deploy applications</span></a></label>
+  
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbuild-and-deploydeploying-an-app-li">
+  <input type="checkbox" id="m-docsv211developerbuild-and-deploydeploying-an-app-check"/>
+  <label for="m-docsv211developerbuild-and-deploydeploying-an-app-check"><a href="/docs/v2.11/developer/build-and-deploy/deploying-an-app/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbuild-and-deploydeploying-an-app"><span class="">Deploy an application</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbuild-and-deploybuildpacks-getting-started-li">
+  <input type="checkbox" id="m-docsv211developerbuild-and-deploybuildpacks-getting-started-check"/>
+  <label for="m-docsv211developerbuild-and-deploybuildpacks-getting-started-check"><a href="/docs/v2.11/developer/build-and-deploy/buildpacks-getting-started/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbuild-and-deploybuildpacks-getting-started"><span class="">Get started with buildpacks</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbuild-and-deployhowto-blue-green-li">
+  <input type="checkbox" id="m-docsv211developerbuild-and-deployhowto-blue-green-check"/>
+  <label for="m-docsv211developerbuild-and-deployhowto-blue-green-check"><a href="/docs/v2.11/developer/build-and-deploy/howto-blue-green/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbuild-and-deployhowto-blue-green"><span class="">Reduce deployment risk with blue-green deployments</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbuild-and-deployv2-vs-v3-buildpacks-li">
+  <input type="checkbox" id="m-docsv211developerbuild-and-deployv2-vs-v3-buildpacks-check"/>
+  <label for="m-docsv211developerbuild-and-deployv2-vs-v3-buildpacks-check"><a href="/docs/v2.11/developer/build-and-deploy/v2-vs-v3-buildpacks/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbuild-and-deployv2-vs-v3-buildpacks"><span class="">Compare V2 and V3 Buildpacks</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbuild-and-deploymanifest-li">
+  <input type="checkbox" id="m-docsv211developerbuild-and-deploymanifest-check"/>
+  <label for="m-docsv211developerbuild-and-deploymanifest-check"><a href="/docs/v2.11/developer/build-and-deploy/manifest/" class="align-left pl-0  active td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbuild-and-deploymanifest"><span class="td-sidebar-nav-active-item">App Manifest</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbuild-and-deployapp-runtime-li">
+  <input type="checkbox" id="m-docsv211developerbuild-and-deployapp-runtime-check"/>
+  <label for="m-docsv211developerbuild-and-deployapp-runtime-check"><a href="/docs/v2.11/developer/build-and-deploy/app-runtime/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbuild-and-deployapp-runtime"><span class="">App runtime</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbuild-and-deploybuild-runtime-li">
+  <input type="checkbox" id="m-docsv211developerbuild-and-deploybuild-runtime-check"/>
+  <label for="m-docsv211developerbuild-and-deploybuild-runtime-check"><a href="/docs/v2.11/developer/build-and-deploy/build-runtime/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbuild-and-deploybuild-runtime"><span class="">Build runtime</span></a></label>
+  
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211developerbacking-services-li">
+  <input type="checkbox" id="m-docsv211developerbacking-services-check"/>
+  <label for="m-docsv211developerbacking-services-check"><a href="/docs/v2.11/developer/backing-services/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211developerbacking-services"><span class="">Backing services</span></a></label>
+  
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbacking-servicesoverview-li">
+  <input type="checkbox" id="m-docsv211developerbacking-servicesoverview-check"/>
+  <label for="m-docsv211developerbacking-servicesoverview-check"><a href="/docs/v2.11/developer/backing-services/overview/" title="Backing Services Overview" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbacking-servicesoverview"><span class="">Overview</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbacking-servicesmanaged-services-li">
+  <input type="checkbox" id="m-docsv211developerbacking-servicesmanaged-services-check"/>
+  <label for="m-docsv211developerbacking-servicesmanaged-services-check"><a href="/docs/v2.11/developer/backing-services/managed-services/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbacking-servicesmanaged-services"><span class="">Use managed services</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbacking-servicesuser-provided-services-li">
+  <input type="checkbox" id="m-docsv211developerbacking-servicesuser-provided-services-check"/>
+  <label for="m-docsv211developerbacking-servicesuser-provided-services-check"><a href="/docs/v2.11/developer/backing-services/user-provided-services/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbacking-servicesuser-provided-services"><span class="">Configure user-provided services</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbacking-servicesups-templates-li">
+  <input type="checkbox" id="m-docsv211developerbacking-servicesups-templates-check"/>
+  <label for="m-docsv211developerbacking-servicesups-templates-check"><a href="/docs/v2.11/developer/backing-services/ups-templates/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbacking-servicesups-templates"><span class="">User Provided Service Templates</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerbacking-servicesnfs-getting-started-li">
+  <input type="checkbox" id="m-docsv211developerbacking-servicesnfs-getting-started-check"/>
+  <label for="m-docsv211developerbacking-servicesnfs-getting-started-check"><a href="/docs/v2.11/developer/backing-services/nfs-getting-started/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerbacking-servicesnfs-getting-started"><span class="">Configure NFS volumes</span></a></label>
+  
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211developerscaling-li">
+  <input type="checkbox" id="m-docsv211developerscaling-check"/>
+  <label for="m-docsv211developerscaling-check"><a href="/docs/v2.11/developer/scaling/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211developerscaling"><span class="">Scaling</span></a></label>
+  
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerscalingautoscaling-li">
+  <input type="checkbox" id="m-docsv211developerscalingautoscaling-check"/>
+  <label for="m-docsv211developerscalingautoscaling-check"><a href="/docs/v2.11/developer/scaling/autoscaling/" title="Scaling overview" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerscalingautoscaling"><span class="">Overview</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerscalingmanage-autoscaling-li">
+  <input type="checkbox" id="m-docsv211developerscalingmanage-autoscaling-check"/>
+  <label for="m-docsv211developerscalingmanage-autoscaling-check"><a href="/docs/v2.11/developer/scaling/manage-autoscaling/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerscalingmanage-autoscaling"><span class="">Manage Autoscaling</span></a></label>
+  
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerservice-discoveryservice-discovery-li">
+  <input type="checkbox" id="m-docsv211developerservice-discoveryservice-discovery-check"/>
+  <label for="m-docsv211developerservice-discoveryservice-discovery-check"><a href="/docs/v2.11/developer/service-discovery/service-discovery/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerservice-discoveryservice-discovery"><span class="">Service discovery</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developerroutes-and-domains-li">
+  <input type="checkbox" id="m-docsv211developerroutes-and-domains-check"/>
+  <label for="m-docsv211developerroutes-and-domains-check"><a href="/docs/v2.11/developer/routes-and-domains/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developerroutes-and-domains"><span class="">Configure routes and domains</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211developertasks-li">
+  <input type="checkbox" id="m-docsv211developertasks-check"/>
+  <label for="m-docsv211developertasks-check"><a href="/docs/v2.11/developer/tasks/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211developertasks"><span class="">Tasks</span></a></label>
+  
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developertaskstask-li">
+  <input type="checkbox" id="m-docsv211developertaskstask-check"/>
+  <label for="m-docsv211developertaskstask-check"><a href="/docs/v2.11/developer/tasks/task/" title="Tasks Overview" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developertaskstask"><span class="">Overview</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developertasksrun-task-li">
+  <input type="checkbox" id="m-docsv211developertasksrun-task-check"/>
+  <label for="m-docsv211developertasksrun-task-check"><a href="/docs/v2.11/developer/tasks/run-task/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developertasksrun-task"><span class="">Run Tasks</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211developertasksscheduling-tasks-li">
+  <input type="checkbox" id="m-docsv211developertasksscheduling-tasks-check"/>
+  <label for="m-docsv211developertasksscheduling-tasks-check"><a href="/docs/v2.11/developer/tasks/scheduling-tasks/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211developertasksscheduling-tasks"><span class="">Schedule Tasks</span></a></label>
+  
+</li>
+  </ul>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211operator-li">
+  <input type="checkbox" id="m-docsv211operator-check"/>
+  <label for="m-docsv211operator-check"><a href="/docs/v2.11/operator/" title="Operate and Maintain Kf" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operator"><span class="">Operator Guide</span></a></label>
+  
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211operatorservice-brokers-li">
+  <input type="checkbox" id="m-docsv211operatorservice-brokers-check"/>
+  <label for="m-docsv211operatorservice-brokers-check"><a href="/docs/v2.11/operator/service-brokers/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operatorservice-brokers"><span class="">Service brokers</span></a></label>
+  
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorservice-brokersabout-service-brokers-li">
+  <input type="checkbox" id="m-docsv211operatorservice-brokersabout-service-brokers-check"/>
+  <label for="m-docsv211operatorservice-brokersabout-service-brokers-check"><a href="/docs/v2.11/operator/service-brokers/about-service-brokers/" title="Service Brokers Overview" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorservice-brokersabout-service-brokers"><span class="">Overview</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorservice-brokerscloud-sb-overview-li">
+  <input type="checkbox" id="m-docsv211operatorservice-brokerscloud-sb-overview-check"/>
+  <label for="m-docsv211operatorservice-brokerscloud-sb-overview-check"><a href="/docs/v2.11/operator/service-brokers/cloud-sb-overview/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operatorservice-brokerscloud-sb-overview"><span class="">About Kf Cloud Service Broker</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorservice-brokersdeploying-cloud-sb-li">
+  <input type="checkbox" id="m-docsv211operatorservice-brokersdeploying-cloud-sb-check"/>
+  <label for="m-docsv211operatorservice-brokersdeploying-cloud-sb-check"><a href="/docs/v2.11/operator/service-brokers/deploying-cloud-sb/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorservice-brokersdeploying-cloud-sb"><span class="">Deploy Kf Cloud Service Broker</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorservice-brokersnfs-platform-setup-li">
+  <input type="checkbox" id="m-docsv211operatorservice-brokersnfs-platform-setup-check"/>
+  <label for="m-docsv211operatorservice-brokersnfs-platform-setup-check"><a href="/docs/v2.11/operator/service-brokers/nfs-platform-setup/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorservice-brokersnfs-platform-setup"><span class="">Set up NFS platform</span></a></label>
+  
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211operatorcustomizing-li">
+  <input type="checkbox" id="m-docsv211operatorcustomizing-check"/>
+  <label for="m-docsv211operatorcustomizing-check"><a href="/docs/v2.11/operator/customizing/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operatorcustomizing"><span class="">Customizing Kf</span></a></label>
+  
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorcustomizingabout-customizing-kf-li">
+  <input type="checkbox" id="m-docsv211operatorcustomizingabout-customizing-kf-check"/>
+  <label for="m-docsv211operatorcustomizingabout-customizing-kf-check"><a href="/docs/v2.11/operator/customizing/about-customizing-kf/" title="Customizing Overview" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorcustomizingabout-customizing-kf"><span class="">Overview</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorcustomizingcluster-configuration-li">
+  <input type="checkbox" id="m-docsv211operatorcustomizingcluster-configuration-check"/>
+  <label for="m-docsv211operatorcustomizingcluster-configuration-check"><a href="/docs/v2.11/operator/customizing/cluster-configuration/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorcustomizingcluster-configuration"><span class="">Cluster Configuration</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorcustomizingcustomizing-features-li">
+  <input type="checkbox" id="m-docsv211operatorcustomizingcustomizing-features-check"/>
+  <label for="m-docsv211operatorcustomizingcustomizing-features-check"><a href="/docs/v2.11/operator/customizing/customizing-features/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorcustomizingcustomizing-features"><span class="">Customizing Kf Features</span></a></label>
+  
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorkf-dependencies-li">
+  <input type="checkbox" id="m-docsv211operatorkf-dependencies-check"/>
+  <label for="m-docsv211operatorkf-dependencies-check"><a href="/docs/v2.11/operator/kf-dependencies/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operatorkf-dependencies"><span class="">Kf dependencies and architecture</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorreference-architecture-li">
+  <input type="checkbox" id="m-docsv211operatorreference-architecture-check"/>
+  <label for="m-docsv211operatorreference-architecture-check"><a href="/docs/v2.11/operator/reference-architecture/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operatorreference-architecture"><span class="">Kf reference architecture diagrams</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211operatorlogging-monitoring-li">
+  <input type="checkbox" id="m-docsv211operatorlogging-monitoring-check"/>
+  <label for="m-docsv211operatorlogging-monitoring-check"><a href="/docs/v2.11/operator/logging-monitoring/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operatorlogging-monitoring"><span class="">Logging and Monitoring</span></a></label>
+  
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorlogging-monitoringmonitoring-dashboard-li">
+  <input type="checkbox" id="m-docsv211operatorlogging-monitoringmonitoring-dashboard-check"/>
+  <label for="m-docsv211operatorlogging-monitoringmonitoring-dashboard-check"><a href="/docs/v2.11/operator/logging-monitoring/monitoring-dashboard/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorlogging-monitoringmonitoring-dashboard"><span class="">Create and user monitoring dashboards.</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorlogging-monitoringlogging-monitoring-li">
+  <input type="checkbox" id="m-docsv211operatorlogging-monitoringlogging-monitoring-check"/>
+  <label for="m-docsv211operatorlogging-monitoringlogging-monitoring-check"><a href="/docs/v2.11/operator/logging-monitoring/logging-monitoring/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorlogging-monitoringlogging-monitoring"><span class="">Logging and monitoring</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorlogging-monitoringmonitoring-overview-li">
+  <input type="checkbox" id="m-docsv211operatorlogging-monitoringmonitoring-overview-check"/>
+  <label for="m-docsv211operatorlogging-monitoringmonitoring-overview-check"><a href="/docs/v2.11/operator/logging-monitoring/monitoring-overview/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorlogging-monitoringmonitoring-overview"><span class="">Logging and monitoring overview</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorlogging-monitoringmonitoring-logging-li">
+  <input type="checkbox" id="m-docsv211operatorlogging-monitoringmonitoring-logging-check"/>
+  <label for="m-docsv211operatorlogging-monitoringmonitoring-logging-check"><a href="/docs/v2.11/operator/logging-monitoring/monitoring-logging/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorlogging-monitoringmonitoring-logging"><span class="">View logs</span></a></label>
+  
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211operatornetworking-li">
+  <input type="checkbox" id="m-docsv211operatornetworking-check"/>
+  <label for="m-docsv211operatornetworking-check"><a href="/docs/v2.11/operator/networking/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operatornetworking"><span class="">Networking</span></a></label>
+  
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatornetworkingsetting-up-a-custom-domain-li">
+  <input type="checkbox" id="m-docsv211operatornetworkingsetting-up-a-custom-domain-check"/>
+  <label for="m-docsv211operatornetworkingsetting-up-a-custom-domain-check"><a href="/docs/v2.11/operator/networking/setting-up-a-custom-domain/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatornetworkingsetting-up-a-custom-domain"><span class="">Set up a custom domain</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatornetworkingsetting-up-https-ingress-li">
+  <input type="checkbox" id="m-docsv211operatornetworkingsetting-up-https-ingress-check"/>
+  <label for="m-docsv211operatornetworkingsetting-up-https-ingress-check"><a href="/docs/v2.11/operator/networking/setting-up-https-ingress/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatornetworkingsetting-up-https-ingress"><span class="">Set up HTTPS ingress</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatornetworkingsetting-up-networkpolicies-li">
+  <input type="checkbox" id="m-docsv211operatornetworkingsetting-up-networkpolicies-check"/>
+  <label for="m-docsv211operatornetworkingsetting-up-networkpolicies-check"><a href="/docs/v2.11/operator/networking/setting-up-networkpolicies/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatornetworkingsetting-up-networkpolicies"><span class="">Set up network policies</span></a></label>
+  
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211operatorsecurity-li">
+  <input type="checkbox" id="m-docsv211operatorsecurity-check"/>
+  <label for="m-docsv211operatorsecurity-check"><a href="/docs/v2.11/operator/security/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operatorsecurity"><span class="">Security</span></a></label>
+  
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorsecuritysecurity-overview-li">
+  <input type="checkbox" id="m-docsv211operatorsecuritysecurity-overview-check"/>
+  <label for="m-docsv211operatorsecuritysecurity-overview-check"><a href="/docs/v2.11/operator/security/security-overview/" title="Security Overview" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operatorsecuritysecurity-overview"><span class="">Overview</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorsecurityrole-based-access-control-li">
+  <input type="checkbox" id="m-docsv211operatorsecurityrole-based-access-control-check"/>
+  <label for="m-docsv211operatorsecurityrole-based-access-control-check"><a href="/docs/v2.11/operator/security/role-based-access-control/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorsecurityrole-based-access-control"><span class="">Role-based access control</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorsecurityrbac-li">
+  <input type="checkbox" id="m-docsv211operatorsecurityrbac-check"/>
+  <label for="m-docsv211operatorsecurityrbac-check"><a href="/docs/v2.11/operator/security/rbac/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorsecurityrbac"><span class="">Configure role-based access control</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorsecuritycompute-isolation-li">
+  <input type="checkbox" id="m-docsv211operatorsecuritycompute-isolation-check"/>
+  <label for="m-docsv211operatorsecuritycompute-isolation-check"><a href="/docs/v2.11/operator/security/compute-isolation/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorsecuritycompute-isolation"><span class="">Enable compute isolation</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorsecuritykubernetes-roles-li">
+  <input type="checkbox" id="m-docsv211operatorsecuritykubernetes-roles-check"/>
+  <label for="m-docsv211operatorsecuritykubernetes-roles-check"><a href="/docs/v2.11/operator/security/kubernetes-roles/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorsecuritykubernetes-roles"><span class="">Kubernetes Roles</span></a></label>
+  
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211operatorbuildpacks-li">
+  <input type="checkbox" id="m-docsv211operatorbuildpacks-check"/>
+  <label for="m-docsv211operatorbuildpacks-check"><a href="/docs/v2.11/operator/buildpacks/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211operatorbuildpacks"><span class="">Stacks and Buildpacks</span></a></label>
+  
+  <ul class="ul-4 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorbuildpacksconfigure-stacks-li">
+  <input type="checkbox" id="m-docsv211operatorbuildpacksconfigure-stacks-check"/>
+  <label for="m-docsv211operatorbuildpacksconfigure-stacks-check"><a href="/docs/v2.11/operator/buildpacks/configure-stacks/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorbuildpacksconfigure-stacks"><span class="">Customize stacks</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211operatorbuildpackscustomizing-buildpacks-li">
+  <input type="checkbox" id="m-docsv211operatorbuildpackscustomizing-buildpacks-check"/>
+  <label for="m-docsv211operatorbuildpackscustomizing-buildpacks-check"><a href="/docs/v2.11/operator/buildpacks/customizing-buildpacks/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211operatorbuildpackscustomizing-buildpacks"><span class="">Customize stacks and buildpacks</span></a></label>
+  
+</li>
+  </ul>
+</li>
+  </ul>
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211troubleshooting-li">
+  <input type="checkbox" id="m-docsv211troubleshooting-check"/>
+  <label for="m-docsv211troubleshooting-check"><a href="/docs/v2.11/troubleshooting/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211troubleshooting"><span class="">Troubleshooting</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section with-child" id="m-docsv211examples-li">
+  <input type="checkbox" id="m-docsv211examples-check"/>
+  <label for="m-docsv211examples-check"><a href="/docs/v2.11/examples/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211examples"><span class="">Examples</span></a></label>
+  
+  <ul class="ul-3 foldable">
+    <li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211examplesdeploying-spring-cloud-config-li">
+  <input type="checkbox" id="m-docsv211examplesdeploying-spring-cloud-config-check"/>
+  <label for="m-docsv211examplesdeploying-spring-cloud-config-check"><a href="/docs/v2.11/examples/deploying-spring-cloud-config/" class="align-left pl-0  td-sidebar-link td-sidebar-link__page" id="m-docsv211examplesdeploying-spring-cloud-config"><span class="">Deploy Spring Cloud Config</span></a></label>
+  
+</li><li class="td-sidebar-nav__section-title td-sidebar-nav__section without-child" id="m-docsv211examplesspring-music-li">
+  <input type="checkbox" id="m-docsv211examplesspring-music-check"/>
+  <label for="m-docsv211examplesspring-music-check"><a href="/docs/v2.11/examples/spring-music/" class="align-left pl-0  td-sidebar-link td-sidebar-link__section" id="m-docsv211examplesspring-music"><span class="">Deploy Spring Music</span></a></label>
+  
+</li>
+  </ul>
+</li>
+  </ul>
+</li>
+  </ul>
+</li>
+    </ul>
+  </nav>
+</div>
+
+          </aside>
+          <aside class="d-none d-xl-block col-xl-2 td-sidebar-toc d-print-none">
+            
+<div class="td-page-meta ml-2 pb-1 pt-2 mb-0">
+<a href="https://github.com/google/kf/tree/master/content/en/docs/v2.11/developer/build-and-deploy/manifest.md" class="td-page-meta--view" target="_blank" rel="noopener"><i class="fa fa-file-alt fa-fw"></i> View page source</a>
+  <a href="https://github.com/google/kf/edit/master/content/en/docs/v2.11/developer/build-and-deploy/manifest.md" class="td-page-meta--edit" target="_blank" rel="noopener"><i class="fa fa-edit fa-fw"></i> Edit this page</a>
+  <a href="https://github.com/google/kf/new/master/content/en/docs/v2.11/developer/build-and-deploy/manifest.md?filename=change-me.md&amp;value=---%0Atitle%3A&#43;%22Long&#43;Page&#43;Title%22%0AlinkTitle%3A&#43;%22Short&#43;Nav&#43;Title%22%0Aweight%3A&#43;100%0Adescription%3A&#43;%3E-%0A&#43;&#43;&#43;&#43;&#43;Page&#43;description&#43;for&#43;heading&#43;and&#43;indexes.%0A---%0A%0A%23%23&#43;Heading%0A%0AEdit&#43;this&#43;template&#43;to&#43;create&#43;your&#43;new&#43;page.%0A%0A%2A&#43;Give&#43;it&#43;a&#43;good&#43;name%2C&#43;ending&#43;in&#43;%60.md%60&#43;-&#43;e.g.&#43;%60getting-started.md%60%0A%2A&#43;Edit&#43;the&#43;%22front&#43;matter%22&#43;section&#43;at&#43;the&#43;top&#43;of&#43;the&#43;page&#43;%28weight&#43;controls&#43;how&#43;its&#43;ordered&#43;amongst&#43;other&#43;pages&#43;in&#43;the&#43;same&#43;directory%3B&#43;lowest&#43;number&#43;first%29.%0A%2A&#43;Add&#43;a&#43;good&#43;commit&#43;message&#43;at&#43;the&#43;bottom&#43;of&#43;the&#43;page&#43;%28%3C80&#43;characters%3B&#43;use&#43;the&#43;extended&#43;description&#43;field&#43;for&#43;more&#43;detail%29.%0A%2A&#43;Create&#43;a&#43;new&#43;branch&#43;so&#43;you&#43;can&#43;preview&#43;your&#43;new&#43;file&#43;and&#43;request&#43;a&#43;review&#43;via&#43;Pull&#43;Request.%0A" class="td-page-meta--child" target="_blank" rel="noopener"><i class="fa fa-edit fa-fw"></i> Create child page</a>
+  <a href="https://github.com/google/kf/issues/new?title=App%20Manifest" class="td-page-meta--issue" target="_blank" rel="noopener"><i class="fab fa-github fa-fw"></i> Create documentation issue</a>
+  <a href="https://github.com/google/kf/issues/new" class="td-page-meta--project-issue" target="_blank" rel="noopener"><i class="fas fa-tasks fa-fw"></i> Create project issue</a>
+  <a id="print" href="/docs/v2.11/developer/build-and-deploy/_print/"><i class="fa fa-print fa-fw"></i> Print entire section</a>
+
+</div>
+
+            
+
+
+<div class="td-toc"><nav id="TableOfContents">
+  <ul>
+    <li><a href="#format">Format</a></li>
+    <li><a href="#application-fields">Application fields</a></li>
+    <li><a href="#docker-fields">Docker fields</a></li>
+    <li><a href="#route-fields">Route fields</a></li>
+    <li><a href="#port-fields">Port fields</a></li>
+    <li><a href="#examples">Examples</a>
+      <ul>
+        <li><a href="#minimal-app">Minimal App</a></li>
+        <li><a href="#simple-app">Simple App</a></li>
+        <li><a href="#docker-app">Docker App</a></li>
+        <li><a href="#app-with-multiple-ports">App with multiple ports</a></li>
+        <li><a href="#health-check-types">Health check types</a></li>
+      </ul>
+    </li>
+    <li><a href="#known-differences">Known differences</a></li>
+  </ul>
+</nav></div>
+
+
+
+            
+
+	
+		
+			
+				
+			
+			
+
+
+
+  
+  
+
+		
+			
+				
+			
+			
+
+
+
+  
+  
+
+		
+	
+
+          </aside>
+          <main class="col-12 col-md-9 col-xl-8 pl-md-5" role="main">
+            
+  
+
+            <nav aria-label="breadcrumb" class="td-breadcrumbs">
+  <ol class="breadcrumb">
+  <li class="breadcrumb-item">
+    <a href="/docs/">Docs</a>
+  </li>
+  <li class="breadcrumb-item">
+    <a href="/docs/v2.11/">Kf Documentation</a>
+  </li>
+  <li class="breadcrumb-item">
+    <a href="/docs/v2.11/developer/">Developer Guide</a>
+  </li>
+  <li class="breadcrumb-item">
+    <a href="/docs/v2.11/developer/build-and-deploy/">Build and deploy applications</a>
+  </li>
+  <li class="breadcrumb-item active" aria-current="page">
+    <a href="/docs/v2.11/developer/build-and-deploy/manifest/">App Manifest</a>
+  </li>
+  </ol>
+</nav>
+            
+<div class="td-content">
+	<h1>App Manifest</h1>
+	<div class="lead">Reference guide for the application manifest.yml format.</div>
+	<header class="article-meta">
+		
+
+  
+    
+      
+
+
+    
+      
+
+
+    
+  
+
+		
+	</header>    
+	<p>App manifests provide a way for developers to record their App&rsquo;s execution environment in a declarative way.
+They allow Apps to be deployed consistently and reproducibly.</p>
+<h2 id="format">Format</h2>
+<p>Manifests are YAML files in the root directory of the App. They <strong>must</strong> be named <code>manifest.yml</code> or <code>manifest.yaml</code>.</p>
+<p>Kf App manifests are allowed to have a single top-level element: <code>applications</code>.
+The <code>applications</code> element can contain one or more application entries.</p>
+<h2 id="application-fields">Application fields</h2>
+<p>The following fields are valid for objects under <code>applications</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td><code>string</code></td>
+<td>The name of the application. The app name should be lower-case alphanumeric characters and dashes. It must not start with a dash.</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td><code>string</code></td>
+<td>The path to the source of the app. Defaults to the manifest&rsquo;s directory.</td>
+</tr>
+<tr>
+<td><code>buildpacks</code></td>
+<td><code>string[]</code></td>
+<td>A list of buildpacks to apply to the app.</td>
+</tr>
+<tr>
+<td><code>stack</code></td>
+<td><code>string</code></td>
+<td>Base image to use for to use for apps created with a buildpack.</td>
+</tr>
+<tr>
+<td><code>docker</code></td>
+<td><code>object</code></td>
+<td>A docker object. See the Docker Fields section for more information.</td>
+</tr>
+<tr>
+<td><code>env</code></td>
+<td><code>map</code></td>
+<td>Key/value pairs to use as the environment variables for the app and build.</td>
+</tr>
+<tr>
+<td><code>services</code></td>
+<td><code>string[]</code></td>
+<td>A list of service instance names to automatically bind to the app.</td>
+</tr>
+<tr>
+<td><code>disk_quota</code></td>
+<td><code>quantity</code></td>
+<td>The amount of disk the application should get. Defaults to 1GiB.</td>
+</tr>
+<tr>
+<td><code>memory</code></td>
+<td><code>quantity</code></td>
+<td>The amount of RAM to provide the app. Defaults to 1GiB.</td>
+</tr>
+<tr>
+<td><code>cpu</code> †</td>
+<td><code>quantity</code></td>
+<td>The amount of CPU to provide the application. Defaults to 0.1 (1/10th of a CPU).</td>
+</tr>
+<tr>
+<td><code>instances</code></td>
+<td><code>int</code></td>
+<td>The number of instances of the app to run. Defaults to 1.</td>
+</tr>
+<tr>
+<td><code>routes</code></td>
+<td><code>object</code></td>
+<td>A list of routes the app should listen on. See the Route Fields section for more.</td>
+</tr>
+<tr>
+<td><code>no-route</code></td>
+<td><code>boolean</code></td>
+<td>If set to true, the application will not be routable.</td>
+</tr>
+<tr>
+<td><code>random-route</code></td>
+<td><code>boolean</code></td>
+<td>If set to true, the app will be given a random route.</td>
+</tr>
+<tr>
+<td><code>timeout</code></td>
+<td><code>int</code></td>
+<td>The number of seconds to wait for the app to become healthy.</td>
+</tr>
+<tr>
+<td><code>health-check-type</code></td>
+<td><code>string</code></td>
+<td>The type of health-check to use <code>port</code>, <code>process</code>, <code>none</code>, or <code>http</code>. Default: <code>port</code></td>
+</tr>
+<tr>
+<td><code>health-check-http-endpoint</code></td>
+<td><code>string</code></td>
+<td>The endpoint to target as part of the health-check. Only valid if <code>health-check-type</code> is <code>http</code>.</td>
+</tr>
+<tr>
+<td><code>command</code></td>
+<td><code>string</code></td>
+<td>The command that starts the app. If supplied, this will be passed to the container entrypoint.</td>
+</tr>
+<tr>
+<td><code>entrypoint</code> †</td>
+<td><code>string</code></td>
+<td>Overrides the app container&rsquo;s entrypoint.</td>
+</tr>
+<tr>
+<td><code>args</code> †</td>
+<td><code>string[]</code></td>
+<td>Overrides the arguments the app container.</td>
+</tr>
+<tr>
+<td><code>ports</code> †</td>
+<td><code>object</code></td>
+<td>A list of ports to expose on the container. If supplied, the first entry in this list is used as the default port.</td>
+</tr>
+</tbody>
+</table>
+<p>† Unique to Kf</p>
+<h2 id="docker-fields">Docker fields</h2>
+<p>The following fields are valid for <code>application.docker</code> objects:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>image</code></td>
+<td><code>string</code></td>
+<td>The docker image to use.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="route-fields">Route fields</h2>
+<p>The following fields are valid for <code>application.routes</code> objects:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>route</code></td>
+<td><code>string</code></td>
+<td>A route to the app including hostname, domain, and path.</td>
+</tr>
+<tr>
+<td><code>appPort</code></td>
+<td><code>int</code></td>
+<td>(Optional) A custom port on the App the route will send traffic to.</td>
+</tr>
+</tbody>
+</table>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> If you specify an <code>appPort</code>, that port MUST also be declared in the <code>ports</code> field.
+</aside>
+
+<h2 id="port-fields">Port fields</h2>
+<p>The following fields are valid for <code>application.ports</code> objects:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>port</code></td>
+<td><code>int</code></td>
+<td>The port to expose on the App&rsquo;s container.</td>
+</tr>
+<tr>
+<td><code>protocol</code></td>
+<td><code>string</code></td>
+<td>The protocol of the port to expose. Must be <code>tcp</code>, <code>http</code> or <code>http2</code>. Default: <code>tcp</code></td>
+</tr>
+</tbody>
+</table>
+
+<aside class="alert alert-info" style="border-width: 1px 1px 1px 4px;">
+<i class="fas fa-star ml-2"></i> <strong>Note:</strong> The <code>protocol</code> field is a hint about the traffic that goes over the port.
+The hint is used by the <a href="https://cloud.google.com/service-mesh/docs/overview">service mesh</a> for better tracing and metrics.
+</aside>
+
+
+<aside class="alert alert-danger" style="border-width: 1px 1px 1px 4px;">
+<i class="fa-solid fa-triangle-exclamation"></i> <strong>Warning:</strong> Kf doesn&rsquo;t currently support TCP port-based routing. You must use a
+<a href="https://kubernetes.io/docs/tutorials/stateless-application/expose-external-ip-address/">Kubernetes LoadBalancer</a> if you want to expose a TCP port to the Internet. Ports are available on the cluster internal App address <code>&lt;app-name&gt;.&lt;space&gt;</code>.
+</aside>
+
+
+<h2 id="examples">Examples</h2>
+<h3 id="minimal-app">Minimal App</h3>
+<p>This is a bare-bones manifest that will build an App by auto-detecting
+the buildpack based on the uploaded source, and deploy one instance of it.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">applications</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">my-minimal-application</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><h3 id="simple-app">Simple App</h3>
+<p>This is a full manifest for a more traditional Java App.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">applications</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">account-manager</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># only upload src/ on push</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">path</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">src</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># use the Java buildpack</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">buildpacks</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">java</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">env</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#8f5902;font-style:italic"># manually configure the buildpack&#39;s Java version</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">BP_JAVA_VERSION</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">8</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">ENVIRONMENT</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">PRODUCTION</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># use less disk and memory than default</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">disk_quota</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">512M</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">memory</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">512M</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># bump up the CPU</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">cpu</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">0.2</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">instances</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">3</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># make the app listen on three routes</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">routes</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">route</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">accounts.mycompany.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">route</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">accounts.datacenter.mycompany.internal</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">route</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">mycompany.com/accounts</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># set up a longer timeout and custom endpoint to validate</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># when the app comes up</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">timeout</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">300</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">health-check-type</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">health-check-http-endpoint</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">/healthz</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># attach two services by name</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">services</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">customer-database</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#000">web-cache</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><h3 id="docker-app">Docker App</h3>
+<p>Kf can deploy Docker containers as well as manifest deployed App.
+These Docker Apps MUST listen on the <code>PORT</code> environment variable.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">applications</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">white-label-app</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#8f5902;font-style:italic"># use a pre-built docker image (must listen on $PORT)</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">docker</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">image</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">gcr.io/my-company/white-label-app:123</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">env</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#8f5902;font-style:italic"># add additional environment variables</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">ENVIRONMENT</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">PRODUCTION</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">disk_quota</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">1G</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">memory</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">1G</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">cpu</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">2</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">instances</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">1</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">routes</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">route</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">white-label-app.mycompany.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><h3 id="app-with-multiple-ports">App with multiple ports</h3>
+<p>This App has multiple ports to expose an admin console, website, and SMTP server.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-yaml" data-lang="yaml"><span style="display:flex;"><span><span style="color:#000">---</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span><span style="color:#204a87;font-weight:bold">applications</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline"></span>- <span style="color:#204a87;font-weight:bold">name</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">b2b-server</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">ports</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">port</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">8080</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">port</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">9090</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">http</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">port</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">2525</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">protocol</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">tcp</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span><span style="color:#204a87;font-weight:bold">routes</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">route</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">b2b-admin.mycompany.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#204a87;font-weight:bold">appPort</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#0000cf;font-weight:bold">9090</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">  </span>- <span style="color:#204a87;font-weight:bold">route</span><span style="color:#000;font-weight:bold">:</span><span style="color:#f8f8f8;text-decoration:underline"> </span><span style="color:#000">b2b.mycompany.com</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span><span style="display:flex;"><span><span style="color:#f8f8f8;text-decoration:underline">    </span><span style="color:#8f5902;font-style:italic"># gets the default (first) port</span><span style="color:#f8f8f8;text-decoration:underline">
+</span></span></span></code></pre></div><h3 id="health-check-types">Health check types</h3>
+<p>Kf supports three different health check types:</p>
+<ol>
+<li><code>port</code> (default)</li>
+<li><code>http</code></li>
+<li><code>process</code> (or <code>none</code>)</li>
+</ol>
+<p><code>port</code> and <code>http</code> set a <a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/">Kubernetes readiness and liveness
+probe</a>
+that ensures the application is ready before sending traffic to it.</p>
+<p>The <code>port</code> health check will ensure the port found at <code>$PORT</code> is being
+listened to. Under the hood Kf uses a TCP probe.</p>
+<p>The <code>http</code> health check will use the configured value in
+<code>health-check-http-endpoint</code> to check the application&rsquo;s health. Under the hood
+Kf uses an HTTP probe.</p>
+<p>A <code>process</code> health check only checks to see if the process running on the
+container is alive. It does NOT set a Kubernetes readiness or liveness probe.</p>
+<h2 id="known-differences">Known differences</h2>
+<p>The following are known differences between Kf manifests and CF manifests:</p>
+<ul>
+<li>Kf does not support deprecated CF manifest fields. This includes all fields at the root-level of the manifest (other than applications) and routing fields.</li>
+<li>Kf is missing support for the following v2 manifest fields:
+<ul>
+<li><code>docker.username</code></li>
+</ul>
+</li>
+<li>Kf does not support auto-detecting ports for Docker containers.</li>
+</ul>
+
+	
+	
+	
+</div>
+
+
+          </main>
+        </div>
+      </div>
+      
+<footer class="bg-dark py-5 row d-print-none">
+  <div class="container-fluid mx-sm-5">
+    <div class="row">
+      <div class="col-6 col-sm-4 text-xs-center order-sm-2">
+        
+        
+        
+      </div>
+      <div class="col-6 col-sm-4 text-right text-xs-center order-sm-3">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" target="_blank" rel="noopener" href="https://github.com/google/kf" aria-label="GitHub">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-toggle="tooltip" data-placement="top" title="Security mailing list" aria-label="Security mailing list">
+    <a class="text-white" target="_blank" rel="noopener" href="mailto:kf-security@google.com" aria-label="Security mailing list">
+      <i class="fa fa-envelope"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+      <div class="col-12 col-sm-4 text-center py-2 order-sm-2">
+        <small class="text-white">&copy; 2022 The Kf Authors All Rights Reserved</small>
+        
+	
+		
+	
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+    integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+    crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js"
+    integrity="sha512-UR25UO94eTnCVwjbXozyeVd6ZqpaAE9naiEUBK/A+QDbfSTQFhPGj5lOR6d8tsgbBk84Ggb5A3EkjsOgPRPcKA=="
+    crossorigin="anonymous"></script>
+
+
+
+
+
+<script src='/js/tabpane-persist.js'></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/js/main.min.91798a335c881f1b6b805085ba4aa22d1dbd2b0b18d105d05189fa104ddae350.js" integrity="sha256-kXmKM1yIHxtrgFCFukqiLR29KwsY0QXQUYn6EE3a41A=" crossorigin="anonymous"></script>
+
+
+
+
+  </body>
+</html>

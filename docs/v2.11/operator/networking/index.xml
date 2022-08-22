@@ -1,0 +1,342 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Kf – Networking</title>
+    <link>/docs/v2.11/operator/networking/</link>
+    <description>Recent content in Networking on Kf</description>
+    <generator>Hugo -- gohugo.io</generator>
+    
+	  <atom:link href="/docs/v2.11/operator/networking/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>Docs: Set up a custom domain</title>
+      <link>/docs/v2.11/operator/networking/setting-up-a-custom-domain/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/operator/networking/setting-up-a-custom-domain/</guid>
+      <description>
+        
+        
+        &lt;p&gt;All Kf Apps that serve HTTP traffic to users or applications
+outside of the cluster must be associated with a domain name.&lt;/p&gt;
+&lt;p&gt;Kf has three locations where domains can be configured.
+Ordered by precedence, they are:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Apps&lt;/li&gt;
+&lt;li&gt;Spaces&lt;/li&gt;
+&lt;li&gt;The &lt;code&gt;config-defaults&lt;/code&gt; ConfigMap in the &lt;code&gt;kf&lt;/code&gt; Namespace&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;edit-the-config-defaults-configmap&#34;&gt;Edit the &lt;code&gt;config-defaults&lt;/code&gt; ConfigMap&lt;/h2&gt;
+&lt;p&gt;The &lt;code&gt;config-defaults&lt;/code&gt; ConfigMap holds cluster-wide settings for Kf and can be edited by cluster administrators.
+The values in the ConfigMap are read by the Spaces controller and modify their configuration.
+Domain values are reflected in the Space&amp;rsquo;s &lt;code&gt;status.networkConfig.domains&lt;/code&gt; field.&lt;/p&gt;
+&lt;p&gt;To modify Kf cluster&amp;rsquo;s domain, edit the &lt;code&gt;config-defaults&lt;/code&gt; ConfigMap in the &lt;code&gt;kf&lt;/code&gt; Namespace:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl edit configmap config-defaults -n kf
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Add or update the entry for the &lt;code&gt;spaceClusterDomain&lt;/code&gt; key like the following:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;spaceClusterDomain&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;my-domain.com&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;To validate the configuration was updated correctly, check the domain value in a Space:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf space SPACE_NAME -o &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;jsonpath={.status.networkConfig.domains[][&amp;#39;domain&amp;#39;]}&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The output will look similar to:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;Getting Space some-space
+some-space.my-domain.com
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Each Space prefixes the cluster domains with its own name.
+This prevents conflicts between Apps.&lt;/p&gt;
+
+&lt;aside class=&#34;alert alert-danger&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fa-solid fa-triangle-exclamation&#34;&gt;&lt;/i&gt; &lt;strong&gt;Warning:&lt;/strong&gt; Updating the &lt;code&gt;spaceClusterDomain&lt;/code&gt; in &lt;code&gt;config-defaults&lt;/code&gt; will immediately be
+reflected on all Spaces and Apps that haven&amp;rsquo;t overridden the domain.
+&lt;/aside&gt;
+
+
+&lt;h2 id=&#34;assign-space-domains&#34;&gt;Assign Space domains&lt;/h2&gt;
+&lt;p&gt;Spaces are the authoritative location for domain configuration.
+You can assign domains and sub-domains to each Space for developers to use.
+The field for configuring domains is &lt;code&gt;spec.networkConfig.domains&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Use &lt;code&gt;kf space&lt;/code&gt; to view the domains assigned to a Space:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf space SPACE_NAME
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;In the output, the &lt;code&gt;Spec&lt;/code&gt; field contains specific configuration for the Space
+and the &lt;code&gt;Status&lt;/code&gt; field reflects configuration for the Space with cluster-wide
+defaults appended to the end:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;...
+Spec:
+  Network Config:
+    Domains:
+      Domain: my-space.mycompany.com
+...
+Status:
+  Network Config:
+    Domains:
+      Domain: my-space.mycompany.com
+      Domain: my-space.prod.us-east1.kf.mycompany.com
+&lt;/code&gt;&lt;/pre&gt;
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; Apps will use the &lt;strong&gt;first&lt;/strong&gt; domain the status if developers don&amp;rsquo;t specify a domain.
+&lt;/aside&gt;
+
+&lt;h3 id=&#34;add-or-remove-domains-using-the-cli&#34;&gt;Add or remove domains using the CLI&lt;/h3&gt;
+&lt;p&gt;The &lt;code&gt;kf&lt;/code&gt; CLI supports mutations on Space domains. Each command outputs
+a diff between the old and new configurations.&lt;/p&gt;
+&lt;p&gt;Add a new domain with &lt;code&gt;kf configure-space append-domain&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf configure-space append-domain SPACE_NAME myspace.mycompany.com
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Add or make an existing domain the default with &lt;code&gt;kf configure-space set-default-domain&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf configure-space set-default-domain SPACE_NAME myspace.mycompany.com
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;And finally, remove a domain:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf configure-space remove-domain SPACE_NAME myspace.mycompany.com
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; You can override a cluster domains by inserting a new domain on the &lt;code&gt;spec&lt;/code&gt; with the same &lt;code&gt;domain&lt;/code&gt;.
+This ensures the space won&amp;rsquo;t be updated if the cluster domain changes.
+&lt;/aside&gt;
+
+&lt;h2 id=&#34;use-apps-to-specify-domains&#34;&gt;Use Apps to specify domains&lt;/h2&gt;
+&lt;p&gt;Apps can specify domains as part of their configuration.
+Routes are mapped to Apps during &lt;code&gt;kf push&lt;/code&gt; using the following logic:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;let current_routes  = The set of routes already on the app
+let manifest_routes = The set of routes defined by the manifest
+let flag_routes     = The set of routes supplied by the --route flag(s)
+let no_route        = Whether the manifest has no-route:true or --no-route is set
+let random_route    = Whether the manifest has random-route:true or --random-route is set
+
+let new_routes = Union(current_routes, manifest_routes, flag_routes)
+
+if new_routes.IsEmpty() then
+  if random_route then
+    new_routes.Add(CreateRandomRoute())
+  else
+    new_routes.Add(CreateDefaultRoute())
+  end
+end
+
+if no_route then
+  new_routes.RemoveAll()
+end
+
+return new_routes
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;If an App doesn&amp;rsquo;t specify a Route, or requests a random Route, the first domain
+on the Space is used. If the first domain on a Space changes, all Apps in the
+Space using the default domain are updated to reflect it.&lt;/p&gt;
+&lt;h2 id=&#34;customize-domain-templates&#34;&gt;Customize domain templates&lt;/h2&gt;
+&lt;p&gt;Kf supports variable substitution in domains. Substitution allows a single
+cluster-wide domain to be customized per-Space and to react to changes to the
+ingress IP. Substitution is performed on variables with the syntax &lt;code&gt;$(VARIABLE_NAME)&lt;/code&gt;
+that occur in a domain.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Variable&lt;/th&gt;
+&lt;th&gt;Description&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;CLUSTER_INGRESS_IP&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The IPV4 address of the cluster ingress.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;SPACE_NAME&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;The name of the Space.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; Use the &lt;code&gt;SPACE_NAME&lt;/code&gt; variable in domains to allow developers in different
+Spaces to avoid DNS conflicts if they push Apps with the same name.
+&lt;/aside&gt;
+
+&lt;h3 id=&#34;examples&#34;&gt;Examples&lt;/h3&gt;
+&lt;p&gt;The following examples demonstrate how domain variables can be used to support
+a variety of different organizational structures and cluster patterns.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Using a wildcard DNS service like &lt;a href=&#34;https://nip.io/&#34;&gt;nip.io&lt;/a&gt;:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;$(SPACE_NAME).$(CLUSTER_INGRESS_IP).nip.io
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Domain for an organization with centrally managed DNS:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;$(SPACE_NAME).cluster-name.example.com
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Domain for teams who manage their own DNS:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;cluster-name.$(SPACE_NAME).example.com
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Domain for a cluster with warm failover and external circuit breaker:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;$(SPACE_NAME)-failover.cluster-name.example.com
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;differences-between-kf-and-cf&#34;&gt;Differences between Kf and CF&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Kf Spaces prefix the cluster-wide domain with the Space name.&lt;/li&gt;
+&lt;li&gt;Kf does not check for domain conflicts on user-specified routes.&lt;/li&gt;
+&lt;/ul&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Set up HTTPS ingress</title>
+      <link>/docs/v2.11/operator/networking/setting-up-https-ingress/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/operator/networking/setting-up-https-ingress/</guid>
+      <description>
+        
+        
+        &lt;p&gt;You can secure the ingress gateway with HTTPS by using simple TLS, and enable HTTPS connections to specific webpages. In addition, you can redirect HTTP connections to HTTPS.&lt;/p&gt;
+&lt;p&gt;HTTPS creates a secure channel over an insecure network, protecting against man-in-the-middle attacks and encrypting traffic between the client and server. To prepare a web server to accept HTTPS connections, an administrator must create a public key certificate for the server. This certificate must be signed by a trusted certificate authority for a web browser to accept it without warning.&lt;/p&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; These instructions supplement the Istio instructions to &lt;a href=&#34;https://istio.io/latest/docs/tasks/traffic-management/ingress/secure-ingress&#34;&gt;configure a TLS ingress gateway&lt;/a&gt;, and assume that a valid certificate and private key for the server have already been created.
+&lt;/aside&gt;
+
+&lt;p&gt;Edit the gateway named external-gateway in the &lt;code&gt;kf&lt;/code&gt; namespace using the built-in Kubernetes editor:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl edit gateway -n kf external-gateway
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ol&gt;
+&lt;li&gt;Assuming you have a certificate and key for your service, create a Kubernetes secret for the ingress gateway. Make sure the secret name does not begin with &lt;code&gt;istio&lt;/code&gt; or &lt;code&gt;prometheus&lt;/code&gt;. For this example, the secret is named &lt;code&gt;myapp-https-credential&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Under &lt;code&gt;servers:&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Add a section for port 443.&lt;/li&gt;
+&lt;li&gt;Under &lt;code&gt;tls:&lt;/code&gt;, set the &lt;code&gt;credentialName&lt;/code&gt; to the name of the secret you just created.&lt;/li&gt;
+&lt;li&gt;Under &lt;code&gt;hosts:&lt;/code&gt;, add the host name of the service you want to secure with HTTPS. This can be set to an entire domain using a wildcard (e.g. &lt;code&gt;*.example.com&lt;/code&gt;) or scoped to just one hostname (e.g. &lt;code&gt;myapp.example.com&lt;/code&gt;).&lt;/li&gt;
+&lt;li&gt;There should already be a section under &lt;code&gt;servers:&lt;/code&gt; for port 80 HTTP. Keep this section in the Gateway definition if you would like all traffic to come in as HTTP.&lt;/li&gt;
+&lt;li&gt;To redirect HTTP to HTTPS, add the value &lt;code&gt;httpsRedirect: true&lt;/code&gt; under &lt;code&gt;tls&lt;/code&gt; in the HTTP server section. See the &lt;a href=&#34;https://istio.io/latest/docs/reference/config/networking/gateway/&#34;&gt;Istio Gateway documentation&lt;/a&gt; for reference. Note that adding this in the section where &lt;code&gt;hosts&lt;/code&gt; is set to &lt;code&gt;*&lt;/code&gt; means that &lt;strong&gt;all&lt;/strong&gt; traffic is redirected to HTTPS. If you only want to redirect HTTP to HTTPS for a single app/domain, add a separate HTTP section specifying the redirect.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Shown below is an example of a Gateway &lt;code&gt;spec&lt;/code&gt; that sets up HTTPS for &lt;code&gt;myapp.example.com&lt;/code&gt; and redirects HTTP to HTTPS for that host:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-yaml&#34; data-lang=&#34;yaml&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;spec&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;  &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;selector&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;    &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;istio&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;ingressgateway&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;  &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;servers&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;  &lt;/span&gt;- &lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;hosts&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;    &lt;/span&gt;- &lt;span style=&#34;color:#000&#34;&gt;myapp.example.com&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;    &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;port&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;      &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;name&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;https&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;      &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;number&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#0000cf;font-weight:bold&#34;&gt;443&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;      &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;protocol&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;HTTPS&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;    &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;tls&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;      &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;credentialName&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;myapp-https-credential&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;      &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;mode&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;SIMPLE&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;  &lt;/span&gt;- &lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;hosts&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;    &lt;/span&gt;- &lt;span style=&#34;color:#000&#34;&gt;myapp.example.com&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;    &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;port&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;      &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;name&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;http-my-app&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;      &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;number&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#0000cf;font-weight:bold&#34;&gt;80&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;      &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;protocol&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;HTTP&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;    &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;tls&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;      &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;httpsRedirect&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;true&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;  &lt;/span&gt;- &lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;hosts&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;    &lt;/span&gt;- &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;*&amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;    &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;port&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;      &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;name&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;http&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;      &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;number&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#0000cf;font-weight:bold&#34;&gt;80&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;      &lt;/span&gt;&lt;span style=&#34;color:#204a87;font-weight:bold&#34;&gt;protocol&lt;/span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt; &lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;HTTP&lt;/span&gt;&lt;span style=&#34;color:#f8f8f8;text-decoration:underline&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Set up network policies</title>
+      <link>/docs/v2.11/operator/networking/setting-up-networkpolicies/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/operator/networking/setting-up-networkpolicies/</guid>
+      <description>
+        
+        
+        &lt;p&gt;Kf integrates tightly with Kubernetes and Istio to
+provide robust network policy enforcement.&lt;/p&gt;
+&lt;p&gt;By default, Kf workloads are run in the Kubernetes cluster and resolve addresses
+using &lt;a href=&#34;https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/&#34;&gt;Kubernetes DNS&lt;/a&gt;.
+This DNS resolver will first attempt to resolve addresses within the cluster,
+and only if none are found will attempt external resolution.&lt;/p&gt;
+&lt;p&gt;Each Kf App gets run with an Envoy sidecar injected by &lt;a href=&#34;https://istio.io/&#34;&gt;Istio&lt;/a&gt;
+or the &lt;a href=&#34;https://cloud.google.com/anthos/service-mesh&#34;&gt;Anthos Service Mesh&lt;/a&gt; (ASM).
+This sidecar proxies all network traffic in and out of the Kubernetes Pod.&lt;/p&gt;
+&lt;p&gt;Each Kubernetes Pod is executed on a Node, a physical or virtual machine
+responsible for managing the container images that make up a Pod. Nodes exist on
+a physical or virtual network.&lt;/p&gt;
+&lt;p&gt;Together, these form a hierarchy of systems you can apply network policies.
+These are listed below from least to most granular.&lt;/p&gt;
+&lt;h2 id=&#34;network-level-policies&#34;&gt;Network level policies&lt;/h2&gt;
+&lt;p&gt;Workload protection starts with the network your GKE cluster is installed on.&lt;/p&gt;
+&lt;p&gt;If you&amp;rsquo;re running Kf on a GKE cluster on GCP, Kf recommends:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Placing your GKE cluster on a &lt;a href=&#34;https://cloud.google.com/vpc/docs&#34;&gt;Virtual Private Cloud&lt;/a&gt; (VPC) network.
+&lt;ul&gt;
+&lt;li&gt;With &lt;a href=&#34;https://cloud.google.com/vpc/docs/configure-private-google-access&#34;&gt;Private Google Access&lt;/a&gt; enabled.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Using &lt;a href=&#34;https://cloud.google.com/nat&#34;&gt;Cloud NAT&lt;/a&gt; to control egress.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;node-level-policies&#34;&gt;Node level policies&lt;/h2&gt;
+&lt;p&gt;You can set up policies for containers running on the Node using Kubernetes NetworkPolicies.
+These are the closest mapping to Cloud Foundry network policies that exist in Kubernetes.&lt;/p&gt;
+&lt;p&gt;NetworkPolicies are backed by a Kubernetes add-on. If you set up your own GKE
+cluster, you will need to &lt;a href=&#34;https://cloud.google.com/kubernetes-engine/docs/how-to/network-policy&#34;&gt;enable NetworkPolicy enforcement&lt;/a&gt;.&lt;/p&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; NetworkPolicies applied by &lt;a href=&#34;https://www.projectcalico.org/&#34;&gt;Project Calico&lt;/a&gt;
+filter on a per-connection basis. On Linux they are backed by &lt;a href=&#34;https://en.wikipedia.org/wiki/Iptables&#34;&gt;iptables&lt;/a&gt;.
+Like any firewall, &lt;strong&gt;they are not a substitute of authentication and authorization&lt;/strong&gt;.
+&lt;/aside&gt;
+
+&lt;p&gt;Kf labels Apps with &lt;code&gt;kf.dev/networkpolicy=app&lt;/code&gt; and builds with &lt;code&gt;kf.dev/networkpolicy=build&lt;/code&gt;.
+This allows you to target NetworkPolicies directly at Pods running Apps or Builds.&lt;/p&gt;
+&lt;p&gt;Each Kf Space creates two NetworkPolicies to start with, one targeting Apps and
+one targeting Builds. You can change the configuration on the Space&amp;rsquo;s
+&lt;code&gt;spec.networkConfig.(app|build)NetworkPolicy.(in|e)gress&lt;/code&gt; fields.
+These fields can be set to one of the following values:&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Enum Value&lt;/th&gt;
+&lt;th&gt;Description&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;PermitAll&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Allows all traffic.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;code&gt;DenyAll&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Denies all traffic.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;By default Kf uses a permissive network policy. This allows the following
+functionality that Kf uses:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;North/South routing to the cluster ingress gateway&lt;/li&gt;
+&lt;li&gt;Egress to the Internet e.g. to fetch Buildpacks&lt;/li&gt;
+&lt;li&gt;East/West routing between Apps&lt;/li&gt;
+&lt;li&gt;Access to the Kubernetes DNS server&lt;/li&gt;
+&lt;li&gt;Access to container registries&lt;/li&gt;
+&lt;li&gt;Direct access to the VPC network&lt;/li&gt;
+&lt;li&gt;Access to Google services like Cloud Logging&lt;/li&gt;
+&lt;li&gt;Access to the Workload Identity server for automatic rotating credentials&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; Setting a default &lt;code&gt;DenyAll&lt;/code&gt; policy will break existing and new Apps and Builds
+unless you create additional NetworkPolicies to add back the connections listed
+above.
+&lt;/aside&gt;
+
+&lt;h2 id=&#34;service-mesh-policies&#34;&gt;Service mesh policies&lt;/h2&gt;
+&lt;p&gt;If you need fine-grained networking control, authentication, authorization, and
+observability you can apply policies using &lt;a href=&#34;https://cloud.google.com/service-mesh/docs/overview&#34;&gt;Anthos Service Mesh&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;A service mesh is an infrastructure layer that enables managed, observable and
+secure communication across your services, letting you create robust enterprise
+applications made up of many microservices on your chosen infrastructure.&lt;/p&gt;
+&lt;p&gt;You can see the &lt;a href=&#34;https://cloud.google.com/service-mesh/docs/supported-features&#34;&gt;list of supported features here&lt;/a&gt;.&lt;/p&gt;
+
+      </description>
+    </item>
+    
+  </channel>
+</rss>

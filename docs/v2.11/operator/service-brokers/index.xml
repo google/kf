@@ -1,0 +1,399 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Kf – Service brokers</title>
+    <link>/docs/v2.11/operator/service-brokers/</link>
+    <description>Recent content in Service brokers on Kf</description>
+    <generator>Hugo -- gohugo.io</generator>
+    
+	  <atom:link href="/docs/v2.11/operator/service-brokers/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>Docs: Service Brokers Overview</title>
+      <link>/docs/v2.11/operator/service-brokers/about-service-brokers/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/operator/service-brokers/about-service-brokers/</guid>
+      <description>
+        
+        
+        &lt;p&gt;Kf supports binding and provisioning apps to &lt;a href=&#34;https://www.openservicebrokerapi.org/&#34;&gt;Open Service Broker (OSB)&lt;/a&gt; services.&lt;/p&gt;
+&lt;p&gt;Any compatible service broker can be installed using the &lt;code&gt;create-service-broker&lt;/code&gt; command, but only the &lt;a href=&#34;/docs/v2.11/operator/service-brokers/cloud-sb-overview/&#34;&gt;Kf Cloud Service Broker&lt;/a&gt; is fully supported.&lt;/p&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; Kf only supports a subset of the types of services
+that Open Service Brokers provide. Specifically, it only supports credential
+services.
+&lt;/aside&gt;
+
+&lt;p&gt;Special services such as syslog drains, volume services, route services,
+service keys, and shared services aren&amp;rsquo;t currently supported.&lt;/p&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: About Kf Cloud Service Broker</title>
+      <link>/docs/v2.11/operator/service-brokers/cloud-sb-overview/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/operator/service-brokers/cloud-sb-overview/</guid>
+      <description>
+        
+        
+        &lt;p&gt;The Kf Cloud Service Broker is a Service Broker bundle that includes the open source
+&lt;a href=&#34;https://github.com/cloudfoundry-incubator/cloud-service-broker&#34;&gt;Cloud Service Broker&lt;/a&gt;
+and &lt;a href=&#34;https://github.com/cloudfoundry-incubator/csb-brokerpak-gcp&#34;&gt;Google Cloud Brokerpak&lt;/a&gt;.
+It is made available as a public Docker image and ready to deploy as a
+Kubernetes service in Kf clusters. Once the
+Kf Cloud Service Broker service is deployed in a cluster, developers can provision Google Cloud
+backing services through the Kf Cloud Service Broker service, and bind the backing services to Kf Apps.&lt;/p&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; Kf Cloud Service Brokeris not customizable, and the default
+Google Cloud Brokerpak is included. If you would like to use a custom
+Brokerpak, you can follow the steps in the
+&lt;a href=&#34;https://github.com/cloudfoundry-incubator/csb-brokerpak-gcp/blob/main/docs/gcp-installation.md&#34;&gt;open source Cloud Service Broker Google Cloud installation guide&lt;/a&gt;.
+&lt;/aside&gt;
+
+&lt;h2 id=&#34;requirements&#34;&gt;Requirements&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Kf Cloud Service Broker requires a MySQL instance and a service account for accessing the MySQL instance and Google Cloud backing services to be provisioned. Connection from the Kf Cloud Service Broker to the MySQL instance goes through the &lt;a href=&#34;https://cloud.google.com/sql/docs/mysql/sql-proxy&#34;&gt;Cloud SQL Auth Proxy&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;Requests to access Google Cloud services (for example: Cloud SQL for MySQL or Cloud Memorystore for Redis) are authenticated via &lt;a href=&#34;https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity&#34;&gt;Workload Identity&lt;/a&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;override-brokerpak-defaults&#34;&gt;Override Brokerpak defaults&lt;/h2&gt;
+&lt;p&gt;Brokerpaks are essentially a Terraform plan and related dependencies in a tar
+file. You can inspect the Terraform plans to see what the defaults are, and then
+you can tell Kf Cloud Service Broker to override them when creating new services.&lt;/p&gt;
+&lt;p&gt;For example, the &lt;a href=&#34;https://github.com/cloudfoundry-incubator/csb-brokerpak-gcp/blob/main/terraform/cloud-sql-provision.tf&#34;&gt;Terraform plan for MySQL&lt;/a&gt; includes a variable called &lt;code&gt;authorized_network&lt;/code&gt;. If not overridden, the &lt;code&gt;default&lt;/code&gt; VPC will be used. If you&amp;rsquo;d like to override the default, you can pass that during service creation. Here are some examples:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Override the compute region &lt;code&gt;config&lt;/code&gt;.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt; kf create-service csb-google-postgres small spring-music-postgres-db -c &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;{&amp;#34;config&amp;#34;:&amp;#34;YOUR_COMPUTE_REGION&amp;#34;}&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ol&gt;
+&lt;li&gt;Override the &lt;code&gt;authorized_network&lt;/code&gt; and compute region &lt;code&gt;config&lt;/code&gt;.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt; kf create-service csb-google-postgres small spring-music-postgres-db -c &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;{&amp;#34;config&amp;#34;:&amp;#34;YOUR_COMPUTE_REGION&amp;#34;,&amp;#34;authorized_network&amp;#34;:&amp;#34;YOUR_CUSTOM_VPC_NAME&amp;#34;}&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You can learn more by reading the &lt;a href=&#34;https://github.com/cloudfoundry-incubator/csb-brokerpak-gcp/blob/main/docs/mysql-plans-and-config.md&#34;&gt;MySQL Plans and Configs&lt;/a&gt; documentation.&lt;/p&gt;
+&lt;h2 id=&#34;architecture&#34;&gt;Architecture&lt;/h2&gt;
+&lt;p&gt;The following Kf Cloud Service Broker architecture shows how instances are created.&lt;/p&gt;
+
+&lt;figure&gt;
+    &lt;img src=&#34;./kf-csb-architecture.svg&#34;
+         alt=&#34;Kf Cloud Service Broker architecture&#34;/&gt; 
+&lt;/figure&gt;
+
+&lt;ul&gt;
+&lt;li&gt;The Kf Cloud Service Broker (CSB) is installed in its own namespace.&lt;/li&gt;
+&lt;li&gt;On installation, a MySQL instance must be provided to persist
+business logic used by Kf Cloud Service Broker. Requests are sent securely
+from the Kf Cloud Service Broker pod to the MySQL instance via
+the MySQL Auth Proxy.&lt;/li&gt;
+&lt;li&gt;On service provisioning, a Kf Service custom resource
+is created. The reconciler of the Kf Service
+provisions Google Cloud backing services using the Open Service Broker API.&lt;/li&gt;
+&lt;li&gt;When a request to provision/deprovision backing resources is received,
+Kf Cloud Service Broker sends resource creation/deletion requests to the
+corresponding Google Cloud service, and these requests are authenticated
+with Workload Identity. It also persists the business logics (e.g. mapping of
+Kf services to backing services, service bindings) to
+the MySQL instance.&lt;/li&gt;
+&lt;li&gt;On backing service creation success, the backing service is bound to an App
+via &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices&#34;&gt;VCAP_SERVICES&lt;/a&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;whats-next&#34;&gt;What&amp;rsquo;s next?&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;/docs/v2.11/operator/service-brokers/deploying-cloud-sb/&#34;&gt;Deploy Kf Cloud Service Broker&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;/docs/v2.11/developer/backing-services/managed-services/&#34;&gt;Learn how to list and provision services&lt;/a&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;{% endblock %}&lt;/p&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Deploy Kf Cloud Service Broker</title>
+      <link>/docs/v2.11/operator/service-brokers/deploying-cloud-sb/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/operator/service-brokers/deploying-cloud-sb/</guid>
+      <description>
+        
+        
+        &lt;p&gt;This page shows you how to deploy Kf Cloud Service Broker and use it to provision or deprovision backing resources.
+Read about the &lt;a href=&#34;/docs/v2.11/operator/service-brokers/cloud-sb-overview/&#34;&gt;concepts and architecture&lt;/a&gt; to learn more about the Kf Cloud Service Broker.&lt;/p&gt;
+&lt;h2 id=&#34;create_env_variables&#34;&gt;Create environment variables&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Linux&lt;/strong&gt;&lt;/p&gt;
+&lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+export PROJECT_ID=&lt;var&gt;YOUR_PROJECT_ID&lt;/var&gt;
+export CLUSTER_PROJECT_ID=&lt;var&gt;YOUR_PROJECT_ID&lt;/var&gt;
+export CLUSTER_NAME=&lt;var&gt;kf-cluster&lt;/var&gt;
+export INSTANCE_NAME=&lt;var&gt;cloud-service-broker&lt;/var&gt;
+export COMPUTE_REGION=&lt;var&gt;us-central1&lt;/var&gt;
+&lt;/pre&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Windows PowerShell&lt;/strong&gt;&lt;/p&gt;
+&lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+Set-Variable -Name PROJECT_ID -Value &lt;var&gt;YOUR_PROJECT_ID&lt;/var&gt;
+Set-Variable -Name CLUSTER_PROJECT_ID -Value &lt;var&gt;YOUR_PROJECT_ID&lt;/var&gt;
+Set-Variable -Name CLUSTER_NAME -Value &lt;var&gt;kf-cluster&lt;/var&gt;
+Set-Variable -Name INSTANCE_NAME -Value &lt;var&gt;cloud-service-broker&lt;/var&gt;
+Set-Variable -Name COMPUTE_REGION -Value &lt;var&gt;us-central1&lt;/var&gt;
+&lt;/pre&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;set-up-the-kf-cloud-service-broker-database&#34;&gt;Set up the Kf Cloud Service Broker database&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Create a MySQL instance.&lt;/p&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; &lt;pre&gt;&lt;code&gt;Read [Creating and managing MySQL users](https://cloud.google.com/sql/docs/mysql/create-manage-users) for Google Cloud SQL and set a secure password for the default `root` user.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;/aside&gt;
+
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;gcloud sql instances create &lt;span style=&#34;color:#4e9a06&#34;&gt;${&lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;INSTANCE_NAME&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;}&lt;/span&gt; --cpu&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#0000cf;font-weight:bold&#34;&gt;2&lt;/span&gt; --memory&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;=&lt;/span&gt;7680MB --require-ssl --region&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;${&lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;COMPUTE_REGION&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Create a database named &lt;code&gt;servicebroker&lt;/code&gt; in the MySQL instance.&lt;/p&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; Document the database name since it is used in later steps.
+&lt;/aside&gt;
+
+&lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+gcloud sql databases create servicebroker -i ${INSTANCE_NAME}&lt;/pre&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Create a username and password to be used by the broker.&lt;/p&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; Document these values since they will be used in later steps.
+&lt;/aside&gt;
+
+&lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+gcloud sql users create &lt;var&gt;csbuser&lt;/var&gt; -i ${INSTANCE_NAME} --password=&lt;var&gt;csbpassword&lt;/var&gt;&lt;/pre&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;set-up-a-google-service-account-for-the-broker&#34;&gt;Set up a Google Service Account for the broker&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;Create a Google Service Account.&lt;/li&gt;
+&lt;/ol&gt;
+  &lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+  gcloud iam service-accounts create csb-${CLUSTER_NAME}-sa \
+      --project=${CLUSTER_PROJECT_ID} \
+      --description=&#34;GSA for CSB at ${CLUSTER_NAME}&#34; \
+      --display-name=&#34;csb-${CLUSTER_NAME}&#34;&lt;/pre&gt;
+&lt;ol&gt;
+&lt;li&gt;Grant &lt;code&gt;roles/cloudsql.client&lt;/code&gt; permissions to the Service Account. This is required to connect the service broker pod to the CloudSQL for MySQL instance through the CloudSQL Proxy.&lt;/li&gt;
+&lt;/ol&gt;
+  &lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+  gcloud projects add-iam-policy-binding ${CLUSTER_PROJECT_ID} \
+      --member=&#34;serviceAccount:csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com&#34; \
+      --role=&#34;roles/cloudsql.client&#34;&lt;/pre&gt;
+&lt;ol&gt;
+&lt;li&gt;Grant additional Google Cloud permissions to the Service Account.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; In the example below, we grant IAM roles required to provision an instance of CloudSQL and Cloud Memorystore.
+You must grant this service account the appropriate roles to provision instances of other Google Cloud managed services listed in &lt;code&gt;kf marketplace&lt;/code&gt;.
+&lt;/aside&gt;
+
+  &lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+  gcloud projects add-iam-policy-binding ${CLUSTER_PROJECT_ID} \
+      --member=&#34;serviceAccount:csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com&#34; \
+      --role=&#34;roles/compute.networkUser&#34;&lt;/pre&gt;
+  &lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+  gcloud projects add-iam-policy-binding ${CLUSTER_PROJECT_ID} \
+      --member=&#34;serviceAccount:csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com&#34; \
+      --role=&#34;roles/cloudsql.admin&#34;&lt;/pre&gt;
+  &lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+  gcloud projects add-iam-policy-binding ${CLUSTER_PROJECT_ID} \
+      --member=&#34;serviceAccount:csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com&#34; \
+      --role=&#34;roles/redis.admin&#34;&lt;/pre&gt;
+&lt;ol&gt;
+&lt;li&gt;Verify the permissions.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;aside class=&#34;alert alert-danger&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fa-solid fa-triangle-exclamation&#34;&gt;&lt;/i&gt; &lt;strong&gt;Warning:&lt;/strong&gt; Replace the &lt;code&gt;CSB_SERVICE_ACCOUNT_NAME&lt;/code&gt; variable in the YAML below with the full service account resolved from &lt;code&gt;csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com&lt;/code&gt;.
+&lt;/aside&gt;
+
+
+  &lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+  gcloud projects get-iam-policy ${CLUSTER_PROJECT_ID} \
+      --filter=&#39;bindings.members:serviceAccount:&#34;&lt;var&gt;CSB_SERVICE_ACCOUNT_NAME&lt;/var&gt;&#34;&#39; \
+      --flatten=&#34;bindings[].members&#34;&lt;/pre&gt;
+&lt;h2 id=&#34;set-up-workload-identity-for-the-broker&#34;&gt;Set up Workload Identity for the broker&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;Bind the Google Service Account with the Kubernetes Service Account.&lt;/li&gt;
+&lt;/ol&gt;
+  &lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+  gcloud iam service-accounts add-iam-policy-binding &#34;csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com&#34; \
+      --project=${CLUSTER_PROJECT_ID} \
+      --role=&#34;roles/iam.workloadIdentityUser&#34; \
+      --member=&#34;serviceAccount:${CLUSTER_PROJECT_ID}.svc.id.goog[kf-csb/csb-user]&#34;&lt;/pre&gt;
+&lt;ol&gt;
+&lt;li&gt;Verify the binding.&lt;/li&gt;
+&lt;/ol&gt;
+  &lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+  gcloud iam service-accounts get-iam-policy &#34;csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com&#34; \
+      --project=${CLUSTER_PROJECT_ID}&lt;/pre&gt;
+&lt;h2 id=&#34;kubernetes_secret&#34;&gt;Set up a Kubernetes Secret to share configuration with the broker&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;Create a config.yml file.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Note: Replace the default user/password if desired. Ensure you have set the &lt;code&gt;CLUSTER_PROJECT_ID&lt;/code&gt; in the &lt;a href=&#34;#create_env_variables&#34;&gt;Create environment variables&lt;/a&gt; step.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;cat &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;lt;&amp;lt; EOF &amp;gt;&amp;gt; ./config.yml
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;gcp:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;  credentials: &amp;#34;&amp;#34;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;  project: ${CLUSTER_PROJECT_ID}
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;db:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;  host: 127.0.0.1
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;  password: csbpassword
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;  user: csbuser
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;  tls: false
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;api:
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;  user: servicebroker
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;  password: password
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;EOF&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ol&gt;
+&lt;li&gt;Create the &lt;code&gt;kf-csb&lt;/code&gt; namespace.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl create ns kf-csb
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ol&gt;
+&lt;li&gt;Create the Kubernetes Secret.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl create secret generic csb-secret --from-file&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;=&lt;/span&gt;config.yml -n kf-csb
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;install-the-kf-cloud-service-broker&#34;&gt;Install the Kf Cloud Service Broker&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;Download the &lt;code&gt;kf-csb.yml&lt;/code&gt;.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;gsutil cp gs://kf-releases/csb/v&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;{{&lt;/span&gt;this_kf_csb_version&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;}}&lt;/span&gt;/kf-csb.yaml /tmp/kf-csb.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ol&gt;
+&lt;li&gt;Edit &lt;code&gt;/tmp/kf-csb.yaml&lt;/code&gt; and replace placeholders with final values. In the example below, &lt;code&gt;sed&lt;/code&gt; is used.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sed -i &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;s|&amp;lt;GSA_NAME&amp;gt;|csb-&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;${&lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;CLUSTER_NAME&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;-sa@&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;${&lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;CLUSTER_PROJECT_ID&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;.iam.gserviceaccount.com|g&amp;#34;&lt;/span&gt; /tmp/kf-csb.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sed -i &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;s|&amp;lt;INSTANCE_CONNECTION_NAME&amp;gt;|&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;${&lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;CLUSTER_PROJECT_ID&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;${&lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;COMPUTE_REGION&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;:&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;${&lt;/span&gt;&lt;span style=&#34;color:#000&#34;&gt;INSTANCE_NAME&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#4e9a06&#34;&gt;|g&amp;#34;&lt;/span&gt; /tmp/kf-csb.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sed -i &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;s|&amp;lt;DB_PORT&amp;gt;|3306|g&amp;#34;&lt;/span&gt; /tmp/kf-csb.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ol&gt;
+&lt;li&gt;Apply yaml for Kf Cloud Service Broker.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl apply -f /tmp/kf-csb.yaml
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ol&gt;
+&lt;li&gt;Verify the Cloud Service Broker installation status.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl get pods -n kf-csb
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;create-a-service-broker&#34;&gt;Create a service broker&lt;/h2&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; The user/password must match what you entered in the &lt;a href=&#34;#kubernetes_secret&#34;&gt;Kubernetes secret&lt;/a&gt; step earlier.
+&lt;/aside&gt;
+
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf create-service-broker cloud-service-broker servicebroker password http://csb-controller.kf-csb/
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;validate-installation&#34;&gt;Validate installation&lt;/h2&gt;
+&lt;p&gt;Check for available services in the marketplace.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf marketplace
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;If everything is installed and configured correctly, you should see the following:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;$ kf marketplace
+
+Broker                Name                          Namespace  Description
+cloud-service-broker  csb-google-bigquery                      A fast, economical and fully managed data warehouse for large-scale data analytics.
+cloud-service-broker  csb-google-dataproc                      Dataproc is a fully-managed service for running Apache Spark and Apache Hadoop clusters in a simpler, more cost-efficient way.
+cloud-service-broker  csb-google-mysql                         Mysql is a fully managed service for the Google Cloud Platform.
+cloud-service-broker  csb-google-postgres                      PostgreSQL is a fully managed service for the Google Cloud Platform.
+cloud-service-broker  csb-google-redis                         Cloud Memorystore for Redis is a fully managed Redis service for the Google Cloud Platform.
+cloud-service-broker  csb-google-spanner                       Fully managed, scalable, relational database service for regional and global application data.
+cloud-service-broker  csb-google-stackdriver-trace             Distributed tracing service
+cloud-service-broker  csb-google-storage-bucket                Google Cloud Storage that uses the Terraform back-end and grants service accounts IAM permissions directly on the bucket.
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;clean-up&#34;&gt;Clean up&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;Delete cloud-service-broker.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf delete-service-broker cloud-service-broker
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ol&gt;
+&lt;li&gt;Delete CSB components.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl delete ns kf-csb
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Delete the broker&amp;rsquo;s database instance.&lt;/p&gt;
+ &lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+ gcloud sql instances delete ${INSTANCE_NAME} --project=${CLUSTER_PROJECT_ID}&lt;/pre&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Remove the IAM policy bindings.&lt;/p&gt;
+ &lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+ gcloud projects remove-iam-policy-binding ${CLUSTER_PROJECT_ID} \
+ --member=&#39;serviceAccount:csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com&#39; \
+ --role=roles/cloudsql.client&lt;/pre&gt;
+ &lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+ gcloud projects remove-iam-policy-binding ${CLUSTER_PROJECT_ID} \
+ --member=&#39;serviceAccount:csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com&#39; \
+ --role=roles/compute.networkUser&lt;/pre&gt;
+ &lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+ gcloud projects remove-iam-policy-binding ${CLUSTER_PROJECT_ID} \
+ --member=&#39;serviceAccount:csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com&#39; \
+ --role=roles/redis.admin&lt;/pre&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Remove the GSA.&lt;/p&gt;
+ &lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+ gcloud iam service-accounts delete csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com \
+   --project=${CLUSTER_PROJECT_ID}&lt;/pre&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Set up NFS platform</title>
+      <link>/docs/v2.11/operator/service-brokers/nfs-platform-setup/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/operator/service-brokers/nfs-platform-setup/</guid>
+      <description>
+        
+        
+        &lt;p&gt;Kf supports Kubernetes native NFS, and exposes them with a dedicated &lt;code&gt;nfsvolumebroker&lt;/code&gt; service broker for developers to consume. This broker has an &lt;code&gt;nfs&lt;/code&gt; service offering which has a service plan named &lt;code&gt;existing&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Use &lt;code&gt;kf marketplace&lt;/code&gt; to see the service offering:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;$ kf marketplace
+...
+Broker           Name  Namespace  Description
+nfsvolumebroker  nfs              mout nfs shares
+...
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Use &lt;code&gt;kf marketplace -s nfs&lt;/code&gt; to see the service plan:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;$ kf marketplace -s nfs
+...
+Broker           Name      Free  Description
+nfsvolumebroker  existing  true  mount existing nfs server
+...
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;requirements&#34;&gt;Requirements&lt;/h2&gt;
+&lt;p&gt;You need an NFS volume that can be accessed by your Kubernetes cluster. For example &lt;a href=&#34;https://cloud.google.com/filestore&#34;&gt;Cloud Filestore&lt;/a&gt; which Google&amp;rsquo;s managed NFS solution that provides access to clusters in the same gcloud project.&lt;/p&gt;
+&lt;h2 id=&#34;prepare-nfs&#34;&gt;Prepare NFS&lt;/h2&gt;
+&lt;p&gt;If you have an existing NFS service, you can use that. If you want a Google managed NFS service, &lt;a href=&#34;https://cloud.google.com/filestore/docs/creating-instances&#34;&gt;create a Filestore instance&lt;/a&gt; and Kf will automaticlaly configure the cluster to use it.&lt;/p&gt;
+&lt;p&gt;Warning: You only need to create the NFS instance. Kf will create relevant Kubernetes objects, including PersistentVolume and PersistentVolumeClaims. Do not manually mount the volume.&lt;/p&gt;
+&lt;h2 id=&#34;whats-next&#34;&gt;What&amp;rsquo;s next?&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;/docs/v2.11/developer/backing-services/nfs-getting-started/&#34;&gt;Configure NFS volumes&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+      </description>
+    </item>
+    
+  </channel>
+</rss>

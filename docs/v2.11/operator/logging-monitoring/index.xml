@@ -1,0 +1,221 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Kf – Logging and Monitoring</title>
+    <link>/docs/v2.11/operator/logging-monitoring/</link>
+    <description>Recent content in Logging and Monitoring on Kf</description>
+    <generator>Hugo -- gohugo.io</generator>
+    
+	  <atom:link href="/docs/v2.11/operator/logging-monitoring/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>Docs: Create and user monitoring dashboards.</title>
+      <link>/docs/v2.11/operator/logging-monitoring/monitoring-dashboard/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/operator/logging-monitoring/monitoring-dashboard/</guid>
+      <description>
+        
+        
+        &lt;p&gt;You can use &lt;a href=&#34;https://cloud.google.com/monitoring/dashboards&#34;&gt;Google Cloud Monitoring dashboards&lt;/a&gt; to create custom dashboards and charts. Kf comes with a default template which can be used to create dashboards to monitor the performance of your applications.&lt;/p&gt;
+&lt;h2 id=&#34;application-performance-dashboard&#34;&gt;Application performance dashboard&lt;/h2&gt;
+&lt;p&gt;Run the following commands to deploy a dashboard in your monitoring workspace in &lt;a href=&#34;https://cloud.google.com/monitoring/dashboards&#34;&gt;Cloud monitoring dashboards&lt;/a&gt; to monitor performance of your apps. This dashboard has application performance metrics like requests/sec, round trip latency, HTTP error codes, and more.&lt;/p&gt;
+&lt;pre class=&#34;devsite-terminal&#34; suppresswarning=&#34;true&#34; translate=&#34;no&#34;&gt;
+&lt;code class=&#34;devsite-terminal&#34;&gt;git clone https://github.com/google/kf&lt;/code&gt;
+&lt;code class=&#34;devsite-terminal&#34;&gt;cd ./kf/dashboards&lt;/code&gt;
+&lt;code class=&#34;devsite-terminal&#34;&gt;./create-dashboard.py my-dashboard my-cluster my-space&lt;/code&gt;
+&lt;/pre&gt;
+&lt;h2 id=&#34;system-resources-and-performance-dashboard&#34;&gt;System resources and performance dashboard&lt;/h2&gt;
+&lt;p&gt;You can view all the system resources and performance metrics such as list of nodes, pods, containers and much more using a built-in dashboard. Click the link below to access the system dashboard.&lt;/p&gt;
+  &lt;a href=&#34;https://console.cloud.google.com/monitoring/dashboards/resourceList/kubernetes&#34; target=&#34;_blank&#34; class=&#34;button button-primary&#34; track-type=&#34;tasks&#34; track-name=&#34;consoleLink&#34; track-metadata-position=&#34;body&#34; track-metadata-end-goal=&#34;connectToSerialConsole&#34; &gt;
+    System dashboard&lt;/a&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;More details about this dashboard can be found &lt;a href=&#34;https://cloud.google.com/stackdriver/docs/solutions/gke/observing&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
+&lt;h2 id=&#34;create-slo-and-alerts&#34;&gt;Create SLO and alerts&lt;/h2&gt;
+&lt;p&gt;You can create &lt;a href=&#34;https://cloud.google.com/stackdriver/docs/solutions/slo-monitoring/ui/create-slo&#34;&gt;SLOs&lt;/a&gt; and &lt;a href=&#34;https://cloud.google.com/stackdriver/docs/solutions/slo-monitoring/ui/create-alert&#34;&gt;Alerts&lt;/a&gt; on available metrics to monitor performance and availability of both system and applications. For example, you can use the metrics &lt;code&gt;istio.io/service/server/response_latencies&lt;/code&gt; to setup an alert on the application roundtrip latency.&lt;/p&gt;
+&lt;h2 id=&#34;configure-dashboard-access-control&#34;&gt;Configure dashboard access control&lt;/h2&gt;
+&lt;p&gt;Follow &lt;a href=&#34;https://cloud.google.com/monitoring/access-control&#34;&gt;these instructions&lt;/a&gt; to provide dashboard access to developers and other members on the team. The role &lt;code&gt;roles/monitoring.dashboardViewer&lt;/code&gt; provides read-only access to dashboards.&lt;/p&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Logging and monitoring</title>
+      <link>/docs/v2.11/operator/logging-monitoring/logging-monitoring/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/operator/logging-monitoring/logging-monitoring/</guid>
+      <description>
+        
+        
+        &lt;p&gt;Kf can use GKE&amp;rsquo;s Google Cloud integrations
+to send a log of events to your Cloud Monitoring and Cloud Logging project for observability. For more information, see
+&lt;a href=&#34;https://cloud.google.com/monitoring/kubernetes-engine&#34;&gt;Overview of GKE operations&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Kf deploys two server side components:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Controller&lt;/li&gt;
+&lt;li&gt;Webhook&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;To view the logs for these components, use the following Cloud Logging query:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;resource.type=&amp;#34;k8s_container&amp;#34;
+resource.labels.project_id=&amp;lt;PROJECT ID&amp;gt;
+resource.labels.location=&amp;lt;GCP ZONE&amp;gt;
+resource.labels.cluster_name=&amp;lt;CLUSTER NAME&amp;gt;
+resource.labels.namespace_name=&amp;#34;kf&amp;#34;
+labels.k8s-pod/app=&amp;lt;controller OR webhook&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; Replace the values inside the &amp;lt;&amp;gt; with the correct values.
+&lt;/aside&gt;
+
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Logging and monitoring overview</title>
+      <link>/docs/v2.11/operator/logging-monitoring/monitoring-overview/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/operator/logging-monitoring/monitoring-overview/</guid>
+      <description>
+        
+        
+        &lt;p&gt;By default, Kf includes native integration with &lt;a href=&#34;https://cloud.google.com/monitoring&#34;&gt;Cloud Monitoring&lt;/a&gt; and &lt;a href=&#34;https://cloud.google.com/logging/docs&#34;&gt;Cloud Logging&lt;/a&gt;. When you create a cluster, both Monitoring and Cloud Logging are enabled by default. This integration lets you monitor your running clusters and help analyze your system and application performance using advanced profiling and tracing
+capabilities.&lt;/p&gt;
+&lt;p&gt;Application level performance metrics is provided by &lt;a href=&#34;https://cloud.google.com/service-mesh/docs/proxy-injection&#34;&gt;Istio sidecar injection&lt;/a&gt; which is injected alongside applications deployed via Kf. You can also create &lt;a href=&#34;https://cloud.google.com/stackdriver/docs/solutions/slo-monitoring/ui/create-slo&#34;&gt;SLO&lt;/a&gt; and &lt;a href=&#34;https://cloud.google.com/stackdriver/docs/solutions/slo-monitoring/ui/create-alert&#34;&gt;Alerts&lt;/a&gt; using this default integration to monitor performance and availability of both system and applications.&lt;/p&gt;
+&lt;p&gt;Ensure the following are setup on your cluster:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://cloud.google.com/monitoring&#34;&gt;Cloud Monitoring&lt;/a&gt; and &lt;a href=&#34;https://cloud.google.com/logging/docs&#34;&gt;Cloud Logging&lt;/a&gt; are enabled on the Kf cluster by default unless you disabled them explicitly, so no extra step is required.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a href=&#34;https://cloud.google.com/service-mesh/docs/proxy-injection&#34;&gt;Istio sidecar injection&lt;/a&gt; is enabled.  Sidecar proxy will inject application level &lt;a href=&#34;https://cloud.google.com/monitoring/api/metrics_istio&#34;&gt;performance metrics&lt;/a&gt;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: View logs</title>
+      <link>/docs/v2.11/operator/logging-monitoring/monitoring-logging/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/operator/logging-monitoring/monitoring-logging/</guid>
+      <description>
+        
+        
+        &lt;p&gt;Kf provides you with several types of logs. This document describes these logs and how to access them.&lt;/p&gt;
+&lt;h2 id=&#34;application-logs&#34;&gt;Application logs&lt;/h2&gt;
+&lt;p&gt;All logs written to standard output &lt;code&gt;stdout&lt;/code&gt; and standard error &lt;code&gt;stderr&lt;/code&gt;, are uploaded to &lt;a href=&#34;https://cloud.google.com/logging&#34;&gt;Cloud Logging&lt;/a&gt; and stored under the log name &lt;code&gt;user-container&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Open &lt;a href=&#34;https://cloud.google.com/logging/docs/view/logs-explorer-interface&#34;&gt;Cloud Logging&lt;/a&gt; and run the following query:&lt;/p&gt;
+&lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+resource.type=&#34;k8s_container&#34;
+log_name=&#34;projects/&lt;var&gt;YOUR_PROJECT_ID&lt;/var&gt;/logs/user-container&#34;
+resource.labels.project_id=&lt;var&gt;YOUR_PROJECT_ID&lt;/var&gt;
+resource.labels.location=&lt;var&gt;GCP_COMPUTE_ZONE (e.g. us-central1-a)&lt;/var&gt;
+resource.labels.cluster_name=&lt;var&gt;YOUR_CLUSTER_NAME&lt;/var&gt;
+resource.labels.namespace_name=&lt;var&gt;YOUR_KF_SPACE_NAME&lt;/var&gt;
+resource.labels.pod_name:&lt;var&gt;YOUR_KF_APP_NAME&lt;/var&gt;&lt;/pre&gt;
+&lt;p&gt;You should see all your application logs written on standard &lt;code&gt;stdout&lt;/code&gt; and standard error &lt;code&gt;stderr&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id=&#34;access-logs-for-your-applications&#34;&gt;Access logs for your applications&lt;/h2&gt;
+&lt;p&gt;Kf provides access logs using &lt;a href=&#34;https://cloud.google.com/service-mesh/docs/proxy-injection&#34;&gt;Istio sidecar injection&lt;/a&gt;. Access logs are stored under the log name &lt;code&gt;server-accesslog-stackdriver&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;Open &lt;a href=&#34;https://cloud.google.com/logging/docs/view/logs-explorer-interface&#34;&gt;Cloud Logging&lt;/a&gt; and run the following query:&lt;/p&gt;
+&lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+resource.type=&#34;k8s_container&#34;
+log_name=&#34;projects/&lt;var&gt;YOUR_PROJECT_ID&lt;/var&gt;/logs/server-accesslog-stackdriver&#34;
+resource.labels.project_id=&lt;var&gt;YOUR_PROJECT_ID&lt;/var&gt;
+resource.labels.location=&lt;var&gt;GCP_COMPUTE_ZONE (e.g. us-central1-a)&lt;/var&gt;
+resource.labels.cluster_name=&lt;var&gt;YOUR_CLUSTER_NAME&lt;/var&gt;
+resource.labels.namespace_name=&lt;var&gt;YOUR_KF_SPACE_NAME&lt;/var&gt;
+resource.labels.pod_name:&lt;var&gt;YOUR_KF_APP_NAME&lt;/var&gt;&lt;/pre&gt;
+&lt;p&gt;You should see access logs for your application. Sample access log:&lt;/p&gt;
+&lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+{
+  &#34;insertId&#34;: &#34;166tsrsg273q5mf&#34;,
+  &#34;httpRequest&#34;: {
+    &#34;requestMethod&#34;: &#34;GET&#34;,
+    &#34;requestUrl&#34;: &#34;http://test-app-38n6dgwh9kx7h-c72edc13nkcm.***. ***.nip.io/&#34;,
+    &#34;requestSize&#34;: &#34;738&#34;,
+    &#34;status&#34;: 200,
+    &#34;responseSize&#34;: &#34;3353&#34;,
+    &#34;remoteIp&#34;: &#34;10.128.0.54:0&#34;,
+    &#34;serverIp&#34;: &#34;10.48.0.18:8080&#34;,
+    &#34;latency&#34;: &#34;0.000723777s&#34;,
+    &#34;protocol&#34;: &#34;http&#34;
+  },
+  &#34;resource&#34;: {
+    &#34;type&#34;: &#34;k8s_container&#34;,
+    &#34;labels&#34;: {
+      &#34;container_name&#34;: &#34;user-container&#34;,
+      &#34;project_id&#34;: ***,
+      &#34;namespace_name&#34;: ***,
+      &#34;pod_name&#34;: &#34;test-app-85888b9796-bqg7b&#34;,
+      &#34;location&#34;: &#34;us-central1-a&#34;,
+      &#34;cluster_name&#34;: ***
+    }
+  },
+  &#34;timestamp&#34;: &#34;2020-11-19T20:09:21.721815Z&#34;,
+  &#34;severity&#34;: &#34;INFO&#34;,
+  &#34;labels&#34;: {
+    &#34;source_canonical_service&#34;: &#34;istio-ingressgateway&#34;,
+    &#34;source_principal&#34;: &#34;spiffe://***.svc.id.goog/ns/istio-system/sa/istio-ingressgateway-service-account&#34;,
+    &#34;request_id&#34;: &#34;0e3bac08-ab68-408f-9b14-0aec671845bf&#34;,
+    &#34;source_app&#34;: &#34;istio-ingressgateway&#34;,
+    &#34;response_flag&#34;: &#34;-&#34;,
+    &#34;route_name&#34;: &#34;default&#34;,
+    &#34;upstream_cluster&#34;: &#34;inbound|80|http-user-port|test-app.***.svc.cluster.local&#34;,
+    &#34;destination_name&#34;: &#34;test-app-85888b9796-bqg7b&#34;,
+    &#34;destination_canonical_revision&#34;: &#34;latest&#34;,
+    &#34;destination_principal&#34;: &#34;spiffe://***.svc.id.goog/ns/***/sa/sa-test-app&#34;,
+    &#34;connection_id&#34;: &#34;82261&#34;,
+    &#34;destination_workload&#34;: &#34;test-app&#34;,
+    &#34;destination_namespace&#34;: ***,
+    &#34;destination_canonical_service&#34;: &#34;test-app&#34;,
+    &#34;upstream_host&#34;: &#34;127.0.0.1:8080&#34;,
+    &#34;log_sampled&#34;: &#34;false&#34;,
+    &#34;mesh_uid&#34;: &#34;proj-228179605852&#34;,
+    &#34;source_namespace&#34;: &#34;istio-system&#34;,
+    &#34;requested_server_name&#34;: &#34;outbound_.80_._.test-app.***.svc.cluster.local&#34;,
+    &#34;source_canonical_revision&#34;: &#34;asm-173-6&#34;,
+    &#34;x-envoy-original-dst-host&#34;: &#34;&#34;,
+    &#34;destination_service_host&#34;: &#34;test-app.***.svc.cluster.local&#34;,
+    &#34;source_name&#34;: &#34;istio-ingressgateway-5469f77856-4n2pw&#34;,
+    &#34;source_workload&#34;: &#34;istio-ingressgateway&#34;,
+    &#34;x-envoy-original-path&#34;: &#34;&#34;,
+    &#34;service_authentication_policy&#34;: &#34;MUTUAL_TLS&#34;,
+    &#34;protocol&#34;: &#34;http&#34;
+  },
+  &#34;logName&#34;: &#34;projects/*/logs/server-accesslog-stackdriver&#34;,
+  &#34;receiveTimestamp&#34;: &#34;2020-11-19T20:09:24.627065813Z&#34;
+}
+&lt;/pre&gt;
+&lt;h2 id=&#34;audit-logs&#34;&gt;Audit logs&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;https://cloud.google.com/kubernetes-engine/docs/how-to/audit-logging&#34;&gt;Audit Logs&lt;/a&gt; provides a
+chronological record of calls that have been made to the Kubernetes API Server. Kubernetes audit log entries are useful for investigating suspicious API requests, for collecting statistics, or for creating monitoring alerts for unwanted API calls.&lt;/p&gt;
+&lt;p&gt;Open &lt;a href=&#34;https://cloud.google.com/logging/docs/view/logs-explorer-interface&#34;&gt;Cloud Logging&lt;/a&gt; and run the following query:&lt;/p&gt;
+&lt;pre class=&#34;devsite-click-to-copy&#34; translate=&#34;no&#34;&gt;
+resource.type=&#34;k8s_container&#34;
+log_name=&#34;projects/&lt;var&gt;YOUR_PROJECT_ID&lt;/var&gt;/logs/cloudaudit.googleapis.com%2Factivity&#34;
+resource.labels.project_id=&lt;var&gt;YOUR_PROJECT_ID&lt;/var&gt;
+resource.labels.location=&lt;var&gt;GCP_COMPUTE_ZONE (e.g. us-central1-a)&lt;/var&gt;
+resource.labels.cluster_name=&lt;var&gt;YOUR_CLUSTER_NAME&lt;/var&gt;
+protoPayload.request.metadata.name=&lt;var&gt;YOUR_APP_NAME&lt;/var&gt;
+protoPayload.methodName:&#34;deployments.&#34;&lt;/pre&gt;
+&lt;p&gt;You should see a trace of calls being made to the Kubernetes API server.&lt;/p&gt;
+&lt;h2 id=&#34;configure-logging-access-control&#34;&gt;Configure logging access control&lt;/h2&gt;
+&lt;p&gt;Follow &lt;a href=&#34;https://cloud.google.com/logging/docs/access-control&#34;&gt;these instructions&lt;/a&gt; to provide logs access to developers and other members on the team. The role &lt;code&gt;roles/logging.viewer&lt;/code&gt; provides read-only access to logs.&lt;/p&gt;
+&lt;h2 id=&#34;use-logs-router&#34;&gt;Use Logs Router&lt;/h2&gt;
+&lt;p&gt;You can also use &lt;a href=&#34;https://cloud.google.com/logging/docs/routing/overview&#34;&gt;Logs Router&lt;/a&gt; to route the logs to supported destinations.&lt;/p&gt;
+
+      </description>
+    </item>
+    
+  </channel>
+</rss>

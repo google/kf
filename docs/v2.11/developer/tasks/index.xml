@@ -1,0 +1,290 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Kf – Tasks</title>
+    <link>/docs/v2.11/developer/tasks/</link>
+    <description>Recent content in Tasks on Kf</description>
+    <generator>Hugo -- gohugo.io</generator>
+    
+	  <atom:link href="/docs/v2.11/developer/tasks/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+      
+        
+      
+    
+    
+    <item>
+      <title>Docs: Tasks Overview</title>
+      <link>/docs/v2.11/developer/tasks/task/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/developer/tasks/task/</guid>
+      <description>
+        
+        
+        &lt;h2 id=&#34;about-tasks&#34;&gt;About Tasks&lt;/h2&gt;
+&lt;p&gt;Unlike Apps which run indefinitely and restart if the process terminates, Tasks run a process until it completes and then stop.
+Tasks are run in their own containers and are based on the configuration and binary of an existing App.&lt;/p&gt;
+&lt;p&gt;Tasks are not accessible from routes, and should be used for one-off or scheduled recurring work necessary for the health of an
+application.&lt;/p&gt;
+&lt;h2 id=&#34;use-cases-for-tasks&#34;&gt;Use cases for Tasks&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Migrating a database&lt;/li&gt;
+&lt;li&gt;Running a batch job (scheduled/unscheduled)&lt;/li&gt;
+&lt;li&gt;Sending an email&lt;/li&gt;
+&lt;li&gt;Transforming data (ETL)&lt;/li&gt;
+&lt;li&gt;Processing data (upload/backup/download)&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;how-tasks-work&#34;&gt;How Tasks work&lt;/h2&gt;
+&lt;p&gt;Tasks are executed asynchronously and run independently from the parent App or other Tasks running on the same App. An App created for running Tasks does not have routes created or assigned, and the &lt;strong&gt;Run&lt;/strong&gt; lifecycle is skipped. The &lt;strong&gt;Source code upload&lt;/strong&gt; and &lt;strong&gt;Build&lt;/strong&gt; lifecycles still proceed and result in a container image used for running Tasks after pushing the App (see App lifecycles at &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/deploying-an-app/&#34;&gt;Deploying an Application&lt;/a&gt;).&lt;/p&gt;
+&lt;p&gt;The lifecycle of a Task is as follows:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;You push an App for running tasks with the &lt;code&gt;kf push APP_NAME --task&lt;/code&gt; command.&lt;/li&gt;
+&lt;li&gt;You run a Task on the App with the &lt;code&gt;kf run-task APP_NAME&lt;/code&gt; command. Task inherits the environment variables, service bindings, resource allocation, start-up command, and security groups bound to the App.&lt;/li&gt;
+&lt;li&gt;Kf creates a Tekton &lt;a href=&#34;https://github.com/tektoncd/pipeline/blob/master/docs/pipelineruns.md&#34;&gt;PipelineRun&lt;/a&gt; with values from the App and parameters from the &lt;code&gt;run-task&lt;/code&gt; command.&lt;/li&gt;
+&lt;li&gt;The Tekton PipelineRun creates a Kubernetes Pod which launches a container based on the configurations on the App and Task.&lt;/li&gt;
+&lt;li&gt;Task execution stops (Task exits or is terminated manually), the underlying Pod is either stopped or terminated. Pods of stopped Tasks are preserved and thus Task logs are accessible via the &lt;code&gt;kf logs APP_NAME --task&lt;/code&gt; command.&lt;/li&gt;
+&lt;li&gt;If you terminate a Task before it stops, the Tekton PipelineRun is cancelled (see &lt;a href=&#34;https://github.com/tektoncd/pipeline/blob/master/docs/pipelineruns.md#cancelling-a-pipelinerun&#34;&gt;Cancelling a PipelineRun&lt;/a&gt;), the underlying Pod together with the logs are deleted. The logs of termianted Tasks are delivered to the cluster level logging streams if configured (e.g. Stackdriver, Fluentd).&lt;/li&gt;
+&lt;li&gt;If the number of Tasks run on an App is greater than 500, the oldest Tasks are automatically deleted.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;tasks-retention-policy&#34;&gt;Tasks retention policy&lt;/h2&gt;
+&lt;p&gt;Tasks are created as custom resources in the Kubernetes cluster, therefore, it is important not to exhaust the space of the underlying &lt;code&gt;etcd&lt;/code&gt; database. By default, Kf only keeps the latest 500 Tasks per each App. Once the number of Tasks reach 500, the oldest Tasks (together with the underlying Pods and logs) will be automatically deleted.&lt;/p&gt;
+&lt;h2 id=&#34;task-logging-and-execution-history&#34;&gt;Task logging and execution history&lt;/h2&gt;
+&lt;p&gt;Any data or messages the Task outputs to STDOUT or STDERR is available by using the &lt;code&gt;kf logs APP_NAME --task&lt;/code&gt; command. Cluster level logging mechanism (such as Stackdriver, Fluentd) will deliver the Task logs to the configured logging destination.&lt;/p&gt;
+&lt;h2 id=&#34;scheduling-tasks&#34;&gt;Scheduling Tasks&lt;/h2&gt;
+&lt;p&gt;As described above, Tasks can be run asynchronously by using the &lt;code&gt;kf run-task APP_NAME&lt;/code&gt; command.
+Alternatively, you can schedule Tasks for execution by first creating a Job using
+the &lt;code&gt;kf create-job&lt;/code&gt; command, and then scheduling it with the
+&lt;code&gt;kf schedule-job JOB_NAME&lt;/code&gt; command. You can schedule that Job to automatically
+run Tasks on a specified &lt;a href=&#34;https://man7.org/linux/man-pages/man5/crontab.5.html&#34;&gt;unix-cron&lt;/a&gt; schedule.&lt;/p&gt;
+&lt;h3 id=&#34;how-tasks-are-scheduled&#34;&gt;How Tasks are scheduled&lt;/h3&gt;
+&lt;p&gt;Create and schedule a Job to run the Task. A Job describes the Task to execute
+and automatically manages Task creation.&lt;/p&gt;
+&lt;p&gt;Tasks are created on the schedule even if previous executions of the Task are still running.
+If any executions are missed for any reason, only the most recently missed execution
+are executed when the system recovers.&lt;/p&gt;
+&lt;p&gt;Deleting a Job deletes all associated Tasks. If any associated Tasks were still
+in progress, they are forcefully deleted without running to completion.&lt;/p&gt;
+&lt;p&gt;Tasks created by a scheduled Job are still subject to the
+&lt;a href=&#34;#tasks_retention_policy&#34;&gt;Task retention policy&lt;/a&gt;.&lt;/p&gt;
+&lt;h3 id=&#34;differences-from-pcf-scheduler&#34;&gt;Differences from PCF Scheduler&lt;/h3&gt;
+&lt;p&gt;PCF Scheduler allows multiple schedules for a single Job while Kf
+only supports a single schedule per Job. You can replicate the PCF Scheduler
+behavior by creating multiple Jobs, one for each schedule.&lt;/p&gt;
+
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Run Tasks</title>
+      <link>/docs/v2.11/developer/tasks/run-task/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/developer/tasks/run-task/</guid>
+      <description>
+        
+        
+        &lt;p&gt;You can execute short-lived workflows by running them as Tasks in
+Kf. Tasks are run under Apps, meaning that each Task must
+have an associated App. Each Task execution uses the build artifacts from the
+parent App. Because Tasks are short-lived, the App is not deployed as a
+long-running application, and no routes should be created for the App or the Task.&lt;/p&gt;
+&lt;h2 id=&#34;push-an-app-for-running-tasks&#34;&gt;Push an App for running Tasks&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Clone the &lt;a href=&#34;https://github.com/cloudfoundry-samples/test-app&#34;&gt;test-app repo&lt;/a&gt; repo:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;git clone https://github.com/cloudfoundry-samples/test-app test-app
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#204a87&#34;&gt;cd&lt;/span&gt; test-app
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Push the App.&lt;/p&gt;
+&lt;p&gt;Push the App with the &lt;code&gt;kf push APP_NAME --task&lt;/code&gt; command. The &lt;code&gt;--task&lt;/code&gt; flag
+indicates that the App is meant to be used for running Tasks, and thus no
+routes are created on the App, and it is not deployed as a long-running
+application:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf push test-app --task
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Confirm that no App instances or routes were created by listing the App:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf apps
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Notice that the App is not started and has no URLs:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;Listing Apps in Space: test-space
+Name                     Instances  Memory  Disk  CPU   URLs
+test-app                 stopped    1Gi     1Gi   100m  &amp;lt;nil&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;run-a-task-on-the-app&#34;&gt;Run a Task on the App&lt;/h2&gt;
+&lt;p&gt;When you run a Task on the App, you can optionally specify a start command by
+using the &lt;code&gt;--command&lt;/code&gt; flag. If no start command is specified, it uses the start
+command specified on the App. If the App doesn&amp;rsquo;t have a start command specified,
+it looks up the CMD configuration of the container image. A start command must
+exist in order to run the Task successfully.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf run-task test-app --command &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;printenv&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;You see something similar to this, confirming that the Task was submitted:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;Task test-app-gd8dv is submitted successfully for execution.
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The Task name is automatically generated, prefixed with the App name, and
+suffixed with an arbitrary string. The Task name is a unique identifier for
+Tasks within the same cluster.&lt;/p&gt;
+&lt;h2 id=&#34;specify-task-resource-limits&#34;&gt;Specify Task resource limits&lt;/h2&gt;
+&lt;p&gt;Resource limits (such as CPU cores/Memory limit/Disk quota) can be specified in
+the App (during &lt;code&gt;kf push&lt;/code&gt;) or during the &lt;code&gt;kf run-task&lt;/code&gt; command. The limits
+specified in the &lt;code&gt;kf run-task&lt;/code&gt; command take prededence over the limits specified
+on the App.&lt;/p&gt;
+&lt;p&gt;To specify resource limits in an App, you can use the &lt;code&gt;--cpu-cores&lt;/code&gt;,
+&lt;code&gt;--memory-limit&lt;/code&gt;, and &lt;code&gt;--disk-quota&lt;/code&gt; flags in the &lt;code&gt;kf push&lt;/code&gt; command:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf push test-app --command &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;printenv&amp;#34;&lt;/span&gt; --cpu-cores&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;=&lt;/span&gt;0.5 --memory-limit&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;=&lt;/span&gt;2G --disk-quota&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;=&lt;/span&gt;5G --task
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;To override these limits in the App, you can use the &lt;code&gt;--cpu-cores&lt;/code&gt;,
+&lt;code&gt;--memory-limit&lt;/code&gt;, and &lt;code&gt;--disk-quota&lt;/code&gt; flags in the &lt;code&gt;kf run-task&lt;/code&gt; command:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf run-task test-app --command &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;printenv&amp;#34;&lt;/span&gt; --cpu-cores&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;=&lt;/span&gt;0.5 --memory-limit&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;=&lt;/span&gt;2G --disk-quota&lt;span style=&#34;color:#ce5c00;font-weight:bold&#34;&gt;=&lt;/span&gt;5G
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;specify-a-custom-display-name-for-a-task&#34;&gt;Specify a custom display name for a Task&lt;/h2&gt;
+&lt;p&gt;You can optionally use the &lt;code&gt;--name&lt;/code&gt; flag to specify a custom display name for a
+Task for easier identification/grouping:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;$ kf run-task test-app --command &amp;#34;printenv&amp;#34; --name foo
+Task test-app-6swct is submitted successfully for execution.
+
+$ kf tasks test-app
+Listing Tasks in Space: test space
+Name              ID  DisplayName        Age    Duration  Succeeded  Reason
+test-app-6swct    3   foo                1m     21s       True       &amp;lt;nil&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;manage-tasks&#34;&gt;Manage Tasks&lt;/h2&gt;
+&lt;p&gt;View all Tasks of an App with the &lt;code&gt;kf tasks APP_NAME&lt;/code&gt; command:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;$ kf tasks test-app
+Listing Tasks in Space: test space
+Name              ID  DisplayName        Age    Duration  Succeeded  Reason
+test-app-gd8dv    1   test-app-gd8dv     1m     21s       True       &amp;lt;nil&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;cancel-a-task&#34;&gt;Cancel a Task&lt;/h2&gt;
+&lt;p&gt;Cancel an active Task by using the &lt;code&gt;kf terminate-task&lt;/code&gt; command:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Cancel a Task by Task name:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;$ kf terminate-task test-app-6w6mz
+Task &amp;#34;test-app-6w6mz&amp;#34; is successfully submitted for termination
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Or cancel a Task by &lt;code&gt;&lt;var&gt;APP_NAME&lt;/var&gt;&lt;/code&gt; + Task ID:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;$ kf terminate-task test-app 2
+Task &amp;#34;test-app-6w6mz&amp;#34; is successfully submitted for termination
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; You can only cancel Tasks that are pending/running. Completed Tasks are not cancellable.
+&lt;/aside&gt;
+
+&lt;p&gt;Cancelled Tasks have &lt;code&gt;PipelineRunCancelled&lt;/code&gt; status.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;$ kf tasks test-app
+Listing Tasks in Space: test space
+Name              ID  DisplayName        Age    Duration  Succeeded  Reason
+test-app-gd8dv    1   test-app-gd8dv     1m     21s       True       &amp;lt;nil&amp;gt;
+test-app-6w6mz    2   test-app-6w6mz     38s    11s       False      PipelineRunCancelled
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&#34;view-task-logs&#34;&gt;View Task logs&lt;/h2&gt;
+&lt;p&gt;View logs of a Task by using the &lt;code&gt;kf logs APP_NAME --task&lt;/code&gt; command:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;$ kf logs test-app --task
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+      </description>
+    </item>
+    
+    <item>
+      <title>Docs: Schedule Tasks</title>
+      <link>/docs/v2.11/developer/tasks/scheduling-tasks/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/docs/v2.11/developer/tasks/scheduling-tasks/</guid>
+      <description>
+        
+        
+        &lt;p&gt;You can execute short-lived workflows by running them as &lt;a href=&#34;/docs/v2.11/developer/tasks/task/&#34;&gt;Tasks&lt;/a&gt;.
+&lt;a href=&#34;/docs/v2.11/developer/tasks/run-task/#push_an_app_for_running_tasks&#34;&gt;Running Tasks&lt;/a&gt;
+describes how to run Tasks under Apps.&lt;/p&gt;
+&lt;p&gt;You can also schedule Tasks to run at recurring intervals
+specified using the &lt;a href=&#34;https://man7.org/linux/man-pages/man5/crontab.5.html&#34;&gt;unix-cron&lt;/a&gt; format.
+With scheduled Tasks, you first push an App running the Task as you do with an unscheduled Task,
+and then create a Job to schedule the Task.&lt;/p&gt;
+&lt;p&gt;You can define a schedule so that your Task runs multiple times a day or on specific
+days and months.&lt;/p&gt;
+&lt;h2 id=&#34;push-an-app-for-running-scheduled-tasks&#34;&gt;Push an App for running scheduled Tasks&lt;/h2&gt;
+&lt;ol&gt;
+&lt;li&gt;Clone the &lt;a href=&#34;https://github.com/cloudfoundry-samples/test-app&#34;&gt;test-app repo&lt;/a&gt;:&lt;/li&gt;
+&lt;/ol&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;git clone https://github.com/cloudfoundry-samples/test-app test-app
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#204a87&#34;&gt;cd&lt;/span&gt; test-app
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Push the App.&lt;/p&gt;
+&lt;p&gt;Push the App with the &lt;code&gt;kf push APP_NAME --task&lt;/code&gt; command. The &lt;code&gt;--task&lt;/code&gt; flag indicates that the App is meant to be used for running Tasks, and thus no routes will be created on the App and it will not be deployed as a long-running application.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf push test-app --task
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Confirm that no App instances or routes were created by listing the App:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf apps
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Notice that the App is not started and has no URLs:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;Listing Apps in Space: test-space
+Name                     Instances  Memory  Disk  CPU   URLs
+test-app                 stopped    1Gi     1Gi   100m  &amp;lt;nil&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;create-a-job&#34;&gt;Create a Job&lt;/h2&gt;
+&lt;p&gt;To run a Task on a schedule, you must first create a Job that describes the Task:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf create-job test-app test-job &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;printenv&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The Job starts suspended or unscheduled, and does not create Tasks until it is
+manually executed by &lt;code&gt;kf run-job&lt;/code&gt; or scheduled by &lt;code&gt;kf schedule-task&lt;/code&gt;.&lt;/p&gt;
+&lt;h3 id=&#34;run-a-job-manually&#34;&gt;Run a Job manually&lt;/h3&gt;
+&lt;p&gt;Jobs can be run ad hoc similar to running Tasks by &lt;code&gt;kf run-task&lt;/code&gt;. This option
+can be useful for testing the Job before scheduling or running as needed in addition
+to the schedule.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf run-job test-job
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This command runs the Task defined by the Job a single time immediately.&lt;/p&gt;
+&lt;h2 id=&#34;schedule-a-job&#34;&gt;Schedule a Job&lt;/h2&gt;
+&lt;p&gt;To schedule the Job for execution, you must provide a unix-cron schedule in the
+&lt;code&gt;kf schedule-job&lt;/code&gt; command:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf schedule-job test-job &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;* * * * *&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This command triggers the Job to automatically create Tasks on the specified schedule.
+In this example a Task runs every minute.&lt;/p&gt;
+&lt;p&gt;You can update a Job&amp;rsquo;s schedule by running &lt;code&gt;kf schedule-task&lt;/code&gt; with a new schedule.
+Jobs in Kf can only have a single cron schedule. This differs
+from the PCF Scheduler, which allows multiple schedules for a single Job.
+If you require multiple cron schedules, then you can achieve that with multiple Jobs.&lt;/p&gt;
+&lt;h2 id=&#34;manage-jobs-and-schedules&#34;&gt;Manage Jobs and schedules&lt;/h2&gt;
+&lt;p&gt;View all Jobs, both scheduled and unscheduled, in the current Space by using
+the &lt;code&gt;kf jobs&lt;/code&gt; command:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;$ kf jobs
+Listing Jobs in Space: test space
+Name               Schedule    Suspend  LastSchedule  Age  Ready  Reason
+test-job           * * * * *   &amp;lt;nil&amp;gt;    16s           2m   True   &amp;lt;nil&amp;gt;
+unscheduled-job    0 0 30 2 *  true     16s           2m   True   &amp;lt;nil&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; The &lt;code&gt;unscheduled-job&lt;/code&gt; has a default schedule set (&lt;code&gt;0 0 30 2 *&lt;/code&gt;).
+This schedule is not active because the Job is suspended and is only present as a
+placeholder schedule for unscheduled Jobs.
+&lt;/aside&gt;
+
+&lt;p&gt;Additionally, you can view only Jobs that are actively scheduled with
+the &lt;code&gt;kf job-schedules&lt;/code&gt; command.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-none&#34; data-lang=&#34;none&#34;&gt;$ kf job-schedules
+Listing job schedules in Space: test space
+Name           Schedule   Suspend  LastSchedule  Age  Ready  Reason
+test-job       * * * * *  &amp;lt;nil&amp;gt;    16s           2m   True   &amp;lt;nil&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Notice how the &lt;code&gt;unscheduled-job&lt;/code&gt; is not listed in the &lt;code&gt;kf job-schedules&lt;/code&gt; output.&lt;/p&gt;
+&lt;h3 id=&#34;cancel-a-jobs-schedule&#34;&gt;Cancel a Job&amp;rsquo;s schedule&lt;/h3&gt;
+&lt;p&gt;You can stop a scheduled Job with the &lt;code&gt;kf delete-job-schedule&lt;/code&gt; command:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf delete-job-schedule test-job
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This command suspends the Job and stops it from creating Tasks on the previous schedule.
+The Job is not deleted and can be scheduled again by &lt;code&gt;kf schedule-job&lt;/code&gt; to continue execution.&lt;/p&gt;
+&lt;h3 id=&#34;delete-a-job&#34;&gt;Delete a Job&lt;/h3&gt;
+&lt;p&gt;The entire Job can be deleted with the &lt;code&gt;kf delete-job&lt;/code&gt; command:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf delete-job test-job
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This command deletes the Job and all Tasks that were created by the Job,
+both scheduled and manual executions. If any Tasks are still running, this command
+forcefully deletes them.&lt;/p&gt;
+&lt;p&gt;If you want to ensure that running Tasks are not interrupted, then first delete
+the Jobs schedule with &lt;code&gt;kf delete-job-schedule&lt;/code&gt;, wait for all Tasks to complete,
+and then delete the job by calling &lt;code&gt;kf delete-job&lt;/code&gt;.&lt;/p&gt;
+
+      </description>
+    </item>
+    
+  </channel>
+</rss>
