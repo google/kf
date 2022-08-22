@@ -1,11 +1,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Kf – Service brokers</title>
-    <link>/docs/v2.11/operator/service-brokers/</link>
+    <link>https://google.github.io/kf/docs/v2.11/operator/service-brokers/</link>
     <description>Recent content in Service brokers on Kf</description>
     <generator>Hugo -- gohugo.io</generator>
     
-	  <atom:link href="/docs/v2.11/operator/service-brokers/index.xml" rel="self" type="application/rss+xml" />
+	  <atom:link href="https://google.github.io/kf/docs/v2.11/operator/service-brokers/index.xml" rel="self" type="application/rss+xml" />
     
     
       
@@ -15,15 +15,15 @@
     
     <item>
       <title>Docs: Service Brokers Overview</title>
-      <link>/docs/v2.11/operator/service-brokers/about-service-brokers/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/service-brokers/about-service-brokers/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/service-brokers/about-service-brokers/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/service-brokers/about-service-brokers/</guid>
       <description>
         
         
         &lt;p&gt;Kf supports binding and provisioning apps to &lt;a href=&#34;https://www.openservicebrokerapi.org/&#34;&gt;Open Service Broker (OSB)&lt;/a&gt; services.&lt;/p&gt;
-&lt;p&gt;Any compatible service broker can be installed using the &lt;code&gt;create-service-broker&lt;/code&gt; command, but only the &lt;a href=&#34;/docs/v2.11/operator/service-brokers/cloud-sb-overview/&#34;&gt;Kf Cloud Service Broker&lt;/a&gt; is fully supported.&lt;/p&gt;
+&lt;p&gt;Any compatible service broker can be installed using the &lt;code&gt;create-service-broker&lt;/code&gt; command, but only the &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/operator/service-brokers/cloud-sb-overview/&#34;&gt;Kf Cloud Service Broker&lt;/a&gt; is fully supported.&lt;/p&gt;
 
 &lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
 &lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; Kf only supports a subset of the types of services
@@ -39,10 +39,10 @@ service keys, and shared services aren&amp;rsquo;t currently supported.&lt;/p&gt
     
     <item>
       <title>Docs: About Kf Cloud Service Broker</title>
-      <link>/docs/v2.11/operator/service-brokers/cloud-sb-overview/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/service-brokers/cloud-sb-overview/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/service-brokers/cloud-sb-overview/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/service-brokers/cloud-sb-overview/</guid>
       <description>
         
         
@@ -104,12 +104,12 @@ with Workload Identity. It also persists the business logics (e.g. mapping of
 Kf services to backing services, service bindings) to
 the MySQL instance.&lt;/li&gt;
 &lt;li&gt;On backing service creation success, the backing service is bound to an App
-via &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices&#34;&gt;VCAP_SERVICES&lt;/a&gt;.&lt;/li&gt;
+via &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices&#34;&gt;VCAP_SERVICES&lt;/a&gt;.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;whats-next&#34;&gt;What&amp;rsquo;s next?&lt;/h2&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;/docs/v2.11/operator/service-brokers/deploying-cloud-sb/&#34;&gt;Deploy Kf Cloud Service Broker&lt;/a&gt;.&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;/docs/v2.11/developer/backing-services/managed-services/&#34;&gt;Learn how to list and provision services&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/operator/service-brokers/deploying-cloud-sb/&#34;&gt;Deploy Kf Cloud Service Broker&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/backing-services/managed-services/&#34;&gt;Learn how to list and provision services&lt;/a&gt;.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;{% endblock %}&lt;/p&gt;
 
@@ -118,15 +118,15 @@ via &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapserv
     
     <item>
       <title>Docs: Deploy Kf Cloud Service Broker</title>
-      <link>/docs/v2.11/operator/service-brokers/deploying-cloud-sb/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/service-brokers/deploying-cloud-sb/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/service-brokers/deploying-cloud-sb/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/service-brokers/deploying-cloud-sb/</guid>
       <description>
         
         
         &lt;p&gt;This page shows you how to deploy Kf Cloud Service Broker and use it to provision or deprovision backing resources.
-Read about the &lt;a href=&#34;/docs/v2.11/operator/service-brokers/cloud-sb-overview/&#34;&gt;concepts and architecture&lt;/a&gt; to learn more about the Kf Cloud Service Broker.&lt;/p&gt;
+Read about the &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/operator/service-brokers/cloud-sb-overview/&#34;&gt;concepts and architecture&lt;/a&gt; to learn more about the Kf Cloud Service Broker.&lt;/p&gt;
 &lt;h2 id=&#34;create_env_variables&#34;&gt;Create environment variables&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;
@@ -362,10 +362,10 @@ cloud-service-broker  csb-google-storage-bucket                Google Cloud Stor
     
     <item>
       <title>Docs: Set up NFS platform</title>
-      <link>/docs/v2.11/operator/service-brokers/nfs-platform-setup/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/service-brokers/nfs-platform-setup/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/service-brokers/nfs-platform-setup/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/service-brokers/nfs-platform-setup/</guid>
       <description>
         
         
@@ -389,7 +389,7 @@ nfsvolumebroker  existing  true  mount existing nfs server
 &lt;p&gt;Warning: You only need to create the NFS instance. Kf will create relevant Kubernetes objects, including PersistentVolume and PersistentVolumeClaims. Do not manually mount the volume.&lt;/p&gt;
 &lt;h2 id=&#34;whats-next&#34;&gt;What&amp;rsquo;s next?&lt;/h2&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;/docs/v2.11/developer/backing-services/nfs-getting-started/&#34;&gt;Configure NFS volumes&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/backing-services/nfs-getting-started/&#34;&gt;Configure NFS volumes&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
       </description>

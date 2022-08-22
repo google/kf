@@ -1,11 +1,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Kf – Develop Applications on Kf</title>
-    <link>/docs/v2.11/developer/</link>
+    <link>https://google.github.io/kf/docs/v2.11/developer/</link>
     <description>Recent content in Develop Applications on Kf on Kf</description>
     <generator>Hugo -- gohugo.io</generator>
     
-	  <atom:link href="/docs/v2.11/developer/index.xml" rel="self" type="application/rss+xml" />
+	  <atom:link href="https://google.github.io/kf/docs/v2.11/developer/index.xml" rel="self" type="application/rss+xml" />
     
     
       
@@ -15,10 +15,10 @@
     
     <item>
       <title>Docs: Build and deploy applications</title>
-      <link>/docs/v2.11/developer/build-and-deploy/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/build-and-deploy/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/</guid>
       <description>
         
         
@@ -28,10 +28,10 @@
     
     <item>
       <title>Docs: Backing services</title>
-      <link>/docs/v2.11/developer/backing-services/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/backing-services/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/backing-services/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/backing-services/</guid>
       <description>
         
         
@@ -41,10 +41,10 @@
     
     <item>
       <title>Docs: Scaling</title>
-      <link>/docs/v2.11/developer/scaling/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/scaling/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/scaling/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/scaling/</guid>
       <description>
         
         
@@ -54,10 +54,10 @@
     
     <item>
       <title>Docs: Service discovery</title>
-      <link>/docs/v2.11/developer/service-discovery/service-discovery/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/service-discovery/service-discovery/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/service-discovery/service-discovery/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/service-discovery/service-discovery/</guid>
       <description>
         
         
@@ -135,7 +135,7 @@ even true if the Kf app doesn&amp;rsquo;t serve HTTP traffic.
 
 &lt;h2 id=&#34;best-practices&#34;&gt;Best practices&lt;/h2&gt;
 &lt;p&gt;Applications that are going to be the target of DNS based service discovery
-should have frequent &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/manifest/#health_check_types&#34;&gt;health checks&lt;/a&gt;
+should have frequent &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/build-and-deploy/manifest/#health_check_types&#34;&gt;health checks&lt;/a&gt;
 to ensure they are rapidly added and removed from the pool of hosts that accept
 connections.&lt;/p&gt;
 &lt;p&gt;Applications using DNS based service discovery should not cache the IP addresses
@@ -182,10 +182,10 @@ the following reasons:&lt;/p&gt;
     
     <item>
       <title>Docs: Configure routes and domains</title>
-      <link>/docs/v2.11/developer/routes-and-domains/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/routes-and-domains/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/routes-and-domains/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/routes-and-domains/</guid>
       <description>
         
         
@@ -309,10 +309,10 @@ traffic.&lt;/p&gt;
     
     <item>
       <title>Docs: Tasks</title>
-      <link>/docs/v2.11/developer/tasks/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/tasks/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/tasks/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/tasks/</guid>
       <description>
         
         

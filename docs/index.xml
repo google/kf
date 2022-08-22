@@ -1,11 +1,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Kf – Docs</title>
-    <link>/docs/</link>
+    <link>https://google.github.io/kf/docs/</link>
     <description>Recent content in Docs on Kf</description>
     <generator>Hugo -- gohugo.io</generator>
     
-	  <atom:link href="/docs/index.xml" rel="self" type="application/rss+xml" />
+	  <atom:link href="https://google.github.io/kf/docs/index.xml" rel="self" type="application/rss+xml" />
     
     
       
@@ -15,10 +15,10 @@
     
     <item>
       <title>Docs: Backing Services Overview</title>
-      <link>/docs/v2.11/developer/backing-services/overview/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/backing-services/overview/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/backing-services/overview/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/backing-services/overview/</guid>
       <description>
         
         
@@ -52,10 +52,10 @@ as managed services.&lt;/p&gt;
     
     <item>
       <title>Docs: Scaling overview</title>
-      <link>/docs/v2.11/developer/scaling/autoscaling/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/scaling/autoscaling/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/scaling/autoscaling/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/scaling/autoscaling/</guid>
       <description>
         
         
@@ -99,10 +99,10 @@ corresponding App is deleted.&lt;/p&gt;
     
     <item>
       <title>Docs: Tasks Overview</title>
-      <link>/docs/v2.11/developer/tasks/task/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/tasks/task/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/tasks/task/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/tasks/task/</guid>
       <description>
         
         
@@ -120,7 +120,7 @@ application.&lt;/p&gt;
 &lt;li&gt;Processing data (upload/backup/download)&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;how-tasks-work&#34;&gt;How Tasks work&lt;/h2&gt;
-&lt;p&gt;Tasks are executed asynchronously and run independently from the parent App or other Tasks running on the same App. An App created for running Tasks does not have routes created or assigned, and the &lt;strong&gt;Run&lt;/strong&gt; lifecycle is skipped. The &lt;strong&gt;Source code upload&lt;/strong&gt; and &lt;strong&gt;Build&lt;/strong&gt; lifecycles still proceed and result in a container image used for running Tasks after pushing the App (see App lifecycles at &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/deploying-an-app/&#34;&gt;Deploying an Application&lt;/a&gt;).&lt;/p&gt;
+&lt;p&gt;Tasks are executed asynchronously and run independently from the parent App or other Tasks running on the same App. An App created for running Tasks does not have routes created or assigned, and the &lt;strong&gt;Run&lt;/strong&gt; lifecycle is skipped. The &lt;strong&gt;Source code upload&lt;/strong&gt; and &lt;strong&gt;Build&lt;/strong&gt; lifecycles still proceed and result in a container image used for running Tasks after pushing the App (see App lifecycles at &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/build-and-deploy/deploying-an-app/&#34;&gt;Deploying an Application&lt;/a&gt;).&lt;/p&gt;
 &lt;p&gt;The lifecycle of a Task is as follows:&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;You push an App for running tasks with the &lt;code&gt;kf push APP_NAME --task&lt;/code&gt; command.&lt;/li&gt;
@@ -161,10 +161,10 @@ behavior by creating multiple Jobs, one for each schedule.&lt;/p&gt;
     
     <item>
       <title>Docs: Getting Started Overview</title>
-      <link>/docs/v2.11/getting-started/overview/</link>
+      <link>https://google.github.io/kf/docs/v2.11/getting-started/overview/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/getting-started/overview/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/getting-started/overview/</guid>
       <description>
         
         
@@ -173,7 +173,7 @@ Kubernetes without changing your developer workflows.&lt;/p&gt;
 &lt;p&gt;Use the following sections to get started deploying Cloud Foundry apps
 to Kf.&lt;/p&gt;
 &lt;h2 id=&#34;get-started-with-a-quickstart&#34;&gt;Get started with a quickstart&lt;/h2&gt;
-&lt;p&gt;Use the &lt;a href=&#34;/docs/v2.11/getting-started/quickstart/&#34;&gt;quickstart&lt;/a&gt; to install Kf and deploy a
+&lt;p&gt;Use the &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/getting-started/quickstart/&#34;&gt;quickstart&lt;/a&gt; to install Kf and deploy a
 simple test Cloud Foundry app. This introduces you to the basic steps you&amp;rsquo;d
 perform for most app deployments.&lt;/p&gt;
 &lt;h2 id=&#34;get-an-introduction-to-key-concepts&#34;&gt;Get an introduction to key concepts&lt;/h2&gt;
@@ -181,14 +181,14 @@ perform for most app deployments.&lt;/p&gt;
 high-level overviews of the technology, see the following documents:&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;To learn more about how Kf works, see
-&lt;a href=&#34;/docs/v2.11/operator/kf-dependencies/&#34;&gt;Kf dependencies and architecture&lt;/a&gt;.&lt;/li&gt;
+&lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/operator/kf-dependencies/&#34;&gt;Kf dependencies and architecture&lt;/a&gt;.&lt;/li&gt;
 &lt;li&gt;For a side-by-side comparison of Cloud Foundry and Kf
 components, see
-&lt;a href=&#34;/docs/v2.11/getting-started/compare-services/&#34;&gt;Compare Cloud Foundry and Kf services&lt;/a&gt;.&lt;/li&gt;
+&lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/getting-started/compare-services/&#34;&gt;Compare Cloud Foundry and Kf services&lt;/a&gt;.&lt;/li&gt;
 &lt;li&gt;To learn how to use service brokers with Kf,
-see &lt;a href=&#34;/docs/v2.11/operator/service-brokers/about-service-brokers/&#34;&gt;Service brokers&lt;/a&gt;.&lt;/li&gt;
+see &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/operator/service-brokers/about-service-brokers/&#34;&gt;Service brokers&lt;/a&gt;.&lt;/li&gt;
 &lt;li&gt;For more information about Kf security design, see the
-&lt;a href=&#34;/docs/v2.11/operator/security/security-overview/&#34;&gt;Security overview&lt;/a&gt;.&lt;/li&gt;
+&lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/operator/security/security-overview/&#34;&gt;Security overview&lt;/a&gt;.&lt;/li&gt;
 &lt;/ul&gt;
 
       </description>
@@ -196,10 +196,10 @@ see &lt;a href=&#34;/docs/v2.11/operator/service-brokers/about-service-brokers/&
     
     <item>
       <title>Docs: Manage Autoscaling</title>
-      <link>/docs/v2.11/developer/scaling/manage-autoscaling/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/scaling/manage-autoscaling/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/scaling/manage-autoscaling/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/scaling/manage-autoscaling/</guid>
       <description>
         
         
@@ -245,10 +245,10 @@ configurations, including limits and rules, are preserved.&lt;/p&gt;
     
     <item>
       <title>Docs: Quickstart</title>
-      <link>/docs/v2.11/getting-started/quickstart/</link>
+      <link>https://google.github.io/kf/docs/v2.11/getting-started/quickstart/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/getting-started/quickstart/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/getting-started/quickstart/</guid>
       <description>
         
         
@@ -336,10 +336,10 @@ configurations, including limits and rules, are preserved.&lt;/p&gt;
     
     <item>
       <title>Docs: Compare Cloud Foundry and Kf services</title>
-      <link>/docs/v2.11/getting-started/compare-services/</link>
+      <link>https://google.github.io/kf/docs/v2.11/getting-started/compare-services/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/getting-started/compare-services/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/getting-started/compare-services/</guid>
       <description>
         
         
@@ -459,10 +459,10 @@ APIs, or command-line tools provided by CF and Kf.
     
     <item>
       <title>Docs: Use managed services</title>
-      <link>/docs/v2.11/developer/backing-services/managed-services/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/backing-services/managed-services/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/backing-services/managed-services/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/backing-services/managed-services/</guid>
       <description>
         
         
@@ -518,7 +518,7 @@ Listing bindings in Space: &amp;#34;test&amp;#34;
 Name                  App     Service  Age  Ready
 binding-my-app-my-db  my-app  my-db    82s  True
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Once a service is bound, restart the App using &lt;code&gt;kf restart&lt;/code&gt; and the credentials
-will be in the &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices&#34;&gt;&lt;code&gt;VCAP_SERVICES&lt;/code&gt;&lt;/a&gt; environment variable.&lt;/p&gt;
+will be in the &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices&#34;&gt;&lt;code&gt;VCAP_SERVICES&lt;/code&gt;&lt;/a&gt; environment variable.&lt;/p&gt;
 &lt;p&gt;You can delete a service binding with the &lt;code&gt;kf unbind-service&lt;/code&gt; command:&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ kf unbind-service my-app my-db
 &lt;/code&gt;&lt;/pre&gt;
@@ -527,10 +527,10 @@ will be in the &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/app-runtim
     
     <item>
       <title>Docs: Configure user-provided services</title>
-      <link>/docs/v2.11/developer/backing-services/user-provided-services/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/backing-services/user-provided-services/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/backing-services/user-provided-services/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/backing-services/user-provided-services/</guid>
       <description>
         
         
@@ -547,7 +547,7 @@ Creating, listing, updating, deleting, binding, and unbinding user-provided serv
 &lt;h3 id=&#34;deliver-service-credentials-to-an-app&#34;&gt;Deliver service credentials to an app&lt;/h3&gt;
 &lt;p&gt;A user-provided service instance can be used to deliver credentials to an App. For example, a database admin can have a set of credentials for an existing database managed outside of Kf, and these credentials include the URL, port, username, and password used to connect to the database.&lt;/p&gt;
 &lt;p&gt;The admin can create a user-provided service with the credentials and the developer can bind the service instance to the App. This allows the credentials to be shared without ever leaving the platform. Binding a service instance to an App has the same effect regardless of whether the service is a user-provided service or a marketplace service.&lt;/p&gt;
-&lt;p&gt;The App is configured with the credentials provided by the user, and the App runtime environment variable &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices&#34;&gt;&lt;code&gt;VCAP_SERVICES&lt;/code&gt;&lt;/a&gt; is populated with information about all of the bound services to that App.&lt;/p&gt;
+&lt;p&gt;The App is configured with the credentials provided by the user, and the App runtime environment variable &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices&#34;&gt;&lt;code&gt;VCAP_SERVICES&lt;/code&gt;&lt;/a&gt; is populated with information about all of the bound services to that App.&lt;/p&gt;
 &lt;p&gt;A user-provided service can be created with credentials and/or a list of tags.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf cups my-db -p &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;{&amp;#34;username&amp;#34;:&amp;#34;admin&amp;#34;, &amp;#34;password&amp;#34;:&amp;#34;test123&amp;#34;, &amp;#34;some-int-val&amp;#34;: 1, &amp;#34;some-bool&amp;#34;: true}&amp;#39;&lt;/span&gt; -t &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;comma, separated, tags&amp;#34;&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This will create the user-provided service instance &lt;code&gt;my-db&lt;/code&gt; with the provided credentials and tags. The credentials passed in to the &lt;code&gt;-p&lt;/code&gt; flag must be valid JSON (either inline or loaded from a file path).&lt;/p&gt;
@@ -608,10 +608,10 @@ Creating, listing, updating, deleting, binding, and unbinding user-provided serv
     
     <item>
       <title>Docs: Deploy an application</title>
-      <link>/docs/v2.11/developer/build-and-deploy/deploying-an-app/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/deploying-an-app/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/build-and-deploy/deploying-an-app/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/deploying-an-app/</guid>
       <description>
         
         
@@ -657,7 +657,7 @@ Kf currently has the following Tekton Tasks:&lt;/p&gt;
 &lt;/ul&gt;
 &lt;p&gt;Kf tracks each TaskRun as a Build. If a Build succeeds, the resulting
 container image is then deployed via the Run lifecycle (described below).&lt;/p&gt;
-&lt;p&gt;More information can be found at &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/build-runtime/&#34;&gt;Build runtime&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;More information can be found at &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/build-and-deploy/build-runtime/&#34;&gt;Build runtime&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 id=&#34;run&#34;&gt;Run&lt;/h2&gt;
 &lt;p&gt;The Run lifecycle is responsible for taking a container image and creating a
 &lt;a href=&#34;https://kubernetes.io/docs/concepts/workloads/controllers/deployment/&#34;&gt;Kubernetes Deployment&lt;/a&gt;.&lt;/p&gt;
@@ -666,7 +666,7 @@ container image is then deployed via the Run lifecycle (described below).&lt;/p&
 &lt;li&gt;&lt;a href=&#34;https://istio.io/docs/reference/config/networking/virtual-service/&#34;&gt;Istio Virtual Services&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://kubernetes.io/docs/concepts/configuration/secret/&#34;&gt;Kubernetes Secrets&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;More information can be found at &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/build-runtime/&#34;&gt;Build runtime&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;More information can be found at &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/build-and-deploy/build-runtime/&#34;&gt;Build runtime&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 id=&#34;push-timeouts&#34;&gt;Push timeouts&lt;/h2&gt;
 &lt;p&gt;Kf supports setting an environment variable to instruct the CLI to time out
 while pushing apps. If set, the variables &lt;code&gt;KF_STARTUP_TIMEOUT&lt;/code&gt; or
@@ -678,10 +678,10 @@ while pushing apps. If set, the variables &lt;code&gt;KF_STARTUP_TIMEOUT&lt;/cod
     
     <item>
       <title>Docs: Customizing Overview</title>
-      <link>/docs/v2.11/operator/customizing/about-customizing-kf/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/customizing/about-customizing-kf/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/customizing/about-customizing-kf/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/customizing/about-customizing-kf/</guid>
       <description>
         
         
@@ -698,15 +698,15 @@ while pushing apps. If set, the variables &lt;code&gt;KF_STARTUP_TIMEOUT&lt;/cod
     
     <item>
       <title>Docs: Service Brokers Overview</title>
-      <link>/docs/v2.11/operator/service-brokers/about-service-brokers/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/service-brokers/about-service-brokers/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/service-brokers/about-service-brokers/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/service-brokers/about-service-brokers/</guid>
       <description>
         
         
         &lt;p&gt;Kf supports binding and provisioning apps to &lt;a href=&#34;https://www.openservicebrokerapi.org/&#34;&gt;Open Service Broker (OSB)&lt;/a&gt; services.&lt;/p&gt;
-&lt;p&gt;Any compatible service broker can be installed using the &lt;code&gt;create-service-broker&lt;/code&gt; command, but only the &lt;a href=&#34;/docs/v2.11/operator/service-brokers/cloud-sb-overview/&#34;&gt;Kf Cloud Service Broker&lt;/a&gt; is fully supported.&lt;/p&gt;
+&lt;p&gt;Any compatible service broker can be installed using the &lt;code&gt;create-service-broker&lt;/code&gt; command, but only the &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/operator/service-brokers/cloud-sb-overview/&#34;&gt;Kf Cloud Service Broker&lt;/a&gt; is fully supported.&lt;/p&gt;
 
 &lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
 &lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; Kf only supports a subset of the types of services
@@ -722,10 +722,10 @@ service keys, and shared services aren&amp;rsquo;t currently supported.&lt;/p&gt
     
     <item>
       <title>Docs: Run Tasks</title>
-      <link>/docs/v2.11/developer/tasks/run-task/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/tasks/run-task/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/tasks/run-task/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/tasks/run-task/</guid>
       <description>
         
         
@@ -832,10 +832,10 @@ test-app-6w6mz    2   test-app-6w6mz     38s    11s       False      PipelineRun
     
     <item>
       <title>Docs: Service discovery</title>
-      <link>/docs/v2.11/developer/service-discovery/service-discovery/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/service-discovery/service-discovery/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/service-discovery/service-discovery/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/service-discovery/service-discovery/</guid>
       <description>
         
         
@@ -913,7 +913,7 @@ even true if the Kf app doesn&amp;rsquo;t serve HTTP traffic.
 
 &lt;h2 id=&#34;best-practices&#34;&gt;Best practices&lt;/h2&gt;
 &lt;p&gt;Applications that are going to be the target of DNS based service discovery
-should have frequent &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/manifest/#health_check_types&#34;&gt;health checks&lt;/a&gt;
+should have frequent &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/build-and-deploy/manifest/#health_check_types&#34;&gt;health checks&lt;/a&gt;
 to ensure they are rapidly added and removed from the pool of hosts that accept
 connections.&lt;/p&gt;
 &lt;p&gt;Applications using DNS based service discovery should not cache the IP addresses
@@ -960,16 +960,16 @@ the following reasons:&lt;/p&gt;
     
     <item>
       <title>Docs: User Provided Service Templates</title>
-      <link>/docs/v2.11/developer/backing-services/ups-templates/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/backing-services/ups-templates/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/backing-services/ups-templates/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/backing-services/ups-templates/</guid>
       <description>
         
         
         
 &lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
-&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; You can leverage services that aren&amp;rsquo;t listed in the marketplace by creating user-provided service instances that an App can bind to. Learn more about &lt;a href=&#34;/docs/v2.11/developer/backing-services/user-provided-services/&#34;&gt;user-provided services&lt;/a&gt;.
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; You can leverage services that aren&amp;rsquo;t listed in the marketplace by creating user-provided service instances that an App can bind to. Learn more about &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/backing-services/user-provided-services/&#34;&gt;user-provided services&lt;/a&gt;.
 &lt;/aside&gt;
 
 &lt;h2 id=&#34;before-you-begin&#34;&gt;Before you begin&lt;/h2&gt;
@@ -1023,7 +1023,7 @@ user provided service by name, just like a managed service:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf bind-service application-name service-instance-name
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;whats-next&#34;&gt;What&amp;rsquo;s next&lt;/h2&gt;
 &lt;ul&gt;
-&lt;li&gt;Learn about &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices&#34;&gt;how the credentials are injected into your app&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;Learn about &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices&#34;&gt;how the credentials are injected into your app&lt;/a&gt;.&lt;/li&gt;
 &lt;/ul&gt;
 
       </description>
@@ -1031,17 +1031,17 @@ user provided service by name, just like a managed service:&lt;/p&gt;
     
     <item>
       <title>Docs: Configure NFS volumes</title>
-      <link>/docs/v2.11/developer/backing-services/nfs-getting-started/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/backing-services/nfs-getting-started/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/backing-services/nfs-getting-started/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/backing-services/nfs-getting-started/</guid>
       <description>
         
         
         &lt;p&gt;Kf supports mounting NFS volumes using the &lt;code&gt;kf marketplace&lt;/code&gt;.&lt;/p&gt;
 &lt;h2 id=&#34;prerequisites&#34;&gt;Prerequisites&lt;/h2&gt;
 &lt;ul&gt;
-&lt;li&gt;Your administrator must have &lt;a href=&#34;/docs/v2.11/operator/service-brokers/nfs-platform-setup/&#34;&gt;completed the NFS platform setup guide&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;Your administrator must have &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/operator/service-brokers/nfs-platform-setup/&#34;&gt;completed the NFS platform setup guide&lt;/a&gt;.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;create-an-nfs-service-instance&#34;&gt;Create an NFS service instance&lt;/h2&gt;
 &lt;p&gt;Run &lt;code&gt;kf marketplace&lt;/code&gt; to see available services. The built-in NFS service appears on the list if NFS is enabled on the platform.&lt;/p&gt;
@@ -1163,10 +1163,10 @@ You can view the file path in the details of the service binding, which are visi
     
     <item>
       <title>Docs: Cluster Configuration</title>
-      <link>/docs/v2.11/operator/customizing/cluster-configuration/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/customizing/cluster-configuration/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/customizing/cluster-configuration/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/customizing/cluster-configuration/</guid>
       <description>
         
         
@@ -1466,10 +1466,10 @@ that can enable and disable features of Kf.&lt;/p&gt;
     
     <item>
       <title>Docs: Get started with buildpacks</title>
-      <link>/docs/v2.11/developer/build-and-deploy/buildpacks-getting-started/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/buildpacks-getting-started/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/build-and-deploy/buildpacks-getting-started/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/buildpacks-getting-started/</guid>
       <description>
         
         
@@ -1538,10 +1538,10 @@ covers some starter examples for using them.&lt;/p&gt;
     
     <item>
       <title>Docs: Role-based access control</title>
-      <link>/docs/v2.11/operator/security/role-based-access-control/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/security/role-based-access-control/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/security/role-based-access-control/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/security/role-based-access-control/</guid>
       <description>
         
         
@@ -1628,7 +1628,7 @@ and grants additional, limited, roles at the cluster scope.&lt;/p&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
 &lt;p&gt;Information about the policy rules that make up each predefined role can be found in the
-&lt;a href=&#34;/docs/v2.11/operator/security/kubernetes-roles/&#34;&gt;Kf roles reference documentation&lt;/a&gt;.&lt;/p&gt;
+&lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/operator/security/kubernetes-roles/&#34;&gt;Kf roles reference documentation&lt;/a&gt;.&lt;/p&gt;
 &lt;h3 id=&#34;interaction_with_iam&#34;&gt;Google Cloud IAM roles&lt;/h3&gt;
 &lt;p&gt;Kf roles provide access control for objects within a
 Kubernetes cluster. Subjects must also be granted an Cloud IAM role to
@@ -1692,7 +1692,7 @@ model&lt;/a&gt;.&lt;/li&gt;
 &lt;li&gt;Learn more about &lt;a href=&#34;https://cloud.google.com/kubernetes-engine/docs/concepts/access-control&#34;&gt;access control&lt;/a&gt; in GKE.&lt;/li&gt;
 &lt;li&gt;Read the &lt;a href=&#34;https://cloud.google.com/kubernetes-engine/docs/concepts/multitenancy-overview&#34;&gt;GKE multi-tenancy overview&lt;/a&gt;.&lt;/li&gt;
 &lt;li&gt;Learn about &lt;a href=&#34;https://cloud.google.com/kubernetes-engine/docs/how-to/hardening-your-cluster&#34;&gt;hardening your GKE cluster&lt;/a&gt;.&lt;/li&gt;
-&lt;li&gt;Understand the &lt;a href=&#34;/docs/v2.11/operator/security/kubernetes-roles/&#34;&gt;Kubernetes permissions that make up each Kf predefined role&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;Understand the &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/operator/security/kubernetes-roles/&#34;&gt;Kubernetes permissions that make up each Kf predefined role&lt;/a&gt;.&lt;/li&gt;
 &lt;/ul&gt;
 
       </description>
@@ -1700,15 +1700,15 @@ model&lt;/a&gt;.&lt;/li&gt;
     
     <item>
       <title>Docs: Schedule Tasks</title>
-      <link>/docs/v2.11/developer/tasks/scheduling-tasks/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/tasks/scheduling-tasks/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/tasks/scheduling-tasks/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/tasks/scheduling-tasks/</guid>
       <description>
         
         
-        &lt;p&gt;You can execute short-lived workflows by running them as &lt;a href=&#34;/docs/v2.11/developer/tasks/task/&#34;&gt;Tasks&lt;/a&gt;.
-&lt;a href=&#34;/docs/v2.11/developer/tasks/run-task/#push_an_app_for_running_tasks&#34;&gt;Running Tasks&lt;/a&gt;
+        &lt;p&gt;You can execute short-lived workflows by running them as &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/tasks/task/&#34;&gt;Tasks&lt;/a&gt;.
+&lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/tasks/run-task/#push_an_app_for_running_tasks&#34;&gt;Running Tasks&lt;/a&gt;
 describes how to run Tasks under Apps.&lt;/p&gt;
 &lt;p&gt;You can also schedule Tasks to run at recurring intervals
 specified using the &lt;a href=&#34;https://man7.org/linux/man-pages/man5/crontab.5.html&#34;&gt;unix-cron&lt;/a&gt; format.
@@ -1801,10 +1801,10 @@ and then delete the job by calling &lt;code&gt;kf delete-job&lt;/code&gt;.&lt;/p
     
     <item>
       <title>Docs: Customizing Kf Features</title>
-      <link>/docs/v2.11/operator/customizing/customizing-features/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/customizing/customizing-features/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/customizing/customizing-features/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/customizing/customizing-features/</guid>
       <description>
         
         
@@ -1890,10 +1890,10 @@ kfsystem kfsystem \
     
     <item>
       <title>Docs: Reduce deployment risk with blue-green deployments</title>
-      <link>/docs/v2.11/developer/build-and-deploy/howto-blue-green/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/howto-blue-green/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/build-and-deploy/howto-blue-green/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/howto-blue-green/</guid>
       <description>
         
         
@@ -1951,10 +1951,10 @@ route and stop the App:&lt;/p&gt;
     
     <item>
       <title>Docs: Compare V2 and V3 Buildpacks</title>
-      <link>/docs/v2.11/developer/build-and-deploy/v2-vs-v3-buildpacks/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/v2-vs-v3-buildpacks/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/build-and-deploy/v2-vs-v3-buildpacks/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/v2-vs-v3-buildpacks/</guid>
       <description>
         
         
@@ -2084,10 +2084,10 @@ V3       org.cloudfoundry.stacks.cflinuxfs3  cloudfoundry/cnb:cflinuxfs3@sha256:
     
     <item>
       <title>Docs: App Manifest</title>
-      <link>/docs/v2.11/developer/build-and-deploy/manifest/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/manifest/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/build-and-deploy/manifest/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/manifest/</guid>
       <description>
         
         
@@ -2408,10 +2408,10 @@ container is alive. It does NOT set a Kubernetes readiness or liveness probe.&lt
     
     <item>
       <title>Docs: App runtime</title>
-      <link>/docs/v2.11/developer/build-and-deploy/app-runtime/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/app-runtime/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/build-and-deploy/app-runtime/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/app-runtime/</guid>
       <description>
         
         
@@ -2553,7 +2553,7 @@ the following structure.&lt;/p&gt;
 &lt;p&gt;A JSON object where the keys are Service labels and the values are an array of
 &lt;code&gt;VCAPService&lt;/code&gt;. The array represents every bound
 service with that label.
-&lt;a href=&#34;/docs/v2.11/developer/backing-services/user-provided-services/&#34;&gt;User provided services&lt;/a&gt;
+&lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/backing-services/user-provided-services/&#34;&gt;User provided services&lt;/a&gt;
 are placed under the label &lt;code&gt;user-provided&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Example&lt;/strong&gt;&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-.json&#34; data-lang=&#34;.json&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;{&lt;/span&gt;
@@ -2723,10 +2723,10 @@ However, the values are allowed to be &lt;a href=&#34;https://github.com/openser
     
     <item>
       <title>Docs: Build runtime</title>
-      <link>/docs/v2.11/developer/build-and-deploy/build-runtime/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/build-runtime/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/build-and-deploy/build-runtime/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/build-runtime/</guid>
       <description>
         
         
@@ -2840,7 +2840,7 @@ earlier ones with the same name:&lt;/p&gt;
 
 &lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
 &lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; The environment variables Kf provides to Builds are a subset of those provided
-to &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/app-runtime/&#34;&gt;App Runtime&lt;/a&gt;.
+to &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/build-and-deploy/app-runtime/&#34;&gt;App Runtime&lt;/a&gt;.
 &lt;/aside&gt;
 
 
@@ -2849,10 +2849,10 @@ to &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/app-runtime/&#34;&gt;A
     
     <item>
       <title>Docs: Configure role-based access control</title>
-      <link>/docs/v2.11/operator/security/rbac/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/security/rbac/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/security/rbac/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/security/rbac/</guid>
       <description>
         
         
@@ -2915,10 +2915,10 @@ to &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/app-runtime/&#34;&gt;A
     
     <item>
       <title>Docs: Configure routes and domains</title>
-      <link>/docs/v2.11/developer/routes-and-domains/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/routes-and-domains/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/routes-and-domains/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/routes-and-domains/</guid>
       <description>
         
         
@@ -3042,10 +3042,10 @@ traffic.&lt;/p&gt;
     
     <item>
       <title>Docs: Create and user monitoring dashboards.</title>
-      <link>/docs/v2.11/operator/logging-monitoring/monitoring-dashboard/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/logging-monitoring/monitoring-dashboard/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/logging-monitoring/monitoring-dashboard/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/logging-monitoring/monitoring-dashboard/</guid>
       <description>
         
         
@@ -3073,10 +3073,10 @@ traffic.&lt;/p&gt;
     
     <item>
       <title>Docs: Customize stacks</title>
-      <link>/docs/v2.11/operator/buildpacks/configure-stacks/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/buildpacks/configure-stacks/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/buildpacks/configure-stacks/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/buildpacks/configure-stacks/</guid>
       <description>
         
         
@@ -3110,10 +3110,10 @@ traffic.&lt;/p&gt;
     
     <item>
       <title>Docs: Customize stacks and buildpacks</title>
-      <link>/docs/v2.11/operator/buildpacks/customizing-buildpacks/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/buildpacks/customizing-buildpacks/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/buildpacks/customizing-buildpacks/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/buildpacks/customizing-buildpacks/</guid>
       <description>
         
         
@@ -3397,15 +3397,15 @@ the value from the &lt;code&gt;config-defaults&lt;/code&gt; ConfigMap is used.&l
     
     <item>
       <title>Docs: Deploy Kf Cloud Service Broker</title>
-      <link>/docs/v2.11/operator/service-brokers/deploying-cloud-sb/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/service-brokers/deploying-cloud-sb/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/service-brokers/deploying-cloud-sb/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/service-brokers/deploying-cloud-sb/</guid>
       <description>
         
         
         &lt;p&gt;This page shows you how to deploy Kf Cloud Service Broker and use it to provision or deprovision backing resources.
-Read about the &lt;a href=&#34;/docs/v2.11/operator/service-brokers/cloud-sb-overview/&#34;&gt;concepts and architecture&lt;/a&gt; to learn more about the Kf Cloud Service Broker.&lt;/p&gt;
+Read about the &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/operator/service-brokers/cloud-sb-overview/&#34;&gt;concepts and architecture&lt;/a&gt; to learn more about the Kf Cloud Service Broker.&lt;/p&gt;
 &lt;h2 id=&#34;create_env_variables&#34;&gt;Create environment variables&lt;/h2&gt;
 &lt;ul&gt;
 &lt;li&gt;
@@ -3641,10 +3641,10 @@ cloud-service-broker  csb-google-storage-bucket                Google Cloud Stor
     
     <item>
       <title>Docs: Deploy Spring Cloud Config</title>
-      <link>/docs/v2.11/examples/deploying-spring-cloud-config/</link>
+      <link>https://google.github.io/kf/docs/v2.11/examples/deploying-spring-cloud-config/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/examples/deploying-spring-cloud-config/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/examples/deploying-spring-cloud-config/</guid>
       <description>
         
         
@@ -3707,7 +3707,7 @@ additional steps to take if you want to deploy the application to production.
 &lt;/aside&gt;
 
 &lt;h2 id=&#34;bind-applications-to-the-configuration-server&#34;&gt;Bind applications to the configuration server&lt;/h2&gt;
-&lt;p&gt;You can create a &lt;a href=&#34;/docs/v2.11/developer/backing-services/user-provided-services/&#34;&gt;user provided service&lt;/a&gt;
+&lt;p&gt;You can create a &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/backing-services/user-provided-services/&#34;&gt;user provided service&lt;/a&gt;
 to bind the deployed configuration server to other Kf
 applications in the same cluster or namespace.&lt;/p&gt;
 &lt;p&gt;How you configure them will depend on the library you use:&lt;/p&gt;
@@ -3724,7 +3724,7 @@ only has to be done once per configuration server:&lt;/p&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 &lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
 &lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; If you want to use a configuration server in a different space,
-change the URI &lt;a href=&#34;/docs/v2.11/developer/service-discovery/service-discovery/#how_to_use_service_discovery_with&#34;&gt;to include the space&lt;/a&gt;.
+change the URI &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/service-discovery/service-discovery/#how_to_use_service_discovery_with&#34;&gt;to include the space&lt;/a&gt;.
 &lt;/aside&gt;
 
 &lt;/li&gt;
@@ -3746,7 +3746,7 @@ server should be configured to access it using its cluster internal URI:&lt;/p&g
 &lt;/code&gt;&lt;/pre&gt;
 &lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
 &lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; If you want to use a configuration server in a different space, change the URI
-&lt;a href=&#34;/docs/v2.11/developer/service-discovery/service-discovery/#how_to_use_service_discovery_with&#34;&gt;to include the space name&lt;/a&gt;.
+&lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/service-discovery/service-discovery/#how_to_use_service_discovery_with&#34;&gt;to include the space name&lt;/a&gt;.
 &lt;/aside&gt;
 
 &lt;ul&gt;
@@ -3778,7 +3778,7 @@ for your application. This is usually an &lt;code&gt;application.properties&lt;/
 &lt;ul&gt;
 &lt;li&gt;Read more about the &lt;a href=&#34;https://cloud.spring.io/spring-cloud-config/reference/html/#_environment_repository&#34;&gt;types of configuration sources&lt;/a&gt;
 Spring Cloud Config supports.&lt;/li&gt;
-&lt;li&gt;Learn about &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices&#34;&gt;the structure of the &lt;code&gt;VCAP_SERVICES&lt;/code&gt; environment variable&lt;/a&gt;
+&lt;li&gt;Learn about &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices&#34;&gt;the structure of the &lt;code&gt;VCAP_SERVICES&lt;/code&gt; environment variable&lt;/a&gt;
 to understand how it can be used for service discovery.&lt;/li&gt;
 &lt;/ul&gt;
 
@@ -3787,10 +3787,10 @@ to understand how it can be used for service discovery.&lt;/li&gt;
     
     <item>
       <title>Docs: Enable compute isolation</title>
-      <link>/docs/v2.11/operator/security/compute-isolation/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/security/compute-isolation/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/security/compute-isolation/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/security/compute-isolation/</guid>
       <description>
         
         
@@ -3879,10 +3879,10 @@ spaceStacksV2: |
     
     <item>
       <title>Docs: Kubernetes Roles</title>
-      <link>/docs/v2.11/operator/security/kubernetes-roles/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/security/kubernetes-roles/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/security/kubernetes-roles/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/security/kubernetes-roles/</guid>
       <description>
         
         
@@ -3985,10 +3985,10 @@ permissions:&lt;/p&gt;
     
     <item>
       <title>Docs: Logging and monitoring</title>
-      <link>/docs/v2.11/operator/logging-monitoring/logging-monitoring/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/logging-monitoring/logging-monitoring/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/logging-monitoring/logging-monitoring/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/logging-monitoring/logging-monitoring/</guid>
       <description>
         
         
@@ -4018,10 +4018,10 @@ labels.k8s-pod/app=&amp;lt;controller OR webhook&amp;gt;
     
     <item>
       <title>Docs: Logging and monitoring overview</title>
-      <link>/docs/v2.11/operator/logging-monitoring/monitoring-overview/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/logging-monitoring/monitoring-overview/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/logging-monitoring/monitoring-overview/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/logging-monitoring/monitoring-overview/</guid>
       <description>
         
         
@@ -4043,10 +4043,10 @@ capabilities.&lt;/p&gt;
     
     <item>
       <title>Docs: Set up a custom domain</title>
-      <link>/docs/v2.11/operator/networking/setting-up-a-custom-domain/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/networking/setting-up-a-custom-domain/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/networking/setting-up-a-custom-domain/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/networking/setting-up-a-custom-domain/</guid>
       <description>
         
         
@@ -4209,10 +4209,10 @@ a variety of different organizational structures and cluster patterns.&lt;/p&gt;
     
     <item>
       <title>Docs: Set up HTTPS ingress</title>
-      <link>/docs/v2.11/operator/networking/setting-up-https-ingress/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/networking/setting-up-https-ingress/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/networking/setting-up-https-ingress/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/networking/setting-up-https-ingress/</guid>
       <description>
         
         
@@ -4268,10 +4268,10 @@ a variety of different organizational structures and cluster patterns.&lt;/p&gt;
     
     <item>
       <title>Docs: Set up network policies</title>
-      <link>/docs/v2.11/operator/networking/setting-up-networkpolicies/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/networking/setting-up-networkpolicies/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/networking/setting-up-networkpolicies/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/networking/setting-up-networkpolicies/</guid>
       <description>
         
         
@@ -4368,10 +4368,10 @@ applications made up of many microservices on your chosen infrastructure.&lt;/p&
     
     <item>
       <title>Docs: Set up NFS platform</title>
-      <link>/docs/v2.11/operator/service-brokers/nfs-platform-setup/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/service-brokers/nfs-platform-setup/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/service-brokers/nfs-platform-setup/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/service-brokers/nfs-platform-setup/</guid>
       <description>
         
         
@@ -4395,7 +4395,7 @@ nfsvolumebroker  existing  true  mount existing nfs server
 &lt;p&gt;Warning: You only need to create the NFS instance. Kf will create relevant Kubernetes objects, including PersistentVolume and PersistentVolumeClaims. Do not manually mount the volume.&lt;/p&gt;
 &lt;h2 id=&#34;whats-next&#34;&gt;What&amp;rsquo;s next?&lt;/h2&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;/docs/v2.11/developer/backing-services/nfs-getting-started/&#34;&gt;Configure NFS volumes&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/backing-services/nfs-getting-started/&#34;&gt;Configure NFS volumes&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
       </description>
@@ -4403,10 +4403,10 @@ nfsvolumebroker  existing  true  mount existing nfs server
     
     <item>
       <title>Docs: View logs</title>
-      <link>/docs/v2.11/operator/logging-monitoring/monitoring-logging/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/logging-monitoring/monitoring-logging/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/logging-monitoring/monitoring-logging/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/logging-monitoring/monitoring-logging/</guid>
       <description>
         
         

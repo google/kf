@@ -1,11 +1,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Kf – Tasks</title>
-    <link>/docs/v2.11/developer/tasks/</link>
+    <link>https://google.github.io/kf/docs/v2.11/developer/tasks/</link>
     <description>Recent content in Tasks on Kf</description>
     <generator>Hugo -- gohugo.io</generator>
     
-	  <atom:link href="/docs/v2.11/developer/tasks/index.xml" rel="self" type="application/rss+xml" />
+	  <atom:link href="https://google.github.io/kf/docs/v2.11/developer/tasks/index.xml" rel="self" type="application/rss+xml" />
     
     
       
@@ -15,10 +15,10 @@
     
     <item>
       <title>Docs: Tasks Overview</title>
-      <link>/docs/v2.11/developer/tasks/task/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/tasks/task/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/tasks/task/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/tasks/task/</guid>
       <description>
         
         
@@ -36,7 +36,7 @@ application.&lt;/p&gt;
 &lt;li&gt;Processing data (upload/backup/download)&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;how-tasks-work&#34;&gt;How Tasks work&lt;/h2&gt;
-&lt;p&gt;Tasks are executed asynchronously and run independently from the parent App or other Tasks running on the same App. An App created for running Tasks does not have routes created or assigned, and the &lt;strong&gt;Run&lt;/strong&gt; lifecycle is skipped. The &lt;strong&gt;Source code upload&lt;/strong&gt; and &lt;strong&gt;Build&lt;/strong&gt; lifecycles still proceed and result in a container image used for running Tasks after pushing the App (see App lifecycles at &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/deploying-an-app/&#34;&gt;Deploying an Application&lt;/a&gt;).&lt;/p&gt;
+&lt;p&gt;Tasks are executed asynchronously and run independently from the parent App or other Tasks running on the same App. An App created for running Tasks does not have routes created or assigned, and the &lt;strong&gt;Run&lt;/strong&gt; lifecycle is skipped. The &lt;strong&gt;Source code upload&lt;/strong&gt; and &lt;strong&gt;Build&lt;/strong&gt; lifecycles still proceed and result in a container image used for running Tasks after pushing the App (see App lifecycles at &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/build-and-deploy/deploying-an-app/&#34;&gt;Deploying an Application&lt;/a&gt;).&lt;/p&gt;
 &lt;p&gt;The lifecycle of a Task is as follows:&lt;/p&gt;
 &lt;ol&gt;
 &lt;li&gt;You push an App for running tasks with the &lt;code&gt;kf push APP_NAME --task&lt;/code&gt; command.&lt;/li&gt;
@@ -77,10 +77,10 @@ behavior by creating multiple Jobs, one for each schedule.&lt;/p&gt;
     
     <item>
       <title>Docs: Run Tasks</title>
-      <link>/docs/v2.11/developer/tasks/run-task/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/tasks/run-task/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/tasks/run-task/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/tasks/run-task/</guid>
       <description>
         
         
@@ -187,15 +187,15 @@ test-app-6w6mz    2   test-app-6w6mz     38s    11s       False      PipelineRun
     
     <item>
       <title>Docs: Schedule Tasks</title>
-      <link>/docs/v2.11/developer/tasks/scheduling-tasks/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/tasks/scheduling-tasks/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/tasks/scheduling-tasks/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/tasks/scheduling-tasks/</guid>
       <description>
         
         
-        &lt;p&gt;You can execute short-lived workflows by running them as &lt;a href=&#34;/docs/v2.11/developer/tasks/task/&#34;&gt;Tasks&lt;/a&gt;.
-&lt;a href=&#34;/docs/v2.11/developer/tasks/run-task/#push_an_app_for_running_tasks&#34;&gt;Running Tasks&lt;/a&gt;
+        &lt;p&gt;You can execute short-lived workflows by running them as &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/tasks/task/&#34;&gt;Tasks&lt;/a&gt;.
+&lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/tasks/run-task/#push_an_app_for_running_tasks&#34;&gt;Running Tasks&lt;/a&gt;
 describes how to run Tasks under Apps.&lt;/p&gt;
 &lt;p&gt;You can also schedule Tasks to run at recurring intervals
 specified using the &lt;a href=&#34;https://man7.org/linux/man-pages/man5/crontab.5.html&#34;&gt;unix-cron&lt;/a&gt; format.

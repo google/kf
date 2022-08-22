@@ -1,11 +1,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Kf – Operate and Maintain Kf</title>
-    <link>/docs/v2.11/operator/</link>
+    <link>https://google.github.io/kf/docs/v2.11/operator/</link>
     <description>Recent content in Operate and Maintain Kf on Kf</description>
     <generator>Hugo -- gohugo.io</generator>
     
-	  <atom:link href="/docs/v2.11/operator/index.xml" rel="self" type="application/rss+xml" />
+	  <atom:link href="https://google.github.io/kf/docs/v2.11/operator/index.xml" rel="self" type="application/rss+xml" />
     
     
       
@@ -15,10 +15,10 @@
     
     <item>
       <title>Docs: Service brokers</title>
-      <link>/docs/v2.11/operator/service-brokers/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/service-brokers/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/service-brokers/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/service-brokers/</guid>
       <description>
         
         
@@ -28,10 +28,10 @@
     
     <item>
       <title>Docs: Customizing Kf</title>
-      <link>/docs/v2.11/operator/customizing/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/customizing/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/customizing/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/customizing/</guid>
       <description>
         
         
@@ -41,10 +41,10 @@
     
     <item>
       <title>Docs: Kf dependencies and architecture</title>
-      <link>/docs/v2.11/operator/kf-dependencies/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/kf-dependencies/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/kf-dependencies/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/kf-dependencies/</guid>
       <description>
         
         
@@ -552,10 +552,10 @@ the version of the Kf CLI that you downloaded.&lt;/p&gt;
     
     <item>
       <title>Docs: Kf reference architecture diagrams</title>
-      <link>/docs/v2.11/operator/reference-architecture/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/reference-architecture/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/reference-architecture/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/reference-architecture/</guid>
       <description>
         
         
@@ -573,7 +573,7 @@ the version of the Kf CLI that you downloaded.&lt;/p&gt;
 &lt;a href=&#34;https://github.com/GoogleContainerTools/kpt-config-sync&#34;&gt;ConfigSync&lt;/a&gt; to
 automate Space creation across any number of clusters.
 Create new namespaces on non-Kf clusters, and Spaces on Kf clusters.
-You can also manage Spaces by removing the Kf CLI from Space management, if desired. Use &lt;code&gt;kubectl explain&lt;/code&gt; to &lt;a href=&#34;/docs/v2.11/operator/kf-dependencies/#get_crd_details&#34;&gt;get Kf CRD specs&lt;/a&gt; to fully manage your product configuration via GitOps.&lt;/p&gt;
+You can also manage Spaces by removing the Kf CLI from Space management, if desired. Use &lt;code&gt;kubectl explain&lt;/code&gt; to &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/operator/kf-dependencies/#get_crd_details&#34;&gt;get Kf CRD specs&lt;/a&gt; to fully manage your product configuration via GitOps.&lt;/p&gt;
 
 &lt;figure&gt;
     &lt;img src=&#34;./config-sync-reference-diagram.svg&#34;
@@ -586,10 +586,10 @@ You can also manage Spaces by removing the Kf CLI from Space management, if desi
     
     <item>
       <title>Docs: Logging and Monitoring</title>
-      <link>/docs/v2.11/operator/logging-monitoring/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/logging-monitoring/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/logging-monitoring/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/logging-monitoring/</guid>
       <description>
         
         
@@ -599,10 +599,10 @@ You can also manage Spaces by removing the Kf CLI from Space management, if desi
     
     <item>
       <title>Docs: Networking</title>
-      <link>/docs/v2.11/operator/networking/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/networking/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/networking/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/networking/</guid>
       <description>
         
         
@@ -612,10 +612,10 @@ You can also manage Spaces by removing the Kf CLI from Space management, if desi
     
     <item>
       <title>Docs: Security</title>
-      <link>/docs/v2.11/operator/security/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/security/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/security/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/security/</guid>
       <description>
         
         
@@ -625,10 +625,10 @@ You can also manage Spaces by removing the Kf CLI from Space management, if desi
     
     <item>
       <title>Docs: Stacks and Buildpacks</title>
-      <link>/docs/v2.11/operator/buildpacks/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/buildpacks/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/buildpacks/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/buildpacks/</guid>
       <description>
         
         

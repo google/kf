@@ -1,11 +1,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Kf – Security</title>
-    <link>/docs/v2.11/operator/security/</link>
+    <link>https://google.github.io/kf/docs/v2.11/operator/security/</link>
     <description>Recent content in Security on Kf</description>
     <generator>Hugo -- gohugo.io</generator>
     
-	  <atom:link href="/docs/v2.11/operator/security/index.xml" rel="self" type="application/rss+xml" />
+	  <atom:link href="https://google.github.io/kf/docs/v2.11/operator/security/index.xml" rel="self" type="application/rss+xml" />
     
     
       
@@ -15,10 +15,10 @@
     
     <item>
       <title>Docs: Security Overview</title>
-      <link>/docs/v2.11/operator/security/security-overview/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/security/security-overview/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/security/security-overview/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/security/security-overview/</guid>
       <description>
         
         
@@ -106,10 +106,10 @@ neighbors. Use Kubernetes
     
     <item>
       <title>Docs: Role-based access control</title>
-      <link>/docs/v2.11/operator/security/role-based-access-control/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/security/role-based-access-control/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/security/role-based-access-control/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/security/role-based-access-control/</guid>
       <description>
         
         
@@ -196,7 +196,7 @@ and grants additional, limited, roles at the cluster scope.&lt;/p&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
 &lt;p&gt;Information about the policy rules that make up each predefined role can be found in the
-&lt;a href=&#34;/docs/v2.11/operator/security/kubernetes-roles/&#34;&gt;Kf roles reference documentation&lt;/a&gt;.&lt;/p&gt;
+&lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/operator/security/kubernetes-roles/&#34;&gt;Kf roles reference documentation&lt;/a&gt;.&lt;/p&gt;
 &lt;h3 id=&#34;interaction_with_iam&#34;&gt;Google Cloud IAM roles&lt;/h3&gt;
 &lt;p&gt;Kf roles provide access control for objects within a
 Kubernetes cluster. Subjects must also be granted an Cloud IAM role to
@@ -260,7 +260,7 @@ model&lt;/a&gt;.&lt;/li&gt;
 &lt;li&gt;Learn more about &lt;a href=&#34;https://cloud.google.com/kubernetes-engine/docs/concepts/access-control&#34;&gt;access control&lt;/a&gt; in GKE.&lt;/li&gt;
 &lt;li&gt;Read the &lt;a href=&#34;https://cloud.google.com/kubernetes-engine/docs/concepts/multitenancy-overview&#34;&gt;GKE multi-tenancy overview&lt;/a&gt;.&lt;/li&gt;
 &lt;li&gt;Learn about &lt;a href=&#34;https://cloud.google.com/kubernetes-engine/docs/how-to/hardening-your-cluster&#34;&gt;hardening your GKE cluster&lt;/a&gt;.&lt;/li&gt;
-&lt;li&gt;Understand the &lt;a href=&#34;/docs/v2.11/operator/security/kubernetes-roles/&#34;&gt;Kubernetes permissions that make up each Kf predefined role&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;Understand the &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/operator/security/kubernetes-roles/&#34;&gt;Kubernetes permissions that make up each Kf predefined role&lt;/a&gt;.&lt;/li&gt;
 &lt;/ul&gt;
 
       </description>
@@ -268,10 +268,10 @@ model&lt;/a&gt;.&lt;/li&gt;
     
     <item>
       <title>Docs: Configure role-based access control</title>
-      <link>/docs/v2.11/operator/security/rbac/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/security/rbac/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/security/rbac/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/security/rbac/</guid>
       <description>
         
         
@@ -334,10 +334,10 @@ model&lt;/a&gt;.&lt;/li&gt;
     
     <item>
       <title>Docs: Enable compute isolation</title>
-      <link>/docs/v2.11/operator/security/compute-isolation/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/security/compute-isolation/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/security/compute-isolation/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/security/compute-isolation/</guid>
       <description>
         
         
@@ -426,10 +426,10 @@ spaceStacksV2: |
     
     <item>
       <title>Docs: Kubernetes Roles</title>
-      <link>/docs/v2.11/operator/security/kubernetes-roles/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/security/kubernetes-roles/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/security/kubernetes-roles/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/security/kubernetes-roles/</guid>
       <description>
         
         

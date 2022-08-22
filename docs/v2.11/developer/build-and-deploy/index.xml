@@ -1,11 +1,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Kf – Build and deploy applications</title>
-    <link>/docs/v2.11/developer/build-and-deploy/</link>
+    <link>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/</link>
     <description>Recent content in Build and deploy applications on Kf</description>
     <generator>Hugo -- gohugo.io</generator>
     
-	  <atom:link href="/docs/v2.11/developer/build-and-deploy/index.xml" rel="self" type="application/rss+xml" />
+	  <atom:link href="https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/index.xml" rel="self" type="application/rss+xml" />
     
     
       
@@ -15,10 +15,10 @@
     
     <item>
       <title>Docs: Deploy an application</title>
-      <link>/docs/v2.11/developer/build-and-deploy/deploying-an-app/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/deploying-an-app/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/build-and-deploy/deploying-an-app/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/deploying-an-app/</guid>
       <description>
         
         
@@ -64,7 +64,7 @@ Kf currently has the following Tekton Tasks:&lt;/p&gt;
 &lt;/ul&gt;
 &lt;p&gt;Kf tracks each TaskRun as a Build. If a Build succeeds, the resulting
 container image is then deployed via the Run lifecycle (described below).&lt;/p&gt;
-&lt;p&gt;More information can be found at &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/build-runtime/&#34;&gt;Build runtime&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;More information can be found at &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/build-and-deploy/build-runtime/&#34;&gt;Build runtime&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 id=&#34;run&#34;&gt;Run&lt;/h2&gt;
 &lt;p&gt;The Run lifecycle is responsible for taking a container image and creating a
 &lt;a href=&#34;https://kubernetes.io/docs/concepts/workloads/controllers/deployment/&#34;&gt;Kubernetes Deployment&lt;/a&gt;.&lt;/p&gt;
@@ -73,7 +73,7 @@ container image is then deployed via the Run lifecycle (described below).&lt;/p&
 &lt;li&gt;&lt;a href=&#34;https://istio.io/docs/reference/config/networking/virtual-service/&#34;&gt;Istio Virtual Services&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://kubernetes.io/docs/concepts/configuration/secret/&#34;&gt;Kubernetes Secrets&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;More information can be found at &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/build-runtime/&#34;&gt;Build runtime&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;More information can be found at &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/build-and-deploy/build-runtime/&#34;&gt;Build runtime&lt;/a&gt;.&lt;/p&gt;
 &lt;h2 id=&#34;push-timeouts&#34;&gt;Push timeouts&lt;/h2&gt;
 &lt;p&gt;Kf supports setting an environment variable to instruct the CLI to time out
 while pushing apps. If set, the variables &lt;code&gt;KF_STARTUP_TIMEOUT&lt;/code&gt; or
@@ -85,10 +85,10 @@ while pushing apps. If set, the variables &lt;code&gt;KF_STARTUP_TIMEOUT&lt;/cod
     
     <item>
       <title>Docs: Get started with buildpacks</title>
-      <link>/docs/v2.11/developer/build-and-deploy/buildpacks-getting-started/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/buildpacks-getting-started/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/build-and-deploy/buildpacks-getting-started/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/buildpacks-getting-started/</guid>
       <description>
         
         
@@ -157,10 +157,10 @@ covers some starter examples for using them.&lt;/p&gt;
     
     <item>
       <title>Docs: Reduce deployment risk with blue-green deployments</title>
-      <link>/docs/v2.11/developer/build-and-deploy/howto-blue-green/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/howto-blue-green/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/build-and-deploy/howto-blue-green/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/howto-blue-green/</guid>
       <description>
         
         
@@ -218,10 +218,10 @@ route and stop the App:&lt;/p&gt;
     
     <item>
       <title>Docs: Compare V2 and V3 Buildpacks</title>
-      <link>/docs/v2.11/developer/build-and-deploy/v2-vs-v3-buildpacks/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/v2-vs-v3-buildpacks/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/build-and-deploy/v2-vs-v3-buildpacks/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/v2-vs-v3-buildpacks/</guid>
       <description>
         
         
@@ -351,10 +351,10 @@ V3       org.cloudfoundry.stacks.cflinuxfs3  cloudfoundry/cnb:cflinuxfs3@sha256:
     
     <item>
       <title>Docs: App Manifest</title>
-      <link>/docs/v2.11/developer/build-and-deploy/manifest/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/manifest/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/build-and-deploy/manifest/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/manifest/</guid>
       <description>
         
         
@@ -675,10 +675,10 @@ container is alive. It does NOT set a Kubernetes readiness or liveness probe.&lt
     
     <item>
       <title>Docs: App runtime</title>
-      <link>/docs/v2.11/developer/build-and-deploy/app-runtime/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/app-runtime/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/build-and-deploy/app-runtime/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/app-runtime/</guid>
       <description>
         
         
@@ -820,7 +820,7 @@ the following structure.&lt;/p&gt;
 &lt;p&gt;A JSON object where the keys are Service labels and the values are an array of
 &lt;code&gt;VCAPService&lt;/code&gt;. The array represents every bound
 service with that label.
-&lt;a href=&#34;/docs/v2.11/developer/backing-services/user-provided-services/&#34;&gt;User provided services&lt;/a&gt;
+&lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/backing-services/user-provided-services/&#34;&gt;User provided services&lt;/a&gt;
 are placed under the label &lt;code&gt;user-provided&lt;/code&gt;.&lt;/p&gt;
 &lt;p&gt;&lt;strong&gt;Example&lt;/strong&gt;&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-.json&#34; data-lang=&#34;.json&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#000;font-weight:bold&#34;&gt;{&lt;/span&gt;
@@ -990,10 +990,10 @@ However, the values are allowed to be &lt;a href=&#34;https://github.com/openser
     
     <item>
       <title>Docs: Build runtime</title>
-      <link>/docs/v2.11/developer/build-and-deploy/build-runtime/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/build-runtime/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/build-and-deploy/build-runtime/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/build-and-deploy/build-runtime/</guid>
       <description>
         
         
@@ -1107,7 +1107,7 @@ earlier ones with the same name:&lt;/p&gt;
 
 &lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
 &lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; The environment variables Kf provides to Builds are a subset of those provided
-to &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/app-runtime/&#34;&gt;App Runtime&lt;/a&gt;.
+to &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/build-and-deploy/app-runtime/&#34;&gt;App Runtime&lt;/a&gt;.
 &lt;/aside&gt;
 
 

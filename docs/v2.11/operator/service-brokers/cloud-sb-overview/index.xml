@@ -1,11 +1,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Kf – About Kf Cloud Service Broker</title>
-    <link>/docs/v2.11/operator/service-brokers/cloud-sb-overview/</link>
+    <link>https://google.github.io/kf/docs/v2.11/operator/service-brokers/cloud-sb-overview/</link>
     <description>Recent content in About Kf Cloud Service Broker on Kf</description>
     <generator>Hugo -- gohugo.io</generator>
     
-	  <atom:link href="/docs/v2.11/operator/service-brokers/cloud-sb-overview/index.xml" rel="self" type="application/rss+xml" />
+	  <atom:link href="https://google.github.io/kf/docs/v2.11/operator/service-brokers/cloud-sb-overview/index.xml" rel="self" type="application/rss+xml" />
     
     
       

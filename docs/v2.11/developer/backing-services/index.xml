@@ -1,11 +1,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Kf – Backing services</title>
-    <link>/docs/v2.11/developer/backing-services/</link>
+    <link>https://google.github.io/kf/docs/v2.11/developer/backing-services/</link>
     <description>Recent content in Backing services on Kf</description>
     <generator>Hugo -- gohugo.io</generator>
     
-	  <atom:link href="/docs/v2.11/developer/backing-services/index.xml" rel="self" type="application/rss+xml" />
+	  <atom:link href="https://google.github.io/kf/docs/v2.11/developer/backing-services/index.xml" rel="self" type="application/rss+xml" />
     
     
       
@@ -15,10 +15,10 @@
     
     <item>
       <title>Docs: Backing Services Overview</title>
-      <link>/docs/v2.11/developer/backing-services/overview/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/backing-services/overview/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/backing-services/overview/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/backing-services/overview/</guid>
       <description>
         
         
@@ -52,10 +52,10 @@ as managed services.&lt;/p&gt;
     
     <item>
       <title>Docs: Use managed services</title>
-      <link>/docs/v2.11/developer/backing-services/managed-services/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/backing-services/managed-services/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/backing-services/managed-services/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/backing-services/managed-services/</guid>
       <description>
         
         
@@ -111,7 +111,7 @@ Listing bindings in Space: &amp;#34;test&amp;#34;
 Name                  App     Service  Age  Ready
 binding-my-app-my-db  my-app  my-db    82s  True
 &lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Once a service is bound, restart the App using &lt;code&gt;kf restart&lt;/code&gt; and the credentials
-will be in the &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices&#34;&gt;&lt;code&gt;VCAP_SERVICES&lt;/code&gt;&lt;/a&gt; environment variable.&lt;/p&gt;
+will be in the &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices&#34;&gt;&lt;code&gt;VCAP_SERVICES&lt;/code&gt;&lt;/a&gt; environment variable.&lt;/p&gt;
 &lt;p&gt;You can delete a service binding with the &lt;code&gt;kf unbind-service&lt;/code&gt; command:&lt;/p&gt;
 &lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;$ kf unbind-service my-app my-db
 &lt;/code&gt;&lt;/pre&gt;
@@ -120,10 +120,10 @@ will be in the &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/app-runtim
     
     <item>
       <title>Docs: Configure user-provided services</title>
-      <link>/docs/v2.11/developer/backing-services/user-provided-services/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/backing-services/user-provided-services/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/backing-services/user-provided-services/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/backing-services/user-provided-services/</guid>
       <description>
         
         
@@ -140,7 +140,7 @@ Creating, listing, updating, deleting, binding, and unbinding user-provided serv
 &lt;h3 id=&#34;deliver-service-credentials-to-an-app&#34;&gt;Deliver service credentials to an app&lt;/h3&gt;
 &lt;p&gt;A user-provided service instance can be used to deliver credentials to an App. For example, a database admin can have a set of credentials for an existing database managed outside of Kf, and these credentials include the URL, port, username, and password used to connect to the database.&lt;/p&gt;
 &lt;p&gt;The admin can create a user-provided service with the credentials and the developer can bind the service instance to the App. This allows the credentials to be shared without ever leaving the platform. Binding a service instance to an App has the same effect regardless of whether the service is a user-provided service or a marketplace service.&lt;/p&gt;
-&lt;p&gt;The App is configured with the credentials provided by the user, and the App runtime environment variable &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices&#34;&gt;&lt;code&gt;VCAP_SERVICES&lt;/code&gt;&lt;/a&gt; is populated with information about all of the bound services to that App.&lt;/p&gt;
+&lt;p&gt;The App is configured with the credentials provided by the user, and the App runtime environment variable &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices&#34;&gt;&lt;code&gt;VCAP_SERVICES&lt;/code&gt;&lt;/a&gt; is populated with information about all of the bound services to that App.&lt;/p&gt;
 &lt;p&gt;A user-provided service can be created with credentials and/or a list of tags.&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf cups my-db -p &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#39;{&amp;#34;username&amp;#34;:&amp;#34;admin&amp;#34;, &amp;#34;password&amp;#34;:&amp;#34;test123&amp;#34;, &amp;#34;some-int-val&amp;#34;: 1, &amp;#34;some-bool&amp;#34;: true}&amp;#39;&lt;/span&gt; -t &lt;span style=&#34;color:#4e9a06&#34;&gt;&amp;#34;comma, separated, tags&amp;#34;&lt;/span&gt;
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;This will create the user-provided service instance &lt;code&gt;my-db&lt;/code&gt; with the provided credentials and tags. The credentials passed in to the &lt;code&gt;-p&lt;/code&gt; flag must be valid JSON (either inline or loaded from a file path).&lt;/p&gt;
@@ -201,16 +201,16 @@ Creating, listing, updating, deleting, binding, and unbinding user-provided serv
     
     <item>
       <title>Docs: User Provided Service Templates</title>
-      <link>/docs/v2.11/developer/backing-services/ups-templates/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/backing-services/ups-templates/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/backing-services/ups-templates/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/backing-services/ups-templates/</guid>
       <description>
         
         
         
 &lt;aside class=&#34;alert alert-info&#34; style=&#34;border-width: 1px 1px 1px 4px;&#34;&gt;
-&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; You can leverage services that aren&amp;rsquo;t listed in the marketplace by creating user-provided service instances that an App can bind to. Learn more about &lt;a href=&#34;/docs/v2.11/developer/backing-services/user-provided-services/&#34;&gt;user-provided services&lt;/a&gt;.
+&lt;i class=&#34;fas fa-star ml-2&#34;&gt;&lt;/i&gt; &lt;strong&gt;Note:&lt;/strong&gt; You can leverage services that aren&amp;rsquo;t listed in the marketplace by creating user-provided service instances that an App can bind to. Learn more about &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/backing-services/user-provided-services/&#34;&gt;user-provided services&lt;/a&gt;.
 &lt;/aside&gt;
 
 &lt;h2 id=&#34;before-you-begin&#34;&gt;Before you begin&lt;/h2&gt;
@@ -264,7 +264,7 @@ user provided service by name, just like a managed service:&lt;/p&gt;
 &lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;background-color:#f8f8f8;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-sh&#34; data-lang=&#34;sh&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kf bind-service application-name service-instance-name
 &lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;whats-next&#34;&gt;What&amp;rsquo;s next&lt;/h2&gt;
 &lt;ul&gt;
-&lt;li&gt;Learn about &lt;a href=&#34;/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices&#34;&gt;how the credentials are injected into your app&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;Learn about &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/developer/build-and-deploy/app-runtime/#vcapservices&#34;&gt;how the credentials are injected into your app&lt;/a&gt;.&lt;/li&gt;
 &lt;/ul&gt;
 
       </description>
@@ -272,17 +272,17 @@ user provided service by name, just like a managed service:&lt;/p&gt;
     
     <item>
       <title>Docs: Configure NFS volumes</title>
-      <link>/docs/v2.11/developer/backing-services/nfs-getting-started/</link>
+      <link>https://google.github.io/kf/docs/v2.11/developer/backing-services/nfs-getting-started/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/developer/backing-services/nfs-getting-started/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/developer/backing-services/nfs-getting-started/</guid>
       <description>
         
         
         &lt;p&gt;Kf supports mounting NFS volumes using the &lt;code&gt;kf marketplace&lt;/code&gt;.&lt;/p&gt;
 &lt;h2 id=&#34;prerequisites&#34;&gt;Prerequisites&lt;/h2&gt;
 &lt;ul&gt;
-&lt;li&gt;Your administrator must have &lt;a href=&#34;/docs/v2.11/operator/service-brokers/nfs-platform-setup/&#34;&gt;completed the NFS platform setup guide&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;Your administrator must have &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/operator/service-brokers/nfs-platform-setup/&#34;&gt;completed the NFS platform setup guide&lt;/a&gt;.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;h2 id=&#34;create-an-nfs-service-instance&#34;&gt;Create an NFS service instance&lt;/h2&gt;
 &lt;p&gt;Run &lt;code&gt;kf marketplace&lt;/code&gt; to see available services. The built-in NFS service appears on the list if NFS is enabled on the platform.&lt;/p&gt;

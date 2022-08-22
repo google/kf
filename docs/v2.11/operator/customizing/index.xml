@@ -1,11 +1,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Kf – Customizing Kf</title>
-    <link>/docs/v2.11/operator/customizing/</link>
+    <link>https://google.github.io/kf/docs/v2.11/operator/customizing/</link>
     <description>Recent content in Customizing Kf on Kf</description>
     <generator>Hugo -- gohugo.io</generator>
     
-	  <atom:link href="/docs/v2.11/operator/customizing/index.xml" rel="self" type="application/rss+xml" />
+	  <atom:link href="https://google.github.io/kf/docs/v2.11/operator/customizing/index.xml" rel="self" type="application/rss+xml" />
     
     
       
@@ -15,10 +15,10 @@
     
     <item>
       <title>Docs: Customizing Overview</title>
-      <link>/docs/v2.11/operator/customizing/about-customizing-kf/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/customizing/about-customizing-kf/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/customizing/about-customizing-kf/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/customizing/about-customizing-kf/</guid>
       <description>
         
         
@@ -35,10 +35,10 @@
     
     <item>
       <title>Docs: Cluster Configuration</title>
-      <link>/docs/v2.11/operator/customizing/cluster-configuration/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/customizing/cluster-configuration/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/customizing/cluster-configuration/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/customizing/cluster-configuration/</guid>
       <description>
         
         
@@ -338,10 +338,10 @@ that can enable and disable features of Kf.&lt;/p&gt;
     
     <item>
       <title>Docs: Customizing Kf Features</title>
-      <link>/docs/v2.11/operator/customizing/customizing-features/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/customizing/customizing-features/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/customizing/customizing-features/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/customizing/customizing-features/</guid>
       <description>
         
         

@@ -1,11 +1,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Kf – Getting Started</title>
-    <link>/docs/v2.11/getting-started/</link>
+    <link>https://google.github.io/kf/docs/v2.11/getting-started/</link>
     <description>Recent content in Getting Started on Kf</description>
     <generator>Hugo -- gohugo.io</generator>
     
-	  <atom:link href="/docs/v2.11/getting-started/index.xml" rel="self" type="application/rss+xml" />
+	  <atom:link href="https://google.github.io/kf/docs/v2.11/getting-started/index.xml" rel="self" type="application/rss+xml" />
     
     
       
@@ -15,10 +15,10 @@
     
     <item>
       <title>Docs: Getting Started Overview</title>
-      <link>/docs/v2.11/getting-started/overview/</link>
+      <link>https://google.github.io/kf/docs/v2.11/getting-started/overview/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/getting-started/overview/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/getting-started/overview/</guid>
       <description>
         
         
@@ -27,7 +27,7 @@ Kubernetes without changing your developer workflows.&lt;/p&gt;
 &lt;p&gt;Use the following sections to get started deploying Cloud Foundry apps
 to Kf.&lt;/p&gt;
 &lt;h2 id=&#34;get-started-with-a-quickstart&#34;&gt;Get started with a quickstart&lt;/h2&gt;
-&lt;p&gt;Use the &lt;a href=&#34;/docs/v2.11/getting-started/quickstart/&#34;&gt;quickstart&lt;/a&gt; to install Kf and deploy a
+&lt;p&gt;Use the &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/getting-started/quickstart/&#34;&gt;quickstart&lt;/a&gt; to install Kf and deploy a
 simple test Cloud Foundry app. This introduces you to the basic steps you&amp;rsquo;d
 perform for most app deployments.&lt;/p&gt;
 &lt;h2 id=&#34;get-an-introduction-to-key-concepts&#34;&gt;Get an introduction to key concepts&lt;/h2&gt;
@@ -35,14 +35,14 @@ perform for most app deployments.&lt;/p&gt;
 high-level overviews of the technology, see the following documents:&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;To learn more about how Kf works, see
-&lt;a href=&#34;/docs/v2.11/operator/kf-dependencies/&#34;&gt;Kf dependencies and architecture&lt;/a&gt;.&lt;/li&gt;
+&lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/operator/kf-dependencies/&#34;&gt;Kf dependencies and architecture&lt;/a&gt;.&lt;/li&gt;
 &lt;li&gt;For a side-by-side comparison of Cloud Foundry and Kf
 components, see
-&lt;a href=&#34;/docs/v2.11/getting-started/compare-services/&#34;&gt;Compare Cloud Foundry and Kf services&lt;/a&gt;.&lt;/li&gt;
+&lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/getting-started/compare-services/&#34;&gt;Compare Cloud Foundry and Kf services&lt;/a&gt;.&lt;/li&gt;
 &lt;li&gt;To learn how to use service brokers with Kf,
-see &lt;a href=&#34;/docs/v2.11/operator/service-brokers/about-service-brokers/&#34;&gt;Service brokers&lt;/a&gt;.&lt;/li&gt;
+see &lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/operator/service-brokers/about-service-brokers/&#34;&gt;Service brokers&lt;/a&gt;.&lt;/li&gt;
 &lt;li&gt;For more information about Kf security design, see the
-&lt;a href=&#34;/docs/v2.11/operator/security/security-overview/&#34;&gt;Security overview&lt;/a&gt;.&lt;/li&gt;
+&lt;a href=&#34;https://google.github.io/kf/kf/docs/v2.11/operator/security/security-overview/&#34;&gt;Security overview&lt;/a&gt;.&lt;/li&gt;
 &lt;/ul&gt;
 
       </description>
@@ -50,10 +50,10 @@ see &lt;a href=&#34;/docs/v2.11/operator/service-brokers/about-service-brokers/&
     
     <item>
       <title>Docs: Quickstart</title>
-      <link>/docs/v2.11/getting-started/quickstart/</link>
+      <link>https://google.github.io/kf/docs/v2.11/getting-started/quickstart/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/getting-started/quickstart/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/getting-started/quickstart/</guid>
       <description>
         
         
@@ -141,10 +141,10 @@ see &lt;a href=&#34;/docs/v2.11/operator/service-brokers/about-service-brokers/&
     
     <item>
       <title>Docs: Compare Cloud Foundry and Kf services</title>
-      <link>/docs/v2.11/getting-started/compare-services/</link>
+      <link>https://google.github.io/kf/docs/v2.11/getting-started/compare-services/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/getting-started/compare-services/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/getting-started/compare-services/</guid>
       <description>
         
         

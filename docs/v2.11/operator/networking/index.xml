@@ -1,11 +1,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Kf – Networking</title>
-    <link>/docs/v2.11/operator/networking/</link>
+    <link>https://google.github.io/kf/docs/v2.11/operator/networking/</link>
     <description>Recent content in Networking on Kf</description>
     <generator>Hugo -- gohugo.io</generator>
     
-	  <atom:link href="/docs/v2.11/operator/networking/index.xml" rel="self" type="application/rss+xml" />
+	  <atom:link href="https://google.github.io/kf/docs/v2.11/operator/networking/index.xml" rel="self" type="application/rss+xml" />
     
     
       
@@ -15,10 +15,10 @@
     
     <item>
       <title>Docs: Set up a custom domain</title>
-      <link>/docs/v2.11/operator/networking/setting-up-a-custom-domain/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/networking/setting-up-a-custom-domain/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/networking/setting-up-a-custom-domain/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/networking/setting-up-a-custom-domain/</guid>
       <description>
         
         
@@ -181,10 +181,10 @@ a variety of different organizational structures and cluster patterns.&lt;/p&gt;
     
     <item>
       <title>Docs: Set up HTTPS ingress</title>
-      <link>/docs/v2.11/operator/networking/setting-up-https-ingress/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/networking/setting-up-https-ingress/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/networking/setting-up-https-ingress/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/networking/setting-up-https-ingress/</guid>
       <description>
         
         
@@ -240,10 +240,10 @@ a variety of different organizational structures and cluster patterns.&lt;/p&gt;
     
     <item>
       <title>Docs: Set up network policies</title>
-      <link>/docs/v2.11/operator/networking/setting-up-networkpolicies/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/networking/setting-up-networkpolicies/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/networking/setting-up-networkpolicies/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/networking/setting-up-networkpolicies/</guid>
       <description>
         
         

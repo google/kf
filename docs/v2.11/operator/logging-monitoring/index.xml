@@ -1,11 +1,11 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Kf – Logging and Monitoring</title>
-    <link>/docs/v2.11/operator/logging-monitoring/</link>
+    <link>https://google.github.io/kf/docs/v2.11/operator/logging-monitoring/</link>
     <description>Recent content in Logging and Monitoring on Kf</description>
     <generator>Hugo -- gohugo.io</generator>
     
-	  <atom:link href="/docs/v2.11/operator/logging-monitoring/index.xml" rel="self" type="application/rss+xml" />
+	  <atom:link href="https://google.github.io/kf/docs/v2.11/operator/logging-monitoring/index.xml" rel="self" type="application/rss+xml" />
     
     
       
@@ -15,10 +15,10 @@
     
     <item>
       <title>Docs: Create and user monitoring dashboards.</title>
-      <link>/docs/v2.11/operator/logging-monitoring/monitoring-dashboard/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/logging-monitoring/monitoring-dashboard/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/logging-monitoring/monitoring-dashboard/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/logging-monitoring/monitoring-dashboard/</guid>
       <description>
         
         
@@ -46,10 +46,10 @@
     
     <item>
       <title>Docs: Logging and monitoring</title>
-      <link>/docs/v2.11/operator/logging-monitoring/logging-monitoring/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/logging-monitoring/logging-monitoring/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/logging-monitoring/logging-monitoring/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/logging-monitoring/logging-monitoring/</guid>
       <description>
         
         
@@ -79,10 +79,10 @@ labels.k8s-pod/app=&amp;lt;controller OR webhook&amp;gt;
     
     <item>
       <title>Docs: Logging and monitoring overview</title>
-      <link>/docs/v2.11/operator/logging-monitoring/monitoring-overview/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/logging-monitoring/monitoring-overview/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/logging-monitoring/monitoring-overview/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/logging-monitoring/monitoring-overview/</guid>
       <description>
         
         
@@ -104,10 +104,10 @@ capabilities.&lt;/p&gt;
     
     <item>
       <title>Docs: View logs</title>
-      <link>/docs/v2.11/operator/logging-monitoring/monitoring-logging/</link>
+      <link>https://google.github.io/kf/docs/v2.11/operator/logging-monitoring/monitoring-logging/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>/docs/v2.11/operator/logging-monitoring/monitoring-logging/</guid>
+      <guid>https://google.github.io/kf/docs/v2.11/operator/logging-monitoring/monitoring-logging/</guid>
       <description>
         
         
