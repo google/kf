@@ -1,6 +1,6 @@
 # Kf
 
-See go/kf for details.
+This is not an officially supported Google product
 
 ## Getting started the manual way
 
