@@ -37,6 +37,10 @@ const (
 var (
 	revisionHistoryLimit = int32(1)
 	replicas             = int32(1)
+
+	// defaultMaxSurge and defaultMaxUnavailable are the default values for Deployment's rolling upgrade strategy.
+	defaultMaxSurge       intstr.IntOrString = intstr.FromString("25%")
+	defaultMaxUnavailable intstr.IntOrString = intstr.FromString("25%")
 )
 
 // DeploymentName gets the name of a Deployment given the route service instance.
@@ -95,6 +99,14 @@ func MakeDeployment(serviceInstance *v1alpha1.ServiceInstance, cfg *config.Confi
 			},
 			RevisionHistoryLimit: ptr.Int32(revisionHistoryLimit),
 			Replicas:             ptr.Int32(replicas),
+			Strategy: appsv1.DeploymentStrategy{
+				Type: appsv1.RollingUpdateDeploymentStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateDeployment{
+					MaxUnavailable: &defaultMaxUnavailable,
+					MaxSurge:       &defaultMaxSurge,
+				},
+			},
+			ProgressDeadlineSeconds: ptr.Int32(600),
 		},
 	}, nil
 }
@@ -112,7 +124,10 @@ func makePodSpec(serviceInstance v1alpha1.ServiceInstance, configDefaults *confi
 		Ports: []corev1.ContainerPort{{
 			Name:          RouteServiceProxyUserPortName,
 			ContainerPort: RouteServiceProxyUserPort,
+			Protocol:      corev1.ProtocolTCP,
 		}},
+		TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+		TerminationMessagePolicy: corev1.TerminationMessageReadFile,
 	}
 
 	// Set environment variables on the container for Route Service URL and Port.
@@ -141,5 +156,13 @@ func makePodSpec(serviceInstance v1alpha1.ServiceInstance, configDefaults *confi
 	userContainer.LivenessProbe = &tcpProbe
 	userContainer.ReadinessProbe = &tcpProbe
 	spec.Containers = []corev1.Container{userContainer}
+
+	// Populate default pod spec
+	spec.RestartPolicy = corev1.RestartPolicyAlways
+	spec.TerminationGracePeriodSeconds = ptr.Int64(corev1.DefaultTerminationGracePeriodSeconds)
+	spec.DNSPolicy = corev1.DNSClusterFirst
+
+	spec.SecurityContext = &corev1.PodSecurityContext{}
+	spec.SchedulerName = corev1.DefaultSchedulerName
 	return spec
 }

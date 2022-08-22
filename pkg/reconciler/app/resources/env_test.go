@@ -63,7 +63,8 @@ func TestBuildRuntimeEnvVars(t *testing.T) {
 				{Name: "VCAP_APP_PORT", Value: "$(PORT)"},
 				{Name: "CF_INSTANCE_IP", ValueFrom: &corev1.EnvVarSource{
 					FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath: "status.podIP",
+						APIVersion: "v1",
+						FieldPath:  "status.podIP",
 					},
 				}},
 				{Name: "CF_INSTANCE_INTERNAL_IP", Value: "$(CF_INSTANCE_IP)"},
@@ -72,7 +73,8 @@ func TestBuildRuntimeEnvVars(t *testing.T) {
 				{Name: "CF_INSTANCE_ADDR", Value: "$(CF_INSTANCE_IP):$(CF_INSTANCE_PORT)"},
 				{Name: "CF_INSTANCE_GUID", ValueFrom: &corev1.EnvVarSource{
 					FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath: "metadata.uid",
+						APIVersion: "v1",
+						FieldPath:  "metadata.uid",
 					},
 				}},
 				{Name: "INSTANCE_GUID", Value: "$(CF_INSTANCE_GUID)"},
@@ -120,7 +122,8 @@ func TestBuildRuntimeEnvVars(t *testing.T) {
 			wantOut: []corev1.EnvVar{
 				{Name: "CF_INSTANCE_IP", ValueFrom: &corev1.EnvVarSource{
 					FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath: "status.podIP",
+						APIVersion: "v1",
+						FieldPath:  "status.podIP",
 					},
 				}},
 				{Name: "CF_INSTANCE_INTERNAL_IP", Value: "$(CF_INSTANCE_IP)"},
@@ -160,7 +163,8 @@ func TestBuildRuntimeEnvVars(t *testing.T) {
 			wantOut: []corev1.EnvVar{
 				{Name: "CF_INSTANCE_IP", ValueFrom: &corev1.EnvVarSource{
 					FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath: "status.podIP",
+						APIVersion: "v1",
+						FieldPath:  "status.podIP",
 					},
 				}},
 				{Name: "CF_INSTANCE_INTERNAL_IP", Value: "$(CF_INSTANCE_IP)"},
@@ -169,7 +173,8 @@ func TestBuildRuntimeEnvVars(t *testing.T) {
 				{Name: "CF_INSTANCE_ADDR", Value: "$(CF_INSTANCE_IP):$(CF_INSTANCE_PORT)"},
 				{Name: "CF_INSTANCE_GUID", ValueFrom: &corev1.EnvVarSource{
 					FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath: "metadata.uid",
+						APIVersion: "v1",
+						FieldPath:  "metadata.uid",
 					},
 				}},
 				{Name: "INSTANCE_GUID", Value: "$(CF_INSTANCE_GUID)"},

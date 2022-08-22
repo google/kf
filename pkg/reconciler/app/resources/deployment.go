@@ -41,6 +41,12 @@ const (
 	unmountCmdFormat string = "fusermount -u %s &"
 )
 
+var (
+	// defaultMaxSurge and defaultMaxUnavailable are the default values for Deployment's rolling upgrade strategy.
+	defaultMaxSurge       intstr.IntOrString = intstr.FromString("25%")
+	defaultMaxUnavailable intstr.IntOrString = intstr.FromString("25%")
+)
+
 // DeploymentName gets the name of a Deployment given the app.
 func DeploymentName(app *v1alpha1.App) string {
 	return app.Name
@@ -96,6 +102,14 @@ func MakeDeployment(
 			},
 			RevisionHistoryLimit: ptr.Int32(DefaultRevisionHistoryLimit),
 			Replicas:             ptr.Int32(int32(replicas)),
+			Strategy: appsv1.DeploymentStrategy{
+				Type: appsv1.RollingUpdateDeploymentStrategyType,
+				RollingUpdate: &appsv1.RollingUpdateDeployment{
+					MaxUnavailable: &defaultMaxUnavailable,
+					MaxSurge:       &defaultMaxSurge,
+				},
+			},
+			ProgressDeadlineSeconds: ptr.Int32(600),
 		},
 	}, nil
 }
@@ -145,11 +159,18 @@ func makePodSpec(app *v1alpha1.App, space *v1alpha1.Space) (*corev1.PodSpec, err
 	userContainer.Stdin = false
 	userContainer.TTY = false
 
+	// Populate default container values
+	userContainer.ImagePullPolicy = corev1.PullIfNotPresent
+	userContainer.TerminationMessagePath = corev1.TerminationMessagePathDefault
+	userContainer.TerminationMessagePolicy = corev1.TerminationMessageReadFile
+
 	// If the client provides probes, we should fill in the port for them.
 	rewriteUserProbe(userContainer.LivenessProbe, userPort)
 	rewriteUserProbe(userContainer.ReadinessProbe, userPort)
 
 	spec.ServiceAccountName = app.Status.ServiceAccountName
+	// This need to be removed after we implement server side apply.
+	spec.DeprecatedServiceAccount = spec.ServiceAccountName
 
 	// If the client provides a node selector, we should fill in the corresponding field in the podspec.
 	spec.NodeSelector = selectorutil.GetNodeSelector(app.Spec.Build.Spec, space)
@@ -184,6 +205,14 @@ func makePodSpec(app *v1alpha1.App, space *v1alpha1.Space) (*corev1.PodSpec, err
 			},
 		}
 	}
+
+	// Populate default pod spec
+	spec.RestartPolicy = corev1.RestartPolicyAlways
+	spec.TerminationGracePeriodSeconds = ptr.Int64(corev1.DefaultTerminationGracePeriodSeconds)
+	spec.DNSPolicy = corev1.DNSClusterFirst
+
+	spec.SecurityContext = &corev1.PodSecurityContext{}
+	spec.SchedulerName = corev1.DefaultSchedulerName
 
 	return spec, nil
 }
@@ -254,6 +283,7 @@ func buildContainerPorts(userPort int32) []corev1.ContainerPort {
 	return []corev1.ContainerPort{{
 		Name:          UserPortName,
 		ContainerPort: userPort,
+		Protocol:      corev1.ProtocolTCP,
 	}}
 }
 

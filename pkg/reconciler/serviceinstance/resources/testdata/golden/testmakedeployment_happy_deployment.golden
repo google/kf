@@ -60,7 +60,8 @@
                         "ports": [
                             {
                                 "name": "http",
-                                "containerPort": 8080
+                                "containerPort": 8080,
+                                "protocol": "TCP"
                             }
                         ],
                         "env": [
@@ -84,14 +85,28 @@
                                 "port": 8080
                             }
                         },
+                        "terminationMessagePath": "/dev/termination-log",
+                        "terminationMessagePolicy": "File",
                         "imagePullPolicy": "IfNotPresent"
                     }
                 ],
+                "restartPolicy": "Always",
+                "terminationGracePeriodSeconds": 30,
+                "dnsPolicy": "ClusterFirst",
+                "securityContext": {},
+                "schedulerName": "default-scheduler",
                 "enableServiceLinks": false
             }
         },
-        "strategy": {},
-        "revisionHistoryLimit": 1
+        "strategy": {
+            "type": "RollingUpdate",
+            "rollingUpdate": {
+                "maxUnavailable": "25%",
+                "maxSurge": "25%"
+            }
+        },
+        "revisionHistoryLimit": 1,
+        "progressDeadlineSeconds": 600
     },
     "status": {}
 }

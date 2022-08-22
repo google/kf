@@ -80,6 +80,7 @@
                 "name": "CF_INSTANCE_IP",
                 "valueFrom": {
                     "fieldRef": {
+                        "apiVersion": "v1",
                         "fieldPath": "status.podIP"
                     }
                 }

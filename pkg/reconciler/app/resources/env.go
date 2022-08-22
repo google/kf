@@ -110,7 +110,9 @@ func fieldRef(path string) envProducer {
 		return corev1.EnvVar{
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: path,
+					// "v1" is the default value.
+					APIVersion: "v1",
+					FieldPath:  path,
 				},
 			},
 		}
