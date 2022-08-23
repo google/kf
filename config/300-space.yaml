@@ -513,6 +513,18 @@ spec:
                   description: RuntimeConfig contains the info necessary to configure the application runtime.
                   type: object
                   properties:
+                    appCPUPerGBOfRAM:
+                      description: AppCPUPerGBOfRAM sets the default amount of CPU to assign an app per GB of RAM.
+                      anyOf:
+                        - type: integer
+                        - type: string
+                      x-kubernetes-int-or-string: true
+                    appCPUMin:
+                      description: AppCPUMin sets the minimum amount of CPU to assign an app.
+                      anyOf:
+                        - type: integer
+                        - type: string
+                      x-kubernetes-int-or-string: true
                     env:
                       description: Env sets default environment variables on kf applications for the whole space.
                       type: array

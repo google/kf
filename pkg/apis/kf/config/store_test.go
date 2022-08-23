@@ -52,6 +52,8 @@ func TestStoreLoadWithContext(t *testing.T) {
 		buildPodResourcesKey,
 		featureFlagsKey,
 		nopImageKey,
+		appCPUMinKey,
+		appCPUPerGBOfRAMKey,
 	}
 	_, configMap := cmtesting.ConfigMapsFromTestFile(t, DefaultsConfigName, allowedPredefinedKey...)
 	// sanity check the configmap, add more assertions below when new fields

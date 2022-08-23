@@ -58,7 +58,7 @@ func TestPushCommand(t *testing.T) {
 	wantCPU := resource.MustParse("2")
 
 	app := manifest.Application{}
-	defaultContainer, err := app.ToContainer()
+	defaultContainer, err := app.ToContainer(&v1alpha1.SpaceStatusRuntimeConfig{})
 	testutil.AssertNil(t, "default container err", err)
 
 	defaultSpaceStatusNetworkConfig := v1alpha1.SpaceStatusNetworkConfig{

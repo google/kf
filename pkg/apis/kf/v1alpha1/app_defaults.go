@@ -180,6 +180,21 @@ func SetKfAppContainerDefaults(_ context.Context, container *corev1.Container) {
 	if _, exists := container.Resources.Requests[corev1.ResourceCPU]; !exists {
 		container.Resources.Requests[corev1.ResourceCPU] = defaultCPU
 	}
+
+	// Set limits if they've not been set for a value.
+	if container.Resources.Limits == nil {
+		container.Resources.Limits = v1.ResourceList{}
+	}
+
+	for _, key := range []v1.ResourceName{
+		corev1.ResourceMemory,
+		corev1.ResourceEphemeralStorage,
+		corev1.ResourceCPU,
+	} {
+		if _, exists := container.Resources.Limits[key]; !exists {
+			container.Resources.Limits[key] = container.Resources.Requests[key]
+		}
+	}
 }
 
 func setContainerReadinessProbe(container *corev1.Container) {

@@ -20,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/google/kf/v2/pkg/apis/kf/config"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
@@ -230,6 +231,13 @@ type SpaceStatusRuntimeConfig struct {
 	// space.
 	// +optional
 	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// AppCPUPerGBOfRAM sets the default amount of CPU to assign an app per GB of RAM.
+	AppCPUPerGBOfRAM *resource.Quantity `json:"appCPUPerGBOfRAM,omitempty"`
+
+	// AppCPUMin sets the minimum amount of CPU to assign an app regardless of the
+	// amount of RAM it's assigned.
+	AppCPUMin *resource.Quantity `json:"appCPUMin,omitempty"`
 }
 
 // SpaceStatusNetworkConfig reflects the actual Networking configuration for the

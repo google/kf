@@ -206,7 +206,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, space *v1alpha1.Space) er
 	// they should be updated regardless of the state of the overall Space.
 	{
 		logger.Debug("updating application runtime config")
-		space.Status.PropagateRuntimeConfigStatus(space.Spec.RuntimeConfig)
+		space.Status.PropagateRuntimeConfigStatus(space.Spec.RuntimeConfig, kfconfig.FromContext(ctx))
 	}
 
 	{

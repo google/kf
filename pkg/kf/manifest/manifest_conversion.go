@@ -17,12 +17,17 @@ package manifest
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/internal/envutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+)
+
+var (
+	ramDivisor = resource.MustParse("1Gi")
 )
 
 // ToAppSpecInstances extracts scaling info from the manifest.
@@ -43,7 +48,7 @@ func (source *Application) ToAppSpecInstances() v1alpha1.AppSpecInstances {
 
 // ToResourceRequests returns a ResourceList with memory, CPU, and storage set.
 // If none are set by the user, the returned ResourceList will be nil.
-func (source *Application) ToResourceRequests() (corev1.ResourceList, error) {
+func (source *Application) ToResourceRequests(runtimeConfig *v1alpha1.SpaceStatusRuntimeConfig) (corev1.ResourceList, error) {
 	resourceMapping := map[corev1.ResourceName]string{
 		corev1.ResourceMemory:           CFToSIUnits(source.Memory),
 		corev1.ResourceEphemeralStorage: CFToSIUnits(source.DiskQuota),
@@ -61,6 +66,30 @@ func (source *Application) ToResourceRequests() (corev1.ResourceList, error) {
 			}
 
 			requests[kind] = quantity
+		}
+	}
+
+	// If CPU isn't set, we use a CF-ism which is to default it based on the amount of RAM.
+	if _, ok := requests[corev1.ResourceCPU]; !ok {
+		if cpuMult := runtimeConfig.AppCPUPerGBOfRAM; cpuMult != nil {
+			ramRatio := 1.0 // Assume CPU unit by default.
+			if ramQty, err := resource.ParseQuantity(CFToSIUnits(source.Memory)); err == nil {
+				ramRatio = float64(ramQty.MilliValue()) / float64(ramDivisor.MilliValue())
+			}
+
+			cpuMillis := math.Ceil(cpuMult.AsApproximateFloat64() * ramRatio * 1000)
+			requests[corev1.ResourceCPU] = *resource.NewMilliQuantity(int64(cpuMillis), resource.BinarySI)
+		}
+	}
+
+	// Set a lower-bound on CPU so containers aren't starved.
+	if minCPU := runtimeConfig.AppCPUMin; minCPU != nil {
+		if cpuRequest, ok := requests[corev1.ResourceCPU]; ok {
+			if cpuRequest.Cmp(*minCPU) < 0 {
+				requests[corev1.ResourceCPU] = *minCPU
+			}
+		} else {
+			requests[corev1.ResourceCPU] = *minCPU
 		}
 	}
 
@@ -126,8 +155,8 @@ func (source *Application) ToHealthCheck() (*corev1.Probe, error) {
 
 // ToContainer converts the manifest to a container suitable for use in a pod,
 // ksvc, or app.
-func (source *Application) ToContainer() (corev1.Container, error) {
-	resourceRequests, err := source.ToResourceRequests()
+func (source *Application) ToContainer(runtimeConfig *v1alpha1.SpaceStatusRuntimeConfig) (corev1.Container, error) {
+	resourceRequests, err := source.ToResourceRequests(runtimeConfig)
 	if err != nil {
 		return corev1.Container{}, err
 	}
@@ -141,7 +170,9 @@ func (source *Application) ToContainer() (corev1.Container, error) {
 		Args:    source.CommandArgs(),
 		Command: source.CommandEntrypoint(),
 		Resources: corev1.ResourceRequirements{
+			// Requests and limits match to mirror CF.
 			Requests: resourceRequests,
+			Limits:   resourceRequests,
 		},
 		ReadinessProbe: healthCheck,
 		LivenessProbe:  healthCheck,

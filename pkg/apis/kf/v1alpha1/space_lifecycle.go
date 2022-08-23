@@ -78,10 +78,20 @@ func (status *SpaceStatus) PropagateIngressGatewayStatus(ingresses []corev1.Load
 
 // PropagateRuntimeConfigStatus copies the application runtime settings to the
 // space status.
-func (status *SpaceStatus) PropagateRuntimeConfigStatus(runtimeConfig SpaceSpecRuntimeConfig) {
+func (status *SpaceStatus) PropagateRuntimeConfigStatus(runtimeConfig SpaceSpecRuntimeConfig, cfg *config.Config) {
 	// Copy environment over wholesale because there are no values that can be set
 	// cluster-wide.
 	status.RuntimeConfig.Env = runtimeConfig.Env
+
+	// Copy from the config if possible.
+	defaultsConfig, err := cfg.Defaults()
+	if err != nil {
+		status.RuntimeConfigCondition().MarkReconciliationError("NilConfig", err)
+		return
+	}
+
+	status.RuntimeConfig.AppCPUMin = defaultsConfig.AppCPUMin
+	status.RuntimeConfig.AppCPUPerGBOfRAM = defaultsConfig.AppCPUPerGBOfRAM
 
 	status.RuntimeConfigCondition().MarkSuccess()
 }

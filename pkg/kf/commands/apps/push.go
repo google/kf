@@ -237,7 +237,7 @@ func NewPushCommand(
 					return errors.New("--container-registry is not valid with AppDevExperienceBuilds")
 				}
 
-				container, err := app.ToContainer()
+				container, err := app.ToContainer(&space.Status.RuntimeConfig)
 				if err != nil {
 					return err
 				}

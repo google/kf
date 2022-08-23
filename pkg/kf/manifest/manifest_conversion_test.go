@@ -22,14 +22,22 @@ import (
 	"github.com/google/kf/v2/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"knative.dev/pkg/ptr"
 )
 
+func resourcePtr(qty resource.Quantity) *resource.Quantity {
+	return &qty
+}
+
 func TestApplication_ToResourceRequests(t *testing.T) {
+	defaultRuntimeConfig := &v1alpha1.SpaceStatusRuntimeConfig{}
+
 	cases := map[string]struct {
-		source       Application
-		expectedList corev1.ResourceList
-		expectedErr  error
+		source        Application
+		runtimeConfig *v1alpha1.SpaceStatusRuntimeConfig
+		expectedList  corev1.ResourceList
+		expectedErr   error
 	}{
 		"full": {
 			source: Application{
@@ -39,6 +47,7 @@ func TestApplication_ToResourceRequests(t *testing.T) {
 					CPU: "200m",
 				},
 			},
+			runtimeConfig: defaultRuntimeConfig,
 			expectedList: corev1.ResourceList{
 				corev1.ResourceMemory:           resource.MustParse("30Mi"),
 				corev1.ResourceCPU:              resource.MustParse("200m"),
@@ -50,6 +59,7 @@ func TestApplication_ToResourceRequests(t *testing.T) {
 				Memory:    "30M",
 				DiskQuota: "1Gi",
 			},
+			runtimeConfig: defaultRuntimeConfig,
 			expectedList: corev1.ResourceList{
 				corev1.ResourceMemory:           resource.MustParse("30Mi"),
 				corev1.ResourceEphemeralStorage: resource.MustParse("1Gi"),
@@ -59,20 +69,100 @@ func TestApplication_ToResourceRequests(t *testing.T) {
 			source: Application{
 				Memory: "30Y",
 			},
-			expectedErr: errors.New("couldn't parse resource quantity 30Y: quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'"),
+			runtimeConfig: defaultRuntimeConfig,
+			expectedErr:   errors.New("couldn't parse resource quantity 30Y: quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'"),
 		},
 		"no quotas": {
-			source:       Application{},
-			expectedList: nil, // explicitly want nil rather than the empty map
+			source:        Application{},
+			runtimeConfig: defaultRuntimeConfig,
+			expectedList:  nil, // explicitly want nil rather than the empty map
+		},
+		"min CPU mone specified": {
+			source: Application{},
+			runtimeConfig: &v1alpha1.SpaceStatusRuntimeConfig{
+				AppCPUMin: resourcePtr(resource.MustParse("2000m")),
+			},
+			expectedList: corev1.ResourceList{
+				corev1.ResourceCPU: resource.MustParse("2000m"),
+			},
+		},
+		"min CPU lesser specified": {
+			source: Application{
+				KfApplicationExtension: KfApplicationExtension{
+					CPU: "200m",
+				},
+			},
+			runtimeConfig: &v1alpha1.SpaceStatusRuntimeConfig{
+				AppCPUMin: resourcePtr(resource.MustParse("2000m")),
+			},
+			expectedList: corev1.ResourceList{
+				corev1.ResourceCPU: resource.MustParse("2000m"),
+			},
+		},
+		"default CPU from RAM": {
+			source: Application{
+				Memory: "256M",
+			},
+			runtimeConfig: &v1alpha1.SpaceStatusRuntimeConfig{
+				AppCPUPerGBOfRAM: resourcePtr(resource.MustParse("1")),
+			},
+			expectedList: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("256Mi"),
+				corev1.ResourceCPU:    resource.MustParse(".25"),
+			},
+		},
+		"default CPU from RAM with min": {
+			source: Application{
+				Memory: "256M",
+			},
+			runtimeConfig: &v1alpha1.SpaceStatusRuntimeConfig{
+				AppCPUPerGBOfRAM: resourcePtr(resource.MustParse("1")),
+				AppCPUMin:        resourcePtr(resource.MustParse(".5")),
+			},
+			expectedList: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("256Mi"),
+				corev1.ResourceCPU:    resource.MustParse(".5"),
+			},
+		},
+		"default CPU doesn't override custom": {
+			source: Application{
+				Memory: "256M",
+				KfApplicationExtension: KfApplicationExtension{
+					CPU: "200m",
+				},
+			},
+			runtimeConfig: &v1alpha1.SpaceStatusRuntimeConfig{
+				AppCPUPerGBOfRAM: resourcePtr(resource.MustParse("100")),
+			},
+			expectedList: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("256Mi"),
+				corev1.ResourceCPU:    resource.MustParse("200m"),
+			},
 		},
 	}
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			actualList, actualErr := tc.source.ToResourceRequests()
+			actualList, actualErr := tc.source.ToResourceRequests(tc.runtimeConfig)
 
 			testutil.AssertErrorsEqual(t, tc.expectedErr, actualErr)
-			testutil.AssertEqual(t, "resource lists", tc.expectedList, actualList)
+
+			expectedKeys := sets.NewString()
+			for k := range tc.expectedList {
+				expectedKeys.Insert(string(k))
+			}
+			actualKeys := sets.NewString()
+			for k := range actualList {
+				actualKeys.Insert(string(k))
+			}
+			testutil.AssertEqual(t, "resource keys", expectedKeys, actualKeys)
+
+			for key, expected := range tc.expectedList {
+				actual := actualList[key]
+				if expected.Cmp(actual) != 0 {
+					t.Errorf("limit[%v] expected: %v actual: %v", key, expected, actual)
+				}
+			}
 		})
 	}
 }
@@ -241,13 +331,17 @@ func TestApplication_ToContainer(t *testing.T) {
 		},
 	}
 
+	defaultRuntimeConfig := &v1alpha1.SpaceStatusRuntimeConfig{}
+
 	cases := map[string]struct {
 		app             Application
+		runtimeConfig   *v1alpha1.SpaceStatusRuntimeConfig
 		expectContainer corev1.Container
 		expectErr       error
 	}{
 		"empty manifest": {
-			app: Application{},
+			app:           Application{},
+			runtimeConfig: defaultRuntimeConfig,
 			expectContainer: corev1.Container{
 				ReadinessProbe: defaultHealthCheck,
 				LivenessProbe:  defaultHealthCheck,
@@ -257,13 +351,15 @@ func TestApplication_ToContainer(t *testing.T) {
 			app: Application{
 				Memory: "21ZB",
 			},
-			expectErr: errors.New("couldn't parse resource quantity 21ZB: quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'"),
+			runtimeConfig: defaultRuntimeConfig,
+			expectErr:     errors.New("couldn't parse resource quantity 21ZB: quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'"),
 		},
 		"bad health check": {
 			app: Application{
 				HealthCheckType: "NOT ALLOWED",
 			},
-			expectErr: errors.New("unknown health check type NOT ALLOWED, supported types are http and port"),
+			runtimeConfig: defaultRuntimeConfig,
+			expectErr:     errors.New("unknown health check type NOT ALLOWED, supported types are http and port"),
 		},
 		"full manifest": {
 			app: Application{
@@ -280,6 +376,7 @@ func TestApplication_ToContainer(t *testing.T) {
 					},
 				},
 			},
+			runtimeConfig: defaultRuntimeConfig,
 			expectContainer: corev1.Container{
 				Args:           []string{"foo", "bar"},
 				Command:        []string{"bash"},
@@ -290,6 +387,10 @@ func TestApplication_ToContainer(t *testing.T) {
 				},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
+						corev1.ResourceMemory:           resource.MustParse("30Mi"),
+						corev1.ResourceEphemeralStorage: resource.MustParse("1Gi"),
+					},
+					Limits: corev1.ResourceList{
 						corev1.ResourceMemory:           resource.MustParse("30Mi"),
 						corev1.ResourceEphemeralStorage: resource.MustParse("1Gi"),
 					},
@@ -304,7 +405,7 @@ func TestApplication_ToContainer(t *testing.T) {
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			actualContainer, actualErr := tc.app.ToContainer()
+			actualContainer, actualErr := tc.app.ToContainer(tc.runtimeConfig)
 
 			testutil.AssertErrorsEqual(t, tc.expectErr, actualErr)
 			testutil.AssertEqual(t, "container", tc.expectContainer, actualContainer)

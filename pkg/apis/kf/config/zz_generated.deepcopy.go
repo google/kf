@@ -132,6 +132,16 @@ func (in *DefaultsConfig) DeepCopyInto(out *DefaultsConfig) {
 			(*out)[key] = val
 		}
 	}
+	if in.AppCPUPerGBOfRAM != nil {
+		in, out := &in.AppCPUPerGBOfRAM, &out.AppCPUPerGBOfRAM
+		x := (*in).DeepCopy()
+		*out = &x
+	}
+	if in.AppCPUMin != nil {
+		in, out := &in.AppCPUMin, &out.AppCPUMin
+		x := (*in).DeepCopy()
+		*out = &x
+	}
 	return
 }
 

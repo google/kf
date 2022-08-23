@@ -183,6 +183,11 @@ func TestAppSpec_SetDefaults_ResourceLimits_AlreadySet(t *testing.T) {
 								corev1.ResourceEphemeralStorage: wantStorage,
 								corev1.ResourceCPU:              wantCPU,
 							},
+							Limits: corev1.ResourceList{
+								corev1.ResourceMemory:           wantMem,
+								corev1.ResourceEphemeralStorage: wantStorage,
+								corev1.ResourceCPU:              wantCPU,
+							},
 						},
 					}},
 				},
@@ -196,6 +201,10 @@ func TestAppSpec_SetDefaults_ResourceLimits_AlreadySet(t *testing.T) {
 	testutil.AssertEqual(t, "default memory request", wantMem, appResourceRequests[corev1.ResourceMemory])
 	testutil.AssertEqual(t, "default storage request", wantStorage, appResourceRequests[corev1.ResourceEphemeralStorage])
 	testutil.AssertEqual(t, "default CPU request", wantCPU, appResourceRequests[corev1.ResourceCPU])
+	appResourceLimits := app.Spec.Template.Spec.Containers[0].Resources.Limits
+	testutil.AssertEqual(t, "default memory request", wantMem, appResourceLimits[corev1.ResourceMemory])
+	testutil.AssertEqual(t, "default storage request", wantStorage, appResourceLimits[corev1.ResourceEphemeralStorage])
+	testutil.AssertEqual(t, "default CPU request", wantCPU, appResourceLimits[corev1.ResourceCPU])
 }
 
 func TestSetKfAppContainerDefaults(t *testing.T) {
@@ -215,6 +224,11 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 				ReadinessProbe: nil,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:              defaultCPU,
+						corev1.ResourceMemory:           defaultMem,
+						corev1.ResourceEphemeralStorage: defaultStorage,
+					},
+					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:              defaultCPU,
 						corev1.ResourceMemory:           defaultMem,
 						corev1.ResourceEphemeralStorage: defaultStorage,
@@ -281,6 +295,11 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 						corev1.ResourceMemory:           resource.MustParse("2Gi"),
 						corev1.ResourceEphemeralStorage: resource.MustParse("2Gi"),
 					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:              resource.MustParse("3"),
+						corev1.ResourceMemory:           resource.MustParse("3Gi"),
+						corev1.ResourceEphemeralStorage: resource.MustParse("3Gi"),
+					},
 				},
 			},
 			expected: &corev1.Container{
@@ -288,6 +307,39 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 				ReadinessProbe: defaultContainer.ReadinessProbe,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:              resource.MustParse("2"),
+						corev1.ResourceMemory:           resource.MustParse("2Gi"),
+						corev1.ResourceEphemeralStorage: resource.MustParse("2Gi"),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceCPU:              resource.MustParse("3"),
+						corev1.ResourceMemory:           resource.MustParse("3Gi"),
+						corev1.ResourceEphemeralStorage: resource.MustParse("3Gi"),
+					},
+				},
+			},
+		},
+		"limits set from requests don't get overwritten": {
+			template: &corev1.Container{
+				Name: "some-name",
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:              resource.MustParse("2"),
+						corev1.ResourceMemory:           resource.MustParse("2Gi"),
+						corev1.ResourceEphemeralStorage: resource.MustParse("2Gi"),
+					},
+				},
+			},
+			expected: &corev1.Container{
+				Name:           "some-name",
+				ReadinessProbe: defaultContainer.ReadinessProbe,
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:              resource.MustParse("2"),
+						corev1.ResourceMemory:           resource.MustParse("2Gi"),
+						corev1.ResourceEphemeralStorage: resource.MustParse("2Gi"),
+					},
+					Limits: corev1.ResourceList{
 						corev1.ResourceCPU:              resource.MustParse("2"),
 						corev1.ResourceMemory:           resource.MustParse("2Gi"),
 						corev1.ResourceEphemeralStorage: resource.MustParse("2Gi"),

@@ -18,6 +18,7 @@ import (
 	"reflect"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/yaml"
 )
 
@@ -38,6 +39,8 @@ const (
 	buildRetentionCountKey      = "buildRetentionCount"
 	buildTimeoutKey             = "buildTimeout"
 	buildNodeSelectorsKey       = "buildNodeSelectors"
+	appCPUPerGBOfRAMKey         = "appCPUPerGBOfRAM"
+	appCPUMinKey                = "appCPUMin"
 
 	// Images used for build purposes
 
@@ -117,13 +120,30 @@ type DefaultsConfig struct {
 
 	// FeatureFlags is a map of feature names to their status (enabled/disabled) represented as a bool.
 	FeatureFlags FeatureFlagToggles `json:"featureFlags,omitempty"`
+
+	// Default amount of CPU to assign an app per GB of RAM.
+	AppCPUPerGBOfRAM *resource.Quantity `json:"appCPUPerGBOfRAM,omitempty"`
+
+	// Minimum amount of CPU to assign an app.
+	AppCPUMin *resource.Quantity `json:"appCPUMin,omitempty"`
 }
 
 // BuiltinDefaultsConfig creates a defaults configuration with default values.
 func BuiltinDefaultsConfig() *DefaultsConfig {
+	// CPU isn't defaulted in Cloud Foundry so we assume apps are I/O bound
+	// and roughly 10 should run on a single core machine.
+	defaultCPUPerGBOfRAM := resource.MustParse("100m")
+	defaultAppCPUMin := resource.MustParse("100m")
+
 	return &DefaultsConfig{
 		// Default to v2 stacks like CF users expect.
 		SpaceDefaultToV3Stack: false,
+
+		// Default to what Kf did prior to scaling CPU by GB/RAM.
+		AppCPUPerGBOfRAM: &defaultCPUPerGBOfRAM,
+
+		// Prevent an app from being starved even if it doesn't need much RAM.
+		AppCPUMin: &defaultAppCPUMin,
 	}
 }
 
@@ -208,6 +228,8 @@ func (defaultsConfig *DefaultsConfig) getInterfaceValues(leaveEmpty bool) map[st
 		buildPodResourcesKey:        &defaultsConfig.BuildPodResources,
 		buildRetentionCountKey:      &defaultsConfig.BuildRetentionCount,
 		buildNodeSelectorsKey:       &defaultsConfig.BuildNodeSelectors,
+		appCPUPerGBOfRAMKey:         &defaultsConfig.AppCPUPerGBOfRAM,
+		appCPUMinKey:                &defaultsConfig.AppCPUMin,
 	}
 
 	if !leaveEmpty {

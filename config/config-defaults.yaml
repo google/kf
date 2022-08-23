@@ -152,6 +152,12 @@ data:
       enable_custom_buildpacks: true
       enable_custom_stacks: true
       enable_some_feature: true
+    
+    # Minimum amount of CPUs to give an app based on the amount of RAM it
+    # requests. Expressed as a Kubernetes quantity.
+    appCPUPerGBOfRAM: "100m"
+    # Absolute minimum amount of CPU to give an app. Expressed as a Kubernetes quantity.
+    appCPUMin: "100m"
 
     # The following images are used to execute builds. They SHOULD NOT be
     # modified except in rare circumstances.
@@ -219,3 +225,6 @@ data:
     enable_custom_buildpacks: true
     enable_custom_stacks: true
     enable_appdevexperience_builds: false
+  appCPUPerGBOfRAM: "100m"
+  appCPUMin: "100m"
+
