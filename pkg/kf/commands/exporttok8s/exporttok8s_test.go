@@ -179,6 +179,18 @@ func TestGetContainer(t *testing.T) {
 					SuccessThreshold:    1,
 					FailureThreshold:    0,
 				},
+				LivenessProbe: &corev1.Probe{
+					ProbeHandler: corev1.ProbeHandler{
+						TCPSocket: &corev1.TCPSocketAction{
+							Port: intstr.FromInt(int(resources.DefaultUserPort)),
+						},
+					},
+					InitialDelaySeconds: 0,
+					TimeoutSeconds:      0,
+					PeriodSeconds:       0,
+					SuccessThreshold:    1,
+					FailureThreshold:    0,
+				},
 			},
 		},
 		"have manifest with the properties": {
@@ -211,6 +223,18 @@ func TestGetContainer(t *testing.T) {
 					},
 				},
 				ReadinessProbe: &corev1.Probe{
+					ProbeHandler: corev1.ProbeHandler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Port: intstr.FromInt(int(resources.DefaultUserPort)),
+						},
+					},
+					InitialDelaySeconds: 0,
+					TimeoutSeconds:      60,
+					PeriodSeconds:       0,
+					SuccessThreshold:    1,
+					FailureThreshold:    0,
+				},
+				LivenessProbe: &corev1.Probe{
 					ProbeHandler: corev1.ProbeHandler{
 						HTTPGet: &corev1.HTTPGetAction{
 							Port: intstr.FromInt(int(resources.DefaultUserPort)),
@@ -262,6 +286,18 @@ func TestGetContainer(t *testing.T) {
 					SuccessThreshold:    1,
 					FailureThreshold:    0,
 				},
+				LivenessProbe: &corev1.Probe{
+					ProbeHandler: corev1.ProbeHandler{
+						TCPSocket: &corev1.TCPSocketAction{
+							Port: intstr.FromInt(int(resources.DefaultUserPort)),
+						},
+					},
+					InitialDelaySeconds: 0,
+					TimeoutSeconds:      0,
+					PeriodSeconds:       0,
+					SuccessThreshold:    1,
+					FailureThreshold:    0,
+				},
 			},
 		},
 		"have manifest but no CPU, DiskQuota,Memory": {
@@ -284,6 +320,18 @@ func TestGetContainer(t *testing.T) {
 						ContainerPort: resources.DefaultUserPort},
 				},
 				ReadinessProbe: &corev1.Probe{
+					ProbeHandler: corev1.ProbeHandler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Port: intstr.FromInt(int(resources.DefaultUserPort)),
+						},
+					},
+					InitialDelaySeconds: 0,
+					TimeoutSeconds:      60,
+					PeriodSeconds:       0,
+					SuccessThreshold:    1,
+					FailureThreshold:    0,
+				},
+				LivenessProbe: &corev1.Probe{
 					ProbeHandler: corev1.ProbeHandler{
 						HTTPGet: &corev1.HTTPGetAction{
 							Port: intstr.FromInt(int(resources.DefaultUserPort)),
