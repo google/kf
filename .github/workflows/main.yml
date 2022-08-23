@@ -29,14 +29,14 @@ jobs:
           go-version: 1.18
 
       - name: Verify Build
-        run: ./$GITHUB_WORKSPACE/hack/prow/verify-build.sh
+        run: ./hack/prow/verify-build.sh
 
       - name: Verify Generate
-        run: ./$GITHUB_WORKSPACE/hack/prow/verify-generate.sh
+        run: ./hack/prow/verify-generate.sh
 
       - name: Verify License
-        run: ./$GITHUB_WORKSPACE/hack/prow/verify-license.sh
+        run: ./hack/prow/verify-license.sh
 
       - name: Unit Test
-        run: SKIP_INTEGRATION=true ./$GITHUB_WORKSPACE/hack/prow/unit-test.sh
+        run: SKIP_INTEGRATION=true ./hack/prow/unit-test.sh
 
