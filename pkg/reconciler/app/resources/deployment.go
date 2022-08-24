@@ -109,7 +109,7 @@ func MakeDeployment(
 					MaxSurge:       &defaultMaxSurge,
 				},
 			},
-			ProgressDeadlineSeconds: ptr.Int32(600),
+			ProgressDeadlineSeconds: ptr.Int32(space.Status.RuntimeConfig.ProgressDeadlineSeconds),
 		},
 	}, nil
 }

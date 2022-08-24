@@ -41,6 +41,7 @@ const (
 	buildNodeSelectorsKey       = "buildNodeSelectors"
 	appCPUPerGBOfRAMKey         = "appCPUPerGBOfRAM"
 	appCPUMinKey                = "appCPUMin"
+	progressDeadlineSecondsKey  = "progressDeadlineSeconds"
 
 	// Images used for build purposes
 
@@ -126,6 +127,11 @@ type DefaultsConfig struct {
 
 	// Minimum amount of CPU to assign an app.
 	AppCPUMin *resource.Quantity `json:"appCPUMin,omitempty"`
+
+	// ProgressDeadlineSeconds contains a configurable timeout between state 
+	// transition and reaching a stable state before provisioning or deprovisioning
+	// times out.
+	ProgressDeadlineSeconds int32 `json:"progressDeadlineSeconds,omitempty"`
 }
 
 // BuiltinDefaultsConfig creates a defaults configuration with default values.

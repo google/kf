@@ -238,6 +238,11 @@ type SpaceStatusRuntimeConfig struct {
 	// AppCPUMin sets the minimum amount of CPU to assign an app regardless of the
 	// amount of RAM it's assigned.
 	AppCPUMin *resource.Quantity `json:"appCPUMin,omitempty"`
+
+	// ProgressDeadlineSeconds contains a configurable timeout between state 
+	// transition and reaching a stable state before provisioning or deprovisioning
+	// times out.
+	ProgressDeadlineSeconds int32 `json:"progressDeadlineSeconds,omitempty"`
 }
 
 // SpaceStatusNetworkConfig reflects the actual Networking configuration for the
