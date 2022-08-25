@@ -20,7 +20,8 @@ metadata:
   name: kf
   labels:
     app.kubernetes.io/name: kf
-    app.kubernetes.io/version: v2.6.0
+    app.kubernetes.io/version: v2.11.5
+    kf.dev/release: v2.11.5
 
 ---
 # Copyright 2019 Google LLC
@@ -54,6 +55,7 @@ metadata:
   name: kf-core
   labels:
     kf.dev/controller: "true"
+    kf.dev/release: v2.11.5
 rules:
   - apiGroups: [""]
     resources: ["pods", "namespaces", "secrets", "configmaps", "endpoints", "services", "events", "serviceaccounts", "persistentvolumes", "persistentvolumeclaims"]
@@ -109,6 +111,12 @@ rules:
   - apiGroups: ["builds.appdevexperience.dev"]
     resources: ["*/status", "builds"]
     verbs: ["get", "list", "update", "delete", "patch", "watch"]
+  - apiGroups: ["upload.kf.dev"]
+    resources: ["*"]
+    verbs: ["*"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles"]
+    verbs: ["bind"]
 
 ---
 # Copyright 2019 Google LLC
@@ -133,16 +141,30 @@ metadata:
   name: controller
   namespace: kf
   labels:
-    serving.knative.dev/release: devel
+    kf.dev/release: v2.11.5
 
 ---
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  labels:
-    kf.dev/controller: "true"
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: kf-cluster-reader
 rules:
   - apiGroups: ["kf.dev"]
@@ -156,10 +178,10 @@ rules:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  labels:
-    kf.dev/controller: "true"
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: space-manager
 rules:
   - apiGroups: ["rbac.authorization.k8s.io"]
@@ -176,10 +198,10 @@ rules:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  labels:
-    kf.dev/controller: "true"
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: space-developer
 rules:
   - apiGroups: ["rbac.authorization.k8s.io"]
@@ -215,14 +237,17 @@ rules:
   - apiGroups: ["data.builds.appdevexperience.dev"]
     resources: ["*"]
     verbs: ["get", "list", "create", "update", "delete", "patch", "watch", "proxy"]
+  - apiGroups: ["tekton.dev"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  labels:
-    kf.dev/controller: "true"
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: space-auditor
 rules:
   - apiGroups: ["rbac.authorization.k8s.io"]
@@ -255,6 +280,8 @@ kind: ClusterRoleBinding
 metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: kf-controller-admin
 subjects:
   - kind: ServiceAccount
@@ -270,6 +297,8 @@ kind: ClusterRoleBinding
 metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: kf-controller:system:auth-delegator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -285,6 +314,8 @@ kind: RoleBinding
 metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: kf-subresource-auth-reader
   namespace: kube-system
 roleRef:
@@ -316,6 +347,8 @@ kind: Gateway
 metadata:
   annotations:
     operator.knative.dev/mode: EnsureExists
+  labels:
+    kf.dev/release: v2.11.5
   name: external-gateway
   namespace: kf
 spec:
@@ -350,6 +383,8 @@ kind: Gateway
 metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: internal-gateway
   namespace: kf
 spec:
@@ -384,6 +419,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: apps.kf.dev
 spec:
   group: kf.dev
@@ -4377,7 +4414,6 @@ spec:
               description: AppStatus is the current configuration and running state for an App.
               type: object
               required:
-                - routeConditions
                 - serviceBindingConditions
               properties:
                 annotations:
@@ -4697,6 +4733,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: builds.kf.dev
 spec:
   group: kf.dev
@@ -4926,11 +4964,27 @@ spec:
           jsonPath: .status.image
 
 ---
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: clusterservicebrokers.kf.dev
 spec:
   group: kf.dev
@@ -5163,6 +5217,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: routes.kf.dev
 spec:
   group: kf.dev
@@ -5325,11 +5381,27 @@ spec:
           jsonPath: ".status.conditions[?(@.type=='Ready')].reason"
 
 ---
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: servicebrokers.kf.dev
 spec:
   group: kf.dev
@@ -5556,6 +5628,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: serviceinstances.kf.dev
 spec:
   group: kf.dev
@@ -5608,6 +5682,9 @@ spec:
                     planName:
                       description: PlanName is the name of the service plan.
                       type: string
+                deleteRequests:
+                  description: DeleteRequests is a unique identifier, updating will trigger an additional delete retry.
+                  type: integer
                 osb:
                   description: OSB is a service instance created using Kf's built-in OSB support.
                   type: object
@@ -5747,6 +5824,9 @@ spec:
                       type:
                         description: Type of condition.
                         type: string
+                deleteRequests:
+                  description: DeleteRequests is a unique identifier, updating will trigger an additional delete retry.
+                  type: integer
                 observedGeneration:
                   description: ObservedGeneration is the 'Generation' of the Service that was last processed by the controller.
                   type: integer
@@ -5883,6 +5963,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: serviceinstancebindings.kf.dev
 spec:
   group: kf.dev
@@ -5947,6 +6029,9 @@ spec:
                   description: ProgressDeadlineSeconds contains a configurable timeout between state transition and reaching a stable state before binding or unbinding times out.
                   type: integer
                   format: int64
+                unbindRequests:
+                  description: UnbindRequests is a unique identifier, updating will trigger an additional unbind retry.
+                  type: integer
                 route:
                   description: Route is the Route that the service instance is bound to.
                   type: object
@@ -6134,11 +6219,27 @@ spec:
           jsonPath: .status.conditions[?(@.type=="Ready")].status
 
 ---
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: sourcepackages.kf.dev
 spec:
   group: kf.dev
@@ -6280,6 +6381,8 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: spaces.kf.dev
 spec:
   group: kf.dev
@@ -6774,6 +6877,18 @@ spec:
                   description: RuntimeConfig contains the info necessary to configure the application runtime.
                   type: object
                   properties:
+                    appCPUPerGBOfRAM:
+                      description: AppCPUPerGBOfRAM sets the default amount of CPU to assign an app per GB of RAM.
+                      anyOf:
+                        - type: integer
+                        - type: string
+                      x-kubernetes-int-or-string: true
+                    appCPUMin:
+                      description: AppCPUMin sets the minimum amount of CPU to assign an app.
+                      anyOf:
+                        - type: integer
+                        - type: string
+                      x-kubernetes-int-or-string: true
                     env:
                       description: Env sets default environment variables on kf applications for the whole space.
                       type: array
@@ -6866,11 +6981,27 @@ spec:
           jsonPath: ".status.conditions[?(@.type=='Ready')].reason"
 
 ---
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: taskschedules.kf.dev
 spec:
   group: kf.dev
@@ -7011,7 +7142,7 @@ spec:
           jsonPath: .status.lastScheduleTime
         - name: ConcurrencyPolicy
           type: string
-          jsonPath: .spec.ConcurrencyPolicy
+          jsonPath: .spec.concurrencyPolicy
         - name: Age
           type: date
           jsonPath: .metadata.creationTimestamp
@@ -7023,11 +7154,27 @@ spec:
           jsonPath: ".status.conditions[?(@.type=='Ready')].reason"
 
 ---
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: tasks.kf.dev
 spec:
   group: kf.dev
@@ -7164,31 +7311,27 @@ spec:
           jsonPath: ".status.conditions[?(@.type=='Succeeded')].reason"
 
 ---
-apiVersion: kf.dev/v1alpha1
-kind: ClusterServiceBroker
-metadata:
-  annotations:
-    operator.knative.dev/mode: Reconcile
-  name: nfsvolumebroker
-spec:
-  volume:
-    offering:
-      - displayName: nfs
-        uid: "629d4a0a-bb74-484d-aa85-a8e086a82fc1"
-        description: "mount nfs shares"
-        tags: []
-        plans:
-          - displayName: "existing"
-            free: true
-            uid: b3b1d330-d16f-4e43-b854-2f26954fdd9b
-            description: "mount existing nfs server"
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
----
 apiVersion: v1
 kind: Service
 metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: subresource-apiserver
   namespace: kf
 spec:
@@ -7223,6 +7366,7 @@ metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
   labels:
+    kf.dev/release: v2.11.5
     app: controller
   name: controller
   namespace: kf
@@ -7259,6 +7403,7 @@ metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
   labels:
+    kf.dev/release: v2.11.5
     role: webhook
   name: webhook
   namespace: kf
@@ -7270,6 +7415,20 @@ spec:
     role: webhook
 
 ---
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
@@ -7277,7 +7436,7 @@ metadata:
     operator.knative.dev/mode: Reconcile
   name: webhook.kf.dev
   labels:
-    kf.dev/release: devel
+    kf.dev/release: v2.11.5
 webhooks:
   - admissionReviewVersions: ["v1", "v1beta1"]
     clientConfig:
@@ -7295,7 +7454,7 @@ metadata:
     operator.knative.dev/mode: Reconcile
   name: validation.webhook.kf.dev
   labels:
-    kf.dev/release: devel
+    kf.dev/release: v2.11.5
 webhooks:
   - admissionReviewVersions: ["v1", "v1beta1"]
     clientConfig:
@@ -7313,7 +7472,7 @@ metadata:
     operator.knative.dev/mode: Reconcile
   name: config.webhook.kf.dev
   labels:
-    kf.dev/release: devel
+    kf.dev/release: v2.11.5
 webhooks:
   - admissionReviewVersions: ["v1", "v1beta1"]
     clientConfig:
@@ -7336,10 +7495,24 @@ metadata:
   name: webhook-certs
   namespace: kf
   labels:
-    kf.dev/release: devel
+    kf.dev/release: v2.11.5
 # The data is populated at install time.
 
 ---
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -7347,10 +7520,11 @@ metadata:
     operator.knative.dev/mode: Reconcile
   labels:
     app: subresource-apiserver
+    kf.dev/release: v2.11.5
   name: subresource-apiserver
   namespace: kf
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: subresource-apiserver
@@ -7358,13 +7532,13 @@ spec:
     metadata:
       labels:
         app: subresource-apiserver
+        kf.dev/release: v2.11.5
       name: subresource-apiserver
     spec:
       serviceAccountName: controller
       containers:
         - name: subresource-apiserver
-          image: gcr.io/kf-releases/subresource-apiserver-2a8b01273f197db7af21f6b4616837a0@sha256:ff56e38ba3f98e9006fa8f6166f00f27ea017bf4d6c4087a992cca2f43017cf2
-          imagePullPolicy: Always
+          image: gcr.io/kf-releases/subresource-apiserver-2a8b01273f197db7af21f6b4616837a0@sha256:b0ba4cd96f4c379b1d170bc27dbd4e14762a2bfe2b2dbdfeba3efc6b450f390f
           args: ["--secure-port=6443", "--cert-dir=/etc/kf/certs"]
           ports:
             - containerPort: 6443
@@ -7400,6 +7574,20 @@ spec:
                 path: apiserver.key
 
 ---
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 apiVersion: apiregistration.k8s.io/v1
 kind: APIService
 metadata:
@@ -7426,8 +7614,44 @@ metadata:
   name: upload-api-server-secret
   namespace: kf
   labels:
-    kf.dev/release: devel
+    kf.dev/release: v2.11.5
 # The data is populated at install time.
+
+---
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: kf.dev/v1alpha1
+kind: ClusterServiceBroker
+metadata:
+  annotations:
+    operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
+  name: nfsvolumebroker
+spec:
+  volume:
+    offering:
+      - displayName: nfs
+        uid: "629d4a0a-bb74-484d-aa85-a8e086a82fc1"
+        description: "mount nfs shares"
+        tags: []
+        plans:
+          - displayName: "existing"
+            free: true
+            uid: b3b1d330-d16f-4e43-b854-2f26954fdd9b
+            description: "mount existing nfs server"
 
 ---
 # Copyright 2019 Google LLC
@@ -7449,6 +7673,8 @@ kind: ConfigMap
 metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: config-defaults
   namespace: kf
 data:
@@ -7498,10 +7724,27 @@ data:
       - domain: $(SPACE_NAME)-apps.internal
         gatewayName: kf/internal-gateway
 
-    # BuildpacksV2LifecycleImage is the image URL for the V2 buildpack
+    # buildpacksV2LifecycleImage is the image URL for the V2 buildpack
     # lifecycle binaries. It is expected to contain the `launcher` and
     # `builder` binaries AND to self extract those binaries into /workspace.
     buildpacksV2LifecycleImage: "ko://code.cloudfoundry.org/buildpackapplifecycle/installer"
+
+    # buildDisableIstioSidecar when set to true, will preven the Istio sidecar
+    # from being injected on Build pods.
+    buildDisableIstioSidecar: "false"
+
+    # buildPodResources sets the Build pod resources field.
+    # NOTE: This is only applicable for built-in Tasks. For V2 builds, this
+    # will be set on two steps and one for V3 and Dockerfiles. This implies
+    # for a V2 build, the required Pod size will be the limit doubled.  For
+    # example, if the memory limit is 1Gi, then the pod will require 2Gi.
+    buildPodResources: |
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
 
     # spaceBuildpacksV2 contains an ordered list of default buildpacks to be
     # used for CF compatible builds. The value must be a valid JSON or YAML
@@ -7566,17 +7809,24 @@ data:
       enable_custom_stacks: true
       enable_some_feature: true
 
+    # Minimum amount of CPUs to give an app based on the amount of RAM it
+    # requests. Expressed as a Kubernetes quantity.
+    appCPUPerGBOfRAM: "100m"
+    # Absolute minimum amount of CPU to give an app. Expressed as a Kubernetes quantity.
+    appCPUMin: "100m"
+
     # The following images are used to execute builds. They SHOULD NOT be
     # modified except in rare circumstances.
     buildHelpersImage: "ko://github.com/google/kf/v2/cmd/build-helpers"
     buildKanikoExecutorImage: "gcr.io/kaniko-project/executor:latest"
     buildInfoImage: "kf-release-repository/build-info:kf-version"
     buildTokenDownloadImage: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
+    nopImage: "ko://github.com/google/kf/v2/cmd/nop"
   spaceClusterDomains: |
     - domain: $(SPACE_NAME).$(CLUSTER_INGRESS_IP).nip.io
     - domain: apps.internal
       gatewayName: kf/internal-gateway
-  buildpacksV2LifecycleImage: "gcr.io/kf-releases/installer-d148684b3032e4386ff76c190d42c7d0@sha256:e667fbb1f6b10f062a90bf3c03476af1a632c02033b8d88b98f7129326ecc1d7"
+  buildpacksV2LifecycleImage: "gcr.io/kf-releases/installer-d148684b3032e4386ff76c190d42c7d0@sha256:71c65074eb157b2fb88f10c9a86e165ba6bbd5443f832977d8dd5b34a7a74308"
   spaceBuildpacksV2: |
     - name: staticfile_buildpack
       url: https://github.com/cloudfoundry/staticfile-buildpack
@@ -7602,16 +7852,27 @@ data:
     - name: cflinuxfs3
       image: cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5
   spaceStacksV3: |
+    - name: kf-v2-to-v3-shim
+      description: A V3 stack that wraps the V2 buildpacks.
+      buildImage: gcr.io/kf-releases/v2-to-v3-builder:v2.11.5
+      runImage: gcr.io/buildpacks/gcp/run:v1
+    - name: google
+      description: Google buildpacks (https://github.com/GoogleCloudPlatform/buildpacks)
+      buildImage: gcr.io/buildpacks/builder:v1
+      runImage: gcr.io/buildpacks/gcp/run:v1
     - name: org.cloudfoundry.stacks.cflinuxfs3
       description: A large Cloud Foundry stack based on Ubuntu 18.04
       buildImage: cloudfoundry/cnb:cflinuxfs3@sha256:f96b6e3528185368dd6af1d9657527437cefdaa5fa135338462f68f9c9db3022
       runImage: cloudfoundry/run:full-cnb@sha256:dbe17be507b1cc6ffae1e9edf02806fe0e28ffbbb89a6c7ef41f37b69156c3c2
   spaceDefaultToV3Stack: "false"
-  routeServiceProxyImage: "gcr.io/kf-releases/route-service-proxy-c1f6176cf95d0f3fa2d57301546cd9ba@sha256:d52bb074450f993095d9fc8682ff150705d326289b14a2ef7d17996c2836e55a"
+  routeServiceProxyImage: "gcr.io/kf-releases/route-service-proxy-c1f6176cf95d0f3fa2d57301546cd9ba@sha256:f9d9836d0dfdae7c371f4aac1adb8ebbb8669a13384c629ec4e4ea30bb524222"
   buildKanikoExecutorImage: "gcr.io/kaniko-project/executor:v1.0.0"
-  buildInfoImage: "gcr.io/kf-releases/setup-buildpack-build-3d4a49ab2eaf0617c947c1ff112148c7@sha256:6d9e67fa5a0ed33e1530656b2d9d1f088aa26b68fe3b7a9d644939ec833726c9"
+  buildInfoImage: "gcr.io/kf-releases/setup-buildpack-build-3d4a49ab2eaf0617c947c1ff112148c7@sha256:171ae8dc02376a41263fd33f518c64f603419a202649340e00df2618b77f8fb4"
   buildTokenDownloadImage: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
-  buildHelpersImage: "gcr.io/kf-releases/build-helpers-474eb21b176ee72508443e3d3d30098a@sha256:979154417d523b1998a9dc7d4bcf829337f1223a1fb55bc69e5bb943131c74e7"
+  buildHelpersImage: "gcr.io/kf-releases/build-helpers-474eb21b176ee72508443e3d3d30098a@sha256:15b8422289689ebc2970302e3486b2152388d034bb24acdb706d86f185813a86"
+  nopImage: "gcr.io/kf-releases/nop-3f3113223c79b33eae2bb115e1e237c5@sha256:35630e1bdd44bc323cd21126a1224df8749b51c57ba6a91aac253bfd80e90152"
+  buildDisableIstioSidecar: "false"
+  buildPodResources: ""
   featureFlags: |
     disable_custom_builds: false
     enable_dockerfile_builds: true
@@ -7619,6 +7880,8 @@ data:
     enable_custom_buildpacks: true
     enable_custom_stacks: true
     enable_appdevexperience_builds: false
+  appCPUPerGBOfRAM: "100m"
+  appCPUMin: "100m"
 
 ---
 # Copyright 2019 Google LLC
@@ -7640,6 +7903,8 @@ kind: ConfigMap
 metadata:
   annotations:
     operator.knative.dev/mode: EnsureExists
+  labels:
+    kf.dev/release: v2.11.5
   name: config-logging
   namespace: kf
 data:
@@ -7712,6 +7977,8 @@ kind: ConfigMap
 metadata:
   annotations:
     operator.knative.dev/mode: EnsureExists
+  labels:
+    kf.dev/release: v2.11.5
   name: config-observability
   namespace: kf
 data:
@@ -7838,6 +8105,8 @@ metadata:
   #   --docker-password="$(cat /path/to/key.json)"
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: config-secrets-example
   namespace: kf
 data:
@@ -7865,6 +8134,8 @@ kind: Deployment
 metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: controller
   namespace: kf
 spec:
@@ -7878,13 +8149,14 @@ spec:
         sidecar.istio.io/inject: "false"
       labels:
         app: controller
+        kf.dev/release: v2.11.5
     spec:
       serviceAccountName: controller
       containers:
         - name: controller
           # This is the Go import path for the binary that is containerized
           # and substituted here.
-          image: gcr.io/kf-releases/controller-07998f8b6ac07623f78ee015e042c586@sha256:629af5c872f099e950f061888fc5c12b462d44b56cef92b7f74e09295ec03779
+          image: gcr.io/kf-releases/controller-07998f8b6ac07623f78ee015e042c586@sha256:b23a26da803d55b8bd0b1ad98d9c4ad503db18b17948bf83b0c7b2a2eb20e9d3
           args:
             # TODO(b/178107014): This flag will be deprecated at some point. We
             # should try to get our controllers to work with HA before that.
@@ -7924,6 +8196,8 @@ spec:
               value: config-observability
             - name: METRICS_DOMAIN
               value: kf.dev
+            - name: KUBERNETES_MIN_VERSION
+              value: v1.21.0
       volumes:
         - name: config-logging
           configMap:
@@ -7949,6 +8223,8 @@ kind: Deployment
 metadata:
   annotations:
     operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: v2.11.5
   name: webhook
   namespace: kf
 spec:
@@ -7965,14 +8241,14 @@ spec:
       labels:
         app: webhook
         role: webhook
-        kf.dev/release: devel
+        kf.dev/release: v2.11.5
     spec:
       serviceAccountName: controller
       containers:
         - name: webhook
           # This is the Go import path for the binary that is containerized
           # and substituted here.
-          image: gcr.io/kf-releases/webhook-7c741c491cb8bd40c130a6f0e744c8f3@sha256:ef197ccdcfdd6240728d6d771b63c4c91e28eb0c5fe7baed80bb2cb0e24c6b56
+          image: gcr.io/kf-releases/webhook-7c741c491cb8bd40c130a6f0e744c8f3@sha256:ed95086a06c7f95bcc1a1a6bb6dad6031596205de3ca852a6b9e0822dd073eb7
           resources:
             # Request 2x what we saw running e2e
             requests:
@@ -7994,6 +8270,8 @@ spec:
               value: config-logging
             - name: METRICS_DOMAIN
               value: kf.dev
+            - name: KUBERNETES_MIN_VERSION
+              value: v1.21.0
           securityContext:
             allowPrivilegeEscalation: false
       volumes:

@@ -430,7 +430,7 @@ func getParams(destination string, app *manifest.Application) ([]tektonv1beta1.P
 	return params, nil
 }
 
-//set Skip-Detect parameter to false and get all the default Buildpacks
+// set Skip-Detect parameter to false and get all the default Buildpacks
 func getBuildSpec() (*v1alpha1.BuildSpec, error) {
 	app := manifest.Application{}
 
@@ -508,7 +508,7 @@ func getBuildSpec() (*v1alpha1.BuildSpec, error) {
 func getContainer(app *manifest.Application) (*corev1.Container, error) {
 	var container corev1.Container
 
-	container, err := app.ToContainer()
+	container, err := app.ToContainer(&v1alpha1.SpaceStatusRuntimeConfig{})
 	if err != nil {
 		return nil, err
 	}
