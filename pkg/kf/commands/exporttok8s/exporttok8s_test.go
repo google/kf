@@ -221,6 +221,11 @@ func TestGetContainer(t *testing.T) {
 						"ephemeral-storage": getResourceQuantity(manifest.CFToSIUnits("1024M")),
 						"memory":            getResourceQuantity(manifest.CFToSIUnits("512M")),
 					},
+					Limits: corev1.ResourceList{
+						"cpu":               getResourceQuantity("1"),
+						"ephemeral-storage": getResourceQuantity(manifest.CFToSIUnits("1024M")),
+						"memory":            getResourceQuantity(manifest.CFToSIUnits("512M")),
+					},
 				},
 				ReadinessProbe: &corev1.Probe{
 					ProbeHandler: corev1.ProbeHandler{
@@ -269,6 +274,11 @@ func TestGetContainer(t *testing.T) {
 				},
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
+						"cpu":               getResourceQuantity("1"),
+						"ephemeral-storage": getResourceQuantity(manifest.CFToSIUnits("1024M")),
+						"memory":            getResourceQuantity(manifest.CFToSIUnits("512M")),
+					},
+					Limits: corev1.ResourceList{
 						"cpu":               getResourceQuantity("1"),
 						"ephemeral-storage": getResourceQuantity(manifest.CFToSIUnits("1024M")),
 						"memory":            getResourceQuantity(manifest.CFToSIUnits("512M")),
