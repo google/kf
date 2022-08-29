@@ -747,6 +747,70 @@ func TestPush(t *testing.T) {
 					)
 			},
 		},
+		"annotations-are-canonical": {
+			appName:   "some-app",
+			srcImage:  "some-image",
+			buildpack: "some-buildpack",
+			opts: apps.PushOptions{
+				apps.WithPushSpace("default"),
+				apps.WithPushAnnotations(map[string]string{
+					"new1k": "new1v",
+				}),
+			},
+			setup: func(t *testing.T, f *fakes) {
+				f.appsClient.EXPECT().
+					Upsert(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+					Do(func(ctx context.Context, space string, newApp *v1alpha1.App, merge apps.Merger) {
+						oldApp := &v1alpha1.App{}
+						oldApp.Annotations = map[string]string{
+							"old1k": "old1v",
+						}
+
+						merge(newApp, oldApp)
+
+						testutil.AssertEqual(
+							t,
+							"annotations",
+							map[string]string{
+								"new1k": "new1v",
+							},
+							newApp.Annotations,
+						)
+					}).Return(&v1alpha1.App{}, nil)
+			},
+		},
+		"labels-are-canonical": {
+			appName:   "some-app",
+			srcImage:  "some-image",
+			buildpack: "some-buildpack",
+			opts: apps.PushOptions{
+				apps.WithPushSpace("default"),
+				apps.WithPushLabels(map[string]string{
+					"new1k": "new1v",
+				}),
+			},
+			setup: func(t *testing.T, f *fakes) {
+				f.appsClient.EXPECT().
+					Upsert(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+					Do(func(ctx context.Context, space string, newApp *v1alpha1.App, merge apps.Merger) {
+						oldApp := &v1alpha1.App{}
+						oldApp.Labels = map[string]string{
+							"old1k": "old1v",
+						}
+
+						merge(newApp, oldApp)
+
+						testutil.AssertEqual(
+							t,
+							"labels",
+							map[string]string{
+								"new1k": "new1v",
+							},
+							newApp.Labels,
+						)
+					}).Return(&v1alpha1.App{}, nil)
+			},
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			if tc.assert == nil {
