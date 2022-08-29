@@ -82,7 +82,168 @@ func TestMakeDeployment(t *testing.T) {
 						},
 					},
 				},
-
+				Spec: appsv1.DeploymentSpec{
+					Replicas:             ptr.Int32(0),
+					RevisionHistoryLimit: ptr.Int32(10),
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app.kubernetes.io/component":  "app-server",
+							"app.kubernetes.io/managed-by": "kf",
+							"app.kubernetes.io/name":       "my-app",
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"app.kubernetes.io/component":  "app-server",
+								"app.kubernetes.io/managed-by": "kf",
+								"app.kubernetes.io/name":       "my-app",
+								v1alpha1.NetworkPolicyLabel:    v1alpha1.NetworkPolicyApp,
+							},
+							Annotations: map[string]string{
+								"sidecar.istio.io/inject":                          "true",
+								"traffic.sidecar.istio.io/includeOutboundIPRanges": "*",
+							},
+						},
+					},
+					Strategy: appsv1.DeploymentStrategy{
+						Type: appsv1.RollingUpdateDeploymentStrategyType,
+						RollingUpdate: &appsv1.RollingUpdateDeployment{
+							MaxUnavailable: &defaultMaxUnavailable,
+							MaxSurge:       &defaultMaxSurge,
+						},
+					},
+					ProgressDeadlineSeconds: ptr.Int32(600),
+				},
+			},
+		},
+		"app-labels": {
+			app: &v1alpha1.App{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-app",
+					Labels: map[string]string{
+						"user-label1": "label1-value",
+						"user-label2": "label2-value",
+					},
+					Annotations: map[string]string{
+						"user-annotation1": "annotation1-value",
+						"user-annotation2": "annotation2-value",
+					},
+				},
+				Spec: v1alpha1.AppSpec{
+					Instances: v1alpha1.AppSpecInstances{
+						Stopped:  true,
+						Replicas: ptr.Int32(30),
+					},
+				},
+				Status: v1alpha1.AppStatus{
+					BuildStatusFields: v1alpha1.BuildStatusFields{
+						Image: "gcr.io/my-app",
+					},
+				},
+			},
+			space: &v1alpha1.Space{},
+			want: &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-app",
+					Labels: map[string]string{
+						"app.kubernetes.io/component":  "app-scaler",
+						"app.kubernetes.io/managed-by": "kf",
+						"app.kubernetes.io/name":       "my-app",
+						"user-label1":                  "label1-value",
+						"user-label2":                  "label2-value",
+					},
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         "kf.dev/v1alpha1",
+							Kind:               "App",
+							Name:               "my-app",
+							Controller:         ptr.Bool(true),
+							BlockOwnerDeletion: ptr.Bool(true),
+						},
+					},
+				},
+				Spec: appsv1.DeploymentSpec{
+					Replicas:             ptr.Int32(0),
+					RevisionHistoryLimit: ptr.Int32(10),
+					Selector: &metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"app.kubernetes.io/component":  "app-server",
+							"app.kubernetes.io/managed-by": "kf",
+							"app.kubernetes.io/name":       "my-app",
+						},
+					},
+					Template: corev1.PodTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"user-label1":                  "label1-value",
+								"user-label2":                  "label2-value",
+								"app.kubernetes.io/component":  "app-server",
+								"app.kubernetes.io/managed-by": "kf",
+								"app.kubernetes.io/name":       "my-app",
+								v1alpha1.NetworkPolicyLabel:    v1alpha1.NetworkPolicyApp,
+							},
+							Annotations: map[string]string{
+								"sidecar.istio.io/inject":                          "true",
+								"traffic.sidecar.istio.io/includeOutboundIPRanges": "*",
+								"user-annotation1":                                 "annotation1-value",
+								"user-annotation2":                                 "annotation2-value",
+							},
+						},
+					},
+					Strategy: appsv1.DeploymentStrategy{
+						Type: appsv1.RollingUpdateDeploymentStrategyType,
+						RollingUpdate: &appsv1.RollingUpdateDeployment{
+							MaxUnavailable: &defaultMaxUnavailable,
+							MaxSurge:       &defaultMaxSurge,
+						},
+					},
+					ProgressDeadlineSeconds: ptr.Int32(600),
+				},
+			},
+		},
+		"app-labels-lowest-priority": {
+			app: &v1alpha1.App{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-app",
+					Labels: map[string]string{
+						"app.kubernetes.io/managed-by": "user-defined",
+					},
+					Annotations: map[string]string{
+						"sidecar.istio.io/inject": "false",
+					},
+				},
+				Spec: v1alpha1.AppSpec{
+					Instances: v1alpha1.AppSpecInstances{
+						Stopped:  true,
+						Replicas: ptr.Int32(30),
+					},
+				},
+				Status: v1alpha1.AppStatus{
+					BuildStatusFields: v1alpha1.BuildStatusFields{
+						Image: "gcr.io/my-app",
+					},
+				},
+			},
+			space: &v1alpha1.Space{},
+			want: &appsv1.Deployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-app",
+					Labels: map[string]string{
+						"app.kubernetes.io/component":  "app-scaler",
+						"app.kubernetes.io/managed-by": "kf",
+						"app.kubernetes.io/name":       "my-app",
+					},
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion:         "kf.dev/v1alpha1",
+							Kind:               "App",
+							Name:               "my-app",
+							Controller:         ptr.Bool(true),
+							BlockOwnerDeletion: ptr.Bool(true),
+						},
+					},
+				},
 				Spec: appsv1.DeploymentSpec{
 					Replicas:             ptr.Int32(0),
 					RevisionHistoryLimit: ptr.Int32(10),

@@ -19,7 +19,11 @@ import (
 	"fmt"
 
 	kfapis "github.com/google/kf/v2/pkg/apis/kf"
+	apivalidation "k8s.io/apimachinery/pkg/api/validation"
+	v1validation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+
 	"knative.dev/pkg/apis"
 )
 
@@ -50,6 +54,8 @@ func (app *Application) Validate(ctx context.Context) (errs *apis.FieldError) {
 	}
 
 	errs = errs.Also(app.Ports.Validate(ctx).ViaField("ports"))
+
+	errs = errs.Also(app.Metadata.Validate(ctx).ViaField("metadata"))
 
 	okRoutePorts := sets.NewInt(0) // 0 means default
 	for _, port := range app.Ports {
@@ -92,6 +98,26 @@ func (a *AppPort) Validate(ctx context.Context) (errs *apis.FieldError) {
 	if !validProtocols.Has(a.Protocol) {
 		msg := fmt.Sprintf("must be one of: %v", validProtocols.List())
 		errs = errs.Also(apis.ErrInvalidValue(msg, "protocol"))
+	}
+
+	return
+}
+
+// Validate implements apis.Validatable
+func (a *ApplicationMetadata) Validate(ctx context.Context) (errs *apis.FieldError) {
+
+	for _, err := range apivalidation.ValidateAnnotations(a.Annotations, field.NewPath("annotations")) {
+		errs = errs.Also(&apis.FieldError{
+			Message: err.ErrorBody(),
+			Paths:   []string{err.Field},
+		})
+	}
+
+	for _, err := range v1validation.ValidateLabels(a.Labels, field.NewPath("labels")) {
+		errs = errs.Also(&apis.FieldError{
+			Message: err.ErrorBody(),
+			Paths:   []string{err.Field},
+		})
 	}
 
 	return

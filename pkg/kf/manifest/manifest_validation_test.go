@@ -130,3 +130,61 @@ func TestApplication_Validation(t *testing.T) {
 		})
 	}
 }
+
+func TestApplicationMetadata_Validation(t *testing.T) {
+	cases := map[string]struct {
+		spec ApplicationMetadata
+		want *apis.FieldError
+	}{
+		// Labels and annotations rely on K8s validation, but we still want to assert
+		// the formats and paths look okay.
+
+		"valid": {
+			spec: ApplicationMetadata{
+				Labels: map[string]string{
+					"kf.dev/test": "ok",
+				},
+				Annotations: map[string]string{
+					"kf.dev/test": "ok",
+				},
+			},
+			want: nil,
+		},
+		"blank okay": {
+			spec: ApplicationMetadata{},
+			want: nil,
+		},
+
+		"bad label key": {
+			spec: ApplicationMetadata{
+				Labels: map[string]string{
+					"kf.dev test": "bad",
+				},
+			},
+			want: &apis.FieldError{
+				Message: `Invalid value: "kf.dev test": name part must consist of alphanumeric characters, '-', '_' or '.', and must start and end with an alphanumeric character (e.g. 'MyName',  or 'my.name',  or '123-abc', regex used for validation is '([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]')`,
+				Paths:   []string{"labels"},
+			},
+		},
+		"bad annotation key": {
+			spec: ApplicationMetadata{
+				Annotations: map[string]string{
+					"kf.dev test": "bad",
+				},
+			},
+			want: &apis.FieldError{
+				Message: `Invalid value: "kf.dev test": name part must consist of alphanumeric characters, '-', '_' or '.', and must start and end with an alphanumeric character (e.g. 'MyName',  or 'my.name',  or '123-abc', regex used for validation is '([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]')`,
+				Paths:   []string{"annotations"},
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			got := tc.spec.Validate(context.Background())
+
+			testutil.AssertEqual(t, "validation errors", tc.want.Error(), got.Error())
+		})
+	}
+
+}

@@ -250,6 +250,8 @@ func NewPushCommand(
 					apps.WithPushAppSpecInstances(app.ToAppSpecInstances()),
 					apps.WithPushContainer(container),
 					apps.WithPushContainerImage(image),
+					apps.WithPushLabels(app.Metadata.Labels),
+					apps.WithPushAnnotations(app.Metadata.Annotations),
 				}
 
 				var srcPath string

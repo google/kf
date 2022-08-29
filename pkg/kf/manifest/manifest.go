@@ -68,8 +68,19 @@ type Application struct {
 	// get requests to determine liveness if HealthCheckType is http.
 	HealthCheckHTTPEndpoint string `json:"health-check-http-endpoint,omitempty"`
 
+	// Metadata contains additional tags for applications and their underlying
+	// resources.
+	Metadata ApplicationMetadata `json:"metadata,omitempty"`
+
 	// KfApplicationExtension holds fields that aren't officially in cf
 	KfApplicationExtension `json:",inline"`
+}
+
+type ApplicationMetadata struct {
+	// Annotations to set on the app instance.
+	Annotations map[string]string `json:"annotations,omitempty"`
+	// Labels to set on the app instance.
+	Labels map[string]string `json:"labels,omitempty"`
 }
 
 // KfApplicationExtension holds fields that aren't officially in cf
