@@ -77,3 +77,41 @@ If you want to use self signed certificates for TLS (`https` instead of `http`) 
       --type='json' \
       -p="[{'op':'add','path':'/spec/kf/config/secrets','value':{'controllerCACerts':{'name':'<var>cacerts</var>'}}}]"
     ```
+## Set CPU minimums and ratios
+
+Application default CPU ratios and minimums can be set in the operator.
+
+Values are set in
+[CPU units](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu).
+Units are typically expressed in millicpus (`m`), or thousandths of a CPU.
+
+The `spec.kf.config.appCPUMin` property specifies a minimum amount of CPU per
+application, even if the developer has specified less.
+
+```sh
+kubectl patch \
+    kfsystem kfsystem \
+    --type='json' \
+    -p="[{'op':'add','path':'/spec/kf/config/appCPUMin','value':'<var>200m</var>'}]"
+```
+
+{{< note >}}Many application runtimes are CPU intensive while initializing
+applications. Setting this value too low may cause initial liveness checks to
+fail.{{< /note >}}
+
+The `spec.kf.config.appCPUPerGBOfRAM` property specifies a default amount of CPU
+to give each app per GB or RAM requested.
+
+You can choose different approaches based on the desired outcome:
+
+*   Choose the ratio of CPU to RAM for the cluster's nodes if you want to
+    maximize utilization.
+*   Choose a ratio of 1 CPU to 4 GB of RAM which typically works well for I/0 or
+    memory bound web applications.
+
+```sh
+kubectl patch \
+    kfsystem kfsystem \
+    --type='json' \
+    -p="[{'op':'add','path':'/spec/kf/config/appCPUPerGBOfRAM','value':'<var>250m</var>'}]"
+```
