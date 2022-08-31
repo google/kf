@@ -46,7 +46,7 @@ jobs:
           HUGO_ENVIRONMENT: production
           HUGO_ENV: production
         run: |
-          hugo \
+          cd docs && hugo \
             --minify \
             --baseURL "${{ steps.pages.outputs.base_url }}/"
       - name: Upload artifact
@@ -57,7 +57,7 @@ jobs:
   # Deployment job
   deploy:
     environment:
-      name: github-pages
+      name: public_docs
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
