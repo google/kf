@@ -1020,6 +1020,38 @@ func (k *Kf) Push(ctx context.Context, appName string, extraArgs ...string) {
 	})
 }
 
+// UpdateConfigMapBuildpack adds a new buildpack with a tagged url
+func UpdateConfigMapBuildpack(ctx context.Context, t *testing.T, test func(ctx context.Context, t *testing.T)) {
+	t.Helper()
+
+	WithKubernetes(ctx, t, func(k8s *kubernetes.Clientset) {
+		configDefaults, err := k8s.CoreV1().ConfigMaps("kf").Get(ctx, "config-defaults", metav1.GetOptions{})
+		if err != nil {
+			panic(err)
+		}
+
+		buildpacks := configDefaults.Data["spaceBuildpacksV2"]
+
+		gobuildPack := "- name: go_buildpack_v47 \n  url: https://github.com/cloudfoundry/go-buildpack.git#v1.9.47"
+
+		if !strings.Contains(buildpacks, gobuildPack) {
+			newbuildPack := buildpacks + gobuildPack
+
+			configDefaults.Data["spaceBuildpacksV2"] = newbuildPack
+
+			_, err = k8s.CoreV1().ConfigMaps("kf").Update(ctx, configDefaults, metav1.UpdateOptions{})
+			if err != nil {
+				panic(err)
+			}
+		} else {
+			fmt.Println("Already exists")
+		}
+
+	})
+
+	test(ctx, t)
+}
+
 // SSH runs a shell on an App.
 func (k *Kf) SSH(ctx context.Context, appName string, extraArgs ...string) []string {
 	k.t.Helper()
