@@ -26,15 +26,24 @@ data:
     - name: [buildpack name]
       url: [buildpack url, specifying tag if appropriate]
 ```
+For example, to pin Go Lang buildpack to version 1.9.48 
+```
+data:
+  buildpacksV2: |
+    - name: go_buildpack_v1.9.48
+      url: https://github.com/cloudfoundry/go-buildpack.git#v1.9.48
+```
 
 Use kubectl to apply the changes from that patch file directly to the existing `./config/config-defaults.yaml` file 
 
 `kubectl patch configmap config-defaults --patch-file ./patch-file.yaml`
 
-Note: The configmap name in this case is config-defaults
+Note: 
+1. The configmap name in this case is config-defaults
+2. Applying the patch-file.yaml file will replace all the buildpacks under data/buildpacksV2 path which means you have to add all the buildpacks your spaces and apps will be needing.
 
 To check the config map has been successfully updated run 
 
-`kubectl describe configmap config-defaults`
+`kubectl describe configmap config-defaults -n kf`
 
-Here you should see the amended list of buildpacks
+Here you should see the amended list of buildpacks under data/buildpacksV2, newly created spaces will have the updated buildpacks.
