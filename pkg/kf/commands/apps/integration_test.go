@@ -475,17 +475,14 @@ func TestIntegration_PushTaskWithRouteSetting(t *testing.T) {
 	})
 }
 
-func TestIntegration_Push_With_Manifest(t *testing.T) {
+func TestIntegration_Push_With_Pinned_Buildpack_Manifest(t *testing.T) {
 	integration.RunKubeAPITest(context.Background(), t, func(apictx context.Context, t *testing.T) {
 		integration.UpdateConfigMapBuildpack(apictx, t, func(apictx context.Context, t *testing.T) {
 			integration.RunKfTest(context.Background(), t, func(ctx context.Context, t *testing.T, kf *integration.Kf) {
 				appName := v1alpha1.GenerateName("integration-push-manifest", fmt.Sprint(time.Now().UnixNano()))
-				//appName := "manifest-with-buildpack"
-				fmt.Println("Application Name: ", appName)
 
 				// Push an App and then clean it up. This pushes the echo App which
 				// replies with the same body that was posted.
-				// For the purposes of this test the results SHOULD NOT be cached.
 				kf.Push(ctx, appName,
 					"--path",
 					filepath.Join(integration.RootDir(ctx, t), "./samples/apps/manifest-with-buildpack"),
