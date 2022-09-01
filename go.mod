@@ -210,7 +210,6 @@ require (
 
 replace (
 	github.com/google/go-cmp => github.com/google/go-cmp v0.3.0
-	//google.golang.org/grpc => google.golang.org/grpc v1.27.1
 	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.0.0-20190528110419-48d5cc0538c7
 )
 
