@@ -6,7 +6,7 @@ Buildpacks can support pinning by get tags instead of automatically sourcing the
 
 ## Instructions
 
-Note: If a space was created before doing this process, then the space will not automatically update itself
+Note: If a space was created before doing this process, then the space will not automatically update itself. It's recommended to carry out this process before creating the space
 
 Create a new file that includes the existing buildpacks, as well as the new buildpacks and tags that are to be included
 
@@ -26,7 +26,7 @@ data:
     - name: [buildpack name]
       url: [buildpack url, specifying tag if appropriate]
 ```
-For example, to pin Go Lang buildpack to version 1.9.48 
+For example, to pin Golang buildpack to version 1.9.48 
 ```
 data:
   buildpacksV2: |
@@ -40,10 +40,10 @@ Use kubectl to apply the changes from that patch file directly to the existing `
 
 Note: 
 1. The configmap name in this case is config-defaults
-2. Applying the patch-file.yaml file will replace all the buildpacks under data/buildpacksV2 path which means you have to add all the buildpacks your spaces and apps will be needing.
+2. Applying the patch-file.yaml file will replace all the buildpacks under data/buildpacksV2 path which means you have to add all the buildpacks your spaces and apps will be needing
 
 To check the config map has been successfully updated run 
 
 `kubectl describe configmap config-defaults -n kf`
 
-Here you should see the amended list of buildpacks under data/buildpacksV2, newly created spaces will have the updated buildpacks.
+Here you should see the amended list of buildpacks under data/buildpacksV2, newly created spaces will have the updated buildpacks
