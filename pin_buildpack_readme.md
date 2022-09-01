@@ -2,7 +2,7 @@
 
 ## Description
 
-Buildpacks can support pinning by get tags instead of automatically sourcing the latest buildpack from a git repository.
+Buildpacks can support pinning by using tags instead of automatically sourcing the latest buildpack from a git repository.
 
 ## Instructions
 
@@ -22,14 +22,14 @@ Populate the patch-file.yaml using the following format
 
 ```
 data:
-  buildpacksV2: |
+  SpaceBuildpacksV2: |
     - name: [buildpack name]
       url: [buildpack url, specifying tag if appropriate]
 ```
 For example, to pin Golang buildpack to version 1.9.48 
 ```
 data:
-  buildpacksV2: |
+  SpaceBuildpacksV2: |
     - name: go_buildpack_v1.9.48
       url: https://github.com/cloudfoundry/go-buildpack.git#v1.9.48
 ```
