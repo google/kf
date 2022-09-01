@@ -6,7 +6,7 @@ Buildpacks can support pinning by get tags instead of automatically sourcing the
 
 ## Instructions
 
-Note: If a space was created before doing this process, then the space will not automatically update itself
+Note: If a space was created before doing this process, then the space will not automatically update itself. It's recommended to carry out this process before creating the space
 
 Create a new file that includes the existing buildPacks, as well as the new buildPacks and tags that are to be included
 
@@ -26,7 +26,7 @@ data:
     - name: [buildpack name]
       url: [buildpack url, specifying tag if appropriate]
 ```
-For example, to pin Go Lang buildpack to version 1.9.48 
+For example, to pin Golang buildpack to version 1.9.48 
 ```
 data:
   buildpacksV2: |
@@ -47,4 +47,3 @@ To check the config map has been successfully updated run
 `kubectl describe configmap config-defaults -n kf`
 
 Here you should see the amended list of buildPacks under data/buildpacksV2, newly created spaces will have the updated buildPacks.
-
