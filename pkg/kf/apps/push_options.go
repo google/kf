@@ -33,6 +33,8 @@ type pushConfig struct {
 	ADXDockerfile string
 	// ADXStack is the stack to use with the AppDevExperience build
 	ADXStack config.StackV3Definition
+	// Annotations is Annotations to add to the pushed app.
+	Annotations map[string]string
 	// AppSpecInstances is Scaling information for the service
 	AppSpecInstances v1alpha1.AppSpecInstances
 	// Build is a custom Tekton task used for the build
@@ -45,6 +47,8 @@ type pushConfig struct {
 	GenerateDefaultRoute bool
 	// GenerateRandomRoute is returns true if the app should receive a random route if a route doesn't already exist
 	GenerateRandomRoute bool
+	// Labels is Labels to add to the pushed app.
+	Labels map[string]string
 	// Output is the io.Writer to write output such as build logs
 	Output io.Writer
 	// Routes is routes for the app
@@ -107,6 +111,12 @@ func (opts PushOptions) ADXStack() config.StackV3Definition {
 	return opts.toConfig().ADXStack
 }
 
+// Annotations returns the last set value for Annotations or the empty value
+// if not set.
+func (opts PushOptions) Annotations() map[string]string {
+	return opts.toConfig().Annotations
+}
+
 // AppSpecInstances returns the last set value for AppSpecInstances or the empty value
 // if not set.
 func (opts PushOptions) AppSpecInstances() v1alpha1.AppSpecInstances {
@@ -141,6 +151,12 @@ func (opts PushOptions) GenerateDefaultRoute() bool {
 // if not set.
 func (opts PushOptions) GenerateRandomRoute() bool {
 	return opts.toConfig().GenerateRandomRoute
+}
+
+// Labels returns the last set value for Labels or the empty value
+// if not set.
+func (opts PushOptions) Labels() map[string]string {
+	return opts.toConfig().Labels
 }
 
 // Output returns the last set value for Output or the empty value
@@ -201,6 +217,13 @@ func WithPushADXStack(val config.StackV3Definition) PushOption {
 	}
 }
 
+// WithPushAnnotations creates an Option that sets Annotations to add to the pushed app.
+func WithPushAnnotations(val map[string]string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.Annotations = val
+	}
+}
+
 // WithPushAppSpecInstances creates an Option that sets Scaling information for the service
 func WithPushAppSpecInstances(val v1alpha1.AppSpecInstances) PushOption {
 	return func(cfg *pushConfig) {
@@ -240,6 +263,13 @@ func WithPushGenerateDefaultRoute(val bool) PushOption {
 func WithPushGenerateRandomRoute(val bool) PushOption {
 	return func(cfg *pushConfig) {
 		cfg.GenerateRandomRoute = val
+	}
+}
+
+// WithPushLabels creates an Option that sets Labels to add to the pushed app.
+func WithPushLabels(val map[string]string) PushOption {
+	return func(cfg *pushConfig) {
+		cfg.Labels = val
 	}
 }
 

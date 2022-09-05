@@ -40,6 +40,7 @@ The following fields are valid for objects under `applications`:
 | `entrypoint` †               | `string`   | Overrides the app container's entrypoint. |
 | `args` †                     | `string[]` | Overrides the arguments the app container. |
 | `ports` †                    | `object`   | A list of ports to expose on the container. If supplied, the first entry in this list is used as the default port. |
+| `metadata`                   | `object`   | Additional tags for applications and their underlying resources. | 
 
 † Unique to Kf
 
@@ -78,6 +79,17 @@ The hint is used by the [service mesh](https://cloud.google.com/service-mesh/doc
 {{< warning >}} Kf doesn't currently support TCP port-based routing. You must use a
 [Kubernetes LoadBalancer](https://kubernetes.io/docs/tutorials/stateless-application/expose-external-ip-address/) if you want to expose a TCP port to the Internet. Ports are available on the cluster internal App address `<app-name>.<space>`.{{< /warning >}}
 
+## Metadata fields
+
+The following fields are valid for `application.metadata` objects:
+
+| Field         | Type     | Description |
+| ---           | ---      | ---         |
+| `labels`      | `string -> string map` | Labels to add to the app and underlying application Pods. |
+| `annotations` | `string -> string map` | Annotations to add to the app and underlying application Pods. |
+
+{{< note >}}Kf's metadata overrides custom metadata for certain resources to ensure platform elements like
+routing and logging continue to work.{{< /note >}}
 
 
 ## Examples

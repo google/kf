@@ -67,6 +67,18 @@ spec:
     app.kubernetes.io/name: my-app
 ```
 
+If you want to target multiple applications, add a common label to
+the manfiest like the following and replace the `app.kubernetes.io/name`
+label with it in the Kubernetes service selector:
+
+```yaml
+applications:
+- name: my-app
+  metadata:
+    labels:
+      jsessionid-lb-target: some-unique-name
+```
+
 Next, push the load balancer app pointing to the internal address
 of the service you just created:
 

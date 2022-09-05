@@ -100,8 +100,10 @@ func newApp(appName, adxBuild string, opts ...PushOption) *v1alpha1.App {
 			APIVersion: "kf.dev/v1alpha1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      appName,
-			Namespace: cfg.Space,
+			Name:        appName,
+			Namespace:   cfg.Space,
+			Labels:      cfg.Labels,
+			Annotations: cfg.Annotations,
 		},
 		Spec: v1alpha1.AppSpec{
 			Build: v1alpha1.AppSpecBuild{
@@ -269,6 +271,8 @@ func (p *pusher) CreatePlaceholderApp(ctx context.Context, appName string, opts 
 					Stopped: true,
 				},
 			),
+			WithPushLabels(cfg.Labels),
+			WithPushAnnotations(cfg.Annotations),
 		)
 
 		app, err := p.appsClient.Create(ctx, cfg.Space, tmpApp)

@@ -72,3 +72,9 @@ configs:
   - name: ADXDockerfile
     type: "string"
     description: the path to the dockerfile to us with the AppDevExperience build
+  - name: Labels
+    type: "map[string]string"
+    description: Labels to add to the pushed app.
+  - name: Annotations
+    type: "map[string]string"
+    description: Annotations to add to the pushed app.

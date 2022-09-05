@@ -87,16 +87,24 @@ func MakeDeployment(
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: v1alpha1.UnionMaps(
+						app.GetLabels(),
+						// Add in the App's labels, which may be user-defined.
 						PodLabels(app),
 
 						// Insert a label for isolating apps with their own NetworkPolicies.
 						map[string]string{
 							v1alpha1.NetworkPolicyLabel: v1alpha1.NetworkPolicyApp,
 						}),
-					Annotations: map[string]string{
-						"sidecar.istio.io/inject":                          "true",
-						"traffic.sidecar.istio.io/includeOutboundIPRanges": "*",
-					},
+					Annotations: v1alpha1.UnionMaps(
+						// Add in the App's annotations, which may be user-defined.
+						app.GetAnnotations(),
+
+						// Inject the Envoy sidecar on all apps so networking rules
+						// apply.
+						map[string]string{
+							"sidecar.istio.io/inject":                          "true",
+							"traffic.sidecar.istio.io/includeOutboundIPRanges": "*",
+						}),
 				},
 				Spec: *podSpec,
 			},
