@@ -605,6 +605,9 @@ spec:
                                   optional:
                                     description: Specify whether the Secret or its key must be defined
                                     type: boolean
+                    ProgressDeadlineSeconds: 
+                      description: ProgressDeadlineSeconds contains a configurable timeout between state transition and reaching a stable state before provisioning or deprovisioning times out.
+                      type: int32
       additionalPrinterColumns:
         - name: Age
           type: date
