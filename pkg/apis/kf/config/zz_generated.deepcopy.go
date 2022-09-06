@@ -142,6 +142,11 @@ func (in *DefaultsConfig) DeepCopyInto(out *DefaultsConfig) {
 		x := (*in).DeepCopy()
 		*out = &x
 	}
+	if in.ProgressDeadlineSeconds != nil {
+		in, out := &in.ProgressDeadlineSeconds, &out.ProgressDeadlineSeconds
+		*out = new(int32)
+		**out = **in
+	}
 	return
 }
 

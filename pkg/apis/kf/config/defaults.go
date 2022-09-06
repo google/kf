@@ -130,7 +130,7 @@ type DefaultsConfig struct {
 
 	// ProgressDeadlineSeconds contains the maximum time in seconds for a deployment to make progress before it
 	// is considered to be failed.
-	ProgressDeadlineSeconds int32 `json:"progressDeadlineSeconds,omitempty"`
+	ProgressDeadlineSeconds *int32 `json:"progressDeadlineSeconds,omitempty"`
 }
 
 // BuiltinDefaultsConfig creates a defaults configuration with default values.

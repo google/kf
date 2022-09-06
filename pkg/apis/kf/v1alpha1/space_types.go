@@ -241,7 +241,7 @@ type SpaceStatusRuntimeConfig struct {
 
 	// ProgressDeadlineSeconds contains the maximum time in seconds for a deployment to make progress before it
 	// is considered to be failed
-	ProgressDeadlineSeconds int32 `json:"progressDeadlineSeconds,omitempty"`
+	ProgressDeadlineSeconds *int32 `json:"progressDeadlineSeconds,omitempty"`
 }
 
 // SpaceStatusNetworkConfig reflects the actual Networking configuration for the

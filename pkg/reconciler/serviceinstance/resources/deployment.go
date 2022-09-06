@@ -106,7 +106,7 @@ func MakeDeployment(serviceInstance *v1alpha1.ServiceInstance, cfg *config.Confi
 					MaxSurge:       &defaultMaxSurge,
 				},
 			},
-			ProgressDeadlineSeconds: ptr.Int32(20),
+			ProgressDeadlineSeconds: ptr.Int32(600),
 		},
 	}, nil
 }
