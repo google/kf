@@ -128,9 +128,8 @@ type DefaultsConfig struct {
 	// Minimum amount of CPU to assign an app.
 	AppCPUMin *resource.Quantity `json:"appCPUMin,omitempty"`
 
-	// ProgressDeadlineSeconds contains a configurable timeout between state 
-	// transition and reaching a stable state before provisioning or deprovisioning
-	// times out.
+	// ProgressDeadlineSeconds contains the maximum time in seconds for a deployment to make progress before it
+	// is considered to be failed.
 	ProgressDeadlineSeconds int32 `json:"progressDeadlineSeconds,omitempty"`
 }
 
@@ -236,6 +235,7 @@ func (defaultsConfig *DefaultsConfig) getInterfaceValues(leaveEmpty bool) map[st
 		buildNodeSelectorsKey:       &defaultsConfig.BuildNodeSelectors,
 		appCPUPerGBOfRAMKey:         &defaultsConfig.AppCPUPerGBOfRAM,
 		appCPUMinKey:                &defaultsConfig.AppCPUMin,
+		progressDeadlineSecondsKey:  &defaultsConfig.ProgressDeadlineSeconds,
 	}
 
 	if !leaveEmpty {

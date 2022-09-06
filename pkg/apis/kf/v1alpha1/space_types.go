@@ -239,9 +239,8 @@ type SpaceStatusRuntimeConfig struct {
 	// amount of RAM it's assigned.
 	AppCPUMin *resource.Quantity `json:"appCPUMin,omitempty"`
 
-	// ProgressDeadlineSeconds contains a configurable timeout between state 
-	// transition and reaching a stable state before provisioning or deprovisioning
-	// times out.
+	// ProgressDeadlineSeconds contains the maximum time in seconds for a deployment to make progress before it
+	// is considered to be failed
 	ProgressDeadlineSeconds int32 `json:"progressDeadlineSeconds,omitempty"`
 }
 
