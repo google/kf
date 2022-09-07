@@ -82,6 +82,7 @@ func (status *SpaceStatus) PropagateIngressGatewayStatus(ingresses []corev1.Load
 func (status *SpaceStatus) PropagateRuntimeConfigStatus(runtimeConfig SpaceSpecRuntimeConfig, cfg *config.Config) {
 	// Copy environment over wholesale because there are no values that can be set
 	// cluster-wide.
+	status.RuntimeConfig = SpaceStatusRuntimeConfig{} // clear out anything old
 	status.RuntimeConfig.Env = runtimeConfig.Env
 
 	// Copy from the config if possible.
