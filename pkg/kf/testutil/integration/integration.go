@@ -106,6 +106,10 @@ const (
 	nfsServiceClassName = "nfs"
 
 	nfsServicePlanExisting = "existing"
+
+	PinnedBuildPackName = "go_buildpack_v47"
+
+	PinnedBuildPackURL = "https://github.com/cloudfoundry/go-buildpack.git#v1.9.47"
 )
 
 // ShouldSkipIntegration returns true if integration tests are being skipped.
@@ -1018,6 +1022,38 @@ func (k *Kf) Push(ctx context.Context, appName string, extraArgs ...string) {
 			"--async",
 		)
 	})
+}
+
+// UpdateConfigMapBuildpack adds a new buildpack with a tagged url to the config-defaults configmap in the kf namespace
+func UpdateConfigMapBuildpack(ctx context.Context, t *testing.T, test func(ctx context.Context, t *testing.T)) {
+	t.Helper()
+
+	WithKubernetes(ctx, t, func(k8s *kubernetes.Clientset) {
+		configDefaults, err := k8s.CoreV1().ConfigMaps("kf").Get(ctx, "config-defaults", metav1.GetOptions{})
+		if err != nil {
+			panic(err)
+		}
+
+		buildPacks := configDefaults.Data["spaceBuildpacksV2"]
+
+		gobuildPack := fmt.Sprintf("- name: %s \n  url: %s", PinnedBuildPackName, PinnedBuildPackURL)
+
+		if !strings.Contains(buildPacks, gobuildPack) {
+			newbuildPack := buildPacks + gobuildPack
+
+			configDefaults.Data["spaceBuildpacksV2"] = newbuildPack
+
+			_, err = k8s.CoreV1().ConfigMaps("kf").Update(ctx, configDefaults, metav1.UpdateOptions{})
+			if err != nil {
+				panic(err)
+			}
+		} else {
+			fmt.Println("Already exists")
+		}
+
+	})
+
+	test(ctx, t)
 }
 
 // SSH runs a shell on an App.

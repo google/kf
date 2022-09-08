@@ -35,7 +35,7 @@ export SPACE_DOMAIN="${TEST_DOMAIN:-integration-tests.kf.dev}"
 echo "Space domain: ${SPACE_DOMAIN}"
 ${KUBECTL} delete spaces --all
 
-go install ./cmd/test-runner
+#go install ./cmd/test-runner
 
 START_TIME=$(date +%s)
 
