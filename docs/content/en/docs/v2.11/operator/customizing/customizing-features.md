@@ -77,6 +77,7 @@ If you want to use self signed certificates for TLS (`https` instead of `http`) 
       --type='json' \
       -p="[{'op':'add','path':'/spec/kf/config/secrets','value':{'controllerCACerts':{'name':'<var>cacerts</var>'}}}]"
     ```
+
 ## Set CPU minimums and ratios
 
 Application default CPU ratios and minimums can be set in the operator.
@@ -114,4 +115,38 @@ kubectl patch \
     kfsystem kfsystem \
     --type='json' \
     -p="[{'op':'add','path':'/spec/kf/config/appCPUPerGBOfRAM','value':'<var>250m</var>'}]"
+```
+
+## Set buildpacks using git tags
+
+Buildpacks can support pinning by using git tags instead of automatically sourcing the latest buildpack from a git repository.
+
+{{< note >}}Buildpacks can be added using the `kfsystem` operator and `kubectl patch`.{{< /note >}}
+
+Add a new buildpack as follows and use a git tag to specify which version of the buildpack the app should use. Otherwise the buildpack will default to the latest version.
+
+For example, to pin Golang buildpack version 1.9.49 do:
+
+```sh
+kubectl patch \
+kfsystem kfsystem \
+--type='json' \
+ -p='[{"op":"add","path":"data/spec/kf/config/spaceBuildpacksV2","value":[{"name":"go_buildpack_v1.9.49","url":"https://github.com/cloudfoundry/go-buildpack.git#v1.9.49"}]}]'
+```
+
+This command will add the following to the config-defaults configmaps resource:
+
+```sh
+data:
+  SpaceBuildpacksV2: |
+    - name: go_buildpack_v1.9.49
+      url: https://github.com/cloudfoundry/go-buildpack.git#v1.9.49
+```
+
+The `kubectl patch` command will replace all the existing buildpacks in the config-defaults configmaps. If the user would like the existing buildpacks to remain, these too need to be included in the command.
+
+To get the list of existing buildpacks in the configmaps run the following command:
+
+```sh
+kubectl describe configmaps config-defaults -n kf
 ```
