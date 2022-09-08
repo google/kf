@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"knative.dev/pkg/ptr"
 	"strings"
 
 	"github.com/google/kf/v2/pkg/apis/kf/config"
@@ -94,7 +93,7 @@ func (status *SpaceStatus) PropagateRuntimeConfigStatus(runtimeConfig SpaceSpecR
 
 	status.RuntimeConfig.AppCPUMin = defaultsConfig.AppCPUMin
 	status.RuntimeConfig.AppCPUPerGBOfRAM = defaultsConfig.AppCPUPerGBOfRAM
-	status.RuntimeConfig.ProgressDeadlineSeconds = ptr.Int32(20)
+	status.RuntimeConfig.ProgressDeadlineSeconds = defaultsConfig.ProgressDeadlineSeconds
 
 	status.RuntimeConfigCondition().MarkSuccess()
 }
