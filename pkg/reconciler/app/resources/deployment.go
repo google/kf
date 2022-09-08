@@ -216,7 +216,7 @@ func makePodSpec(app *v1alpha1.App, space *v1alpha1.Space) (*corev1.PodSpec, err
 
 	// Populate default pod spec
 	spec.RestartPolicy = corev1.RestartPolicyAlways
-	spec.TerminationGracePeriodSeconds = ptr.Int64(corev1.DefaultTerminationGracePeriodSeconds)
+	spec.TerminationGracePeriodSeconds = space.Status.RuntimeConfig.TerminationGracePeriodSeconds
 	spec.DNSPolicy = corev1.DNSClusterFirst
 
 	spec.SecurityContext = &corev1.PodSecurityContext{}

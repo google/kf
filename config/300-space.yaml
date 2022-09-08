@@ -609,6 +609,10 @@ spec:
                       description: ProgressDeadlineSeconds contains a configurable timeout between state transition and reaching a stable state before provisioning or deprovisioning times out.
                       type: integer
                       format: int32
+                    terminationGracePeriodSeconds:
+                      description: The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal
+                      type: integer
+                      format: int64
       additionalPrinterColumns:
         - name: Age
           type: date

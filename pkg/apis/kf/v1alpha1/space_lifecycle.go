@@ -94,6 +94,7 @@ func (status *SpaceStatus) PropagateRuntimeConfigStatus(runtimeConfig SpaceSpecR
 	status.RuntimeConfig.AppCPUMin = defaultsConfig.AppCPUMin
 	status.RuntimeConfig.AppCPUPerGBOfRAM = defaultsConfig.AppCPUPerGBOfRAM
 	status.RuntimeConfig.ProgressDeadlineSeconds = defaultsConfig.ProgressDeadlineSeconds
+	status.RuntimeConfig.TerminationGracePeriodSeconds = defaultsConfig.TerminationGracePeriodSeconds
 
 	status.RuntimeConfigCondition().MarkSuccess()
 }

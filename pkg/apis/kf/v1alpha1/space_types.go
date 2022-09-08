@@ -242,6 +242,10 @@ type SpaceStatusRuntimeConfig struct {
 	// ProgressDeadlineSeconds contains the maximum time in seconds for a deployment to make progress before it
 	// is considered to be failed
 	ProgressDeadlineSeconds *int32 `json:"progressDeadlineSeconds,omitempty"`
+
+	// TerminationGracePeriodSeconds is the duration in seconds after the processes running in the pod are sent
+	// a termination signal and the time when the processes are forcibly halted with a kill signal.
+	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
 }
 
 // SpaceStatusNetworkConfig reflects the actual Networking configuration for the

@@ -160,6 +160,9 @@ data:
     appCPUMin: "100m"
     # Maximum time in seconds for a deployment to make progress before it is considered to be failed
     progressDeadlineSeconds: "600"
+    # The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and 
+    # the time when the processes are forcibly halted with a kill signal.
+    terminationGracePeriodSeconds: 120
 
     # The following images are used to execute builds. They SHOULD NOT be
     # modified except in rare circumstances.
@@ -230,4 +233,5 @@ data:
   appCPUPerGBOfRAM: "100m"
   appCPUMin: "100m"
   progressDeadlineSeconds: "60"
+  terminationGracePeriodSeconds: "120"
 

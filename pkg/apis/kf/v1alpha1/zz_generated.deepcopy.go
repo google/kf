@@ -2167,6 +2167,11 @@ func (in *SpaceStatusRuntimeConfig) DeepCopyInto(out *SpaceStatusRuntimeConfig) 
 		*out = new(int32)
 		**out = **in
 	}
+	if in.TerminationGracePeriodSeconds != nil {
+		in, out := &in.TerminationGracePeriodSeconds, &out.TerminationGracePeriodSeconds
+		*out = new(int64)
+		**out = **in
+	}
 	return
 }
 
