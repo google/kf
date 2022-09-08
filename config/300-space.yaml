@@ -605,7 +605,7 @@ spec:
                                   optional:
                                     description: Specify whether the Secret or its key must be defined
                                     type: boolean
-                    ProgressDeadlineSeconds: 
+                    progressDeadlineSeconds:
                       description: ProgressDeadlineSeconds contains a configurable timeout between state transition and reaching a stable state before provisioning or deprovisioning times out.
                       type: integer
                       format: int32
