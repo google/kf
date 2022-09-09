@@ -232,6 +232,6 @@ data:
     enable_appdevexperience_builds: false
   appCPUPerGBOfRAM: "100m"
   appCPUMin: "100m"
-  progressDeadlineSeconds: "60"
-  terminationGracePeriodSeconds: "120"
+  progressDeadlineSeconds: "600"
+  terminationGracePeriodSeconds: "30"
 
