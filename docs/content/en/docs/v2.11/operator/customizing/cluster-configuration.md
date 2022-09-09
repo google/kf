@@ -317,7 +317,7 @@ featureFlags: |
 ```
 ## ProgressDeadlineSeconds
 
-`ProgressDeadlineSeconds` contains a configurable quoted integer indicating the maximun allowed time between state transition and reaching a stable state before provisioning or deprovisioning when pushing an application. The default value is `600` seconds.
+`ProgressDeadlineSeconds` contains a configurable quoted integer indicating the maximum allowed time between state transition and reaching a stable state before provisioning or deprovisioning when pushing an application. The default value is `600` seconds.
 
 ## TerminationGracePeriodSeconds
 
