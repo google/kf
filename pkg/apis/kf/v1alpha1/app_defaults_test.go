@@ -217,11 +217,12 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 		template *corev1.Container
 		expected *corev1.Container
 	}{
-		"default everything except ReadinessProbe": {
+		"default everything except runtime probes": {
 			template: &corev1.Container{},
 			expected: &corev1.Container{
 				Name:           DefaultUserContainerName,
 				ReadinessProbe: nil,
+				LivenessProbe:  nil,
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
 						corev1.ResourceCPU:              defaultCPU,
@@ -247,10 +248,26 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 						HTTPGet: &corev1.HTTPGetAction{},
 					},
 				},
+				LivenessProbe: &corev1.Probe{
+					TimeoutSeconds:   DefaultHealthCheckProbeTimeout,
+					PeriodSeconds:    DefaultHealthCheckPeriodSeconds,
+					FailureThreshold: DefaultHealthCheckFailureThreshold,
+					ProbeHandler: corev1.ProbeHandler{
+						HTTPGet: &corev1.HTTPGetAction{},
+					},
+				},
 			},
 			expected: &corev1.Container{
 				Name: "some-name",
 				ReadinessProbe: &corev1.Probe{
+					TimeoutSeconds:   DefaultHealthCheckProbeTimeout,
+					PeriodSeconds:    DefaultHealthCheckPeriodSeconds,
+					FailureThreshold: DefaultHealthCheckFailureThreshold,
+					ProbeHandler: corev1.ProbeHandler{
+						HTTPGet: &corev1.HTTPGetAction{Path: DefaultHealthCheckProbeEndpoint},
+					},
+				},
+				LivenessProbe: &corev1.Probe{
 					TimeoutSeconds:   DefaultHealthCheckProbeTimeout,
 					PeriodSeconds:    DefaultHealthCheckPeriodSeconds,
 					FailureThreshold: DefaultHealthCheckFailureThreshold,
@@ -272,10 +289,26 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 						HTTPGet: &corev1.HTTPGetAction{Path: "/healthz"},
 					},
 				},
+				LivenessProbe: &corev1.Probe{
+					TimeoutSeconds:   180,
+					PeriodSeconds:    180,
+					FailureThreshold: 300,
+					ProbeHandler: corev1.ProbeHandler{
+						HTTPGet: &corev1.HTTPGetAction{Path: "/healthz"},
+					},
+				},
 			},
 			expected: &corev1.Container{
 				Name: "some-name",
 				ReadinessProbe: &corev1.Probe{
+					TimeoutSeconds:   180,
+					PeriodSeconds:    180,
+					FailureThreshold: 300,
+					ProbeHandler: corev1.ProbeHandler{
+						HTTPGet: &corev1.HTTPGetAction{Path: "/healthz"},
+					},
+				},
+				LivenessProbe: &corev1.Probe{
 					TimeoutSeconds:   180,
 					PeriodSeconds:    180,
 					FailureThreshold: 300,
