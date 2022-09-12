@@ -162,9 +162,74 @@ func verifyAuditorPermission(ctx context.Context, t *testing.T, namespace string
 		{title: "SpaceAuditor gets Apps in space", space: namespace, verb: "get", group: "kf.dev", resource: "apps", expectedOutput: true},
 		{title: "SpaceAuditor lists Apps in space", space: namespace, verb: "list", group: "kf.dev", resource: "apps", expectedOutput: true},
 		{title: "SpaceAuditor watches Apps in space", space: namespace, verb: "watch", group: "kf.dev", resource: "apps", expectedOutput: true},
+
+		{title: "SpaceAuditor gets Pods in space", space: namespace, verb: "get", group: "", resource: "pods", expectedOutput: true},
+		{title: "SpaceAuditor lists Pods in space", space: namespace, verb: "list", group: "", resource: "pods", expectedOutput: true},
+		{title: "SpaceAuditor watches Pods in space", space: namespace, verb: "watch", group: "", resource: "pods", expectedOutput: true},
+
+		{title: "SpaceAuditor can not create Pods in space", space: namespace, verb: "create", group: "", resource: "pods", expectedOutput: false},
+		{title: "SpaceAuditor can not update Pods in space", space: namespace, verb: "update", group: "", resource: "pods", expectedOutput: false},
+		{title: "SpaceAuditor can not patch Pods in space", space: namespace, verb: "patch", group: "", resource: "pods", expectedOutput: false},
+		{title: "SpaceAuditor can not delete Pods in space", space: namespace, verb: "delete", group: "", resource: "pods", expectedOutput: false},
+
+		{title: "SpaceAuditor get upload.kf.dev resources in space", space: namespace, verb: "get", group: "upload.kf.dev", resource: "*", expectedOutput: true},
+		{title: "SpaceAuditor list upload.kf.dev resources in space", space: namespace, verb: "list", group: "upload.kf.dev", resource: "*", expectedOutput: true},
+		{title: "SpaceAuditor watch upload.kf.dev resources in space", space: namespace, verb: "watch", group: "upload.kf.dev", resource: "events", expectedOutput: true},
+
+		{title: "SpaceAuditor can not create upload.kf.dev in space", space: namespace, verb: "create", group: "upload.kf.dev", resource: "*", expectedOutput: false},
+		{title: "SpaceAuditor can not update upload.kf.dev in space", space: namespace, verb: "update", group: "upload.kf.dev", resource: "*", expectedOutput: false},
+		{title: "SpaceAuditor can not patch upload.kf.dev in space", space: namespace, verb: "patch", group: "upload.kf.dev", resource: "*", expectedOutput: false},
+		{title: "SpaceAuditor can not delete upload.kf.dev in space", space: namespace, verb: "delete", group: "upload.kf.dev", resource: "*", expectedOutput: false},
+
+		{title: "SpaceAuditor gets events in space", space: namespace, verb: "get", group: "", resource: "events", expectedOutput: true},
+		{title: "SpaceAuditor list events in space", space: namespace, verb: "list", group: "", resource: "events", expectedOutput: true},
+		{title: "SpaceAuditor watch events in space", space: namespace, verb: "watch", group: "", resource: "events", expectedOutput: true},
+
+		{title: "SpaceAuditor can not create events in space", space: namespace, verb: "create", group: "", resource: "events", expectedOutput: false},
+		{title: "SpaceAuditor can not update events in space", space: namespace, verb: "update", group: "", resource: "events", expectedOutput: false},
+		{title: "SpaceAuditor can not patch events in space", space: namespace, verb: "patch", group: "", resource: "events", expectedOutput: false},
+		{title: "SpaceAuditor can not delete events in space", space: namespace, verb: "delete", group: "", resource: "events", expectedOutput: false},
+
+		{title: "SpaceAuditor gets services in space", space: namespace, verb: "get", group: "", resource: "services", expectedOutput: true},
+		{title: "SpaceAuditor list services in space", space: namespace, verb: "list", group: "", resource: "services", expectedOutput: true},
+		{title: "SpaceAuditor watch services in space", space: namespace, verb: "watch", group: "", resource: "services", expectedOutput: true},
+
+		{title: "SpaceAuditor can not create services in space", space: namespace, verb: "create", group: "", resource: "services", expectedOutput: false},
+		{title: "SpaceAuditor can not update services in space", space: namespace, verb: "update", group: "", resource: "services", expectedOutput: false},
+		{title: "SpaceAuditor can not patch services in space", space: namespace, verb: "patch", group: "", resource: "services", expectedOutput: false},
+		{title: "SpaceAuditor can not delete services in space", space: namespace, verb: "delete", group: "", resource: "services", expectedOutput: false},
+
+		{title: "SpaceAuditor get networking policies in space", space: namespace, verb: "get", group: "networking.k8s.io", resource: "networkpolicies", expectedOutput: true},
+		{title: "SpaceAuditor list networking policies in space", space: namespace, verb: "list", group: "networking.k8s.io", resource: "networkpolicies", expectedOutput: true},
+		{title: "SpaceAuditor watch networking policies in space", space: namespace, verb: "watch", group: "networking.k8s.io", resource: "networkpolicies", expectedOutput: true},
+
+		{title: "SpaceAuditor can not create networking policies in space", space: namespace, verb: "create", group: "networking.k8s.io", resource: "networkpolicies", expectedOutput: false},
+		{title: "SpaceAuditor can not update networking policies in space", space: namespace, verb: "update", group: "networking.k8s.io", resource: "networkpolicies", expectedOutput: false},
+		{title: "SpaceAuditor can not patch networking policies in space", space: namespace, verb: "patch", group: "networking.k8s.io", resource: "networkpolicies", expectedOutput: false},
+		{title: "SpaceAuditor can not delete networking policies in space", space: namespace, verb: "delete", group: "networking.k8s.io", resource: "networkpolicies", expectedOutput: false},
+
+		{title: "SpaceAuditor get builds in space", space: namespace, verb: "get", group: "builds.appdevexperience.dev", resource: "builds", expectedOutput: true},
+		{title: "SpaceAuditor list builds in space", space: namespace, verb: "list", group: "builds.appdevexperience.dev", resource: "builds", expectedOutput: true},
+		{title: "SpaceAuditor watch builds in space", space: namespace, verb: "watch", group: "builds.appdevexperience.dev", resource: "builds", expectedOutput: true},
+
+		{title: "SpaceAuditor can not create builds in space", space: namespace, verb: "create", group: "builds.appdevexperience.dev", resource: "builds", expectedOutput: false},
+		{title: "SpaceAuditor can not update builds in space", space: namespace, verb: "update", group: "builds.appdevexperience.dev", resource: "builds", expectedOutput: false},
+		{title: "SpaceAuditor can not patch builds in space", space: namespace, verb: "patch", group: "builds.appdevexperience.dev", resource: "builds", expectedOutput: false},
+		{title: "SpaceAuditor can not delete builds in space", space: namespace, verb: "delete", group: "builds.appdevexperience.dev", resource: "builds", expectedOutput: false},
+
+		{title: "SpaceAuditor get all resources in tekton.dev", space: namespace, verb: "get", group: "tekton.dev", resource: "*", expectedOutput: true},
+		{title: "SpaceAuditor list all resources in tekton.dev", space: namespace, verb: "list", group: "tekton.dev", resource: "*", expectedOutput: true},
+		{title: "SpaceAuditor watch all resources in tekton.dev", space: namespace, verb: "watch", group: "tekton.dev", resource: "*", expectedOutput: true},
+
+		{title: "SpaceAuditor can not create resources in tekton.dev", space: namespace, verb: "create", group: "tekton.dev", resource: "*", expectedOutput: false},
+		{title: "SpaceAuditor can not update resources in tekton.dev", space: namespace, verb: "update", group: "tekton.dev", resource: "*", expectedOutput: false},
+		{title: "SpaceAuditor can not patch resources in tekton.dev", space: namespace, verb: "patch", group: "tekton.dev", resource: "*", expectedOutput: false},
+		{title: "SpaceAuditor can not delete resources in tekton.dev", space: namespace, verb: "delete", group: "tekton.dev", resource: "*", expectedOutput: false},
+
 		{title: "SpaceAuditor gets rolebindings in space", space: namespace, verb: "get", group: "rbac.authorization.k8s.io", resource: "rolebindings", expectedOutput: true},
 		{title: "SpaceAuditor lists rolebindings in space", space: namespace, verb: "list", group: "rbac.authorization.k8s.io", resource: "rolebindings", expectedOutput: true},
 		{title: "SpaceAuditor watches rolebindings in space", space: namespace, verb: "watch", group: "rbac.authorization.k8s.io", resource: "rolebindings", expectedOutput: true},
+
 		{title: "SpaceAuditor gets spaces in cluster", space: "", verb: "get", group: "kf.dev", resource: "spaces", expectedOutput: true},
 		{title: "SpaceAuditor lists spaces in cluster", space: "", verb: "list", group: "kf.dev", resource: "spaces", expectedOutput: true},
 		{title: "SpaceAuditor watches spaces in cluster", space: "", verb: "watch", group: "kf.dev", resource: "spaces", expectedOutput: true},
