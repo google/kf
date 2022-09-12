@@ -126,7 +126,7 @@ applications:
   disk_quota: 512M
   memory: 512M
   # bump up the CPU
-  cpu: 0.2
+  cpu: 200m
   instances: 3
   # make the app listen on three routes
   routes:
@@ -161,7 +161,7 @@ applications:
     ENVIRONMENT: PRODUCTION
   disk_quota: 1G
   memory: 1G
-  cpu: 2
+  cpu: 2000m
   instances: 1
   routes:
   - route: white-label-app.mycompany.com
