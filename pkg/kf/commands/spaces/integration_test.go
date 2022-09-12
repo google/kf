@@ -159,9 +159,41 @@ func verifyDeveloperPermission(ctx context.Context, t *testing.T, namespace stri
 
 func verifyAuditorPermission(ctx context.Context, t *testing.T, namespace string) {
 	tests := []TestInput{
+		{title: "SpaceAuditor gets rolebindings in space", space: namespace, verb: "get", group: "rbac.authorization.k8s.io", resource: "rolebindings", expectedOutput: true},
+		{title: "SpaceAuditor lists rolebindings in space", space: namespace, verb: "list", group: "rbac.authorization.k8s.io", resource: "rolebindings", expectedOutput: true},
+		{title: "SpaceAuditor watches rolebindings in space", space: namespace, verb: "watch", group: "rbac.authorization.k8s.io", resource: "rolebindings", expectedOutput: true},
+
+		{title: "SpaceAuditor can not update rolebindings in space", space: namespace, verb: "update", group: "rbac.authorization.k8s.io", resource: "rolebindings", expectedOutput: false},
+		{title: "SpaceAuditor can not patch rolebindings in space", space: namespace, verb: "patch", group: "rbac.authorization.k8s.io", resource: "rolebindings", expectedOutput: false},
+		{title: "SpaceAuditor can not create rolebindings in space", space: namespace, verb: "create", group: "rbac.authorization.k8s.io", resource: "rolebindings", expectedOutput: false},
+		{title: "SpaceAuditor can not delete rolebindings in space", space: namespace, verb: "delete", group: "rbac.authorization.k8s.io", resource: "rolebindings", expectedOutput: false},
+
 		{title: "SpaceAuditor gets Apps in space", space: namespace, verb: "get", group: "kf.dev", resource: "apps", expectedOutput: true},
 		{title: "SpaceAuditor lists Apps in space", space: namespace, verb: "list", group: "kf.dev", resource: "apps", expectedOutput: true},
 		{title: "SpaceAuditor watches Apps in space", space: namespace, verb: "watch", group: "kf.dev", resource: "apps", expectedOutput: true},
+
+		{title: "SpaceAuditor can not create Apps in space", space: namespace, verb: "create", group: "kf.dev", resource: "apps", expectedOutput: false},
+		{title: "SpaceAuditor can not update Apps in space", space: namespace, verb: "update", group: "kf.dev", resource: "apps", expectedOutput: false},
+		{title: "SpaceAuditor can not delete Apps in space", space: namespace, verb: "delete", group: "kf.dev", resource: "apps", expectedOutput: false},
+		{title: "SpaceAuditor can not list Apps in other space", space: "kf", verb: "list", group: "kf.dev", resource: "apps", expectedOutput: false},		
+
+		{title: "SpaceAuditor gets spaces in cluster", space: "", verb: "get", group: "kf.dev", resource: "spaces", expectedOutput: true},
+		{title: "SpaceAuditor lists spaces in cluster", space: "", verb: "list", group: "kf.dev", resource: "spaces", expectedOutput: true},
+		{title: "SpaceAuditor watches spaces in cluster", space: "", verb: "watch", group: "kf.dev", resource: "spaces", expectedOutput: true},
+
+		{title: "SpaceAuditor can not create spaces in cluster", space: "", verb: "create", group: "kf.dev", resource: "spaces", expectedOutput: false},
+		{title: "SpaceAuditor can not update spaces in cluster", space: "", verb: "update", group: "kf.dev", resource: "spaces", expectedOutput: false},
+		{title: "SpaceAuditor can not patch spaces in cluster", space: "", verb: "patch", group: "kf.dev", resource: "spaces", expectedOutput: false},
+		{title: "SpaceAuditor can not delete spaces in cluster", space: "", verb: "delete", group: "kf.dev", resource: "spaces", expectedOutput: false},
+
+		{title: "SpaceAuditor gets clusterservicebrokers in cluster", space: "", verb: "get", group: "kf.dev", resource: "clusterservicebrokers", expectedOutput: true},
+		{title: "SpaceAuditor lists clusterservicebrokers in cluster", space: "", verb: "list", group: "kf.dev", resource: "clusterservicebrokers", expectedOutput: true},
+		{title: "SpaceAuditor watches clusterservicebrokers in cluster", space: "", verb: "watch", group: "kf.dev", resource: "clusterservicebrokers", expectedOutput: true},
+
+		{title: "SpaceAuditor can not create clusterservicebrokers in cluster", space: "", verb: "create", group: "kf.dev", resource: "clusterservicebrokers", expectedOutput: false},
+		{title: "SpaceAuditor can not update clusterservicebrokers in cluster", space: "", verb: "update", group: "kf.dev", resource: "clusterservicebrokers", expectedOutput: false},
+		{title: "SpaceAuditor can not patch clusterservicebrokers in cluster", space: "", verb: "patch", group: "kf.dev", resource: "clusterservicebrokers", expectedOutput: false},
+		{title: "SpaceAuditor can not delete clusterservicebrokers in cluster", space: "", verb: "delete", group: "kf.dev", resource: "clusterservicebrokers", expectedOutput: false},
 
 		{title: "SpaceAuditor gets Pods in space", space: namespace, verb: "get", group: "", resource: "pods", expectedOutput: true},
 		{title: "SpaceAuditor lists Pods in space", space: namespace, verb: "list", group: "", resource: "pods", expectedOutput: true},
@@ -172,9 +204,15 @@ func verifyAuditorPermission(ctx context.Context, t *testing.T, namespace string
 		{title: "SpaceAuditor can not patch Pods in space", space: namespace, verb: "patch", group: "", resource: "pods", expectedOutput: false},
 		{title: "SpaceAuditor can not delete Pods in space", space: namespace, verb: "delete", group: "", resource: "pods", expectedOutput: false},
 
+		{title: "SpaceAuditor gets Pods log in space", space: namespace, verb: "get", group: "", resource: "pods/log", expectedOutput: true},
+		{title: "SpaceAuditor lists Pods log in space", space: namespace, verb: "list", group: "", resource: "pods/log", expectedOutput: true},
+		{title: "SpaceAuditor watches Pods log in space", space: namespace, verb: "watch", group: "", resource: "pods/log", expectedOutput: true},
+
+		{title: "SpaceAuditor can not create Pods exec in space", space: namespace, verb: "create", group: "", resource: "pods/exec", expectedOutput: false},
+
 		{title: "SpaceAuditor get upload.kf.dev resources in space", space: namespace, verb: "get", group: "upload.kf.dev", resource: "*", expectedOutput: true},
 		{title: "SpaceAuditor list upload.kf.dev resources in space", space: namespace, verb: "list", group: "upload.kf.dev", resource: "*", expectedOutput: true},
-		{title: "SpaceAuditor watch upload.kf.dev resources in space", space: namespace, verb: "watch", group: "upload.kf.dev", resource: "events", expectedOutput: true},
+		{title: "SpaceAuditor watch upload.kf.dev resources in space", space: namespace, verb: "watch", group: "upload.kf.dev", resource: "*", expectedOutput: true},
 
 		{title: "SpaceAuditor can not create upload.kf.dev in space", space: namespace, verb: "create", group: "upload.kf.dev", resource: "*", expectedOutput: false},
 		{title: "SpaceAuditor can not update upload.kf.dev in space", space: namespace, verb: "update", group: "upload.kf.dev", resource: "*", expectedOutput: false},
@@ -226,35 +264,13 @@ func verifyAuditorPermission(ctx context.Context, t *testing.T, namespace string
 		{title: "SpaceAuditor can not patch resources in tekton.dev", space: namespace, verb: "patch", group: "tekton.dev", resource: "*", expectedOutput: false},
 		{title: "SpaceAuditor can not delete resources in tekton.dev", space: namespace, verb: "delete", group: "tekton.dev", resource: "*", expectedOutput: false},
 
-		{title: "SpaceAuditor gets rolebindings in space", space: namespace, verb: "get", group: "rbac.authorization.k8s.io", resource: "rolebindings", expectedOutput: true},
-		{title: "SpaceAuditor lists rolebindings in space", space: namespace, verb: "list", group: "rbac.authorization.k8s.io", resource: "rolebindings", expectedOutput: true},
-		{title: "SpaceAuditor watches rolebindings in space", space: namespace, verb: "watch", group: "rbac.authorization.k8s.io", resource: "rolebindings", expectedOutput: true},
-
-		{title: "SpaceAuditor gets spaces in cluster", space: "", verb: "get", group: "kf.dev", resource: "spaces", expectedOutput: true},
-		{title: "SpaceAuditor lists spaces in cluster", space: "", verb: "list", group: "kf.dev", resource: "spaces", expectedOutput: true},
-		{title: "SpaceAuditor watches spaces in cluster", space: "", verb: "watch", group: "kf.dev", resource: "spaces", expectedOutput: true},
-		{title: "SpaceAuditor gets clusterservicebrokers in cluster", space: "", verb: "get", group: "kf.dev", resource: "clusterservicebrokers", expectedOutput: true},
-		{title: "SpaceAuditor lists clusterservicebrokers in cluster", space: "", verb: "list", group: "kf.dev", resource: "clusterservicebrokers", expectedOutput: true},
-		{title: "SpaceAuditor watches clusterservicebrokers in cluster", space: "", verb: "watch", group: "kf.dev", resource: "clusterservicebrokers", expectedOutput: true},
-		{title: "SpaceAuditor can not update rolebindings in space", space: namespace, verb: "update", group: "rbac.authorization.k8s.io", resource: "rolebindings", expectedOutput: false},
-		{title: "SpaceAuditor can not patch rolebindings in space", space: namespace, verb: "patch", group: "rbac.authorization.k8s.io", resource: "rolebindings", expectedOutput: false},
-		{title: "SpaceAuditor can not create rolebindings in space", space: namespace, verb: "create", group: "rbac.authorization.k8s.io", resource: "rolebindings", expectedOutput: false},
-		{title: "SpaceAuditor can not delete rolebindings in space", space: namespace, verb: "delete", group: "rbac.authorization.k8s.io", resource: "rolebindings", expectedOutput: false},
-		{title: "SpaceAuditor can not create spaces in cluster", space: "", verb: "create", group: "kf.dev", resource: "spaces", expectedOutput: false},
-		{title: "SpaceAuditor can not update spaces in cluster", space: "", verb: "update", group: "kf.dev", resource: "spaces", expectedOutput: false},
-		{title: "SpaceAuditor can not patch spaces in cluster", space: "", verb: "patch", group: "kf.dev", resource: "spaces", expectedOutput: false},
-		{title: "SpaceAuditor can not delete spaces in cluster", space: "", verb: "delete", group: "kf.dev", resource: "spaces", expectedOutput: false},
-		{title: "SpaceAuditor can not create Apps in space", space: namespace, verb: "create", group: "kf.dev", resource: "apps", expectedOutput: false},
-		{title: "SpaceAuditor can not update Apps in space", space: namespace, verb: "update", group: "kf.dev", resource: "apps", expectedOutput: false},
-		{title: "SpaceAuditor can not delete Apps in space", space: namespace, verb: "delete", group: "kf.dev", resource: "apps", expectedOutput: false},
-		{title: "SpaceAuditor can not list Apps in other space", space: "kf", verb: "list", group: "kf.dev", resource: "apps", expectedOutput: false},
 		{title: "SpaceAuditor can not list secrets in space", space: namespace, verb: "list", group: "", resource: "secrets", expectedOutput: false},
 		{title: "SpaceAuditor can not get secrets in space", space: namespace, verb: "get", group: "", resource: "secrets", expectedOutput: false},
 		{title: "SpaceAuditor can not watch secrets in space", space: namespace, verb: "watch", group: "", resource: "secrets", expectedOutput: false},
-		{title: "SpaceAuditor can not create secrets in space", space: namespace, verb: "list", group: "", resource: "secrets", expectedOutput: false},
-		{title: "SpaceAuditor can not update secrets in space", space: namespace, verb: "get", group: "", resource: "secrets", expectedOutput: false},
-		{title: "SpaceAuditor can not patch secrets in space", space: namespace, verb: "watch", group: "", resource: "secrets", expectedOutput: false},
-		{title: "SpaceAuditor can not delete secrets in space", space: namespace, verb: "watch", group: "", resource: "secrets", expectedOutput: false},
+		{title: "SpaceAuditor can not create secrets in space", space: namespace, verb: "create", group: "", resource: "secrets", expectedOutput: false},
+		{title: "SpaceAuditor can not update secrets in space", space: namespace, verb: "update", group: "", resource: "secrets", expectedOutput: false},
+		{title: "SpaceAuditor can not patch secrets in space", space: namespace, verb: "patch", group: "", resource: "secrets", expectedOutput: false},
+		{title: "SpaceAuditor can not delete secrets in space", space: namespace, verb: "delete", group: "", resource: "secrets", expectedOutput: false},
 	}
 
 	for _, test := range tests {
