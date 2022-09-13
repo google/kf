@@ -162,7 +162,8 @@ func SetKfAppContainerDefaults(_ context.Context, container *corev1.Container) {
 		container.Name = DefaultUserContainerName
 	}
 
-	setContainerReadinessProbe(container)
+	setContainerRuntimeProbeDefaults(container.ReadinessProbe)
+	setContainerRuntimeProbeDefaults(container.LivenessProbe)
 
 	// Set default disk, RAM, and CPU limits on the application if they have not been custom set
 	if container.Resources.Requests == nil {
@@ -197,36 +198,34 @@ func SetKfAppContainerDefaults(_ context.Context, container *corev1.Container) {
 	}
 }
 
-func setContainerReadinessProbe(container *corev1.Container) {
+func setContainerRuntimeProbeDefaults(probe *corev1.Probe) {
 	// Container.ReadinessProbe is set at client side
 	// based on App's health check type (http/port/process/none).
 	// If container.ReadinessProbe == nil, it means health check type == "process" or "none",
 	// it shouldn't be default at the Webhook where App's health check type can't be determined,
 	// it could result in incorrect configuration if setting container.ReadinessProbe for "process"
 	// or "none" health check types (see b/173615950).
-	if container.ReadinessProbe == nil {
+	if probe == nil {
 		return
 	}
 
-	readinessProbe := container.ReadinessProbe
-
 	// Default the probe timeout
-	if readinessProbe.TimeoutSeconds == 0 {
-		readinessProbe.TimeoutSeconds = DefaultHealthCheckProbeTimeout
+	if probe.TimeoutSeconds == 0 {
+		probe.TimeoutSeconds = DefaultHealthCheckProbeTimeout
 	}
 
 	// Knative serving 0.8 requires PeriodSeconds and FailureThreshold to be set
 	// even if we don't expose them to users directly.
-	if readinessProbe.PeriodSeconds == 0 {
-		readinessProbe.PeriodSeconds = DefaultHealthCheckPeriodSeconds
+	if probe.PeriodSeconds == 0 {
+		probe.PeriodSeconds = DefaultHealthCheckPeriodSeconds
 	}
 
-	if readinessProbe.FailureThreshold == 0 {
-		readinessProbe.FailureThreshold = DefaultHealthCheckFailureThreshold
+	if probe.FailureThreshold == 0 {
+		probe.FailureThreshold = DefaultHealthCheckFailureThreshold
 	}
 
 	// If the probe is HTTP, default the path
-	if http := readinessProbe.HTTPGet; http != nil {
+	if http := probe.HTTPGet; http != nil {
 		if http.Path == "" {
 			http.Path = DefaultHealthCheckProbeEndpoint
 		}
