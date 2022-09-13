@@ -152,7 +152,7 @@ data:
       enable_custom_buildpacks: true
       enable_custom_stacks: true
       enable_some_feature: true
-    
+
     # Minimum amount of CPUs to give an app based on the amount of RAM it
     # requests. Expressed as a Kubernetes quantity.
     appCPUPerGBOfRAM: "100m"
@@ -160,7 +160,7 @@ data:
     appCPUMin: "100m"
     # Maximum time in seconds for a deployment to make progress before it is considered to be failed
     progressDeadlineSeconds: "600"
-    # The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and 
+    # The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and
     # the time when the processes are forcibly halted with a kill signal.
     terminationGracePeriodSeconds: 120
 
@@ -176,7 +176,6 @@ data:
     - domain: apps.internal
       gatewayName: kf/internal-gateway
   buildpacksV2LifecycleImage: "ko://code.cloudfoundry.org/buildpackapplifecycle/installer"
-
   spaceBuildpacksV2: |
     - name: staticfile_buildpack
       url: https://github.com/cloudfoundry/staticfile-buildpack
