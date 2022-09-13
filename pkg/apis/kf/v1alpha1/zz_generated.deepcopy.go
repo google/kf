@@ -2162,6 +2162,16 @@ func (in *SpaceStatusRuntimeConfig) DeepCopyInto(out *SpaceStatusRuntimeConfig) 
 		x := (*in).DeepCopy()
 		*out = &x
 	}
+	if in.ProgressDeadlineSeconds != nil {
+		in, out := &in.ProgressDeadlineSeconds, &out.ProgressDeadlineSeconds
+		*out = new(int32)
+		**out = **in
+	}
+	if in.TerminationGracePeriodSeconds != nil {
+		in, out := &in.TerminationGracePeriodSeconds, &out.TerminationGracePeriodSeconds
+		*out = new(int64)
+		**out = **in
+	}
 	return
 }
 
