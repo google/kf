@@ -118,6 +118,11 @@ func (in *DefaultsConfig) DeepCopyInto(out *DefaultsConfig) {
 		*out = new(uint)
 		**out = **in
 	}
+	if in.TaskRetentionCount != nil {
+		in, out := &in.TaskRetentionCount, &out.TaskRetentionCount
+		*out = new(uint)
+		**out = **in
+	}
 	if in.BuildNodeSelectors != nil {
 		in, out := &in.BuildNodeSelectors, &out.BuildNodeSelectors
 		*out = make(BuildNodeSelectors, len(*in))

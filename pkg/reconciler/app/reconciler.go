@@ -521,7 +521,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		}
 
 		if len(taskList.Items) > 0 {
-			tasksToDelete := tasksToGC(taskList.Items, v1alpha1.MaxTaskCount)
+			tasksToDelete := tasksToGC(taskList.Items, v1alpha1.DefaultMaxTaskCount)
 
 			if configDefaults.TaskRetentionCount != nil {
 				tasksToDelete = tasksToGC(taskList.Items, int(*configDefaults.TaskRetentionCount))
