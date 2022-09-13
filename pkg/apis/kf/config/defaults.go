@@ -37,6 +37,7 @@ const (
 	buildDisableIstioSidecarKey = "buildDisableIstioSidecar"
 	buildPodResourcesKey        = "buildPodResources"
 	buildRetentionCountKey      = "buildRetentionCount"
+	maxTaskCountKey             = "maxTaskCount"
 	buildTimeoutKey             = "buildTimeout"
 	buildNodeSelectorsKey       = "buildNodeSelectors"
 	appCPUPerGBOfRAMKey         = "appCPUPerGBOfRAM"
@@ -109,6 +110,10 @@ type DefaultsConfig struct {
 	// BuildRetentionCount is the number of completed Builds each App will
 	// keep before garbage collecting.
 	BuildRetentionCount *uint `json:"buildRetentionCount,omitempty"`
+
+	// MaxTaskCount is the number of completed Tasks each App will
+	// keep before garbage collecting.
+	MaxTaskCount *uint `json:"maxTaskCount,omitempty"`
 
 	// BuildTimeout is the timeout value to set at the underlying TaskRun of Build, it is the time duration
 	// to fail a build that takes too long to complete, valid values are specified in time unit, e.g. "1h", "30m", "60s"
@@ -227,6 +232,7 @@ func (defaultsConfig *DefaultsConfig) getInterfaceValues(leaveEmpty bool) map[st
 		buildDisableIstioSidecarKey: &defaultsConfig.BuildDisableIstioSidecar,
 		buildPodResourcesKey:        &defaultsConfig.BuildPodResources,
 		buildRetentionCountKey:      &defaultsConfig.BuildRetentionCount,
+		maxTaskCountKey:             &defaultsConfig.MaxTaskCount,
 		buildNodeSelectorsKey:       &defaultsConfig.BuildNodeSelectors,
 		appCPUPerGBOfRAMKey:         &defaultsConfig.AppCPUPerGBOfRAM,
 		appCPUMinKey:                &defaultsConfig.AppCPUMin,
