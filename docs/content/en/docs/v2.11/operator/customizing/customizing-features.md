@@ -159,9 +159,9 @@ ProgressDeadlineSeconds can be set in the kfsystem operator.
 
 ```sh
 kubectl patch \
-kfsystem kfsystem \
---type='json' \
- -p='[{"op":"add","path":"spec/kf/config/progressDeadlineSeconds","value":100}]'
+    kfsystem kfsystem \
+    --type='json' \
+    -p="[{'op':'add','path':'/spec/kf/config/progressDeadlineSeconds','value':100}]"
 ```
 ## Set TerminationGracePeriodSeconds
 
@@ -169,7 +169,7 @@ TerminationGracePeriodSeconds can be set in the kfsystem operator.
 
 ```sh
 kubectl patch \
-kfsystem kfsystem \
---type='json' \
- -p='[{"op":"add","path":"spec/kf/config/terminationGracePeriodSeconds","value":200}]'
+    kfsystem kfsystem \
+    --type='json' \
+    -p="[{'op':'add','path':'/spec/kf/config/terminationGracePeriodSeconds','value':200}]"
 ```
