@@ -63,7 +63,13 @@ func TestMakeDeployment(t *testing.T) {
 					},
 				},
 			},
-			space: &v1alpha1.Space{},
+			space: &v1alpha1.Space{
+				Status: v1alpha1.SpaceStatus{
+					RuntimeConfig: v1alpha1.SpaceStatusRuntimeConfig{
+						ProgressDeadlineSeconds: ptr.Int32(600),
+					},
+				},
+			},
 			want: &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-app",
@@ -142,7 +148,13 @@ func TestMakeDeployment(t *testing.T) {
 					},
 				},
 			},
-			space: &v1alpha1.Space{},
+			space: &v1alpha1.Space{
+				Status: v1alpha1.SpaceStatus{
+					RuntimeConfig: v1alpha1.SpaceStatusRuntimeConfig{
+						ProgressDeadlineSeconds: ptr.Int32(600),
+					},
+				},
+			},
 			want: &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-app",
@@ -225,7 +237,13 @@ func TestMakeDeployment(t *testing.T) {
 					},
 				},
 			},
-			space: &v1alpha1.Space{},
+			space: &v1alpha1.Space{
+				Status: v1alpha1.SpaceStatus{
+					RuntimeConfig: v1alpha1.SpaceStatusRuntimeConfig{
+						ProgressDeadlineSeconds: ptr.Int32(600),
+					},
+				},
+			},
 			want: &appsv1.Deployment{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "my-app",
@@ -307,7 +325,13 @@ func Test_makePodSpec(t *testing.T) {
 					Name: "my-app",
 				},
 			},
-			space: &v1alpha1.Space{},
+			space: &v1alpha1.Space{
+				Status: v1alpha1.SpaceStatus{
+					RuntimeConfig: v1alpha1.SpaceStatusRuntimeConfig{
+						TerminationGracePeriodSeconds: ptr.Int64(30),
+					},
+				},
+			},
 			want: func(app *v1alpha1.App) corev1.PodSpec {
 				var wantEnv []corev1.EnvVar
 
@@ -330,7 +354,7 @@ func Test_makePodSpec(t *testing.T) {
 					},
 					NodeSelector:                  map[string]string{},
 					RestartPolicy:                 corev1.RestartPolicyAlways,
-					TerminationGracePeriodSeconds: ptr.Int64(corev1.DefaultTerminationGracePeriodSeconds),
+					TerminationGracePeriodSeconds: ptr.Int64(30),
 					DNSPolicy:                     corev1.DNSClusterFirst,
 					SecurityContext:               &corev1.PodSecurityContext{},
 					SchedulerName:                 corev1.DefaultSchedulerName,
@@ -393,6 +417,7 @@ func Test_makePodSpec(t *testing.T) {
 						Env: []corev1.EnvVar{
 							{Name: "space-key", Value: "bar"},
 						},
+						TerminationGracePeriodSeconds: ptr.Int64(30),
 					},
 				},
 				Spec: v1alpha1.SpaceSpec{
@@ -456,7 +481,7 @@ func Test_makePodSpec(t *testing.T) {
 					DeprecatedServiceAccount: ServiceAccountName(app),
 
 					RestartPolicy:                 corev1.RestartPolicyAlways,
-					TerminationGracePeriodSeconds: ptr.Int64(corev1.DefaultTerminationGracePeriodSeconds),
+					TerminationGracePeriodSeconds: ptr.Int64(30),
 					DNSPolicy:                     corev1.DNSClusterFirst,
 					SecurityContext:               &corev1.PodSecurityContext{},
 					SchedulerName:                 corev1.DefaultSchedulerName,

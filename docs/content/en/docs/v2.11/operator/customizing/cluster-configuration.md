@@ -315,3 +315,12 @@ featureFlags: |
   enable_dockerfile_builds: true
   enable_some_feature: true
 ```
+## ProgressDeadlineSeconds
+
+`ProgressDeadlineSeconds` contains a configurable quoted integer indicating the maximum allowed time between state transition and reaching a stable state before provisioning or deprovisioning when pushing an application. The default value is `600` seconds.
+
+## TerminationGracePeriodSeconds
+
+The `TerminationGracePeriodSeconds` contains a configurable quoted integer indicating the time between when the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. The default value is `30` seconds.
+
+

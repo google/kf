@@ -54,6 +54,8 @@ func TestStoreLoadWithContext(t *testing.T) {
 		nopImageKey,
 		appCPUMinKey,
 		appCPUPerGBOfRAMKey,
+		progressDeadlineSecondsKey,
+		terminationGracePeriodSecondsKey,
 	}
 	_, configMap := cmtesting.ConfigMapsFromTestFile(t, DefaultsConfigName, allowedPredefinedKey...)
 	// sanity check the configmap, add more assertions below when new fields

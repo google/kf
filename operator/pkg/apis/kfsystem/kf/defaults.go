@@ -25,7 +25,6 @@ import (
 const (
 	// DefaultsConfigName is the name of the defaults configmap.
 	DefaultsConfigName = "config-defaults"
-
 	spaceContainerRegistryKey   = "spaceContainerRegistry"
 	spaceClusterDomainsKey      = "spaceClusterDomains"
 	spaceBuildpacksV2Key        = "spaceBuildpacksV2"
@@ -42,6 +41,8 @@ const (
 	buildNodeSelectorsKey       = "buildNodeSelectors"
 	appCPUPerGBOfRAMKey         = "appCPUPerGBOfRAM"
 	appCPUMinKey                = "appCPUMin"
+	progressDeadlineSecondsKey       = "progressDeadlineSeconds"
+	terminationGracePeriodSecondsKey = "terminationGracePeriodSeconds"
 
 	// Images used for build purposes
 
@@ -131,6 +132,14 @@ type DefaultsConfig struct {
 
 	// Minimum amount of CPU to assign an app.
 	AppCPUMin *resource.Quantity `json:"appCPUMin,omitempty"`
+
+	// ProgressDeadlineSeconds contains the maximum time in seconds for a deployment to make progress before it
+	// is considered to be failed.
+	ProgressDeadlineSeconds *int32 `json:"progressDeadlineSeconds,omitempty"`
+
+	// The grace period is the duration in seconds after the processes running in the pod are sent
+	// a termination signal and the time when the processes are forcibly halted with a kill signal.
+	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
 }
 
 // BuiltinDefaultsConfig creates a defaults configuration with default values.
@@ -228,6 +237,7 @@ func (defaultsConfig *DefaultsConfig) getStringValues() map[string]*string {
 // getInterfaceValues returns a map of the key/value pairs on a DefaultsConfig that are JSON/YAML encoded values.
 func (defaultsConfig *DefaultsConfig) getInterfaceValues(leaveEmpty bool) map[string]interface{} {
 	m := map[string]interface{}{
+<<<<<<< HEAD
 		spaceDefaultToV3StackKey:    &defaultsConfig.SpaceDefaultToV3Stack,
 		buildDisableIstioSidecarKey: &defaultsConfig.BuildDisableIstioSidecar,
 		buildPodResourcesKey:        &defaultsConfig.BuildPodResources,
@@ -236,6 +246,17 @@ func (defaultsConfig *DefaultsConfig) getInterfaceValues(leaveEmpty bool) map[st
 		buildNodeSelectorsKey:       &defaultsConfig.BuildNodeSelectors,
 		appCPUPerGBOfRAMKey:         &defaultsConfig.AppCPUPerGBOfRAM,
 		appCPUMinKey:                &defaultsConfig.AppCPUMin,
+=======
+		spaceDefaultToV3StackKey:         &defaultsConfig.SpaceDefaultToV3Stack,
+		buildDisableIstioSidecarKey:      &defaultsConfig.BuildDisableIstioSidecar,
+		buildPodResourcesKey:             &defaultsConfig.BuildPodResources,
+		buildRetentionCountKey:           &defaultsConfig.BuildRetentionCount,
+		buildNodeSelectorsKey:            &defaultsConfig.BuildNodeSelectors,
+		appCPUPerGBOfRAMKey:              &defaultsConfig.AppCPUPerGBOfRAM,
+		appCPUMinKey:                     &defaultsConfig.AppCPUMin,
+		progressDeadlineSecondsKey:       &defaultsConfig.ProgressDeadlineSeconds,
+		terminationGracePeriodSecondsKey: &defaultsConfig.TerminationGracePeriodSeconds,
+>>>>>>> main
 	}
 
 	if !leaveEmpty {
