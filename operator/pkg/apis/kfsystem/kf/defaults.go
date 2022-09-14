@@ -24,23 +24,23 @@ import (
 
 const (
 	// DefaultsConfigName is the name of the defaults configmap.
-	DefaultsConfigName = "config-defaults"
-	spaceContainerRegistryKey   = "spaceContainerRegistry"
-	spaceClusterDomainsKey      = "spaceClusterDomains"
-	spaceBuildpacksV2Key        = "spaceBuildpacksV2"
-	spaceStacksV2Key            = "spaceStacksV2"
-	spaceStacksV3Key            = "spaceStacksV3"
-	spaceDefaultToV3StackKey    = "spaceDefaultToV3Stack"
-	routeServiceProxyImageKey   = "routeServiceProxyImage"
-	featureFlagsKey             = "featureFlags"
-	buildDisableIstioSidecarKey = "buildDisableIstioSidecar"
-	buildPodResourcesKey        = "buildPodResources"
-	buildRetentionCountKey      = "buildRetentionCount"
-	taskRetentionCountKey       = "taskRetentionCount"
-	buildTimeoutKey             = "buildTimeout"
-	buildNodeSelectorsKey       = "buildNodeSelectors"
-	appCPUPerGBOfRAMKey         = "appCPUPerGBOfRAM"
-	appCPUMinKey                = "appCPUMin"
+	DefaultsConfigName               = "config-defaults"
+	spaceContainerRegistryKey        = "spaceContainerRegistry"
+	spaceClusterDomainsKey           = "spaceClusterDomains"
+	spaceBuildpacksV2Key             = "spaceBuildpacksV2"
+	spaceStacksV2Key                 = "spaceStacksV2"
+	spaceStacksV3Key                 = "spaceStacksV3"
+	spaceDefaultToV3StackKey         = "spaceDefaultToV3Stack"
+	routeServiceProxyImageKey        = "routeServiceProxyImage"
+	featureFlagsKey                  = "featureFlags"
+	buildDisableIstioSidecarKey      = "buildDisableIstioSidecar"
+	buildPodResourcesKey             = "buildPodResources"
+	buildRetentionCountKey           = "buildRetentionCount"
+	taskRetentionCountKey            = "taskRetentionCount"
+	buildTimeoutKey                  = "buildTimeout"
+	buildNodeSelectorsKey            = "buildNodeSelectors"
+	appCPUPerGBOfRAMKey              = "appCPUPerGBOfRAM"
+	appCPUMinKey                     = "appCPUMin"
 	progressDeadlineSecondsKey       = "progressDeadlineSeconds"
 	terminationGracePeriodSecondsKey = "terminationGracePeriodSeconds"
 
@@ -237,26 +237,16 @@ func (defaultsConfig *DefaultsConfig) getStringValues() map[string]*string {
 // getInterfaceValues returns a map of the key/value pairs on a DefaultsConfig that are JSON/YAML encoded values.
 func (defaultsConfig *DefaultsConfig) getInterfaceValues(leaveEmpty bool) map[string]interface{} {
 	m := map[string]interface{}{
-<<<<<<< HEAD
-		spaceDefaultToV3StackKey:    &defaultsConfig.SpaceDefaultToV3Stack,
-		buildDisableIstioSidecarKey: &defaultsConfig.BuildDisableIstioSidecar,
-		buildPodResourcesKey:        &defaultsConfig.BuildPodResources,
-		buildRetentionCountKey:      &defaultsConfig.BuildRetentionCount,
-		taskRetentionCountKey:       &defaultsConfig.TaskRetentionCount,
-		buildNodeSelectorsKey:       &defaultsConfig.BuildNodeSelectors,
-		appCPUPerGBOfRAMKey:         &defaultsConfig.AppCPUPerGBOfRAM,
-		appCPUMinKey:                &defaultsConfig.AppCPUMin,
-=======
 		spaceDefaultToV3StackKey:         &defaultsConfig.SpaceDefaultToV3Stack,
 		buildDisableIstioSidecarKey:      &defaultsConfig.BuildDisableIstioSidecar,
 		buildPodResourcesKey:             &defaultsConfig.BuildPodResources,
 		buildRetentionCountKey:           &defaultsConfig.BuildRetentionCount,
+		taskRetentionCountKey:            &defaultsConfig.TaskRetentionCount,
 		buildNodeSelectorsKey:            &defaultsConfig.BuildNodeSelectors,
 		appCPUPerGBOfRAMKey:              &defaultsConfig.AppCPUPerGBOfRAM,
 		appCPUMinKey:                     &defaultsConfig.AppCPUMin,
 		progressDeadlineSecondsKey:       &defaultsConfig.ProgressDeadlineSeconds,
 		terminationGracePeriodSecondsKey: &defaultsConfig.TerminationGracePeriodSeconds,
->>>>>>> main
 	}
 
 	if !leaveEmpty {
