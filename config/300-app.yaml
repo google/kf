@@ -4285,6 +4285,20 @@ spec:
                         type: string
                       readonly:
                         type: boolean
+                startCommands:                  
+                  description: StartCommands defines the container and buildpack start commands for the App.
+                  type: object
+                  properties:
+                    container:
+                      description: Container is the start command of the container.
+                      type: array
+                      items:
+                        type: string
+                    buildpack:
+                      description: Buildpack is the start command of the buildpack.
+                      type: array
+                      items:
+                        type: string
       additionalPrinterColumns:
         - name: Instances
           type: string

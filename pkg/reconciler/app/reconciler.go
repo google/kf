@@ -18,6 +18,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/google/go-containerregistry/pkg/name"
+	containerregistryv1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/kf/v2/pkg/dockerutil"
 	"math"
 	"reflect"
 	"sort"
@@ -585,7 +589,46 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		app.Status.PropagateInstanceStatus(instanceStatus)
 	}
 
+	// Sync start commands, populate container and buildpack start commands in app status
+	{
+		logger.Debug("reconciling start commands")
+		
+		startCommands := app.Status.StartCommands
+		
+		containerConfig, err := r.fetchContainerCommand(app)
+		if err != nil {
+			return err
+		}
+
+		containerCmd := containerConfig.Config.Entrypoint
+		buildpackCmd := containerConfig.Config.Labels["StartCommand"]
+
+		startCommands.Container = containerCmd
+		startCommands.Buildpack = []string{buildpackCmd}
+
+		app.Status.PropagateStartCommandStatus(startCommands)
+	}
+
 	return nil
+}
+
+func (r *Reconciler) fetchContainerCommand(app *v1alpha1.App) (*containerregistryv1.ConfigFile, error) {
+	imageRef, err := name.ParseReference(app.Status.Image, name.WeakValidation)
+	if err != nil {
+		return nil, err
+	}
+
+	img, err := remote.Image(imageRef, dockerutil.GetAuthKeyChain())
+	if err != nil {
+		return nil, err
+	}
+
+	configFile, err := img.ConfigFile()
+	if err != nil {
+		return nil, err
+	}
+
+	return configFile, nil
 }
 
 func (r *Reconciler) reconcileRoute(

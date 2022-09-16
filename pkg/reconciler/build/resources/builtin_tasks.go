@@ -153,13 +153,16 @@ fi
 EOF
 chmod a+x /workspace/entrypoint.bash
 
-cat << 'EOF' > /workspace/Dockerfile
+start_cmd=$(cat /tmp/result.json | jq .process_types.web)
+
+cat << EOF > /workspace/Dockerfile
 FROM gcr.io/kf-releases/fusesidecar:v2.11.2 as builder
 
 FROM $(inputs.params.RUN_IMAGE)
 COPY launcher /lifecycle/launcher
 COPY entrypoint.bash /lifecycle/entrypoint.bash
 COPY --from=builder --chown=root:vcap /bin/mapfs /bin/mapfs
+LABEL StartCommand=$start_cmd
 
 # need this to allow users other than root to use fuse.
 RUN echo "user_allow_other" >> /etc/fuse.conf

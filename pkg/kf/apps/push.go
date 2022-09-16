@@ -243,6 +243,7 @@ func (p *pusher) Push(ctx context.Context, appName string, opts ...PushOption) e
 		fmt.Fprintf(w, "Space:\t%s\n", finalApp.Namespace)
 		fmt.Fprintf(w, "Routes:\t%v\n", finalApp.Status.URLs)
 		fmt.Fprintf(w, "Instances:\t%s\n", finalApp.Status.Instances.Representation)
+		fmt.Fprintf(w, "Start command:\t%v\n", finalApp.Status.StartCommands.Buildpack)
 	})
 
 	return nil
