@@ -24,8 +24,7 @@ import (
 
 const (
 	// DefaultsConfigName is the name of the defaults configmap.
-	DefaultsConfigName = "config-defaults"
-
+	DefaultsConfigName               = "config-defaults"
 	spaceContainerRegistryKey        = "spaceContainerRegistry"
 	spaceClusterDomainsKey           = "spaceClusterDomains"
 	spaceBuildpacksV2Key             = "spaceBuildpacksV2"
@@ -37,6 +36,7 @@ const (
 	buildDisableIstioSidecarKey      = "buildDisableIstioSidecar"
 	buildPodResourcesKey             = "buildPodResources"
 	buildRetentionCountKey           = "buildRetentionCount"
+	taskRetentionCountKey            = "taskRetentionCount"
 	buildTimeoutKey                  = "buildTimeout"
 	buildNodeSelectorsKey            = "buildNodeSelectors"
 	appCPUPerGBOfRAMKey              = "appCPUPerGBOfRAM"
@@ -111,6 +111,10 @@ type DefaultsConfig struct {
 	// BuildRetentionCount is the number of completed Builds each App will
 	// keep before garbage collecting.
 	BuildRetentionCount *uint `json:"buildRetentionCount,omitempty"`
+
+	// TaskRetentionCount is the number of completed Tasks each App will
+	// keep before garbage collecting.
+	TaskRetentionCount *uint `json:"taskRetentionCount,omitempty"`
 
 	// BuildTimeout is the timeout value to set at the underlying TaskRun of Build, it is the time duration
 	// to fail a build that takes too long to complete, valid values are specified in time unit, e.g. "1h", "30m", "60s"
@@ -237,6 +241,7 @@ func (defaultsConfig *DefaultsConfig) getInterfaceValues(leaveEmpty bool) map[st
 		buildDisableIstioSidecarKey:      &defaultsConfig.BuildDisableIstioSidecar,
 		buildPodResourcesKey:             &defaultsConfig.BuildPodResources,
 		buildRetentionCountKey:           &defaultsConfig.BuildRetentionCount,
+		taskRetentionCountKey:            &defaultsConfig.TaskRetentionCount,
 		buildNodeSelectorsKey:            &defaultsConfig.BuildNodeSelectors,
 		appCPUPerGBOfRAMKey:              &defaultsConfig.AppCPUPerGBOfRAM,
 		appCPUMinKey:                     &defaultsConfig.AppCPUMin,
