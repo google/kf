@@ -116,17 +116,105 @@ func CFToSIUnits(orig string) string {
 	return orig
 }
 
-// ToHealthCheck creates a corev1.Probe that maps the health checks CloudFoundry
-// does.
-func (source *Application) ToHealthCheck() (*corev1.Probe, error) {
+// ToStartupHealthCheck creates a corev1.Probe that mimics Cloud Foundry's
+// post-startup application health checks. The following are steps 2 and 3 from
+// https://docs.cloudfoundry.org/devguide/deploy-apps/healthchecks.html#healthcheck-lifecycle
+//
+// When deploying the app, the developer specifies a health check type for the app and,
+// optionally, a timeout. If the developer does not specify a health check type, then
+// the monitoring process defaults to a port health check.
+//
+// When Diego starts an app instance, the app health check runs every two seconds
+// until aresponse indicates that the app instance is healthy or until the health
+// check timeout elapses. The 2-second health check interval is not configurable.
+func (source *Application) ToStartupHealthCheck() (*corev1.Probe, error) {
 	if source.HealthCheckTimeout < 0 {
 		return nil, errors.New("health check timeouts can't be negative")
 	}
+	healthCheckTimeout := source.HealthCheckTimeout
+	if healthCheckTimeout == 0 {
+
+		// https://docs.cloudfoundry.org/devguide/deploy-apps/healthchecks.html#health_check_timeout
+		// In Cloud Foundry, the default timeout is 60 seconds
+		healthCheckTimeout = 60
+	}
 
 	probe := &corev1.Probe{
-		TimeoutSeconds:   int32(source.HealthCheckTimeout),
+		// For both HTTP and port based health checks, CF docs state:
+		// The configured endpoint must respond within one second to be considered healthy.
+		// This was later revised to be user-configurable.
+		TimeoutSeconds:   1,
 		SuccessThreshold: 1,
+		PeriodSeconds:    2,
 		ProbeHandler:     corev1.ProbeHandler{},
+	}
+
+	if source.HealthCheckInvocationTimeout != 0 {
+		probe.TimeoutSeconds = int32(source.HealthCheckInvocationTimeout)
+	}
+
+	// To get the startup probe to work like CF where timeout is the total
+	// amount of time from container start to health we set the failure threshold
+	// to be:
+	//
+	//     ceil(timeout / check period)
+
+	probe.FailureThreshold = int32(math.Ceil(float64(healthCheckTimeout) / float64(probe.PeriodSeconds)))
+
+	switch source.HealthCheckType {
+	case "http":
+		probe.ProbeHandler.HTTPGet = &corev1.HTTPGetAction{Path: source.HealthCheckHTTPEndpoint}
+		return probe, nil
+
+	case "port", "": // By default, cf uses a port based health check.
+		if source.HealthCheckHTTPEndpoint != "" {
+			return nil, errors.New("health check endpoints can only be used with http checks")
+		}
+
+		probe.ProbeHandler.TCPSocket = &corev1.TCPSocketAction{}
+		return probe, nil
+
+	case "process", "none":
+		// A process check implies there isn't a probe but instead just rely
+		// on the process failing.
+		// https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes
+		return nil, nil
+
+	default:
+		return nil, fmt.Errorf("unknown health check type %s", source.HealthCheckType)
+	}
+}
+
+// ToPostStartupHealthCheck creates a corev1.Probe that mimics Cloud Foundry's
+// post-startup application health checks (used for both liveness and readiness).
+// The following are steps 6 and 7 from
+// https://docs.cloudfoundry.org/devguide/deploy-apps/healthchecks.html#healthcheck-lifecycle
+//
+// When an app instance becomes healthy, its route is advertised, if applicable.
+// Subsequent health checks are run every 30 seconds once the app becomes healthy.
+// The 30-second health check interval is not configurable.
+//
+// If a previously healthy app instance fails a health check, Diego considers that
+// particular instance to be unhealthy. As a result, Diego stops and deletes the
+// app instance.
+func (source *Application) ToPostStartupHealthCheck() (*corev1.Probe, error) {
+	if source.HealthCheckInvocationTimeout < 0 {
+		return nil, errors.New("health check invocation timeouts can't be negative")
+	}
+
+	probe := &corev1.Probe{
+		// For both HTTP and port based health checks, CF docs state:
+		// The configured endpoint must respond within one second to be considered healthy.
+		// This was later revised to be user-configurable.
+		TimeoutSeconds:   1,
+		SuccessThreshold: 1,
+		FailureThreshold: 1,
+		PeriodSeconds:    30,
+		ProbeHandler:     corev1.ProbeHandler{},
+	}
+
+	if source.HealthCheckInvocationTimeout != 0 {
+		probe.TimeoutSeconds = int32(source.HealthCheckInvocationTimeout)
 	}
 
 	switch source.HealthCheckType {
@@ -149,19 +237,27 @@ func (source *Application) ToHealthCheck() (*corev1.Probe, error) {
 		return nil, nil
 
 	default:
-		return nil, fmt.Errorf("unknown health check type %s, supported types are http and port", source.HealthCheckType)
+		return nil, fmt.Errorf("unknown health check type %s", source.HealthCheckType)
 	}
+}
+
+func (source *Application) hasCFHealthCheckFields() bool {
+	return source.HealthCheckTimeout != 0 ||
+		source.HealthCheckType != "" ||
+		source.HealthCheckHTTPEndpoint != "" ||
+		source.HealthCheckInvocationTimeout != 0
+}
+
+func (source *Application) hasK8sHealthCheckFields() bool {
+	return source.StartupProbe != nil ||
+		source.LivenessProbe != nil ||
+		source.ReadinessProbe != nil
 }
 
 // ToContainer converts the manifest to a container suitable for use in a pod,
 // ksvc, or app.
 func (source *Application) ToContainer(runtimeConfig *v1alpha1.SpaceStatusRuntimeConfig) (corev1.Container, error) {
 	resourceRequests, err := source.ToResourceRequests(runtimeConfig)
-	if err != nil {
-		return corev1.Container{}, err
-	}
-
-	healthCheck, err := source.ToHealthCheck()
 	if err != nil {
 		return corev1.Container{}, err
 	}
@@ -174,8 +270,25 @@ func (source *Application) ToContainer(runtimeConfig *v1alpha1.SpaceStatusRuntim
 			Requests: resourceRequests,
 			Limits:   resourceRequests,
 		},
-		ReadinessProbe: healthCheck,
-		LivenessProbe:  healthCheck,
+	}
+
+	if source.hasK8sHealthCheckFields() {
+		container.LivenessProbe = source.LivenessProbe
+		container.ReadinessProbe = source.ReadinessProbe
+		container.StartupProbe = source.StartupProbe
+	} else {
+		postStartupHealthCheck, err := source.ToPostStartupHealthCheck()
+		if err != nil {
+			return corev1.Container{}, err
+		}
+		startupHealthCheck, err := source.ToStartupHealthCheck()
+		if err != nil {
+			return corev1.Container{}, err
+		}
+
+		container.ReadinessProbe = postStartupHealthCheck
+		container.LivenessProbe = postStartupHealthCheck
+		container.StartupProbe = startupHealthCheck
 	}
 
 	if len(source.Env) > 0 {

@@ -28,6 +28,7 @@ import (
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/internal/envutil"
 	"github.com/imdario/mergo"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"knative.dev/pkg/kmp"
 	"knative.dev/pkg/logging"
@@ -68,6 +69,10 @@ type Application struct {
 	// get requests to determine liveness if HealthCheckType is http.
 	HealthCheckHTTPEndpoint string `json:"health-check-http-endpoint,omitempty"`
 
+	// HealthCheckInvocationTimeout is the timeout in seconds for individual
+	// health check requests for HTTP and port health checks. By default this is 1.
+	HealthCheckInvocationTimeout int `json:"health-check-invocation-timeout,omitempty"`
+
 	// Metadata contains additional tags for applications and their underlying
 	// resources.
 	Metadata ApplicationMetadata `json:"metadata,omitempty"`
@@ -93,6 +98,13 @@ type KfApplicationExtension struct {
 	Dockerfile Dockerfile          `json:"dockerfile,omitempty"`
 	Build      *v1alpha1.BuildSpec `json:"build,omitempty"`
 	Ports      AppPortList         `json:"ports,omitempty"`
+
+	// Allow developers access to the underlying K8s probes because
+	// CF is extremely limiting in this respect.
+
+	StartupProbe   *corev1.Probe `json:"startupProbe,omitempty"`
+	LivenessProbe  *corev1.Probe `json:"livenessProbe,omitempty"`
+	ReadinessProbe *corev1.Probe `json:"readinessProbe,omitempty"`
 }
 
 // AppPort represents an open port on an App.

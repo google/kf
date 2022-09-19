@@ -21,6 +21,8 @@ import (
 
 	kfapis "github.com/google/kf/v2/pkg/apis/kf"
 	"github.com/google/kf/v2/pkg/kf/testutil"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"knative.dev/pkg/apis"
 )
 
@@ -119,6 +121,208 @@ func TestApplication_Validation(t *testing.T) {
 				},
 			},
 			want: apis.ErrInvalidValue("must match a declared port", "routes[0].appPort"),
+		},
+		"valid probes": {
+			spec: Application{
+				KfApplicationExtension: KfApplicationExtension{
+					StartupProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path: "/warmed-up",
+							},
+						},
+					},
+					ReadinessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path: "/healthz",
+							},
+						},
+					},
+					LivenessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							TCPSocket: &corev1.TCPSocketAction{},
+						},
+					},
+				},
+			},
+		},
+		"grpc disabled": {
+			spec: Application{
+				KfApplicationExtension: KfApplicationExtension{
+					StartupProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							GRPC: &corev1.GRPCAction{},
+						},
+					},
+					ReadinessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							GRPC: &corev1.GRPCAction{},
+						},
+					},
+					LivenessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							GRPC: &corev1.GRPCAction{},
+						},
+					},
+				},
+			},
+			want: apis.ErrDisallowedFields("livenessProbe.grpc", "readinessProbe.grpc", "startupProbe.grpc"),
+		},
+		"exec disabled": {
+			spec: Application{
+				KfApplicationExtension: KfApplicationExtension{
+					StartupProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							Exec: &corev1.ExecAction{},
+						},
+					},
+					ReadinessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							Exec: &corev1.ExecAction{},
+						},
+					},
+					LivenessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							Exec: &corev1.ExecAction{},
+						},
+					},
+				},
+			},
+			want: apis.ErrDisallowedFields("livenessProbe.exec", "readinessProbe.exec", "startupProbe.exec"),
+		},
+		"http port disallowed": {
+			spec: Application{
+				KfApplicationExtension: KfApplicationExtension{
+					StartupProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Port: intstr.FromInt(9999),
+							},
+						},
+					},
+					ReadinessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Port: intstr.FromInt(9999),
+							},
+						},
+					},
+					LivenessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Port: intstr.FromInt(9999),
+							},
+						},
+					},
+				},
+			},
+			want: apis.ErrDisallowedFields("livenessProbe.httpGet.port", "readinessProbe.httpGet.port", "startupProbe.httpGet.port"),
+		},
+		"tcp port disallowed": {
+			spec: Application{
+				KfApplicationExtension: KfApplicationExtension{
+					StartupProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							TCPSocket: &corev1.TCPSocketAction{
+								Port: intstr.FromInt(9999),
+							},
+						},
+					},
+					ReadinessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							TCPSocket: &corev1.TCPSocketAction{
+								Port: intstr.FromInt(9999),
+							},
+						},
+					},
+					LivenessProbe: &corev1.Probe{
+						ProbeHandler: corev1.ProbeHandler{
+							TCPSocket: &corev1.TCPSocketAction{
+								Port: intstr.FromInt(9999),
+							},
+						},
+					},
+				},
+			},
+			want: apis.ErrDisallowedFields("livenessProbe.tcpSocket.port", "readinessProbe.tcpSocket.port", "startupProbe.tcpSocket.port"),
+		},
+		"conflicting startupProbe": {
+			spec: Application{
+				HealthCheckTimeout: 300,
+				KfApplicationExtension: KfApplicationExtension{
+					StartupProbe: &corev1.Probe{},
+				},
+			},
+			want: &apis.FieldError{Message: "startupProbe, livenessProbe, and readinessProbe can't be used with CF health check fields"},
+		},
+		"conflicting livenessProbe": {
+			spec: Application{
+				HealthCheckType: "http",
+				KfApplicationExtension: KfApplicationExtension{
+					LivenessProbe: &corev1.Probe{},
+				},
+			},
+			want: &apis.FieldError{Message: "startupProbe, livenessProbe, and readinessProbe can't be used with CF health check fields"},
+		},
+		"conflicting readinessProbe": {
+			spec: Application{
+				HealthCheckHTTPEndpoint: "/",
+				KfApplicationExtension: KfApplicationExtension{
+					ReadinessProbe: &corev1.Probe{},
+				},
+			},
+			want: &apis.FieldError{Message: "startupProbe, livenessProbe, and readinessProbe can't be used with CF health check fields"},
+		},
+		"good http health check": {
+			spec: Application{
+				HealthCheckTimeout:           30,
+				HealthCheckInvocationTimeout: 30,
+				HealthCheckType:              "http",
+				HealthCheckHTTPEndpoint:      "/statusz",
+			},
+		},
+		"bad health check type": {
+			spec: Application{
+				HealthCheckType: "foo",
+			},
+			want: apis.ErrInvalidValue("foo", "health-check-type", `valid values are: ["" "http" "none" "port" "process"]`),
+		},
+		"http endpoint is only valid with http": {
+			spec: Application{
+				HealthCheckType:         "port",
+				HealthCheckHTTPEndpoint: "/",
+			},
+			want: apis.ErrInvalidValue("/", "health-check-http-endpoint", `field can only be set if health-check-type is "http"`),
+		},
+		"good port health check": {
+			spec: Application{
+				HealthCheckTimeout:           30,
+				HealthCheckInvocationTimeout: 30,
+				HealthCheckType:              "port",
+			},
+		},
+		"good process health check": {
+			spec: Application{
+				HealthCheckType: "process",
+			},
+		},
+		"good none (process) health check": {
+			spec: Application{
+				HealthCheckType: "none",
+			},
+		},
+		"bad health check timeout": {
+			spec: Application{
+				HealthCheckTimeout: -1,
+			},
+			want: apis.ErrInvalidValue(-1, "timeout", "health check timeout can't be negative"),
+		},
+		"bad health check invocation timeout": {
+			spec: Application{
+				HealthCheckInvocationTimeout: -2,
+			},
+			want: apis.ErrInvalidValue(-2, "health-check-invocation-timeout", "health check timeout can't be negative"),
 		},
 	}
 

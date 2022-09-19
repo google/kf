@@ -513,14 +513,19 @@ func getContainer(app *manifest.Application) (*corev1.Container, error) {
 		return nil, err
 	}
 
-	probe := container.ReadinessProbe
+	// Kf usually adds the default port server-side.
 	if len(container.Ports) == 0 {
-		rewriteProbe(probe, resources.DefaultUserPort)
 		container.Ports = append(container.Ports, corev1.ContainerPort{
 			Name:          resources.UserPortName,
 			ContainerPort: resources.DefaultUserPort,
 		})
-	} else {
+	}
+
+	for _, probe := range []*corev1.Probe{
+		container.ReadinessProbe,
+		container.LivenessProbe,
+		container.StartupProbe,
+	} {
 		rewriteProbe(probe, container.Ports[0].ContainerPort)
 	}
 

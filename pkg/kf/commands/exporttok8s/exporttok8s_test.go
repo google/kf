@@ -8,12 +8,9 @@ import (
 
 	"github.com/google/kf/v2/pkg/kf/manifest"
 	"github.com/google/kf/v2/pkg/kf/testutil"
-	"github.com/google/kf/v2/pkg/reconciler/app/resources"
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/yaml"
 )
 
@@ -153,45 +150,10 @@ func TestGetParams(t *testing.T) {
 func TestGetContainer(t *testing.T) {
 
 	cases := map[string]struct {
-		appManifest       *manifest.Manifest
-		expectedContainer *corev1.Container
+		appManifest *manifest.Manifest
 	}{
 		"no manifest": {
 			appManifest: nil,
-			expectedContainer: &corev1.Container{
-				Name:  "test-app",
-				Image: "placeholder",
-				Ports: []corev1.ContainerPort{
-					{
-						Name:          resources.UserPortName,
-						ContainerPort: resources.DefaultUserPort,
-					},
-				},
-				ReadinessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						TCPSocket: &corev1.TCPSocketAction{
-							Port: intstr.FromInt(int(resources.DefaultUserPort)),
-						},
-					},
-					InitialDelaySeconds: 0,
-					TimeoutSeconds:      0,
-					PeriodSeconds:       0,
-					SuccessThreshold:    1,
-					FailureThreshold:    0,
-				},
-				LivenessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						TCPSocket: &corev1.TCPSocketAction{
-							Port: intstr.FromInt(int(resources.DefaultUserPort)),
-						},
-					},
-					InitialDelaySeconds: 0,
-					TimeoutSeconds:      0,
-					PeriodSeconds:       0,
-					SuccessThreshold:    1,
-					FailureThreshold:    0,
-				},
-			},
 		},
 		"have manifest with the properties": {
 			appManifest: &manifest.Manifest{
@@ -206,52 +168,6 @@ func TestGetContainer(t *testing.T) {
 					},
 				},
 			},
-			expectedContainer: &corev1.Container{
-				Name:  "test-app",
-				Image: "placeholder",
-				Ports: []corev1.ContainerPort{
-					{
-						Name:          resources.UserPortName,
-						ContainerPort: resources.DefaultUserPort,
-					},
-				},
-				Resources: corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						"cpu":               getResourceQuantity("1"),
-						"ephemeral-storage": getResourceQuantity(manifest.CFToSIUnits("1024M")),
-						"memory":            getResourceQuantity(manifest.CFToSIUnits("512M")),
-					},
-					Limits: corev1.ResourceList{
-						"cpu":               getResourceQuantity("1"),
-						"ephemeral-storage": getResourceQuantity(manifest.CFToSIUnits("1024M")),
-						"memory":            getResourceQuantity(manifest.CFToSIUnits("512M")),
-					},
-				},
-				ReadinessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Port: intstr.FromInt(int(resources.DefaultUserPort)),
-						},
-					},
-					InitialDelaySeconds: 0,
-					TimeoutSeconds:      60,
-					PeriodSeconds:       0,
-					SuccessThreshold:    1,
-					FailureThreshold:    0,
-				},
-				LivenessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Port: intstr.FromInt(int(resources.DefaultUserPort)),
-						},
-					},
-					InitialDelaySeconds: 0,
-					TimeoutSeconds:      60,
-					PeriodSeconds:       0,
-					SuccessThreshold:    1,
-					FailureThreshold:    0,
-				},
-			},
 		},
 		"have manifest but no health check": {
 			appManifest: &manifest.Manifest{
@@ -262,51 +178,6 @@ func TestGetContainer(t *testing.T) {
 						Memory:                 "512M",
 						KfApplicationExtension: manifest.KfApplicationExtension{CPU: "1"},
 					},
-				},
-			},
-			expectedContainer: &corev1.Container{
-				Name:  "test-app",
-				Image: "placeholder",
-				Ports: []corev1.ContainerPort{
-					{
-						Name:          resources.UserPortName,
-						ContainerPort: resources.DefaultUserPort},
-				},
-				Resources: corev1.ResourceRequirements{
-					Requests: corev1.ResourceList{
-						"cpu":               getResourceQuantity("1"),
-						"ephemeral-storage": getResourceQuantity(manifest.CFToSIUnits("1024M")),
-						"memory":            getResourceQuantity(manifest.CFToSIUnits("512M")),
-					},
-					Limits: corev1.ResourceList{
-						"cpu":               getResourceQuantity("1"),
-						"ephemeral-storage": getResourceQuantity(manifest.CFToSIUnits("1024M")),
-						"memory":            getResourceQuantity(manifest.CFToSIUnits("512M")),
-					},
-				},
-				ReadinessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						TCPSocket: &corev1.TCPSocketAction{
-							Port: intstr.FromInt(int(resources.DefaultUserPort)),
-						},
-					},
-					InitialDelaySeconds: 0,
-					TimeoutSeconds:      0,
-					PeriodSeconds:       0,
-					SuccessThreshold:    1,
-					FailureThreshold:    0,
-				},
-				LivenessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						TCPSocket: &corev1.TCPSocketAction{
-							Port: intstr.FromInt(int(resources.DefaultUserPort)),
-						},
-					},
-					InitialDelaySeconds: 0,
-					TimeoutSeconds:      0,
-					PeriodSeconds:       0,
-					SuccessThreshold:    1,
-					FailureThreshold:    0,
 				},
 			},
 		},
@@ -321,39 +192,6 @@ func TestGetContainer(t *testing.T) {
 					},
 				},
 			},
-			expectedContainer: &corev1.Container{
-				Name:  "test-app",
-				Image: "placeholder",
-				Ports: []corev1.ContainerPort{
-					{
-						Name:          resources.UserPortName,
-						ContainerPort: resources.DefaultUserPort},
-				},
-				ReadinessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Port: intstr.FromInt(int(resources.DefaultUserPort)),
-						},
-					},
-					InitialDelaySeconds: 0,
-					TimeoutSeconds:      60,
-					PeriodSeconds:       0,
-					SuccessThreshold:    1,
-					FailureThreshold:    0,
-				},
-				LivenessProbe: &corev1.Probe{
-					ProbeHandler: corev1.ProbeHandler{
-						HTTPGet: &corev1.HTTPGetAction{
-							Port: intstr.FromInt(int(resources.DefaultUserPort)),
-						},
-					},
-					InitialDelaySeconds: 0,
-					TimeoutSeconds:      60,
-					PeriodSeconds:       0,
-					SuccessThreshold:    1,
-					FailureThreshold:    0,
-				},
-			},
 		},
 	}
 
@@ -362,6 +200,7 @@ func TestGetContainer(t *testing.T) {
 			if tc.appManifest != nil {
 				manifestYaml, _ := yaml.Marshal(tc.appManifest)
 				os.WriteFile("manifest.yml", manifestYaml, os.ModePerm)
+				defer os.Remove("manifest.yml")
 			}
 
 			var app *manifest.Application
@@ -372,17 +211,13 @@ func TestGetContainer(t *testing.T) {
 			} else {
 				app, _ = tc.appManifest.App("test-app")
 			}
-			gotContainer, err := getContainer(app)
 
+			gotContainer, err := getContainer(app)
 			if err != nil {
 				t.Fatalf("wanted err: %v, got: %v", nil, err)
+			} else {
+				testutil.AssertGoldenJSON(t, "container", gotContainer)
 			}
-
-			if tc.appManifest != nil {
-				os.Remove("manifest.yml")
-			}
-
-			testutil.AssertEqual(t, "", tc.expectedContainer, gotContainer)
 		})
 	}
 }

@@ -368,6 +368,13 @@ func Test_makePodSpec(t *testing.T) {
 											TCPSocket: &corev1.TCPSocketAction{},
 										},
 									},
+									StartupProbe: &corev1.Probe{
+										ProbeHandler: corev1.ProbeHandler{
+											HTTPGet: &corev1.HTTPGetAction{
+												Path: "/v1/livez",
+											},
+										},
+									},
 								},
 							},
 						},
@@ -439,6 +446,14 @@ func Test_makePodSpec(t *testing.T) {
 							ReadinessProbe: &corev1.Probe{
 								ProbeHandler: corev1.ProbeHandler{
 									TCPSocket: &corev1.TCPSocketAction{
+										Port: intstr.FromInt(9999),
+									},
+								},
+							},
+							StartupProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/v1/livez",
 										Port: intstr.FromInt(9999),
 									},
 								},
