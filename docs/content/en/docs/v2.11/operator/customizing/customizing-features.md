@@ -21,6 +21,20 @@ kfsystem kfsystem \
 -p="[{'op': 'replace', 'path': '/spec/kf/config/buildRetentionCount', 'value': <var>1</var>}]"
 </pre>
 
+## Task Retention
+
+You can control how many Kf Tasks are kept before being garbage collected.
+
+{{< note >}} This example sets the retention to 1 Task. Change the value as needed.{{< /note >}}
+
+<pre class="devsite-terminal devsite-click-to-copy" translate="no">
+kubectl patch \
+kfsystem kfsystem \
+--type='json' \
+-p="[{'op': 'replace', 'path': '/spec/kf/config/taskRetentionCount', 'value': <var>1</var>}]"
+</pre>
+
+
 ## Enable or Disable the Istio Sidecar
 
 If you do not require the Istio sidecar for the Build pods, then they can be disabled by setting the value to `true`. Enable by setting the value to `false`.

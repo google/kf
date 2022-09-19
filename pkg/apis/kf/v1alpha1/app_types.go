@@ -46,8 +46,8 @@ const (
 	WorkloadIdentityAnnotation = "iam.gke.io/gcp-service-account"
 	// DefaultUserContainerName contains the default name for the user container.
 	DefaultUserContainerName = "user-container"
-	// MaxTaskCount is the maximum number of tasks to keep in an App.
-	MaxTaskCount = 500
+	// DefaultMaxTaskCount is the maximum number of tasks to keep in an App.
+	DefaultMaxTaskCount = 500
 	// AppServerComponent is the value used for the App component.
 	AppServerComponent = "app-server"
 )
