@@ -503,6 +503,279 @@ func Test_makePodSpec(t *testing.T) {
 				}
 			},
 		},
+
+		"nfs volume default app": {
+			app: &v1alpha1.App{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-app",
+				},
+				Spec: v1alpha1.AppSpec{
+					Template: v1alpha1.AppSpecTemplate{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Image: "gcr.io/my-app",
+								},
+							},
+						},
+					},
+				},
+				Status: v1alpha1.AppStatus{
+					Volumes: []v1alpha1.AppVolumeStatus{
+						{
+							MountPath:       "/nfs/volume1",
+							VolumeName:      "nfsvolume1",
+							ReadOnly:        false,
+							VolumeClaimName: "nfs-volume1-pvc",
+						},
+					},
+				},
+			},
+			space: &v1alpha1.Space{
+				Status: v1alpha1.SpaceStatus{
+					RuntimeConfig: v1alpha1.SpaceStatusRuntimeConfig{
+						TerminationGracePeriodSeconds: ptr.Int64(30),
+					},
+				},
+			},
+			want: func(app *v1alpha1.App) corev1.PodSpec {
+				var wantEnv []corev1.EnvVar
+
+				wantEnv = append(wantEnv, BuildRuntimeEnvVars(CFRunning, app)...)
+				wantEnv = append(wantEnv, corev1.EnvVar{Name: "KF_UPDATE_REQUESTS_", Value: "0"})
+
+				return corev1.PodSpec{
+					EnableServiceLinks: ptr.Bool(false),
+					Containers: []corev1.Container{
+						{
+							Name:                     "user-container",
+							Ports:                    buildContainerPorts(DefaultUserPort),
+							Env:                      wantEnv,
+							Stdin:                    false,
+							TTY:                      false,
+							ImagePullPolicy:          corev1.PullIfNotPresent,
+							TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+							TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+							Command:                  []string{"/bin/sh"},
+							Args: []string{
+								"-c",
+								"mapfs -uid 2000 -gid 2000 /nfs/volume1 /.kfmounts/nfs/volume1 & /lifecycle/entrypoint.bash",
+							},
+							VolumeMounts: []corev1.VolumeMount{{Name: "nfs-volume1-pvc", MountPath: "/.kfmounts/nfs/volume1"}},
+							Lifecycle: &corev1.Lifecycle{
+								PreStop: &corev1.LifecycleHandler{
+									Exec: &corev1.ExecAction{
+										Command: []string{"timeout", "-k", "10s", "10s", "/bin/sh", "-c", "fusermount -u /nfs/volume1 & wait"},
+									},
+								},
+							},
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: ptr.Bool(true),
+							},
+						},
+					},
+					NodeSelector:                  map[string]string{},
+					RestartPolicy:                 corev1.RestartPolicyAlways,
+					TerminationGracePeriodSeconds: ptr.Int64(30),
+					DNSPolicy:                     corev1.DNSClusterFirst,
+					SecurityContext:               &corev1.PodSecurityContext{},
+					SchedulerName:                 corev1.DefaultSchedulerName,
+					Volumes: []corev1.Volume{
+						{
+							Name: "nfs-volume1-pvc",
+							VolumeSource: corev1.VolumeSource{
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: "nfs-volume1-pvc",
+								},
+							},
+						},
+					},
+				}
+			},
+		},
+
+		"nfs volume app with args": {
+			app: &v1alpha1.App{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-app",
+				},
+				Spec: v1alpha1.AppSpec{
+					Template: v1alpha1.AppSpecTemplate{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Image: "gcr.io/my-app",
+									Args:  []string{"-jar", "my-library.jar", "-timeout=10"},
+								},
+							},
+						},
+					},
+				},
+				Status: v1alpha1.AppStatus{
+					Volumes: []v1alpha1.AppVolumeStatus{
+						{
+							MountPath:       "/nfs/volume1",
+							VolumeName:      "nfsvolume1",
+							ReadOnly:        false,
+							VolumeClaimName: "nfs-volume1-pvc",
+						},
+					},
+				},
+			},
+			space: &v1alpha1.Space{
+				Status: v1alpha1.SpaceStatus{
+					RuntimeConfig: v1alpha1.SpaceStatusRuntimeConfig{
+						TerminationGracePeriodSeconds: ptr.Int64(30),
+					},
+				},
+			},
+			want: func(app *v1alpha1.App) corev1.PodSpec {
+				var wantEnv []corev1.EnvVar
+
+				wantEnv = append(wantEnv, BuildRuntimeEnvVars(CFRunning, app)...)
+				wantEnv = append(wantEnv, corev1.EnvVar{Name: "KF_UPDATE_REQUESTS_", Value: "0"})
+
+				return corev1.PodSpec{
+					EnableServiceLinks: ptr.Bool(false),
+					Containers: []corev1.Container{
+						{
+							Name:                     "user-container",
+							Ports:                    buildContainerPorts(DefaultUserPort),
+							Env:                      wantEnv,
+							Stdin:                    false,
+							TTY:                      false,
+							ImagePullPolicy:          corev1.PullIfNotPresent,
+							TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+							TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+							Command:                  []string{"/bin/sh"},
+							Args: []string{
+								"-c",
+								"mapfs -uid 2000 -gid 2000 /nfs/volume1 /.kfmounts/nfs/volume1 & /lifecycle/entrypoint.bash -jar my-library.jar -timeout=10",
+							},
+							VolumeMounts: []corev1.VolumeMount{{Name: "nfs-volume1-pvc", MountPath: "/.kfmounts/nfs/volume1"}},
+							Lifecycle: &corev1.Lifecycle{
+								PreStop: &corev1.LifecycleHandler{
+									Exec: &corev1.ExecAction{
+										Command: []string{"timeout", "-k", "10s", "10s", "/bin/sh", "-c", "fusermount -u /nfs/volume1 & wait"},
+									},
+								},
+							},
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: ptr.Bool(true),
+							},
+						},
+					},
+					NodeSelector:                  map[string]string{},
+					RestartPolicy:                 corev1.RestartPolicyAlways,
+					TerminationGracePeriodSeconds: ptr.Int64(30),
+					DNSPolicy:                     corev1.DNSClusterFirst,
+					SecurityContext:               &corev1.PodSecurityContext{},
+					SchedulerName:                 corev1.DefaultSchedulerName,
+					Volumes: []corev1.Volume{
+						{
+							Name: "nfs-volume1-pvc",
+							VolumeSource: corev1.VolumeSource{
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: "nfs-volume1-pvc",
+								},
+							},
+						},
+					},
+				}
+			},
+		},
+
+		"nfs volume app with args and command": {
+			app: &v1alpha1.App{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-app",
+				},
+				Spec: v1alpha1.AppSpec{
+					Template: v1alpha1.AppSpecTemplate{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{
+								{
+									Image:   "gcr.io/my-app",
+									Args:    []string{"-jar", "my-library.jar", "-timeout=10"},
+									Command: []string{"java"},
+								},
+							},
+						},
+					},
+				},
+				Status: v1alpha1.AppStatus{
+					Volumes: []v1alpha1.AppVolumeStatus{
+						{
+							MountPath:       "/nfs/volume1",
+							VolumeName:      "nfsvolume1",
+							ReadOnly:        false,
+							VolumeClaimName: "nfs-volume1-pvc",
+						},
+					},
+				},
+			},
+			space: &v1alpha1.Space{
+				Status: v1alpha1.SpaceStatus{
+					RuntimeConfig: v1alpha1.SpaceStatusRuntimeConfig{
+						TerminationGracePeriodSeconds: ptr.Int64(30),
+					},
+				},
+			},
+			want: func(app *v1alpha1.App) corev1.PodSpec {
+				var wantEnv []corev1.EnvVar
+
+				wantEnv = append(wantEnv, BuildRuntimeEnvVars(CFRunning, app)...)
+				wantEnv = append(wantEnv, corev1.EnvVar{Name: "KF_UPDATE_REQUESTS_", Value: "0"})
+
+				return corev1.PodSpec{
+					EnableServiceLinks: ptr.Bool(false),
+					Containers: []corev1.Container{
+						{
+							Name:                     "user-container",
+							Ports:                    buildContainerPorts(DefaultUserPort),
+							Env:                      wantEnv,
+							Stdin:                    false,
+							TTY:                      false,
+							ImagePullPolicy:          corev1.PullIfNotPresent,
+							TerminationMessagePath:   corev1.TerminationMessagePathDefault,
+							TerminationMessagePolicy: corev1.TerminationMessageReadFile,
+							Command:                  []string{"/bin/sh"},
+							Args: []string{
+								"-c",
+								"mapfs -uid 2000 -gid 2000 /nfs/volume1 /.kfmounts/nfs/volume1 & java -jar my-library.jar -timeout=10",
+							},
+							VolumeMounts: []corev1.VolumeMount{{Name: "nfs-volume1-pvc", MountPath: "/.kfmounts/nfs/volume1"}},
+							Lifecycle: &corev1.Lifecycle{
+								PreStop: &corev1.LifecycleHandler{
+									Exec: &corev1.ExecAction{
+										Command: []string{"timeout", "-k", "10s", "10s", "/bin/sh", "-c", "fusermount -u /nfs/volume1 & wait"},
+									},
+								},
+							},
+							SecurityContext: &corev1.SecurityContext{
+								Privileged: ptr.Bool(true),
+							},
+						},
+					},
+					NodeSelector:                  map[string]string{},
+					RestartPolicy:                 corev1.RestartPolicyAlways,
+					TerminationGracePeriodSeconds: ptr.Int64(30),
+					DNSPolicy:                     corev1.DNSClusterFirst,
+					SecurityContext:               &corev1.PodSecurityContext{},
+					SchedulerName:                 corev1.DefaultSchedulerName,
+					Volumes: []corev1.Volume{
+						{
+							Name: "nfs-volume1-pvc",
+							VolumeSource: corev1.VolumeSource{
+								PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+									ClaimName: "nfs-volume1-pvc",
+								},
+							},
+						},
+					},
+				}
+			},
+		},
 	}
 	for tn, tc := range tests {
 		t.Run(tn, func(t *testing.T) {

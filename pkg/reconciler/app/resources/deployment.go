@@ -197,14 +197,22 @@ func makePodSpec(app *v1alpha1.App, space *v1alpha1.Space) (*corev1.PodSpec, err
 		spec.Volumes = append(spec.Volumes, volumes...)
 		userContainer.VolumeMounts = append(userContainer.VolumeMounts, userVolumeMounts...)
 
-		argsOrgin := userContainer.Args
-		originEntry := []string{"/lifecycle/entrypoint.bash"}
-		originCmd := append(originEntry, argsOrgin...)
-		cmd := append(fuseCommands, strings.Join(originCmd, " "))
+		originalArgs := userContainer.Args
+		originalCommand := []string{}
+		if len(userContainer.Command) > 0 {
+			// Append to the existing array so we don't modify the userContainer.Command value.
+			originalCommand = append(originalCommand, userContainer.Command...)
+		} else {
+			// TODO: Look up the correct value rather than assuming
+			// the build is from a buildpack.
+			originalCommand = []string{"/lifecycle/entrypoint.bash"}
+		}
+		originalStartCommand := append(originalCommand, originalArgs...)
+
+		combinedStartCommand := append(fuseCommands, strings.Join(originalStartCommand, " "))
+
 		userContainer.Command = []string{"/bin/sh"}
-		args := userContainer.Args
-		userContainer.Args = []string{"-c", strings.Join(cmd, " ")}
-		userContainer.Args = append(userContainer.Args, args...)
+		userContainer.Args = []string{"-c", strings.Join(combinedStartCommand, " ")}
 
 		userContainer.Lifecycle = &corev1.Lifecycle{
 			PreStop: &corev1.LifecycleHandler{
