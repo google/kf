@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"knative.dev/pkg/kmeta"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -868,6 +869,8 @@ func TestPush(t *testing.T) {
 func TestPush_ServiceInstanceBindings(t *testing.T) {
 	t.Parallel()
 
+	app := &v1alpha1.App{}
+
 	for tn, tc := range map[string]struct {
 		appName   string
 		srcImage  string
@@ -879,7 +882,7 @@ func TestPush_ServiceInstanceBindings(t *testing.T) {
 		"does not overwrite existing ServiceBindings": {
 			appName: "some-app",
 			opts: apps.PushOptions{
-				apps.WithPushServiceBindings([]v1alpha1.ServiceInstanceBinding{createServiceInstanceBinding("some-app", "some-service", "some-space")}),
+				apps.WithPushServiceBindings([]v1alpha1.ServiceInstanceBinding{createServiceInstanceBinding("some-app", "some-service", "some-space", app)}),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient, bindingsClient *bindingsfake.FakeClient, secretsClient *secretsfake.FakeClient) {
 				appsClient.EXPECT().
@@ -897,7 +900,7 @@ func TestPush_ServiceInstanceBindings(t *testing.T) {
 		"uses new ServiceBindings": {
 			appName: "some-app",
 			opts: apps.PushOptions{
-				apps.WithPushServiceBindings([]v1alpha1.ServiceInstanceBinding{createServiceInstanceBinding("some-app", "some-service", "some-space")}),
+				apps.WithPushServiceBindings([]v1alpha1.ServiceInstanceBinding{createServiceInstanceBinding("some-app", "some-service", "some-space", app)}),
 			},
 			setup: func(t *testing.T, appsClient *appsfake.FakeClient, bindingsClient *bindingsfake.FakeClient, secretsClient *secretsfake.FakeClient) {
 				appsClient.EXPECT().
@@ -969,11 +972,14 @@ func TestPush_ServiceInstanceBindings(t *testing.T) {
 	}
 }
 
-func createServiceInstanceBinding(appName, serviceInstance, namespace string) v1alpha1.ServiceInstanceBinding {
+func createServiceInstanceBinding(appName, serviceInstance, namespace string, app *v1alpha1.App) v1alpha1.ServiceInstanceBinding {
 	return v1alpha1.ServiceInstanceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      v1alpha1.MakeServiceBindingName(appName, serviceInstance),
 			Namespace: namespace,
+			OwnerReferences: []metav1.OwnerReference{
+				*kmeta.NewControllerRef(app),
+			},
 		},
 		Spec: v1alpha1.ServiceInstanceBindingSpec{
 			BindingType: v1alpha1.BindingType{
