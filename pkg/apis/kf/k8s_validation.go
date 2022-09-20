@@ -180,7 +180,7 @@ func ValidateContainerProbe(probe *corev1.Probe) *apis.FieldError {
 	handler := probe.ProbeHandler
 	errs = errs.Also(apis.CheckDisallowedFields(handler, containerProbeHandlerMask(handler)))
 
-	// XXX: the checks here should match the probes in containerProbeHandlerMask
+	// NOTE: the checks here should match the probes in containerProbeHandlerMask
 	suppliedHandlers := sets.NewString()
 	if handler.HTTPGet != nil {
 		suppliedHandlers.Insert("httpGet")
