@@ -1,0 +1,38 @@
+{
+    "name": "test-app",
+    "image": "placeholder",
+    "ports": [
+        {
+            "name": "http-user-port",
+            "containerPort": 8080
+        }
+    ],
+    "resources": {},
+    "livenessProbe": {
+        "httpGet": {
+            "port": 8080
+        },
+        "timeoutSeconds": 1,
+        "periodSeconds": 30,
+        "successThreshold": 1,
+        "failureThreshold": 1
+    },
+    "readinessProbe": {
+        "httpGet": {
+            "port": 8080
+        },
+        "timeoutSeconds": 1,
+        "periodSeconds": 30,
+        "successThreshold": 1,
+        "failureThreshold": 1
+    },
+    "startupProbe": {
+        "httpGet": {
+            "port": 8080
+        },
+        "timeoutSeconds": 1,
+        "periodSeconds": 2,
+        "successThreshold": 1,
+        "failureThreshold": 30
+    }
+}

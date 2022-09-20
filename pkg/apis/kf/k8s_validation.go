@@ -83,6 +83,7 @@ func ValidateContainer(container corev1.Container) *apis.FieldError {
 	errs = errs.Also(ValidateContainerResources(container.Resources).ViaField("resources"))
 	errs = errs.Also(ValidateContainerProbe(container.LivenessProbe).ViaField("livenessProbe"))
 	errs = errs.Also(ValidateContainerProbe(container.ReadinessProbe).ViaField("readinessProbe"))
+	errs = errs.Also(ValidateContainerProbe(container.StartupProbe).ViaField("startupProbe"))
 
 	return errs
 }
@@ -179,7 +180,17 @@ func ValidateContainerProbe(probe *corev1.Probe) *apis.FieldError {
 	handler := probe.ProbeHandler
 	errs = errs.Also(apis.CheckDisallowedFields(handler, containerProbeHandlerMask(handler)))
 
+	// NOTE: the checks here should match the probes in containerProbeHandlerMask
+	suppliedHandlers := sets.NewString()
+	if handler.HTTPGet != nil {
+		suppliedHandlers.Insert("httpGet")
+	}
+	if handler.TCPSocket != nil {
+		suppliedHandlers.Insert("tcpSocket")
+	}
 	switch {
+	case suppliedHandlers.Len() > 1:
+		errs = errs.Also(apis.ErrMultipleOneOf(suppliedHandlers.List()...))
 	case handler.HTTPGet != nil:
 		masked := containerProbeHandlerHTTPGetActionMask(*handler.HTTPGet)
 		errs = errs.Also(apis.CheckDisallowedFields(*handler.HTTPGet, masked)).ViaField("httpGet")

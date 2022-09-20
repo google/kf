@@ -62,6 +62,7 @@ func TestContainerMask(t *testing.T) {
 		Resources:      corev1.ResourceRequirements{},
 		LivenessProbe:  &corev1.Probe{},
 		ReadinessProbe: &corev1.Probe{},
+		StartupProbe:   &corev1.Probe{},
 	}
 	in := corev1.Container{
 		Name:           "foo",
@@ -73,6 +74,7 @@ func TestContainerMask(t *testing.T) {
 		Resources:      corev1.ResourceRequirements{},
 		LivenessProbe:  &corev1.Probe{},
 		ReadinessProbe: &corev1.Probe{},
+		StartupProbe:   &corev1.Probe{},
 
 		Image:                    "python",
 		EnvFrom:                  []corev1.EnvFromSource{{}},

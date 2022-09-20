@@ -175,6 +175,7 @@ func makePodSpec(app *v1alpha1.App, space *v1alpha1.Space) (*corev1.PodSpec, err
 	// If the client provides probes, we should fill in the port for them.
 	rewriteUserProbe(userContainer.LivenessProbe, userPort)
 	rewriteUserProbe(userContainer.ReadinessProbe, userPort)
+	rewriteUserProbe(userContainer.StartupProbe, userPort)
 
 	spec.ServiceAccountName = app.Status.ServiceAccountName
 	// This need to be removed after we implement server side apply.

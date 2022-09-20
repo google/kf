@@ -36,10 +36,14 @@ The following fields are valid for objects under `applications`:
 | `timeout`                    | `int`      | The number of seconds to wait for the app to become healthy. |
 | `health-check-type`          | `string`   | The type of health-check to use `port`, `process`, `none`, or `http`. Default: `port` |
 | `health-check-http-endpoint` | `string`   | The endpoint to target as part of the health-check. Only valid if `health-check-type` is `http`. |
+| `health-check-invocation-timeout` | `int` | Timeout in seconds for an individual health check probe to complete. Default: `1`. |
 | `command`                    | `string`   | The command that starts the app. If supplied, this will be passed to the container entrypoint. |
 | `entrypoint` †               | `string`   | Overrides the app container's entrypoint. |
 | `args` †                     | `string[]` | Overrides the arguments the app container. |
 | `ports` †                    | `object`   | A list of ports to expose on the container. If supplied, the first entry in this list is used as the default port. |
+| `startupProbe` †             | [`probe`](#probe-fields)  | Sets the app container's startup probe. |
+| `livenessProbe` †            | [`probe`](#probe-fields)  | Sets the app container's liveness probe. |
+| `readinessProbe` †           | [`probe`](#probe-fields)  | Sets the app container's readiness probe. |
 | `metadata`                   | `object`   | Additional tags for applications and their underlying resources. | 
 
 † Unique to Kf
@@ -91,6 +95,46 @@ The following fields are valid for `application.metadata` objects:
 {{< note >}}Kf's metadata overrides custom metadata for certain resources to ensure platform elements like
 routing and logging continue to work.{{< /note >}}
 
+## Probe fields {#probe-fields}
+
+Probes allow a subset of functionality from
+[Kubernetes probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/).
+
+A probe must contain one action and other settings.
+
+| Field | Type  | Description | 
+| ---   | ---   | ---         |
+| `failureThreshold` | `int` | Minimum consecutive failures for the probe to be considered failed. |
+| `initialDelaySeconds` | `int` | Number of seconds to wait after container initialization to start the probe. |
+| `periodSeconds` | `int` | How often (in seconds) to perform the probe. |
+| `successThreshold` | `int` | Minimum consecutive successes for the probe to be considered successful. |
+| `timeoutSeconds` | `int` | Number of seconds after a single invocation of the probe times out. |
+| `tcpSocket` | [`TCPSocketAction` object](#tcpsocketaction) | **Action** specifying a request to a TCP port. |
+| `httpGet` | [`HTTPGetAction` object](#httpgetaction) | **Action** specifying a request to a TCP port. |
+
+### TCPSocketAction fields {#tcpsocketaction}
+
+Describes an action based on TCP requests.
+
+| Field | Type  | Description | 
+| ---   | ---   | ---         |
+| `host` | `string` | Host to connect to, defaults to the App's IP. |
+
+{{< note >}}The port will automatically be set to match the App's default port.{{< /note >}}
+
+
+### HTTPGetAction fields {#httpgetaction}
+
+Describes an action based on HTTP get requests.
+
+| Field | Type  | Description | 
+| ---   | ---   | ---         |
+| `host` | `string` | Host to connect to, defaults to the App's IP. |
+| `path` | `string` | Path to access on the HTTP server. |
+| `scheme` | `string` | Scheme to use when connecting to the host. Default: `http` |
+| `httpHeaders` | array of `{"name": <string>, "value": <string>}` objects  | Additional headers to send. |
+
+{{< note >}}The port will automatically be set to match the App's default port.{{< /note >}}
 
 ## Examples
 
