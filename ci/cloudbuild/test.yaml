@@ -50,7 +50,7 @@ substitutions:
 
   # _MACHINE_TYPE is the name of a Google Compute Engine machine type (if a
   # GKE cluster is created).
-  _MACHINE_TYPE: n2-highmem-4
+  _MACHINE_TYPE: n1-highmem-4
 
   # _NODE_COUNT is the initial number of nodes desired in the cluster (if a
   # GKE cluster is created).
@@ -240,7 +240,7 @@ steps:
     gcloud builds submit \
     --no-source \
     --config=/workspace/${BUILD_ID}/fresh-cluster.yaml \
-    --substitutions=_CLOUDSDK_COMPUTE_ZONE=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_COMPUTE_ZONE),_CLOUDSDK_CONTAINER_CLUSTER=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_CONTAINER_CLUSTER),_NODE_COUNT=${_NODE_COUNT},_MACHINE_TYPE=${_MACHINE_TYPE},_RELEASE_CHANNEL=${_RELEASE_CHANNEL},_ASM_MANAGED=${_ASM_MANAGED}
+    --substitutions=_NETWORK=kf-int-tests,_CLOUDSDK_COMPUTE_ZONE=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_COMPUTE_ZONE),_CLOUDSDK_CONTAINER_CLUSTER=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_CONTAINER_CLUSTER),_NODE_COUNT=${_NODE_COUNT},_MACHINE_TYPE=${_MACHINE_TYPE},_RELEASE_CHANNEL=${_RELEASE_CHANNEL},_ASM_MANAGED=${_ASM_MANAGED}
 
     if [ ! -z "${_EXTRA_CERTS_URL}" ]; then
       gsutil cp "${_EXTRA_CERTS_URL}" /workspace/certs.pem
