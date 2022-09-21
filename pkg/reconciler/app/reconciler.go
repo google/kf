@@ -589,7 +589,7 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		app.Status.PropagateInstanceStatus(instanceStatus)
 	}
 
-	// Sync start commands, populate container and buildpack start commands in app status
+	// Sync start commands, populate container and buildpack start commands in app status.
 	{
 		logger.Debug("reconciling start commands")
 		
@@ -600,11 +600,22 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 			return err
 		}
 
-		containerCmd := containerConfig.Config.Entrypoint
-		buildpackCmd := containerConfig.Config.Labels["StartCommand"]
+		if app.Spec.Build.Image != nil {
+			startCommands.Container = containerConfig.Config.Entrypoint
+		} else {
+			buildName := app.Status.BuildStatusFields.BuildName
 
-		startCommands.Container = containerCmd
-		startCommands.Buildpack = []string{buildpackCmd}
+			buildConfig, err := r.buildLister.Builds(app.GetNamespace()).Get(buildName)
+			if err != nil {
+				return err
+			}
+
+			startCommands.Container = containerConfig.Config.Entrypoint
+
+			if buildConfig.Spec.Name == v1alpha1.BuildpackV2BuildTaskName {
+				startCommands.Buildpack = []string{containerConfig.Config.Labels["StartCommand"]}
+			}
+		}
 
 		app.Status.PropagateStartCommandStatus(startCommands)
 	}
