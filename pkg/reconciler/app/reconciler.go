@@ -511,6 +511,10 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 	// reconcile Tasks
 	{
 		logger.Debug("reconciling tasks")
+		configDefaults, err := kfconfig.FromContext(ctx).Defaults()
+		if err != nil {
+			return fmt.Errorf("failed to read config-defaults: %v", err)
+		}
 		taskLabelSelector := fmt.Sprintf("%s=%s", v1alpha1.NameLabel, app.Name)
 		listOptions := metav1.ListOptions{
 			LabelSelector: taskLabelSelector,
@@ -521,7 +525,12 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		}
 
 		if len(taskList.Items) > 0 {
-			tasksToDelete := tasksToGC(taskList.Items, v1alpha1.MaxTaskCount)
+			tasksToDelete := tasksToGC(taskList.Items, v1alpha1.DefaultMaxTaskCount)
+
+			if configDefaults.TaskRetentionCount != nil {
+				tasksToDelete = tasksToGC(taskList.Items, int(*configDefaults.TaskRetentionCount))
+			}
+
 			for _, t := range tasksToDelete {
 				if err := r.KfClientSet.KfV1alpha1().
 					Tasks(app.GetNamespace()).

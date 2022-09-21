@@ -382,6 +382,18 @@ func TestValidateContainerProbe(t *testing.T) {
 			field: goodTCPContainerProbe(),
 			want:  nil,
 		},
+		"multiple probe handlers invalid": {
+			field: &corev1.Probe{
+				ProbeHandler: corev1.ProbeHandler{
+
+					HTTPGet: &corev1.HTTPGetAction{
+						Path: "/",
+					},
+					TCPSocket: &corev1.TCPSocketAction{},
+				},
+			},
+			want: apis.ErrMultipleOneOf("tcpSocket", "httpGet"),
+		},
 		"exec not allowed": {
 			field: badContainerProbe(),
 			want:  apis.ErrDisallowedFields("exec"),

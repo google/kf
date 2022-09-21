@@ -1,0 +1,26 @@
+applications:
+- name: slowpoke
+  env:
+    BIND_DELAY: "10"
+    HEALTH_DELAY: "20"
+    HEALTH_PROBE_LATENCY: "5"
+  startupProbe:
+    initialDelaySeconds: 1
+    successThreshold: 1
+    failureThreshold: 5
+    periodSeconds: 2
+    tcpSocket: {}
+  livenessProbe:
+    failureThreshold: 2
+    successThreshold: 1
+    periodSeconds: 10
+    httpGet:
+      path: "/"
+    timeoutSeconds: 6
+  readinessProbe:
+    failureThreshold: 10
+    successThreshold: 1
+    periodSeconds: 1
+    httpGet:
+      path: "/"
+    timeoutSeconds: 6

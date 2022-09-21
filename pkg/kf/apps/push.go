@@ -140,7 +140,7 @@ func (p *pusher) Push(ctx context.Context, appName string, opts ...PushOption) e
 	}
 
 	// Bind declared services to the App.
-	if err := p.ReconcileBindings(ctx, appName, opts...); err != nil {
+	if err := p.ReconcileBindings(ctx, appName, app, opts...); err != nil {
 		return err
 	}
 
@@ -306,7 +306,7 @@ func (p *pusher) CreatePlaceholderApp(ctx context.Context, appName string, opts 
 }
 
 // ReconcileBindings binds services declared in a manifest to the given App.
-func (p *pusher) ReconcileBindings(ctx context.Context, appName string, opts ...PushOption) error {
+func (p *pusher) ReconcileBindings(ctx context.Context, appName string, app *v1alpha1.App, opts ...PushOption) error {
 	cfg := PushOptionDefaults().Extend(opts).toConfig()
 	logger := logging.FromContext(ctx)
 
@@ -320,7 +320,15 @@ func (p *pusher) ReconcileBindings(ctx context.Context, appName string, opts ...
 		switch {
 		case apierrs.IsNotFound(err):
 			logger.Infof("Creating binding for ServiceInstance %q...", desiredBinding.Spec.InstanceRef.Name)
+
+			desiredInstanceBindingOwnerReferences := []metav1.OwnerReference{
+				*kmeta.NewControllerRef(app),
+			}
+
+			desiredBinding.ObjectMeta.OwnerReferences = desiredInstanceBindingOwnerReferences
+
 			newBinding, err := p.bindingsClient.Create(ctx, desiredBinding.GetNamespace(), &desiredBinding)
+
 			if err != nil {
 				return fmt.Errorf("failed to create ServiceInstanceBinding: %s", err)
 			}

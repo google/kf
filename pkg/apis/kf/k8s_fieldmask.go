@@ -44,6 +44,7 @@ func containerMask(in corev1.Container) (out corev1.Container) {
 	out.Resources = in.Resources
 	out.LivenessProbe = in.LivenessProbe
 	out.ReadinessProbe = in.ReadinessProbe
+	out.StartupProbe = in.StartupProbe
 
 	// Explicitly disallowed fields.
 	// These are optional, but provided here for clarity.

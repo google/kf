@@ -218,18 +218,19 @@ func TestApplication_ToAppSpecInstances(t *testing.T) {
 	}
 }
 
-func TestApplication_ToHealthCheck(t *testing.T) {
+func TestApplication_ToStartupHealthCheck(t *testing.T) {
 	cases := map[string]struct {
-		checkType string
-		endpoint  string
-		timeout   int
+		checkType         string
+		endpoint          string
+		timeout           int
+		invocationTimeout int
 
 		expectProbe *corev1.Probe
 		expectErr   error
 	}{
 		"invalid type": {
 			checkType: "foo",
-			expectErr: errors.New("unknown health check type foo, supported types are http and port"),
+			expectErr: errors.New("unknown health check type foo"),
 		},
 		"process type": {
 			checkType:   "process",
@@ -240,12 +241,15 @@ func TestApplication_ToHealthCheck(t *testing.T) {
 			expectProbe: nil,
 		},
 		"http complete": {
-			checkType: "http",
-			endpoint:  "/healthz",
-			timeout:   180,
+			checkType:         "http",
+			endpoint:          "/healthz",
+			timeout:           99,
+			invocationTimeout: 22,
 			expectProbe: &corev1.Probe{
-				TimeoutSeconds:   int32(180),
+				TimeoutSeconds:   int32(22),
 				SuccessThreshold: 1,
+				FailureThreshold: 50, // ceil(99/2)
+				PeriodSeconds:    2,
 				ProbeHandler: corev1.ProbeHandler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Path: "/healthz",
@@ -256,7 +260,10 @@ func TestApplication_ToHealthCheck(t *testing.T) {
 		"http default": {
 			checkType: "http",
 			expectProbe: &corev1.Probe{
+				TimeoutSeconds:   1,
 				SuccessThreshold: 1,
+				FailureThreshold: 30, // ceil(60/2)
+				PeriodSeconds:    2,
 				ProbeHandler: corev1.ProbeHandler{
 					HTTPGet: &corev1.HTTPGetAction{},
 				},
@@ -264,7 +271,10 @@ func TestApplication_ToHealthCheck(t *testing.T) {
 		},
 		"blank type uses port": {
 			expectProbe: &corev1.Probe{
+				TimeoutSeconds:   1,
 				SuccessThreshold: 1,
+				FailureThreshold: 30, // ceil(60/2)
+				PeriodSeconds:    2,
 				ProbeHandler: corev1.ProbeHandler{
 					TCPSocket: &corev1.TCPSocketAction{},
 				},
@@ -275,11 +285,14 @@ func TestApplication_ToHealthCheck(t *testing.T) {
 			expectErr: errors.New("health check timeouts can't be negative"),
 		},
 		"port complete": {
-			checkType: "port",
-			timeout:   180,
+			checkType:         "port",
+			timeout:           180,
+			invocationTimeout: 22,
 			expectProbe: &corev1.Probe{
-				TimeoutSeconds:   int32(180),
+				TimeoutSeconds:   22,
 				SuccessThreshold: 1,
+				FailureThreshold: 90, // ceil(180/2)
+				PeriodSeconds:    2,
 				ProbeHandler: corev1.ProbeHandler{
 					TCPSocket: &corev1.TCPSocketAction{},
 				},
@@ -288,7 +301,10 @@ func TestApplication_ToHealthCheck(t *testing.T) {
 		"port default": {
 			checkType: "port",
 			expectProbe: &corev1.Probe{
+				TimeoutSeconds:   1,
 				SuccessThreshold: 1,
+				FailureThreshold: 30, // ceil(60/2)
+				PeriodSeconds:    2,
 				ProbeHandler: corev1.ProbeHandler{
 					TCPSocket: &corev1.TCPSocketAction{},
 				},
@@ -304,12 +320,126 @@ func TestApplication_ToHealthCheck(t *testing.T) {
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
 			app := Application{
-				HealthCheckType:         tc.checkType,
-				HealthCheckHTTPEndpoint: tc.endpoint,
-				HealthCheckTimeout:      tc.timeout,
+				HealthCheckType:              tc.checkType,
+				HealthCheckHTTPEndpoint:      tc.endpoint,
+				HealthCheckTimeout:           tc.timeout,
+				HealthCheckInvocationTimeout: tc.invocationTimeout,
 			}
 
-			actualProbe, actualErr := app.ToHealthCheck()
+			actualProbe, actualErr := app.ToStartupHealthCheck()
+
+			testutil.AssertErrorsEqual(t, tc.expectErr, actualErr)
+			testutil.AssertEqual(t, "probe", tc.expectProbe, actualProbe)
+		})
+	}
+}
+
+func TestApplication_ToPostStartupHealthCheck(t *testing.T) {
+	cases := map[string]struct {
+		checkType         string
+		endpoint          string
+		timeout           int
+		invocationTimeout int
+
+		expectProbe *corev1.Probe
+		expectErr   error
+	}{
+		"invalid type": {
+			checkType: "foo",
+			expectErr: errors.New("unknown health check type foo"),
+		},
+		"process type": {
+			checkType:   "process",
+			expectProbe: nil,
+		},
+		"none is process type": {
+			checkType:   "none",
+			expectProbe: nil,
+		},
+		"http complete": {
+			checkType:         "http",
+			endpoint:          "/healthz",
+			invocationTimeout: 22,
+			expectProbe: &corev1.Probe{
+				TimeoutSeconds:   int32(22),
+				SuccessThreshold: 1,
+				FailureThreshold: 1,
+				PeriodSeconds:    30,
+				ProbeHandler: corev1.ProbeHandler{
+					HTTPGet: &corev1.HTTPGetAction{
+						Path: "/healthz",
+					},
+				},
+			},
+		},
+		"http default": {
+			checkType: "http",
+			expectProbe: &corev1.Probe{
+				TimeoutSeconds:   1,
+				SuccessThreshold: 1,
+				FailureThreshold: 1,
+				PeriodSeconds:    30,
+				ProbeHandler: corev1.ProbeHandler{
+					HTTPGet: &corev1.HTTPGetAction{},
+				},
+			},
+		},
+		"blank type uses port": {
+			expectProbe: &corev1.Probe{
+				TimeoutSeconds:   1,
+				SuccessThreshold: 1,
+				FailureThreshold: 1,
+				PeriodSeconds:    30,
+				ProbeHandler: corev1.ProbeHandler{
+					TCPSocket: &corev1.TCPSocketAction{},
+				},
+			},
+		},
+		"negative timeout": {
+			invocationTimeout: -1,
+			expectErr:         errors.New("health check invocation timeouts can't be negative"),
+		},
+		"port complete": {
+			checkType:         "port",
+			invocationTimeout: 180,
+			expectProbe: &corev1.Probe{
+				TimeoutSeconds:   int32(180),
+				SuccessThreshold: 1,
+				FailureThreshold: 1,
+				PeriodSeconds:    30,
+				ProbeHandler: corev1.ProbeHandler{
+					TCPSocket: &corev1.TCPSocketAction{},
+				},
+			},
+		},
+		"port default": {
+			checkType: "port",
+			expectProbe: &corev1.Probe{
+				TimeoutSeconds:   1,
+				SuccessThreshold: 1,
+				FailureThreshold: 1,
+				PeriodSeconds:    30,
+				ProbeHandler: corev1.ProbeHandler{
+					TCPSocket: &corev1.TCPSocketAction{},
+				},
+			},
+		},
+		"port with endpoint": {
+			checkType: "port",
+			endpoint:  "/healthz",
+			expectErr: errors.New("health check endpoints can only be used with http checks"),
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			app := Application{
+				HealthCheckType:              tc.checkType,
+				HealthCheckHTTPEndpoint:      tc.endpoint,
+				HealthCheckInvocationTimeout: tc.invocationTimeout,
+			}
+
+			actualProbe, actualErr := app.ToPostStartupHealthCheck()
 
 			testutil.AssertErrorsEqual(t, tc.expectErr, actualErr)
 			testutil.AssertEqual(t, "probe", tc.expectProbe, actualProbe)
@@ -319,15 +449,32 @@ func TestApplication_ToHealthCheck(t *testing.T) {
 
 func TestApplication_ToContainer(t *testing.T) {
 	defaultHealthCheck := &corev1.Probe{
+		TimeoutSeconds:   1,
+		PeriodSeconds:    30,
 		SuccessThreshold: 1,
+		FailureThreshold: 1,
 		ProbeHandler: corev1.ProbeHandler{
 			TCPSocket: &corev1.TCPSocketAction{},
 		},
 	}
-	httpHealthCheck := &corev1.Probe{
-		SuccessThreshold: 1,
+	defaultStartupProbe := &corev1.Probe{
 		ProbeHandler: corev1.ProbeHandler{
-			HTTPGet: &corev1.HTTPGetAction{},
+			TCPSocket: &corev1.TCPSocketAction{},
+		},
+		TimeoutSeconds:   1,
+		PeriodSeconds:    2,
+		SuccessThreshold: 1,
+		FailureThreshold: 30,
+	}
+	httpHealthCheck := &corev1.Probe{
+		TimeoutSeconds:   22,
+		PeriodSeconds:    30,
+		SuccessThreshold: 1,
+		FailureThreshold: 1,
+		ProbeHandler: corev1.ProbeHandler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/healthz",
+			},
 		},
 	}
 
@@ -345,6 +492,7 @@ func TestApplication_ToContainer(t *testing.T) {
 			expectContainer: corev1.Container{
 				ReadinessProbe: defaultHealthCheck,
 				LivenessProbe:  defaultHealthCheck,
+				StartupProbe:   defaultStartupProbe,
 			},
 		},
 		"bad resource requests": {
@@ -359,14 +507,17 @@ func TestApplication_ToContainer(t *testing.T) {
 				HealthCheckType: "NOT ALLOWED",
 			},
 			runtimeConfig: defaultRuntimeConfig,
-			expectErr:     errors.New("unknown health check type NOT ALLOWED, supported types are http and port"),
+			expectErr:     errors.New("unknown health check type NOT ALLOWED"),
 		},
 		"full manifest": {
 			app: Application{
-				HealthCheckType: "http",
-				Memory:          "30M",
-				DiskQuota:       "1Gi",
-				Env:             map[string]string{"KEYMASTER": "GATEKEEPER"},
+				HealthCheckTimeout:           180,
+				HealthCheckType:              "http",
+				HealthCheckHTTPEndpoint:      "/healthz",
+				HealthCheckInvocationTimeout: 22,
+				Memory:                       "30M",
+				DiskQuota:                    "1Gi",
+				Env:                          map[string]string{"KEYMASTER": "GATEKEEPER"},
 				KfApplicationExtension: KfApplicationExtension{
 					Args:       []string{"foo", "bar"},
 					Entrypoint: "bash",
@@ -382,6 +533,17 @@ func TestApplication_ToContainer(t *testing.T) {
 				Command:        []string{"bash"},
 				ReadinessProbe: httpHealthCheck,
 				LivenessProbe:  httpHealthCheck,
+				StartupProbe: &corev1.Probe{
+					TimeoutSeconds:   22,
+					PeriodSeconds:    2,
+					SuccessThreshold: 1,
+					FailureThreshold: int32(180 / 2),
+					ProbeHandler: corev1.ProbeHandler{
+						HTTPGet: &corev1.HTTPGetAction{
+							Path: "/healthz",
+						},
+					},
+				},
 				Env: []corev1.EnvVar{
 					{Name: "KEYMASTER", Value: "GATEKEEPER"},
 				},

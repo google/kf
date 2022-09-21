@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/kf/v2/pkg/apis/kf"
 	kfapis "github.com/google/kf/v2/pkg/apis/kf"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	v1validation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
@@ -64,6 +65,48 @@ func (app *Application) Validate(ctx context.Context) (errs *apis.FieldError) {
 	for i, route := range app.Routes {
 		if !okRoutePorts.Has(int(route.AppPort)) {
 			errs = errs.Also(apis.ErrInvalidValue("must match a declared port", "appPort").ViaFieldIndex("routes", i))
+		}
+	}
+
+	// Check that the probe fields are mutually exclusive
+	hasCFHealthChecks := app.hasCFHealthCheckFields()
+	hasK8sHealthChecks := app.hasK8sHealthCheckFields()
+
+	switch {
+	case hasCFHealthChecks && hasK8sHealthChecks:
+		errs = errs.Also(&apis.FieldError{Message: "startupProbe, livenessProbe, and readinessProbe can't be used with CF health check fields"})
+	case hasK8sHealthChecks:
+		errs = errs.Also(kf.ValidateContainerProbe(app.StartupProbe).ViaField("startupProbe"))
+		errs = errs.Also(kf.ValidateContainerProbe(app.LivenessProbe).ViaField("livenessProbe"))
+		errs = errs.Also(kf.ValidateContainerProbe(app.ReadinessProbe).ViaField("readinessProbe"))
+	case hasCFHealthChecks:
+		// NOTE: https://docs.cloudfoundry.org/devguide/deploy-apps/healthchecks.html#health_check_timeout
+		// says that officially the max timeout is 180, but checking that would likely be a
+		// major breaking change with Kf because Kf was built before K8s supported startup probes so
+		// longer timeouts were necessary to ensure apps would start.
+
+		if timeout := app.HealthCheckTimeout; timeout < 0 {
+			errs = errs.Also(apis.ErrInvalidValue(timeout, "timeout", "health check timeout can't be negative"))
+		}
+
+		if timeout := app.HealthCheckInvocationTimeout; timeout < 0 {
+			errs = errs.Also(apis.ErrInvalidValue(timeout, "health-check-invocation-timeout", "health check timeout can't be negative"))
+		}
+
+		if app.HealthCheckType != "http" && app.HealthCheckHTTPEndpoint != "" {
+			errs = errs.Also(apis.ErrInvalidValue(
+				app.HealthCheckHTTPEndpoint,
+				"health-check-http-endpoint",
+				`field can only be set if health-check-type is "http"`))
+		}
+
+		allowedHealthCheckTypes := sets.NewString("http", "port", "", "process", "none")
+		if !allowedHealthCheckTypes.Has(app.HealthCheckType) {
+			errs = errs.Also(apis.ErrInvalidValue(
+				app.HealthCheckType,
+				"health-check-type",
+				fmt.Sprintf("valid values are: %q", allowedHealthCheckTypes.List()),
+			))
 		}
 	}
 
