@@ -592,9 +592,9 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 	// Sync start commands, populate container and buildpack start commands in app status.
 	{
 		logger.Debug("reconciling start commands")
-		
+
 		startCommands := app.Status.StartCommands
-		
+
 		containerConfig, err := r.fetchContainerCommand(app)
 		if err != nil {
 			return err
