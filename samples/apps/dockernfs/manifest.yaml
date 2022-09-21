@@ -1,0 +1,5 @@
+applications:
+- name: hello
+  entrypoint: /bin/hello
+  docker:
+    image: gcr.io/kf-source/jlewisiii-hello:v2
