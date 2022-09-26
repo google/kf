@@ -601,34 +601,31 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 	// Sync start commands, populate container and buildpack start commands in app status.
 	{
 		logger.Debug("reconciling start commands")
-
 		startCommands := app.Status.StartCommands
+		if (startCommands.Image == "" || startCommands.Image != app.Status.Image) && app.Status.Image != "" && app.Status.Image != "gcr.io/kf-releases/nop:nop" {
+			startCommands.Image = app.Status.Image
+			containerConfig, err := r.fetchContainerCommand(app)
+			if err != nil {
+				startCommands.Error = err.Error()
+			}
 
-		containerConfig, err := r.fetchContainerCommand(app)
-		if err != nil {
-			return err
-		}
-
-		if app.Spec.Build.Image != nil {
 			startCommands.Container = containerConfig.Config.Entrypoint
-		} else {
-			buildName := app.Status.BuildStatusFields.BuildName
 
-			buildConfig, err := r.buildLister.Builds(app.GetNamespace()).Get(buildName)
+			app.Status.PropagateStartCommandStatus(startCommands)
+		}
+		if app.Status.BuildStatusFields.BuildName != "" && startCommands.Buildpack == nil {
+			containerConfig, err := r.fetchContainerCommand(app)
+			buildConfig, err := r.buildLister.Builds(app.GetNamespace()).Get(app.Status.BuildStatusFields.BuildName)
 			if err != nil {
 				return err
 			}
 
-			startCommands.Container = containerConfig.Config.Entrypoint
-
 			if buildConfig.Spec.Name == v1alpha1.BuildpackV2BuildTaskName {
 				startCommands.Buildpack = []string{containerConfig.Config.Labels["StartCommand"]}
 			}
+			app.Status.PropagateStartCommandStatus(startCommands)
 		}
-
-		app.Status.PropagateStartCommandStatus(startCommands)
 	}
-
 	return nil
 }
 

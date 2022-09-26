@@ -416,6 +416,8 @@ type AppStatus struct {
 type StartCommandStatus struct {
 	Container []string `json:"container,omitempty"`
 	Buildpack []string `json:"buildpack,omitempty"`
+	Image     string   `json:"image,omitempty"`
+	Error     string   `json:"error,omitempty"`
 }
 
 // AppVolumeStatus contains the status of mounted volume.
