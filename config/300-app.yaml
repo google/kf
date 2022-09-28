@@ -4299,6 +4299,12 @@ spec:
                       type: array
                       items:
                         type: string
+                    image:
+                      description: Image is the latest image used to start a container.
+                      type: string
+                    error:
+                      description: Error is the error message if the start command returns an error.
+                      type: string
       additionalPrinterColumns:
         - name: Instances
           type: string
