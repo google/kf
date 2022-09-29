@@ -21,6 +21,7 @@
 #     instances:
 #       labelSelector: ""
 #     serviceBindingConditions: null
+#     startCommands: {}
 #     tasks:
 #       updateRequests: 0
 

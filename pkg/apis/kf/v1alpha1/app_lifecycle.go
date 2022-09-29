@@ -61,6 +61,11 @@ func (status *AppStatus) PropagateADXBuildStatus(u *unstructured.Unstructured) e
 	return nil
 }
 
+// PropagateStartCommandStatus updates the start command status from the app
+func (status *AppStatus) PropagateStartCommandStatus(sc StartCommandStatus) {
+	status.StartCommands = sc
+}
+
 // PropagateInstanceStatus updates the effective instance status from the app
 func (status *AppStatus) PropagateInstanceStatus(is InstanceStatus) {
 	status.Instances = is

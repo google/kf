@@ -18,6 +18,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/google/go-containerregistry/pkg/name"
+	containerregistryv1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/kf/v2/pkg/dockerutil"
 	"math"
 	"reflect"
 	"sort"
@@ -50,6 +54,10 @@ import (
 var (
 	restageNeededErr        = errors.New("a restage is needed to reflect the latest build settings")
 	adxBuildNotInstalledErr = errors.New("ADX builds is not installed however BuildRef is set. This could be that the controller pod needs to be restarted")
+)
+
+const (
+	DefaultPlaceHolderBuildImage = "gcr.io/kf-releases/nop:nop"
 )
 
 type Reconciler struct {
@@ -594,7 +602,57 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		app.Status.PropagateInstanceStatus(instanceStatus)
 	}
 
+	// Sync start commands, populate container and buildpack start commands in app status.
+	{
+		logger.Debug("reconciling start commands")
+		startCommands := app.Status.StartCommands
+		if startCommands.Image != app.Status.Image && app.Status.Image != DefaultPlaceHolderBuildImage {
+			startCommands.Image = app.Status.Image
+			containerConfig, err := r.fetchContainerCommand(app)
+			if err != nil {
+				startCommands.Error = err.Error()
+			}
+
+			if app.Spec.Build.Image != nil {
+				startCommands.Container = containerConfig.Config.Entrypoint
+			} else {
+				buildName := app.Status.BuildStatusFields.BuildName
+
+				buildConfig, err := r.buildLister.Builds(app.GetNamespace()).Get(buildName)
+				if err != nil {
+					return err
+				}
+
+				startCommands.Container = containerConfig.Config.Entrypoint
+
+				if buildConfig.Spec.Name == v1alpha1.BuildpackV2BuildTaskName {
+					startCommands.Buildpack = []string{containerConfig.Config.Labels["StartCommand"]}
+				}
+			}
+
+			app.Status.PropagateStartCommandStatus(startCommands)
+		}
+	}
 	return nil
+}
+
+func (r *Reconciler) fetchContainerCommand(app *v1alpha1.App) (*containerregistryv1.ConfigFile, error) {
+	imageRef, err := name.ParseReference(app.Status.Image, name.WeakValidation)
+	if err != nil {
+		return nil, err
+	}
+
+	img, err := remote.Image(imageRef, dockerutil.GetAuthKeyChain())
+	if err != nil {
+		return nil, err
+	}
+
+	configFile, err := img.ConfigFile()
+	if err != nil {
+		return nil, err
+	}
+
+	return configFile, nil
 }
 
 func (r *Reconciler) reconcileRoute(

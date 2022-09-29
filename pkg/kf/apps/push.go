@@ -237,12 +237,21 @@ func (p *pusher) Push(ctx context.Context, appName string, opts ...PushOption) e
 		return fmt.Errorf("App deployed, but couldn't fetch final status: %s", err)
 	}
 
+	var startCmd []string
+
+	if finalApp.Status.StartCommands.Buildpack != nil {
+		startCmd = finalApp.Status.StartCommands.Buildpack
+	} else {
+		startCmd = finalApp.Status.StartCommands.Container
+	}
+
 	// Show enough info to start using the App.
 	describe.TabbedWriter(cfg.Output, func(w io.Writer) {
 		fmt.Fprintf(w, "Name:\t%s\n", finalApp.Name)
 		fmt.Fprintf(w, "Space:\t%s\n", finalApp.Namespace)
 		fmt.Fprintf(w, "Routes:\t%v\n", finalApp.Status.URLs)
 		fmt.Fprintf(w, "Instances:\t%s\n", finalApp.Status.Instances.Representation)
+		fmt.Fprintf(w, "Start command:\t%v\n", startCmd)
 	})
 
 	return nil
