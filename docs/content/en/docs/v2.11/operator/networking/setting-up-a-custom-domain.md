@@ -19,16 +19,16 @@ The `config-defaults` ConfigMap holds cluster-wide settings for Kf and can be ed
 The values in the ConfigMap are read by the Spaces controller and modify their configuration.
 Domain values are reflected in the Space's `status.networkConfig.domains` field.
 
-To modify Kf cluster's domain, edit the `config-defaults` ConfigMap in the `kf` Namespace:
+To modify Kf cluster's domain, edit the `kfsystem`, the operator will then popluate the change to `config-defaults` configmap under `kf` namespace:
 
 ```sh
-kubectl edit configmap config-defaults -n kf
+kubectl edit kfsystem
 ```
 
-Add or update the entry for the `spaceClusterDomain` key like the following:
+Add or update the entry for the `spaceClusterDomains` key under `spec/kf/config` like the following:
 
 ```yaml 
-spaceClusterDomain: my-domain.com
+spaceClusterDomains: my-domain.com
 ```
 
 To validate the configuration was updated correctly, check the domain value in a Space:
@@ -48,7 +48,7 @@ Each Space prefixes the cluster domains with its own name.
 This prevents conflicts between Apps.
 
 {{< warning >}}
-Updating the `spaceClusterDomain` in `config-defaults` will immediately be
+Updating the `spaceClusterDomains` in `config-defaults` will immediately be
 reflected on all Spaces and Apps that haven't overridden the domain.
 {{< /warning >}}
 
