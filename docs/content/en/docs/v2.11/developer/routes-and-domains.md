@@ -95,7 +95,7 @@ Developers can make their App accessible on a Route using the `kf map-route`
 command.
 
 ```.sh
-$ kf map-route MYAPP mycluster.example.com --host myapp --path mypath
+$ kf map-route MYAPP mycluster.example.com --hostname myapp --path mypath
 ```
 
 {{< note >}} `map-route` creates the Route if it doesn't exist yet.{{< /note >}}
@@ -106,7 +106,7 @@ Developers can remove their App from being accessible on a Route using the `kf
 unmap-route` command.
 
 ```.sh
-$ kf unmap-route MYAPP mycluster.example.com --host myapp --path mypath
+$ kf unmap-route MYAPP mycluster.example.com --hostname myapp --path mypath
 ```
 
 ### Delete a route
@@ -114,7 +114,7 @@ $ kf unmap-route MYAPP mycluster.example.com --host myapp --path mypath
 Developers can delete a Route using the `kf delete-route` command.
 
 ```.sh
-$ kf delete-route mycluster.example.com --host myapp --path mypath
+$ kf delete-route mycluster.example.com --hostname myapp --path mypath
 ```
 
 Deleting a Route will stop traffic from being routed to all Apps listening on
