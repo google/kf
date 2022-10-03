@@ -25,7 +25,7 @@ To modify Kf cluster's domain, edit the `kfsystem`, the operator will then poplu
 kubectl edit kfsystem
 ```
 
-Add or update the entry for the `spaceClusterDomains` key under `spec/kf/config` like the following:
+Add or update the entry for the `spaceClusterDomains` key under `spec.kf.config` like the following:
 
 ```yaml 
 spaceClusterDomains: my-domain.com
