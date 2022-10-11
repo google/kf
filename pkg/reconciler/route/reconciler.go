@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/google/kf/v2/pkg/apis/kf/config"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	networking "github.com/google/kf/v2/pkg/apis/networking/v1alpha3"
 	kflisters "github.com/google/kf/v2/pkg/client/kf/listers/kf/v1alpha1"
@@ -47,6 +48,8 @@ type Reconciler struct {
 	appLister                    kflisters.AppLister
 	spaceLister                  kflisters.SpaceLister
 	serviceInstanceBindingLister kflisters.ServiceInstanceBindingLister
+
+	kfConfigStore *config.Store
 }
 
 // Check that our Reconciler implements controller.Reconciler
@@ -55,6 +58,7 @@ var _ controller.Reconciler = (*Reconciler)(nil)
 // Reconcile is called by knative/pkg when a new event is observed by one of the
 // watchers in the controller.
 func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
+	ctx = r.kfConfigStore.ToContext(ctx)
 	namespace, domain, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		return err
@@ -207,7 +211,14 @@ func (r *Reconciler) ApplyChanges(
 		// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/controllers.md
 		toReconcile.Status.ObservedGeneration = toReconcile.Generation
 
-		toReconcile.Status.PropagateVirtualService(actualVS, sErr)
+		configDefaults, err := config.FromContext(ctx).Defaults()
+		if err != nil {
+			return fmt.Errorf("failed to read config-defaults: %v", err)
+		}
+
+		shouldTrackVirtualService := configDefaults.RouteTrackVirtualService
+
+		toReconcile.Status.PropagateVirtualService(actualVS, sErr, shouldTrackVirtualService)
 		toReconcile.Status.PropagateRouteSpecFields(origRoute.Spec.RouteSpecFields)
 
 		rsfString := toReconcile.Spec.RouteSpecFields.String()

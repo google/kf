@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 
+	config "github.com/google/kf/v2/pkg/apis/kf/config"
 	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	networking "github.com/google/kf/v2/pkg/apis/networking/v1alpha3"
 	appinformer "github.com/google/kf/v2/pkg/client/kf/injection/informers/kf/v1alpha1/app"
@@ -46,6 +47,10 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	spaceInformer := spaceinformer.Get(ctx)
 	serviceInstanceBindingInformer := serviceinstancebindinginformer.Get(ctx)
 
+	// Setting up ConfigMap receivers
+	kfConfigStore := config.NewStore(logger.Named("kf-config-store"))
+	kfConfigStore.WatchConfigs(cmw)
+
 	// Create reconciler
 	c := &Reconciler{
 		Base:                         reconciler.NewBase(ctx, cmw),
@@ -55,6 +60,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		virtualServiceLister:         vsInformer.Lister(),
 		networkingClientSet:          networkingclient.Get(ctx),
 		serviceInstanceBindingLister: serviceInstanceBindingInformer.Lister(),
+		kfConfigStore:                kfConfigStore,
 	}
 
 	impl := controller.NewContext(ctx, c, controller.ControllerOptions{WorkQueueName: "Routes", Logger: logger})

@@ -50,6 +50,7 @@ func TestPatchConfigMap(t *testing.T) {
 		appCPUPerGBOfRAMKey,
 		progressDeadlineSecondsKey,
 		terminationGracePeriodSecondsKey,
+		routeTrackVirtualServiceKey,
 	}
 	_, configMap := cmtesting.ConfigMapsFromTestFile(t, DefaultsConfigTestName, allowedPredefinedKey...)
 	// sanity check the configmap, add more assertions below when new fields
