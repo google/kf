@@ -35,6 +35,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/controller"
 	"knative.dev/pkg/logging"
+	pkgreconciler "knative.dev/pkg/reconciler"
 )
 
 // Reconciler reconciles a Route object with the K8s cluster.
@@ -49,7 +50,7 @@ type Reconciler struct {
 	spaceLister                  kflisters.SpaceLister
 	serviceInstanceBindingLister kflisters.ServiceInstanceBindingLister
 
-	kfConfigStore *config.Store
+	kfConfigStore pkgreconciler.ConfigStore
 }
 
 // Check that our Reconciler implements controller.Reconciler
@@ -58,7 +59,6 @@ var _ controller.Reconciler = (*Reconciler)(nil)
 // Reconcile is called by knative/pkg when a new event is observed by one of the
 // watchers in the controller.
 func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
-	ctx = r.kfConfigStore.ToContext(ctx)
 	namespace, domain, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		return err
@@ -89,6 +89,7 @@ func (r *Reconciler) ApplyChanges(
 	domain string,
 ) error {
 	logger := logging.FromContext(ctx)
+	ctx = r.kfConfigStore.ToContext(ctx)
 
 	// Check that the domain is valid for the Space
 	var spaceDomain *v1alpha1.SpaceDomain

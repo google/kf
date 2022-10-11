@@ -21,6 +21,7 @@ import (
 	"time"
 
 	gomock "github.com/golang/mock/gomock"
+	"github.com/google/kf/v2/pkg/apis/kf/config"
 	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/apis/networking/v1alpha3"
 	"github.com/google/kf/v2/pkg/kf/testutil"
@@ -31,6 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
+	pkgreconciler "knative.dev/pkg/reconciler"
 )
 
 //go:generate mockgen --package=route --copyright_file ../../kf/internal/tools/option-builder/LICENSE_HEADER --destination=fake_listers.go --mock_names=RouteLister=FakeRouteLister,RouteNamespaceLister=FakeRouteNamespaceLister,AppLister=FakeAppLister,AppNamespaceLister=FakeAppNamespaceLister,SpaceLister=FakeSpaceLister,ServiceInstanceBindingLister=FakeServiceInstanceBindingLister,ServiceInstanceBindingNamespaceLister=FakeServiceInstanceBindingNamespaceLister github.com/google/kf/v2/pkg/client/kf/listers/kf/v1alpha1 RouteLister,RouteNamespaceLister,AppLister,AppNamespaceLister,SpaceLister,ServiceInstanceBindingLister,ServiceInstanceBindingNamespaceLister
@@ -40,6 +42,17 @@ import (
 //go:generate mockgen --package=route --copyright_file ../../kf/internal/tools/option-builder/LICENSE_HEADER --destination=fake_kf.go --mock_names=Interface=FakeKfInterface github.com/google/kf/v2/pkg/client/kf/clientset/versioned Interface
 //go:generate mockgen --package=route --copyright_file ../../kf/internal/tools/option-builder/LICENSE_HEADER --destination=fake_kf_v1alpha1.go --mock_names=KfV1alpha1Interface=FakeKfAlpha1Interface,RouteInterface=FakeRouteInterface github.com/google/kf/v2/pkg/client/kf/clientset/versioned/typed/kf/v1alpha1 KfV1alpha1Interface,RouteInterface
 //go:generate mockgen --package=route --copyright_file ../../kf/internal/tools/option-builder/LICENSE_HEADER --destination=fake_networking_listers.go --mock_names=VirtualServiceLister=FakeVirtualServiceLister,VirtualServiceNamespaceLister=FakeVirtualServiceNamespaceLister github.com/google/kf/v2/pkg/client/networking/listers/networking/v1alpha3 VirtualServiceLister,VirtualServiceNamespaceLister
+
+type testConfigStore struct {
+	config *config.DefaultsConfig
+}
+
+func (t *testConfigStore) ToContext(ctx context.Context) context.Context {
+	return config.ToContextForTest(ctx, config.CreateConfigForTest(t.config))
+}
+
+var _ pkgreconciler.ConfigStore = (*testConfigStore)(nil)
+
 func TestReconciler_Reconcile_badKey(t *testing.T) {
 	t.Parallel()
 
@@ -618,6 +631,9 @@ func TestReconciler_Reconcile_ApplyChanges(t *testing.T) {
 				appLister:                    fakeAppLister,
 				spaceLister:                  fakeSpaceLister,
 				serviceInstanceBindingLister: fakeServiceInstanceBindingLister,
+				kfConfigStore: &testConfigStore{&config.DefaultsConfig{
+					RouteTrackVirtualService: true,
+				}},
 			}
 
 			err := r.ApplyChanges(
