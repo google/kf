@@ -4,11 +4,11 @@ description: "Learn to set resources on apps."
 weight: 20
 ---
 
-When you create an app, you can optionallyl specify how much of each resource each instance
+When you create an app, you can optionally specify how much of each resource an instance
 of the application will receive when it runs.
 
 Kf simplifies the Kubernetes model of resources and provides defaults that should work for
-most I/O bound appliations out of the box.
+most I/O bound applications out of the box.
 
 ## Resource types
 
@@ -44,7 +44,7 @@ applications:
 
 Memory and ephemeral storage are both set to 1Gi if not specified.
 
-CPU defautls to one of the following
+CPU defaults to one of the following
 
 * 1/10th of a CPU if the platform operator hasn't overridden it.
 * A CPU value proportionally scaled by the amount of memory requested.

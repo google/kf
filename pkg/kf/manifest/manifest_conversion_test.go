@@ -116,7 +116,7 @@ func TestApplication_ToResourceRequirements(t *testing.T) {
 			runtimeConfig: defaultRuntimeConfig,
 			expectedReqs:  &corev1.ResourceRequirements{},
 		},
-		"min CPU mone specified": {
+		"min CPU none specified": {
 			source: Application{},
 			runtimeConfig: &v1alpha1.SpaceStatusRuntimeConfig{
 				AppCPUMin: resourcePtr(resource.MustParse("2000m")),
@@ -231,7 +231,7 @@ func TestApplication_ToResourceRequirements(t *testing.T) {
 			},
 			expectedErr: errors.New(`cpu-limit: "1m" must be greater than request: "256m"`),
 		},
-		"just cpu-limit ": {
+		"just cpu-limit": {
 			source: Application{
 				KfApplicationExtension: KfApplicationExtension{
 					CPULimit: "5000m",
