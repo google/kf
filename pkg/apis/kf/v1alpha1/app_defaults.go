@@ -26,11 +26,11 @@ import (
 
 var (
 	DefaultMem     = resource.MustParse("1Gi")
-	DefaultStorage = resource.MustParse("1Gi")
+	defaultStorage = resource.MustParse("1Gi")
 
 	// CPU isn't defaulted in Cloud Foundry so we assume apps are I/O bound
 	// and roughly 10 should run on a single core machine.
-	DefaultCPU = resource.MustParse("100m")
+	defaultCPU = resource.MustParse("100m")
 )
 
 const (
@@ -175,11 +175,11 @@ func SetKfAppContainerDefaults(_ context.Context, container *corev1.Container) {
 	}
 
 	if _, exists := container.Resources.Requests[corev1.ResourceEphemeralStorage]; !exists {
-		container.Resources.Requests[corev1.ResourceEphemeralStorage] = DefaultStorage
+		container.Resources.Requests[corev1.ResourceEphemeralStorage] = defaultStorage
 	}
 
 	if _, exists := container.Resources.Requests[corev1.ResourceCPU]; !exists {
-		container.Resources.Requests[corev1.ResourceCPU] = DefaultCPU
+		container.Resources.Requests[corev1.ResourceCPU] = defaultCPU
 	}
 
 	// Set limits if they've not been set for a value.

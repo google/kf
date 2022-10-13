@@ -226,11 +226,11 @@ func TestSetKfAppContainerDefaults(t *testing.T) {
 				Resources: corev1.ResourceRequirements{
 					Requests: corev1.ResourceList{
 						corev1.ResourceCPU:              defaultCPU,
-						corev1.ResourceMemory:           defaultMem,
+						corev1.ResourceMemory:           DefaultMem,
 						corev1.ResourceEphemeralStorage: defaultStorage,
 					},
 					Limits: corev1.ResourceList{
-						corev1.ResourceMemory:           defaultMem,
+						corev1.ResourceMemory:           DefaultMem,
 						corev1.ResourceEphemeralStorage: defaultStorage,
 					},
 				},
