@@ -75,7 +75,7 @@ your application.
 ## Best practices
 
 * All applications should set memory and disk quotas.
-* CPU intensive applications should set a CPU and limit to guarantee they'll have the resources they need without
+* CPU intensive applications should set a CPU request and limit to guarantee they'll have the resources they need without
   starving other apps.
 * I/O bound applications shouldn't set a CPU limit so they can burst during startup.
 
