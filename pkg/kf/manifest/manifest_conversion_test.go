@@ -30,13 +30,13 @@ func resourcePtr(qty resource.Quantity) *resource.Quantity {
 	return &qty
 }
 
-func TestApplication_ToResourceRequests(t *testing.T) {
+func TestApplication_ToResourceRequirements(t *testing.T) {
 	defaultRuntimeConfig := &v1alpha1.SpaceStatusRuntimeConfig{}
 
 	cases := map[string]struct {
 		source        Application
 		runtimeConfig *v1alpha1.SpaceStatusRuntimeConfig
-		expectedList  corev1.ResourceList
+		expectedReqs  *corev1.ResourceRequirements
 		expectedErr   error
 	}{
 		"full": {
@@ -44,14 +44,22 @@ func TestApplication_ToResourceRequests(t *testing.T) {
 				Memory:    "30MB", // CF uses X and XB as SI units, these get changed to SI
 				DiskQuota: "1G",
 				KfApplicationExtension: KfApplicationExtension{
-					CPU: "200m",
+					CPU:      "200m",
+					CPULimit: "500m",
 				},
 			},
 			runtimeConfig: defaultRuntimeConfig,
-			expectedList: corev1.ResourceList{
-				corev1.ResourceMemory:           resource.MustParse("30Mi"),
-				corev1.ResourceCPU:              resource.MustParse("200m"),
-				corev1.ResourceEphemeralStorage: resource.MustParse("1Gi"),
+			expectedReqs: &corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceMemory:           resource.MustParse("30Mi"),
+					corev1.ResourceCPU:              resource.MustParse("200m"),
+					corev1.ResourceEphemeralStorage: resource.MustParse("1Gi"),
+				},
+				Limits: corev1.ResourceList{
+					corev1.ResourceMemory:           resource.MustParse("30Mi"),
+					corev1.ResourceCPU:              resource.MustParse("500m"),
+					corev1.ResourceEphemeralStorage: resource.MustParse("1Gi"),
+				},
 			},
 		},
 		"normal cf subset": {
@@ -60,30 +68,64 @@ func TestApplication_ToResourceRequests(t *testing.T) {
 				DiskQuota: "1Gi",
 			},
 			runtimeConfig: defaultRuntimeConfig,
-			expectedList: corev1.ResourceList{
-				corev1.ResourceMemory:           resource.MustParse("30Mi"),
-				corev1.ResourceEphemeralStorage: resource.MustParse("1Gi"),
+			expectedReqs: &corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceMemory:           resource.MustParse("30Mi"),
+					corev1.ResourceEphemeralStorage: resource.MustParse("1Gi"),
+				},
+				Limits: corev1.ResourceList{
+					corev1.ResourceMemory:           resource.MustParse("30Mi"),
+					corev1.ResourceEphemeralStorage: resource.MustParse("1Gi"),
+				},
 			},
 		},
-		"bad quantity": {
+		"bad memory quantity": {
 			source: Application{
 				Memory: "30Y",
 			},
 			runtimeConfig: defaultRuntimeConfig,
-			expectedErr:   errors.New("couldn't parse resource quantity 30Y: quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'"),
+			expectedErr:   errors.New("couldn't parse memory 30Y: quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'"),
+		},
+		"bad cpu quantity": {
+			source: Application{
+				KfApplicationExtension: KfApplicationExtension{
+					CPU: "30Y",
+				},
+			},
+			runtimeConfig: defaultRuntimeConfig,
+			expectedErr:   errors.New("couldn't parse cpu 30Y: quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'"),
+		},
+		"bad cpu-limit quantity": {
+			source: Application{
+				KfApplicationExtension: KfApplicationExtension{
+					CPULimit: "30Y",
+				},
+			},
+			runtimeConfig: defaultRuntimeConfig,
+			expectedErr:   errors.New("couldn't parse cpu-limit 30Y: quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'"),
+		},
+		"bad disk quantity": {
+			source: Application{
+				DiskQuota: "30Y",
+			},
+			runtimeConfig: defaultRuntimeConfig,
+			expectedErr:   errors.New("couldn't parse disk 30Y: quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'"),
 		},
 		"no quotas": {
 			source:        Application{},
 			runtimeConfig: defaultRuntimeConfig,
-			expectedList:  nil, // explicitly want nil rather than the empty map
+			expectedReqs:  &corev1.ResourceRequirements{},
 		},
 		"min CPU mone specified": {
 			source: Application{},
 			runtimeConfig: &v1alpha1.SpaceStatusRuntimeConfig{
 				AppCPUMin: resourcePtr(resource.MustParse("2000m")),
 			},
-			expectedList: corev1.ResourceList{
-				corev1.ResourceCPU: resource.MustParse("2000m"),
+			expectedReqs: &corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU: resource.MustParse("2000m"),
+				},
+				Limits: corev1.ResourceList{},
 			},
 		},
 		"min CPU lesser specified": {
@@ -95,8 +137,11 @@ func TestApplication_ToResourceRequests(t *testing.T) {
 			runtimeConfig: &v1alpha1.SpaceStatusRuntimeConfig{
 				AppCPUMin: resourcePtr(resource.MustParse("2000m")),
 			},
-			expectedList: corev1.ResourceList{
-				corev1.ResourceCPU: resource.MustParse("2000m"),
+			expectedReqs: &corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU: resource.MustParse("2000m"),
+				},
+				Limits: corev1.ResourceList{},
 			},
 		},
 		"default CPU from RAM": {
@@ -106,9 +151,14 @@ func TestApplication_ToResourceRequests(t *testing.T) {
 			runtimeConfig: &v1alpha1.SpaceStatusRuntimeConfig{
 				AppCPUPerGBOfRAM: resourcePtr(resource.MustParse("1")),
 			},
-			expectedList: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("256Mi"),
-				corev1.ResourceCPU:    resource.MustParse(".25"),
+			expectedReqs: &corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceMemory: resource.MustParse("256Mi"),
+					corev1.ResourceCPU:    resource.MustParse(".25"),
+				},
+				Limits: corev1.ResourceList{
+					corev1.ResourceMemory: resource.MustParse("256Mi"),
+				},
 			},
 		},
 		"default CPU from RAM with min": {
@@ -119,9 +169,14 @@ func TestApplication_ToResourceRequests(t *testing.T) {
 				AppCPUPerGBOfRAM: resourcePtr(resource.MustParse("1")),
 				AppCPUMin:        resourcePtr(resource.MustParse(".5")),
 			},
-			expectedList: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("256Mi"),
-				corev1.ResourceCPU:    resource.MustParse(".5"),
+			expectedReqs: &corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceMemory: resource.MustParse("256Mi"),
+					corev1.ResourceCPU:    resource.MustParse(".5"),
+				},
+				Limits: corev1.ResourceList{
+					corev1.ResourceMemory: resource.MustParse("256Mi"),
+				},
 			},
 		},
 		"default CPU doesn't override custom": {
@@ -134,36 +189,134 @@ func TestApplication_ToResourceRequests(t *testing.T) {
 			runtimeConfig: &v1alpha1.SpaceStatusRuntimeConfig{
 				AppCPUPerGBOfRAM: resourcePtr(resource.MustParse("100")),
 			},
-			expectedList: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("256Mi"),
-				corev1.ResourceCPU:    resource.MustParse("200m"),
+			expectedReqs: &corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceMemory: resource.MustParse("256Mi"),
+					corev1.ResourceCPU:    resource.MustParse("200m"),
+				},
+				Limits: corev1.ResourceList{
+					corev1.ResourceMemory: resource.MustParse("256Mi"),
+				},
+			},
+		},
+		"cpu-limit less than cpu": {
+			source: Application{
+				KfApplicationExtension: KfApplicationExtension{
+					CPU:      "500m",
+					CPULimit: "200m",
+				},
+			},
+			runtimeConfig: defaultRuntimeConfig,
+			expectedErr:   errors.New(`cpu-limit: "200m" must be greater than request: "500m"`),
+		},
+		"cpu-limit less than min": {
+			source: Application{
+				KfApplicationExtension: KfApplicationExtension{
+					CPULimit: "1m",
+				},
+			},
+			runtimeConfig: &v1alpha1.SpaceStatusRuntimeConfig{
+				AppCPUMin: resourcePtr(resource.MustParse("256m")),
+			},
+			expectedErr: errors.New(`cpu-limit: "1m" must be greater than request: "256m"`),
+		},
+		"cpu-limit less than calculated": {
+			source: Application{
+				KfApplicationExtension: KfApplicationExtension{
+					CPULimit: "1m",
+				},
+			},
+			runtimeConfig: &v1alpha1.SpaceStatusRuntimeConfig{
+				AppCPUPerGBOfRAM: resourcePtr(resource.MustParse("256m")),
+			},
+			expectedErr: errors.New(`cpu-limit: "1m" must be greater than request: "256m"`),
+		},
+		"just cpu-limit ": {
+			source: Application{
+				KfApplicationExtension: KfApplicationExtension{
+					CPULimit: "5000m",
+				},
+			},
+			runtimeConfig: defaultRuntimeConfig,
+			expectedReqs: &corev1.ResourceRequirements{
+				Requests: nil,
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU: resource.MustParse("5000m"),
+				},
+			},
+		},
+		"cpu-limit with min": {
+			source: Application{
+				KfApplicationExtension: KfApplicationExtension{
+					CPULimit: "5000m",
+				},
+			},
+			runtimeConfig: &v1alpha1.SpaceStatusRuntimeConfig{
+				AppCPUMin: resourcePtr(resource.MustParse("1000m")),
+			},
+			expectedReqs: &corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU: resource.MustParse("1000m"),
+				},
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU: resource.MustParse("5000m"),
+				},
+			},
+		},
+		"cpu-limit with multiplier": {
+			source: Application{
+				KfApplicationExtension: KfApplicationExtension{
+					CPULimit: "5000m",
+				},
+			},
+			runtimeConfig: &v1alpha1.SpaceStatusRuntimeConfig{
+				AppCPUPerGBOfRAM: resourcePtr(resource.MustParse("200m")),
+			},
+			expectedReqs: &corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU: resource.MustParse("200m"),
+				},
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU: resource.MustParse("5000m"),
+				},
 			},
 		},
 	}
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			actualList, actualErr := tc.source.ToResourceRequests(tc.runtimeConfig)
+			actual, actualErr := tc.source.ToResourceRequirements(tc.runtimeConfig)
 
 			testutil.AssertErrorsEqual(t, tc.expectedErr, actualErr)
 
-			expectedKeys := sets.NewString()
-			for k := range tc.expectedList {
-				expectedKeys.Insert(string(k))
-			}
-			actualKeys := sets.NewString()
-			for k := range actualList {
-				actualKeys.Insert(string(k))
-			}
-			testutil.AssertEqual(t, "resource keys", expectedKeys, actualKeys)
-
-			for key, expected := range tc.expectedList {
-				actual := actualList[key]
-				if expected.Cmp(actual) != 0 {
-					t.Errorf("limit[%v] expected: %v actual: %v", key, expected, actual)
-				}
+			if tc.expectedReqs == nil {
+				testutil.AssertEqual(t, "requests", tc.expectedReqs, actual)
+			} else {
+				AssertResourceListsEqual(t, tc.expectedReqs.Requests, actual.Requests)
+				AssertResourceListsEqual(t, tc.expectedReqs.Limits, actual.Limits)
 			}
 		})
+	}
+}
+
+func AssertResourceListsEqual(t *testing.T, expectedList, actualList corev1.ResourceList) {
+	t.Helper()
+
+	expectedKeys := sets.NewString()
+	for k := range expectedList {
+		expectedKeys.Insert(string(k))
+	}
+	actualKeys := sets.NewString()
+	for k := range actualList {
+		actualKeys.Insert(string(k))
+	}
+	testutil.AssertEqual(t, "resource keys", expectedKeys, actualKeys)
+
+	for key, expected := range expectedList {
+		actual := actualList[key]
+		if expected.Cmp(actual) != 0 {
+			t.Errorf("resource[%v] expected: %v actual: %v", key, expected, actual)
+		}
 	}
 }
 
@@ -500,7 +653,7 @@ func TestApplication_ToContainer(t *testing.T) {
 				Memory: "21ZB",
 			},
 			runtimeConfig: defaultRuntimeConfig,
-			expectErr:     errors.New("couldn't parse resource quantity 21ZB: quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'"),
+			expectErr:     errors.New("couldn't parse memory 21ZB: quantities must match the regular expression '^([+-]?[0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$'"),
 		},
 		"bad health check": {
 			app: Application{
