@@ -228,6 +228,30 @@ applications:
 				},
 			},
 		},
+		"resources": {
+			fileContent: `---
+applications:
+- name: MY-APP
+  memory: 4G
+  cpu: 1000m
+  disk_quota: 1G
+  cpu-limit: 2000m
+`,
+			expected: &manifest.Manifest{
+				RelativePathRoot: relativePathRoot,
+				Applications: []manifest.Application{
+					{
+						Name:      "MY-APP",
+						DiskQuota: "1G",
+						Memory:    "4G",
+						KfApplicationExtension: manifest.KfApplicationExtension{
+							CPU:      "1000m",
+							CPULimit: "2000m",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for tn, tc := range cases {

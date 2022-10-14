@@ -90,8 +90,8 @@ type ApplicationMetadata struct {
 
 // KfApplicationExtension holds fields that aren't officially in cf
 type KfApplicationExtension struct {
-	// TODO(#95): These aren't CF proper. How do we expose these in the manifest?
 	CPU        string              `json:"cpu,omitempty"`
+	CPULimit   string              `json:"cpu-limit,omitempty"`
 	NoStart    *bool               `json:"no-start,omitempty"`
 	Entrypoint string              `json:"entrypoint,omitempty"`
 	Args       []string            `json:"args,omitempty"`

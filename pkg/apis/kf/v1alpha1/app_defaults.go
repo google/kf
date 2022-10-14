@@ -25,7 +25,7 @@ import (
 )
 
 var (
-	defaultMem     = resource.MustParse("1Gi")
+	DefaultMem     = resource.MustParse("1Gi")
 	defaultStorage = resource.MustParse("1Gi")
 
 	// CPU isn't defaulted in Cloud Foundry so we assume apps are I/O bound
@@ -171,7 +171,7 @@ func SetKfAppContainerDefaults(_ context.Context, container *corev1.Container) {
 	}
 
 	if _, exists := container.Resources.Requests[corev1.ResourceMemory]; !exists {
-		container.Resources.Requests[corev1.ResourceMemory] = defaultMem
+		container.Resources.Requests[corev1.ResourceMemory] = DefaultMem
 	}
 
 	if _, exists := container.Resources.Requests[corev1.ResourceEphemeralStorage]; !exists {
@@ -190,7 +190,9 @@ func SetKfAppContainerDefaults(_ context.Context, container *corev1.Container) {
 	for _, key := range []v1.ResourceName{
 		corev1.ResourceMemory,
 		corev1.ResourceEphemeralStorage,
-		corev1.ResourceCPU,
+
+		// No upper bound for CPU is set by default. Users must explicitly
+		// set CPU in the manifest to cap it if they want.
 	} {
 		if _, exists := container.Resources.Limits[key]; !exists {
 			container.Resources.Limits[key] = container.Resources.Requests[key]
