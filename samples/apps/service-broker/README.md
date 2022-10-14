@@ -1,4 +1,4 @@
 # Service Broker Sample App
 
-This is a Go application that mocks a service broker. It is
+This is an example Go application that mocks a service broker. It is
 used by integration tests.

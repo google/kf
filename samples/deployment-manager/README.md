@@ -1,8 +1,8 @@
 Deploying Kf
 ============
 
-Deploying Kf via [Deployment Manager][deployment-manager] is a great way to
-get up and going fast.
+This is an example [Deployment Manager][deployment-manager] template that
+demonstrates how to deploy Kf using infrastructure as code tooling.
 
 ## Prerequisites
 
