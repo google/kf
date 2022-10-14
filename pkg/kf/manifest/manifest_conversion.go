@@ -46,58 +46,83 @@ func (source *Application) ToAppSpecInstances() v1alpha1.AppSpecInstances {
 	return instances
 }
 
-// ToResourceRequests returns a ResourceList with memory, CPU, and storage set.
-// If none are set by the user, the returned ResourceList will be nil.
-func (source *Application) ToResourceRequests(runtimeConfig *v1alpha1.SpaceStatusRuntimeConfig) (corev1.ResourceList, error) {
-	resourceMapping := map[corev1.ResourceName]string{
-		corev1.ResourceMemory:           CFToSIUnits(source.Memory),
-		corev1.ResourceEphemeralStorage: CFToSIUnits(source.DiskQuota),
-		// CPU is not converted to SI because it's not a normal CF field
-		// and is therefore expected to be in SI to begin with.
-		corev1.ResourceCPU: source.CPU,
+// ToResourceRequirements returns a ResourceRequirements with memory, CPU, and storage set.
+func (source *Application) ToResourceRequirements(runtimeConfig *v1alpha1.SpaceStatusRuntimeConfig) (*corev1.ResourceRequirements, error) {
+	requirements := &corev1.ResourceRequirements{
+		Requests: make(corev1.ResourceList),
+		Limits:   make(corev1.ResourceList),
 	}
 
-	requests := corev1.ResourceList{}
-	for kind, rawQuantity := range resourceMapping {
-		if rawQuantity != "" {
-			quantity, err := resource.ParseQuantity(rawQuantity)
-			if err != nil {
-				return nil, fmt.Errorf("couldn't parse resource quantity %s: %v", rawQuantity, err)
-			}
-
-			requests[kind] = quantity
+	memoryRequest := v1alpha1.DefaultMem
+	if rawMem := CFToSIUnits(source.Memory); rawMem != "" {
+		quantity, err := resource.ParseQuantity(rawMem)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't parse memory %s: %v", rawMem, err)
 		}
+
+		requirements.Requests[corev1.ResourceMemory] = quantity
+		requirements.Limits[corev1.ResourceMemory] = quantity
+		memoryRequest = quantity
 	}
 
-	// If CPU isn't set, we use a CF-ism which is to default it based on the amount of RAM.
-	if _, ok := requests[corev1.ResourceCPU]; !ok {
+	if rawStorage := CFToSIUnits(source.DiskQuota); rawStorage != "" {
+		quantity, err := resource.ParseQuantity(rawStorage)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't parse disk %s: %v", rawStorage, err)
+		}
+
+		requirements.Requests[corev1.ResourceEphemeralStorage] = quantity
+		requirements.Limits[corev1.ResourceEphemeralStorage] = quantity
+	}
+
+	// CPU is not converted to SI because it's not a normal CF field
+	// and is therefore expected to be in SI to begin with.
+	if rawCPU := source.CPU; rawCPU != "" {
+		quantity, err := resource.ParseQuantity(rawCPU)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't parse cpu %s: %v", rawCPU, err)
+		}
+
+		requirements.Requests[corev1.ResourceCPU] = quantity
+	} else {
+		// If CPU isn't set, we use a CF-ism which is to default it based on the amount of RAM.
 		if cpuMult := runtimeConfig.AppCPUPerGBOfRAM; cpuMult != nil {
-			ramRatio := 1.0 // Assume CPU unit by default.
-			if ramQty, err := resource.ParseQuantity(CFToSIUnits(source.Memory)); err == nil {
-				ramRatio = float64(ramQty.MilliValue()) / float64(ramDivisor.MilliValue())
-			}
+			ramRatio := float64(memoryRequest.MilliValue()) / float64(ramDivisor.MilliValue())
 
 			cpuMillis := math.Ceil(cpuMult.AsApproximateFloat64() * ramRatio * 1000)
-			requests[corev1.ResourceCPU] = *resource.NewMilliQuantity(int64(cpuMillis), resource.BinarySI)
+			requirements.Requests[corev1.ResourceCPU] = *resource.NewMilliQuantity(int64(cpuMillis), resource.BinarySI)
 		}
 	}
 
 	// Set a lower-bound on CPU so containers aren't starved.
 	if minCPU := runtimeConfig.AppCPUMin; minCPU != nil {
-		if cpuRequest, ok := requests[corev1.ResourceCPU]; ok {
-			if cpuRequest.Cmp(*minCPU) < 0 {
-				requests[corev1.ResourceCPU] = *minCPU
-			}
-		} else {
-			requests[corev1.ResourceCPU] = *minCPU
+		if cpuRequest, ok := requirements.Requests[corev1.ResourceCPU]; !ok || cpuRequest.Cmp(*minCPU) < 0 {
+			requirements.Requests[corev1.ResourceCPU] = *minCPU
 		}
 	}
 
-	if len(requests) == 0 {
-		return nil, nil
+	if rawCPULimit := source.CPULimit; rawCPULimit != "" {
+		quantity, err := resource.ParseQuantity(rawCPULimit)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't parse cpu-limit %s: %v", rawCPULimit, err)
+		}
+
+		if cpuRequest, ok := requirements.Requests[corev1.ResourceCPU]; ok && quantity.Cmp(cpuRequest) < 0 {
+			return nil, fmt.Errorf("cpu-limit: %q must be greater than request: %q", quantity.String(), cpuRequest.String())
+		}
+
+		requirements.Limits[corev1.ResourceCPU] = quantity
 	}
 
-	return requests, nil
+	if len(requirements.Requests) == 0 {
+		requirements.Requests = nil
+	}
+
+	if len(requirements.Limits) == 0 {
+		requirements.Limits = nil
+	}
+
+	return requirements, nil
 }
 
 // CFToSIUnits converts CF resource quantities into the equivalent k8s quantity
@@ -257,19 +282,15 @@ func (source *Application) hasK8sHealthCheckFields() bool {
 // ToContainer converts the manifest to a container suitable for use in a pod,
 // ksvc, or app.
 func (source *Application) ToContainer(runtimeConfig *v1alpha1.SpaceStatusRuntimeConfig) (corev1.Container, error) {
-	resourceRequests, err := source.ToResourceRequests(runtimeConfig)
+	resourceRequirements, err := source.ToResourceRequirements(runtimeConfig)
 	if err != nil {
 		return corev1.Container{}, err
 	}
 
 	container := corev1.Container{
-		Args:    source.CommandArgs(),
-		Command: source.CommandEntrypoint(),
-		Resources: corev1.ResourceRequirements{
-			// Requests and limits match to mirror CF.
-			Requests: resourceRequests,
-			Limits:   resourceRequests,
-		},
+		Args:      source.CommandArgs(),
+		Command:   source.CommandEntrypoint(),
+		Resources: *resourceRequirements,
 	}
 
 	if source.hasK8sHealthCheckFields() {

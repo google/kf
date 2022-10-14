@@ -28,7 +28,8 @@ The following fields are valid for objects under `applications`:
 | `services`                   | `string[]` | A list of service instance names to automatically bind to the app. |
 | `disk_quota`                 | `quantity` | The amount of disk the application should get. Defaults to 1GiB. |
 | `memory`                     | `quantity` | The amount of RAM to provide the app. Defaults to 1GiB. |
-| `cpu` †                      | `quantity` | The amount of CPU to provide the application. Defaults to 0.1 (1/10th of a CPU). |
+| `cpu` †                      | `quantity` | The amount of CPU to provide the application. Defaults to 1/10th of a CPU. |
+| `cpu-limit` †                | `quantity` | The maximum amount of CPU to provide the application. Defaults to unlimited. |
 | `instances`                  | `int`      | The number of instances of the app to run. Defaults to 1. |
 | `routes`                     | `object`   | A list of routes the app should listen on. See the Route Fields section for more. |
 | `no-route`                   | `boolean`  | If set to true, the application will not be routable. |
@@ -169,7 +170,7 @@ applications:
   # use less disk and memory than default
   disk_quota: 512M
   memory: 512M
-  # bump up the CPU
+  # Give the app a minimum of 2/10ths of a CPU
   cpu: 200m
   instances: 3
   # make the app listen on three routes
@@ -205,6 +206,7 @@ applications:
     ENVIRONMENT: PRODUCTION
   disk_quota: 1G
   memory: 1G
+  # Give the app a minimum of 2 full CPUs
   cpu: 2000m
   instances: 1
   routes:
