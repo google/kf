@@ -35,8 +35,6 @@ export SPACE_DOMAIN="${TEST_DOMAIN:-integration-tests.kf.dev}"
 echo "Space domain: ${SPACE_DOMAIN}"
 ${KUBECTL} delete spaces --all
 
-#go install ./cmd/test-runner
-
 START_TIME=$(date +%s)
 
 # When running integration tests, we would like two things that simply running
@@ -57,7 +55,7 @@ arr+=("./pkg/kf/internal/last_integration_tests/integration_test.go")
 for f in "${arr[@]}"; do
   echo "Executing sub-integration tests for: $(dirname "$f")"
   START_SUBTEST=$(date +%s)
-  GOMAXPROCS=24 test-runner --attempts=3 --timeout=60m --run=TestIntegration_ $(dirname "$f")
+  GOMAXPROCS=24 go run ./cmd/test-runner --attempts=3 --timeout=60m --run=TestIntegration_ $(dirname "$f")
   END_SUBTEST=$(date +%s)
   echo "Sub-integration tests for $(dirname "$f") took $((END_SUBTEST - START_SUBTEST)) seconds to complete."
 done
