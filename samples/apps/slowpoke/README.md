@@ -1,0 +1,1 @@
+This is an example Go application that is slow starting and is used to test the different startup and health timeouts.

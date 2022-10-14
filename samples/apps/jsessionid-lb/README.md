@@ -1,7 +1,7 @@
 # `JSESSIONID` Load Balancer
 
-This application acts as a sticky load balancer for HTTP sessions with a `JSESSIONID`
-cokie attached.
+This is an example application acts as a sticky load balancer for HTTP sessions
+with a `JSESSIONID` cookie attached.
 
 It works similarly to Cloud Foundry's gorouter package. If the application returns the
 cookie `JSESSIONID` then the load balancer appends a `__VCAP_ID__` cookie with the same
