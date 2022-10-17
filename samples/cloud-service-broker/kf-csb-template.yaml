@@ -82,7 +82,7 @@ spec:
       serviceAccountName: csb-user
       containers:
       - name: controller
-        image: gcr.io/kf-releases/csb:VERSION_PLACEHOLDER
+        image: <CSB_IMAGE_DESTINATION>
         imagePullPolicy: Always
         command: ["/bin/cloud-service-broker"]
         args: ["serve", "--config", "/csb-config/config.yml"]
