@@ -647,3 +647,432 @@ func TestReconciler_Reconcile_ApplyChanges(t *testing.T) {
 		})
 	}
 }
+
+func TestReconciler_Reconcile_ApplyChanges_NotTrackingVirtualService(t *testing.T) {
+	t.Parallel()
+
+	type fakes struct {
+		fsl    *FakeSpaceLister
+		fri    *FakeRouteInterface
+		frl    *FakeRouteLister
+		frnl   *FakeRouteNamespaceLister
+		fvsi   *FakeVirtualServiceInterface
+		fanl   *FakeAppNamespaceLister
+		fvsnl  *FakeVirtualServiceNamespaceLister
+		fsibl  *FakeServiceInstanceBindingLister
+		fsibnl *FakeServiceInstanceBindingNamespaceLister
+	}
+
+	expectRouteListCall := func(frl *FakeRouteLister, frnl *FakeRouteNamespaceLister) {
+		frl.EXPECT().
+			Routes(gomock.Any()).
+			Return(frnl)
+	}
+
+	goodDomain := "example.com"
+
+	goodSpace := v1alpha1.Space{}
+	goodSpace.Status.NetworkConfig.Domains = []v1alpha1.SpaceDomain{
+		{Domain: goodDomain},
+	}
+	expectGoodSpace := func(fsl *FakeSpaceLister) {
+		fsl.EXPECT().
+			Get(gomock.Any()).
+			Return(&goodSpace, nil).
+			AnyTimes()
+	}
+
+	goodRoute := v1alpha1.Route{
+		Spec: v1alpha1.RouteSpec{
+			RouteSpecFields: v1alpha1.RouteSpecFields{
+				Domain: goodDomain,
+			},
+		},
+	}
+
+	expectGoodRoute := func(frnl *FakeRouteNamespaceLister) {
+		frnl.EXPECT().
+			List(gomock.Any()).
+			Return([]*v1alpha1.Route{
+				&goodRoute,
+			}, nil)
+	}
+
+	testCases := map[string]struct {
+		ExpectedErr error
+		Setup       func(t *testing.T, f fakes)
+		Domain      string
+		Namespace   string
+	}{
+		"making VirtualServices fails": {
+			Domain:      goodDomain,
+			ExpectedErr: errors.New(`Error occurred while reconciling VirtualService: configuring: failed to convert path to regexp: mux: unbalanced braces in "/}invalid{"`),
+			Setup: func(t *testing.T, f fakes) {
+				expectGoodSpace(f.fsl)
+				expectRouteListCall(f.frl, f.frnl)
+				f.frnl.EXPECT().
+					List(gomock.Any()).
+					Return([]*v1alpha1.Route{
+						{Spec: v1alpha1.RouteSpec{RouteSpecFields: v1alpha1.RouteSpecFields{Domain: goodDomain, Path: "}invalid{"}}},
+					}, nil)
+
+				f.fanl.EXPECT().
+					List(gomock.Any()).
+					Return(nil, nil)
+
+				f.fsibnl.EXPECT().
+					List(gomock.Any()).
+					Return(nil, nil)
+
+				f.fri.EXPECT().
+					UpdateStatus(gomock.Any(), gomock.Any(), gomock.Any()).Do(func(ctx context.Context, c *v1alpha1.Route, o metav1.UpdateOptions) error {
+					cond := c.Status.GetCondition(v1alpha1.RouteConditionReady)
+					testutil.AssertTrue(t, "condition", cond.IsTrue())
+					return nil
+				})
+			},
+		},
+		"getting VirtualServices fails": {
+			Domain:      goodDomain,
+			ExpectedErr: errors.New("Error occurred while reconciling VirtualService: some-error"),
+			Setup: func(t *testing.T, f fakes) {
+				expectGoodSpace(f.fsl)
+				expectRouteListCall(f.frl, f.frnl)
+				expectGoodRoute(f.frnl)
+
+				f.fanl.EXPECT().
+					List(gomock.Any()).
+					Return(nil, nil)
+
+				f.fsibnl.EXPECT().
+					List(gomock.Any()).
+					Return(nil, nil)
+
+				f.fvsnl.EXPECT().
+					Get(gomock.Any()).
+					Return(nil, errors.New("some-error"))
+
+				f.fri.EXPECT().
+					UpdateStatus(gomock.Any(), gomock.Any(), gomock.Any())
+			},
+		},
+		"VirtualServices is not found, creating VirtualService fails": {
+			Domain:      goodDomain,
+			ExpectedErr: errors.New("Error occurred while reconciling VirtualService: some-error"),
+			Setup: func(t *testing.T, f fakes) {
+				expectGoodSpace(f.fsl)
+				expectRouteListCall(f.frl, f.frnl)
+				expectGoodRoute(f.frnl)
+
+				f.fanl.EXPECT().
+					List(gomock.Any()).
+					Return(nil, nil)
+
+				f.fsibnl.EXPECT().
+					List(gomock.Any()).
+					Return(nil, nil)
+
+				f.fvsnl.EXPECT().
+					Get(gomock.Any()).
+					Return(nil, apierrors.NewNotFound(v1alpha3.Resource("VirtualService"), "VirtualService"))
+
+				f.fvsi.EXPECT().
+					Create(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil, errors.New("some-error"))
+
+				f.fri.EXPECT().
+					UpdateStatus(gomock.Any(), gomock.Any(), gomock.Any())
+			},
+		},
+		"VirtualServices is not found, creating VirtualService": {
+			Domain: goodDomain,
+			Setup: func(t *testing.T, f fakes) {
+				expectGoodSpace(f.fsl)
+				expectRouteListCall(f.frl, f.frnl)
+				expectGoodRoute(f.frnl)
+
+				f.fanl.EXPECT().
+					List(gomock.Any()).
+					Return(nil, nil)
+
+				f.fsibnl.EXPECT().
+					List(gomock.Any()).
+					Return(nil, nil)
+
+				f.fvsnl.EXPECT().
+					Get(gomock.Any()).
+					Return(nil, apierrors.NewNotFound(v1alpha3.Resource("VirtualService"), "VirtualService"))
+
+				f.fvsi.EXPECT().
+					Create(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil, nil)
+
+				f.fri.EXPECT().
+					UpdateStatus(gomock.Any(), gomock.Any(), gomock.Any())
+			},
+		},
+		"VirtualServices is being deleted": {
+			Domain: goodDomain,
+			Setup: func(t *testing.T, f fakes) {
+				expectGoodSpace(f.fsl)
+				expectRouteListCall(f.frl, f.frnl)
+				expectGoodRoute(f.frnl)
+
+				f.fanl.EXPECT().
+					List(gomock.Any()).
+					Return(nil, nil)
+
+				f.fsibnl.EXPECT().
+					List(gomock.Any()).
+					Return(nil, nil)
+
+				f.fvsnl.EXPECT().
+					Get(gomock.Any()).
+					Return(&v1alpha3.VirtualService{
+						ObjectMeta: metav1.ObjectMeta{
+							DeletionTimestamp: &metav1.Time{Time: time.Now()},
+						},
+					}, nil)
+
+				f.fri.EXPECT().
+					UpdateStatus(gomock.Any(), gomock.Any(), gomock.Any())
+			},
+		},
+		"update VirtualServices fails": {
+			Domain:      goodDomain,
+			ExpectedErr: errors.New("Error occurred while reconciling VirtualService: some-error"),
+			Setup: func(t *testing.T, f fakes) {
+				expectGoodSpace(f.fsl)
+				expectRouteListCall(f.frl, f.frnl)
+				expectGoodRoute(f.frnl)
+
+				f.fanl.EXPECT().
+					List(gomock.Any()).
+					Return(nil, nil)
+
+				f.fsibnl.EXPECT().
+					List(gomock.Any()).
+					Return(nil, nil)
+
+				f.fvsnl.EXPECT().
+					Get(gomock.Any()).
+					Return(&v1alpha3.VirtualService{}, nil)
+
+				f.fvsi.EXPECT().
+					Update(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil, errors.New("some-error"))
+
+				f.fri.EXPECT().
+					UpdateStatus(gomock.Any(), gomock.Any(), gomock.Any()).Do(func(ctx context.Context, c *v1alpha1.Route, o metav1.UpdateOptions) error {
+					testutil.AssertTrue(t, "condition", c.Status.GetCondition(v1alpha1.RouteConditionReady).IsTrue())
+					return nil
+				})
+			},
+		},
+		"update VirtualServices fails 409": {
+			Domain:      goodDomain,
+			ExpectedErr: errors.New(`Error occurred while reconciling VirtualService: Operation cannot be fulfilled on virtualservices.istio.io "MyService": the object has been modified; please apply your changes to the latest version and try again`),
+			Setup: func(t *testing.T, f fakes) {
+				expectGoodSpace(f.fsl)
+				expectRouteListCall(f.frl, f.frnl)
+				expectGoodRoute(f.frnl)
+
+				f.fanl.EXPECT().
+					List(gomock.Any()).
+					Return(nil, nil)
+
+				f.fvsnl.EXPECT().
+					Get(gomock.Any()).
+					Return(&v1alpha3.VirtualService{}, nil)
+
+				f.fsibnl.EXPECT().
+					List(gomock.Any()).
+					Return(nil, nil)
+
+				conflict := apierrors.NewConflict(
+					schema.GroupResource{
+						Group:    "istio.io",
+						Resource: "virtualservices",
+					},
+					"MyService",
+					errors.New("the object has been modified; please apply your changes to the latest version and try again"),
+				)
+				f.fvsi.EXPECT().
+					Update(gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(nil, conflict)
+
+				f.fri.EXPECT().
+					UpdateStatus(gomock.Any(), gomock.Any(), gomock.Any()).Do(func(ctx context.Context, c *v1alpha1.Route, o metav1.UpdateOptions) error {
+					testutil.AssertTrue(t, "condition", c.Status.GetCondition(v1alpha1.RouteConditionReady).IsTrue())
+					return nil
+				})
+			},
+		},
+		"update VirtualServices": {
+			Domain:    goodDomain,
+			Namespace: "some-namespace",
+			Setup: func(t *testing.T, f fakes) {
+				expectGoodSpace(f.fsl)
+				expectRouteListCall(f.frl, f.frnl)
+				expectGoodRoute(f.frnl)
+
+				f.fanl.EXPECT().
+					List(gomock.Any()).
+					Return(nil, nil)
+
+				f.fsibnl.EXPECT().
+					List(gomock.Any()).
+					Return(nil, nil)
+
+				f.fvsnl.EXPECT().
+					Get(gomock.Any()).
+					Return(&v1alpha3.VirtualService{
+						ObjectMeta: metav1.ObjectMeta{
+							OwnerReferences: []metav1.OwnerReference{{Name: "some-name"}},
+						},
+					}, nil)
+
+				f.fvsi.EXPECT().
+					Update(gomock.Any(), gomock.Any(), gomock.Any()).
+					Do(func(ctx context.Context, vs *v1alpha3.VirtualService, o metav1.UpdateOptions) {
+						testutil.AssertEqual(t, "OwnerReference len", 1, len(vs.OwnerReferences))
+						testutil.AssertEqual(t, "HTTPRoutes len", 1, len(vs.Spec.Http))
+					})
+
+				f.fri.EXPECT().
+					UpdateStatus(gomock.Any(), gomock.Any(), gomock.Any())
+			},
+		},
+		"update hosts VirtualServices": {
+			Domain:    goodDomain,
+			Namespace: "some-namespace",
+			Setup: func(t *testing.T, f fakes) {
+				expectGoodSpace(f.fsl)
+				expectRouteListCall(f.frl, f.frnl)
+				expectGoodRoute(f.frnl)
+
+				f.fanl.EXPECT().
+					List(gomock.Any()).
+					Return(nil, nil)
+
+				f.fsibnl.EXPECT().
+					List(gomock.Any()).
+					Return(nil, nil)
+
+				f.fvsnl.EXPECT().
+					Get(gomock.Any()).
+					Return(&v1alpha3.VirtualService{
+						ObjectMeta: metav1.ObjectMeta{
+							OwnerReferences: []metav1.OwnerReference{{Name: "some-name"}},
+						},
+						Spec: istio.VirtualService{
+							Hosts: []string{goodDomain},
+						},
+					}, nil)
+
+				f.fvsi.EXPECT().
+					Update(gomock.Any(), gomock.Any(), gomock.Any()).
+					Do(func(ctx context.Context, vs *v1alpha3.VirtualService, o metav1.UpdateOptions) {
+						testutil.AssertEqual(t, "OwnerReference len", 1, len(vs.OwnerReferences))
+						testutil.AssertEqual(t, "Hosts len", 2, len(vs.Spec.Hosts))
+					})
+
+				f.fri.EXPECT().
+					UpdateStatus(gomock.Any(), gomock.Any(), gomock.Any())
+			},
+		},
+	}
+
+	for tn, tc := range testCases {
+		t.Run(tn, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			fakeRouteLister := NewFakeRouteLister(ctrl)
+			fakeRouteNamespaceLister := NewFakeRouteNamespaceLister(ctrl)
+			fakeNetworkingClient := NewFakeNetworkingClient(ctrl)
+			fakeNetworking := NewFakeNetworking(ctrl)
+			fakeVirtualServiceInterface := NewFakeVirtualServiceInterface(ctrl)
+			fakeKfInterface := NewFakeKfInterface(ctrl)
+			fakeKfAlpha1Interface := NewFakeKfAlpha1Interface(ctrl)
+			fakeRouteInterface := NewFakeRouteInterface(ctrl)
+			fakeAppLister := NewFakeAppLister(ctrl)
+			fakeSpaceLister := NewFakeSpaceLister(ctrl)
+			fakeAppNamespaceLister := NewFakeAppNamespaceLister(ctrl)
+			fakeVirtualServiceLister := NewFakeVirtualServiceLister(ctrl)
+			fakeVirtualServiceNamespaceLister := NewFakeVirtualServiceNamespaceLister(ctrl)
+			fakeServiceInstanceBindingLister := NewFakeServiceInstanceBindingLister(ctrl)
+			fakeServiceInstanceBindingNamespaceLister := NewFakeServiceInstanceBindingNamespaceLister(ctrl)
+
+			fakeVirtualServiceLister.EXPECT().
+				VirtualServices(gomock.Any()).
+				Return(fakeVirtualServiceNamespaceLister).
+				AnyTimes()
+
+			fakeKfInterface.EXPECT().
+				KfV1alpha1().
+				Return(fakeKfAlpha1Interface).
+				AnyTimes()
+
+			fakeNetworkingClient.EXPECT().
+				NetworkingV1alpha3().
+				Return(fakeNetworking).
+				AnyTimes()
+
+			fakeNetworking.EXPECT().
+				VirtualServices(gomock.Any()).
+				Return(fakeVirtualServiceInterface).
+				AnyTimes()
+
+			fakeKfAlpha1Interface.EXPECT().
+				Routes(gomock.Any()).
+				Return(fakeRouteInterface).
+				AnyTimes()
+
+			fakeAppLister.EXPECT().
+				Apps(gomock.Any()).
+				Return(fakeAppNamespaceLister).
+				AnyTimes()
+
+			fakeServiceInstanceBindingLister.EXPECT().
+				ServiceInstanceBindings(gomock.Any()).
+				Return(fakeServiceInstanceBindingNamespaceLister).
+				AnyTimes()
+
+			if tc.Setup != nil {
+				tc.Setup(t, fakes{
+					fri:    fakeRouteInterface,
+					frl:    fakeRouteLister,
+					frnl:   fakeRouteNamespaceLister,
+					fvsi:   fakeVirtualServiceInterface,
+					fvsnl:  fakeVirtualServiceNamespaceLister,
+					fanl:   fakeAppNamespaceLister,
+					fsl:    fakeSpaceLister,
+					fsibl:  fakeServiceInstanceBindingLister,
+					fsibnl: fakeServiceInstanceBindingNamespaceLister,
+				})
+			}
+
+			r := &Reconciler{
+				Base: &reconciler.Base{
+					KfClientSet: fakeKfInterface,
+				},
+				networkingClientSet:          fakeNetworkingClient,
+				routeLister:                  fakeRouteLister,
+				virtualServiceLister:         fakeVirtualServiceLister,
+				appLister:                    fakeAppLister,
+				spaceLister:                  fakeSpaceLister,
+				serviceInstanceBindingLister: fakeServiceInstanceBindingLister,
+				kfConfigStore: &testConfigStore{&config.DefaultsConfig{
+					RouteTrackVirtualService: false,
+				}},
+			}
+
+			err := r.ApplyChanges(
+				context.Background(),
+				tc.Namespace,
+				tc.Domain,
+			)
+
+			testutil.AssertErrorsEqual(t, tc.ExpectedErr, err)
+		})
+	}
+}

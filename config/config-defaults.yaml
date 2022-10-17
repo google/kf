@@ -164,7 +164,7 @@ data:
     # the time when the processes are forcibly halted with a kill signal.
     terminationGracePeriodSeconds: 120
     # When set to true, Route status will be updated with VirtualService conditions.
-    routeTrackVirtualService: "false"
+    routeTrackVirtualService: "true"
 
     # The following images are used to execute builds. They SHOULD NOT be
     # modified except in rare circumstances.
@@ -235,5 +235,5 @@ data:
   appCPUMin: "100m"
   progressDeadlineSeconds: "600"
   terminationGracePeriodSeconds: "30"
-  routeTrackVirtualService: "false"
+  routeTrackVirtualService: "true"
 
