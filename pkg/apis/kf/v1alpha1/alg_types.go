@@ -121,7 +121,11 @@ func (d RouteSpecFieldsSlice) Less(i int, j int) bool {
 		return d[i].Domain < d[j].Domain
 	}
 
-	return len(d[i].Path) > len(d[j].Path)
+	if len(d[i].Path) != len(d[j].Path) {
+		return len(d[i].Path) > len(d[j].Path)
+	}
+
+	return d[i].Path < d[j].Path
 }
 
 // Swap implements Interface.
