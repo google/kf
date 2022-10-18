@@ -5,6 +5,7 @@ title: "Deploy Kf Cloud Service Broker"
 This page shows you how to deploy Kf Cloud Service Broker and use it to provision or deprovision backing resources. 
 Read about the [concepts and architecture]({{< relref "cloud-sb-overview" >}}) to learn more about the Kf Cloud Service Broker.
 
+
 ## Create environment variables {#create_env_variables}
 
 * **Linux**
@@ -12,6 +13,7 @@ Read about the [concepts and architecture]({{< relref "cloud-sb-overview" >}}) t
   <pre class="devsite-click-to-copy" translate="no">
   export PROJECT_ID=<var>YOUR_PROJECT_ID</var>
   export CLUSTER_PROJECT_ID=<var>YOUR_PROJECT_ID</var>
+  export CSB_IMAGE_DESTINATION=<var>YOUR_DOCKER_REPO_CSB_PATH</var>
   export CLUSTER_NAME=<var>kf-cluster</var>
   export INSTANCE_NAME=<var>cloud-service-broker</var>
   export COMPUTE_REGION=<var>us-central1</var>
@@ -22,18 +24,28 @@ Read about the [concepts and architecture]({{< relref "cloud-sb-overview" >}}) t
   <pre class="devsite-click-to-copy" translate="no">
   Set-Variable -Name PROJECT_ID -Value <var>YOUR_PROJECT_ID</var>
   Set-Variable -Name CLUSTER_PROJECT_ID -Value <var>YOUR_PROJECT_ID</var>
+  Set-Variable -Name CSB_IMAGE_DESTINATION=<var>YOUR_DOCKER_REPO_CSB_PATH</var>
   Set-Variable -Name CLUSTER_NAME -Value <var>kf-cluster</var>
   Set-Variable -Name INSTANCE_NAME -Value <var>cloud-service-broker</var>
   Set-Variable -Name COMPUTE_REGION -Value <var>us-central1</var>
   </pre>
 
+## Build the broker
+
+First you'll want to download and build the broker and push it to your container registry:
+
+```sh
+git clone --single-branch --branch main https://github.com/google/kf.git kf
+cd kf/samples/cloud-service-broker
+docker build --tag ${CSB_IMAGE_DESTINATION} .
+docker push ${CSB_IMAGE_DESTINATION}
+```
+
 ## Set up the Kf Cloud Service Broker database
 
 1. Create a MySQL instance.
 
-    {{%note%}}
-    Read [Creating and managing MySQL users](https://cloud.google.com/sql/docs/mysql/create-manage-users) for Google Cloud SQL and set a secure password for the default `root` user.
-    {{%/note%}}
+    {{%note%}}Read [Creating and managing MySQL users](https://cloud.google.com/sql/docs/mysql/create-manage-users) for Google Cloud SQL and set a secure password for the default `root` user.{{%/note%}}
 
     ```sh
     gcloud sql instances create ${INSTANCE_NAME} --cpu=2 --memory=7680MB --require-ssl --region=${COMPUTE_REGION}
@@ -57,142 +69,137 @@ Read about the [concepts and architecture]({{< relref "cloud-sb-overview" >}}) t
 
 1. Create a Google Service Account.
 
-  <pre class="devsite-click-to-copy" translate="no">
-  gcloud iam service-accounts create csb-${CLUSTER_NAME}-sa \
-      --project=${CLUSTER_PROJECT_ID} \
-      --description="GSA for CSB at ${CLUSTER_NAME}" \
-      --display-name="csb-${CLUSTER_NAME}"</pre>
+    <pre class="devsite-click-to-copy" translate="no">
+    gcloud iam service-accounts create csb-${CLUSTER_NAME}-sa \
+        --project=${CLUSTER_PROJECT_ID} \
+        --description="GSA for CSB at ${CLUSTER_NAME}" \
+        --display-name="csb-${CLUSTER_NAME}"</pre>
 
 1. Grant `roles/cloudsql.client` permissions to the Service Account. This is required to connect the service broker pod to the CloudSQL for MySQL instance through the CloudSQL Proxy.
 
-  <pre class="devsite-click-to-copy" translate="no">
-  gcloud projects add-iam-policy-binding ${CLUSTER_PROJECT_ID} \
-      --member="serviceAccount:csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com" \
-      --role="roles/cloudsql.client"</pre>
+    <pre class="devsite-click-to-copy" translate="no">
+    gcloud projects add-iam-policy-binding ${CLUSTER_PROJECT_ID} \
+        --member="serviceAccount:csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com" \
+        --role="roles/cloudsql.client"</pre>
 
 1. Grant additional Google Cloud permissions to the Service Account.
 
-  {{%note%}}
-  In the example below, we grant IAM roles required to provision an instance of CloudSQL and Cloud Memorystore.
-  You must grant this service account the appropriate roles to provision instances of other Google Cloud managed services listed in `kf marketplace`.
-  {{%/note%}}
+    {{%note%}}In the example below, we grant IAM roles required to provision an instance of CloudSQL and Cloud Memorystore. You must grant this service account the appropriate roles to provision instances of other Google Cloud managed services listed in `kf marketplace`.{{%/note%}}
 
-  <pre class="devsite-click-to-copy" translate="no">
-  gcloud projects add-iam-policy-binding ${CLUSTER_PROJECT_ID} \
-      --member="serviceAccount:csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com" \
-      --role="roles/compute.networkUser"</pre>
+    <pre class="devsite-click-to-copy" translate="no">
+    gcloud projects add-iam-policy-binding ${CLUSTER_PROJECT_ID} \
+        --member="serviceAccount:csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com" \
+        --role="roles/compute.networkUser"</pre>
 
-  <pre class="devsite-click-to-copy" translate="no">
-  gcloud projects add-iam-policy-binding ${CLUSTER_PROJECT_ID} \
-      --member="serviceAccount:csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com" \
-      --role="roles/cloudsql.admin"</pre>
+    <pre class="devsite-click-to-copy" translate="no">
+    gcloud projects add-iam-policy-binding ${CLUSTER_PROJECT_ID} \
+        --member="serviceAccount:csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com" \
+        --role="roles/cloudsql.admin"</pre>
 
-  <pre class="devsite-click-to-copy" translate="no">
-  gcloud projects add-iam-policy-binding ${CLUSTER_PROJECT_ID} \
-      --member="serviceAccount:csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com" \
-      --role="roles/redis.admin"</pre>
+    <pre class="devsite-click-to-copy" translate="no">
+    gcloud projects add-iam-policy-binding ${CLUSTER_PROJECT_ID} \
+        --member="serviceAccount:csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com" \
+        --role="roles/redis.admin"</pre>
 
 1. Verify the permissions.
 
-  {{%warning%}}
-  Replace the `CSB_SERVICE_ACCOUNT_NAME` variable in the YAML below with the full service account resolved from `csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com`.
-  {{%/warning%}}
+    {{%warning%}}Replace the `CSB_SERVICE_ACCOUNT_NAME` variable in the YAML below with the full service account resolved from `csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com`.{{%/warning%}}
 
-  <pre class="devsite-click-to-copy" translate="no">
-  gcloud projects get-iam-policy ${CLUSTER_PROJECT_ID} \
-      --filter='bindings.members:serviceAccount:"<var>CSB_SERVICE_ACCOUNT_NAME</var>"' \
-      --flatten="bindings[].members"</pre>
+    <pre class="devsite-click-to-copy" translate="no">
+    gcloud projects get-iam-policy ${CLUSTER_PROJECT_ID} \
+        --filter='bindings.members:serviceAccount:"<var>CSB_SERVICE_ACCOUNT_NAME</var>"' \
+        --flatten="bindings[].members"</pre>
 
 ## Set up Workload Identity for the broker
 
 1. Bind the Google Service Account with the Kubernetes Service Account.
 
-  <pre class="devsite-click-to-copy" translate="no">
-  gcloud iam service-accounts add-iam-policy-binding "csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com" \
-      --project=${CLUSTER_PROJECT_ID} \
-      --role="roles/iam.workloadIdentityUser" \
-      --member="serviceAccount:${CLUSTER_PROJECT_ID}.svc.id.goog[kf-csb/csb-user]"</pre>
+    <pre class="devsite-click-to-copy" translate="no">
+    gcloud iam service-accounts add-iam-policy-binding "csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com" \
+        --project=${CLUSTER_PROJECT_ID} \
+        --role="roles/iam.workloadIdentityUser" \
+        --member="serviceAccount:${CLUSTER_PROJECT_ID}.svc.id.goog[kf-csb/csb-user]"</pre>
 
 1. Verify the binding.
 
-  <pre class="devsite-click-to-copy" translate="no">
-  gcloud iam service-accounts get-iam-policy "csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com" \
-      --project=${CLUSTER_PROJECT_ID}</pre>
+    <pre class="devsite-click-to-copy" translate="no">
+    gcloud iam service-accounts get-iam-policy "csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com" \
+        --project=${CLUSTER_PROJECT_ID}</pre>
 
 ## Set up a Kubernetes Secret to share configuration with the broker {#kubernetes_secret}
 
 1. Create a config.yml file.
 
-  Note: Replace the default user/password if desired. Ensure you have set the `CLUSTER_PROJECT_ID` in the [Create environment variables](#create_env_variables) step.
+    {{%note%}}Replace the default user/password if desired. Ensure you have set the `CLUSTER_PROJECT_ID` in the [Create environment variables](#create_env_variables) step.{{%/note%}}
 
-  ```sh
-  cat << EOF >> ./config.yml
-  gcp:
-    credentials: ""
-    project: ${CLUSTER_PROJECT_ID}
+    ```sh
+    cat << EOF >> ./config.yml
+    gcp:
+      credentials: ""
+      project: ${CLUSTER_PROJECT_ID}
 
-  db:
-    host: 127.0.0.1
-    password: csbpassword
-    user: csbuser
-    tls: false
-  api:
-    user: servicebroker
-    password: password
-  EOF
-  ```
+    db:
+      host: 127.0.0.1
+      password: csbpassword
+      user: csbuser
+      tls: false
+    api:
+      user: servicebroker
+      password: password
+    EOF
+    ```
 
 1. Create the `kf-csb` namespace.
 
-  ```sh
-  kubectl create ns kf-csb
-  ```
+    ```sh
+    kubectl create ns kf-csb
+    ```
 
 1. Create the Kubernetes Secret.
 
-  ```sh
-  kubectl create secret generic csb-secret --from-file=config.yml -n kf-csb
-  ```
+    ```sh
+    kubectl create secret generic csb-secret --from-file=config.yml -n kf-csb
+    ```
 
 ## Install the Kf Cloud Service Broker
 
-1. Download the `kf-csb.yml`.
+1. Copy the `kf-csb-template.yaml` into `kf-csb.yaml` for working:
 
-  ```sh
-  gsutil cp gs://kf-releases/csb/v{{this_kf_csb_version}}/kf-csb.yaml /tmp/kf-csb.yaml
-  ```
+    ```sh
+    cp kf-csb-template.yaml /tmp/kf-csb.yaml
+    ```
 
 1. Edit `/tmp/kf-csb.yaml` and replace placeholders with final values. In the example below, `sed` is used.
 
-  ```sh
-  sed -i "s|<GSA_NAME>|csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com|g" /tmp/kf-csb.yaml
+    ```sh
+    sed -i "s|<GSA_NAME>|csb-${CLUSTER_NAME}-sa@${CLUSTER_PROJECT_ID}.iam.gserviceaccount.com|g" /tmp/kf-csb.yaml
 
-  sed -i "s|<INSTANCE_CONNECTION_NAME>|${CLUSTER_PROJECT_ID}:${COMPUTE_REGION}:${INSTANCE_NAME}|g" /tmp/kf-csb.yaml
+    sed -i "s|<INSTANCE_CONNECTION_NAME>|${CLUSTER_PROJECT_ID}:${COMPUTE_REGION}:${INSTANCE_NAME}|g" /tmp/kf-csb.yaml
 
-  sed -i "s|<DB_PORT>|3306|g" /tmp/kf-csb.yaml
-  ```
+    sed -i "s|<DB_PORT>|3306|g" /tmp/kf-csb.yaml
+
+    sed -i "s|<CSB_IMAGE_DESTINATION>|${CSB_IMAGE_DESTINATION}|g" /tmp/kf-csb.yaml
+    ```
 
 1. Apply yaml for Kf Cloud Service Broker.
 
-  ```sh
-  kubectl apply -f /tmp/kf-csb.yaml
-  ```
+    ```sh
+    kubectl apply -f /tmp/kf-csb.yaml
+    ```
 
 1. Verify the Cloud Service Broker installation status.
 
-  ```sh
-  kubectl get pods -n kf-csb
-  ```
+    ```sh
+    kubectl get pods -n kf-csb
+    ```
 
 ## Create a service broker
 
-  {{%note%}}
-  The user/password must match what you entered in the [Kubernetes secret](#kubernetes_secret) step earlier.
-  {{%/note%}}
+{{%note%}}The user/password must match what you entered in the [Kubernetes secret](#kubernetes_secret) step earlier.{{%/note%}}
 
-  ```sh
-  kf create-service-broker cloud-service-broker servicebroker password http://csb-controller.kf-csb/
-  ```
+```sh
+kf create-service-broker cloud-service-broker servicebroker password http://csb-controller.kf-csb/
+```
 
 ## Validate installation
 
@@ -222,15 +229,15 @@ Read about the [concepts and architecture]({{< relref "cloud-sb-overview" >}}) t
 
 1. Delete cloud-service-broker.
 
-  ```sh
-  kf delete-service-broker cloud-service-broker
-  ```
+    ```sh
+    kf delete-service-broker cloud-service-broker
+    ```
 
 1. Delete CSB components.
 
-  ```sh
-  kubectl delete ns kf-csb
-  ```
+    ```sh
+    kubectl delete ns kf-csb
+    ```
 
 1. Delete the broker's database instance.
 
