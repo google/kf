@@ -213,6 +213,24 @@ func TestMakeVirtualService(t *testing.T) {
 				GatewayName: "kf/some-gateway",
 			},
 		},
+		"same path length": {
+			Routes: []*v1alpha1.Route{
+				makeRoute("some-host", "example.com/", "/bar", "some-namespace"),
+				makeRoute("some-host", "example.com/", "/foo", "some-namespace"),
+			},
+			Bindings: map[string]RouteBindingSlice{
+				makeRouteSpecFieldsStr("some-host", "example.com/", "/bar"): []v1alpha1.RouteDestination{
+					makeAppDestination("should-be-first", 1),
+				},
+				makeRouteSpecFieldsStr("some-host", "example.com/", "/foo"): []v1alpha1.RouteDestination{
+					makeAppDestination("should-be-second", 1),
+				},
+			},
+			SpaceDomain: v1alpha1.SpaceDomain{
+				Domain:      "example.com",
+				GatewayName: "kf/some-gateway",
+			},
+		},
 		"destination ports": {
 			Routes: []*v1alpha1.Route{
 				makeRoute("some-host", "example.com/", "", "some-namespace"),
