@@ -43,6 +43,7 @@ const (
 	appCPUMinKey                     = "appCPUMin"
 	progressDeadlineSecondsKey       = "progressDeadlineSeconds"
 	terminationGracePeriodSecondsKey = "terminationGracePeriodSeconds"
+	routeTrackVirtualServiceKey      = "routeTrackVirtualService"
 
 	// Images used for build purposes
 
@@ -140,6 +141,9 @@ type DefaultsConfig struct {
 	// The grace period is the duration in seconds after the processes running in the pod are sent
 	// a termination signal and the time when the processes are forcibly halted with a kill signal.
 	TerminationGracePeriodSeconds *int64 `json:"terminationGracePeriodSeconds,omitempty"`
+
+	// RouteTrackVirtualService when set to true, will update Route status with VirtualService conditions.
+	RouteTrackVirtualService bool `json:"routeTrackVirtualService,omitempty"`
 }
 
 // BuiltinDefaultsConfig creates a defaults configuration with default values.
@@ -247,6 +251,7 @@ func (defaultsConfig *DefaultsConfig) getInterfaceValues(leaveEmpty bool) map[st
 		appCPUMinKey:                     &defaultsConfig.AppCPUMin,
 		progressDeadlineSecondsKey:       &defaultsConfig.ProgressDeadlineSeconds,
 		terminationGracePeriodSecondsKey: &defaultsConfig.TerminationGracePeriodSeconds,
+		routeTrackVirtualServiceKey:      &defaultsConfig.RouteTrackVirtualService,
 	}
 
 	if !leaveEmpty {

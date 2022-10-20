@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/google/kf/v2/pkg/apis/kf/config"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	networking "github.com/google/kf/v2/pkg/apis/networking/v1alpha3"
 	kflisters "github.com/google/kf/v2/pkg/client/kf/listers/kf/v1alpha1"
@@ -34,6 +35,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/controller"
 	"knative.dev/pkg/logging"
+	pkgreconciler "knative.dev/pkg/reconciler"
 )
 
 // Reconciler reconciles a Route object with the K8s cluster.
@@ -47,6 +49,8 @@ type Reconciler struct {
 	appLister                    kflisters.AppLister
 	spaceLister                  kflisters.SpaceLister
 	serviceInstanceBindingLister kflisters.ServiceInstanceBindingLister
+
+	kfConfigStore pkgreconciler.ConfigStore
 }
 
 // Check that our Reconciler implements controller.Reconciler
@@ -85,6 +89,7 @@ func (r *Reconciler) ApplyChanges(
 	domain string,
 ) error {
 	logger := logging.FromContext(ctx)
+	ctx = r.kfConfigStore.ToContext(ctx)
 
 	// Check that the domain is valid for the Space
 	var spaceDomain *v1alpha1.SpaceDomain
@@ -207,7 +212,14 @@ func (r *Reconciler) ApplyChanges(
 		// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/controllers.md
 		toReconcile.Status.ObservedGeneration = toReconcile.Generation
 
-		toReconcile.Status.PropagateVirtualService(actualVS, sErr)
+		configDefaults, err := config.FromContext(ctx).Defaults()
+		if err != nil {
+			return fmt.Errorf("failed to read config-defaults: %v", err)
+		}
+
+		shouldTrackVirtualService := configDefaults.RouteTrackVirtualService
+
+		toReconcile.Status.PropagateVirtualService(actualVS, sErr, shouldTrackVirtualService)
 		toReconcile.Status.PropagateRouteSpecFields(origRoute.Spec.RouteSpecFields)
 
 		rsfString := toReconcile.Spec.RouteSpecFields.String()

@@ -669,7 +669,7 @@ func TestAppStatus_PropagateRouteStatus(t *testing.T) {
 		route.Status.PropagateRouteSpecFields(qrb.Source)
 		route.Status.PropagateVirtualService(&networking.VirtualService{
 			ObjectMeta: metav1.ObjectMeta{Name: "some-vs"},
-		}, nil)
+		}, nil, true)
 		route.Status.PropagateBindings([]RouteDestination{qrb.Destination})
 		route.Status.PropagateSpaceDomain(&SpaceDomain{
 			Domain: qrb.Source.Domain,

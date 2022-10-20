@@ -199,7 +199,7 @@ func buildHTTPRoutes(routes v1alpha1.RouteSpecFieldsSlice, appBindings map[strin
 		}
 
 		if len(appDestinations) == 0 {
-			// no apps bound to this path, return http route with fault for path
+			// no apps bound to this path, return http route with default for path
 			rsfHTTPRoutes = append(rsfHTTPRoutes, buildDefaultHTTPRoute(*pathMatchers))
 		} else {
 			// Build HTTP Routes with `x-kf-app` header for matching specific app requests.
