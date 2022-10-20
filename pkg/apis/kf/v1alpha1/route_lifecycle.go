@@ -35,14 +35,20 @@ var _ kmeta.OwnerRefable = (*Route)(nil)
 // PropagateVirtualService stores the VirtualService in the RouteStatus.
 // If vsErr is set, a reconciliation error is triggered and the name will be
 // empty. The state is unknown if both VirtualService and error are nil.
-func (status *RouteStatus) PropagateVirtualService(vs *networking.VirtualService, vsErr error) {
+// If shouldTrack is false, directly setting the condition to True.
+func (status *RouteStatus) PropagateVirtualService(vs *networking.VirtualService, vsErr error, shouldTrack bool) {
 	cond := status.VirtualServiceCondition()
 
 	switch {
+	case !shouldTrack:
+		cond.MarkSuccess()
+		// Update VirtualService when it's not nil. Do not overwrite it back to empty otherwise.
+		if vs != nil {
+			status.VirtualService = corev1.LocalObjectReference{Name: vs.Name}
+		}
 	case vsErr != nil:
 		cond.MarkReconciliationError("reconciling", vsErr)
 		status.VirtualService = corev1.LocalObjectReference{}
-
 	case vs == nil:
 		cond.MarkReconciliationPending()
 		status.VirtualService = corev1.LocalObjectReference{}

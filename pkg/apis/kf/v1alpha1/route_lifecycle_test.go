@@ -56,7 +56,7 @@ func TestRouteStatus_VirtualServiceError(t *testing.T) {
 	t.Parallel()
 
 	status := RouteStatus{}
-	status.PropagateVirtualService(nil, errors.New("some-reason: some-message"))
+	status.PropagateVirtualService(nil, errors.New("some-reason: some-message"), true)
 	apitesting.CheckConditionFailed(status.duck(), RouteConditionVirtualServiceReady, t)
 }
 
@@ -64,7 +64,7 @@ func TestRouteStatus_VirtualServiceNil(t *testing.T) {
 	t.Parallel()
 
 	status := RouteStatus{}
-	status.PropagateVirtualService(nil, nil)
+	status.PropagateVirtualService(nil, nil, true)
 	testutil.AssertEqual(t, "VirtualService", "", status.VirtualService.Name)
 }
 
@@ -74,7 +74,36 @@ func TestRouteStatus_VirtualService(t *testing.T) {
 	status := RouteStatus{}
 	status.PropagateVirtualService(&networking.VirtualService{
 		ObjectMeta: metav1.ObjectMeta{Name: "some-name"},
-	}, nil)
+	}, nil, true)
+	testutil.AssertEqual(t, "VirtualService", "some-name", status.VirtualService.Name)
+}
+
+func TestRouteStatus_VirtualServiceErrorNotTracking(t *testing.T) {
+	t.Parallel()
+
+	status := RouteStatus{}
+	status.PropagateVirtualService(nil, errors.New("some-reason: some-message"), false)
+	apitesting.CheckConditionSucceeded(status.duck(), RouteConditionVirtualServiceReady, t)
+}
+
+func TestRouteStatus_VirtualServiceErrorNotTrackingVSNamePopulated(t *testing.T) {
+	t.Parallel()
+	status := RouteStatus{}
+	status.PropagateVirtualService(
+		&networking.VirtualService{
+			ObjectMeta: metav1.ObjectMeta{Name: "some-name"},
+		},
+		errors.New("some-reason: some-message"),
+		false)
+	apitesting.CheckConditionSucceeded(status.duck(), RouteConditionVirtualServiceReady, t)
+	testutil.AssertEqual(t, "VirtualService", "some-name", status.VirtualService.Name)
+
+	status.PropagateVirtualService(
+		nil,
+		errors.New("some-reason: some-message"),
+		false)
+	apitesting.CheckConditionSucceeded(status.duck(), RouteConditionVirtualServiceReady, t)
+	// Asserting VirtualService Name didn't change.
 	testutil.AssertEqual(t, "VirtualService", "some-name", status.VirtualService.Name)
 }
 
