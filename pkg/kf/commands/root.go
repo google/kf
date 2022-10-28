@@ -47,8 +47,8 @@ import (
 var k8sClientFactory = config.GetKubernetes
 
 const (
-	docsURL    = "https://cloud.google.com/migrate/kf"
-	versionURL = "https://cloud.google.com/migrate/kf/docs/downloads"
+	docsURL    = "https://kf.dev"
+	versionURL = "https://github.com/google/kf/releases"
 )
 
 // NewKfCommand creates the root Kf command suitable for using in a CLI context.

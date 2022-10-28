@@ -1,0 +1,99 @@
+---
+title: "kf doctor"
+weight: 100
+description: "Run validation tests against one or more components."
+---
+### Name
+
+<code translate="no">kf doctor</code> - Run validation tests against one or more components.
+
+### Synopsis
+
+<pre translate="no">kf doctor [(COMPONENT|TYPE/NAME)...] [flags]</pre>
+
+### Description
+
+Doctor runs tests on one or more components or objects to
+validate their desired status.
+
+If no arguments are supplied, then all component tests are ran.
+If one or more arguments are suplied then only the test for those
+components or objects are ran.
+
+Possible components are:
+
+* cluster
+* istio
+
+Possible object types are:
+
+* app
+* build
+* clusterservicebroker
+* route
+* servicebroker
+* serviceinstance
+* serviceinstancebinding
+* sourcepackage
+* space
+* task
+
+
+### Examples
+
+<pre translate="no">
+# Run doctor against all components.
+kf doctor
+# Run doctor against server-side components.
+kf doctor cluster
+# Run doctor for a Kf App named my-app.
+kf doctor app/my-app
+# Run doctor for a Kf Service named my-service.
+kf doctor serviceinstance/my-service
+# Run doctor for a Kf Binding named my-binding.
+kf doctor serviceinstancebinding/my-binding
+# Run doctor for the Kf Operator.
+kf doctor operator
+</pre>
+
+### Flags
+
+<dl>
+<dt><code translate="no">--delay=<var translate="no">duration</var></code></dt>
+<dd><p>Set the delay between executions. (default 5s)</p>
+</dd>
+<dt><code translate="no">-h, --help</code></dt>
+<dd><p>help for doctor</p>
+</dd>
+<dt><code translate="no">--retries=<var translate="no">int</var></code></dt>
+<dd><p>Number of times to retry doctor if it isn't successful. (default 1)</p>
+</dd>
+</dl>
+
+
+### Inherited flags
+
+These flags are inherited from parent commands.
+
+<dl>
+<dt><code translate="no">--as=<var translate="no">string</var></code></dt>
+<dd><p>Username to impersonate for the operation.</p>
+</dd>
+<dt><code translate="no">--as-group=<var translate="no">strings</var></code></dt>
+<dd><p>Group to impersonate for the operation. Include this flag multiple times to specify multiple groups.</p>
+</dd>
+<dt><code translate="no">--config=<var translate="no">string</var></code></dt>
+<dd><p>Path to the Kf config file to use for CLI requests.</p>
+</dd>
+<dt><code translate="no">--kubeconfig=<var translate="no">string</var></code></dt>
+<dd><p>Path to the kubeconfig file to use for CLI requests.</p>
+</dd>
+<dt><code translate="no">--log-http</code></dt>
+<dd><p>Log HTTP requests to standard error.</p>
+</dd>
+<dt><code translate="no">--space=<var translate="no">string</var></code></dt>
+<dd><p>Space to run the command against. This flag overrides the currently targeted Space.</p>
+</dd>
+</dl>
+
+
