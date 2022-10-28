@@ -54,46 +54,6 @@ func main() {
 
 	kf := commands.NewRawKfCommand()
 
-	// if *kfOnly {
-	// 	buf := &bytes.Buffer{}
-	// 	fmt.Fprintf(buf, fmTemplate, docVersion, "kf Command Reference")
-
-	// 	if err := genCommandMarkdown(kf, buf); err != nil {
-	// 		log.Fatal(err)
-	// 	}
-
-	// 	fmt.Fprintln(buf, footer)
-
-	// 	// Remove the version and documentation headers
-	// 	newBuf := &bytes.Buffer{}
-	// 	scanner := bufio.NewScanner(buf)
-	// 	for scanner.Scan() {
-	// 		switch {
-	// 		case strings.HasPrefix(scanner.Text(), "Kf CLI Version:"):
-	// 			continue
-	// 		case strings.HasPrefix(scanner.Text(), "Documentation:"):
-	// 			continue
-	// 		default:
-	// 			fmt.Fprintln(newBuf, scanner.Text())
-	// 		}
-	// 	}
-	// 	if err := ioutil.WriteFile(outputPath, newBuf.Bytes(), 0666); err != nil {
-	// 		log.Fatal(err)
-	// 	}
-
-	// 	return
-	// }
-
-	// if *bookOnly {
-	// 	buf := &bytes.Buffer{}
-	// 	commanddocgenerator.GenerateBookYAML(buf, kf, docVersion)
-
-	// 	if err := ioutil.WriteFile(outputPath, buf.Bytes(), 0666); err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// 	return
-	// }
-
 	if err := genMarkdownTree(kf, outputPath, docVersion); err != nil {
 		log.Fatal(err)
 	}
@@ -171,9 +131,9 @@ func genMarkdownTree(cmd *cobra.Command, dir, docVersion string) error {
 	})
 
 	// TODO: figure out if this is the root command and use index.html instead.
-	basename := strings.Replace(cmd.CommandPath(), " ", "-", -1) + ".md"
-	basename = strings.Replace(basename, "_", "-", -1) + ".md"
-	filename := filepath.Join(dir, basename)
+	basename := strings.Replace(cmd.CommandPath(), " ", "-", -1)
+	basename = strings.Replace(basename, "_", "-", -1)
+	filename := filepath.Join(dir, basename+".md")
 	f, err := os.Create(filename)
 	if err != nil {
 		return err
