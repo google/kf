@@ -18,17 +18,14 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"flag"
 	"fmt"
 	"html"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/MakeNowJust/heredoc"
@@ -38,18 +35,15 @@ import (
 )
 
 const (
-	fmTemplate = `{%% extends "migrate/kf/docs/%s/_base.html" %%}
-{%% block page_title %%} %s {%% endblock %%}
-
-{%% block body %%}
-
+	fmTemplate = `---
+title: %q
+weight: 100
+description: %q
+---
 `
-	footer = `{% endblock %}`
 )
 
 func main() {
-	kfOnly := flag.Bool("kf-only", false, "when set, the output will write the kf command. This is useful to generate the index.md")
-	bookOnly := flag.Bool("book-only", false, "when set, the output will write the book.yaml file only.")
 	flag.Parse()
 
 	if len(flag.Args()) != 2 {
@@ -60,53 +54,13 @@ func main() {
 
 	kf := commands.NewRawKfCommand()
 
-	if *kfOnly {
-		buf := &bytes.Buffer{}
-		fmt.Fprintf(buf, fmTemplate, docVersion, "kf Command Reference")
-
-		if err := genCommandMarkdown(kf, buf); err != nil {
-			log.Fatal(err)
-		}
-
-		fmt.Fprintln(buf, footer)
-
-		// Remove the version and documentation headers
-		newBuf := &bytes.Buffer{}
-		scanner := bufio.NewScanner(buf)
-		for scanner.Scan() {
-			switch {
-			case strings.HasPrefix(scanner.Text(), "Kf CLI Version:"), strings.HasPrefix(scanner.Text(), "{{kf_product_name_short}} CLI Version:"):
-				continue
-			case strings.HasPrefix(scanner.Text(), "Documentation:"):
-				continue
-			default:
-				fmt.Fprintln(newBuf, scanner.Text())
-			}
-		}
-		if err := ioutil.WriteFile(outputPath, newBuf.Bytes(), 0666); err != nil {
-			log.Fatal(err)
-		}
-
-		return
-	}
-
-	if *bookOnly {
-		buf := &bytes.Buffer{}
-		commanddocgenerator.GenerateBookYAML(buf, kf, docVersion)
-
-		if err := ioutil.WriteFile(outputPath, buf.Bytes(), 0666); err != nil {
-			log.Fatal(err)
-		}
-		return
-	}
-
 	if err := genMarkdownTree(kf, outputPath, docVersion); err != nil {
 		log.Fatal(err)
 	}
 }
 
-// genCommandMarkdown creates markdown output for the command in Google Cloud
-// style.
+// genCommandMarkdown creates markdown output for the command that works
+// for the Docsy Hugo template.
 func genCommandMarkdown(cmd *cobra.Command, w io.Writer) error {
 	cmd.InitDefaultHelpCmd()
 	cmd.InitDefaultHelpFlag()
@@ -118,6 +72,11 @@ func genCommandMarkdown(cmd *cobra.Command, w io.Writer) error {
 	long := cmd.Long
 	if len(long) == 0 {
 		long = short
+	}
+
+	// Set the header
+	if _, err := fmt.Fprintf(w, fmTemplate, cmd.CommandPath(), short); err != nil {
+		return err
 	}
 
 	// Structure based on gcloud's docs:
@@ -162,11 +121,7 @@ func genCommandMarkdown(cmd *cobra.Command, w io.Writer) error {
 		buf.WriteString("\n\n")
 	}
 
-	match := regexp.MustCompile(`\bKf\b`)
-	var newBuf bytes.Buffer
-	newBuf.WriteString(match.ReplaceAllString(buf.String(), "{{kf_product_name_short}}"))
-
-	_, err := newBuf.WriteTo(w)
+	_, err := buf.WriteTo(w)
 	return err
 }
 
@@ -176,26 +131,16 @@ func genMarkdownTree(cmd *cobra.Command, dir, docVersion string) error {
 	})
 
 	// TODO: figure out if this is the root command and use index.html instead.
-	basename := strings.Replace(cmd.CommandPath(), " ", "-", -1) + ".md"
-	filename := filepath.Join(dir, basename)
+	basename := strings.Replace(cmd.CommandPath(), " ", "-", -1)
+	basename = strings.Replace(basename, "_", "-", -1)
+	filename := filepath.Join(dir, basename+".md")
 	f, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	// Add the Google Cloud required header
-	if _, err := fmt.Fprintf(f, fmTemplate, docVersion, cmd.CommandPath()); err != nil {
-		return err
-	}
-
-	// Generate the command markdown
 	if err := genCommandMarkdown(cmd, f); err != nil {
-		return err
-	}
-
-	// Add the Google Cloud required footer to finish the template
-	if _, err := fmt.Fprintln(f, footer); err != nil {
 		return err
 	}
 

@@ -32,6 +32,9 @@ MINOR="${VERSION_NUMBERS[1]}"
 DOC_VERSION="${MAJOR:1}.${MINOR}"
 echo "DOC_VERSION:${DOC_VERSION}"
 
+cli_output_dir="${PWD}/docs/content/en/docs/v${DOC_VERSION}/cli/generated"
+troubleshoot_output_dir="${PWD}/docs/content/en/docs/v${DOC_VERSION}/troubleshooting/generated"
+
 temp_dir=$(mktemp -d)
 finish() {
   rm -rf "${temp_dir}"
@@ -40,23 +43,6 @@ trap finish EXIT
 
 # Generate docs
 go run ./pkg/kf/internal/tools/command-doc-generator/command-doc-generator.go "${temp_dir}" "${DOC_VERSION}"
-
-# Build a new _index.md file
-# We want to use the kf.md file with a different header.
-go run ./pkg/kf/internal/tools/command-doc-generator/command-doc-generator.go --kf-only "${temp_dir}/index.md" "${DOC_VERSION}"
-
-# Build a new _book.yaml file
-go run ./pkg/kf/internal/tools/command-doc-generator/command-doc-generator.go --book-only "${temp_dir}/_toc.yaml" "${DOC_VERSION}"
-
-# Build a new dependency_matrix.html file.
-cat << EOF > "${temp_dir}/dependency-matrix-${VERSION}.md"
-{% include "migrate/kf/docs/${DOC_VERSION}/_local_variables.html" %}
-{% include "_shared/apis/_clientlib_variables.html" %}
-{% include "_shared/apis/console/_local_variables.html" %}
-{% include "cloud/_shared/_cloud_shared_files.html" %}
-
-EOF
-go run ./cmd/kf dependencies matrix >> "${temp_dir}/dependency-matrix-${VERSION}.md"
 
 # This can get a bit noisy, turn off verbose mode.
 set +x
@@ -74,31 +60,10 @@ done
 popd
 set -x
 
-# Setup a new CitC
-clientdir="$(p4 g4d -f -- "${CITC:=kf-cli-docs-$(date +%s)}")"
-pushd "${clientdir}"
-output_dir=${clientdir}/googledata/devsite/site-cloud/en/migrate/kf/docs/${DOC_VERSION}/cli/
-mkdir -p "$output_dir"
-popd
-
-# CitC isn't a normal filedrive, so visiting it instead of calling it from afar
-# helps it work more reliably.
-pushd "${clientdir}/googledata/devsite/site-cloud/en/migrate/kf/docs/${DOC_VERSION}/"
-
-mv "${temp_dir}/dependency-matrix-${VERSION}.md" "./_dependency-matrix-${VERSION}.md"
-
-popd
-
-# CitC isn't a normal filedrive, so visiting it instead of calling it from afar
-# helps it work more reliably.
-pushd "${output_dir}"
-
-# Remove everything from the commands directory.
-# We do this so if we ever delete a command, the doc won't be stranded.
+# Remove old generated files then add the new ones.
+pushd "${cli_output_dir}"
 rm -f ./*.md
-
 cp -r "${temp_dir}/"* .
-
 popd
 
 # Set up runbooks
@@ -106,20 +71,8 @@ rm -r "${temp_dir}/"
 
 go run ./pkg/kf/internal/tools/runbook-generator/main.go "${temp_dir}" "${DOC_VERSION}"
 
-pushd "${clientdir}/googledata/devsite/site-cloud/en/migrate/kf/docs/${DOC_VERSION}/reference"
+# Remove old generated files then add the new ones.
+pushd "${troubleshoot_output_dir}"
+rm -f ./*.md
 cp -r "${temp_dir}/"* .
-popd
-
-# Check to see if a CL has already been created for this CitC
-pushd "${clientdir}"
-cl=$(p4 -F %change0% p)
-if [[ "${cl}" == "" ]]; then
-  # Create a CL
-  p4 change --desc "Regenerate Kf CLI command docs and dependency matrix"
-  cl=$(p4 -F %change0% p)
-  echo "Next steps:"
-  echo "cl/${cl}"
-  echo "To stage to devsite:"
-  echo "/google/data/ro/projects/devsite/devsite2 stage --cl=${cl}"
-fi
 popd
