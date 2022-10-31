@@ -166,6 +166,11 @@ data:
     # When set to true, Route status will be updated with VirtualService conditions.
     routeTrackVirtualService: "false"
 
+    # TaskDefaultTimeoutMinutes sets the cluster-wide timeout for tasks.
+    # If the value is null, the timeout is inherited from Tekton.
+    # If the value is <= 0, then an infinite timeout is set.
+    taskDefaultTimeoutMinutes: "-1"
+
     # The following images are used to execute builds. They SHOULD NOT be
     # modified except in rare circumstances.
     buildHelpersImage: "ko://github.com/google/kf/v2/cmd/build-helpers"
@@ -236,4 +241,4 @@ data:
   progressDeadlineSeconds: "600"
   terminationGracePeriodSeconds: "30"
   routeTrackVirtualService: "false"
-
+  taskDefaultTimeoutMinutes: "-1"
