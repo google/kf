@@ -5,6 +5,7 @@ require (
 	cloud.google.com/go/logging v1.0.0
 	code.cloudfoundry.org/buildpackapplifecycle v0.0.0-00010101000000-000000000000
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e
+	github.com/aws/smithy-go v1.11.0
 	github.com/docker/cli v20.10.12+incompatible
 	github.com/docker/docker v20.10.12+incompatible
 	github.com/emicklei/go-restful v2.15.0+incompatible
@@ -79,7 +80,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.8.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.10.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.15.0 // indirect
-	github.com/aws/smithy-go v1.11.0 // indirect
 	github.com/awslabs/amazon-ecr-credential-helper/ecr-login v0.0.0-20220228164355-396b2034c795 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
