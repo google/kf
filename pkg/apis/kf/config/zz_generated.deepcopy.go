@@ -157,6 +157,11 @@ func (in *DefaultsConfig) DeepCopyInto(out *DefaultsConfig) {
 		*out = new(int64)
 		**out = **in
 	}
+	if in.TaskDefaultTimeoutMinutes != nil {
+		in, out := &in.TaskDefaultTimeoutMinutes, &out.TaskDefaultTimeoutMinutes
+		*out = new(int32)
+		**out = **in
+	}
 	return
 }
 

@@ -44,6 +44,7 @@ const (
 	progressDeadlineSecondsKey       = "progressDeadlineSeconds"
 	terminationGracePeriodSecondsKey = "terminationGracePeriodSeconds"
 	routeTrackVirtualServiceKey      = "routeTrackVirtualService"
+	taskDefaultTimeoutMinutesKey     = "taskDefaultTimeoutMinutes"
 
 	// Images used for build purposes
 
@@ -144,6 +145,11 @@ type DefaultsConfig struct {
 
 	// RouteTrackVirtualService when set to true, will update Route status with VirtualService conditions.
 	RouteTrackVirtualService bool `json:"routeTrackVirtualService,omitempty"`
+
+	// TaskDefaultTimeoutMinutes sets the cluster-wide timeout for tasks.
+	// If the value is null, the timeout is inherited from Tekton.
+	// If the value is <= 0, then an infinite timeout is set.
+	TaskDefaultTimeoutMinutes *int32 `json:"taskDefaultTimeoutMinutes,omitempty"`
 }
 
 // BuiltinDefaultsConfig creates a defaults configuration with default values.
@@ -252,6 +258,7 @@ func (defaultsConfig *DefaultsConfig) getInterfaceValues(leaveEmpty bool) map[st
 		progressDeadlineSecondsKey:       &defaultsConfig.ProgressDeadlineSeconds,
 		terminationGracePeriodSecondsKey: &defaultsConfig.TerminationGracePeriodSeconds,
 		routeTrackVirtualServiceKey:      &defaultsConfig.RouteTrackVirtualService,
+		taskDefaultTimeoutMinutesKey:     &defaultsConfig.TaskDefaultTimeoutMinutes,
 	}
 
 	if !leaveEmpty {

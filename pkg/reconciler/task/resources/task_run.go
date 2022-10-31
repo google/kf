@@ -15,6 +15,8 @@
 package resources
 
 import (
+	"time"
+
 	"github.com/google/kf/v2/pkg/apis/kf/config"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	appresources "github.com/google/kf/v2/pkg/reconciler/app/resources"
@@ -88,6 +90,17 @@ func MakeTaskRun(
 		},
 	}
 
+	if timeoutMins := cfg.TaskDefaultTimeoutMinutes; timeoutMins != nil {
+		// https://tekton.dev/vault/pipelines-v0.19.0/taskruns/#configuring-the-failure-timeout
+
+		// Values <= 0 mean infinite timeout.
+		if *timeoutMins <= 0 { // Infinite timeout
+			taskRun.Spec.Timeout = &metav1.Duration{Duration: 0}
+		} else {
+			taskRun.Spec.Timeout = &metav1.Duration{Duration: time.Duration(*timeoutMins) * time.Minute}
+		}
+	}
+
 	if task.Spec.Terminated == true {
 		taskRun.Spec.Status = tektonv1beta1.TaskRunSpecStatusCancelled
 	}
@@ -141,9 +154,10 @@ func getUserContainer(
 	if err := overrideResourceRequests(userContainer, task); err != nil {
 		return nil, err
 	}
-	// Task does not have readiness or liveness probe.
+	// Task does not have probes.
 	userContainer.ReadinessProbe = nil
 	userContainer.LivenessProbe = nil
+	userContainer.StartupProbe = nil
 
 	return userContainer, nil
 }

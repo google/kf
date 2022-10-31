@@ -16,9 +16,12 @@ package resources
 
 import (
 	"fmt"
+	"testing"
 
+	"github.com/aws/smithy-go/ptr"
 	"github.com/google/kf/v2/pkg/apis/kf/config"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -203,4 +206,68 @@ func ExampleMakeTaskRun_verifyTaskRunCancelled() {
 	fmt.Println("TaskRun status:", taskRun.Spec.Status)
 
 	// Output: TaskRun status: TaskRunCancelled
+}
+
+func TestMakeTaskRun(t *testing.T) {
+	cases := map[string]struct {
+		cfg              *config.DefaultsConfig
+		task             *v1alpha1.Task
+		app              *v1alpha1.App
+		space            *v1alpha1.Space
+		containerCommand []string
+	}{
+		"empty": {
+			cfg:   config.BuiltinDefaultsConfig(),
+			task:  &v1alpha1.Task{},
+			app:   &v1alpha1.App{},
+			space: &v1alpha1.Space{},
+		},
+		"unset-timeout": {
+			cfg: func() *config.DefaultsConfig {
+				cfg := config.BuiltinDefaultsConfig()
+				cfg.TaskDefaultTimeoutMinutes = nil
+				return cfg
+			}(),
+			task:  &v1alpha1.Task{},
+			app:   &v1alpha1.App{},
+			space: &v1alpha1.Space{},
+		},
+		"unlimited-timeout": {
+			cfg: func() *config.DefaultsConfig {
+				cfg := config.BuiltinDefaultsConfig()
+				cfg.TaskDefaultTimeoutMinutes = ptr.Int32(-1)
+				return cfg
+			}(),
+			task:  &v1alpha1.Task{},
+			app:   &v1alpha1.App{},
+			space: &v1alpha1.Space{},
+		},
+		"timeout": {
+			cfg: func() *config.DefaultsConfig {
+				cfg := config.BuiltinDefaultsConfig()
+				cfg.TaskDefaultTimeoutMinutes = ptr.Int32(5)
+				return cfg
+			}(),
+			task:  &v1alpha1.Task{},
+			app:   &v1alpha1.App{},
+			space: &v1alpha1.Space{},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			obj, err := MakeTaskRun(tc.cfg, tc.task, tc.app, tc.space, tc.containerCommand)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			testutil.AssertGoldenJSONContext(t, "taskrun", obj, map[string]interface{}{
+				"cfg":              tc.cfg,
+				"task":             tc.task,
+				"app":              tc.app,
+				"space":            tc.space,
+				"containerCommand": tc.containerCommand,
+			})
+		})
+	}
 }

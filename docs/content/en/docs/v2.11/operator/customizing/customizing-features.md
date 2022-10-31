@@ -187,3 +187,28 @@ kubectl patch \
     --type='json' \
     -p="[{'op':'add','path':'/spec/kf/config/terminationGracePeriodSeconds','value':200}]"
 ```
+
+## Set default Kf Task timeout
+
+Kf uses Tekton TaskRuns as its mechanism to run Kf Tasks. 
+Tekton may impose a [default timeout on TaskRuns](https://tekton.dev/docs/pipelines/taskruns/#configuring-the-failure-timeout)
+that differs depending on the version of Tekton you have installed.
+
+You can override this setting either on the Tekton configmap -- which will set the value for both
+Kf Tasks and Builds or on the Kf operator to apply the value only to Tasks.
+
+The following values are supported:
+
+* `null` - Inherit the value from Tekton (Default).
+* Value <= 0 - Tasks get an infinite timeout.
+* Value >= 0 - Tasks get the given timeout.
+
+Consider setting a long, but non-infinite timeout to prevent improperly programmed
+tasks from consuming resources.
+
+```sh
+kubectl patch \
+    kfsystem kfsystem \
+    --type='json' \
+    -p="[{'op':'add','path':'/spec/kf/config/taskDefaultTimeoutMinutes','value':-1}]"
+```

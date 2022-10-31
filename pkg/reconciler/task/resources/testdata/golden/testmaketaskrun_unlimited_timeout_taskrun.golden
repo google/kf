@@ -1,0 +1,177 @@
+# Test:	TestMakeTaskRun/unlimited-timeout
+# app:
+#   metadata:
+#     creationTimestamp: null
+#   spec:
+#     build: {}
+#     instances:
+#       autoscaling: {}
+#     template:
+#       spec:
+#         containers: null
+#       updateRequests: 0
+#   status:
+#     instances:
+#       labelSelector: ""
+#     serviceBindingConditions: null
+#     startCommands: {}
+#     tasks:
+#       updateRequests: 0
+# cfg:
+#   appCPUMin: 100m
+#   appCPUPerGBOfRAM: 100m
+#   taskDefaultTimeoutMinutes: -1
+# containerCommand: null
+# space:
+#   metadata:
+#     creationTimestamp: null
+#   spec:
+#     buildConfig:
+#       defaultToV3Stack: null
+#     networkConfig:
+#       appNetworkPolicy: {}
+#       buildNetworkPolicy: {}
+#     runtimeConfig: {}
+#   status:
+#     buildConfig:
+#       defaultToV3Stack: false
+#     ingressGateways: null
+#     networkConfig: {}
+#     runtimeConfig: {}
+# task:
+#   metadata:
+#     creationTimestamp: null
+#   spec:
+#     appRef: {}
+#   status: {}
+
+{
+    "metadata": {
+        "creationTimestamp": null,
+        "labels": {
+            "app.kubernetes.io/component": "task",
+            "app.kubernetes.io/managed-by": "kf",
+            "app.kubernetes.io/name": "",
+            "kf.dev/networkpolicy": "app",
+            "tekton.dev/pipelineTask": "user-container"
+        },
+        "annotations": {
+            "sidecar.istio.io/inject": "true"
+        },
+        "ownerReferences": [
+            {
+                "apiVersion": "kf.dev/v1alpha1",
+                "kind": "Task",
+                "name": "",
+                "uid": "",
+                "controller": true,
+                "blockOwnerDeletion": true
+            }
+        ]
+    },
+    "spec": {
+        "serviceAccountName": "",
+        "taskSpec": {
+            "steps": [
+                {
+                    "name": "user-container",
+                    "env": [
+                        {
+                            "name": "CF_INSTANCE_IP",
+                            "valueFrom": {
+                                "fieldRef": {
+                                    "apiVersion": "v1",
+                                    "fieldPath": "status.podIP"
+                                }
+                            }
+                        },
+                        {
+                            "name": "CF_INSTANCE_INTERNAL_IP",
+                            "value": "$(CF_INSTANCE_IP)"
+                        },
+                        {
+                            "name": "VCAP_APP_HOST",
+                            "value": "$(CF_INSTANCE_IP)"
+                        },
+                        {
+                            "name": "CF_INSTANCE_PORT",
+                            "value": "8080"
+                        },
+                        {
+                            "name": "CF_INSTANCE_ADDR",
+                            "value": "$(CF_INSTANCE_IP):$(CF_INSTANCE_PORT)"
+                        },
+                        {
+                            "name": "CF_INSTANCE_GUID",
+                            "valueFrom": {
+                                "fieldRef": {
+                                    "apiVersion": "v1",
+                                    "fieldPath": "metadata.uid"
+                                }
+                            }
+                        },
+                        {
+                            "name": "INSTANCE_GUID",
+                            "value": "$(CF_INSTANCE_GUID)"
+                        },
+                        {
+                            "name": "MEMORY_LIMIT",
+                            "valueFrom": {
+                                "resourceFieldRef": {
+                                    "resource": "limits.memory",
+                                    "divisor": "1Mi"
+                                }
+                            }
+                        },
+                        {
+                            "name": "DISK_LIMIT",
+                            "valueFrom": {
+                                "resourceFieldRef": {
+                                    "resource": "limits.ephemeral-storage",
+                                    "divisor": "1Mi"
+                                }
+                            }
+                        },
+                        {
+                            "name": "LANG",
+                            "value": "en_US.UTF-8"
+                        },
+                        {
+                            "name": "VCAP_APPLICATION",
+                            "value": "{\"application_id\":\"\",\"application_name\":\"\",\"application_uris\":[],\"limits\":{\"disk\":$(DISK_LIMIT),\"mem\":$(MEMORY_LIMIT)},\"name\":\"\",\"process_id\":\"\",\"process_type\":\"web\",\"space_name\":\"\",\"uris\":[]}"
+                        },
+                        {
+                            "name": "VCAP_SERVICES",
+                            "valueFrom": {
+                                "secretKeyRef": {
+                                    "name": "kf-injected-envs-",
+                                    "key": "VCAP_SERVICES",
+                                    "optional": false
+                                }
+                            }
+                        },
+                        {
+                            "name": "DATABASE_URL",
+                            "valueFrom": {
+                                "secretKeyRef": {
+                                    "name": "kf-injected-envs-",
+                                    "key": "DATABASE_URL",
+                                    "optional": true
+                                }
+                            }
+                        },
+                        {
+                            "name": "MEMORY_LIMIT",
+                            "value": "$(MEMORY_LIMIT)M"
+                        }
+                    ],
+                    "resources": {}
+                }
+            ]
+        },
+        "timeout": "0s"
+    },
+    "status": {
+        "podName": ""
+    }
+}
