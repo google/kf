@@ -243,7 +243,7 @@ func buildVolumes(volumeStatus []v1alpha1.AppVolumeStatus) ([]corev1.Volume, []c
 	// Make sure the output is deterministic, volume services shouldn't
 	// have dependencies on each other so it should be fine to rearrange.
 	sort.Slice(volumeStatus, func(i, j int) bool {
-		return volumeStatus[i].VolumeName < volumeStatus[j].VolumeName
+		return volumeStatus[i].MountPath < volumeStatus[j].MountPath
 	})
 
 	var volumes []corev1.Volume
