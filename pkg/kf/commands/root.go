@@ -196,6 +196,7 @@ func NewRawKfCommand() *cobra.Command {
 				InjectGetService(p),
 				InjectListServices(p),
 				InjectMarketplace(p),
+				InjectFixOrphanedBindingsCommand(p),
 			},
 		},
 		{

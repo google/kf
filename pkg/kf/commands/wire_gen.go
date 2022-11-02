@@ -398,6 +398,21 @@ func InjectVcapServices(p *config.KfParams) *cobra.Command {
 	return command
 }
 
+func InjectFixOrphanedBindingsCommand(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	serviceInstanceBindingsGetter := provideServiceInstanceBindingsGetter(kfV1alpha1Interface)
+	client := serviceinstancebindings.NewClient(serviceInstanceBindingsGetter)
+	appsGetter := provideAppsGetter(kfV1alpha1Interface)
+	buildsGetter := provideKfBuilds(kfV1alpha1Interface)
+	kubernetesInterface := config.GetKubernetes(p)
+	buildTailer := builds.TektonLoggingShim(kubernetesInterface)
+	buildsClient := builds.NewClient(p, buildsGetter, buildTailer)
+	tailer := logs.NewTailer(kubernetesInterface)
+	appsClient := apps.NewClient(appsGetter, buildsClient, tailer)
+	command := servicebindings.NewFixOrphanedBindingsCommand(p, client, appsClient)
+	return command
+}
+
 func InjectCreateServiceBroker(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	client := cluster.NewClient(kfV1alpha1Interface)

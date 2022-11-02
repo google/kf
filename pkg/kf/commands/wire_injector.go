@@ -350,6 +350,14 @@ func InjectVcapServices(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
+func InjectFixOrphanedBindingsCommand(p *config.KfParams) *cobra.Command {
+	wire.Build(
+		servicebindingscmd.NewFixOrphanedBindingsCommand,
+		ServiceBindingsSet,
+	)
+	return nil
+}
+
 ///////////////////////
 // Service Brokers  //
 /////////////////////
