@@ -302,11 +302,19 @@ func (status *AppStatus) PropagateVolumeBindingsStatus(volumeBindings []*Service
 		})
 	}
 
+	// Make sure status is deterministic.
+	sort.Slice(volumeStatus, func(i, j int) bool {
+		return volumeStatus[i].MountPath < volumeStatus[j].MountPath
+	})
 	status.Volumes = volumeStatus
 }
 
 // PropagateServiceInstanceBindingsStatus updates the service binding readiness status.
 func (status *AppStatus) PropagateServiceInstanceBindingsStatus(bindings []ServiceInstanceBinding) {
+	// Make sure binding sorting is deterministic.
+	sort.Slice(bindings, func(i, j int) bool {
+		return bindings[i].Name < bindings[j].Name
+	})
 
 	// Gather binding names
 	var bindingNames []string
