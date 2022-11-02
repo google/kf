@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"path"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -238,6 +239,12 @@ func buildVolumes(volumeStatus []v1alpha1.AppVolumeStatus) ([]corev1.Volume, []c
 	if len(volumeStatus) == 0 {
 		return nil, nil, nil, nil, nil
 	}
+
+	// Make sure the output is deterministic, volume services shouldn't
+	// have dependencies on each other so it should be fine to rearrange.
+	sort.Slice(volumeStatus, func(i, j int) bool {
+		return volumeStatus[i].VolumeName < volumeStatus[j].VolumeName
+	})
 
 	var volumes []corev1.Volume
 	var userVolumeMounts []corev1.VolumeMount

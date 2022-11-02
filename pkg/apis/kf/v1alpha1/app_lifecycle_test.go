@@ -947,3 +947,157 @@ func TestPropagateADXBuildStatus(t *testing.T) {
 		testutil.AssertErrorsEqual(t, errors.New("failed to read image from status: .status.image accessor error: [wrong-type] is of the type []string, expected string"), err)
 	})
 }
+
+func TestAppStatus_PropagateVolumeBindingsStatus(t *testing.T) {
+	t.Parallel()
+
+	bindingA := ServiceInstanceBinding{
+		Status: ServiceInstanceBindingStatus{
+			VolumeStatus: &BindingVolumeStatus{
+				PersistentVolumeName:      "pv-a",
+				Mount:                     "/pv/a",
+				PersistentVolumeClaimName: "pvc-a",
+				ReadOnly:                  false,
+				UidGid: UidGid{
+					UID: "usr-a",
+					GID: "grp-a",
+				},
+			},
+		},
+	}
+	statusA := AppVolumeStatus{
+		MountPath:       "/pv/a",
+		VolumeName:      "pv-a",
+		VolumeClaimName: "pvc-a",
+		ReadOnly:        false,
+		UidGid: UidGid{
+			UID: "usr-a",
+			GID: "grp-a",
+		},
+	}
+	bindingB := ServiceInstanceBinding{
+		Status: ServiceInstanceBindingStatus{
+			VolumeStatus: &BindingVolumeStatus{
+				PersistentVolumeName:      "pv-b",
+				Mount:                     "/pv/b",
+				PersistentVolumeClaimName: "pvc-b",
+				ReadOnly:                  true,
+				UidGid: UidGid{
+					UID: "usr-b",
+					GID: "grp-b",
+				},
+			},
+		},
+	}
+	statusB := AppVolumeStatus{
+		MountPath:       "/pv/b",
+		VolumeName:      "pv-b",
+		VolumeClaimName: "pvc-b",
+		ReadOnly:        true,
+		UidGid: UidGid{
+			UID: "usr-b",
+			GID: "grp-b",
+		},
+	}
+
+	cases := map[string]struct {
+		volumeBindings []*ServiceInstanceBinding
+		expected       *AppStatus
+	}{
+		"no volume list": {
+			volumeBindings: nil,
+			expected: &AppStatus{
+				Volumes: []AppVolumeStatus{},
+			},
+		},
+		"empty volume list": {
+			volumeBindings: []*ServiceInstanceBinding{},
+			expected: &AppStatus{
+				Volumes: []AppVolumeStatus{},
+			},
+		},
+		"single volume": {
+			volumeBindings: []*ServiceInstanceBinding{&bindingA},
+			expected: &AppStatus{
+				Volumes: []AppVolumeStatus{statusA},
+			},
+		},
+		"sorted volumes pass through": {
+			volumeBindings: []*ServiceInstanceBinding{&bindingA, &bindingB},
+			expected: &AppStatus{
+				Volumes: []AppVolumeStatus{statusA, statusB},
+			},
+		},
+		"reverse sorted volumes get sorted": {
+			volumeBindings: []*ServiceInstanceBinding{&bindingB, &bindingA},
+			expected: &AppStatus{
+				Volumes: []AppVolumeStatus{statusA, statusB},
+			},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			actual := new(AppStatus)
+			actual.PropagateVolumeBindingsStatus(tc.volumeBindings)
+
+			testutil.AssertEqual(t, "status", tc.expected, actual)
+		})
+	}
+}
+
+func TestAppStatus_PropagateServiceInstanceBindingsStatus(t *testing.T) {
+	t.Parallel()
+
+	bindingA := ServiceInstanceBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "binding-a",
+		},
+		Status: ServiceInstanceBindingStatus{
+			BindingName: "binding-a-name",
+		},
+	}
+	bindingB := ServiceInstanceBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "binding-b",
+		},
+		Status: ServiceInstanceBindingStatus{
+			BindingName: "binding-b-name",
+		},
+	}
+
+	cases := map[string]struct {
+		bindings                    []ServiceInstanceBinding
+		expectedServiceBindingNames []string
+	}{
+		"no binding list": {
+			bindings:                    nil,
+			expectedServiceBindingNames: []string{},
+		},
+		"empty binding list": {
+			bindings:                    []ServiceInstanceBinding{},
+			expectedServiceBindingNames: []string{},
+		},
+		"single binding": {
+			bindings:                    []ServiceInstanceBinding{bindingA},
+			expectedServiceBindingNames: []string{"binding-a-name"},
+		},
+		"sorted volumes pass through": {
+			bindings:                    []ServiceInstanceBinding{bindingA, bindingB},
+			expectedServiceBindingNames: []string{"binding-a-name", "binding-b-name"},
+		},
+		"reverse sorted volumes get sorted": {
+			bindings:                    []ServiceInstanceBinding{bindingB, bindingA},
+			expectedServiceBindingNames: []string{"binding-a-name", "binding-b-name"},
+		},
+	}
+
+	for tn, tc := range cases {
+		t.Run(tn, func(t *testing.T) {
+			actual := new(AppStatus)
+			actual.PropagateServiceInstanceBindingsStatus(tc.bindings)
+
+			testutil.AssertEqual(t, "status", tc.expectedServiceBindingNames, actual.ServiceBindingNames)
+		})
+	}
+}
