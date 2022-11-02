@@ -38,10 +38,16 @@ func NewFixOrphanedBindingsCommand(
 	)
 
 	cmd := &cobra.Command{
-		Use:          "fix-orphaned-bindings",
-		Short:        "Fix bindings without an app owner in a space.",
-		Long:         `Fix bindings with a missing owner reference to an App.`,
-		Example:      `kf fix-orphaned-bindings`,
+		Use:   "fix-orphaned-bindings",
+		Short: "Fix bindings without an app owner in a space.",
+		Long:  `Fix bindings with a missing owner reference to an App.`,
+		Example: `
+		# Identify broken bindings in the targeted space.
+		kf fix-orphaned-bindings
+
+		# Fix bindings in the targeted space.
+		kf fix-orphaned-bindings --dry-run=false
+		`,
 		Args:         cobra.ExactArgs(0),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -144,7 +150,7 @@ func NewFixOrphanedBindingsCommand(
 		},
 	}
 
-	cmd.Flags().BoolVar(&dryRun, "dry-run", true, "Run the command without applying changes")
+	cmd.Flags().BoolVar(&dryRun, "dry-run", true, "Run the command without applying changes.")
 
 	return cmd
 }
