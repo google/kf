@@ -788,14 +788,31 @@ func Test_makePodSpec(t *testing.T) {
 
 func Test_buildVolumes(t *testing.T) {
 
-	var gid v1alpha1.ID = "2000"
-	var uid v1alpha1.ID = "2000"
+	var gid v1alpha1.ID = "2002"
+	var uid v1alpha1.ID = "2001"
 	tests := map[string]struct {
 		volumeStatus []v1alpha1.AppVolumeStatus
 
-		wantVolumes int
-		wantError   error
+		wantVolumes         []corev1.Volume
+		wantMounts          []corev1.VolumeMount
+		wantFuseCommands    []string
+		wantUnmountCommands []string
+		wantError           error
 	}{
+		"nil volumes": {
+			volumeStatus:        nil,
+			wantVolumes:         nil,
+			wantMounts:          nil,
+			wantFuseCommands:    nil,
+			wantUnmountCommands: nil,
+		},
+		"empty volumes": {
+			volumeStatus:        []v1alpha1.AppVolumeStatus{},
+			wantVolumes:         nil,
+			wantMounts:          nil,
+			wantFuseCommands:    nil,
+			wantUnmountCommands: nil,
+		},
 		"No GID or UID": {
 			volumeStatus: []v1alpha1.AppVolumeStatus{
 				{
@@ -805,8 +822,22 @@ func Test_buildVolumes(t *testing.T) {
 				},
 			},
 
-			wantVolumes: 1,
-			wantError:   nil,
+			wantVolumes: []corev1.Volume{
+				{
+					Name: "volumeClaimName",
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: "volumeClaimName",
+						},
+					},
+				},
+			},
+			wantMounts: []corev1.VolumeMount{
+				{Name: "volumeClaimName", MountPath: "/.kfmounts/mount/path"},
+			},
+			wantFuseCommands:    []string{"mapfs -uid 2000 -gid 2000 /mount/path /.kfmounts/mount/path &"},
+			wantUnmountCommands: []string{"fusermount -u /mount/path &", "wait"},
+			wantError:           nil,
 		},
 		"Valid GID and UID": {
 			volumeStatus: []v1alpha1.AppVolumeStatus{
@@ -820,8 +851,21 @@ func Test_buildVolumes(t *testing.T) {
 					},
 				},
 			},
-			wantVolumes: 1,
-			wantError:   nil,
+			wantVolumes: []corev1.Volume{
+				{
+					Name: "volumeClaimName",
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: "volumeClaimName",
+						},
+					},
+				},
+			},
+			wantMounts: []corev1.VolumeMount{
+				{Name: "volumeClaimName", MountPath: "/.kfmounts/mount/path"},
+			},
+			wantFuseCommands:    []string{"mapfs -uid 2001 -gid 2002 /mount/path /.kfmounts/mount/path &"},
+			wantUnmountCommands: []string{"fusermount -u /mount/path &", "wait"},
 		},
 		"Valid GID and UID, multiple volumes": {
 			volumeStatus: []v1alpha1.AppVolumeStatus{
@@ -844,22 +888,86 @@ func Test_buildVolumes(t *testing.T) {
 					},
 				},
 			},
-			wantVolumes: 2,
-			wantError:   nil,
+			wantVolumes: []corev1.Volume{
+				{
+					Name: "volumeClaim1",
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: "volumeClaim1",
+						},
+					},
+				},
+				{
+					Name: "volumeClaim2",
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: "volumeClaim2",
+						},
+					},
+				},
+			},
+			wantMounts: []corev1.VolumeMount{
+				{Name: "volumeClaim1", MountPath: "/.kfmounts/mount/path1"},
+				{Name: "volumeClaim2", MountPath: "/.kfmounts/mount/path2"},
+			},
+			wantFuseCommands: []string{
+				"mapfs -uid 2001 -gid 2002 /mount/path1 /.kfmounts/mount/path1 &",
+				"mapfs -uid 2001 -gid 2002 /mount/path2 /.kfmounts/mount/path2 &",
+			},
+			wantUnmountCommands: []string{"fusermount -u /mount/path1 &", "fusermount -u /mount/path2 &", "wait"},
+		},
+		"volumes sorted by path": {
+			volumeStatus: []v1alpha1.AppVolumeStatus{
+				{
+					VolumeName:      "volume2",
+					VolumeClaimName: "volumeClaim2",
+					MountPath:       "/mount/path2",
+				},
+				{
+					VolumeName:      "volume1",
+					VolumeClaimName: "volumeClaim1",
+					MountPath:       "/mount/path1",
+				},
+			},
+			wantVolumes: []corev1.Volume{
+				{
+					Name: "volumeClaim1",
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: "volumeClaim1",
+						},
+					},
+				},
+				{
+					Name: "volumeClaim2",
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: "volumeClaim2",
+						},
+					},
+				},
+			},
+			wantMounts: []corev1.VolumeMount{
+				{Name: "volumeClaim1", MountPath: "/.kfmounts/mount/path1"},
+				{Name: "volumeClaim2", MountPath: "/.kfmounts/mount/path2"},
+			},
+			wantFuseCommands: []string{
+				"mapfs -uid 2000 -gid 2000 /mount/path1 /.kfmounts/mount/path1 &",
+				"mapfs -uid 2000 -gid 2000 /mount/path2 /.kfmounts/mount/path2 &",
+			},
+			wantUnmountCommands: []string{"fusermount -u /mount/path1 &", "fusermount -u /mount/path2 &", "wait"},
 		},
 	}
 
 	for tn, tc := range tests {
 		t.Run(tn, func(t *testing.T) {
-			volumes, userVolumes, fuseVolumes, _, err := buildVolumes(tc.volumeStatus)
+			volumes, mounts, fuseCommands, unmountCommands, err := buildVolumes(tc.volumeStatus)
 
-			if err != nil {
-				testutil.AssertEqual(t, "error", tc.wantError, err)
-			}
-
-			testutil.AssertEqual(t, "number of Volumes", tc.wantVolumes, len(volumes))
-			testutil.AssertEqual(t, "number of userVolumes", tc.wantVolumes, len(userVolumes))
-			testutil.AssertEqual(t, "number of fuseVolumes", tc.wantVolumes, len(fuseVolumes))
+			testutil.AssertEqual(t, "error", tc.wantError, err)
+			testutil.AssertEqual(t, "volumes", tc.wantVolumes, volumes)
+			testutil.AssertEqual(t, "mounts", tc.wantMounts, mounts)
+			testutil.AssertEqual(t, "fuseCommands", tc.wantFuseCommands, fuseCommands)
+			testutil.AssertEqual(t, "unmountCommands", tc.wantUnmountCommands, unmountCommands)
 		})
 	}
 }
