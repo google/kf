@@ -26,6 +26,7 @@ node_count=$4
 machine_type=$5
 network=$6
 release_channel=$7
+image_type="cos_containerd"
 
 if
   [ -z "${project_id}" ] ||
@@ -60,7 +61,7 @@ until [ "$n" -ge ${retry_count} ]; do
 
   gcloud deployment-manager deployments "${command}" \
     "${cluster}" \
-    --properties "zone:${zone},initialNodeCount:${node_count},machineType:${machine_type},network:${network},releaseChannel:${release_channel}" \
+    --properties "zone:${zone},initialNodeCount:${node_count},machineType:${machine_type},imageType:${image_type},network:${network},releaseChannel:${release_channel}" \
     --template /kf/bin/deployment-manager/cluster.py &&
     break
   n=$((n + 1))
