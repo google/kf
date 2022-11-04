@@ -407,6 +407,17 @@ type AppStatus struct {
 
 	// Tasks are status of Tasks run on the App.
 	Tasks AppTaskStatus `json:"tasks,omitempty"`
+
+	// StartCommands are the container and buildpack start commands.
+	StartCommands StartCommandStatus `json:"startCommands,omitempty"`
+}
+
+// StartCommandStatus contains the app start commands.
+type StartCommandStatus struct {
+	Container []string `json:"container,omitempty"`
+	Buildpack []string `json:"buildpack,omitempty"`
+	Image     string   `json:"image,omitempty"`
+	Error     string   `json:"error,omitempty"`
 }
 
 // AppVolumeStatus contains the status of mounted volume.
