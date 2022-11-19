@@ -41,7 +41,16 @@ func NewSetEnvCommand(p *config.KfParams, client apps.Client) *cobra.Command {
 
 		Apps will be updated without downtime.
 		`,
-		Example:           `kf set-env myapp ENV production`,
+		Example: `
+		# Set an environment variable on an App.
+		kf set-env myapp ENV production
+
+		# Don't wait for the App to restart.
+		kf set-env --async myapp ENV production
+		
+		# Set an environment variable that starts with a dash.
+		kf set-env myapp -- JAVA_OPTS -Dtest=sometest
+		`,
 		Args:              cobra.ExactArgs(3),
 		ValidArgsFunction: completion.AppCompletionFn(p),
 		SilenceUsage:      true,
