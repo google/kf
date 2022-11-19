@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alessio/shellescape"
 	"github.com/google/kf/v2/pkg/apis/kf/config"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	appresources "github.com/google/kf/v2/pkg/reconciler/app/resources"
@@ -118,22 +119,24 @@ func MakeTaskRun(
 		taskRun.Spec.TaskSpec.Volumes = append(taskRun.Spec.TaskSpec.Volumes, volumes...)
 		userContainer.VolumeMounts = append(userContainer.VolumeMounts, userVolumeMounts...)
 
-		originalArgs := userContainer.Args
-		originalCommand := []string{}
+		// Grab the user's original command in a way that we can inject into a shell.
+		desiredCommand := []string{}
 		if len(userContainer.Command) > 0 {
 			// Append to the existing array so we don't modify the userContainer.Command value.
-			originalCommand = append(originalCommand, userContainer.Command...)
+			desiredCommand = append(desiredCommand, userContainer.Command...)
 		} else {
-			originalCommand = append(originalCommand, containerCommand...)
+			desiredCommand = append(desiredCommand, containerCommand...)
 		}
-		originalStartCommand := append(originalCommand, originalArgs...)
+		for _, arg := range userContainer.Args {
+			desiredCommand = append(desiredCommand, shellescape.Quote(arg))
+		}
 
-		combinedStartCommand := append(fuseCommands, strings.Join(originalStartCommand, " "))
+		combinedStartCommand := append(fuseCommands, strings.Join(desiredCommand, " "))
 
 		userContainer.Command = []string{"/bin/sh"}
 		userContainer.Args = []string{"-c", strings.Join(combinedStartCommand, " ")}
 
-		// XXX: Tekton doesn't allow hooking into the contianer's lifecycle so we can't guarantee unmount.
+		// XXX: Tekton doesn't allow hooking into the contianer's lifecycle so we rely on the underlying system to unmount.
 	}
 
 	if task.Spec.Terminated == true {
