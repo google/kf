@@ -104,7 +104,7 @@ func MakeTaskRun(
 		}
 	}
 
-	if len(app.Status.Volumes) > 0 {
+	if !cfg.TaskDisableVolumeMounts && len(app.Status.Volumes) > 0 {
 		userContainer := &taskRun.Spec.TaskSpec.Steps[0]
 		// mapfs for volumes needs the extra permission.
 		userContainer.SecurityContext = &corev1.SecurityContext{

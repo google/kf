@@ -171,6 +171,11 @@ data:
     # If the value is <= 0, then an infinite timeout is set.
     taskDefaultTimeoutMinutes: "-1"
 
+    # TaskDisableVolumeMounts disables mounting NFS volumes in Tasks.
+    # Mounting NFS volumes requires FUSE which grants Task Pods additional
+    # system privileges.
+    taskDisableVolumeMounts: "true"
+
     # The following images are used to execute builds. They SHOULD NOT be
     # modified except in rare circumstances.
     buildHelpersImage: "ko://github.com/google/kf/v2/cmd/build-helpers"
@@ -242,3 +247,4 @@ data:
   terminationGracePeriodSeconds: "30"
   routeTrackVirtualService: "false"
   taskDefaultTimeoutMinutes: "-1"
+  taskDisableVolumeMounts: "false"
