@@ -15,6 +15,7 @@
 package resources
 
 import (
+	"strings"
 	"time"
 
 	"github.com/google/kf/v2/pkg/apis/kf/config"
@@ -25,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/kmeta"
+	"knative.dev/pkg/ptr"
 )
 
 const (
@@ -99,6 +101,39 @@ func MakeTaskRun(
 		} else {
 			taskRun.Spec.Timeout = &metav1.Duration{Duration: time.Duration(*timeoutMins) * time.Minute}
 		}
+	}
+
+	if len(app.Status.Volumes) > 0 {
+		userContainer := &taskRun.Spec.TaskSpec.Steps[0]
+		// mapfs for volumes needs the extra permission.
+		userContainer.SecurityContext = &corev1.SecurityContext{
+			Privileged: ptr.Bool(true),
+		}
+
+		// Build NFS volume mounts.
+		volumes, userVolumeMounts, fuseCommands, _, err := appresources.BuildVolumes(app.Status.Volumes)
+		if err != nil {
+			return nil, err
+		}
+		taskRun.Spec.TaskSpec.Volumes = append(taskRun.Spec.TaskSpec.Volumes, volumes...)
+		userContainer.VolumeMounts = append(userContainer.VolumeMounts, userVolumeMounts...)
+
+		originalArgs := userContainer.Args
+		originalCommand := []string{}
+		if len(userContainer.Command) > 0 {
+			// Append to the existing array so we don't modify the userContainer.Command value.
+			originalCommand = append(originalCommand, userContainer.Command...)
+		} else {
+			originalCommand = append(originalCommand, containerCommand...)
+		}
+		originalStartCommand := append(originalCommand, originalArgs...)
+
+		combinedStartCommand := append(fuseCommands, strings.Join(originalStartCommand, " "))
+
+		userContainer.Command = []string{"/bin/sh"}
+		userContainer.Args = []string{"-c", strings.Join(combinedStartCommand, " ")}
+
+		// XXX: Tekton doesn't allow hooking into the contianer's lifecycle so we can't guarantee unmount.
 	}
 
 	if task.Spec.Terminated == true {
