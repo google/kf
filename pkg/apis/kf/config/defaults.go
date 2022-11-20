@@ -41,6 +41,7 @@ const (
 	buildNodeSelectorsKey            = "buildNodeSelectors"
 	appCPUPerGBOfRAMKey              = "appCPUPerGBOfRAM"
 	appCPUMinKey                     = "appCPUMin"
+	appDisableStartCommandLookupKey  = "appDisableStartCommandLookup"
 	progressDeadlineSecondsKey       = "progressDeadlineSeconds"
 	terminationGracePeriodSecondsKey = "terminationGracePeriodSeconds"
 	routeTrackVirtualServiceKey      = "routeTrackVirtualService"
@@ -134,6 +135,11 @@ type DefaultsConfig struct {
 
 	// Minimum amount of CPU to assign an app.
 	AppCPUMin *resource.Quantity `json:"appCPUMin,omitempty"`
+
+	// AppDisableStartCommandLookup disables the App reconciler from looking
+	// up the start command for Apps which requires fetching the container
+	// configuration for every App.
+	AppDisableStartCommandLookup bool `json:"appDisableStartCommandLookup,omitempty"`
 
 	// ProgressDeadlineSeconds contains the maximum time in seconds for a deployment to make progress before it
 	// is considered to be failed.
@@ -255,6 +261,7 @@ func (defaultsConfig *DefaultsConfig) getInterfaceValues(leaveEmpty bool) map[st
 		buildNodeSelectorsKey:            &defaultsConfig.BuildNodeSelectors,
 		appCPUPerGBOfRAMKey:              &defaultsConfig.AppCPUPerGBOfRAM,
 		appCPUMinKey:                     &defaultsConfig.AppCPUMin,
+		appDisableStartCommandLookupKey:  &defaultsConfig.AppDisableStartCommandLookup,
 		progressDeadlineSecondsKey:       &defaultsConfig.ProgressDeadlineSeconds,
 		terminationGracePeriodSecondsKey: &defaultsConfig.TerminationGracePeriodSeconds,
 		routeTrackVirtualServiceKey:      &defaultsConfig.RouteTrackVirtualService,

@@ -188,6 +188,26 @@ kubectl patch \
     -p="[{'op':'add','path':'/spec/kf/config/terminationGracePeriodSeconds','value':200}]"
 ```
 
+## Enable/Disable App Start Command Lookup
+
+Allows enabling/disbaling start command lookup in the App reconciler.
+This behavior requires the reconciler to fetch contianer configuration for every app from the container registry
+and enables displaying the start command on `kf push` and in `kf app`.
+
+Enabling this behavior on a large cluster may make the reconcilation times for Apps slow.
+
+Values for `appDisableStartCommandLookup`:
+
+* `false` Enable start command lookup. (Default)
+* `true` Disable start command lookup.
+
+```sh
+kubectl patch \
+    kfsystem kfsystem \
+    --type='json' \
+    -p="[{'op':'add','path':'/spec/kf/config/appDisableStartCommandLookup','value':true}]"
+```
+
 ## Set default Kf Task timeout
 
 Kf uses Tekton TaskRuns as its mechanism to run Kf Tasks. 
