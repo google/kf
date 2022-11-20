@@ -58,6 +58,7 @@ func TestStoreLoadWithContext(t *testing.T) {
 		terminationGracePeriodSecondsKey,
 		routeTrackVirtualServiceKey,
 		taskDefaultTimeoutMinutesKey,
+		taskDisableVolumeMountsKey,
 	}
 	_, configMap := cmtesting.ConfigMapsFromTestFile(t, DefaultsConfigName, allowedPredefinedKey...)
 	// sanity check the configmap, add more assertions below when new fields

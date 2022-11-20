@@ -212,3 +212,17 @@ kubectl patch \
     --type='json' \
     -p="[{'op':'add','path':'/spec/kf/config/taskDefaultTimeoutMinutes','value':-1}]"
 ```
+
+## Enable/Disbale NFS in Kf Tasks
+
+You can enable/disable the ability for Tasks run from Apps to mount NFS volumes.
+
+Mounting NFS volumes requires FUSE which grants Task Pods with NFS additional 
+system privileges on the node and may be a security concern.
+
+```sh
+kubectl patch \
+    kfsystem kfsystem \
+    --type='json' \
+    -p="[{'op':'add','path':'/spec/kf/config/taskDisableVolumeMounts','value':true}]"
+```

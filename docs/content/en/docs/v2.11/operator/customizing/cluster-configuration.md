@@ -12,6 +12,13 @@ Kf uses a Kubernetes configmap named `config-defaults` in
 the `kf` namespace to store cluster wide configuration settings.
 This document explains its structure and fields.
 
+{{< note >}}
+
+This configuration is usually copied from the `kfsystem` by the Kf operator.
+The values can be set in the operator under the `spec.kf.config` path.
+
+{{< /note >}}
+
 ## Structure of the config-defaults configmap
 
 The configmap contains three types of key/value pairs in the `.data` field:
@@ -322,5 +329,4 @@ featureFlags: |
 ## TerminationGracePeriodSeconds
 
 The `TerminationGracePeriodSeconds` contains a configurable quoted integer indicating the time between when the processes running in the pod are sent a termination signal and the time when the processes are forcibly halted with a kill signal. The default value is `30` seconds.
-
 
