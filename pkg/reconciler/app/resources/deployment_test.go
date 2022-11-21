@@ -109,6 +109,7 @@ func TestMakeDeployment(t *testing.T) {
 							Annotations: map[string]string{
 								"sidecar.istio.io/inject":                          "true",
 								"traffic.sidecar.istio.io/includeOutboundIPRanges": "*",
+								"kubectl.kubernetes.io/default-container":          "user-container",
 							},
 						},
 					},
@@ -198,6 +199,7 @@ func TestMakeDeployment(t *testing.T) {
 							Annotations: map[string]string{
 								"sidecar.istio.io/inject":                          "true",
 								"traffic.sidecar.istio.io/includeOutboundIPRanges": "*",
+								"kubectl.kubernetes.io/default-container":          "user-container",
 								"user-annotation1":                                 "annotation1-value",
 								"user-annotation2":                                 "annotation2-value",
 							},
@@ -283,6 +285,7 @@ func TestMakeDeployment(t *testing.T) {
 							Annotations: map[string]string{
 								"sidecar.istio.io/inject":                          "true",
 								"traffic.sidecar.istio.io/includeOutboundIPRanges": "*",
+								"kubectl.kubernetes.io/default-container":          "user-container",
 							},
 						},
 					},

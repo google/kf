@@ -100,11 +100,15 @@ func MakeDeployment(
 						// Add in the App's annotations, which may be user-defined.
 						app.GetAnnotations(),
 
-						// Inject the Envoy sidecar on all apps so networking rules
-						// apply.
 						map[string]string{
+							// Inject the Envoy sidecar on all apps so networking rules
+							// apply.
 							"sidecar.istio.io/inject":                          "true",
 							"traffic.sidecar.istio.io/includeOutboundIPRanges": "*",
+
+							// Follow KEP-2227 which allows setting the default
+							// container name for kubectl logs/exec/debug/attach etc.
+							"kubectl.kubernetes.io/default-container": v1alpha1.DefaultUserContainerName,
 						}),
 				},
 				Spec: *podSpec,
