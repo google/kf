@@ -51,7 +51,7 @@ kfsystem kfsystem \
 Allows enabling/disbaling retries in the VirtualServices that route traffic to Apps.
 Kf leaves this value unset by default and it's inherited from Istio.
 
-Istio's default retry mechanism attempts to make up for instability inerent in service meshes,
+Istio's default retry mechanism attempts to make up for instability inherent in service meshes,
 however allowing retries requires the contents of the payload to be buffered within Envoy. This
 may fail for large payloads and the buffering will need to be disabled at the expense of some
 stability.
