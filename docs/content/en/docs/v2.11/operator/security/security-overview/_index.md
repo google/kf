@@ -34,7 +34,7 @@ This diagram illustrates those interactions:
 
 ### NFS
 
-In order to mimic Cloud Foundry's UID/GID mapping containers in Kf that mount NFS volumes need
+In order to mimic Cloud Foundry's UID/GID mapping, containers in Kf that mount NFS volumes need
 the ability to run as `root` and the ability to access the FUSE device of the kernel running the
 Node.
 
