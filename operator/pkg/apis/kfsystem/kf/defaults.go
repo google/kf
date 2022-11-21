@@ -44,6 +44,7 @@ const (
 	progressDeadlineSecondsKey       = "progressDeadlineSeconds"
 	terminationGracePeriodSecondsKey = "terminationGracePeriodSeconds"
 	routeTrackVirtualServiceKey      = "routeTrackVirtualService"
+	routeDisableRetriesKey           = "routeDisableRetries"
 	taskDefaultTimeoutMinutesKey     = "taskDefaultTimeoutMinutes"
 	taskDisableVolumeMountsKey       = "taskDisableVolumeMounts"
 
@@ -146,6 +147,10 @@ type DefaultsConfig struct {
 
 	// RouteTrackVirtualService when set to true, will update Route status with VirtualService conditions.
 	RouteTrackVirtualService bool `json:"routeTrackVirtualService,omitempty"`
+
+	// RouteDisableRetries disables retries in the VirtualServices that route traffic to apps.
+	// By default, Kf leaves the value unset and it's inherited from Istio.
+	RouteDisableRetries bool `json:"routeDisableRetries,omitempty"`
 
 	// TaskDefaultTimeoutMinutes sets the cluster-wide timeout for tasks.
 	// If the value is null, the timeout is inherited from Tekton.
@@ -264,6 +269,7 @@ func (defaultsConfig *DefaultsConfig) getInterfaceValues(leaveEmpty bool) map[st
 		progressDeadlineSecondsKey:       &defaultsConfig.ProgressDeadlineSeconds,
 		terminationGracePeriodSecondsKey: &defaultsConfig.TerminationGracePeriodSeconds,
 		routeTrackVirtualServiceKey:      &defaultsConfig.RouteTrackVirtualService,
+		routeDisableRetriesKey:           &defaultsConfig.RouteDisableRetries,
 		taskDefaultTimeoutMinutesKey:     &defaultsConfig.TaskDefaultTimeoutMinutes,
 		taskDisableVolumeMountsKey:       &defaultsConfig.TaskDisableVolumeMounts,
 	}

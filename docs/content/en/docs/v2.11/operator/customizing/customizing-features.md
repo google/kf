@@ -46,6 +46,28 @@ kfsystem kfsystem \
 -p="[{'op': 'replace', 'path': '/spec/kf/config/buildDisableIstioSidecar', 'value': <var>true</var>}]"
 </pre>
 
+## Enable or Disable Routing Retries
+
+Allows enabling/disbaling retries in the VirtualServices that route traffic to Apps.
+Kf leaves this value unset by default and it's inherited from Istio.
+
+Istio's default retry mechanism attempts to make up for instability inherent in service meshes,
+however allowing retries requires the contents of the payload to be buffered within Envoy. This
+may fail for large payloads and the buffering will need to be disabled at the expense of some
+stability.
+
+Values for `routeDisableRetries`:
+
+* `false` Inherit Istio's retry settings. (Default)
+* `true` Set retries to 0.
+
+```sh
+kubectl patch \
+    kfsystem kfsystem \
+    --type='json' \
+    -p="[{'op':'add','path':'/spec/kf/config/routeDisableRetries','value':true}]"
+```
+
 ## Build Pod Resource Limits
 
 The default pod resource size can be increased from the default to accommodate very large builds. The units for the value are in `Mi` or `Gi`.

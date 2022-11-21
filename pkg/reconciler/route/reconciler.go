@@ -20,6 +20,7 @@ import (
 	"sort"
 
 	"github.com/google/kf/v2/pkg/apis/kf/config"
+	kfconfig "github.com/google/kf/v2/pkg/apis/kf/config"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	networking "github.com/google/kf/v2/pkg/apis/networking/v1alpha3"
 	kflisters "github.com/google/kf/v2/pkg/client/kf/listers/kf/v1alpha1"
@@ -105,6 +106,11 @@ func (r *Reconciler) ApplyChanges(
 		}
 	}
 	logger = logger.With(zap.Reflect("spaceDomain", spaceDomain))
+
+	configDefaults, err := kfconfig.FromContext(ctx).Defaults()
+	if err != nil {
+		return fmt.Errorf("failed to read config-defaults: %v", err)
+	}
 
 	// Sync VirtualService
 	logger.Debug("reconciling VirtualService")
@@ -195,6 +201,7 @@ func (r *Reconciler) ApplyChanges(
 		appBindings,
 		routeServiceBindings,
 		spaceDomain,
+		configDefaults,
 	)
 
 	// Used if the reconciler should fail based on the conditions of the Routes
@@ -262,6 +269,7 @@ func (r *Reconciler) reconcileVirtualService(
 	appBindings map[string]resources.RouteBindingSlice,
 	routeServiceBindings map[string][]v1alpha1.RouteServiceDestination,
 	spaceDomain *v1alpha1.SpaceDomain,
+	configDefaults *kfconfig.DefaultsConfig,
 ) (*networking.VirtualService, error) {
 	logger := logging.FromContext(ctx)
 
@@ -283,7 +291,13 @@ func (r *Reconciler) reconcileVirtualService(
 		return nil, err
 	}
 
-	desired, err := resources.MakeVirtualService(routes, appBindings, routeServiceBindings, spaceDomain)
+	desired, err := resources.MakeVirtualService(
+		routes,
+		appBindings,
+		routeServiceBindings,
+		spaceDomain,
+		configDefaults,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("configuring: %v", err)
 	}
