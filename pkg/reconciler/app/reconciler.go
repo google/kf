@@ -18,13 +18,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
+	"reflect"
+	"sort"
+
 	"github.com/google/go-containerregistry/pkg/name"
 	containerregistryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/kf/v2/pkg/dockerutil"
-	"math"
-	"reflect"
-	"sort"
 
 	kfconfig "github.com/google/kf/v2/pkg/apis/kf/config"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
@@ -604,40 +605,52 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 
 	// Sync start commands, populate container and buildpack start commands in app status.
 	{
-		logger.Debug("reconciling start commands")
-		startCommands := app.Status.StartCommands
-		if startCommands.Image != app.Status.Image && app.Status.Image != DefaultPlaceHolderBuildImage {
-			startCommands.Image = app.Status.Image
-			containerConfig, err := r.fetchContainerCommand(app)
-			if err != nil {
-				startCommands.Error = err.Error()
-			}
+		configDefaults, err := kfconfig.FromContext(ctx).Defaults()
+		if err != nil {
+			return fmt.Errorf("failed to read config-defaults: %v", err)
+		}
 
-			if app.Spec.Build.Image != nil {
-				startCommands.Container = containerConfig.Config.Entrypoint
-			} else {
-				buildName := app.Status.BuildStatusFields.BuildName
-
-				buildConfig, err := r.buildLister.Builds(app.GetNamespace()).Get(buildName)
-				if err != nil {
-					return err
-				}
-
-				startCommands.Container = containerConfig.Config.Entrypoint
-
-				if buildConfig.Spec.Name == v1alpha1.BuildpackV2BuildTaskName {
-					startCommands.Buildpack = []string{containerConfig.Config.Labels["StartCommand"]}
-				}
-			}
-
-			app.Status.PropagateStartCommandStatus(startCommands)
+		if !configDefaults.AppDisableStartCommandLookup {
+			logger.Debug("reconciling start commands")
+			r.updateStartCommand(app, fetchContainerCommand)
 		}
 	}
 	return nil
 }
 
-func (r *Reconciler) fetchContainerCommand(app *v1alpha1.App) (*containerregistryv1.ConfigFile, error) {
-	imageRef, err := name.ParseReference(app.Status.Image, name.WeakValidation)
+type ImageConfigFetcher func(image string) (*containerregistryv1.ConfigFile, error)
+
+func (*Reconciler) updateStartCommand(app *v1alpha1.App, fetcher ImageConfigFetcher) {
+	if app.Status.Image == app.Status.StartCommands.Image ||
+		app.Status.Image == DefaultPlaceHolderBuildImage ||
+		app.Status.Image == "" {
+		// Don't lookup start commands if we've already cached them or expect them not to exist.
+		return
+	}
+
+	startCommands := v1alpha1.StartCommandStatus{
+		// The image is set to prevent repeatedly looking up the values for the same image.
+		Image: app.Status.Image,
+	}
+
+	containerConfig, err := fetcher(app.Status.Image)
+	if err != nil {
+		startCommands.Error = err.Error()
+	} else {
+		startCommands.Container = containerConfig.Config.Entrypoint
+
+		// Look for a special label set by the buildpack that might contain the
+		// start command for v2 buildpacks.
+		if maybeStartCommand, ok := containerConfig.Config.Labels["StartCommand"]; ok {
+			startCommands.Buildpack = []string{maybeStartCommand}
+		}
+	}
+
+	app.Status.PropagateStartCommandStatus(startCommands)
+}
+
+func fetchContainerCommand(image string) (*containerregistryv1.ConfigFile, error) {
+	imageRef, err := name.ParseReference(image, name.WeakValidation)
 	if err != nil {
 		return nil, err
 	}
