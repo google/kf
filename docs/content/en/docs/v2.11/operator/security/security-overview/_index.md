@@ -7,7 +7,7 @@ weight: 100
 
 Kf aims to provide a similar developer experience to Cloud Foundry, replicating the build, push, and deploy lifecycle. It does this by building a developer UX layer on top of widely-known, broadly used and adopted technologies like Kubernetes, Istio, and container registries rather than by implementing all the pieces from the ground up.
 
-{{< note >}} Kf should be used in a GCP Project dedicated to your evaluation. See [Important considerations](#important-considerations) for more information.{{< /note >}}
+{{< note >}} Kf should be used in a dedicated GCP Project. See [Important considerations](#important-considerations) for more information.{{< /note >}}
 
 When making security decisions, Kf aims to provide complete solutions that are native to their respective components and can be augmented with other mechanisms. Breaking that down:
 
@@ -32,22 +32,17 @@ This diagram illustrates those interactions:
 
 {{<figure src="./wi_overview.svg" alt="Workload identity overview diagram" >}}
 
-### Current limitations
+### NFS
 
-* Kf doesn't provide pre-built RBAC roles. Until
-  Kf provides this, use
-  [RBAC](https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control).
+In order to mimic Cloud Foundry's UID/GID mapping, containers in Kf that mount NFS volumes need
+the ability to run as `root` and the ability to access the FUSE device of the kernel running the
+Node.
+
+### Current limitations
 
 * A developer pushing an app with Kf can also create
   Pods (with `kubectl`) that can use the `kf-builder` KSA with the permissions
   of its associated GSA.
-
-* Deploying to Kf requires write access to a container
-  registry. Deploy Kf in a dedicated project without
-  access to production resources. Grant developers access to push code to the
-  Artifact Repository by
-  [granting them `roles/storage.admin`](https://cloud.google.com/container-registry/docs/access-control)
-  on the project or buckets that Artifact Repository uses.
 
 * Kf uses the same Pod to fetch, build, and store images.
   Assume that any credentials that you provide can be known by the authors and

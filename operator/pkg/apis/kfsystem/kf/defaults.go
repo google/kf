@@ -45,6 +45,7 @@ const (
 	terminationGracePeriodSecondsKey = "terminationGracePeriodSeconds"
 	routeTrackVirtualServiceKey      = "routeTrackVirtualService"
 	taskDefaultTimeoutMinutesKey     = "taskDefaultTimeoutMinutes"
+	taskDisableVolumeMountsKey       = "taskDisableVolumeMounts"
 
 	// Images used for build purposes
 
@@ -150,6 +151,11 @@ type DefaultsConfig struct {
 	// If the value is null, the timeout is inherited from Tekton.
 	// If the value is <= 0, then an infinite timeout is set.
 	TaskDefaultTimeoutMinutes *int32 `json:"taskDefaultTimeoutMinutes,omitempty"`
+
+	// TaskDisableVolumeMounts disables mounting NFS volumes in Tasks.
+	// Mounting NFS volumes requires FUSE which grants Task Pods additional
+	// system privileges.
+	TaskDisableVolumeMounts bool `json:"taskDisableVolumeMounts,omitempty"`
 }
 
 // BuiltinDefaultsConfig creates a defaults configuration with default values.
@@ -259,6 +265,7 @@ func (defaultsConfig *DefaultsConfig) getInterfaceValues(leaveEmpty bool) map[st
 		terminationGracePeriodSecondsKey: &defaultsConfig.TerminationGracePeriodSeconds,
 		routeTrackVirtualServiceKey:      &defaultsConfig.RouteTrackVirtualService,
 		taskDefaultTimeoutMinutesKey:     &defaultsConfig.TaskDefaultTimeoutMinutes,
+		taskDisableVolumeMountsKey:       &defaultsConfig.TaskDisableVolumeMounts,
 	}
 
 	if !leaveEmpty {

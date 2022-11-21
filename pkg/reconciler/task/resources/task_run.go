@@ -15,8 +15,10 @@
 package resources
 
 import (
+	"strings"
 	"time"
 
+	"github.com/alessio/shellescape"
 	"github.com/google/kf/v2/pkg/apis/kf/config"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	appresources "github.com/google/kf/v2/pkg/reconciler/app/resources"
@@ -25,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/kmeta"
+	"knative.dev/pkg/ptr"
 )
 
 const (
@@ -99,6 +102,41 @@ func MakeTaskRun(
 		} else {
 			taskRun.Spec.Timeout = &metav1.Duration{Duration: time.Duration(*timeoutMins) * time.Minute}
 		}
+	}
+
+	if !cfg.TaskDisableVolumeMounts && len(app.Status.Volumes) > 0 {
+		userContainer := &taskRun.Spec.TaskSpec.Steps[0]
+		// mapfs for volumes needs the extra permission.
+		userContainer.SecurityContext = &corev1.SecurityContext{
+			Privileged: ptr.Bool(true),
+		}
+
+		// Build NFS volume mounts.
+		volumes, userVolumeMounts, fuseCommands, _, err := appresources.BuildVolumes(app.Status.Volumes)
+		if err != nil {
+			return nil, err
+		}
+		taskRun.Spec.TaskSpec.Volumes = append(taskRun.Spec.TaskSpec.Volumes, volumes...)
+		userContainer.VolumeMounts = append(userContainer.VolumeMounts, userVolumeMounts...)
+
+		// Grab the user's original command in a way that we can inject into a shell.
+		desiredCommand := []string{}
+		if len(userContainer.Command) > 0 {
+			// Append to the existing array so we don't modify the userContainer.Command value.
+			desiredCommand = append(desiredCommand, userContainer.Command...)
+		} else {
+			desiredCommand = append(desiredCommand, containerCommand...)
+		}
+		for _, arg := range userContainer.Args {
+			desiredCommand = append(desiredCommand, shellescape.Quote(arg))
+		}
+
+		combinedStartCommand := append(fuseCommands, strings.Join(desiredCommand, " "))
+
+		userContainer.Command = []string{"/bin/sh"}
+		userContainer.Args = []string{"-c", strings.Join(combinedStartCommand, " ")}
+
+		// XXX: Tekton doesn't allow hooking into the contianer's lifecycle so we rely on the underlying system to unmount.
 	}
 
 	if task.Spec.Terminated == true {

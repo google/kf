@@ -252,6 +252,82 @@ func TestMakeTaskRun(t *testing.T) {
 			app:   &v1alpha1.App{},
 			space: &v1alpha1.Space{},
 		},
+		"NFS volumes disabled": {
+			cfg: func() *config.DefaultsConfig {
+				cfg := config.BuiltinDefaultsConfig()
+				cfg.TaskDisableVolumeMounts = true
+				return cfg
+			}(),
+			task: &v1alpha1.Task{
+				Spec: v1alpha1.TaskSpec{
+					Command: "sleep 1000",
+				},
+			},
+			app: &v1alpha1.App{
+				Status: v1alpha1.AppStatus{
+					Volumes: []v1alpha1.AppVolumeStatus{
+						{
+							MountPath:       "/nfs/volume1",
+							VolumeName:      "nfsvolume1",
+							ReadOnly:        false,
+							VolumeClaimName: "nfs-volume1-pvc",
+						},
+					},
+				},
+			},
+			space: &v1alpha1.Space{},
+		},
+		"NFS volumes enabled": {
+			cfg: func() *config.DefaultsConfig {
+				cfg := config.BuiltinDefaultsConfig()
+				cfg.TaskDisableVolumeMounts = false
+				return cfg
+			}(),
+			task: &v1alpha1.Task{
+				Spec: v1alpha1.TaskSpec{
+					Command: "sleep 1000",
+				},
+			},
+			app: &v1alpha1.App{
+				Status: v1alpha1.AppStatus{
+					Volumes: []v1alpha1.AppVolumeStatus{
+						{
+							MountPath:       "/nfs/volume1",
+							VolumeName:      "nfsvolume1",
+							ReadOnly:        false,
+							VolumeClaimName: "nfs-volume1-pvc",
+						},
+					},
+				},
+			},
+			space: &v1alpha1.Space{},
+		},
+		"NFS volumes enabled start command": {
+			cfg: func() *config.DefaultsConfig {
+				cfg := config.BuiltinDefaultsConfig()
+				cfg.TaskDisableVolumeMounts = false
+				return cfg
+			}(),
+			task: &v1alpha1.Task{
+				Spec: v1alpha1.TaskSpec{
+					Command: "sleep 1000",
+				},
+			},
+			app: &v1alpha1.App{
+				Status: v1alpha1.AppStatus{
+					Volumes: []v1alpha1.AppVolumeStatus{
+						{
+							MountPath:       "/nfs/volume1",
+							VolumeName:      "nfsvolume1",
+							ReadOnly:        false,
+							VolumeClaimName: "nfs-volume1-pvc",
+						},
+					},
+				},
+			},
+			space:            &v1alpha1.Space{},
+			containerCommand: []string{"/launcher/lifecycle"},
+		},
 	}
 
 	for tn, tc := range cases {

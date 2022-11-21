@@ -96,6 +96,22 @@ func NewRunTaskCommand(p *config.KfParams, client tasks.Client, appClient apps.C
 			}
 
 			logging.FromContext(ctx).Infof("Task %s is submitted successfully for execution.", task.Name)
+
+			utils.SuggestNextAction(utils.NextAction{
+				Description: "View Task logs",
+				Commands: []string{
+					fmt.Sprintf("kf logs --task %s --space %s", app.Name, task.Namespace),
+					fmt.Sprintf("kubectl logs %s-pod --namespace %s", task.Name, task.Namespace),
+				},
+			})
+
+			utils.SuggestNextAction(utils.NextAction{
+				Description: "List App's Tasks",
+				Commands: []string{
+					fmt.Sprintf("kf tasks %s --space %s", app.Name, task.Namespace),
+				},
+			})
+
 			return nil
 		},
 	}

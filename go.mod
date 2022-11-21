@@ -5,6 +5,7 @@ require (
 	cloud.google.com/go/logging v1.0.0
 	code.cloudfoundry.org/buildpackapplifecycle v0.0.0-00010101000000-000000000000
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e
+	github.com/alessio/shellescape v1.4.1
 	github.com/aws/smithy-go v1.11.0
 	github.com/docker/cli v20.10.12+incompatible
 	github.com/docker/docker v20.10.12+incompatible

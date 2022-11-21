@@ -239,6 +239,18 @@ func makePodSpec(app *v1alpha1.App, space *v1alpha1.Space) (*corev1.PodSpec, err
 	return spec, nil
 }
 
+// BuildVolumes creates the set of items to run to enable and disable NFS
+// volume mounts on a container.
+func BuildVolumes(volumeStatus []v1alpha1.AppVolumeStatus) (
+	volumes []corev1.Volume,
+	userVolumeMounts []corev1.VolumeMount,
+	fuseCommands []string,
+	unmountCommands []string,
+	err error,
+) {
+	return buildVolumes(volumeStatus)
+}
+
 func buildVolumes(volumeStatus []v1alpha1.AppVolumeStatus) ([]corev1.Volume, []corev1.VolumeMount, []string, []string, error) {
 	if len(volumeStatus) == 0 {
 		return nil, nil, nil, nil, nil
