@@ -191,7 +191,7 @@ kubectl patch \
 ## Enable/Disable App Start Command Lookup
 
 Allows enabling/disbaling start command lookup in the App reconciler.
-This behavior requires the reconciler to fetch contianer configuration for every app from the container registry
+This behavior requires the reconciler to fetch container configuration for every app from the container registry
 and enables displaying the start command on `kf push` and in `kf app`.
 
 Enabling this behavior on a large cluster may make the reconcilation times for Apps slow.
