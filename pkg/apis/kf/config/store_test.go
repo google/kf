@@ -57,6 +57,7 @@ func TestStoreLoadWithContext(t *testing.T) {
 		progressDeadlineSecondsKey,
 		terminationGracePeriodSecondsKey,
 		routeTrackVirtualServiceKey,
+		routeDisableRetriesKey,
 		taskDefaultTimeoutMinutesKey,
 	}
 	_, configMap := cmtesting.ConfigMapsFromTestFile(t, DefaultsConfigName, allowedPredefinedKey...)

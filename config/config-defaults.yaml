@@ -165,6 +165,9 @@ data:
     terminationGracePeriodSeconds: 120
     # When set to true, Route status will be updated with VirtualService conditions.
     routeTrackVirtualService: "false"
+    # RouteDisableRetries disables retries in the VirtualServices that route traffic to apps.
+    # By default, Kf leaves the value unset and it's inherited from Istio.
+    routeDisableRetries: "false"
 
     # TaskDefaultTimeoutMinutes sets the cluster-wide timeout for tasks.
     # If the value is null, the timeout is inherited from Tekton.
@@ -241,4 +244,5 @@ data:
   progressDeadlineSeconds: "600"
   terminationGracePeriodSeconds: "30"
   routeTrackVirtualService: "false"
+  routeDisableRetries: "false"
   taskDefaultTimeoutMinutes: "-1"

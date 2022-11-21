@@ -22,6 +22,7 @@ import (
 	"sort"
 	"strings"
 
+	kfconfig "github.com/google/kf/v2/pkg/apis/kf/config"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	kfistio "github.com/google/kf/v2/pkg/apis/networking/v1alpha3"
 	serviceinstance "github.com/google/kf/v2/pkg/reconciler/serviceinstance/resources"
@@ -93,7 +94,13 @@ func MakeVirtualServiceName(domain string) string {
 }
 
 // MakeVirtualService creates a VirtualService from a Route object.
-func MakeVirtualService(routes []*v1alpha1.Route, bindings map[string]RouteBindingSlice, routeServiceBindings map[string][]v1alpha1.RouteServiceDestination, spaceDomain *v1alpha1.SpaceDomain) (*kfistio.VirtualService, error) {
+func MakeVirtualService(
+	routes []*v1alpha1.Route,
+	bindings map[string]RouteBindingSlice,
+	routeServiceBindings map[string][]v1alpha1.RouteServiceDestination,
+	spaceDomain *v1alpha1.SpaceDomain,
+	defaultsConfig *kfconfig.DefaultsConfig,
+) (*kfistio.VirtualService, error) {
 	if len(routes) == 0 {
 		return nil, errors.New("routes must not be empty")
 	}
@@ -112,6 +119,15 @@ func MakeVirtualService(routes []*v1alpha1.Route, bindings map[string]RouteBindi
 	httpRoutes, err := buildHTTPRoutes(rsfs, bindings, routeServiceBindings)
 	if err != nil {
 		return nil, err
+	}
+
+	// If specified, disable retries per route.
+	if defaultsConfig != nil && defaultsConfig.RouteDisableRetries {
+		for i := range httpRoutes {
+			httpRoutes[i].Retries = &istio.HTTPRetry{
+				Attempts: 0,
+			}
+		}
 	}
 
 	gatewayName, err := buildGatewayName(spaceDomain.GatewayName)

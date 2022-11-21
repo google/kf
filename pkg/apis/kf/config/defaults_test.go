@@ -51,6 +51,7 @@ func TestPatchConfigMap(t *testing.T) {
 		progressDeadlineSecondsKey,
 		terminationGracePeriodSecondsKey,
 		routeTrackVirtualServiceKey,
+		routeDisableRetriesKey,
 		taskDefaultTimeoutMinutesKey,
 	}
 	_, configMap := cmtesting.ConfigMapsFromTestFile(t, DefaultsConfigTestName, allowedPredefinedKey...)

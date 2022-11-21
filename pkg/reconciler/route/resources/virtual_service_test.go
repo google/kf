@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"testing"
 
+	kfconfig "github.com/google/kf/v2/pkg/apis/kf/config"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/kf/testutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -108,6 +109,7 @@ func TestMakeVirtualService(t *testing.T) {
 		Bindings             map[string]RouteBindingSlice
 		RouteServiceBindings map[string][]v1alpha1.RouteServiceDestination
 		SpaceDomain          v1alpha1.SpaceDomain
+		DefaultsConfig       kfconfig.DefaultsConfig
 		assertErr            error
 	}{
 		"empty list of routes": {
@@ -296,9 +298,41 @@ func TestMakeVirtualService(t *testing.T) {
 				GatewayName: "kf/internal-gateway",
 			},
 		},
+		"no retries applies everywhere": {
+			Routes: []*v1alpha1.Route{
+				makeRoute("some-host", "example.com", "/some-path", "some-namespace"),
+				makeRoute("*", "example.com", "/some-path", "some-namespace"),
+			},
+			Bindings: map[string]RouteBindingSlice{
+				makeRouteSpecFieldsStr("some-host", "example.com", "/some-path"): []v1alpha1.RouteDestination{
+					makeAppDestination("app-1", 1),
+				},
+				makeRouteSpecFieldsStr("*", "example.com", "/some-path"): []v1alpha1.RouteDestination{
+					makeAppDestination("backup-app", 1),
+				},
+			},
+			RouteServiceBindings: map[string][]v1alpha1.RouteServiceDestination{
+				makeRouteSpecFieldsStr("some-host", "example.com", ""): {
+					makeRouteServiceDestination("some-route-svc", "http", "some-route-service.com", ""),
+				},
+			},
+			SpaceDomain: v1alpha1.SpaceDomain{
+				Domain:      "example.com",
+				GatewayName: "kf/some-gateway",
+			},
+			DefaultsConfig: kfconfig.DefaultsConfig{
+				RouteDisableRetries: true,
+			},
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
-			actualVS, actualErr := MakeVirtualService(tc.Routes, tc.Bindings, tc.RouteServiceBindings, &tc.SpaceDomain)
+			actualVS, actualErr := MakeVirtualService(
+				tc.Routes,
+				tc.Bindings,
+				tc.RouteServiceBindings,
+				&tc.SpaceDomain,
+				&tc.DefaultsConfig,
+			)
 			testutil.AssertErrorsEqual(t, tc.assertErr, actualErr)
 			testutil.AssertGoldenJSONContext(t, "virtualservice", actualVS, map[string]interface{}{
 				"routes":               tc.Routes,
