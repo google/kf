@@ -214,7 +214,6 @@ func verifyAuditorPermission(ctx context.Context, t *testing.T, namespace string
 		{title: "SpaceAuditor gets Deployments in space", space: namespace, verb: "get", group: "apps", resource: "deployments", expectedOutput: true},
 		{title: "SpaceAuditor lists Deployments in space", space: namespace, verb: "list", group: "apps", resource: "deployments", expectedOutput: true},
 		{title: "SpaceAuditor watches Deployments in space", space: namespace, verb: "watch", group: "apps", resource: "deployments", expectedOutput: true},
-
 		{title: "SpaceAuditor can not create Deployments in space", space: namespace, verb: "create", group: "apps", resource: "deployments", expectedOutput: false},
 		{title: "SpaceAuditor can not update Deployments in space", space: namespace, verb: "update", group: "apps", resource: "deployments", expectedOutput: false},
 		{title: "SpaceAuditor can not patch Deployments in space", space: namespace, verb: "patch", group: "apps", resource: "deployments", expectedOutput: false},
