@@ -150,6 +150,13 @@ func verifyDeveloperPermission(ctx context.Context, t *testing.T, namespace stri
 		{title: "SpaceDeveloper can not patch spaces in cluster", space: "", verb: "patch", group: "kf.dev", resource: "spaces", expectedOutput: false},
 		{title: "SpaceDeveloper can not delete spaces in cluster", space: "", verb: "delete", group: "kf.dev", resource: "spaces", expectedOutput: false},
 		{title: "SpaceDeveloper can not list Apps in other space", space: "kf", verb: "list", group: "kf.dev", resource: "apps", expectedOutput: false},
+		{title: "SpaceDeveloper gets Deployments in space", space: namespace, verb: "get", group: "apps", resource: "deployments", expectedOutput: true},
+		{title: "SpaceDeveloper lists Deployments in space", space: namespace, verb: "list", group: "apps", resource: "deployments", expectedOutput: true},
+		{title: "SpaceDeveloper watches Deployments in space", space: namespace, verb: "watch", group: "apps", resource: "deployments", expectedOutput: true},
+		{title: "SpaceDeveloper can not create Deployments in space", space: namespace, verb: "create", group: "apps", resource: "deployments", expectedOutput: false},
+		{title: "SpaceDeveloper can not update Deployments in space", space: namespace, verb: "update", group: "apps", resource: "deployments", expectedOutput: false},
+		{title: "SpaceDeveloper can not patch Deployments in space", space: namespace, verb: "patch", group: "apps", resource: "deployments", expectedOutput: false},
+		{title: "SpaceDeveloper can not delete Deployments in space", space: namespace, verb: "delete", group: "apps", resource: "deployments", expectedOutput: false},
 	}
 
 	for _, test := range tests {
@@ -203,6 +210,15 @@ func verifyAuditorPermission(ctx context.Context, t *testing.T, namespace string
 		{title: "SpaceAuditor can not update Pods in space", space: namespace, verb: "update", group: "", resource: "pods", expectedOutput: false},
 		{title: "SpaceAuditor can not patch Pods in space", space: namespace, verb: "patch", group: "", resource: "pods", expectedOutput: false},
 		{title: "SpaceAuditor can not delete Pods in space", space: namespace, verb: "delete", group: "", resource: "pods", expectedOutput: false},
+
+		{title: "SpaceAuditor gets Deployments in space", space: namespace, verb: "get", group: "apps", resource: "deployments", expectedOutput: true},
+		{title: "SpaceAuditor lists Deployments in space", space: namespace, verb: "list", group: "apps", resource: "deployments", expectedOutput: true},
+		{title: "SpaceAuditor watches Deployments in space", space: namespace, verb: "watch", group: "apps", resource: "deployments", expectedOutput: true},
+
+		{title: "SpaceAuditor can not create Deployments in space", space: namespace, verb: "create", group: "apps", resource: "deployments", expectedOutput: false},
+		{title: "SpaceAuditor can not update Deployments in space", space: namespace, verb: "update", group: "apps", resource: "deployments", expectedOutput: false},
+		{title: "SpaceAuditor can not patch Deployments in space", space: namespace, verb: "patch", group: "apps", resource: "deployments", expectedOutput: false},
+		{title: "SpaceAuditor can not delete Deployments in space", space: namespace, verb: "delete", group: "apps", resource: "deployments", expectedOutput: false},
 
 		{title: "SpaceAuditor gets Pods log in space", space: namespace, verb: "get", group: "", resource: "pods/log", expectedOutput: true},
 		{title: "SpaceAuditor lists Pods log in space", space: namespace, verb: "list", group: "", resource: "pods/log", expectedOutput: true},
