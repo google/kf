@@ -1,45 +1,38 @@
 ---
-title: "kf set-env"
+title: "kf fix-orphaned-bindings"
 weight: 100
-description: "Create or update an environment variable for an App."
+description: "Fix bindings without an app owner in a space."
 ---
 ### Name
 
-<code translate="no">kf set-env</code> - Create or update an environment variable for an App.
+<code translate="no">kf fix-orphaned-bindings</code> - Fix bindings without an app owner in a space.
 
 ### Synopsis
 
-<pre translate="no">kf set-env APP_NAME ENV_VAR_NAME ENV_VAR_VALUE [flags]</pre>
+<pre translate="no">kf fix-orphaned-bindings [flags]</pre>
 
 ### Description
 
-Sets an environment variable for an App. Existing environment
-variable(s) on the App with the same name will be replaced.
-
-Apps will be updated without downtime.
-
+Fix bindings with a missing owner reference to an App.
 
 ### Examples
 
 <pre translate="no">
-# Set an environment variable on an App.
-kf set-env myapp ENV production
+# Identify broken bindings in the targeted space.
+kf fix-orphaned-bindings
 
-# Don&#39;t wait for the App to restart.
-kf set-env --async myapp ENV production
-
-# Set an environment variable that starts with a dash.
-kf set-env myapp -- JAVA_OPTS -Dtest=sometest
+# Fix bindings in the targeted space.
+kf fix-orphaned-bindings --dry-run=false
 </pre>
 
 ### Flags
 
 <dl>
-<dt><code translate="no">--async</code></dt>
-<dd><p>Do not wait for the action to complete on the server before returning.</p>
+<dt><code translate="no">--dry-run</code></dt>
+<dd><p>Run the command without applying changes. (default true)</p>
 </dd>
 <dt><code translate="no">-h, --help</code></dt>
-<dd><p>help for set-env</p>
+<dd><p>help for fix-orphaned-bindings</p>
 </dd>
 </dl>
 
