@@ -1,8 +1,22 @@
 # Kf
 
+[![Docs](https://img.shields.io/badge/Docs-kf.dev-brightgreen)](https://kf.dev)
+[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white)](https://pkg.go.dev/github.com/google/kf)
+[![Go Report Card](https://goreportcard.com/badge/google/kf)](https://goreportcard.com/report/github.com/google/kf)
+[![Releases](https://img.shields.io/github/release-pre/google/kf.svg)](https://github.com/google/kf/releases)
+[![LICENSE](https://img.shields.io/github/license/google/kf.svg)](https://github.com/google/kf/blob/main/LICENSE)
+
 This is not an officially supported Google product.
 
-## Getting started the manual way
+## Using Kf
+
+Start with the docs at [kf.dev](https://kf.dev)
+
+## Building and developing Kf
+
+If you want to build and deploy Kf on your own, start with the following.
+
+### Getting started the manual way
 
 Follow the install instructions at https://cloud.google.com/migrate/kf/docs/ to create a GKE cluster,
 install Kf into it, and deploy an app with the `kf` CLI.
@@ -18,7 +32,7 @@ If you need to set up a new development cluster run the following command:
 It will fetch all your local sources and kick off a Cloud Build that builds
 a version of Kf, creates a GKE cluster and installs the Kf version onto it.
 
-## Iterative development
+### Iterative development
 
 **Building the CLI:**
 
@@ -69,7 +83,6 @@ To build Kf CLI locally, run `hack/build.sh`. A executable `kf` will be generate
 ***Kf server side component**
 
 Kf has a built-in self diagnostic tool called `Kf doctor`. Run `kf doctor` to run through the diagnotics to make sure the Kf server side component and dependencies are properly installed.
-
 
 **Run tests:**
 
