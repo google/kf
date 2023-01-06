@@ -68,6 +68,28 @@ kubectl patch \
     -p="[{'op':'add','path':'/spec/kf/config/routeDisableRetries','value':true}]"
 ```
 
+## Enable or Disable Routing Hosts Ignoring Any Port Numbers
+
+Allows enabling/disabling routing hosts ignoring any specified port number.
+By default hosts are matched using the exact value specified in the route Host
+(e.g a request with a Host header value of example.com:443 does not match with preconfigured route Host example.com). By enabling,
+ports are ignored and only hosts are used (e.g example.com:443 matches example.com)
+
+Note: Feature will only work in clusters with istio 1.15+. In older versions it will function as though it where disabled.
+
+Values for `routeHostIgnoringPort`:
+
+* `false` Will match the Host header in request to the exact configured route Host. (Default)
+* `true` Will use regexp to match to the configured route Host ignoring 
+any port specified in the Host header of the request.
+
+```sh
+kubectl patch \
+    kfsystem kfsystem \
+    --type='json' \
+    -p="[{'op':'add','path':'/spec/kf/config/routeHostIgnoringPort','value':true}]"
+```
+
 ## Build Pod Resource Limits
 
 The default pod resource size can be increased from the default to accommodate very large builds. The units for the value are in `Mi` or `Gi`.

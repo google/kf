@@ -324,6 +324,29 @@ func TestMakeVirtualService(t *testing.T) {
 				RouteDisableRetries: true,
 			},
 		},
+		"route host ignoring port using prefix": {
+			Routes: []*v1alpha1.Route{
+				makeRoute("some-host", "example.com", "/some-path", "some-namespace"),
+				makeRoute("*", "example.com", "/some-path", "some-namespace"),
+			},
+			Bindings: map[string]RouteBindingSlice{
+				makeRouteSpecFieldsStr("some-host", "example.com", "/some-path"): []v1alpha1.RouteDestination{
+					makeAppDestination("app-1", 1),
+				},
+			},
+			RouteServiceBindings: map[string][]v1alpha1.RouteServiceDestination{
+				makeRouteSpecFieldsStr("some-host", "example.com", ""): {
+					makeRouteServiceDestination("some-route-svc", "http", "some-route-service.com", ""),
+				},
+			},
+			SpaceDomain: v1alpha1.SpaceDomain{
+				Domain:      "example.com",
+				GatewayName: "kf/some-gateway",
+			},
+			DefaultsConfig: kfconfig.DefaultsConfig{
+				RouteHostIgnoringPort: true,
+			},
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			actualVS, actualErr := MakeVirtualService(

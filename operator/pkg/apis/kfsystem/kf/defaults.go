@@ -46,6 +46,7 @@ const (
 	terminationGracePeriodSecondsKey = "terminationGracePeriodSeconds"
 	routeTrackVirtualServiceKey      = "routeTrackVirtualService"
 	routeDisableRetriesKey           = "routeDisableRetries"
+	routeHostIgnoringPortKey         = "routeHostIgnoringPort"
 	taskDefaultTimeoutMinutesKey     = "taskDefaultTimeoutMinutes"
 	taskDisableVolumeMountsKey       = "taskDisableVolumeMounts"
 
@@ -157,6 +158,11 @@ type DefaultsConfig struct {
 	// RouteDisableRetries disables retries in the VirtualServices that route traffic to apps.
 	// By default, Kf leaves the value unset and it's inherited from Istio.
 	RouteDisableRetries bool `json:"routeDisableRetries,omitempty"`
+
+	// RouteHostIgnoringPort determines whether requests are routed ignoring any ports in the Host header.
+	// By default (false value), the Host header value has to match exactly the preconfigured route host.
+	// e.g By default example.com:443 does not match with a route configured with a Host of example.com.
+	RouteHostIgnoringPort bool `json:"routeHostIgnoringPort,omitempty"`
 
 	// TaskDefaultTimeoutMinutes sets the cluster-wide timeout for tasks.
 	// If the value is null, the timeout is inherited from Tekton.
@@ -277,6 +283,7 @@ func (defaultsConfig *DefaultsConfig) getInterfaceValues(leaveEmpty bool) map[st
 		terminationGracePeriodSecondsKey: &defaultsConfig.TerminationGracePeriodSeconds,
 		routeTrackVirtualServiceKey:      &defaultsConfig.RouteTrackVirtualService,
 		routeDisableRetriesKey:           &defaultsConfig.RouteDisableRetries,
+		routeHostIgnoringPortKey:         &defaultsConfig.RouteHostIgnoringPort,
 		taskDefaultTimeoutMinutesKey:     &defaultsConfig.TaskDefaultTimeoutMinutes,
 		taskDisableVolumeMountsKey:       &defaultsConfig.TaskDisableVolumeMounts,
 	}

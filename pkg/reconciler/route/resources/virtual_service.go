@@ -116,18 +116,9 @@ func MakeVirtualService(
 	}
 	sort.Sort(rsfs)
 
-	httpRoutes, err := buildHTTPRoutes(rsfs, bindings, routeServiceBindings)
+	httpRoutes, err := newHTTPRoutesBuilder(rsfs, bindings, routeServiceBindings, defaultsConfig).build()
 	if err != nil {
 		return nil, err
-	}
-
-	// If specified, disable retries per route.
-	if defaultsConfig != nil && defaultsConfig.RouteDisableRetries {
-		for i := range httpRoutes {
-			httpRoutes[i].Retries = &istio.HTTPRetry{
-				Attempts: 0,
-			}
-		}
 	}
 
 	gatewayName, err := buildGatewayName(spaceDomain.GatewayName)
@@ -154,16 +145,17 @@ func MakeVirtualService(
 		return owners[i].Name < owners[j].Name
 	})
 
+	hosts := []string{"*." + domain, domain} // Value of Hosts can be hostname.example.com or example.com since hostname is optional.
 	istioVirtualService := istio.VirtualService{}
 	if gatewayName == "" {
 		istioVirtualService = istio.VirtualService{
-			Hosts: []string{"*." + domain, domain}, // b/176970436: Value of Hosts can be hostname.example.com or example.com since hostname is optional.
+			Hosts: hosts,
 			Http:  httpRoutes,
 		}
 	} else {
 		istioVirtualService = istio.VirtualService{
 			Gateways: []string{gatewayName},
-			Hosts:    []string{"*." + domain, domain},
+			Hosts:    hosts,
 			Http:     httpRoutes,
 		}
 	}
@@ -199,64 +191,55 @@ func buildGatewayName(gatewayName string) (string, error) {
 	return gatewayName, nil
 }
 
+type httpRoutesBuilder struct {
+	routes               v1alpha1.RouteSpecFieldsSlice
+	appBindings          map[string]RouteBindingSlice
+	routeServiceBindings map[string][]v1alpha1.RouteServiceDestination
+	defaultConfig        *kfconfig.DefaultsConfig
+}
+
+func newHTTPRoutesBuilder(
+	routes v1alpha1.RouteSpecFieldsSlice,
+	appBindings map[string]RouteBindingSlice,
+	routeServiceBindings map[string][]v1alpha1.RouteServiceDestination,
+	defaultConfig *kfconfig.DefaultsConfig,
+) *httpRoutesBuilder {
+	return &httpRoutesBuilder{
+		routes:               routes,
+		appBindings:          appBindings,
+		routeServiceBindings: routeServiceBindings,
+		defaultConfig:        defaultConfig,
+	}
+}
+
+func (hb *httpRoutesBuilder) routeBindingSliceFor(rsf v1alpha1.RouteSpecFields) RouteBindingSlice {
+	return hb.appBindings[rsf.String()]
+}
+
+func (hb *httpRoutesBuilder) routeServiceDestinationsFor(rsf v1alpha1.RouteSpecFields) []v1alpha1.RouteServiceDestination {
+	return hb.routeServiceBindings[rsf.String()]
+}
+
 // Create HTTP route rules for all routes with the same domain.
 // Paths that do not have an app bound to them will return a 404 when a request is sent to that path.
-func buildHTTPRoutes(routes v1alpha1.RouteSpecFieldsSlice, appBindings map[string]RouteBindingSlice, routeServiceBindings map[string][]v1alpha1.RouteServiceDestination) ([]*istio.HTTPRoute, error) {
+func (hb *httpRoutesBuilder) build() ([]*istio.HTTPRoute, error) {
 	var httpRoutes []*istio.HTTPRoute
 
-	for _, r := range routes {
-		var rsfHTTPRoutes []*istio.HTTPRoute
-		appDestinations := appBindings[r.String()]
-
-		// Get regex path matchers for route path
-		pathMatchers, err := buildPathMatchers(r)
+	for _, rsf := range hb.routes {
+		rsfRoutes, err := hb.buildRoutesFor(rsf)
 		if err != nil {
 			return nil, err
 		}
+		httpRoutes = append(httpRoutes, rsfRoutes...)
+	}
 
-		if len(appDestinations) == 0 {
-			// no apps bound to this path, return http route with default for path
-			rsfHTTPRoutes = append(rsfHTTPRoutes, buildDefaultHTTPRoute(*pathMatchers))
-		} else {
-			// Build HTTP Routes with `x-kf-app` header for matching specific app requests.
-			appHeaderHTTPRoutes, err := buildAppHeaderHTTPRoutes(r, appDestinations)
-			if err != nil {
-				return nil, err
+	// If specified, disable retries per route.
+	if hb.defaultConfig != nil && hb.defaultConfig.RouteDisableRetries {
+		for i := range httpRoutes {
+			httpRoutes[i].Retries = &istio.HTTPRetry{
+				Attempts: 0,
 			}
-
-			// Build HTTP Route without the `x-kf-app` header.
-			// If only one app is bound to the route, this HTTP Route looks the same as the app header HTTP route, just without the app header match.
-			// If the app is bound but stopped, the HTTP Route returns a 404.
-			// If there are multiple apps bound, the HTTP Route splits traffic to the app destinations according to the weights on the bindings.
-			normalizedHTTPRoute := buildNormalizedHTTPRoute(pathMatchers, r, appDestinations)
-
-			rsfHTTPRoutes = append(rsfHTTPRoutes, appHeaderHTTPRoutes...)
-			rsfHTTPRoutes = append(rsfHTTPRoutes, normalizedHTTPRoute)
 		}
-
-		// If there is a route service bound to this route, add header match rules to each HTTP route.
-		// Then add an HTTP Route that directs to the route service and adds the CF route service headers.
-		// Note: There should only be one route service per route, but we handle the case where multiple are bound.
-		// The last (most recent) route service is used for the VS definition, and the RouteServiceReady condition for the Route is set to False in the reconciler.
-		routeServices := routeServiceBindings[r.String()]
-		if len(routeServices) > 0 {
-			routeService := routeServices[len(routeServices)-1]
-			// Copy original matchers (without the route service header matchers) to use in final HTTP route
-			origPathMatchers := *pathMatchers
-			for _, httpRoute := range rsfHTTPRoutes {
-				var newMatchRules []*istio.HTTPMatchRequest
-				// There should only be one match rule defined per HTTP route, but iterate through the list just in case.
-				for _, matchRule := range httpRoute.Match {
-					newMatchRules = append(newMatchRules, addRouteServiceHeaderMatchers(r, matchRule))
-				}
-				httpRoute.Match = newMatchRules
-			}
-
-			// Add HTTP route for directing request to route service
-			routeServiceHTTPRoute := buildRouteServiceHTTPRoute(r, &origPathMatchers, routeService)
-			rsfHTTPRoutes = append(rsfHTTPRoutes, routeServiceHTTPRoute)
-		}
-		httpRoutes = append(httpRoutes, rsfHTTPRoutes...)
 	}
 
 	// HTTPRoutes should be grouped by RouteSpecFields, where RouteSpecFields are sorted alphabetically by hostname, then
@@ -265,15 +248,71 @@ func buildHTTPRoutes(routes v1alpha1.RouteSpecFieldsSlice, appBindings map[strin
 	return httpRoutes, nil
 }
 
+func (hb *httpRoutesBuilder) buildRoutesFor(rsf v1alpha1.RouteSpecFields) ([]*istio.HTTPRoute, error) {
+	var rsfHTTPRoutes []*istio.HTTPRoute
+	appDestinations := hb.routeBindingSliceFor(rsf)
+
+	// Get regex path matchers for route path
+	pathMatchers, err := hb.buildPathMatchers(rsf)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(appDestinations) == 0 {
+		// no apps bound to this path, return http route with default for path
+		rsfHTTPRoutes = append(rsfHTTPRoutes, buildDefaultHTTPRoute(*pathMatchers))
+	} else {
+		// Build HTTP Routes with `x-kf-app` header for matching specific app requests.
+		appHeaderHTTPRoutes, err := hb.buildAppHeaderHTTPRoutes(rsf)
+		if err != nil {
+			return nil, err
+		}
+
+		// Build HTTP Route without the `x-kf-app` header.
+		// If only one app is bound to the route, this HTTP Route looks the same as the app header HTTP route, just without the app header match.
+		// If the app is bound but stopped, the HTTP Route returns a 404.
+		// If there are multiple apps bound, the HTTP Route splits traffic to the app destinations according to the weights on the bindings.
+		normalizedHTTPRoute := hb.buildNormalizedHTTPRoute(pathMatchers, rsf)
+
+		rsfHTTPRoutes = append(rsfHTTPRoutes, appHeaderHTTPRoutes...)
+		rsfHTTPRoutes = append(rsfHTTPRoutes, normalizedHTTPRoute)
+	}
+
+	// If there is a route service bound to this route, add header match rules to each HTTP route.
+	// Then add an HTTP Route that directs to the route service and adds the CF route service headers.
+	// Note: There should only be one route service per route, but we handle the case where multiple are bound.
+	// The last (most recent) route service is used for the VS definition, and the RouteServiceReady condition for the Route is set to False in the reconciler.
+	routeServices := hb.routeServiceDestinationsFor(rsf)
+	if len(routeServices) > 0 {
+		routeService := routeServices[len(routeServices)-1]
+		// Copy original matchers (without the route service header matchers) to use in final HTTP route
+		origPathMatchers := *pathMatchers
+		for _, httpRoute := range rsfHTTPRoutes {
+			var newMatchRules []*istio.HTTPMatchRequest
+			// There should only be one match rule defined per HTTP route, but iterate through the list just in case.
+			for _, matchRule := range httpRoute.Match {
+				newMatchRules = append(newMatchRules, addRouteServiceHeaderMatchers(rsf, matchRule))
+			}
+			httpRoute.Match = newMatchRules
+		}
+
+		// Add HTTP route for directing request to route service
+		routeServiceHTTPRoute := buildRouteServiceHTTPRoute(rsf, &origPathMatchers, routeService)
+		rsfHTTPRoutes = append(rsfHTTPRoutes, routeServiceHTTPRoute)
+	}
+
+	return rsfHTTPRoutes, nil
+}
+
 // buildAppHeaderHTTPRoutes creates a list of HTTPRoutes, where each HTTPRoute contains a header matching rule for an app destination.
 // Even when there are multiple apps mapped to a route,
 // Kf always directs to the requested app if the request contains the header "x-kf-app": [appname]
 // If a route service is bound to the route, then request should first be processed by the route service (indicated by the headers), then be directed to the app.
-func buildAppHeaderHTTPRoutes(rsf v1alpha1.RouteSpecFields, bindings RouteBindingSlice) ([]*istio.HTTPRoute, error) {
+func (hb *httpRoutesBuilder) buildAppHeaderHTTPRoutes(rsf v1alpha1.RouteSpecFields) ([]*istio.HTTPRoute, error) {
 	appHeaderRoutes := []*istio.HTTPRoute{}
-	for _, binding := range bindings {
+	for _, binding := range hb.routeBindingSliceFor(rsf) {
 		httpRoute := &istio.HTTPRoute{}
-		pathAppMatchers, err := buildPathAppMatchers(rsf, binding.ServiceName)
+		pathAppMatchers, err := hb.buildPathAppMatchers(rsf, binding.ServiceName)
 		if err != nil {
 			return nil, err
 		}
@@ -303,10 +342,10 @@ func buildAppHeaderHTTPRoutes(rsf v1alpha1.RouteSpecFields, bindings RouteBindin
 
 // buildNormalizedHTTPRoute creates an HTTP Route for the app binding(s) on the route, without the `x-kf-app` header match rule.
 // It normalizes the weights defined on the app route binding(s) to percentages and splits traffic among multiple apps.
-func buildNormalizedHTTPRoute(pathMatchers *istio.HTTPMatchRequest, rsf v1alpha1.RouteSpecFields, bindings RouteBindingSlice) *istio.HTTPRoute {
+func (hb *httpRoutesBuilder) buildNormalizedHTTPRoute(pathMatchers *istio.HTTPMatchRequest, rsf v1alpha1.RouteSpecFields) *istio.HTTPRoute {
 	// If an app is stopped, exclude them from the route destinations
 	httpRoute := &istio.HTTPRoute{}
-	normalizedBindings := normalizeRouteWeights(bindings)
+	normalizedBindings := normalizeRouteWeights(hb.routeBindingSliceFor(rsf))
 	if len(normalizedBindings) == 0 {
 		httpRoute = buildDefaultHTTPRoute(*pathMatchers)
 	} else {
@@ -420,38 +459,44 @@ func normalizeRouteWeights(appWeights RouteBindingSlice) RouteBindingSlice {
 
 // buildPathMatchers creates a regex matcher for a given route path.
 // These matcher is used in the virtual service to determine which path a request was sent to
-func buildPathMatchers(rsf v1alpha1.RouteSpecFields) (*istio.HTTPMatchRequest, error) {
+func (hb *httpRoutesBuilder) buildPathMatchers(rsf v1alpha1.RouteSpecFields) (*istio.HTTPMatchRequest, error) {
 	path := path.Join("/", rsf.Path, "/")
 	regexpPath, err := v1alpha1.BuildPathRegexp(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert path to regexp: %s", err)
 	}
 
-	var authorityMatch *istio.StringMatch
-
-	if !strings.HasPrefix(rsf.Host(), "*") {
-		authorityMatch = &istio.StringMatch{
-			MatchType: &istio.StringMatch_Exact{
-				Exact: rsf.Host(),
-			},
-		}
-	}
-
-	return &istio.HTTPMatchRequest{
+	httpMatchRequest := &istio.HTTPMatchRequest{
 		Uri: &istio.StringMatch{
 			MatchType: &istio.StringMatch_Regex{
 				Regex: regexpPath,
 			},
 		},
-		Authority: authorityMatch,
-	}, nil
+	}
+
+	if strings.HasPrefix(rsf.Host(), "*") {
+		return httpMatchRequest, nil
+	}
+
+	httpMatchRequest.Authority = &istio.StringMatch{}
+	if hb.defaultConfig != nil && hb.defaultConfig.RouteHostIgnoringPort {
+		httpMatchRequest.Authority.MatchType = &istio.StringMatch_Prefix{
+			Prefix: rsf.Host(),
+		}
+		return httpMatchRequest, nil
+	}
+
+	httpMatchRequest.Authority.MatchType = &istio.StringMatch_Exact{
+		Exact: rsf.Host(),
+	}
+	return httpMatchRequest, nil
 }
 
 // buildPathAppMatchers creates regex matchers for a route path
 // and a header request matcher for a given app name.
 // These matchers are used in the virtual service to determine which app to direct a request to
-func buildPathAppMatchers(rsf v1alpha1.RouteSpecFields, appName string) (*istio.HTTPMatchRequest, error) {
-	matchers, err := buildPathMatchers(rsf)
+func (hb *httpRoutesBuilder) buildPathAppMatchers(rsf v1alpha1.RouteSpecFields, appName string) (*istio.HTTPMatchRequest, error) {
+	matchers, err := hb.buildPathMatchers(rsf)
 	if err != nil {
 		return nil, err
 	}

@@ -23,9 +23,9 @@ fi
 
 # Necessary to download ASM tarball
 apt-get update -y
-apt-get install -y gnutls-bin google-cloud-sdk-kpt jq
+apt-get install -y jq
 
-curl https://storage.googleapis.com/csm-artifacts/asm/asmcli_1.14 >asmcli
+curl https://storage.googleapis.com/csm-artifacts/asm/asmcli_1.15 >asmcli
 chmod +x asmcli
 
 gcloud container clusters get-credentials "${CLUSTER_NAME}" \
