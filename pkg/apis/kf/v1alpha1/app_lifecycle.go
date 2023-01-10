@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
@@ -180,7 +181,7 @@ func (status *AppStatus) PropagateServiceAccountStatus(serviceAccount *corev1.Se
 func (status *AppStatus) PropagateRouteStatus(bindings []QualifiedRouteBinding, routes []Route, undeclaredBindings []QualifiedRouteBinding) {
 	var rs []AppRouteStatus
 	var conditions []apis.Condition
-	var urls []string
+	urls := sets.NewString()
 
 	// Ensure output is deterministic
 	sort.Slice(bindings, func(i, j int) bool {
@@ -245,7 +246,7 @@ func (status *AppStatus) PropagateRouteStatus(bindings []QualifiedRouteBinding, 
 
 		conditions = append(conditions, cond)
 		rs = append(rs, bindingStatus)
-		urls = append(urls, bindingStatus.URL)
+		urls.Insert(bindingStatus.URL)
 	}
 
 	// Add statuses for all bindings that exist but aren't on the App.
@@ -267,12 +268,10 @@ func (status *AppStatus) PropagateRouteStatus(bindings []QualifiedRouteBinding, 
 			Reason:  "ExtraRouteBinding",
 			Message: fmt.Sprintf("The Route %s has an extra binding to this App", binding.Source.String()),
 		})
-		urls = append(urls, binding.Source.String())
 	}
 
-	// Sort the URLs for deterministic output.
-	sort.Strings(urls)
-	status.URLs = urls
+	// Sort and dedupe the URLs for deterministic output.
+	status.URLs = urls.List()
 
 	summaryCondition, allConditions := SummarizeChildConditions(conditions)
 
