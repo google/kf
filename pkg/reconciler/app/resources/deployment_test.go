@@ -562,13 +562,13 @@ func Test_makePodSpec(t *testing.T) {
 							Command:                  []string{"/bin/sh"},
 							Args: []string{
 								"-c",
-								"mapfs -uid 2000 -gid 2000 /nfs/volume1 /.kfmounts/nfs/volume1 & /lifecycle/entrypoint.bash",
+								"mapfs -uid 2000 -gid 2000 /nfs/volume1 /.kfmounts/nfs/volume1 & exec /lifecycle/entrypoint.bash",
 							},
 							VolumeMounts: []corev1.VolumeMount{{Name: "nfs-volume1-pvc", MountPath: "/.kfmounts/nfs/volume1"}},
 							Lifecycle: &corev1.Lifecycle{
 								PreStop: &corev1.LifecycleHandler{
 									Exec: &corev1.ExecAction{
-										Command: []string{"timeout", "-k", "10s", "10s", "/bin/sh", "-c", "fusermount -u /nfs/volume1 & wait"},
+										Command: []string{"timeout", "-k", "10s", "10s", "/bin/sh", "-c", "fusermount -u -z /nfs/volume1 & wait"},
 									},
 								},
 							},
@@ -608,7 +608,7 @@ func Test_makePodSpec(t *testing.T) {
 							Containers: []corev1.Container{
 								{
 									Image: "gcr.io/my-app",
-									Args:  []string{"-jar", "my-library.jar", "-timeout=10"},
+									Args:  []string{"-jar", "my-library.jar", "-timeout=10", "-needsShellEscape=\"$'"},
 								},
 							},
 						},
@@ -653,13 +653,13 @@ func Test_makePodSpec(t *testing.T) {
 							Command:                  []string{"/bin/sh"},
 							Args: []string{
 								"-c",
-								"mapfs -uid 2000 -gid 2000 /nfs/volume1 /.kfmounts/nfs/volume1 & /lifecycle/entrypoint.bash -jar my-library.jar -timeout=10",
+								`mapfs -uid 2000 -gid 2000 /nfs/volume1 /.kfmounts/nfs/volume1 & exec /lifecycle/entrypoint.bash -jar my-library.jar -timeout=10 '-needsShellEscape="$'"'"''`,
 							},
 							VolumeMounts: []corev1.VolumeMount{{Name: "nfs-volume1-pvc", MountPath: "/.kfmounts/nfs/volume1"}},
 							Lifecycle: &corev1.Lifecycle{
 								PreStop: &corev1.LifecycleHandler{
 									Exec: &corev1.ExecAction{
-										Command: []string{"timeout", "-k", "10s", "10s", "/bin/sh", "-c", "fusermount -u /nfs/volume1 & wait"},
+										Command: []string{"timeout", "-k", "10s", "10s", "/bin/sh", "-c", "fusermount -u -z /nfs/volume1 & wait"},
 									},
 								},
 							},
@@ -745,13 +745,13 @@ func Test_makePodSpec(t *testing.T) {
 							Command:                  []string{"/bin/sh"},
 							Args: []string{
 								"-c",
-								"mapfs -uid 2000 -gid 2000 /nfs/volume1 /.kfmounts/nfs/volume1 & java -jar my-library.jar -timeout=10",
+								"mapfs -uid 2000 -gid 2000 /nfs/volume1 /.kfmounts/nfs/volume1 & exec java -jar my-library.jar -timeout=10",
 							},
 							VolumeMounts: []corev1.VolumeMount{{Name: "nfs-volume1-pvc", MountPath: "/.kfmounts/nfs/volume1"}},
 							Lifecycle: &corev1.Lifecycle{
 								PreStop: &corev1.LifecycleHandler{
 									Exec: &corev1.ExecAction{
-										Command: []string{"timeout", "-k", "10s", "10s", "/bin/sh", "-c", "fusermount -u /nfs/volume1 & wait"},
+										Command: []string{"timeout", "-k", "10s", "10s", "/bin/sh", "-c", "fusermount -u -z /nfs/volume1 & wait"},
 									},
 								},
 							},
@@ -839,7 +839,7 @@ func Test_buildVolumes(t *testing.T) {
 				{Name: "volumeClaimName", MountPath: "/.kfmounts/mount/path"},
 			},
 			wantFuseCommands:    []string{"mapfs -uid 2000 -gid 2000 /mount/path /.kfmounts/mount/path &"},
-			wantUnmountCommands: []string{"fusermount -u /mount/path &", "wait"},
+			wantUnmountCommands: []string{"fusermount -u -z /mount/path &", "wait"},
 			wantError:           nil,
 		},
 		"Valid GID and UID": {
@@ -868,7 +868,7 @@ func Test_buildVolumes(t *testing.T) {
 				{Name: "volumeClaimName", MountPath: "/.kfmounts/mount/path"},
 			},
 			wantFuseCommands:    []string{"mapfs -uid 2001 -gid 2002 /mount/path /.kfmounts/mount/path &"},
-			wantUnmountCommands: []string{"fusermount -u /mount/path &", "wait"},
+			wantUnmountCommands: []string{"fusermount -u -z /mount/path &", "wait"},
 		},
 		"Valid GID and UID, multiple volumes": {
 			volumeStatus: []v1alpha1.AppVolumeStatus{
@@ -917,7 +917,7 @@ func Test_buildVolumes(t *testing.T) {
 				"mapfs -uid 2001 -gid 2002 /mount/path1 /.kfmounts/mount/path1 &",
 				"mapfs -uid 2001 -gid 2002 /mount/path2 /.kfmounts/mount/path2 &",
 			},
-			wantUnmountCommands: []string{"fusermount -u /mount/path1 &", "fusermount -u /mount/path2 &", "wait"},
+			wantUnmountCommands: []string{"fusermount -u -z /mount/path1 &", "fusermount -u -z /mount/path2 &", "wait"},
 		},
 		"volumes sorted by path": {
 			volumeStatus: []v1alpha1.AppVolumeStatus{
@@ -958,7 +958,7 @@ func Test_buildVolumes(t *testing.T) {
 				"mapfs -uid 2000 -gid 2000 /mount/path1 /.kfmounts/mount/path1 &",
 				"mapfs -uid 2000 -gid 2000 /mount/path2 /.kfmounts/mount/path2 &",
 			},
-			wantUnmountCommands: []string{"fusermount -u /mount/path1 &", "fusermount -u /mount/path2 &", "wait"},
+			wantUnmountCommands: []string{"fusermount -u -z /mount/path1 &", "fusermount -u -z /mount/path2 &", "wait"},
 		},
 	}
 

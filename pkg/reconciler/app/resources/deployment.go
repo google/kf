@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/alessio/shellescape"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/internal/selectorutil"
 	appsv1 "k8s.io/api/apps/v1"
@@ -39,7 +40,10 @@ const (
 	mapfsCmdFormat string = "mapfs -uid %d -gid %d %s %s &"
 
 	// unmountCmdFormat defines the format for the unmount command.
-	unmountCmdFormat string = "fusermount -u %s &"
+	// Flags -uz performs a lazy unmount. Mountpoint is released immediately and the
+	// filesystem terminates lazily in the background when all open files are finally closed.
+	// See https://www.unix.com/man-page/linux/1/fusermount/.
+	unmountCmdFormat string = "fusermount -u -z %s &"
 )
 
 var (
@@ -202,17 +206,21 @@ func makePodSpec(app *v1alpha1.App, space *v1alpha1.Space) (*corev1.PodSpec, err
 		spec.Volumes = append(spec.Volumes, volumes...)
 		userContainer.VolumeMounts = append(userContainer.VolumeMounts, userVolumeMounts...)
 
-		originalArgs := userContainer.Args
-		originalCommand := []string{}
+		originalCommand := []string{"exec"}
+		escapedArgs := []string{}
+		for _, arg := range userContainer.Args {
+			escapedArgs = append(escapedArgs, shellescape.Quote(arg))
+		}
+
 		if len(userContainer.Command) > 0 {
 			// Append to the existing array so we don't modify the userContainer.Command value.
 			originalCommand = append(originalCommand, userContainer.Command...)
 		} else {
 			// TODO: Look up the correct value rather than assuming
 			// the build is from a buildpack.
-			originalCommand = []string{"/lifecycle/entrypoint.bash"}
+			originalCommand = append(originalCommand, "/lifecycle/entrypoint.bash")
 		}
-		originalStartCommand := append(originalCommand, originalArgs...)
+		originalStartCommand := append(originalCommand, escapedArgs...)
 
 		combinedStartCommand := append(fuseCommands, strings.Join(originalStartCommand, " "))
 
