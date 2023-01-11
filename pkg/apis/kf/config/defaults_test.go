@@ -53,6 +53,7 @@ func TestPatchConfigMap(t *testing.T) {
 		terminationGracePeriodSecondsKey,
 		routeTrackVirtualServiceKey,
 		routeDisableRetriesKey,
+		routeHostIgnoringPortKey,
 		taskDefaultTimeoutMinutesKey,
 		taskDisableVolumeMountsKey,
 	}

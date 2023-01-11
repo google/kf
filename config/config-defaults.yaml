@@ -254,6 +254,7 @@ data:
   progressDeadlineSeconds: "600"
   terminationGracePeriodSeconds: "30"
   routeTrackVirtualService: "false"
+  routeHostIgnoringPort: "false"
   routeDisableRetries: "false"
   taskDefaultTimeoutMinutes: "-1"
   taskDisableVolumeMounts: "false"

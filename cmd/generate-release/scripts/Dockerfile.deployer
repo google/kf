@@ -2,6 +2,9 @@ FROM gcr.io/google.com/cloudsdktool/cloud-sdk
 WORKDIR /kf
 COPY bin bin
 
+# Required env variables https://cloud.google.com/blog/products/containers-kubernetes/kubectl-auth-changes-in-gke
+ENV USE_GKE_GCLOUD_AUTH_PLUGIN=True
+
 # Copy scripts
 COPY ./cmd/generate-release/scripts /builder
 

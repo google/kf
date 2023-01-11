@@ -120,7 +120,7 @@ func newDependencies() []dependency {
 			InfoURL:    "/service-mesh/docs/gke-install-overview",
 			// This version is fetched from the asmcli script. It needs to be
 			// updated by hand until we have a programtic way to fetch it.
-			ResolveVersion: staticVersionResolver("1.12.0-asm.3+config1"),
+			ResolveVersion: staticVersionResolver("1.15.3-asm.6+config2"),
 			ResolveURL: func(version string) (string, error) {
 				const URL = "https://github.com/GoogleCloudPlatform/anthos-service-mesh-packages/releases/tag/%s"
 				return fmt.Sprintf(URL, version), nil
