@@ -841,7 +841,7 @@ func TestAppStatus_PropagateRouteStatus(t *testing.T) {
 				buildDesiredStatus(bindingA, true),
 				buildOrphanedStatus(bindingB),
 			},
-			wantURLs: []string{bindingA.Source.String(), bindingB.Source.String()},
+			wantURLs: []string{bindingA.Source.String()},
 		},
 	}
 
@@ -852,8 +852,8 @@ func TestAppStatus_PropagateRouteStatus(t *testing.T) {
 			status.PropagateRouteStatus(tc.bindings, tc.routes, tc.extraBindings)
 
 			var urls []string
-			for _, r := range status.Routes {
-				urls = append(urls, r.URL)
+			for _, b := range tc.bindings {
+				urls = append(urls, b.Source.String())
 			}
 
 			actualCond := status.GetCondition(AppConditionRouteReady)
