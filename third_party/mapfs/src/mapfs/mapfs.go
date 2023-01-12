@@ -288,6 +288,8 @@ func (fs *mapFileSystem) StatFs(name string) *fuse.StatfsOut {
 	}
 
 	stats := fs.FileSystem.StatFs(name)
-	stats.Bfree = stats.Blocks
+	if stats != nil {
+		stats.Bfree = stats.Blocks
+	}
 	return stats
 }
