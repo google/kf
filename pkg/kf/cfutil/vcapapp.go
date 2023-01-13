@@ -16,6 +16,7 @@ package cfutil
 
 import (
 	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -30,9 +31,9 @@ func CreateVcapApplication(app *v1alpha1.App) map[string]interface{} {
 	// You can find a list of values here:
 	// https://docs.run.pivotal.io/devguide/deploy-apps/environment-variable.html
 
-	urls := []string{}
+	urls := sets.NewString()
 	for _, r := range app.Status.Routes {
-		urls = append(urls, r.URL)
+		urls.Insert(r.URL)
 	}
 
 	values := map[string]interface{}{
@@ -41,7 +42,7 @@ func CreateVcapApplication(app *v1alpha1.App) map[string]interface{} {
 		// application_name The name assigned to the app when it was pushed.
 		"application_name": app.Name,
 		// application_uris The URIs assigned to the app.
-		"application_uris": urls,
+		"application_uris": urls.List(),
 		// name Identical to application_name.
 		"name": app.Name,
 		// process_id The UID identifying the process. Only present in running app containers.
@@ -51,7 +52,7 @@ func CreateVcapApplication(app *v1alpha1.App) map[string]interface{} {
 		// space_name Human-readable name of the space where the app is deployed.
 		"space_name": app.Namespace,
 		// uris Identical to application_uris.
-		"uris": urls,
+		"uris": urls.List(),
 	}
 
 	return values
