@@ -34,7 +34,7 @@ First, you'll need to update your Dockerfile to add the `mapfs` binary to your a
 
 ```dockerfile
 # Get the mapfs binrary from a version of Kf.
-FROM gcr.io/kf-releases/fusesidecar:v2.11.2 as builder
+FROM gcr.io/kf-releases/fusesidecar:v2.11.14 as builder
 COPY --from=builder --chown=root:vcap /bin/mapfs /bin/mapfs
 
 # Allow users other than root to use fuse.

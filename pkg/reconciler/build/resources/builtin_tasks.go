@@ -156,7 +156,7 @@ chmod a+x /workspace/entrypoint.bash
 start_cmd=$(cat /tmp/result.json | jq .process_types.web)
 
 cat << EOF > /workspace/Dockerfile
-FROM gcr.io/kf-releases/fusesidecar:v2.11.2 as builder
+FROM gcr.io/kf-releases/fusesidecar:v2.11.14 as builder
 
 FROM $(inputs.params.RUN_IMAGE)
 COPY launcher /lifecycle/launcher
