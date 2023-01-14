@@ -26,7 +26,10 @@ func ExampleCreateVcapApplication() {
 	app.Name = "my-app"
 	app.Namespace = "my-ns"
 	app.UID = "12345"
-	app.Status.Routes = []v1alpha1.AppRouteStatus{{URL: "app.example.com"}}
+	app.Status.Routes = []v1alpha1.AppRouteStatus{
+		{URL: "app.example.com", Status: v1alpha1.RouteBindingStatusOrphaned},
+		{URL: "app.example.com", Status: v1alpha1.RouteBindingStatusUnknown},
+	}
 
 	envMap := cfutil.CreateVcapApplication(app)
 
