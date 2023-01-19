@@ -8,12 +8,12 @@ variable "repo_owner" {
 }
 
 variable "repo_name" {
-  type = string 
+  type = string
   default = "kf"
 }
 
 variable "repo_branch" {
-  type = string 
+  type = string
   default = ".*"
 }
 

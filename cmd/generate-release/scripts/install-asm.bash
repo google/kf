@@ -25,6 +25,14 @@ fi
 apt-get update -y
 apt-get install -y jq
 
+# Install gcloud CLI only if it hasn't already been provided
+if ! command -v gcloud &> /dev/null
+then
+    apt-get install -y gcloud
+else 
+    echo "gcloud CLI is already available, skipping installation"
+fi
+
 curl https://storage.googleapis.com/csm-artifacts/asm/asmcli_1.15 >asmcli
 chmod +x asmcli
 
