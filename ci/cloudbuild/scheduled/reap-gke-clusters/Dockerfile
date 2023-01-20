@@ -14,13 +14,4 @@
 
 FROM gcr.io/google.com/cloudsdktool/cloud-sdk:alpine
 WORKDIR /scripts
-COPY delete_dm_deployments.py .
-COPY delete_gke_clusters.py .
-COPY cleanup_load_balancers.py .
-COPY cleanup_firewall_rules.py .
-COPY delete_disks.py .
-COPY reap_gcr_containers.py .
-COPY reap_ar_repos.py .
-COPY reap_iam_bindings.py .
-COPY reap_hub_memberships.py .
-COPY reap_service_keys.py .
+COPY . .
