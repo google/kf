@@ -18,27 +18,18 @@ set -euxo pipefail
 cd "${0%/*}"/../..
 echo $(pwd)
 
-_GCP_PROJECT_ID="${GCP_PROJECT_ID:}"
-_RELEASE_BUCKET="${RELEASE_BUCKET:}"
+_GCP_PROJECT_ID="${GCP_PROJECT_ID:-}"
+_RELEASE_BUCKET="${RELEASE_BUCKET:-}"
 _DELETE_CLUSTER="${DELETE_CLUSTER:-true}"
 _ASM_MANAGED="${ASM_MANAGED:-false}"
 _RELEASE_CHANNEL="${RELEASE_CHANNEL:-REGULAR}"
 _SKIP_UNIT_TESTS="${SKIP_UNIT_TESTS:-true}"
 _EXTRA_CERTS_URL="${_EXTRA_CERTS_URL:-}"
 
-# Get Change-Id from commit. When in prow there is a merge commit after the CL
-# commit so we list Change-Ids found in the previous 2 commits to find the CL
-# commit.
-change_id=$(git log -n2 | egrep '^\s*Change-Id:\s*\w+\s*$' | head -n1 | awk '{print tolower($2)}')
-if [ -z "${change_id}" ]; then
-    echo "Unable to find a Change-Id. Are you using Gerrit?"
-    exit 1
-fi
-change_id_trunc=$(echo ${change_id} | awk '{print substr($1,0,37)}')
-
-# Create Kf release.
-git_sha=$(git rev-parse HEAD)
-release_id="id-${change_id_trunc}-$(date +%s)"
+# Create Kf release
+git_sha=${COMMIT_SHA:-$(git rev-parse HEAD)}
+build_id=${BUILD_ID:-$git_sha}
+release_id="id-${build_id}-$(date +%s)"
 
 gcloud builds submit . \
     --project ${_GCP_PROJECT_ID} \

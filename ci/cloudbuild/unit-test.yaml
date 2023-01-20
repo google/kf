@@ -1,0 +1,76 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+# # Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# If you want to run the unit tests
+# gcloud builds submit . \
+# --config=ci/cloudbuild/unit-test.yaml \
+# --ignore-file=ci/cloudbuild/test.ignore 
+#
+# NOTE: Be sure to replace <RELEASE-BUCKET>. A <RELEASE-BUCKET> is the same
+# used when creating a release. It is the gs:// URI that contains
+# cloud-build/fresh-cluster.yaml and cloud-build/delete-cluster.yaml.
+
+timeout: 7200s
+options:
+  machineType: "E2_HIGHCPU_8"
+substitutions:
+  _GOLANG_IMAGE: "golang:1.17"
+
+steps:
+  - id: verify build
+    timeout: 900s
+    name: "${_GOLANG_IMAGE}"
+    env:
+      - "GO111MODULE=on"
+      - "GOPROXY=https://proxy.golang.org"
+      - "GOSUMDB=sum.golang.org"
+    script: |
+        #!/usr/bin/env bash
+        set -eu  # script exits on error or uninitialized variable
+        ./hack/prow/verify-build.sh
+
+  - id: verify generate
+    timeout: 900s
+    name: "${_GOLANG_IMAGE}"
+    env:
+      - "GO111MODULE=on"
+      - "GOPROXY=https://proxy.golang.org"
+      - "GOSUMDB=sum.golang.org"
+    script: |
+        #!/usr/bin/env bash
+        set -eu
+        ./hack/prow/verify-generate.sh
+
+  - id: verify license
+    timeout: 900s
+    name: "${_GOLANG_IMAGE}"
+    env:
+      - "GO111MODULE=on"
+      - "GOPROXY=https://proxy.golang.org"
+      - "GOSUMDB=sum.golang.org"
+    script: |
+        #!/usr/bin/env bash
+        set -eu
+        ./hack/prow/verify-license.sh
+
+  - id: verify unit test
+    timeout: 900s
+    name: "${_GOLANG_IMAGE}"
+    env:
+      - "GO111MODULE=on"
+      - "GOPROXY=https://proxy.golang.org"
+      - "GOSUMDB=sum.golang.org"
+    script: |
+        #!/usr/bin/env bash
+        set -eu
+        SKIP_INTEGRATION=true ./hack/prow/unit-test.sh
