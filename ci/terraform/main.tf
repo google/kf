@@ -3,7 +3,13 @@ resource "google_storage_bucket" "build_artifacts" {
   project                     = var.project_id
   name                        = "${var.project_id}-build-artifacts"
   location                    = "US"
-  force_destroy               = true
+  uniform_bucket_level_access = true
+}
+
+resource "google_storage_bucket" "test_results" {
+  project                     = var.project_id
+  name                        = "${var.project_id}-test-results"
+  location                    = "US"
   uniform_bucket_level_access = true
 }
 
@@ -98,6 +104,8 @@ resource "google_cloudbuild_trigger" "integ_tests_daily" {
   substitutions = {
     _RELEASE_BUCKET  = google_storage_bucket.build_artifacts.name
     _RELEASE_CHANNEL = "${var.release_channels[count.index]}"
+    _EXPORT_BUCKET = "${google_storage_bucket.test_results.name}"
+    _EXPORT_JOB_NAME = "integ-test-${var.release_channels[count.index]}"
   }
 }
 
@@ -117,6 +125,8 @@ resource "google_cloudbuild_trigger" "unit_tests_on_push" {
       branch = var.unit_tests_branch
     }
   }
+
+  include_build_logs = "INCLUDE_BUILD_LOGS_WITH_STATUS"
 }
 
 # Create on push cloudbuild triggers to run integration tests.
@@ -142,4 +152,6 @@ resource "google_cloudbuild_trigger" "integ_tests_on_push" {
     _RELEASE_BUCKET  = google_storage_bucket.build_artifacts.name
     _RELEASE_CHANNEL = "${var.release_channels[count.index]}"
   }
+
+  include_build_logs = "INCLUDE_BUILD_LOGS_WITH_STATUS"
 }

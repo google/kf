@@ -26,6 +26,8 @@ options:
 substitutions:
   _CLOUDSDK_IMAGE: "gcr.io/google.com/cloudsdktool/cloud-sdk:alpine"
   _RELEASE_BUCKET: ""
+  _EXPORT_BUCKET: "gs://kf-int-build-artifacts/test-results"
+  _EXPORT_JOB_NAME: "helloworld"
 
 steps:
   - id: submit build and then test jobs
@@ -36,3 +38,5 @@ steps:
       - 'GCP_PROJECT_ID=$PROJECT_ID'
       - 'BUILD_ID=$BUILD_ID'
       - 'RELEASE_BUCKET=$_RELEASE_BUCKET'
+      - 'EXPORT_BUCKET=$_EXPORT_BUCKET'
+      - 'EXPORT_JOB_NAME=$_EXPORT_JOB_NAME'
