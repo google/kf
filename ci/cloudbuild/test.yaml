@@ -29,7 +29,7 @@
 # used when creating a release. It is the gs:// URI that contains
 # cloud-build/fresh-cluster.yaml and cloud-build/delete-cluster.yaml.
 
-timeout: 7200s
+timeout: 10800s # 3h
 options:
   machineType: 'N1_HIGHCPU_8'
 substitutions:
@@ -224,7 +224,7 @@ steps:
   - default values
   - download Kf CLI and YAML files
   - unit tests
-  timeout: 1800s
+  timeout: 7200s # allow 2h for other cluster creation to finish
   name: "${_CLOUDSDK_IMAGE}"
   entrypoint: bash
   args:
@@ -237,10 +237,22 @@ steps:
       exit 0
     fi
 
+    # Spin wait for other create GKE cluster operations, only one cluster 
+    # can safely be created at a time.
+    while true; do
+      in_progress=$(gcloud builds list --filter='tags=kf-cluster-operation' --ongoing --format="flattened(id)" | wc -l)
+      if [ "$in_progress" -le 1 ]; then 
+        break
+      fi
+      
+      echo "Another GKE cluster is in creation, waiting for 60 seconds to see if it finishes"
+      sleep 60
+    done
+
     gcloud builds submit \
-    --no-source \
-    --config=/workspace/${BUILD_ID}/fresh-cluster.yaml \
-    --substitutions=_CLOUDSDK_COMPUTE_ZONE=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_COMPUTE_ZONE),_CLOUDSDK_CONTAINER_CLUSTER=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_CONTAINER_CLUSTER),_NODE_COUNT=${_NODE_COUNT},_MACHINE_TYPE=${_MACHINE_TYPE},_RELEASE_CHANNEL=${_RELEASE_CHANNEL},_ASM_MANAGED=${_ASM_MANAGED}
+        --no-source \
+        --config=/workspace/${BUILD_ID}/fresh-cluster.yaml \
+        --substitutions=_CLOUDSDK_COMPUTE_ZONE=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_COMPUTE_ZONE),_CLOUDSDK_CONTAINER_CLUSTER=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_CONTAINER_CLUSTER),_NODE_COUNT=${_NODE_COUNT},_MACHINE_TYPE=${_MACHINE_TYPE},_RELEASE_CHANNEL=${_RELEASE_CHANNEL},_ASM_MANAGED=${_ASM_MANAGED}
 
     if [ ! -z "${_EXTRA_CERTS_URL}" ]; then
       gsutil cp "${_EXTRA_CERTS_URL}" /workspace/certs.pem
