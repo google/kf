@@ -26,7 +26,7 @@ options:
 substitutions:
   _CLOUDSDK_IMAGE: "gcr.io/google.com/cloudsdktool/cloud-sdk:alpine"
   _RELEASE_BUCKET: ""
-  _EXPORT_BUCKET: "gs://kf-int-build-artifacts/test-results"
+  _EXPORT_BUCKET: ""
   _EXPORT_JOB_NAME: ""
 
 steps:
