@@ -5,3 +5,4 @@ bin/
 __pycache__/
 .pyc
 docs/
+ci/terraform/

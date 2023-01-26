@@ -117,6 +117,7 @@ func main() {
 			},
 		},
 		Steps: steps,
+		Tags:  []string{"kf-cluster-operation"},
 	}
 	data, err := yaml.Marshal(build)
 	if err != nil {

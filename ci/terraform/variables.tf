@@ -12,9 +12,19 @@ variable "repo_name" {
   default = "kf"
 }
 
-variable "repo_branch" {
+variable "unit_tests_branch" {
   type = string
   default = ".*"
+}
+
+variable "integ_tests_branch" {
+  type = string
+  default = "^main$"
+}
+
+variable "daily_tests_branch" {
+  type = string
+  default = "^main$"
 }
 
 variable "release_channels" {

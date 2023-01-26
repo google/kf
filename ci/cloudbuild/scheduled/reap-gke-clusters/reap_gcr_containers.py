@@ -16,6 +16,7 @@ import subprocess
 import json
 import argparse
 import sys
+from concurrent.futures import ThreadPoolExecutor
 
 
 def execute(command):
@@ -42,14 +43,16 @@ def protected_image(project_id, image_name):
 
 def delete_images(project_id):
     images = json.loads(execute(f"gcloud --project {project_id} container images list --format=json"))
-    for image in images:
-        image_name = image.get("name")
 
-        if protected_image(project_id, image_name):
-            continue
+    with ThreadPoolExecutor(max_workers=16) as executor:
+      for image in images:
+          image_name = image.get("name")
 
-        for full_name in attach_digests(project_id, image_name):
-            delete_image(project_id, full_name)
+          if protected_image(project_id, image_name):
+              continue
+
+          for full_name in attach_digests(project_id, image_name):
+            executor.submit(delete_image, project_id, full_name)
 
 
 def main():
