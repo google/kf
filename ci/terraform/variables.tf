@@ -17,14 +17,14 @@ variable "unit_tests_branch" {
   default = ".*"
 }
 
-variable "integ_tests_branch" {
+variable "integ_tests_branch_regex" {
   type = string
   default = "^main$"
 }
 
 variable "daily_tests_branch" {
   type = string
-  default = "^main$"
+  default = "main"
 }
 
 variable "release_channels" {

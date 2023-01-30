@@ -144,7 +144,7 @@ resource "google_cloudbuild_trigger" "integ_tests_on_push" {
     owner = var.repo_owner
     name  = var.repo_name
     push {
-      branch = var.integ_tests_branch
+      branch = var.integ_tests_branch_regex
     }
   }
 
