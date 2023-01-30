@@ -165,8 +165,7 @@ steps:
 
     # _CLOUDSDK_CONTAINER_CLUSTER
     if [ "${_CLOUDSDK_CONTAINER_CLUSTER}" == "random" ]; then
-      randNum=$(rand)
-      echo "int-${randNum:1}" > /workspace/${BUILD_ID}/_CLOUDSDK_CONTAINER_CLUSTER
+      echo "int-${BUILD_ID:-$(rand)}" > /workspace/${BUILD_ID}/_CLOUDSDK_CONTAINER_CLUSTER
     else
       echo "${_CLOUDSDK_CONTAINER_CLUSTER}" > /workspace/${BUILD_ID}/_CLOUDSDK_CONTAINER_CLUSTER
     fi
@@ -245,8 +244,8 @@ steps:
         break
       fi
       
-      echo "Another GKE cluster is in creation, waiting for 60 seconds to see if it finishes"
-      sleep 60
+      echo "Another GKE cluster is already starting, waiting for it to complete."
+      echo -e "import random\n\nimport time\ntime.sleep(random.randint(30,90))" | python3
     done
 
     gcloud builds submit \
