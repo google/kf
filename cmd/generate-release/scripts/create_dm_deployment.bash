@@ -65,7 +65,7 @@ until [ "$n" -ge ${retry_count} ]; do
     --template /kf/bin/deployment-manager/cluster.py &&
     break
   n=$((n + 1))
-  sleep 1
+  echo -e "import random\n\nimport time\ntime.sleep(random.randint(30,90))" | python3
 done
 
 if [ ${n} = ${retry_count} ]; then
