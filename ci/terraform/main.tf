@@ -59,33 +59,42 @@ resource "google_cloudbuild_trigger" "reap_gke_clusters" {
 
 # Create scheduled cloudbuild trigger to run integration tests
 resource "google_pubsub_topic" "cloudbuild_cron_integ_tests" {
-  name = "cloudbuild_cron_integ_tests"
+  for_each = toset(var.release_channels)
+  name = "cloudbuild_cron_integ_tests_${each.value}"
   project  = var.project_id
 }
 
 resource "google_cloud_scheduler_job" "cloudbuild_cron_integ_tests" {
-  name        = "cloudbuild_cron_integ_tests"
+  for_each = toset(var.release_channels)
+  name = "cloudbuild_cron_integ_tests_${each.value}"
+
   project     = var.project_id
   region      = "us-central1"
-  # daily at 9 AM
-  schedule    = "0 9 * * *"
+  # Daily starting at 3 AM staggered by 2 hours to avoid thundering herd.
+  schedule    = "0 ${index(var.release_channels, each.value) * 2 + 3} * * *"
   time_zone   = "America/Los_Angeles"
 
   pubsub_target {
-    topic_name = google_pubsub_topic.cloudbuild_cron_integ_tests.id
+    topic_name = google_pubsub_topic.cloudbuild_cron_integ_tests[each.value].id
     data       = base64encode("trigger cloudbuild")
   }
 }
 
 resource "google_cloudbuild_trigger" "integ_tests_daily" {
-  count = length(var.release_channels)
+  for_each = {
+    for v in setproduct(var.release_channels, [for k,v in var.revisions_to_test: [k, v]]): 
+    "${v[0]}-${v[1][0]}" => {
+      "channel" = v[0]
+      "revision_idx" = v[1][1]
+    }
+  }
   location    = "global"
   project     = var.project_id
-  name        = "kf-integ-tests-daily-${var.release_channels[count.index]}"
-  description = "Run integ tests daily at 9:00 AM on ${var.release_channels[count.index]} release channel."
+  name        = "kf-integ-tests-daily-${each.key}"
+  description = "Run integ tests daily for configuration ${each.key}"
 
   pubsub_config {
-    topic = google_pubsub_topic.cloudbuild_cron_integ_tests.id
+    topic = google_pubsub_topic.cloudbuild_cron_integ_tests[each.value.channel].id
   }
 
   source_to_build {
@@ -97,15 +106,16 @@ resource "google_cloudbuild_trigger" "integ_tests_daily" {
   git_file_source {
     path      = "ci/cloudbuild/release-and-test.yaml"
     uri       = "https://github.com/${var.repo_owner}/${var.repo_name}"
-    revision       = "refs/heads/${var.daily_tests_branch}"
+    revision  = "refs/heads/${var.daily_tests_branch}"
     repo_type = "GITHUB"
   }
 
   substitutions = {
     _RELEASE_BUCKET  = google_storage_bucket.build_artifacts.name
-    _RELEASE_CHANNEL = "${var.release_channels[count.index]}"
+    _RELEASE_CHANNEL = "${each.value.channel}"
     _EXPORT_BUCKET = "${google_storage_bucket.test_results.name}"
-    _EXPORT_JOB_NAME = "integ-test-${var.release_channels[count.index]}"
+    _EXPORT_JOB_NAME = "integ-test-${each.key}"
+    _TAGGED_RELEASE_INDEX = "${each.value.revision_idx}"
   }
 }
 

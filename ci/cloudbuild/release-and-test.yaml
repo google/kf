@@ -19,7 +19,7 @@
 # --config=ci/cloudbuild/main.yaml \
 # --ignore-file=ci/cloudbuild/test.ignore \
 
-timeout: 7200s
+timeout: 10800s
 options:
   machineType: "N1_HIGHCPU_8"
 
@@ -28,15 +28,45 @@ substitutions:
   _RELEASE_BUCKET: ""
   _EXPORT_BUCKET: ""
   _EXPORT_JOB_NAME: ""
+  _TAGGED_RELEASE_INDEX: "0" # 0=head, 1=current release, 2=previous release
 
 steps:
+  - id: select revision for test
+    name: "${_CLOUDSDK_IMAGE}"
+    script: |
+      set -eux
+
+      if [ "$_TAGGED_RELEASE_INDEX" -gt 0 ]; then
+        # Preserve the hack and ci configurations
+        temp_dir=$(mktemp -d)
+        cp -r ci $temp_dir/ci
+        cp -r hack $temp_dir/hack
+
+        git fetch --tags --unshallow
+
+        until [ "$_TAGGED_RELEASE_INDEX" -eq 0 ]; do
+          # Jump back one revision based on tagged releases
+          git checkout $(git describe --tags HEAD~1 --abbrev=0)
+          _TAGGED_RELEASE_INDEX=$((_TAGGED_RELEASE_INDEX - 1))
+        done
+
+        cp -r $temp_dir/* ./
+        git status --porcelain
+
+        echo "Running tests against release: $(git describe --tags --abbrev=0)"
+      fi
+
+      echo "Using git revision $(git rev-parse HEAD)"
+    env:
+      - "_TAGGED_RELEASE_INDEX=$_TAGGED_RELEASE_INDEX"
+
   - id: submit build and then test jobs
     entrypoint: bash
     name: "${_CLOUDSDK_IMAGE}"
     args: ["./hack/prow/e2e-test.sh"]
     env:
-      - 'GCP_PROJECT_ID=$PROJECT_ID'
-      - 'BUILD_ID=$BUILD_ID'
-      - 'RELEASE_BUCKET=$_RELEASE_BUCKET'
-      - 'EXPORT_BUCKET=$_EXPORT_BUCKET'
-      - 'EXPORT_JOB_NAME=$_EXPORT_JOB_NAME'
+      - "GCP_PROJECT_ID=$PROJECT_ID"
+      - "BUILD_ID=$BUILD_ID"
+      - "RELEASE_BUCKET=$_RELEASE_BUCKET"
+      - "EXPORT_BUCKET=$_EXPORT_BUCKET"
+      - "EXPORT_JOB_NAME=$_EXPORT_JOB_NAME"
