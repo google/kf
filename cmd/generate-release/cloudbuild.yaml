@@ -32,7 +32,7 @@ substitutions:
   _RELEASE_FOLDER: '' # Defaults to _VERSION
   _KO_IMAGE: 'gcr.io/kf-releases/ko:latest'
   _CLOUDSDK_IMAGE: 'gcr.io/google.com/cloudsdktool/cloud-sdk:alpine'
-  _GOLANG_IMAGE: 'golang:1.17'
+  _GOLANG_IMAGE: 'golang:1.20'
   _BUILDPACK_WRAPPER_GOLANG_IMAGE: 'golang:1.15'
 
 timeout: '1800s'
