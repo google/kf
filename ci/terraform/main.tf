@@ -1,11 +1,11 @@
-# Create a storage bucket to hold build artifacts
-resource "google_storage_bucket" "build_artifacts" {
+
+resource "google_storage_bucket" "test_results" {
   project                     = var.project_id
-  name                        = "${var.project_id}-build-artifacts"
+  name                        = "${var.project_id}-test-results"
   location                    = "US"
   uniform_bucket_level_access = true
 }
-
+# Create a storage bucket to hold build artifacts
 resource "google_storage_bucket" "test_results" {
   project                     = var.project_id
   name                        = "${var.project_id}-test-results"
