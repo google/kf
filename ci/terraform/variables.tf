@@ -32,3 +32,12 @@ variable "release_channels" {
   default = ["stable", "regular", "rapid"]
 }
 
+variable "revisions_to_test" {
+  type    = map
+  default = {
+    "head" = 0
+    "current-release" = 1
+    "prev-release" = 2
+  }
+}
+
