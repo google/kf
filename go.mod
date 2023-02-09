@@ -9,7 +9,7 @@ require (
 	github.com/aws/smithy-go v1.11.0
 	github.com/docker/cli v20.10.12+incompatible
 	github.com/docker/docker v20.10.12+incompatible
-	github.com/emicklei/go-restful v2.15.0+incompatible
+	github.com/emicklei/go-restful v2.16.0+incompatible
 	github.com/fatih/color v1.13.0
 	github.com/gofrs/flock v0.8.1
 	github.com/golang/mock v1.6.0
