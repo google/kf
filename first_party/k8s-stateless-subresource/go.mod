@@ -3,7 +3,7 @@ module github.com/google/k8s-stateless-subresource
 go 1.17
 
 require (
-	github.com/emicklei/go-restful v2.9.5+incompatible
+	github.com/emicklei/go-restful v2.16.0+incompatible
 	github.com/spf13/pflag v1.0.5
 	go.uber.org/zap v1.19.1
 	k8s.io/api v0.23.5
