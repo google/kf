@@ -53,7 +53,6 @@ func main() {
 
 	formatted, err := format.Source(buf)
 	if err != nil {
-		log.Println(string(buf))
 		log.Fatal(err)
 		return
 	}
