@@ -22,7 +22,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 	"github.com/google/k8s-stateless-subresource/pkg/internal/apiserver"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
@@ -37,8 +37,8 @@ import (
 	kubeclient "knative.dev/pkg/client/injection/kube/client"
 	cminformer "knative.dev/pkg/configmap/informer"
 	"knative.dev/pkg/controller"
-	"knative.dev/pkg/injection"
 	"knative.dev/pkg/environment"
+	"knative.dev/pkg/injection"
 	"knative.dev/pkg/injection/sharedmain"
 	"knative.dev/pkg/logging"
 	"knative.dev/pkg/logging/logkey"
