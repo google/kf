@@ -20,6 +20,7 @@ import (
 	apiserviceclient "github.com/google/kf/v2/pkg/client/kube-aggregator/injection/client"
 	apiserviceinformer "github.com/google/kf/v2/pkg/client/kube-aggregator/injection/informers/apiregistration/v1/apiservice"
 	"github.com/google/kf/v2/pkg/reconciler"
+	"github.com/google/kf/v2/pkg/reconciler/reconcilerutil"
 	"github.com/google/kf/v2/pkg/system"
 	"k8s.io/client-go/tools/cache"
 	secretinformer "knative.dev/pkg/client/injection/kube/informers/core/v1/secret"
@@ -42,7 +43,11 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		apiServiceClientSet: apiserviceclient.Get(ctx),
 	}
 
-	impl := controller.NewContext(ctx, r, controller.ControllerOptions{WorkQueueName: "APIServices", Logger: logger})
+	impl := controller.NewContext(ctx, r, controller.ControllerOptions{
+		WorkQueueName: "APIServices",
+		Logger:        logger,
+		Reporter:      &reconcilerutil.StructuredStatsReporter{Logger: logger},
+	})
 
 	logger.Info("Setting up event handlers")
 

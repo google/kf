@@ -23,6 +23,7 @@ import (
 	kfserviceinstanceinformer "github.com/google/kf/v2/pkg/client/kf/injection/informers/kf/v1alpha1/serviceinstance"
 	spaceinformer "github.com/google/kf/v2/pkg/client/kf/injection/informers/kf/v1alpha1/space"
 	"github.com/google/kf/v2/pkg/reconciler"
+	"github.com/google/kf/v2/pkg/reconciler/reconcilerutil"
 	"k8s.io/client-go/tools/cache"
 	deploymentinformer "knative.dev/pkg/client/injection/kube/informers/apps/v1/deployment"
 	persistentvolumeinformer "knative.dev/pkg/client/injection/kube/informers/core/v1/persistentvolume"
@@ -59,7 +60,11 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		k8sServiceLister:   k8sServiceInformer.Lister(),
 	}
 
-	impl := controller.NewContext(ctx, c, controller.ControllerOptions{WorkQueueName: "ServiceInstances", Logger: logger})
+	impl := controller.NewContext(ctx, c, controller.ControllerOptions{
+		WorkQueueName: "ServiceInstances",
+		Logger:        logger,
+		Reporter:      &reconcilerutil.StructuredStatsReporter{Logger: logger},
+	})
 
 	logger.Info("Setting up event handlers")
 

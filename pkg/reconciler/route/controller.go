@@ -28,6 +28,7 @@ import (
 	networkingclient "github.com/google/kf/v2/pkg/client/networking/injection/client"
 	virtualserviceinformer "github.com/google/kf/v2/pkg/client/networking/injection/informers/networking/v1alpha3/virtualservice"
 	"github.com/google/kf/v2/pkg/reconciler"
+	"github.com/google/kf/v2/pkg/reconciler/reconcilerutil"
 	"github.com/google/kf/v2/pkg/reconciler/route/resources"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -63,7 +64,11 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		kfConfigStore:                kfConfigStore,
 	}
 
-	impl := controller.NewContext(ctx, c, controller.ControllerOptions{WorkQueueName: "Routes", Logger: logger})
+	impl := controller.NewContext(ctx, c, controller.ControllerOptions{
+		WorkQueueName: "Routes",
+		Logger:        logger,
+		Reporter:      &reconcilerutil.StructuredStatsReporter{Logger: logger},
+	})
 
 	logger.Info("Setting up event handlers")
 
