@@ -264,3 +264,18 @@ func ExperimentalCommandGroup(name string, cmds ...*cobra.Command) group.Command
 		Commands: cmds,
 	}
 }
+
+// StatusUpdateConditionReporter creates a function that prints deltas
+// between two status updates.
+func StatusUpdateConditionReporter(w io.Writer) func(message string) {
+	var lastMessage string
+
+	prefix := Muted.Sprint("[status update]")
+
+	return func(msg string) {
+		if msg != lastMessage {
+			fmt.Fprintf(w, "%s %s\n", prefix, msg)
+			lastMessage = msg
+		}
+	}
+}

@@ -262,6 +262,9 @@ func (p *pusher) Push(ctx context.Context, appName string, opts ...PushOption) e
 func (p *pusher) CreatePlaceholderApp(ctx context.Context, appName string, opts ...PushOption) (*v1alpha1.App, error) {
 	cfg := PushOptionDefaults().Extend(opts).toConfig()
 	logger := logging.FromContext(ctx)
+	if out := cfg.Output; out != nil {
+		ctx = WithConditionReporter(ctx, utils.StatusUpdateConditionReporter(out))
+	}
 
 	logger.Infof("Checking for existing App named %q...", appName)
 	app, err := p.appsClient.Get(ctx, cfg.Space, appName)

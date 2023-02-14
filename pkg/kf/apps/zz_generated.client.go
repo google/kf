@@ -253,7 +253,24 @@ func (core *coreClient) WaitFor(ctx context.Context, namespace string, name stri
 //
 // This function MAY retrieve a nil instance and an apiErr. It's up to the
 // function to decide how to handle the apiErr.
-type ConditionFuncE func(instance *v1alpha1.App, apiErr error) (done bool, err error)
+type ConditionFuncE func(ctx context.Context, instance *v1alpha1.App, apiErr error) (done bool, err error)
+
+// ConditionReporter reports on changes to conditions while waiting.
+type ConditionReporter func(message string)
+type conditionReporterKey struct{}
+
+// WithConditionReporter adds a callback to condition waits.
+func WithConditionReporter(ctx context.Context, reporter ConditionReporter) context.Context {
+	return context.WithValue(ctx, conditionReporterKey{}, reporter)
+}
+
+func maybeGetConditionReporter(ctx context.Context) ConditionReporter {
+	if v := ctx.Value(conditionReporterKey{}); v != nil {
+		return v.(ConditionReporter)
+	}
+
+	return nil
+}
 
 // waitForE polls for the given object every interval until the condition
 // function becomes done or the timeout expires. The first poll occurs
@@ -266,7 +283,7 @@ func (core *coreClient) waitForE(ctx context.Context, namespace string, name str
 
 	for {
 		instance, err = core.kclient.Apps(namespace).Get(ctx, name, metav1.GetOptions{})
-		if done, err = condition(instance, err); done {
+		if done, err = condition(ctx, instance, err); done {
 			return
 		}
 
@@ -281,7 +298,7 @@ func (core *coreClient) waitForE(ctx context.Context, namespace string, name str
 
 // ConditionDeleted is a ConditionFuncE that succeeds if the error returned by
 // the cluster was a not found error.
-func ConditionDeleted(_ *v1alpha1.App, apiErr error) (bool, error) {
+func ConditionDeleted(ctx context.Context, _ *v1alpha1.App, apiErr error) (bool, error) {
 	if apiErr != nil {
 		if apierrors.IsNotFound(apiErr) {
 			apiErr = nil
@@ -296,7 +313,7 @@ func ConditionDeleted(_ *v1alpha1.App, apiErr error) (bool, error) {
 // wrapPredicate converts a predicate to a ConditionFuncE that fails if the
 // error is not nil or if the Status has a False condition.
 func wrapPredicate(condition Predicate) ConditionFuncE {
-	return func(obj *v1alpha1.App, err error) (bool, error) {
+	return func(ctx context.Context, obj *v1alpha1.App, err error) (bool, error) {
 		if err != nil {
 			return true, err
 		}
@@ -318,13 +335,19 @@ func (core *coreClient) WaitForDeletion(ctx context.Context, namespace string, n
 	return core.waitForE(ctx, namespace, name, interval, ConditionDeleted)
 }
 
-func checkConditionTrue(obj *v1alpha1.App, err error, condition apis.ConditionType) (bool, error) {
+func checkConditionTrue(ctx context.Context, obj *v1alpha1.App, err error, condition apis.ConditionType) (bool, error) {
+	conditionReporter := func(_ string) {}
+	if reporter := maybeGetConditionReporter(ctx); reporter != nil {
+		conditionReporter = reporter
+	}
+
 	if err != nil {
 		return true, err
 	}
 
 	// don't propagate old statuses
 	if !ObservedGenerationMatchesGeneration(obj) {
+		conditionReporter("Waiting for object to be reconciled (generation out of sync)")
 		return false, nil
 	}
 
@@ -335,6 +358,7 @@ func checkConditionTrue(obj *v1alpha1.App, err error, condition apis.ConditionTy
 				return true, nil
 
 			case cond.IsUnknown():
+				conditionReporter(fmt.Sprintf("Last Transition Time: %s Reason: %q Message: %s", cond.LastTransitionTime.Inner, cond.Reason, cond.Message))
 				return false, nil
 
 			default:
@@ -345,13 +369,15 @@ func checkConditionTrue(obj *v1alpha1.App, err error, condition apis.ConditionTy
 		}
 	}
 
+	conditionReporter(fmt.Sprintf("Condition %q not found", condition))
+
 	return false, nil
 }
 
 // ConditionReadyTrue is a ConditionFuncE that waits for Condition{Ready v1alpha1.AppConditionReady } to
 // become true and fails with an error if the condition becomes false.
-func ConditionReadyTrue(obj *v1alpha1.App, err error) (bool, error) {
-	return checkConditionTrue(obj, err, ConditionReady)
+func ConditionReadyTrue(ctx context.Context, obj *v1alpha1.App, err error) (bool, error) {
+	return checkConditionTrue(ctx, obj, err, ConditionReady)
 }
 
 // WaitForConditionReadyTrue is a utility function that combines waitForE with ConditionReadyTrue.
@@ -361,8 +387,8 @@ func (core *coreClient) WaitForConditionReadyTrue(ctx context.Context, namespace
 
 // ConditionServiceInstanceBindingsReadyTrue is a ConditionFuncE that waits for Condition{ServiceInstanceBindingsReady v1alpha1.AppConditionServiceInstanceBindingsReady } to
 // become true and fails with an error if the condition becomes false.
-func ConditionServiceInstanceBindingsReadyTrue(obj *v1alpha1.App, err error) (bool, error) {
-	return checkConditionTrue(obj, err, ConditionServiceInstanceBindingsReady)
+func ConditionServiceInstanceBindingsReadyTrue(ctx context.Context, obj *v1alpha1.App, err error) (bool, error) {
+	return checkConditionTrue(ctx, obj, err, ConditionServiceInstanceBindingsReady)
 }
 
 // WaitForConditionServiceInstanceBindingsReadyTrue is a utility function that combines waitForE with ConditionServiceInstanceBindingsReadyTrue.
@@ -372,8 +398,8 @@ func (core *coreClient) WaitForConditionServiceInstanceBindingsReadyTrue(ctx con
 
 // ConditionKnativeServiceReadyTrue is a ConditionFuncE that waits for Condition{KnativeServiceReady v1alpha1.AppConditionDeploymentReady } to
 // become true and fails with an error if the condition becomes false.
-func ConditionKnativeServiceReadyTrue(obj *v1alpha1.App, err error) (bool, error) {
-	return checkConditionTrue(obj, err, ConditionKnativeServiceReady)
+func ConditionKnativeServiceReadyTrue(ctx context.Context, obj *v1alpha1.App, err error) (bool, error) {
+	return checkConditionTrue(ctx, obj, err, ConditionKnativeServiceReady)
 }
 
 // WaitForConditionKnativeServiceReadyTrue is a utility function that combines waitForE with ConditionKnativeServiceReadyTrue.
@@ -383,8 +409,8 @@ func (core *coreClient) WaitForConditionKnativeServiceReadyTrue(ctx context.Cont
 
 // ConditionRoutesReadyTrue is a ConditionFuncE that waits for Condition{RoutesReady v1alpha1.AppConditionRouteReady } to
 // become true and fails with an error if the condition becomes false.
-func ConditionRoutesReadyTrue(obj *v1alpha1.App, err error) (bool, error) {
-	return checkConditionTrue(obj, err, ConditionRoutesReady)
+func ConditionRoutesReadyTrue(ctx context.Context, obj *v1alpha1.App, err error) (bool, error) {
+	return checkConditionTrue(ctx, obj, err, ConditionRoutesReady)
 }
 
 // WaitForConditionRoutesReadyTrue is a utility function that combines waitForE with ConditionRoutesReadyTrue.

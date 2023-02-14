@@ -191,7 +191,7 @@ func TestConditionDeleted(t *testing.T) {
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			actualDone, actualErr := ConditionDeleted(nil, tc.apiErr)
+			actualDone, actualErr := ConditionDeleted(context.TODO(), nil, tc.apiErr)
 
 			testutil.AssertErrorsEqual(t, tc.wantErr, actualErr)
 			testutil.AssertEqual(t, "done", tc.wantDone, actualDone)
@@ -274,7 +274,7 @@ func TestWrapPredicate(t *testing.T) {
 				called = true
 				return tc.predicateResponse
 			})
-			actualDone, actualErr := wrapped(&v1.Pod{
+			actualDone, actualErr := wrapped(context.TODO(), &v1.Pod{
 				Status: v1.PodStatus{
 					Conditions: tc.conditions,
 				},
@@ -348,7 +348,7 @@ func TestCheckConditionTrue(t *testing.T) {
 				},
 			}
 
-			actualDone, actualErr := checkConditionTrue(pod, tc.err, ConditionReady)
+			actualDone, actualErr := checkConditionTrue(context.TODO(), pod, tc.err, ConditionReady)
 
 			testutil.AssertErrorsEqual(t, tc.wantErr, actualErr)
 			testutil.AssertEqual(t, "done", tc.wantDone, actualDone)
