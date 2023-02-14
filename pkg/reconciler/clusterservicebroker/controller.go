@@ -21,6 +21,7 @@ import (
 	kfclusterservicebrokerinformer "github.com/google/kf/v2/pkg/client/kf/injection/informers/kf/v1alpha1/clusterservicebroker"
 	kfserviceinstanceinformer "github.com/google/kf/v2/pkg/client/kf/injection/informers/kf/v1alpha1/serviceinstance"
 	"github.com/google/kf/v2/pkg/reconciler"
+	"github.com/google/kf/v2/pkg/reconciler/reconcilerutil"
 	"k8s.io/client-go/tools/cache"
 	secretinformer "knative.dev/pkg/client/injection/kube/informers/core/v1/secret"
 	"knative.dev/pkg/configmap"
@@ -42,7 +43,11 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		kfServiceInstanceLister:      serviceInstanceInformer.Lister(),
 	}
 
-	impl := controller.NewContext(ctx, r, controller.ControllerOptions{WorkQueueName: "ClusterServiceBrokers", Logger: logger})
+	impl := controller.NewContext(ctx, r, controller.ControllerOptions{
+		WorkQueueName: "ClusterServiceBrokers",
+		Logger:        logger,
+		Reporter:      &reconcilerutil.StructuredStatsReporter{Logger: logger},
+	})
 
 	logger.Info("setting up event handlers")
 	clusterServiceBrokerInformer.Informer().AddEventHandler(controller.HandleAll(impl.Enqueue))

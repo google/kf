@@ -29,6 +29,7 @@ import (
 	spaceinformer "github.com/google/kf/v2/pkg/client/kf/injection/informers/kf/v1alpha1/space"
 	kflisters "github.com/google/kf/v2/pkg/client/kf/listers/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/reconciler"
+	"github.com/google/kf/v2/pkg/reconciler/reconcilerutil"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -97,7 +98,11 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		go adxBuildInformer.Informer().Run(ctx.Done())
 	}
 
-	impl := controller.NewContext(ctx, c, controller.ControllerOptions{WorkQueueName: "Apps", Logger: logger})
+	impl := controller.NewContext(ctx, c, controller.ControllerOptions{
+		WorkQueueName: "Apps",
+		Logger:        logger,
+		Reporter:      &reconcilerutil.StructuredStatsReporter{Logger: logger},
+	})
 
 	logger.Info("Setting up event handlers")
 

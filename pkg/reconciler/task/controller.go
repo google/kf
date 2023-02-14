@@ -21,6 +21,7 @@ import (
 	"github.com/google/kf/v2/pkg/apis/kf/config"
 	kfv1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	appinformer "github.com/google/kf/v2/pkg/client/kf/injection/informers/kf/v1alpha1/app"
+	"github.com/google/kf/v2/pkg/reconciler/reconcilerutil"
 
 	spaceinformer "github.com/google/kf/v2/pkg/client/kf/injection/informers/kf/v1alpha1/space"
 	taskinformer "github.com/google/kf/v2/pkg/client/kf/injection/informers/kf/v1alpha1/task"
@@ -55,7 +56,11 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		tektonClient:  tektonClient.TektonV1beta1(),
 	}
 
-	impl := controller.NewContext(ctx, c, controller.ControllerOptions{WorkQueueName: "tasks", Logger: logger})
+	impl := controller.NewContext(ctx, c, controller.ControllerOptions{
+		WorkQueueName: "tasks",
+		Logger:        logger,
+		Reporter:      &reconcilerutil.StructuredStatsReporter{Logger: logger},
+	})
 
 	logger.Info("Setting up ConfigMap receivers")
 	configsToResync := []interface{}{

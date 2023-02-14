@@ -102,7 +102,11 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		iamClientSet:             dynamicClient.Resource(*gsaPoliciesGVR),
 	}
 
-	impl := controller.NewContext(ctx, c, controller.ControllerOptions{WorkQueueName: "Spaces", Logger: logger})
+	impl := controller.NewContext(ctx, c, controller.ControllerOptions{
+		WorkQueueName: "Spaces",
+		Logger:        logger,
+		Reporter:      &reconcilerutil.StructuredStatsReporter{Logger: logger},
+	})
 
 	logger.Info("Setting up event handlers")
 	// Watch for changes in sub-resources so we can sync accordingly
