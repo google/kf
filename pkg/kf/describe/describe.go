@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	kfv1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
-	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 )
@@ -158,8 +158,8 @@ func AppSpecAutoscaling(w io.Writer, autoscalingSpec *kfv1alpha1.AppSpecAutoscal
 	})
 }
 
-// MetaV1Beta1Table can print Kubernetes server-side rendered tables.
-func MetaV1Beta1Table(w io.Writer, table *metav1beta1.Table) error {
+// MetaV1Table can print Kubernetes server-side rendered tables.
+func MetaV1Table(w io.Writer, table *metav1.Table) error {
 	TabbedWriter(w, func(w io.Writer) {
 		cols := []string{}
 		for _, col := range table.ColumnDefinitions {

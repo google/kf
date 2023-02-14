@@ -20,7 +20,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/v3"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/google/k8s-stateless-subresource/pkg/apiserver"

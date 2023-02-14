@@ -193,7 +193,7 @@ func NewListCommand(t Type, p *config.KfParams, opts ...ListOption) *cobra.Comma
 			if err != nil {
 				return err
 			}
-			describe.MetaV1Beta1Table(w, table)
+			describe.MetaV1Table(w, table)
 			return nil
 		},
 	}

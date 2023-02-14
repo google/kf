@@ -177,8 +177,8 @@ func ExampleAppSpecAutoscaling() {
 	//     CPU       80
 }
 
-func ExampleMetaV1Beta1Table() {
-	describe.MetaV1Beta1Table(os.Stdout, &metav1beta1.Table{
+func ExampleMetaV1Table() {
+	describe.MetaV1Table(os.Stdout, &metav1beta1.Table{
 		ColumnDefinitions: []metav1beta1.TableColumnDefinition{
 			{Name: "Name"},
 			{Name: "Age"},

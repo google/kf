@@ -26,7 +26,6 @@ import (
 	"github.com/google/kf/v2/pkg/kf/testutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	fakedynamicclient "knative.dev/pkg/injection/clients/dynamicclient/fake"
 )
 
@@ -47,12 +46,12 @@ func (g *genericType) NewUnstructured(ns, name string) *unstructured.Unstructure
 	}
 }
 
-func (g *genericType) NewTable(name string) *metav1beta1.Table {
-	return &metav1beta1.Table{
-		ColumnDefinitions: []metav1beta1.TableColumnDefinition{
+func (g *genericType) NewTable(name string) *metav1.Table {
+	return &metav1.Table{
+		ColumnDefinitions: []metav1.TableColumnDefinition{
 			{Name: "Name"},
 		},
-		Rows: []metav1beta1.TableRow{
+		Rows: []metav1.TableRow{
 			{Cells: []interface{}{name}},
 		},
 	}

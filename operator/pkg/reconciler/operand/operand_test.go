@@ -32,7 +32,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	appsv1 "k8s.io/api/apps/v1"
-	appsv1beta2 "k8s.io/api/apps/v1beta2"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -416,7 +415,7 @@ func TestReconcile(t *testing.T) {
 				OperandWithDefaults("test-obj",
 					Generations(1, 1),
 					WithSteadyState(t,
-						&appsv1beta2.Deployment{
+						&appsv1.Deployment{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:      "platoon",
 								Namespace: "test",
@@ -435,7 +434,7 @@ func TestReconcile(t *testing.T) {
 					Object: OperandWithDefaults("test-obj",
 						Generations(1, 1),
 						WithSteadyState(t,
-							&appsv1beta2.Deployment{
+							&appsv1.Deployment{
 								ObjectMeta: metav1.ObjectMeta{
 									Name:      "platoon",
 									Namespace: "test",
