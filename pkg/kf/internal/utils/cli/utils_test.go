@@ -271,3 +271,14 @@ func TestAddPreviewWarning(t *testing.T) {
 		})
 	}
 }
+
+func ExampleStatusUpdateConditionReporter() {
+	reporter := StatusUpdateConditionReporter(os.Stdout)
+
+	reporter("Foo")
+	reporter("Bar")
+	reporter("Bar")
+
+	// Expected: [status update] Foo
+	// [status update] Bar
+}

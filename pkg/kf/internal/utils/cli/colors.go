@@ -14,7 +14,7 @@ var (
 	// Heading is the color for headings.
 	Heading = color.New(color.FgWhite, color.Bold)
 	// Muted is the color for headings you want muted.
-	Muted = color.New(color.FgWhite, color.Bold)
+	Muted = color.New(color.FgBlue)
 	// TipColor is the color to show for tips.
 	TipColor = color.New(color.FgGreen, color.Bold)
 )

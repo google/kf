@@ -174,7 +174,24 @@ func (core *coreClient) WaitFor(ctx context.Context, {{ $nssig }} name string, i
 //
 // This function MAY retrieve a nil instance and an apiErr. It's up to the
 // function to decide how to handle the apiErr.
-type ConditionFuncE func(instance *{{.Type}}, apiErr error) (done bool, err error)
+type ConditionFuncE func(ctx context.Context, instance *{{.Type}}, apiErr error) (done bool, err error)
+
+// ConditionReporter reports on changes to conditions while waiting.
+type ConditionReporter func(message string)
+type conditionReporterKey struct {}
+
+// WithConditionReporter adds a callback to condition waits.
+func WithConditionReporter(ctx context.Context, reporter ConditionReporter) context.Context {
+	return context.WithValue(ctx, conditionReporterKey{}, reporter)
+}
+
+func maybeGetConditionReporter(ctx context.Context) ConditionReporter {
+	if v := ctx.Value(conditionReporterKey{}); v != nil {
+		return v.(ConditionReporter)
+	}
+
+	return nil
+}
 
 // waitForE polls for the given object every interval until the condition
 // function becomes done or the timeout expires. The first poll occurs
@@ -187,7 +204,7 @@ func (core *coreClient) waitForE(ctx context.Context, {{ $nssig }} name string, 
 
 	for {
 		instance, err = core.kclient.{{ .Kubernetes.Plural }}({{ $ns }}).Get(ctx, name, metav1.GetOptions{})
-		if done, err = condition(instance, err); done {
+		if done, err = condition(ctx, instance, err); done {
 			return
 		}
 
@@ -202,7 +219,7 @@ func (core *coreClient) waitForE(ctx context.Context, {{ $nssig }} name string, 
 
 // ConditionDeleted is a ConditionFuncE that succeeds if the error returned by
 // the cluster was a not found error.
-func ConditionDeleted(_ *{{.Type}}, apiErr error) (bool, error) {
+func ConditionDeleted(ctx context.Context, _ *{{.Type}}, apiErr error) (bool, error) {
 	if apiErr != nil {
 		if apierrors.IsNotFound(apiErr) {
 			apiErr = nil
@@ -217,7 +234,7 @@ func ConditionDeleted(_ *{{.Type}}, apiErr error) (bool, error) {
 // wrapPredicate converts a predicate to a ConditionFuncE that fails if the
 // error is not nil{{ if .SupportsConditions }} or if the Status has a False condition.{{ end }}
 func wrapPredicate(condition Predicate) ConditionFuncE {
-	return func(obj *{{.Type}}, err error) (bool, error) {
+	return func(ctx context.Context, obj *{{.Type}}, err error) (bool, error) {
 		if err != nil {
 			return true, err
 		}
@@ -248,13 +265,19 @@ func (core *coreClient) WaitForDeletion(ctx context.Context, {{ $nssig }} name s
 }
 
 {{ if .SupportsConditions }}
-func checkConditionTrue(obj *{{.Type}}, err error, condition apis.ConditionType) (bool, error) {
+func checkConditionTrue(ctx context.Context, obj *{{.Type}}, err error, condition apis.ConditionType) (bool, error) {
+	conditionReporter := func(_ string) {}
+	if reporter := maybeGetConditionReporter(ctx); reporter != nil {
+		conditionReporter = reporter
+	}
+
 	if err != nil {
 		return true, err
 	}
 
 	{{ if .SupportsObservedGeneration }}// don't propagate old statuses
 	if !ObservedGenerationMatchesGeneration(obj){
+		conditionReporter("Waiting for object to be reconciled (generation out of sync)")
 		return false, nil
 	}
 	{{ end }}
@@ -265,6 +288,7 @@ func checkConditionTrue(obj *{{.Type}}, err error, condition apis.ConditionType)
 				return true, nil
 
 			case cond.IsUnknown():
+				conditionReporter(fmt.Sprintf("Last Transition Time: %s Reason: %q Message: %s", cond.LastTransitionTime.Inner, cond.Reason, cond.Message))
 				return false, nil
 
 			default:
@@ -275,14 +299,16 @@ func checkConditionTrue(obj *{{.Type}}, err error, condition apis.ConditionType)
 		}
 	}
 
+	conditionReporter(fmt.Sprintf("Condition %q not found", condition))
+
 	return false, nil
 }
 
 {{ range .Kubernetes.Conditions }}
 // {{.PredicateName}} is a ConditionFuncE that waits for Condition{{.}} to
 // become true and fails with an error if the condition becomes false.
-func {{.PredicateName}}(obj *{{$type}}, err error) (bool, error) {
-	return checkConditionTrue(obj, err, {{.ConditionName}})
+func {{.PredicateName}}(ctx context.Context, obj *{{$type}}, err error) (bool, error) {
+	return checkConditionTrue(ctx, obj, err, {{.ConditionName}})
 }
 
 // {{.WaitForName}} is a utility function that combines waitForE with {{.PredicateName}}.

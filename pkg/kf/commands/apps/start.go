@@ -65,7 +65,11 @@ func NewStartCommand(
 
 			action := fmt.Sprintf("Starting app %q in space %q", appName, p.Space)
 			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
-				_, err := client.WaitForConditionKnativeServiceReadyTrue(context.Background(), p.Space, appName, 1*time.Second)
+				ctx := apps.WithConditionReporter(
+					context.Background(),
+					utils.StatusUpdateConditionReporter(cmd.OutOrStdout()),
+				)
+				_, err := client.WaitForConditionKnativeServiceReadyTrue(ctx, p.Space, appName, 1*time.Second)
 				return err
 			})
 		},
