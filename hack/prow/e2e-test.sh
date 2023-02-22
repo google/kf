@@ -37,12 +37,11 @@ _EXPORT_REPO="${EXPORT_REPO:-google/kf}"
 
 # Create Kf release
 git_sha=${COMMIT_SHA:-$(git rev-parse HEAD)}
-build_id=${BUILD_ID:-$(git rev-parse --short $git_sha)}
-release_id="$(date +%s)-$build_id"
+release_id="$(date +%s)-$(git rev-parse --short $git_sha)"
 
-# Determine the path to export results to and store the latest build ID
-export_path=gs://${_EXPORT_BUCKET}/logs/${_EXPORT_JOB_NAME}/$build_id
-[ ! -z "${_EXPORT_BUCKET}" ] && echo $build_id | gsutil cp - gs://${_EXPORT_BUCKET}/logs/${_EXPORT_JOB_NAME}/latest-build.txt
+# Determine the path to export results to and store the latest release ID
+export_path=gs://${_EXPORT_BUCKET}/logs/${_EXPORT_JOB_NAME}/$release_id
+[ ! -z "${_EXPORT_BUCKET}" ] && echo $release_id | gsutil cp - gs://${_EXPORT_BUCKET}/logs/${_EXPORT_JOB_NAME}/latest-build.txt
 
 # Write 'started.json' to report start of job to testgrid
 [ ! -z "${_EXPORT_BUCKET}" ] && jq -n \
@@ -67,6 +66,7 @@ function finish {
               --argjson metadata "$( \
                   jq -n \
                       --arg "Commit" $git_sha \
+                      --arg "Build" "$BUILD_ID" \
                       '$ARGS.named' \
               )" \
               '$ARGS.named' | gsutil cp - ${export_path}/finished.json
