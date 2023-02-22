@@ -24,7 +24,7 @@ options:
   machineType: "N1_HIGHCPU_8"
 
 substitutions:
-  _CLOUDSDK_IMAGE: "gcr.io/google.com/cloudsdktool/cloud-sdk:alpine"
+  _CLOUDSDK_IMAGE: "gcr.io/google.com/cloudsdktool/cloud-sdk:417.0.1-alpine"
   _RELEASE_BUCKET: ""
   _EXPORT_BUCKET: ""
   _EXPORT_JOB_NAME: ""
