@@ -33,7 +33,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/tektoncd/pipeline v0.36.0
 	go.uber.org/zap v1.19.1
-	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9
+	golang.org/x/sys v0.1.0
 	google.golang.org/api v0.70.0
 	google.golang.org/genproto v0.0.0-20220303160752-862486edd9cc
 	google.golang.org/protobuf v1.28.0
