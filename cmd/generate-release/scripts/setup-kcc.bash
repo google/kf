@@ -66,7 +66,8 @@ fi
 # Give service account role to access IAM
 gcloud projects add-iam-policy-binding "${project_id}" \
   --member "serviceAccount:${cluster_name}-sa@${project_id}.iam.gserviceaccount.com" \
-  --role "roles/iam.serviceAccountAdmin"
+  --role "roles/iam.serviceAccountAdmin" \
+  --format=none
 
 cat <<EOF | kubectl apply -f -
 apiVersion: core.cnrm.cloud.google.com/v1beta1

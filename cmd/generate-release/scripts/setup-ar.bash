@@ -33,4 +33,5 @@ fi
 # Granting GSA permissions on AR repo
 gcloud projects add-iam-policy-binding "${project_id}" \
   --member "serviceAccount:${gsa}" \
-  --role "roles/artifactregistry.writer"
+  --role "roles/artifactregistry.writer" \
+  --format=none

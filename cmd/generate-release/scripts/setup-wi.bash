@@ -40,7 +40,8 @@ if [ ! "$(kubectl -nkf get configmap config-secrets -o=jsonpath='{.data}')" ]; t
       # Give service account role to read/write from GCR
       gcloud projects add-iam-policy-binding "${project_id}" \
         --member "serviceAccount:${cluster_name}-sa@${project_id}.iam.gserviceaccount.com" \
-        --role "roles/storage.admin"
+        --role "roles/storage.admin" \
+        --format=none
   else
       echo "roles/storage.admin already present"
   fi
@@ -49,7 +50,8 @@ if [ ! "$(kubectl -nkf get configmap config-secrets -o=jsonpath='{.data}')" ]; t
   # Give service account role to access IAM
   gcloud projects add-iam-policy-binding "${project_id}" \
     --member "serviceAccount:${cluster_name}-sa@${project_id}.iam.gserviceaccount.com" \
-    --role "roles/iam.serviceAccountAdmin"
+    --role "roles/iam.serviceAccountAdmin" \
+    --format=none
   else
       echo "roles/iam.serviceAccountAdmin already present"
   fi
