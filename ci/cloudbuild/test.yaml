@@ -89,7 +89,7 @@ substitutions:
 
   # _ASM_MANAGED when set to 'true' will install the Google-manage control plane
   # version of ASM
-  _ASM_MANAGED: 'false'
+  _ASM_MANAGED: 'true'
 
   # _EXTRA_CERTS_URL when set will install the certs found at the given URL.
   # The value must be a gs:// URL.

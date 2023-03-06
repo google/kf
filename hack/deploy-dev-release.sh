@@ -27,7 +27,7 @@ release=$(./hack/create-dev-release.sh)
 cluster_name="${CLUSTER_NAME:=kf-${RANDOM}-${USER}}"
 zone="${GCP_COMPUTE_ZONE:=us-central1-a}"
 machine="${MACHINE_TYPE:=e2-standard-4}"
-asm_managed="${ASM_MANAGED:=false}"
+asm_managed="${ASM_MANAGED:=true}"
 
 git submodule update --init --recursive
 

@@ -90,7 +90,7 @@ func main() {
 			"_MACHINE_TYPE":    "n1-highmem-4",
 			"_NETWORK":         "default",
 			"_RELEASE_CHANNEL": "REGULAR",
-			"_ASM_MANAGED":     "false",
+			"_ASM_MANAGED":     "true",
 		})
 	case TemplateTypeInstallKf:
 		steps = installKf(*deployerImage)

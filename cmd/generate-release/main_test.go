@@ -153,7 +153,7 @@ func buildExpectedSubstitutions() map[string]ExpectedSubsititions {
 			"_MACHINE_TYPE":    "n1-highmem-4",
 			"_NETWORK":         "default",
 			"_RELEASE_CHANNEL": "REGULAR",
-			"_ASM_MANAGED":     "false",
+			"_ASM_MANAGED":     "true",
 		}, installKfSubs, standardSubs),
 		TemplateTypeInstallKf: v1alpha1.UnionMaps(installKfSubs, standardSubs),
 
