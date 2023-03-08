@@ -30,10 +30,10 @@ substitutions:
   _EXTRA_TAG: ''      # Defaults to _VERSION
   _RELEASE_BUCKET: '' # Required
   _RELEASE_FOLDER: '' # Defaults to _VERSION
-  _KO_IMAGE: 'gcr.io/kf-releases/ko:latest'
   _CLOUDSDK_IMAGE: 'gcr.io/google.com/cloudsdktool/cloud-sdk:alpine'
   _GOLANG_IMAGE: 'golang:1.20'
   _BUILDPACK_WRAPPER_GOLANG_IMAGE: 'golang:1.15'
+  _KO_VERSION: 'github.com/google/ko@latest'
 
 timeout: '1800s'
 
@@ -43,7 +43,7 @@ options:
 steps:
 - id: check substitutions
   entrypoint: bash
-  name: "${_KO_IMAGE}"
+  name: "${_GOLANG_IMAGE}"
   args:
   - '-euc'
   - |
@@ -156,7 +156,7 @@ steps:
     done
 
 - id: generate v2 lifecycle image artifacts
-  name: "${_KO_IMAGE}"
+  name: "${_GOLANG_IMAGE}"
   dir: /workspace
   waitFor: ['push third party image']
   env:
@@ -184,7 +184,7 @@ steps:
       vendor/code.cloudfoundry.org/buildpackapplifecycle/installer/kodata
 
 - id: generate Kf Release
-  name: "${_KO_IMAGE}"
+  name: "${_GOLANG_IMAGE}"
   dir: /workspace
   waitFor: ['push third party image']
   env:
@@ -206,7 +206,10 @@ steps:
     # Test the main directories to force go mod to update everything.
     # go test ./cmd/...
     sed -i "s|PROJECT_PLACEHOLDER|${PROJECT_ID}|g" config/config-defaults.yaml
-    /builder/ko.bash resolve --filename config | sed "s/VERSION_PLACEHOLDER/$${VERSION}/" > /workspace/bin/kf.yaml
+
+    go install "${_KO_VERSION}"
+
+    ko resolve --filename config | sed "s/VERSION_PLACEHOLDER/$${VERSION}/" > /workspace/bin/kf.yaml
 
     # Append empty config-secrets to kf release.
     # The Operator need this to exist so the configmap transformers can do their work.
@@ -223,7 +226,7 @@ steps:
     EOF
 
 - id: generate kf Operator Release
-  name: "${_KO_IMAGE}"
+  name: "${_GOLANG_IMAGE}"
   dir: /workspace/operator
   waitFor: ['generate Kf Release']
   env:
@@ -267,7 +270,9 @@ steps:
     mkdir "${target_dir}"
     cp /workspace/bin/kf.yaml "${target_dir}"
 
-    /builder/ko.bash resolve --filename config > /workspace/bin/operator.yaml
+    go install "${_KO_VERSION}"
+
+    ko resolve --filename config > /workspace/bin/operator.yaml
 
     cp /workspace/cmd/generate-release/scripts/kfsystems-cr.yaml /workspace/bin/kfsystem.yaml
 
