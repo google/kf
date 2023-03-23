@@ -33,7 +33,7 @@ func NewEnableAutoscaling(
 	p *config.KfParams,
 	client apps.Client,
 ) *cobra.Command {
-	var async utils.AsyncFlags
+	var async utils.AsyncIfStoppedFlags
 
 	cmd := &cobra.Command{
 		Use:   "enable-autoscaling APP_NAME",
@@ -101,8 +101,9 @@ func NewEnableAutoscaling(
 				return fmt.Errorf("failed to enable autoscaling for App: %s", err)
 			}
 
+			stopped := app != nil && app.Spec.Instances.Stopped
 			action := fmt.Sprintf("Enabling autoscaling for App %q in Space %q", appName, p.Space)
-			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
+			return async.AwaitAndLog(stopped, cmd.OutOrStdout(), action, func() error {
 				_, err := client.WaitForConditionKnativeServiceReadyTrue(context.Background(), p.Space, appName, 1*time.Second)
 				return err
 			})

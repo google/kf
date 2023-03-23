@@ -65,6 +65,17 @@ func TestNewScaleCommand(t *testing.T) {
 				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 			},
 		},
+		"call does not wait when app is stopped": {
+			Args:  []string{"my-app", "--instances=3"},
+			Space: "some-namespace",
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&v1alpha1.App{
+					Spec: v1alpha1.AppSpec{
+						Instances: v1alpha1.AppSpecInstances{Stopped: true},
+					},
+				}, nil)
+			},
+		},
 		"no app name": {
 			Space:       "default",
 			Args:        []string{},

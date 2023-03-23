@@ -26,7 +26,6 @@ import (
 	"github.com/google/kf/v2/pkg/kf/commands/completion"
 	"github.com/google/kf/v2/pkg/kf/commands/config"
 	"github.com/google/kf/v2/pkg/kf/configmaps"
-	utils "github.com/google/kf/v2/pkg/kf/internal/utils/cli"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
 	"knative.dev/pkg/kmp"
@@ -87,8 +86,6 @@ func (cm configMutator) exampleCommands() string {
 }
 
 func (cm configMutator) toCommand(p *config.KfParams, client configmaps.Client) *cobra.Command {
-	var async utils.AsyncFlags
-
 	cmd := &cobra.Command{
 		Use:               fmt.Sprintf("%s %s", cm.Name, strings.Join(cm.Args, " ")),
 		Short:             cm.Short,
@@ -114,7 +111,6 @@ func (cm configMutator) toCommand(p *config.KfParams, client configmaps.Client) 
 			return nil
 		},
 	}
-	async.Add(cmd)
 
 	return cmd
 }

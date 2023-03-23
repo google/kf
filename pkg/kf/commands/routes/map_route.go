@@ -33,7 +33,7 @@ func NewMapRouteCommand(
 	appsClient apps.Client,
 ) *cobra.Command {
 	var (
-		async        utils.AsyncFlags
+		async        utils.AsyncIfStoppedFlags
 		bindingFlags routeBindingFlags
 		weight       int32
 	)
@@ -75,12 +75,14 @@ func NewMapRouteCommand(
 				return nil
 			}
 
-			if _, err := appsClient.Transform(cmd.Context(), p.Space, appName, mutator); err != nil {
+			app, err := appsClient.Transform(cmd.Context(), p.Space, appName, mutator)
+			if err != nil {
 				return fmt.Errorf("failed to map Route: %s", err)
 			}
 
+			stopped := app != nil && app.Spec.Instances.Stopped
 			action := fmt.Sprintf("Mapping route to app %q in space %q", appName, p.Space)
-			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
+			return async.AwaitAndLog(stopped, cmd.OutOrStdout(), action, func() error {
 				_, err := appsClient.WaitForConditionRoutesReadyTrue(context.Background(), p.Space, appName, 1*time.Second)
 				return err
 			})

@@ -103,3 +103,40 @@ func (flags *AsyncFlags) WaitFor(
 		}
 	})
 }
+
+type AsyncIfStoppedFlags struct {
+	AsyncFlags
+	no_short_circuit_wait bool
+}
+
+// Add adds the async and async_if_stopped flags to the cobra command
+func (flags *AsyncIfStoppedFlags) Add(cmd *cobra.Command) {
+	flags.AsyncFlags.Add(cmd)
+
+	cmd.Flags().BoolVarP(
+		&flags.no_short_circuit_wait,
+		"no-short-circuit-wait",
+		"",
+		false,
+		"Allow the CLI to skip waiting if the mutation does not impact a running resource.",
+	)
+}
+
+// IsAsyncIfStopped returns true if the user wanted the operation to run asynchronously if the app is stopped.
+func (flags *AsyncIfStoppedFlags) IsAsyncIfStopped() bool {
+	return !flags.no_short_circuit_wait
+}
+
+// AwaitANdLog waits for the application to be completed if the flags and the
+// app's stopped status determine that the command should run synchronously.
+// In either case, it will notify the user of the decision by logging to the
+// writer whether it waited or not. If an error is returned by the callback the
+// result will be an error, otherwise the error will be nil
+func (flags *AsyncIfStoppedFlags) AwaitAndLog(stopped bool, w io.Writer, action string, callback func() error) error {
+	if stopped && flags.IsAsyncIfStopped() {
+		fmt.Fprintf(w, "%s asynchronously because app is stopped\n", action)
+		return nil
+	}
+
+	return flags.AsyncFlags.AwaitAndLog(w, action, callback)
+}

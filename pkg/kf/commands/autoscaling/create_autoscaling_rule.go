@@ -34,7 +34,7 @@ func NewCreateAutoscalingRule(
 	p *config.KfParams,
 	client apps.Client,
 ) *cobra.Command {
-	var async utils.AsyncFlags
+	var async utils.AsyncIfStoppedFlags
 
 	cmd := &cobra.Command{
 		Use:   "create-autoscaling-rule APP RULE_TYPE MIN_THRESHOLD MAX_THRESHOLD",
@@ -83,12 +83,14 @@ func NewCreateAutoscalingRule(
 				return nil
 			}
 
-			if _, err := client.Transform(cmd.Context(), p.Space, appName, mutator); err != nil {
+			app, err := client.Transform(cmd.Context(), p.Space, appName, mutator)
+			if err != nil {
 				return fmt.Errorf("failed to add autoscaling rule for App: %s", err)
 			}
 
+			stopped := app != nil && (app.Spec.Instances.Stopped || !app.Spec.Instances.Autoscaling.Enabled)
 			action := fmt.Sprintf("Creating autoscaling rule for App %q in Space %q", appName, p.Space)
-			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
+			return async.AwaitAndLog(stopped, cmd.OutOrStdout(), action, func() error {
 				_, err := client.WaitForConditionKnativeServiceReadyTrue(context.Background(), p.Space, appName, 1*time.Second)
 				return err
 			})

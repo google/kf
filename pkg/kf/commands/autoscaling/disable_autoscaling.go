@@ -33,7 +33,7 @@ func NewDisableAutoscaling(
 	p *config.KfParams,
 	client apps.Client,
 ) *cobra.Command {
-	var async utils.AsyncFlags
+	var async utils.AsyncIfStoppedFlags
 
 	cmd := &cobra.Command{
 		Use:               "disable-autoscaling APP_NAME",
@@ -68,8 +68,9 @@ func NewDisableAutoscaling(
 				return fmt.Errorf("failed to disable autoscaling for App: %s", err)
 			}
 
+			stopped := app != nil && app.Spec.Instances.Stopped
 			action := fmt.Sprintf("Disabling autoscaling for App %q in Space %q", appName, p.Space)
-			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
+			return async.AwaitAndLog(stopped, cmd.OutOrStdout(), action, func() error {
 				_, err := client.WaitForConditionKnativeServiceReadyTrue(context.Background(), p.Space, appName, 1*time.Second)
 				return err
 			})

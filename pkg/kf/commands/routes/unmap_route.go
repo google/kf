@@ -32,7 +32,7 @@ func NewUnmapRouteCommand(
 	p *config.KfParams,
 	appsClient apps.Client,
 ) *cobra.Command {
-	var async utils.AsyncFlags
+	var async utils.AsyncIfStoppedFlags
 	var bindingFlags routeBindingFlags
 
 	cmd := &cobra.Command{
@@ -82,7 +82,7 @@ func NewUnmapRouteCommand(
 				space.DefaultDomainOrBlank(),
 			)
 
-			if _, err := appsClient.Transform(cmd.Context(), p.Space, appName, func(app *v1alpha1.App) error {
+			app, err := appsClient.Transform(cmd.Context(), p.Space, appName, func(app *v1alpha1.App) error {
 				foundRoute := false
 				for _, route := range app.Status.Routes {
 					routeBinding := route.ToUnqualified()
@@ -98,12 +98,15 @@ func NewUnmapRouteCommand(
 
 				apps.NewFromApp(app).RemoveRoute(ctx, binding)
 				return nil
-			}); err != nil {
+			})
+
+			if err != nil {
 				return fmt.Errorf("failed to unmap Route: %s", err)
 			}
 
+			stopped := app != nil && app.Spec.Instances.Stopped
 			action := fmt.Sprintf("Unmapping Route to App %q in Space %q", appName, p.Space)
-			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
+			return async.AwaitAndLog(stopped, cmd.OutOrStdout(), action, func() error {
 				_, err := appsClient.WaitForConditionRoutesReadyTrue(context.Background(), p.Space, appName, 1*time.Second)
 				return err
 			})

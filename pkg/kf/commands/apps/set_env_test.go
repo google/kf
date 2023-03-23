@@ -86,6 +86,17 @@ func TestSetEnvCommand(t *testing.T) {
 				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
 			},
 		},
+		"call does not wait if app is stopped": {
+			Args:  []string{"app-name", "NAME", "VALUE"},
+			Space: "some-namespace",
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&v1alpha1.App{
+					Spec: v1alpha1.AppSpec{
+						Instances: v1alpha1.AppSpecInstances{Stopped: true},
+					},
+				}, nil)
+			},
+		},
 	} {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)

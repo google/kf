@@ -30,7 +30,7 @@ import (
 
 // NewSetEnvCommand creates a SetEnv command.
 func NewSetEnvCommand(p *config.KfParams, client apps.Client) *cobra.Command {
-	var async utils.AsyncFlags
+	var async utils.AsyncIfStoppedFlags
 
 	cmd := &cobra.Command{
 		Use:   "set-env APP_NAME ENV_VAR_NAME ENV_VAR_VALUE",
@@ -67,7 +67,7 @@ func NewSetEnvCommand(p *config.KfParams, client apps.Client) *cobra.Command {
 				{Name: name, Value: value},
 			}
 
-			_, err := client.Transform(cmd.Context(), p.Space, appName, func(app *v1alpha1.App) error {
+			app, err := client.Transform(cmd.Context(), p.Space, appName, func(app *v1alpha1.App) error {
 				kfapp := (*apps.KfApp)(app)
 				kfapp.MergeEnvVars(toSet)
 				return nil
@@ -77,8 +77,9 @@ func NewSetEnvCommand(p *config.KfParams, client apps.Client) *cobra.Command {
 				return fmt.Errorf("failed to set environment variable on App: %s", err)
 			}
 
+			stopped := app != nil && app.Spec.Instances.Stopped
 			action := fmt.Sprintf("Setting environment variable on App %q in Space %q", appName, p.Space)
-			return async.AwaitAndLog(cmd.OutOrStdout(), action, func() error {
+			return async.AwaitAndLog(stopped, cmd.OutOrStdout(), action, func() error {
 				_, err := client.WaitForConditionKnativeServiceReadyTrue(context.Background(), p.Space, appName, 1*time.Second)
 				return err
 			})
