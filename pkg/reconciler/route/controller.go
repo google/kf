@@ -68,6 +68,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		WorkQueueName: "Routes",
 		Logger:        logger,
 		Reporter:      &reconcilerutil.StructuredStatsReporter{Logger: logger},
+		Concurrency:   10,
 	})
 
 	logger.Info("Setting up event handlers")
