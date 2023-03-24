@@ -47,21 +47,24 @@ func TestUpdateAutoscalingRuleLimits(t *testing.T) {
 				app := &v1alpha1.App{
 					Spec: v1alpha1.AppSpec{
 						Instances: v1alpha1.AppSpecInstances{
+							Stopped:  false,
 							Replicas: ptr.Int32(99),
 							Autoscaling: v1alpha1.AppSpecAutoscaling{
 								MaxReplicas: ptr.Int32(99),
+								Enabled:     true,
 							},
 						},
 					},
 				}
 				fake.EXPECT().
 					Transform(gomock.Any(), "default", "my-app", gomock.Any()).
-					Do(func(_ context.Context, _, _ string, m apps.Mutator) {
+					DoAndReturn(func(_ context.Context, _, _ string, m apps.Mutator) (*v1alpha1.App, error) {
 						testutil.AssertNil(t, "mutator error", m(app))
 						testutil.AssertEqual(t, "app.spec.instances.replicas", int32(99), *app.Spec.Instances.Replicas)
 						testutil.AssertNotNil(t, "app.spec.instances.autoscalingspec", app.Spec.Instances.Autoscaling)
 						testutil.AssertEqual(t, "app.spec.instances.autoscalingspec.maxreplicas", int32(3), *app.Spec.Instances.Autoscaling.MaxReplicas)
 						testutil.AssertEqual(t, "app.spec.instances.autoscalingspec.minreplicas", int32(1), *app.Spec.Instances.Autoscaling.MinReplicas)
+						return app, nil
 					})
 				fake.EXPECT().WaitForConditionKnativeServiceReadyTrue(gomock.Any(), "default", "my-app", gomock.Any())
 			},
@@ -102,6 +105,8 @@ func TestUpdateAutoscalingRuleLimits(t *testing.T) {
 			if tc.Setup != nil {
 				tc.Setup(t, fake)
 			}
+
+			fake.EXPECT().Get(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(&v1alpha1.App{}, nil)
 
 			buf := new(bytes.Buffer)
 			p := &config.KfParams{

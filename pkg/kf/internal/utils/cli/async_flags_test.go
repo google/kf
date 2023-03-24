@@ -232,3 +232,91 @@ func TestAsyncFlags_AwaitAndLog(t *testing.T) {
 		})
 	}
 }
+
+func TestAsyncIfStoppedFlags_AwaitAndLog(t *testing.T) {
+	type fields struct {
+		async                 bool
+		no_short_circuit_wait bool
+	}
+	type args struct {
+		stopped  bool
+		action   string
+		callback func() error
+	}
+	tests := map[string]struct {
+		fields  fields
+		args    args
+		wantW   string
+		wantErr error
+	}{
+		"never async": {
+			fields: fields{
+				async:                 false,
+				no_short_circuit_wait: true,
+			},
+			args: args{
+				action: "deleting foo in space bar",
+				callback: func() error {
+					return nil
+				},
+			},
+			wantW: "deleting foo in space bar...\nSuccess\n",
+		},
+		"async if stopped when app is stopped": {
+			fields: fields{
+				async:                 false,
+				no_short_circuit_wait: false,
+			},
+			args: args{
+				stopped: true,
+				action:  "deleting foo in space bar",
+				callback: func() error {
+					return nil
+				},
+			},
+			wantW: "deleting foo in space bar asynchronously because app is stopped\n",
+		},
+		"async if stopped when app is running": {
+			fields: fields{
+				async:                 false,
+				no_short_circuit_wait: false,
+			},
+			args: args{
+				stopped: false,
+				action:  "deleting foo in space bar",
+				callback: func() error {
+					return nil
+				},
+			},
+			wantW: "deleting foo in space bar...\nSuccess\n",
+		},
+		"always async": {
+			fields: fields{
+				async:                 true,
+				no_short_circuit_wait: true,
+			},
+			args: args{
+				action: "deleting foo in space bar",
+				callback: func() error {
+					return nil
+				},
+			},
+			wantW: "deleting foo in space bar asynchronously\n",
+		},
+	}
+
+	for tn, tc := range tests {
+		t.Run(tn, func(t *testing.T) {
+			flags := &AsyncIfStoppedFlags{
+				AsyncFlags:            AsyncFlags{async: tc.fields.async},
+				no_short_circuit_wait: tc.fields.no_short_circuit_wait,
+			}
+			w := &bytes.Buffer{}
+
+			actualErr := flags.AwaitAndLog(tc.args.stopped, w, tc.args.action, tc.args.callback)
+			testutil.AssertErrorsEqual(t, actualErr, tc.wantErr)
+
+			testutil.AssertEqual(t, "output", tc.wantW, w.String())
+		})
+	}
+}

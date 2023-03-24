@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/internal/envutil"
 	"github.com/google/kf/v2/pkg/kf/apps"
 	"github.com/google/kf/v2/pkg/kf/apps/fake"
@@ -86,6 +87,17 @@ func TestUnsetEnvCommand(t *testing.T) {
 			Space: "some-namespace",
 			Setup: func(t *testing.T, fake *fake.FakeClient) {
 				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any())
+			},
+		},
+		"call does not wait when app is stopped": {
+			Args:  []string{"app-name", "NAME"},
+			Space: "some-namespace",
+			Setup: func(t *testing.T, fake *fake.FakeClient) {
+				fake.EXPECT().Transform(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(&v1alpha1.App{
+					Spec: v1alpha1.AppSpec{
+						Instances: v1alpha1.AppSpecInstances{Stopped: true},
+					},
+				}, nil)
 			},
 		},
 	} {
