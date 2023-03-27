@@ -41,6 +41,9 @@ kf set-env myapp -- JAVA_OPTS -Dtest=sometest
 <dt><code translate="no">-h, --help</code></dt>
 <dd><p>help for set-env</p>
 </dd>
+<dt><code translate="no">--no-short-circuit-wait</code></dt>
+<dd><p>Allow the CLI to skip waiting if the mutation does not impact a running resource.</p>
+</dd>
 </dl>
 
 

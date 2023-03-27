@@ -44,6 +44,9 @@ kf scale myapp --instances 3
 <dt><code translate="no">-i, --instances=<var translate="no">int32</var></code></dt>
 <dd><p>Number of instances, must be &gt;= 1. (default -1)</p>
 </dd>
+<dt><code translate="no">--no-short-circuit-wait</code></dt>
+<dd><p>Allow the CLI to skip waiting if the mutation does not impact a running resource.</p>
+</dd>
 </dl>
 
 
