@@ -21,9 +21,6 @@ kf configure-cluster unset-feature-flag enable_route_service
 ### Flags
 
 <dl>
-<dt><code translate="no">--async</code></dt>
-<dd><p>Do not wait for the action to complete on the server before returning.</p>
-</dd>
 <dt><code translate="no">-h, --help</code></dt>
 <dd><p>help for unset-feature-flag</p>
 </dd>

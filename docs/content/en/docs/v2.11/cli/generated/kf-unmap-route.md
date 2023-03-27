@@ -52,6 +52,9 @@ kf unmap-route myapp example.com --hostname myapp --path /mypath
 <dt><code translate="no">--hostname=<var translate="no">string</var></code></dt>
 <dd><p>Hostname for the Route.</p>
 </dd>
+<dt><code translate="no">--no-short-circuit-wait</code></dt>
+<dd><p>Allow the CLI to skip waiting if the mutation does not impact a running resource.</p>
+</dd>
 <dt><code translate="no">--path=<var translate="no">string</var></code></dt>
 <dd><p>URL path for the Route.</p>
 </dd>

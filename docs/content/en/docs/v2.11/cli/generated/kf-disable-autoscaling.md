@@ -25,6 +25,9 @@ kf disable-autoscaling APP_NAME</pre>
 <dt><code translate="no">-h, --help</code></dt>
 <dd><p>help for disable-autoscaling</p>
 </dd>
+<dt><code translate="no">--no-short-circuit-wait</code></dt>
+<dd><p>Allow the CLI to skip waiting if the mutation does not impact a running resource.</p>
+</dd>
 </dl>
 
 
