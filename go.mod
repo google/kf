@@ -8,7 +8,7 @@ require (
 	github.com/alessio/shellescape v1.4.1
 	github.com/aws/smithy-go v1.11.0
 	github.com/docker/cli v20.10.12+incompatible
-	github.com/docker/docker v20.10.12+incompatible
+	github.com/docker/docker v20.10.24+incompatible
 	github.com/emicklei/go-restful v2.15.0+incompatible
 	github.com/fatih/color v1.13.0
 	github.com/gofrs/flock v0.8.1
