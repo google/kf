@@ -50,7 +50,7 @@ spec:
             memory: 20Mi
           # Limit to 10x the request (20x the observed peak during e2e)
           limits:
-            cpu: 200m
+            cpu: 500m
             memory: 256Mi
         volumeMounts:
         - name: config-logging
