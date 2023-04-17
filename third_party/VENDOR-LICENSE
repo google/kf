@@ -1884,7 +1884,7 @@ Module: github.com/docker/cli v20.10.12+incompatible
 
 
 ===========================================================
-Module: github.com/docker/docker v20.10.12+incompatible
+Module: github.com/docker/docker v20.10.24+incompatible
 Module: github.com/moby/term v0.0.0-20210610120745-9d4ed1856297
 
 
@@ -2281,7 +2281,7 @@ Module: github.com/opencontainers/go-digest v1.0.0
 
 
 ===========================================================
-Module: github.com/containerd/containerd v1.5.10
+Module: github.com/containerd/containerd v1.5.18
 
 
 
@@ -3406,7 +3406,7 @@ Module: github.com/go-logr/logr v1.2.2
 Module: github.com/go-logr/logr v1.2.2
 Module: github.com/go-logr/zapr v1.2.2
 Module: github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369
-Module: github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369
+Module: github.com/matttproud/golang_protobuf_extensions v1.0.4
 Module: gopkg.in/yaml.v2 v2.4.0
 Module: gopkg.in/yaml.v2 v2.4.0
 Module: sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.0.30
@@ -4835,24 +4835,24 @@ THE SOFTWARE.
 
 ===========================================================
 Module: github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de
-Module: golang.org/x/crypto v0.0.0-20220214200702-86341886e292
+Module: golang.org/x/crypto v0.1.0
 Module: golang.org/x/mod v0.5.1
-Module: golang.org/x/mod v0.5.1
+Module: golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4
 Module: golang.org/x/net v0.0.0-20220225172249-27dd8689420f
-Module: golang.org/x/net v0.0.0-20220225172249-27dd8689420f
+Module: golang.org/x/net v0.7.0
 Module: golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 Module: golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b
 Module: golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-Module: golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
+Module: golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
 Module: golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9
-Module: golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9
+Module: golang.org/x/sys v0.5.0
 Module: golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
-Module: golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
+Module: golang.org/x/term v0.5.0
 Module: golang.org/x/text v0.3.7
-Module: golang.org/x/text v0.3.7
+Module: golang.org/x/text v0.7.0
 Module: golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
 Module: golang.org/x/time v0.0.0-20220224211638-0e9765cccd65
-Module: golang.org/x/tools v0.1.9
+Module: golang.org/x/tools v0.1.12
 
 
 Copyright (c) 2009 The Go Authors. All rights reserved.
@@ -5495,7 +5495,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 
 ===========================================================
-Module: github.com/emicklei/go-restful v2.15.0+incompatible
+Module: github.com/emicklei/go-restful v2.16.0+incompatible
 
 
 Copyright (c) 2012,2013 Ernest Micklei
@@ -6219,7 +6219,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 ===========================================================
-Module: golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 Module: golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 
 
