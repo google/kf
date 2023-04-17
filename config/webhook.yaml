@@ -44,14 +44,12 @@ spec:
         # and substituted here.
         image: ko://github.com/google/kf/v2/cmd/webhook
         resources:
-          # Request 2x what we saw running e2e
           requests:
-            cpu: 20m
-            memory: 20Mi
-          # Limit to 10x the request (20x the observed peak during e2e)
-          limits:
-            cpu: 200m
+            cpu: 256m
             memory: 256Mi
+          limits:
+            cpu: 2000m
+            memory: 2Gi
         volumeMounts:
         - name: config-logging
           mountPath: /etc/config-logging
