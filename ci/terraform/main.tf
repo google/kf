@@ -70,8 +70,8 @@ resource "google_cloud_scheduler_job" "cloudbuild_cron_integ_tests" {
 
   project     = var.project_id
   region      = "us-central1"
-  # Daily starting at 3 AM staggered by 2 hours to avoid thundering herd.
-  schedule    = "0 ${index(var.release_channels, each.value) * 2 + 3} * * *"
+  # Daily starting at 2 AM staggered by 2 hours to avoid thundering herd.
+  schedule    = "0 ${index(var.release_channels, each.value) * 2 + 2} * * *"
   time_zone   = "America/Los_Angeles"
 
   pubsub_target {

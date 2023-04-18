@@ -111,6 +111,12 @@ func InjectApps(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
+func InjectXargsApps(p *config.KfParams) *cobra.Command {
+	wire.Build(capps.NewXargsAppsCommand, SpacesSet)
+
+	return nil
+}
+
 func InjectGetApp(p *config.KfParams) *cobra.Command {
 	wire.Build(capps.NewGetAppCommand)
 

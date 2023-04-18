@@ -57,3 +57,17 @@ configs:
   - name: PropagationPolicy
     type: "metav1.DeletionPropagation"
     description: propagation policy for deleting an object.
+- name: Xargs
+  options:
+  - name: PluralFriendlyName
+    type: 'string'
+    description: the plural object name to display for this resource.
+  - name: LabelFilters
+    type: "map[string]string"
+    description: flag name to label pairs to use as list filters.
+  - name: LabelRequirements
+    type: "[]labels.Requirement"
+    description: label requirements to filter resources.
+  - name: ExecCommandDefault
+    type: 'string'
+    description: the default command to exec on each resource
