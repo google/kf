@@ -132,6 +132,7 @@ func NewRawKfCommand() *cobra.Command {
 				InjectPush(p),
 				InjectDelete(p),
 				InjectApps(p),
+				InjectXargsApps(p),
 				InjectGetApp(p),
 				InjectStart(p),
 				InjectStop(p),

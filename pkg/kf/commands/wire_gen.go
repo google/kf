@@ -25,7 +25,7 @@ import (
 	"github.com/google/kf/v2/pkg/kf/commands/service-bindings"
 	"github.com/google/kf/v2/pkg/kf/commands/service-brokers"
 	"github.com/google/kf/v2/pkg/kf/commands/services"
-	"github.com/google/kf/v2/pkg/kf/commands/spaces"
+	spaces2 "github.com/google/kf/v2/pkg/kf/commands/spaces"
 	tasks2 "github.com/google/kf/v2/pkg/kf/commands/tasks"
 	"github.com/google/kf/v2/pkg/kf/commands/taskschedules"
 	"github.com/google/kf/v2/pkg/kf/configmaps"
@@ -38,7 +38,7 @@ import (
 	"github.com/google/kf/v2/pkg/kf/serviceinstancebindings"
 	"github.com/google/kf/v2/pkg/kf/serviceinstances"
 	"github.com/google/kf/v2/pkg/kf/sourcepackages"
-	spaces2 "github.com/google/kf/v2/pkg/kf/spaces"
+	"github.com/google/kf/v2/pkg/kf/spaces"
 	"github.com/google/kf/v2/pkg/kf/tasks"
 	"github.com/google/wire"
 	"github.com/spf13/cobra"
@@ -82,6 +82,14 @@ func InjectDelete(p *config.KfParams) *cobra.Command {
 
 func InjectApps(p *config.KfParams) *cobra.Command {
 	command := apps2.NewAppsCommand(p)
+	return command
+}
+
+func InjectXargsApps(p *config.KfParams) *cobra.Command {
+	kfV1alpha1Interface := config.GetKfClient(p)
+	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
+	client := spaces.NewClient(spacesGetter)
+	command := apps2.NewXargsAppsCommand(p, client)
 	return command
 }
 
@@ -455,66 +463,66 @@ func InjectStacks(p *config.KfParams) *cobra.Command {
 }
 
 func InjectSpaces(p *config.KfParams) *cobra.Command {
-	command := spaces.NewListSpacesCommand(p)
+	command := spaces2.NewListSpacesCommand(p)
 	return command
 }
 
 func InjectSpace(p *config.KfParams) *cobra.Command {
-	command := spaces.NewGetSpaceCommand(p)
+	command := spaces2.NewGetSpaceCommand(p)
 	return command
 }
 
 func InjectCreateSpace(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
-	client := spaces2.NewClient(spacesGetter)
-	command := spaces.NewCreateSpaceCommand(p, client)
+	client := spaces.NewClient(spacesGetter)
+	command := spaces2.NewCreateSpaceCommand(p, client)
 	return command
 }
 
 func InjectDeleteSpace(p *config.KfParams) *cobra.Command {
-	command := spaces.NewDeleteSpaceCommand(p)
+	command := spaces2.NewDeleteSpaceCommand(p)
 	return command
 }
 
 func InjectConfigSpace(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
-	client := spaces2.NewClient(spacesGetter)
-	command := spaces.NewConfigSpaceCommand(p, client)
+	client := spaces.NewClient(spacesGetter)
+	command := spaces2.NewConfigSpaceCommand(p, client)
 	return command
 }
 
 func InjectSetSpaceRole(p *config.KfParams) *cobra.Command {
 	kubernetesInterface := config.GetKubernetes(p)
-	command := spaces.NewSetSpaceRoleCommand(p, kubernetesInterface)
+	command := spaces2.NewSetSpaceRoleCommand(p, kubernetesInterface)
 	return command
 }
 
 func InjectSpaceUsers(p *config.KfParams) *cobra.Command {
 	kubernetesInterface := config.GetKubernetes(p)
-	command := spaces.NewSpaceUsersCommand(p, kubernetesInterface)
+	command := spaces2.NewSpaceUsersCommand(p, kubernetesInterface)
 	return command
 }
 
 func InjectUnsetSpaceRole(p *config.KfParams) *cobra.Command {
 	kubernetesInterface := config.GetKubernetes(p)
-	command := spaces.NewUnsetSpaceRoleCommand(p, kubernetesInterface)
+	command := spaces2.NewUnsetSpaceRoleCommand(p, kubernetesInterface)
 	return command
 }
 
 func InjectDomains(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
-	client := spaces2.NewClient(spacesGetter)
-	command := spaces.NewDomainsCommand(p, client)
+	client := spaces.NewClient(spacesGetter)
+	command := spaces2.NewDomainsCommand(p, client)
 	return command
 }
 
 func InjectTarget(p *config.KfParams) *cobra.Command {
 	kfV1alpha1Interface := config.GetKfClient(p)
 	spacesGetter := provideKfSpaces(kfV1alpha1Interface)
-	client := spaces2.NewClient(spacesGetter)
+	client := spaces.NewClient(spacesGetter)
 	command := NewTargetCommand(p, client)
 	return command
 }
@@ -759,7 +767,7 @@ func provideRemoteImageFetcher() buildpacks.RemoteImageFetcher {
 	return remote.Image
 }
 
-var SpacesSet = wire.NewSet(config.GetKfClient, config.GetKubernetes, provideKfSpaces, spaces2.NewClient)
+var SpacesSet = wire.NewSet(config.GetKfClient, config.GetKubernetes, provideKfSpaces, spaces.NewClient)
 
 func provideKfSpaces(ki v1alpha1.KfV1alpha1Interface) v1alpha1.SpacesGetter {
 	return ki
