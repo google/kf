@@ -157,6 +157,11 @@ func verifyDeveloperPermission(ctx context.Context, t *testing.T, namespace stri
 		{title: "SpaceDeveloper can not update Deployments in space", space: namespace, verb: "update", group: "apps", resource: "deployments", expectedOutput: false},
 		{title: "SpaceDeveloper can not patch Deployments in space", space: namespace, verb: "patch", group: "apps", resource: "deployments", expectedOutput: false},
 		{title: "SpaceDeveloper can not delete Deployments in space", space: namespace, verb: "delete", group: "apps", resource: "deployments", expectedOutput: false},
+		{title: "SpaceDeveloper can exec to Pods in space", space: namespace, verb: "create", group: "", resource: "pods/exec", expectedOutput: true},
+		{title: "SpaceDeveloper can attach to Pods in space", space: namespace, verb: "create", group: "", resource: "pods/attach", expectedOutput: true},
+		{title: "SpaceDeveloper gets Pods log in space", space: namespace, verb: "get", group: "", resource: "pods/log", expectedOutput: true},
+		{title: "SpaceDeveloper lists Pods log in space", space: namespace, verb: "list", group: "", resource: "pods/log", expectedOutput: true},
+		{title: "SpaceDeveloper watches Pods log in space", space: namespace, verb: "watch", group: "", resource: "pods/log", expectedOutput: true},
 	}
 
 	for _, test := range tests {
@@ -224,6 +229,7 @@ func verifyAuditorPermission(ctx context.Context, t *testing.T, namespace string
 		{title: "SpaceAuditor watches Pods log in space", space: namespace, verb: "watch", group: "", resource: "pods/log", expectedOutput: true},
 
 		{title: "SpaceAuditor can not create Pods exec in space", space: namespace, verb: "create", group: "", resource: "pods/exec", expectedOutput: false},
+		{title: "SpaceAuditor can not create Pods attach in space", space: namespace, verb: "create", group: "", resource: "pods/attach", expectedOutput: false},
 
 		{title: "SpaceAuditor get upload.kf.dev resources in space", space: namespace, verb: "get", group: "upload.kf.dev", resource: "*", expectedOutput: true},
 		{title: "SpaceAuditor list upload.kf.dev resources in space", space: namespace, verb: "list", group: "upload.kf.dev", resource: "*", expectedOutput: true},
