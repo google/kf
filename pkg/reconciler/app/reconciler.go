@@ -475,75 +475,14 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 		}
 	}
 
-	// GC'ing Builds
-	{
-		logger.Debug("GC'ing Builds")
-
-		configDefaults, err := kfconfig.FromContext(ctx).Defaults()
-		if err != nil {
-			return fmt.Errorf("failed to read config-defaults: %v", err)
-		}
-
-		buildLabelSelector := fmt.Sprintf("%s=%s", v1alpha1.NameLabel, app.Name)
-		listOptions := metav1.ListOptions{
-			LabelSelector: buildLabelSelector,
-		}
-		buildList, err := r.KfClientSet.
-			KfV1alpha1().
-			Builds(app.GetNamespace()).
-			List(ctx, listOptions)
-		if err != nil {
-			return err
-		}
-
-		if len(buildList.Items) > 0 {
-			maxBuildCount := v1alpha1.DefaultBuildRetentionCount
-			if configDefaults.BuildRetentionCount != nil {
-				maxBuildCount = int(*configDefaults.BuildRetentionCount)
-			}
-
-			buildsToDelete := buildsToGC(buildList.Items, maxBuildCount)
-			for _, t := range buildsToDelete {
-				if err := r.KfClientSet.KfV1alpha1().
-					Builds(app.GetNamespace()).
-					Delete(ctx, t.Name, metav1.DeleteOptions{}); err != nil {
-					return err
-				}
-			}
-		}
+	configDefaults, err := kfconfig.FromContext(ctx).Defaults()
+	if err != nil {
+		return fmt.Errorf("failed to read config-defaults: %v", err)
 	}
 
-	// reconcile Tasks
+	// GC'ing
 	{
-		logger.Debug("reconciling tasks")
-		configDefaults, err := kfconfig.FromContext(ctx).Defaults()
-		if err != nil {
-			return fmt.Errorf("failed to read config-defaults: %v", err)
-		}
-		taskLabelSelector := fmt.Sprintf("%s=%s", v1alpha1.NameLabel, app.Name)
-		listOptions := metav1.ListOptions{
-			LabelSelector: taskLabelSelector,
-		}
-		taskList, err := r.KfClientSet.KfV1alpha1().Tasks(app.GetNamespace()).List(ctx, listOptions)
-		if err != nil {
-			return err
-		}
-
-		if len(taskList.Items) > 0 {
-			tasksToDelete := tasksToGC(taskList.Items, v1alpha1.DefaultMaxTaskCount)
-
-			if configDefaults.TaskRetentionCount != nil {
-				tasksToDelete = tasksToGC(taskList.Items, int(*configDefaults.TaskRetentionCount))
-			}
-
-			for _, t := range tasksToDelete {
-				if err := r.KfClientSet.KfV1alpha1().
-					Tasks(app.GetNamespace()).
-					Delete(ctx, t.Name, metav1.DeleteOptions{}); err != nil {
-					return err
-				}
-			}
-		}
+		r.cleanup(ctx, app, configDefaults)
 	}
 
 	instanceStatus := app.Spec.Instances.Status()
@@ -605,11 +544,6 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 
 	// Sync start commands, populate container and buildpack start commands in app status.
 	{
-		configDefaults, err := kfconfig.FromContext(ctx).Defaults()
-		if err != nil {
-			return fmt.Errorf("failed to read config-defaults: %v", err)
-		}
-
 		if !configDefaults.AppDisableStartCommandLookup {
 			logger.Debug("reconciling start commands")
 			r.updateStartCommand(app, fetchContainerCommand)
@@ -619,6 +553,75 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, app *v1alpha1.App) error 
 }
 
 type ImageConfigFetcher func(image string) (*containerregistryv1.ConfigFile, error)
+
+func (r *Reconciler) cleanup(ctx context.Context, app *v1alpha1.App, configDefaults *kfconfig.DefaultsConfig) {
+	go r.cleanupBuilds(ctx, app, configDefaults)
+	go r.cleanupTasks(ctx, app, configDefaults)
+}
+
+func (r *Reconciler) cleanupBuilds(ctx context.Context, app *v1alpha1.App, configDefaults *kfconfig.DefaultsConfig) {
+	logger := logging.FromContext(ctx)
+	logger.Debug("cleaning up builds")
+
+	buildLabelSelector := fmt.Sprintf("%s=%s", v1alpha1.NameLabel, app.Name)
+	listOptions := metav1.ListOptions{
+		LabelSelector: buildLabelSelector,
+	}
+	buildList, err := r.KfClientSet.
+		KfV1alpha1().
+		Builds(app.Namespace).
+		List(ctx, listOptions)
+	if err != nil {
+		logger.Warnf("failed to list builds: %v", err)
+		return
+	}
+
+	if len(buildList.Items) > 0 {
+		maxBuildCount := v1alpha1.DefaultBuildRetentionCount
+		if configDefaults.BuildRetentionCount != nil {
+			maxBuildCount = int(*configDefaults.BuildRetentionCount)
+		}
+
+		buildsToDelete := buildsToGC(buildList.Items, maxBuildCount)
+		for _, t := range buildsToDelete {
+			if err := r.KfClientSet.KfV1alpha1().
+				Builds(app.GetNamespace()).
+				Delete(ctx, t.Name, metav1.DeleteOptions{}); err != nil {
+				logger.Warnf("failed to delete build: %v", err)
+			}
+		}
+	}
+}
+
+func (r *Reconciler) cleanupTasks(ctx context.Context, app *v1alpha1.App, configDefaults *kfconfig.DefaultsConfig) {
+	logger := logging.FromContext(ctx)
+	logger.Debug("cleaning up tasks")
+	taskLabelSelector := fmt.Sprintf("%s=%s", v1alpha1.NameLabel, app.Name)
+	listOptions := metav1.ListOptions{
+		LabelSelector: taskLabelSelector,
+	}
+	taskList, err := r.KfClientSet.KfV1alpha1().Tasks(app.GetNamespace()).List(ctx, listOptions)
+	if err != nil {
+		logger.Warnf("failed to list tasks, %v", err)
+		return
+	}
+
+	if len(taskList.Items) > 0 {
+		tasksToDelete := tasksToGC(taskList.Items, v1alpha1.DefaultMaxTaskCount)
+
+		if configDefaults.TaskRetentionCount != nil {
+			tasksToDelete = tasksToGC(taskList.Items, int(*configDefaults.TaskRetentionCount))
+		}
+
+		for _, t := range tasksToDelete {
+			if err := r.KfClientSet.KfV1alpha1().
+				Tasks(app.GetNamespace()).
+				Delete(ctx, t.Name, metav1.DeleteOptions{}); err != nil {
+				logger.Warnf("failed to delete task %s, %v", t.Name, err)
+			}
+		}
+	}
+}
 
 func (*Reconciler) updateStartCommand(app *v1alpha1.App, fetcher ImageConfigFetcher) {
 	if app.Status.Image == app.Status.StartCommands.Image ||
