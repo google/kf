@@ -49,8 +49,8 @@ spec:
             cpu: 256m
             memory: 256Mi
           limits:
-            cpu: 1000m
-            memory: 1000Mi
+            cpu: 2000m
+            memory: 2Gi
         # We use a livenessProbe instead of a readinessProbe because if the
         # health check fails, then it will restart the pod (instead of not
         # signaling it at all). This is necessary for Workload Identity.
