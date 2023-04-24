@@ -546,3 +546,157 @@ func WithDeleteByNameShort(val string) DeleteByNameOption {
 func DeleteByNameOptionDefaults() DeleteByNameOptions {
 	return DeleteByNameOptions{}
 }
+
+type xargsConfig struct {
+	// Aliases is an array of aliases that can be used instead of the command name.
+	Aliases []string
+	// CommandName is the name to use for the command.
+	CommandName string
+	// Example is the example to use for the command.
+	Example string
+	// LabelFilters is flag name to label pairs to use as list filters.
+	LabelFilters map[string]string
+	// LabelRequirements is label requirements to filter resources.
+	LabelRequirements []labels.Requirement
+	// Long is the long description to use for the command.
+	Long string
+	// PluralFriendlyName is the plural object name to display for this resource.
+	PluralFriendlyName string
+	// Short is the short description to use for the command.
+	Short string
+}
+
+// XargsOption is a single option for configuring a xargsConfig
+type XargsOption func(*xargsConfig)
+
+// XargsOptions is a configuration set defining a xargsConfig
+type XargsOptions []XargsOption
+
+// toConfig applies all the options to a new xargsConfig and returns it.
+func (opts XargsOptions) toConfig() xargsConfig {
+	cfg := xargsConfig{}
+
+	for _, v := range opts {
+		v(&cfg)
+	}
+
+	return cfg
+}
+
+// Extend creates a new XargsOptions with the contents of other overriding
+// the values set in this XargsOptions.
+func (opts XargsOptions) Extend(other XargsOptions) XargsOptions {
+	var out XargsOptions
+	out = append(out, opts...)
+	out = append(out, other...)
+	return out
+}
+
+// Aliases returns the last set value for Aliases or the empty value
+// if not set.
+func (opts XargsOptions) Aliases() []string {
+	return opts.toConfig().Aliases
+}
+
+// CommandName returns the last set value for CommandName or the empty value
+// if not set.
+func (opts XargsOptions) CommandName() string {
+	return opts.toConfig().CommandName
+}
+
+// Example returns the last set value for Example or the empty value
+// if not set.
+func (opts XargsOptions) Example() string {
+	return opts.toConfig().Example
+}
+
+// LabelFilters returns the last set value for LabelFilters or the empty value
+// if not set.
+func (opts XargsOptions) LabelFilters() map[string]string {
+	return opts.toConfig().LabelFilters
+}
+
+// LabelRequirements returns the last set value for LabelRequirements or the empty value
+// if not set.
+func (opts XargsOptions) LabelRequirements() []labels.Requirement {
+	return opts.toConfig().LabelRequirements
+}
+
+// Long returns the last set value for Long or the empty value
+// if not set.
+func (opts XargsOptions) Long() string {
+	return opts.toConfig().Long
+}
+
+// PluralFriendlyName returns the last set value for PluralFriendlyName or the empty value
+// if not set.
+func (opts XargsOptions) PluralFriendlyName() string {
+	return opts.toConfig().PluralFriendlyName
+}
+
+// Short returns the last set value for Short or the empty value
+// if not set.
+func (opts XargsOptions) Short() string {
+	return opts.toConfig().Short
+}
+
+// WithXargsAliases creates an Option that sets an array of aliases that can be used instead of the command name.
+func WithXargsAliases(val []string) XargsOption {
+	return func(cfg *xargsConfig) {
+		cfg.Aliases = val
+	}
+}
+
+// WithXargsCommandName creates an Option that sets the name to use for the command.
+func WithXargsCommandName(val string) XargsOption {
+	return func(cfg *xargsConfig) {
+		cfg.CommandName = val
+	}
+}
+
+// WithXargsExample creates an Option that sets the example to use for the command.
+func WithXargsExample(val string) XargsOption {
+	return func(cfg *xargsConfig) {
+		cfg.Example = val
+	}
+}
+
+// WithXargsLabelFilters creates an Option that sets flag name to label pairs to use as list filters.
+func WithXargsLabelFilters(val map[string]string) XargsOption {
+	return func(cfg *xargsConfig) {
+		cfg.LabelFilters = val
+	}
+}
+
+// WithXargsLabelRequirements creates an Option that sets label requirements to filter resources.
+func WithXargsLabelRequirements(val []labels.Requirement) XargsOption {
+	return func(cfg *xargsConfig) {
+		cfg.LabelRequirements = val
+	}
+}
+
+// WithXargsLong creates an Option that sets the long description to use for the command.
+func WithXargsLong(val string) XargsOption {
+	return func(cfg *xargsConfig) {
+		cfg.Long = val
+	}
+}
+
+// WithXargsPluralFriendlyName creates an Option that sets the plural object name to display for this resource.
+func WithXargsPluralFriendlyName(val string) XargsOption {
+	return func(cfg *xargsConfig) {
+		cfg.PluralFriendlyName = val
+	}
+}
+
+// WithXargsShort creates an Option that sets the short description to use for the command.
+func WithXargsShort(val string) XargsOption {
+	return func(cfg *xargsConfig) {
+		cfg.Short = val
+	}
+}
+
+// XargsOptionDefaults gets the default values for Xargs.
+func XargsOptionDefaults() XargsOptions {
+	return XargsOptions{}
+}
