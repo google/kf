@@ -25,7 +25,10 @@ import (
 	"knative.dev/pkg/controller"
 )
 
-// NewController creates a new controller capable of reconciling Kf Apps.
+// NewController creates a new controller capable of reconciling Kf App start commands.
+//
+// This is a separate reconciler from apps beause it relies on an external resource
+// that may be slow to look up.
 func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl {
 	logger := reconciler.NewControllerLogger(ctx, "appstartcommands.kf.dev")
 

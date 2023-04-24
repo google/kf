@@ -29,7 +29,6 @@ import (
 	"github.com/google/kf/v2/pkg/reconciler"
 	appreconciler "github.com/google/kf/v2/pkg/reconciler/app"
 	"go.uber.org/zap"
-	"k8s.io/apimachinery/pkg/api/equality"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
@@ -54,7 +53,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 		return err
 	}
 
-	return r.reconcileApp(
+	return r.reconcileAppStartCommand(
 		logging.WithLogger(ctx,
 			logging.FromContext(ctx).With("namespace", namespace)),
 		namespace,
@@ -62,7 +61,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 	)
 }
 
-func (r *Reconciler) reconcileApp(ctx context.Context, namespace, name string) (err error) {
+func (r *Reconciler) reconcileAppStartCommand(ctx context.Context, namespace, name string) (err error) {
 	logger := logging.FromContext(ctx)
 	original, err := r.appLister.Apps(namespace).Get(name)
 	switch {
@@ -86,12 +85,8 @@ func (r *Reconciler) reconcileApp(ctx context.Context, namespace, name string) (
 	// Don't modify the informers copy
 	toReconcile := original.DeepCopy()
 
-	// ALWAYS update the ObservedGenration: "If the primary resource your
-	// controller is reconciling supports ObservedGeneration in its status, make
-	// sure you correctly set it to metadata.Generation whenever the values
-	// between the two fields mismatches."
-	// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/controllers.md
-	toReconcile.Status.ObservedGeneration = toReconcile.Generation
+	// Don't set observedgeneration because this reconciler isn't the primary
+	// worker.
 
 	// Reconcile this copy of the service and then write back any status
 	// updates regardless of whether the reconciliation errored out.
@@ -99,7 +94,7 @@ func (r *Reconciler) reconcileApp(ctx context.Context, namespace, name string) (
 	if reconcileErr != nil {
 		logger.Debugf("App reconcilerErr is not empty: %+v", reconcileErr)
 	}
-	if equality.Semantic.DeepEqual(original.Status, toReconcile.Status) {
+	if !r.RequiresUpdate(original, toReconcile) {
 		// If we didn't change anything then don't call updateStatus.
 		// This is important because the copy we loaded from the informer's
 		// cache may be stale and we don't want to overwrite a prior update
@@ -188,13 +183,13 @@ func fetchContainerCommand(image string) (*containerregistryv1.ConfigFile, error
 
 func (r *Reconciler) updateStartCommandStatus(ctx context.Context, desired *v1alpha1.App) (*v1alpha1.App, error) {
 	logger := logging.FromContext(ctx)
-	logger.Info("updating status")
+	logger.Debug("updating status")
 	actual, err := r.appLister.Apps(desired.GetNamespace()).Get(desired.Name)
 	if err != nil {
 		return nil, err
 	}
 	// If there's nothing to update, just return.
-	if reflect.DeepEqual(actual.Status.StartCommands, desired.Status.StartCommands) {
+	if r.RequiresUpdate(actual, desired) {
 		return actual, nil
 	}
 
@@ -203,4 +198,9 @@ func (r *Reconciler) updateStartCommandStatus(ctx context.Context, desired *v1al
 	existing.Status.StartCommands = desired.Status.StartCommands
 
 	return r.KfClientSet.KfV1alpha1().Apps(existing.GetNamespace()).UpdateStatus(ctx, existing, metav1.UpdateOptions{})
+}
+
+// RequiresUpdate returns whether the resource needs an update from the actual state.
+func (*Reconciler) RequiresUpdate(actual, desired *v1alpha1.App) bool {
+	return reflect.DeepEqual(actual.Status.StartCommands, desired.Status.StartCommands)
 }
