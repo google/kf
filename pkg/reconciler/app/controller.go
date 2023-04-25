@@ -102,7 +102,10 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		WorkQueueName: "Apps",
 		Logger:        logger,
 		Reporter:      &reconcilerutil.StructuredStatsReporter{Logger: logger},
-		Concurrency:   10,
+
+		// Assume 10k apps with 1s reconciliation that need an
+		// update on average every 10 minutes.
+		Concurrency: 20,
 	})
 
 	logger.Info("Setting up event handlers")

@@ -64,6 +64,10 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		WorkQueueName: "Builds",
 		Logger:        logger,
 		Reporter:      &reconcilerutil.StructuredStatsReporter{Logger: logger},
+
+		// Assume 10k apps, which each control one build that needs
+		// an update on average every 10 minutes.
+		Concurrency: 20,
 	})
 
 	logger.Info("Setting up ConfigMap receivers")
