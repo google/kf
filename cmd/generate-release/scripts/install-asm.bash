@@ -33,7 +33,7 @@ else
     echo "gcloud CLI is already available, skipping installation"
 fi
 
-curl https://storage.googleapis.com/csm-artifacts/asm/asmcli_1.15 >asmcli
+curl https://storage.googleapis.com/csm-artifacts/asm/asmcli_1.16 >asmcli
 chmod +x asmcli
 
 gcloud container clusters get-credentials "${CLUSTER_NAME}" \
