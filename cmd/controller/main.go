@@ -22,6 +22,7 @@ import (
 	"github.com/google/kf/v2/pkg/reconciler/build"
 	"github.com/google/kf/v2/pkg/reconciler/clusterservicebroker"
 	"github.com/google/kf/v2/pkg/reconciler/featureflag"
+	"github.com/google/kf/v2/pkg/reconciler/garbagecollector"
 	"github.com/google/kf/v2/pkg/reconciler/reconcilerutil"
 	"github.com/google/kf/v2/pkg/reconciler/route"
 	"github.com/google/kf/v2/pkg/reconciler/servicebroker"
@@ -55,5 +56,6 @@ func main() {
 		taskschedule.NewController,
 		certificates.NewController,
 		apiservercerts.NewController,
+		garbagecollector.NewController,
 	)
 }
