@@ -66,4 +66,14 @@ else
         jq '.items[].metadata.labels."istio.io/rev"' -r)
     kubectl label namespace asm-gateways istio-injection- istio.io/rev="$REVISION" --overwrite
 fi
-kubectl apply -n asm-gateways -f out/samples/gateways/istio-ingressgateway
+
+# Not everything in theis folder is applicable, some files are only for certain versions of K8s
+# so a blanket -f won't work:
+# https://github.com/GoogleCloudPlatform/anthos-service-mesh-packages/tree/1.16.4-asm.2+config1/samples/gateways/istio-ingressgateway
+kubectl apply -n asm-gateways \
+    -f out/samples/gateways/istio-ingressgateway/deployment.yaml \
+    -f out/samples/gateways/istio-ingressgateway/autoscalingv2/autoscaling-v2.yaml \
+    -f out/samples/gateways/istio-ingressgateway/pdb-v1.yaml \
+    -f out/samples/gateways/istio-ingressgateway/role.yaml \
+    -f out/samples/gateways/istio-ingressgateway/service.yaml \
+    -f out/samples/gateways/istio-ingressgateway/serviceaccount.yaml
