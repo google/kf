@@ -19,8 +19,9 @@ import (
 	"context"
 	"errors"
 	"io"
-	"knative.dev/pkg/kmeta"
 	"testing"
+
+	"knative.dev/pkg/kmeta"
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/v2/pkg/apis/kf/config"
@@ -1123,11 +1124,6 @@ func Test_pusher_CreatePlaceholderApp(t *testing.T) {
 					Create(gomock.Any(), mockAppNamespace, gomock.Any()).
 					Return(nil, nil).
 					Times(1)
-
-				mocks.appsClient.EXPECT().
-					WaitForConditionReadyTrue(gomock.Any(), mockAppNamespace, mockAppName, gomock.Any()).
-					Return(nil, nil).
-					Times(1)
 			},
 		},
 		"creates a valid placeholder App": {
@@ -1148,33 +1144,7 @@ func Test_pusher_CreatePlaceholderApp(t *testing.T) {
 
 						return app, nil
 					}).MinTimes(1)
-
-				mocks.appsClient.EXPECT().
-					WaitForConditionReadyTrue(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(nil, nil).
-					AnyTimes()
 			},
-		},
-		"fails if App wait fails": {
-			appName: mockAppName,
-			opts:    mockPushOptions,
-			setup: func(t *testing.T, mocks *mocks) {
-				mocks.appsClient.EXPECT().
-					Get(gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(nil, notFoundError).
-					AnyTimes()
-
-				mocks.appsClient.EXPECT().
-					Create(gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(nil, nil).
-					AnyTimes()
-
-				mocks.appsClient.EXPECT().
-					WaitForConditionReadyTrue(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(nil, errors.New("test failure")).
-					AnyTimes()
-			},
-			wantErr: errors.New("couldn't wait for App placeholder: test failure"),
 		},
 		"fails if placeholder can't be created": {
 			appName: mockAppName,

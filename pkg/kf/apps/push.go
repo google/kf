@@ -292,10 +292,7 @@ func (p *pusher) CreatePlaceholderApp(ctx context.Context, appName string, opts 
 			return nil, fmt.Errorf("couldn't create App placeholder: %v", err)
 		}
 
-		// Wait for ready.
-		if _, err := p.appsClient.WaitForConditionReadyTrue(ctx, cfg.Space, appName, 1*time.Second); err != nil {
-			return nil, fmt.Errorf("couldn't wait for App placeholder: %v", err)
-		}
+		// Don't wait for ready, it's not a prerequisite for pushing.
 		logger.Info("Placeholder App created.")
 		return app, nil
 
