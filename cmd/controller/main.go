@@ -19,6 +19,7 @@ import (
 
 	"github.com/google/kf/v2/pkg/reconciler/apiservercerts"
 	"github.com/google/kf/v2/pkg/reconciler/app"
+	"github.com/google/kf/v2/pkg/reconciler/appstartcommand"
 	"github.com/google/kf/v2/pkg/reconciler/build"
 	"github.com/google/kf/v2/pkg/reconciler/clusterservicebroker"
 	"github.com/google/kf/v2/pkg/reconciler/featureflag"
@@ -57,5 +58,6 @@ func main() {
 		certificates.NewController,
 		apiservercerts.NewController,
 		garbagecollector.NewController,
+		appstartcommand.NewController,
 	)
 }

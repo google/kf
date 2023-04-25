@@ -1,4 +1,4 @@
-// Copyright 2022 Google LLC
+// Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package app
+package appstartcommand
 
 import (
 	"errors"
@@ -21,6 +21,8 @@ import (
 	containerregistryv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/kf/testutil"
+	corev1 "k8s.io/api/core/v1"
+	"knative.dev/pkg/apis/duck/v1beta1"
 )
 
 func TestReconciler_updateStartCommand(t *testing.T) {
@@ -176,6 +178,33 @@ func TestReconciler_updateStartCommand(t *testing.T) {
 				Buildpack: []string{"java -jar some-file.jar"},
 			},
 		},
+		"app status remains the same": {
+			app: &v1alpha1.App{
+				Status: v1alpha1.AppStatus{
+					Status: v1beta1.Status{
+						Conditions: v1beta1.Conditions{
+							{Type: "Foo", Status: corev1.ConditionTrue},
+						},
+					},
+					BuildStatusFields: v1alpha1.BuildStatusFields{
+						Image: "example.com/image:v2",
+					},
+				},
+			},
+			imageConfig: &containerregistryv1.ConfigFile{
+				Config: containerregistryv1.Config{
+					Entrypoint: []string{"/lifecycle/launcher"},
+					Labels: map[string]string{
+						"StartCommand": "java -jar some-file.jar",
+					},
+				},
+			},
+			wantStartCommandStatus: v1alpha1.StartCommandStatus{
+				Image:     "example.com/image:v2",
+				Container: []string{"/lifecycle/launcher"},
+				Buildpack: []string{"java -jar some-file.jar"},
+			},
+		},
 	}
 
 	for tn, tc := range cases {
@@ -186,6 +215,8 @@ func TestReconciler_updateStartCommand(t *testing.T) {
 				return tc.imageConfig, tc.imageErr
 			}
 
+			original := tc.app.DeepCopy()
+
 			r.updateStartCommand(tc.app, mockImageFetcher)
 
 			testutil.AssertEqual(
@@ -194,6 +225,22 @@ func TestReconciler_updateStartCommand(t *testing.T) {
 				tc.wantStartCommandStatus,
 				tc.app.Status.StartCommands,
 			)
+
+			// It's imperative that other fields in the status don't change to
+			// avoid infinite reconciliations with the app controller.
+			{
+				updated := tc.app.DeepCopy()
+				// Mask off fields we want to be able to change.
+				original.Status.StartCommands = v1alpha1.StartCommandStatus{}
+				updated.Status.StartCommands = v1alpha1.StartCommandStatus{}
+
+				testutil.AssertEqual(
+					t,
+					"status",
+					original.Status,
+					updated.Status,
+				)
+			}
 		})
 	}
 }
