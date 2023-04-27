@@ -384,11 +384,29 @@ steps:
   - '-euxc'
   - |
     tekton_url=$(go run ./cmd/kf dependencies url tekton)
+    
     curl ${tekton_url} \
     -v \
     -L \
     -o \
-    /workspace/bin/tekton.yaml
+    /tmp/tekton-temp.yaml
+
+    # Apply transforms to Tekton YAML for compatibility with the versions of 
+    # various components used in Kf CI/CD
+    go run github.com/mikefarah/yq/v4@latest '. | select(.kind != "PodSecurityPolicy") | 
+    with(select(.kind == "HorizontalPodAutoscaler"); 
+      .apiVersion="autoscaling/v2" | .spec.metrics=[
+          {
+              "type": "Resource",
+              "resource": {
+                  "name": "cpu",
+                  "target": {
+                      "type": "Utilization",
+                      "averageUtilization": 100
+                  }
+              }
+          }
+      ])' /tmp/tekton-temp.yaml > /workspace/bin/tekton.yaml
 
 - id: upload kf artifacts
   name: "${_CLOUDSDK_IMAGE}"
