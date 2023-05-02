@@ -117,7 +117,7 @@ func newDependencies() []dependency {
 		{
 			Name:       "Anthos Service Mesh",
 			ShortNames: []string{"asm"},
-			InfoURL:    "/service-mesh/docs/gke-install-overview",
+			InfoURL:    "https://cloud.google.com/service-mesh/docs/gke-install-overview",
 			// This version is fetched from the asmcli script. It needs to be
 			// updated by hand until we have a programtic way to fetch it.
 			ResolveVersion: staticVersionResolver("1.16.4-asm.2+config1"),
@@ -129,7 +129,7 @@ func newDependencies() []dependency {
 		{
 			Name:       "Config Connector",
 			ShortNames: []string{"kcc"},
-			InfoURL:    "/config-connector/docs/how-to/advanced-install",
+			InfoURL:    "https://cloud.google.com//config-connector/docs/how-to/advanced-install",
 			// This version needs to be updated by hand until we have a
 			// programtic way to fetch it.
 			ResolveVersion: staticVersionResolver("1.66.0"),
