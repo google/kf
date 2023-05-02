@@ -20,7 +20,7 @@ kf xargs-apps --space space1,space2 -- kf stop {{.Name}} --space {{.Space}}
 # Example: use kubectl to label all apps in the default space
 kf xargs-apps -- kubectl label apps -n {{.Space}} {{.Name}} environment=prod`
 
-// NewAppsCommand allows users to list apps.
+// NewXargsAppsCommand allows users to list apps.
 func NewXargsAppsCommand(p *config.KfParams, client spaces.Client) *cobra.Command {
 	return genericcli.NewXargsCommand(
 		apps.NewResourceInfo(),
