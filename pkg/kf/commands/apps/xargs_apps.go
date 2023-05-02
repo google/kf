@@ -9,11 +9,14 @@ import (
 )
 
 const examples = `# Example: restart all apps in all spaces
-kf xargs-apps --all-spaces -- kf restart {{.Name}} --space {{.Space}}
+kf xargs-apps --all-namespaces -- kf restart {{.Name}} --space {{.Space}}
+
 # Example: restage all apps in all spaces
-kf xargs-apps --all-spaces -- kf restage {{.Name}} --space {{.Space}}
+kf xargs-apps --all-namespaces -- kf restage {{.Name}} --space {{.Space}}
+
 # Example: stop all apps in spaces 'space1' and 'space2'
 kf xargs-apps --space space1,space2 -- kf stop {{.Name}} --space {{.Space}}
+
 # Example: use kubectl to label all apps in the default space
 kf xargs-apps -- kubectl label apps -n {{.Space}} {{.Name}} environment=prod`
 

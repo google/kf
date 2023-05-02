@@ -60,6 +60,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 
 func (r *Reconciler) garbageCollectApp(ctx context.Context, namespace, name string) (err error) {
 	logger := logging.FromContext(ctx)
+	ctx = r.kfConfigStore.ToContext(ctx)
+
 	app, err := r.appLister.Apps(namespace).Get(name)
 	switch {
 	case apierrs.IsNotFound(err):
