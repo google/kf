@@ -73,15 +73,15 @@ func NewXargsCommand(t Type, p *config.KfParams, spacesClient spaces.Client, opt
 	}
 
 	cmd := &cobra.Command{
-		Use:     strings.TrimSpace(fmt.Sprintf("%s", options.CommandName())),
-		Aliases: options.Aliases(),
-		Short:   short,
-		Long:    long,
-		Example: example,
-		Args:    cobra.MinimumNArgs(1),
+		Use:          strings.TrimSpace(fmt.Sprintf("%s", options.CommandName())),
+		Aliases:      options.Aliases(),
+		Short:        short,
+		Long:         long,
+		Example:      example,
+		Args:         cobra.MinimumNArgs(1),
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
-			cmd.SilenceUsage = true
 
 			if err := p.ValidateSpaceTargeted(); err != nil {
 				return err
