@@ -60,7 +60,7 @@ func NewXargsCommand(t Type, p *config.KfParams, spacesClient spaces.Client, opt
 	if options.Short() != "" {
 		short = options.Short()
 	} else {
-		short = fmt.Sprintf("Run a command for every %s.", options.PluralFriendlyName())
+		short = fmt.Sprintf("Run a command for every %s.", t.FriendlyName())
 	}
 
 	var long string
@@ -96,9 +96,9 @@ func NewXargsCommand(t Type, p *config.KfParams, spacesClient spaces.Client, opt
 			}
 
 			if flags.allSpaces {
-				logger.Infof("Xargs %s in all spaces", options.PluralFriendlyName())
+				logger.Infof("# Xargs %s in all spaces", options.PluralFriendlyName())
 			} else if t.Namespaced() {
-				logger.Infof("Xargs %s in space: %s", options.PluralFriendlyName(), p.Space)
+				logger.Infof("# Xargs %s in space: %s", options.PluralFriendlyName(), p.Space)
 			}
 
 			labelSelector := labels.Set{}

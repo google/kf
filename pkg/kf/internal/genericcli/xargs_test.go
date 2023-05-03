@@ -53,14 +53,14 @@ func TestXargsCommand_docs(t *testing.T) {
 		"general": {
 			genericType: typ,
 			wantUse:     "xargs-mycustomtypes",
-			wantShort:   "Run a command for every MyCustomTypes.",
+			wantShort:   "Run a command for every MyCustomType.",
 			wantLong:    "Run a command for every MyCustomType in targeted spaces.",
 			wantExample: "kf xargs-mycustomtypes",
 		},
 		"with custom example": {
 			genericType: typ,
 			wantUse:     "xargs-mycustomtypes",
-			wantShort:   "Run a command for every MyCustomTypes.",
+			wantShort:   "Run a command for every MyCustomType.",
 			wantLong:    "Run a command for every MyCustomType in targeted spaces.",
 			wantExample: "a custom example",
 			opts: []XargsOption{
@@ -70,7 +70,7 @@ func TestXargsCommand_docs(t *testing.T) {
 		"with aliases": {
 			genericType: typ,
 			wantUse:     "xargs-mycustomtypes",
-			wantShort:   "Run a command for every MyCustomTypes.",
+			wantShort:   "Run a command for every MyCustomType.",
 			wantLong:    "Run a command for every MyCustomType in targeted spaces.",
 			wantExample: "kf xargs-mycustomtypes",
 			wantAliases: []string{"a", "b"},
@@ -157,7 +157,7 @@ func TestNewXargsCommand(t *testing.T) {
 					Namespace("my-ns").
 					Create(ctx, obj, metav1.CreateOptions{})
 			},
-			wantOut: "Xargs Apps in space: my-ns\n# Command for space=my-ns App=some-object-name\n'my-ns some-object-name'\n# Run with --dry-run=false to apply.\n",
+			wantOut: "# Xargs Apps in space: my-ns\n# Command for space=my-ns App=some-object-name\n'my-ns some-object-name'\n# Run with --dry-run=false to apply.\n",
 		},
 		"cluster type": {
 			t:    clusterType,
@@ -197,7 +197,7 @@ func TestNewXargsCommand(t *testing.T) {
 			setup: func(ctx context.Context, t *testing.T, mocks *mocks) {
 				mocks.p.Space = "ns1,ns2"
 			},
-			wantOut: "Xargs Apps in space: ns1,ns2\n# Command for space=ns1 App=app1\n'ns1 app1'\n# Command for space=ns1 App=app2\n'ns1 app2'\n# Command for space=ns2 App=app3\n'ns2 app3'\n# Command for space=ns2 App=app4\n'ns2 app4'\n# Run with --dry-run=false to apply.\n",
+			wantOut: "# Xargs Apps in space: ns1,ns2\n# Command for space=ns1 App=app1\n'ns1 app1'\n# Command for space=ns1 App=app2\n'ns1 app2'\n# Command for space=ns2 App=app3\n'ns2 app3'\n# Command for space=ns2 App=app4\n'ns2 app4'\n# Run with --dry-run=false to apply.\n",
 		},
 	}
 

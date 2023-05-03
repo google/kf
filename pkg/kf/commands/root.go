@@ -132,7 +132,6 @@ func NewRawKfCommand() *cobra.Command {
 				InjectPush(p),
 				InjectDelete(p),
 				InjectApps(p),
-				InjectXargsApps(p),
 				InjectGetApp(p),
 				InjectStart(p),
 				InjectStop(p),
@@ -281,6 +280,10 @@ func NewRawKfCommand() *cobra.Command {
 		utils.ExperimentalCommandGroup(
 			"Buildpacks",
 			InjectWrapV2Buildpack(p),
+		),
+		utils.ExperimentalCommandGroup(
+			"Bulk Actions",
+			InjectXargsApps(p),
 		),
 		{
 			Name: "Other Commands",

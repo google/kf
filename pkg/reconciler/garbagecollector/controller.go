@@ -31,7 +31,7 @@ const GarbageCollectionInterval time.Duration = 5 * time.Minute
 
 // NewController creates a new controller capable of reconciling Kf Apps.
 func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl {
-	logger := reconciler.NewControllerLogger(ctx, "apps.kf.dev")
+	logger := reconciler.NewControllerLogger(ctx, "garbagecollector.kf.dev")
 
 	// Get informers off context
 	buildInformer := buildinformer.Get(ctx)
