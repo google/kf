@@ -43,8 +43,9 @@ steps:
         cp -r hack $temp_dir/hack
 
         git fetch --tags --unshallow
+        git checkout $(git describe --tags HEAD --abbrev=0)
 
-        until [ "$_TAGGED_RELEASE_INDEX" -eq 0 ]; do
+        until [ "$_TAGGED_RELEASE_INDEX" -eq 1 ]; do
           # Jump back one revision based on tagged releases
           git checkout $(git describe --tags HEAD~1 --abbrev=0)
           _TAGGED_RELEASE_INDEX=$((_TAGGED_RELEASE_INDEX - 1))
