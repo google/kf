@@ -5,7 +5,7 @@ go 1.16
 require (
 	cloud.google.com/go/compute v1.5.0
 	github.com/Masterminds/semver/v3 v3.0.3
-	github.com/docker/distribution v2.8.0+incompatible
+	github.com/docker/distribution v2.8.2+incompatible
 	github.com/go-logr/zapr v1.2.2
 	github.com/golang/mock v1.6.0
 	github.com/google/go-cmp v0.5.7
