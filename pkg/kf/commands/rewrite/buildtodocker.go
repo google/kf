@@ -2,10 +2,9 @@ package rewrite
 
 import (
 	"context"
-	"embed"
+	_ "embed"
 	"fmt"
-	"io"
-	"io/fs"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"text/template"
@@ -25,8 +24,8 @@ var rawDockerfileTemplate []byte
 //go:embed resources/config-defaults.yaml
 var configDefaultsYaml []byte
 
-//go:embed resources/launcher
-var launcherSource embed.FS
+//go:embed resources/launcher.go
+var rawLauncherSource []byte
 
 func parseConfigDefaults() (*apiconfig.DefaultsConfig, error) {
 	configDefaultsConfigmap := new(corev1.ConfigMap)
@@ -38,35 +37,17 @@ func parseConfigDefaults() (*apiconfig.DefaultsConfig, error) {
 }
 
 func extractLauncherSource(rootDirectory string) error {
-	return fs.WalkDir(launcherSource, "", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		outputPath := filepath.Join(".", "launchershim", filepath.FromSlash(path))
-		switch {
-		case d.IsDir():
-			if err := os.MkdirAll(outputPath, d.Type()); err != nil {
-				return err
-			}
-		default:
-			fd, err := os.Open(outputPath)
-			if err != nil {
-				return err
-			}
-			defer fd.Close()
+	launcherShimDir := filepath.Join(".", "launchershim")
 
-			sfd, err := launcherSource.Open(d.Name())
-			if err != nil {
-				return err
-			}
-			defer sfd.Close()
+	if err := os.MkdirAll(launcherShimDir, 0700); err != nil {
+		return err
+	}
 
-			if _, err := io.Copy(fd, sfd); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
+	if err := ioutil.WriteFile(filepath.Join(launcherShimDir, "main.go"), rawLauncherSource, 0600); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // NewBuildToDocker rewrites the apps in a Kf manifest to Dockerfiles.
@@ -114,7 +95,9 @@ func NewBuildToDocker(cfg *config.KfParams) *cobra.Command {
 			// 		Move a kfignore/cfignore to a dockerignore
 			//		Create the launcher
 			fmt.Fprintf(cmd.OutOrStdout(), "Extracting launcher code\n")
-			extractLauncherSource(".")
+			if err := extractLauncherSource("."); err != nil {
+				return fmt.Errorf("couldn't create launcher: %w", err)
+			}
 
 			fmt.Fprintf(cmd.OutOrStdout(), "Found %d application(s)\n", len(appManifest.Applications))
 			for _, app := range appManifest.Applications {
@@ -136,20 +119,30 @@ func NewBuildToDocker(cfg *config.KfParams) *cobra.Command {
 				for _, param := range buildSpec.Params {
 					params[param.Name] = param.Value
 				}
+				for _, param := range buildSpec.Env {
+					params[param.Name] = param.Value
+				}
 				localSource := "."
 				if app.Path != "" {
 					localSource = app.Path
 				}
 				params["LOCAL_SOURCE"] = localSource
 
-				if err := dockerTemplate.Execute(cmd.OutOrStdout(), params); err != nil {
+				dockerfileName := fmt.Sprintf("Dockerfile.%s", app.Name)
+				params["DOCKERFILE_NAME"] = dockerfileName
+				params["UTILITIES_IMAGE"] = "gcr.io/kf-releases/installer-d148684b3032e4386ff76c190d42c7d0:latest"
+
+				fmt.Println(params)
+				fd, err := os.Create(dockerfileName)
+				if err != nil {
+					return err
+				}
+				defer fd.Close()
+
+				if err := dockerTemplate.Execute(fd, params); err != nil {
 					return err
 				}
 			}
-
-			// For every app:
-			// 		Create a Dockerfile.<appname>
-			//
 
 			return nil
 		},

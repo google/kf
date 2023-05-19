@@ -1,7 +1,7 @@
 # Dockerfile that mimics Cloud Foundry's build process. Use the following
 # command to execute it:
 #
-#   DOCKER_BUILDKIT=0 docker build --progress=plain --network=host .
+#   DOCKER_BUILDKIT=0 docker build --progress=plain --network=host -f {{.DOCKERFILE_NAME}} .
 #
 # This file was auto-generated. DO NOT EDIT.
 
@@ -9,7 +9,7 @@
 ###############################################################################
 # Utilities
 ###############################################################################
-FROM {{.UtilitiesImage}} AS buildutils
+FROM {{.UTILITIES_IMAGE}} AS buildutils
 WORKDIR /workspace
 RUN ["/ko-app/installer"]
 
@@ -19,7 +19,9 @@ RUN ["/ko-app/installer"]
 FROM golang:latest AS launcher
 WORKDIR /src
 COPY launchershim/ .
-RUN go build main.go -o /launcher
+RUN go mod init launcher.kf.dev
+RUN go mod tidy
+RUN go build -o /launcher main.go 
 
 ###############################################################################
 # Build
@@ -52,7 +54,6 @@ FROM {{.RUN_IMAGE}}
 
 # Set up the lifecycle that would be provided by Diego in CF.
 WORKDIR /lifecycle
-COPY entrypoint.bash /lifecycle/entrypoint.bash
 COPY --from=launcher /launcher /lifecycle/launcher
 RUN chmod a+rx /lifecycle/launcher
 
