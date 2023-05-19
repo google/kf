@@ -44,6 +44,7 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/typed/core/v1"
+	"github.com/google/kf/v2/pkg/kf/commands/rewrite"
 )
 
 import (
@@ -694,6 +695,11 @@ func InjectDependencyCommand(p *config.KfParams) *cobra.Command {
 
 func InjectExportToK8sCommand(p *config.KfParams) *cobra.Command {
 	command := exporttok8s.NewExportToK8s(p)
+	return command
+}
+
+func InjectBuildToDocker(p *config.KfParams) *cobra.Command {
+	command := rewrite.NewBuildToDocker(p)
 	return command
 }
 

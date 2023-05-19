@@ -1,0 +1,260 @@
+# Copyright 2019 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+    operator.knative.dev/mode: Reconcile
+  labels:
+    kf.dev/release: VERSION_PLACEHOLDER
+  name: config-defaults
+  namespace: kf
+data:
+  _example: |
+    ################################
+    #                              #
+    #    EXAMPLE CONFIGURATION     #
+    #                              #
+    ################################
+
+    # This block is not actually functional configuration,
+    # but serves to illustrate the available configuration
+    # options and document them in a way that is accessible
+    # to users that `kubectl edit` this config map.
+    #
+    # These sample configuration options may be copied out of
+    # this example block and unindented to be in the data block
+    # to actually change the configuration.
+
+    # spaceContainerRegistry is the default container registry to assign to
+    # spaces.
+    spaceContainerRegistry: gcr.io/my-project
+
+    # spaceClusterDomains contains an ordered list of default domains to be
+    # injected into spaces. The value must be a valid JSON or YAML array.
+    #
+    # Each entry in the list must be an object with a `domain` property.
+    # This property contains a string representation of the domain.
+    #
+    # It MAY contain the following two varaible substitutions:
+    # - $(SPACE_NAME) - The name of the space
+    # - $(CLUSTER_INGRESS_IP) - The ingress IP of the cluster
+    #
+    # It's recommended (but not required) that all domains contain the $(SPACE_NAME)
+    # substitution to prevent apps in different spaces from conflicting.
+    #
+    # An optional second property 'gatewayName' can set which Istio Gateway
+    # corresponding routes will assign to themselves. The 'gatewayName' field
+    # is a string of the form 'kf/some-gateway', where `some-gateway' is a
+    # Gateway resource in the 'kf' Namespace.
+    #
+    # If 'gatewayName' is not set, the default 'kf/external-gateway' is used.
+    spaceClusterDomains: |
+      - domain: $(SPACE_NAME).prod.example.com
+      - domain: $(SPACE_NAME).kf.us-east1.prod.example.com
+      - domain: $(SPACE_NAME).$(CLUSTER_INGRESS_IP).nip.io
+      - domain: $(SPACE_NAME)-apps.internal
+        gatewayName: kf/internal-gateway
+
+    # buildpacksV2LifecycleImage is the image URL for the V2 buildpack
+    # lifecycle binaries. It is expected to contain the `launcher` and
+    # `builder` binaries AND to self extract those binaries into /workspace.
+    buildpacksV2LifecycleImage: "ko://code.cloudfoundry.org/buildpackapplifecycle/installer"
+
+    # buildDisableIstioSidecar when set to true, will preven the Istio sidecar
+    # from being injected on Build pods.
+    buildDisableIstioSidecar: "false"
+
+    # buildPodResources sets the Build pod resources field.
+    # NOTE: This is only applicable for built-in Tasks. For V2 builds, this
+    # will be set on two steps and one for V3 and Dockerfiles. This implies
+    # for a V2 build, the required Pod size will be the limit doubled.  For
+    # example, if the memory limit is 1Gi, then the pod will require 2Gi.
+    buildPodResources: |
+      requests:
+        memory: "64Mi"
+        cpu: "250m"
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+
+    # spaceBuildpacksV2 contains an ordered list of default buildpacks to be
+    # used for CF compatible builds. The value must be a valid JSON or YAML
+    # string.
+    #
+    # Each entry in the list must be an object with `name` and `url` propreties
+    # indicating the human readable name of the buildpack and the URL to
+    # fetch it from at runtime. An additional `disabled` property can be used
+    # to disable a single buildpack.
+    spaceBuildpacksV2: |
+      - name: name-of-buildpack
+        url:  https://github.com/cloudfoundry/name-of-buildpack
+        disabled: false
+
+    # spaceStacksV2 contains list of default stacks to be used for CF compatible
+    # builds. The value must be a valid JSON or YAML string.
+    #
+    # Each entry in the list must be an object with `name` and `image`
+    # propreties indicating the human readable name of the stack and the docker
+    # image that will be used by the apps/buildpacks that run on it.
+    #
+    # Use images tagged with SHAs to improve build caching.
+    spaceStacksV2: |
+      - name:  cflinuxfs3
+        image: cloudfoundry/cflinuxfs3
+
+    # spaceStacksV3 contains list of default stacks to be used for cloud native
+    # buildpack builds. The value must be a valid JSON or YAML string.
+    #
+    # Additional stacks can be discovered using `pack suggest-stacks`
+    #
+    # Each entry in the list must be an object with the following properties:
+    # - `name` - the name of the stack to be specified in the app manifest
+    # - `description` - a description of the stack
+    # - `buildImage` - the buildpack builder image
+    # - `runImage` - the base image of the produced application
+    # - `nodeSelector` - list of nodeSelectors
+    spaceStacksV3: |
+      - name: heroku-18
+        description: The official Heroku stack based on Ubuntu 18.04
+        buildImage: heroku/pack:18-build
+        runImage: heroku/pack:18
+        nodeSelector:
+           kubernetes.io/os: windows
+
+    # spaceDefaultToV3Stack will make spaces use v3 stacks by default if set to
+    # true. This will only affect apps without a stack specified in the manifest.
+    spaceDefaultToV3Stack: "true"
+
+    # routeServiceProxyImage is the container image used in the PodSpec of the K8s Deployment
+    # created by Kf for every Route Service instance. This deployment acts as a proxy for the route
+    # service. It adds the `X-Cf-Forwarded-URL` header to each request before forwarding to the route service.
+    routeServiceProxyImage: "ko://github.com/google/kf/v2/route-service-proxy-src"
+
+    # featureFlags allow certain features to be toggled on or off.
+    # Feature flag names that are not supported by Kf will be ignored.
+    # disable_custom_builds - Prevents builds with a kind other than "built-in" from being submitted.
+    featureFlags: |
+      disable_custom_builds: false
+      enable_dockerfile_builds: true
+      enable_custom_buildpacks: true
+      enable_custom_stacks: true
+      enable_some_feature: true
+
+    # Minimum amount of CPUs to give an app based on the amount of RAM it
+    # requests. Expressed as a Kubernetes quantity.
+    appCPUPerGBOfRAM: "100m"
+    # Absolute minimum amount of CPU to give an app. Expressed as a Kubernetes quantity.
+    appCPUMin: "100m"
+    # AppDisableStartCommandLookup disables the App reconciler from looking
+    # up the start command for Apps which requires fetching the container
+    # configuration for every App.
+    appDisableStartCommandLookup: "false"
+    # Maximum time in seconds for a deployment to make progress before it is considered to be failed
+    progressDeadlineSeconds: "600"
+    # The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and
+    # the time when the processes are forcibly halted with a kill signal.
+    terminationGracePeriodSeconds: 120
+    # When set to true, Route status will be updated with VirtualService conditions.
+    routeTrackVirtualService: "false"
+    # RouteDisableRetries disables retries in the VirtualServices that route traffic to apps.
+    # By default, Kf leaves the value unset and it's inherited from Istio.
+    routeDisableRetries: "false"
+
+    # TaskDefaultTimeoutMinutes sets the cluster-wide timeout for tasks.
+    # If the value is null, the timeout is inherited from Tekton.
+    # If the value is <= 0, then an infinite timeout is set.
+    taskDefaultTimeoutMinutes: "-1"
+
+    # TaskDisableVolumeMounts disables mounting NFS volumes in Tasks.
+    # Mounting NFS volumes requires FUSE which grants Task Pods additional
+    # system privileges.
+    taskDisableVolumeMounts: "true"
+
+    # The following images are used to execute builds. They SHOULD NOT be
+    # modified except in rare circumstances.
+    buildHelpersImage: "ko://github.com/google/kf/v2/cmd/build-helpers"
+    buildKanikoExecutorImage: "gcr.io/kaniko-project/executor:latest"
+    buildInfoImage: "kf-release-repository/build-info:kf-version"
+    buildTokenDownloadImage: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
+    nopImage: "ko://github.com/google/kf/v2/cmd/nop"
+  spaceClusterDomains: |
+    - domain: $(SPACE_NAME).$(CLUSTER_INGRESS_IP).nip.io
+    - domain: apps.internal
+      gatewayName: kf/internal-gateway
+  buildpacksV2LifecycleImage: "ko://code.cloudfoundry.org/buildpackapplifecycle/installer"
+  spaceBuildpacksV2: |
+    - name: staticfile_buildpack
+      url: https://github.com/cloudfoundry/staticfile-buildpack
+    - name: java_buildpack
+      url: https://github.com/cloudfoundry/java-buildpack
+    - name: ruby_buildpack
+      url: https://github.com/cloudfoundry/ruby-buildpack
+    - name: dotnet_core_buildpack
+      url: https://github.com/cloudfoundry/dotnet-core-buildpack
+    - name: nodejs_buildpack
+      url: https://github.com/cloudfoundry/nodejs-buildpack
+    - name: go_buildpack
+      url: https://github.com/cloudfoundry/go-buildpack
+    - name: python_buildpack
+      url: https://github.com/cloudfoundry/python-buildpack
+    - name: php_buildpack
+      url: https://github.com/cloudfoundry/php-buildpack
+    - name: binary_buildpack
+      url: https://github.com/cloudfoundry/binary-buildpack
+    - name: nginx_buildpack
+      url: https://github.com/cloudfoundry/nginx-buildpack
+  spaceStacksV2: |
+    - name: cflinuxfs3
+      image: cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5
+  spaceStacksV3: |
+    - name: kf-v2-to-v3-shim
+      description: A V3 stack that wraps the V2 buildpacks.
+      buildImage: gcr.io/PROJECT_PLACEHOLDER/v2-to-v3-builder:VERSION_PLACEHOLDER
+      runImage: gcr.io/buildpacks/gcp/run:v1
+    - name: google
+      description: Google buildpacks (https://github.com/GoogleCloudPlatform/buildpacks)
+      buildImage: gcr.io/buildpacks/builder:v1
+      runImage: gcr.io/buildpacks/gcp/run:v1
+    - name: org.cloudfoundry.stacks.cflinuxfs3
+      description: A large Cloud Foundry stack based on Ubuntu 18.04
+      buildImage: cloudfoundry/cnb:cflinuxfs3@sha256:f96b6e3528185368dd6af1d9657527437cefdaa5fa135338462f68f9c9db3022
+      runImage: cloudfoundry/run:full-cnb@sha256:dbe17be507b1cc6ffae1e9edf02806fe0e28ffbbb89a6c7ef41f37b69156c3c2
+  spaceDefaultToV3Stack: "false"
+  routeServiceProxyImage: "ko://github.com/google/kf/v2/cmd/route-service-proxy"
+  buildKanikoExecutorImage: "gcr.io/kaniko-project/executor:v1.0.0"
+  buildInfoImage: "ko://github.com/google/kf/v2/cmd/setup-buildpack-build"
+  buildTokenDownloadImage: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
+  buildHelpersImage: "ko://github.com/google/kf/v2/cmd/build-helpers"
+  nopImage: "ko://github.com/google/kf/v2/cmd/nop"
+  buildDisableIstioSidecar: "false"
+  buildPodResources: ""
+  featureFlags: |
+    disable_custom_builds: false
+    enable_dockerfile_builds: true
+    enable_route_services: false
+    enable_custom_buildpacks: true
+    enable_custom_stacks: true
+    enable_appdevexperience_builds: false
+  appCPUPerGBOfRAM: "100m"
+  appCPUMin: "100m"
+  appDisableStartCommandLookup: "false"
+  progressDeadlineSeconds: "600"
+  terminationGracePeriodSeconds: "30"
+  routeTrackVirtualService: "false"
+  routeHostIgnoringPort: "false"
+  routeDisableRetries: "false"
+  taskDefaultTimeoutMinutes: "-1"
+  taskDisableVolumeMounts: "false"

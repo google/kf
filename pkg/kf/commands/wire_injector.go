@@ -33,6 +33,7 @@ import (
 	"github.com/google/kf/v2/pkg/kf/commands/exporttok8s"
 	clogs "github.com/google/kf/v2/pkg/kf/commands/logs"
 	cnetworkpolicies "github.com/google/kf/v2/pkg/kf/commands/networkpolicies"
+	"github.com/google/kf/v2/pkg/kf/commands/rewrite"
 	croutes "github.com/google/kf/v2/pkg/kf/commands/routes"
 	servicebindingscmd "github.com/google/kf/v2/pkg/kf/commands/service-bindings"
 	servicebrokerscmd "github.com/google/kf/v2/pkg/kf/commands/service-brokers"
@@ -571,10 +572,9 @@ func InjectProxyRoute(p *config.KfParams) *cobra.Command {
 	return nil
 }
 
-////////////////////
+// //////////////////
 // Builds Command //
-////////////////////
-
+// //////////////////
 var BuildsSet = wire.NewSet(
 	config.GetKfClient,
 	builds.TektonLoggingShim,
@@ -701,6 +701,12 @@ func InjectDependencyCommand(p *config.KfParams) *cobra.Command {
 
 func InjectExportToK8sCommand(p *config.KfParams) *cobra.Command {
 	wire.Build(exporttok8s.NewExportToK8s)
+
+	return nil
+}
+
+func InjectBuildToDocker(p *config.KfParams) *cobra.Command {
+	wire.Build(rewrite.NewBuildToDocker)
 
 	return nil
 }

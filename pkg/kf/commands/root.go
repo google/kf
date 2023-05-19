@@ -161,12 +161,6 @@ func NewRawKfCommand() *cobra.Command {
 			},
 		},
 		{
-			Name: "Export To K8s",
-			Commands: []*cobra.Command{
-				InjectExportToK8sCommand(p),
-			},
-		},
-		{
 			Name: "Buildpacks",
 			Commands: []*cobra.Command{
 				InjectBuildpacks(p),
@@ -284,6 +278,11 @@ func NewRawKfCommand() *cobra.Command {
 		utils.ExperimentalCommandGroup(
 			"Bulk Actions",
 			InjectXargsApps(p),
+		),
+		utils.ExperimentalCommandGroup(
+			"Rewrite",
+			InjectExportToK8sCommand(p),
+			InjectBuildToDocker(p),
 		),
 		{
 			Name: "Other Commands",

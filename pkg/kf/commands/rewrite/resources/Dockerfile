@@ -1,3 +1,11 @@
+# Dockerfile that mimics Cloud Foundry's build process. Use the following
+# command to execute it:
+#
+#   DOCKER_BUILDKIT=0 docker build --progress=plain --network=host .
+#
+# This file was auto-generated. DO NOT EDIT.
+
+
 ###############################################################################
 # Utilities
 ###############################################################################
@@ -6,9 +14,17 @@ WORKDIR /workspace
 RUN ["/ko-app/installer"]
 
 ###############################################################################
+# Launcher
+###############################################################################
+FROM golang:latest AS launcher
+WORKDIR /src
+COPY launchershim/ .
+RUN go build main.go -o /launcher
+
+###############################################################################
 # Build
 ###############################################################################
-FROM {{.BuildImage}} AS build
+FROM {{.BUILDER_IMAGE}} AS build
 
 # Copy utiltiies
 WORKDIR /workspace
@@ -16,29 +32,28 @@ COPY --from=buildutils /workspace /workspace
 
 # Copy source code
 # TODO: generate a .dockerignore
-COPY {{.Source}} /staging/app
-COPY {{.Source}} /tmp/app
+COPY {{.LOCAL_SOURCE}} /staging/app
+COPY {{.LOCAL_SOURCE}} /tmp/app
 
-RUN CF_STACK=cflinuxfs3 /workspace/builder \
+RUN CF_STACK={{.CF_STACK}} /workspace/builder \
   -buildArtifactsCacheDir=/tmp/cache \
   -buildDir=/tmp/app \
   -buildpacksDir=/tmp/buildpacks \
   -outputBuildArtifactsCache=/tmp/output-cache \
   -outputDroplet=/tmp/droplet \
   -outputMetadata=/tmp/result.json \
-  "-buildpackOrder={{.Buildpacks}}" \
-  "-skipDetect={{.SkipDetect}}"
+  "-buildpackOrder={{.BUILDPACKS}}" \
+  "-skipDetect={{.SKIP_DETECT}}"
 
 ###############################################################################
 # Application image
 ###############################################################################
-FROM {{.RunImage}}
+FROM {{.RUN_IMAGE}}
 
 # Set up the lifecycle that would be provided by Diego in CF.
 WORKDIR /lifecycle
 COPY entrypoint.bash /lifecycle/entrypoint.bash
-#COPY --from=buildutils /workspace/launcher /lifecycle/launcher
-COPY containerlauncher /lifecycle/launcher
+COPY --from=launcher /launcher /lifecycle/launcher
 RUN chmod a+rx /lifecycle/launcher
 
 # Set up the application and code.
@@ -47,6 +62,3 @@ USER vcap:vcap
 COPY --from=build /tmp/droplet droplet.tar.gz
 RUN tar -xzf droplet.tar.gz && rm droplet.tar.gz
 ENTRYPOINT ["/lifecycle/launcher"]
-
-
-# DOCKER_BUILDKIT=0 docker build --progress=plain --network=host .
