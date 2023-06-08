@@ -252,6 +252,27 @@ kubectl patch \
     -p="[{'op':'add','path':'/spec/kf/config/appDisableStartCommandLookup','value':true}]"
 ```
 
+## Enable/Disable Kubernetes service Account (KSA) overrides{#ksa-overrides}
+
+Allows enabling/disbaling the ability to override the Kubernetes Service Account for Apps via annotation.
+
+{{< warning >}}
+Enabling this allows developers to run code as any KSA in the App's Namespace.
+This may change the security posture of your cluster.
+{{< /warning >}}
+
+Values for `appEnableServiceAccountOverride`:
+
+* `false` Don't allow overriding service account. (Default)
+* `true` Allow developers to override KSAs for their Apps.
+
+```sh
+kubectl patch \
+    kfsystem kfsystem \
+    --type='json' \
+    -p="[{'op':'add','path':'/spec/kf/config/appEnableServiceAccountOverride','value':true}]"
+```
+
 ## Set default Kf Task timeout
 
 Kf uses Tekton TaskRuns as its mechanism to run Kf Tasks. 

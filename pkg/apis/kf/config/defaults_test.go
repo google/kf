@@ -49,6 +49,7 @@ func TestPatchConfigMap(t *testing.T) {
 		appCPUMinKey,
 		appCPUPerGBOfRAMKey,
 		appDisableStartCommandLookupKey,
+		appEnableServiceAccountOverrideKey,
 		progressDeadlineSecondsKey,
 		terminationGracePeriodSecondsKey,
 		routeTrackVirtualServiceKey,
