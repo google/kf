@@ -55,6 +55,7 @@ func TestStoreLoadWithContext(t *testing.T) {
 		appCPUMinKey,
 		appCPUPerGBOfRAMKey,
 		appDisableStartCommandLookupKey,
+		appEnableServiceAccountOverrideKey,
 		progressDeadlineSecondsKey,
 		terminationGracePeriodSecondsKey,
 		routeTrackVirtualServiceKey,

@@ -84,7 +84,7 @@ The hint is used by the [service mesh](https://cloud.google.com/service-mesh/doc
 {{< warning >}} Kf doesn't currently support TCP port-based routing. You must use a
 [Kubernetes LoadBalancer](https://kubernetes.io/docs/tutorials/stateless-application/expose-external-ip-address/) if you want to expose a TCP port to the Internet. Ports are available on the cluster internal App address `<app-name>.<space>`.{{< /warning >}}
 
-## Metadata fields
+## Metadata fields {#metadata-fields}
 
 The following fields are valid for `application.metadata` objects:
 

@@ -162,6 +162,9 @@ data:
     # up the start command for Apps which requires fetching the container
     # configuration for every App.
     appDisableStartCommandLookup: "false"
+    # AppEnableServiceAccountOverride allows apps to override the service account via annotation:
+    # apps.kf.dev/service-account-name.
+    appEnableServiceAccountOverride: "false"
     # Maximum time in seconds for a deployment to make progress before it is considered to be failed
     progressDeadlineSeconds: "600"
     # The grace period is the duration in seconds after the processes running in the pod are sent a termination signal and
@@ -251,6 +254,7 @@ data:
   appCPUPerGBOfRAM: "100m"
   appCPUMin: "100m"
   appDisableStartCommandLookup: "false"
+  appEnableServiceAccountOverride: "false"
   progressDeadlineSeconds: "600"
   terminationGracePeriodSeconds: "30"
   routeTrackVirtualService: "false"
