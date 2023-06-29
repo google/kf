@@ -421,9 +421,7 @@ func normalizeRouteWeights(appWeights RouteBindingSlice) RouteBindingSlice {
 	// Sort the incoming weights so the algorithm is deterministic
 	// and make a copy so we don't modify the original
 	var sortedWeights RouteBindingSlice
-	for _, copy := range appWeights {
-		sortedWeights = append(sortedWeights, copy)
-	}
+	sortedWeights = append(sortedWeights, appWeights...)
 	sort.Sort(sortedWeights)
 
 	var totalWeight int32
