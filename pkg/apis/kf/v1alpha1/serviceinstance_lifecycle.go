@@ -121,7 +121,7 @@ func (status *ServiceInstanceStatus) PropagateDeploymentStatus(deployment *appsv
 	}
 
 	if deployment.Generation > deployment.Status.ObservedGeneration {
-		status.manage().MarkUnknown(ServiceInstanceConditionBackingResourceReady, "GenerationOutOfDate", fmt.Sprintf("waiting for deployment spec update to be observed"))
+		status.manage().MarkUnknown(ServiceInstanceConditionBackingResourceReady, "GenerationOutOfDate", "waiting for deployment spec update to be observed")
 		return
 	}
 

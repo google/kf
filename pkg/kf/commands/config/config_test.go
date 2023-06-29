@@ -219,7 +219,7 @@ func TestFeatureFlagWarning(t *testing.T) {
 				delete(ns.Annotations, v1alpha1.FeatureFlagsAnnotation)
 				return ns
 			}()),
-			expectedOut: fmt.Sprintf("WARN Unable to read feature flags from server.\n"),
+			expectedOut: "WARN Unable to read feature flags from server.\n",
 		},
 		"bad flags": {
 			namespace: (func() *v1.Namespace {

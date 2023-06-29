@@ -129,7 +129,7 @@ func NewBindServiceCommand(p *config.KfParams, client serviceinstancebindings.Cl
 				utils.SuggestNextAction(utils.NextAction{
 					Description: "List bindings",
 					Commands: []string{
-						fmt.Sprint("kf bindings"),
+						"kf bindings",
 					},
 				})
 				return nil
