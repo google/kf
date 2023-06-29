@@ -32,7 +32,6 @@ import (
 
 // User defined imports
 import (
-	v1 "k8s.io/api/core/v1"
 	cv1 "k8s.io/client-go/kubernetes/typed/core/v1"
 )
 
@@ -77,24 +76,24 @@ func (*ResourceInfo) FriendlyName() string {
 
 var (
 	ConditionReady       = apis.ConditionType("Ready")
-	ConditionInitialized = apis.ConditionType(v1.PodInitialized)
+	ConditionInitialized = apis.ConditionType(corev1.PodInitialized)
 )
 
-// Predicate is a boolean function for a v1.Pod.
-type Predicate func(*v1.Pod) bool
+// Predicate is a boolean function for a corev1.Pod.
+type Predicate func(*corev1.Pod) bool
 
-// Mutator is a function that changes v1.Pod.
-type Mutator func(*v1.Pod) error
+// Mutator is a function that changes corev1.Pod.
+type Mutator func(*corev1.Pod) error
 
 // ObservedGenerationMatchesGeneration is a predicate that returns true if the
 // object's ObservedGeneration matches the genration of the object.
-func ObservedGenerationMatchesGeneration(obj *v1.Pod) bool {
+func ObservedGenerationMatchesGeneration(obj *corev1.Pod) bool {
 	return obj.Generation == obj.Generation
 }
 
 // ExtractConditions converts the native condition types into an apis.Condition
 // array with the Type, Status, Reason, and Message fields intact.
-func ExtractConditions(obj *v1.Pod) (extracted []apis.Condition) {
+func ExtractConditions(obj *corev1.Pod) (extracted []apis.Condition) {
 	for _, cond := range obj.Status.Conditions {
 		// Only copy the following four fields to be compatible with
 		// recommended Kubernetes fields.
@@ -113,20 +112,20 @@ func ExtractConditions(obj *v1.Pod) (extracted []apis.Condition) {
 // Client
 ////////////////////////////////////////////////////////////////////////////////
 
-// Client is the interface for interacting with v1.Pod types as OperatorConfig CF style objects.
+// Client is the interface for interacting with corev1.Pod types as OperatorConfig CF style objects.
 type Client interface {
-	Create(ctx context.Context, namespace string, obj *v1.Pod) (*v1.Pod, error)
-	Transform(ctx context.Context, namespace string, name string, transformer Mutator) (*v1.Pod, error)
-	Get(ctx context.Context, namespace string, name string) (*v1.Pod, error)
+	Create(ctx context.Context, namespace string, obj *corev1.Pod) (*corev1.Pod, error)
+	Transform(ctx context.Context, namespace string, name string, transformer Mutator) (*corev1.Pod, error)
+	Get(ctx context.Context, namespace string, name string) (*corev1.Pod, error)
 	Delete(ctx context.Context, namespace string, name string) error
-	List(ctx context.Context, namespace string) ([]v1.Pod, error)
-	Upsert(ctx context.Context, namespace string, newObj *v1.Pod, merge Merger) (*v1.Pod, error)
-	WaitFor(ctx context.Context, namespace string, name string, interval time.Duration, condition Predicate) (*v1.Pod, error)
+	List(ctx context.Context, namespace string) ([]corev1.Pod, error)
+	Upsert(ctx context.Context, namespace string, newObj *corev1.Pod, merge Merger) (*corev1.Pod, error)
+	WaitFor(ctx context.Context, namespace string, name string, interval time.Duration, condition Predicate) (*corev1.Pod, error)
 
 	// Utility functions
-	WaitForDeletion(ctx context.Context, namespace string, name string, interval time.Duration) (*v1.Pod, error)
-	WaitForConditionReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (*v1.Pod, error)
-	WaitForConditionInitializedTrue(ctx context.Context, namespace string, name string, interval time.Duration) (*v1.Pod, error)
+	WaitForDeletion(ctx context.Context, namespace string, name string, interval time.Duration) (*corev1.Pod, error)
+	WaitForConditionReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (*corev1.Pod, error)
+	WaitForConditionInitializedTrue(ctx context.Context, namespace string, name string, interval time.Duration) (*corev1.Pod, error)
 
 	// ClientExtension can be used by the developer to extend the client.
 	ClientExtension
@@ -136,9 +135,9 @@ type coreClient struct {
 	kclient cv1.PodsGetter
 }
 
-// Create inserts the given v1.Pod into the cluster.
+// Create inserts the given corev1.Pod into the cluster.
 // The value to be inserted will be preprocessed and validated before being sent.
-func (core *coreClient) Create(ctx context.Context, namespace string, obj *v1.Pod) (*v1.Pod, error) {
+func (core *coreClient) Create(ctx context.Context, namespace string, obj *corev1.Pod) (*corev1.Pod, error) {
 	return core.kclient.Pods(namespace).Create(ctx, obj, metav1.CreateOptions{})
 }
 
@@ -146,7 +145,7 @@ func (core *coreClient) Create(ctx context.Context, namespace string, obj *v1.Po
 // and returns the updated object. Transform manages the options for the Get and
 // Update calls. The transform will be retried as long as the resource is in
 // conflict.
-func (core *coreClient) Transform(ctx context.Context, namespace string, name string, mutator Mutator) (*v1.Pod, error) {
+func (core *coreClient) Transform(ctx context.Context, namespace string, name string, mutator Mutator) (*corev1.Pod, error) {
 	for {
 		obj, err := core.Get(ctx, namespace, name)
 		if err != nil {
@@ -169,7 +168,7 @@ func (core *coreClient) Transform(ctx context.Context, namespace string, name st
 // Get retrieves an existing object in the cluster with the given name.
 // The function will return an error if an object is retrieved from the cluster
 // but doesn't pass the membership test of this client.
-func (core *coreClient) Get(ctx context.Context, namespace string, name string) (*v1.Pod, error) {
+func (core *coreClient) Get(ctx context.Context, namespace string, name string) (*corev1.Pod, error) {
 	res, err := core.kclient.Pods(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -192,7 +191,7 @@ func (core *coreClient) Delete(ctx context.Context, namespace string, name strin
 
 // List gets objects in the cluster and filters the results based on the
 // internal membership test.
-func (core *coreClient) List(ctx context.Context, namespace string) ([]v1.Pod, error) {
+func (core *coreClient) List(ctx context.Context, namespace string) ([]corev1.Pod, error) {
 	res, err := core.kclient.Pods(namespace).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("couldn't list OperatorConfigs: %v", err)
@@ -202,13 +201,13 @@ func (core *coreClient) List(ctx context.Context, namespace string) ([]v1.Pod, e
 }
 
 // Merger is a type to merge an existing value with a new one.
-type Merger func(newObj, oldObj *v1.Pod) *v1.Pod
+type Merger func(newObj, oldObj *corev1.Pod) *corev1.Pod
 
 // Upsert inserts the object into the cluster if it doesn't already exist, or else
 // calls the merge function to merge the existing and new then performs an Update.
 // If the update results in a conflict error, then it is retried with the new
 // object. Meaning, the merge function is invoked again.
-func (core *coreClient) Upsert(ctx context.Context, namespace string, newObj *v1.Pod, merge Merger) (*v1.Pod, error) {
+func (core *coreClient) Upsert(ctx context.Context, namespace string, newObj *corev1.Pod, merge Merger) (*corev1.Pod, error) {
 	for ctx.Err() == nil {
 		// kclient must be used so the error code can be validated by apierrors
 		oldObj, err := core.kclient.Pods(namespace).Get(ctx, newObj.Name, metav1.GetOptions{})
@@ -239,7 +238,7 @@ func (core *coreClient) Upsert(ctx context.Context, namespace string, newObj *v1
 // immediately after the function is invoked.
 //
 // The function polls infinitely if no timeout is supplied.
-func (core *coreClient) WaitFor(ctx context.Context, namespace string, name string, interval time.Duration, condition Predicate) (*v1.Pod, error) {
+func (core *coreClient) WaitFor(ctx context.Context, namespace string, name string, interval time.Duration, condition Predicate) (*corev1.Pod, error) {
 	return core.waitForE(ctx, namespace, name, interval, wrapPredicate(condition))
 }
 
@@ -249,7 +248,7 @@ func (core *coreClient) WaitFor(ctx context.Context, namespace string, name stri
 //
 // This function MAY retrieve a nil instance and an apiErr. It's up to the
 // function to decide how to handle the apiErr.
-type ConditionFuncE func(ctx context.Context, instance *v1.Pod, apiErr error) (done bool, err error)
+type ConditionFuncE func(ctx context.Context, instance *corev1.Pod, apiErr error) (done bool, err error)
 
 // ConditionReporter reports on changes to conditions while waiting.
 type ConditionReporter func(message string)
@@ -273,7 +272,7 @@ func maybeGetConditionReporter(ctx context.Context) ConditionReporter {
 // immediately after the function is invoked.
 //
 // The function polls infinitely if no timeout is supplied.
-func (core *coreClient) waitForE(ctx context.Context, namespace string, name string, interval time.Duration, condition ConditionFuncE) (instance *v1.Pod, err error) {
+func (core *coreClient) waitForE(ctx context.Context, namespace string, name string, interval time.Duration, condition ConditionFuncE) (instance *corev1.Pod, err error) {
 	var done bool
 	tick := time.Tick(interval)
 
@@ -294,7 +293,7 @@ func (core *coreClient) waitForE(ctx context.Context, namespace string, name str
 
 // ConditionDeleted is a ConditionFuncE that succeeds if the error returned by
 // the cluster was a not found error.
-func ConditionDeleted(ctx context.Context, _ *v1.Pod, apiErr error) (bool, error) {
+func ConditionDeleted(ctx context.Context, _ *corev1.Pod, apiErr error) (bool, error) {
 	if apiErr != nil {
 		if apierrors.IsNotFound(apiErr) {
 			apiErr = nil
@@ -309,7 +308,7 @@ func ConditionDeleted(ctx context.Context, _ *v1.Pod, apiErr error) (bool, error
 // wrapPredicate converts a predicate to a ConditionFuncE that fails if the
 // error is not nil or if the Status has a False condition.
 func wrapPredicate(condition Predicate) ConditionFuncE {
-	return func(ctx context.Context, obj *v1.Pod, err error) (bool, error) {
+	return func(ctx context.Context, obj *corev1.Pod, err error) (bool, error) {
 		if err != nil {
 			return true, err
 		}
@@ -327,11 +326,11 @@ func wrapPredicate(condition Predicate) ConditionFuncE {
 }
 
 // WaitForDeletion is a utility function that combines waitForE with ConditionDeleted.
-func (core *coreClient) WaitForDeletion(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1.Pod, err error) {
+func (core *coreClient) WaitForDeletion(ctx context.Context, namespace string, name string, interval time.Duration) (instance *corev1.Pod, err error) {
 	return core.waitForE(ctx, namespace, name, interval, ConditionDeleted)
 }
 
-func checkConditionTrue(ctx context.Context, obj *v1.Pod, err error, condition apis.ConditionType) (bool, error) {
+func checkConditionTrue(ctx context.Context, obj *corev1.Pod, err error, condition apis.ConditionType) (bool, error) {
 	conditionReporter := func(_ string) {}
 	if reporter := maybeGetConditionReporter(ctx); reporter != nil {
 		conditionReporter = reporter
@@ -372,22 +371,22 @@ func checkConditionTrue(ctx context.Context, obj *v1.Pod, err error, condition a
 
 // ConditionReadyTrue is a ConditionFuncE that waits for Condition{Ready  Ready} to
 // become true and fails with an error if the condition becomes false.
-func ConditionReadyTrue(ctx context.Context, obj *v1.Pod, err error) (bool, error) {
+func ConditionReadyTrue(ctx context.Context, obj *corev1.Pod, err error) (bool, error) {
 	return checkConditionTrue(ctx, obj, err, ConditionReady)
 }
 
 // WaitForConditionReadyTrue is a utility function that combines waitForE with ConditionReadyTrue.
-func (core *coreClient) WaitForConditionReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1.Pod, err error) {
+func (core *coreClient) WaitForConditionReadyTrue(ctx context.Context, namespace string, name string, interval time.Duration) (instance *corev1.Pod, err error) {
 	return core.waitForE(ctx, namespace, name, interval, ConditionReadyTrue)
 }
 
-// ConditionInitializedTrue is a ConditionFuncE that waits for Condition{Initialized v1.PodInitialized } to
+// ConditionInitializedTrue is a ConditionFuncE that waits for Condition{Initialized corev1.PodInitialized } to
 // become true and fails with an error if the condition becomes false.
-func ConditionInitializedTrue(ctx context.Context, obj *v1.Pod, err error) (bool, error) {
+func ConditionInitializedTrue(ctx context.Context, obj *corev1.Pod, err error) (bool, error) {
 	return checkConditionTrue(ctx, obj, err, ConditionInitialized)
 }
 
 // WaitForConditionInitializedTrue is a utility function that combines waitForE with ConditionInitializedTrue.
-func (core *coreClient) WaitForConditionInitializedTrue(ctx context.Context, namespace string, name string, interval time.Duration) (instance *v1.Pod, err error) {
+func (core *coreClient) WaitForConditionInitializedTrue(ctx context.Context, namespace string, name string, interval time.Duration) (instance *corev1.Pod, err error) {
 	return core.waitForE(ctx, namespace, name, interval, ConditionInitializedTrue)
 }

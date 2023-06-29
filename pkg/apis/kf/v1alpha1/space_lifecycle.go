@@ -23,7 +23,6 @@ import (
 	"github.com/google/kf/v2/pkg/apis/kf/config"
 	"github.com/google/kf/v2/pkg/kf/dynamicutils"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -40,11 +39,11 @@ func (r *Space) GetGroupVersionKind() schema.GroupVersionKind {
 
 // PropagateNamespaceStatus copies fields from the Namespace status to Space
 // and updates the readiness based on the current phase.
-func (status *SpaceStatus) PropagateNamespaceStatus(ns *v1.Namespace) {
+func (status *SpaceStatus) PropagateNamespaceStatus(ns *corev1.Namespace) {
 	switch ns.Status.Phase {
-	case v1.NamespaceActive:
+	case corev1.NamespaceActive:
 		status.manage().MarkTrue(SpaceConditionNamespaceReady)
-	case v1.NamespaceTerminating:
+	case corev1.NamespaceTerminating:
 		status.manage().MarkFalse(SpaceConditionNamespaceReady, "Terminating", "Namespace is terminating")
 	default:
 		status.manage().MarkUnknown(SpaceConditionNamespaceReady, "BadPhase", "Namespace entered an unknown phase: %q", ns.Status.Phase)

@@ -33,7 +33,6 @@ import (
 	sourcepackagesfake "github.com/google/kf/v2/pkg/kf/sourcepackages/fake"
 	"github.com/google/kf/v2/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -915,7 +914,7 @@ func TestPush_ServiceInstanceBindings(t *testing.T) {
 					Create(gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(&v1alpha1.ServiceInstanceBinding{}, nil)
 				secretsClient.EXPECT().CreateParamsSecret(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(&v1.Secret{}, nil)
+					Return(&corev1.Secret{}, nil)
 				bindingsClient.EXPECT().
 					WaitForConditionReadyTrue(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(&v1alpha1.ServiceInstanceBinding{}, nil)
@@ -988,10 +987,10 @@ func createServiceInstanceBinding(appName, serviceInstance, namespace string, ap
 					Name: appName,
 				},
 			},
-			InstanceRef: v1.LocalObjectReference{
+			InstanceRef: corev1.LocalObjectReference{
 				Name: serviceInstance,
 			},
-			ParametersFrom: v1.LocalObjectReference{
+			ParametersFrom: corev1.LocalObjectReference{
 				Name: v1alpha1.MakeServiceBindingParamsSecretName(appName, serviceInstance),
 			},
 		},

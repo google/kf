@@ -21,7 +21,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -161,7 +160,7 @@ func (status *AppStatus) PropagateDeploymentStatus(deployment *appsv1.Deployment
 }
 
 // PropagateEnvVarSecretStatus updates the env var secret readiness status.
-func (status *AppStatus) PropagateEnvVarSecretStatus(secret *v1.Secret) {
+func (status *AppStatus) PropagateEnvVarSecretStatus(secret *corev1.Secret) {
 	status.EnvVarSecretCondition().MarkSuccess()
 }
 
@@ -344,12 +343,12 @@ func (status *AppStatus) PropagateServiceInstanceBindingsStatus(bindings []Servi
 			}
 
 			conditionType := serviceBindingConditionType(binding)
-			switch v1.ConditionStatus(cond.Status) {
-			case v1.ConditionTrue:
+			switch corev1.ConditionStatus(cond.Status) {
+			case corev1.ConditionTrue:
 				manager.MarkTrue(conditionType)
-			case v1.ConditionFalse:
+			case corev1.ConditionFalse:
 				manager.MarkFalse(conditionType, cond.Reason, cond.Message)
-			case v1.ConditionUnknown:
+			case corev1.ConditionUnknown:
 				manager.MarkUnknown(conditionType, cond.Reason, cond.Message)
 			}
 		}

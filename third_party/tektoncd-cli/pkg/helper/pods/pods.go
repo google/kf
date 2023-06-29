@@ -23,7 +23,6 @@ import (
 	"github.com/google/kf/v2/third_party/tektoncd-cli/pkg/helper/pods/stream"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/informers"
 	k8s "k8s.io/client-go/kubernetes"
@@ -112,8 +111,8 @@ func (p *Pod) watcher(stopC <-chan struct{}, eventC chan<- interface{}) {
 	factory.WaitForCacheSync(stopC)
 }
 
-func podOpts(name string) func(opts *v1.ListOptions) {
-	return func(opts *v1.ListOptions) {
+func podOpts(name string) func(opts *metav1.ListOptions) {
+	return func(opts *metav1.ListOptions) {
 		opts.FieldSelector = fields.OneTermEqualSelector("metadata.name", name).String()
 	}
 }

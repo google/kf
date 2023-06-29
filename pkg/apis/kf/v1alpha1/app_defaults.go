@@ -18,7 +18,6 @@ import (
 	"context"
 
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"knative.dev/pkg/apis"
 	"knative.dev/pkg/ptr"
@@ -167,7 +166,7 @@ func SetKfAppContainerDefaults(_ context.Context, container *corev1.Container) {
 
 	// Set default disk, RAM, and CPU limits on the application if they have not been custom set
 	if container.Resources.Requests == nil {
-		container.Resources.Requests = v1.ResourceList{}
+		container.Resources.Requests = corev1.ResourceList{}
 	}
 
 	if _, exists := container.Resources.Requests[corev1.ResourceMemory]; !exists {
@@ -184,10 +183,10 @@ func SetKfAppContainerDefaults(_ context.Context, container *corev1.Container) {
 
 	// Set limits if they've not been set for a value.
 	if container.Resources.Limits == nil {
-		container.Resources.Limits = v1.ResourceList{}
+		container.Resources.Limits = corev1.ResourceList{}
 	}
 
-	for _, key := range []v1.ResourceName{
+	for _, key := range []corev1.ResourceName{
 		corev1.ResourceMemory,
 		corev1.ResourceEphemeralStorage,
 

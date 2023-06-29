@@ -15,7 +15,6 @@
 package resources
 
 import (
-	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	kfv1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,7 +32,7 @@ const (
 )
 
 // PodLabels returns the labels for selecting pods of the deployment.
-func PodLabels(app *v1alpha1.App) map[string]string {
+func PodLabels(app *kfv1alpha1.App) map[string]string {
 	return app.ComponentLabels("app-server")
 }
 
@@ -45,7 +44,7 @@ func ServiceName(app *kfv1alpha1.App) string {
 // ServiceNameForAppName returns the canonical service name to route requests
 // to the given app.
 func ServiceNameForAppName(appName string) string {
-	return v1alpha1.GenerateName(appName)
+	return kfv1alpha1.GenerateName(appName)
 }
 
 // MakeService constructs a K8s service, that is backed by the pod selector
@@ -58,7 +57,7 @@ func MakeService(app *kfv1alpha1.App) *corev1.Service {
 			OwnerReferences: []metav1.OwnerReference{
 				*kmeta.NewControllerRef(app),
 			},
-			Labels: v1alpha1.UnionMaps(app.GetLabels(), app.ComponentLabels("service")),
+			Labels: kfv1alpha1.UnionMaps(app.GetLabels(), app.ComponentLabels("service")),
 		},
 		Spec: corev1.ServiceSpec{
 			Ports:    makeServicePorts(app),
@@ -96,7 +95,7 @@ func makeServicePorts(app *kfv1alpha1.App) (ports []corev1.ServicePort) {
 		ports = append(ports, corev1.ServicePort{
 			Name:     UserPortName,
 			Protocol: corev1.ProtocolTCP,
-			Port:     v1alpha1.DefaultRouteDestinationPort,
+			Port:     kfv1alpha1.DefaultRouteDestinationPort,
 			// This one is matching the public one, since this is the
 			// port queue-proxy listens on.
 			TargetPort: intstr.FromInt(int(getUserPort(app))),
@@ -106,7 +105,7 @@ func makeServicePorts(app *kfv1alpha1.App) (ports []corev1.ServicePort) {
 	return
 }
 
-func getUserPort(app *v1alpha1.App) int32 {
+func getUserPort(app *kfv1alpha1.App) int32 {
 	containers := app.Spec.Template.Spec.Containers
 	if len(containers) == 0 {
 		return DefaultUserPort

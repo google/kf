@@ -20,7 +20,6 @@ import (
 	"github.com/google/kf/v2/pkg/apis/kf/config"
 	"github.com/google/kf/v2/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"knative.dev/pkg/apis"
 	"knative.dev/pkg/apis/duck"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
@@ -322,10 +321,10 @@ func TestSpaceStatus_PropagateBuildConfigStatus(t *testing.T) {
 		spaceSpec SpaceSpec
 		cfg       *config.Config
 
-		expectStatus v1.ConditionStatus
+		expectStatus corev1.ConditionStatus
 	}{
 		"blank everything": {
-			expectStatus: v1.ConditionFalse,
+			expectStatus: corev1.ConditionFalse,
 		},
 		"removes disabled v2 buildpacks": {
 			cfg: config.CreateConfigForTest(&config.DefaultsConfig{
@@ -342,7 +341,7 @@ func TestSpaceStatus_PropagateBuildConfigStatus(t *testing.T) {
 				},
 			},
 			),
-			expectStatus: v1.ConditionTrue,
+			expectStatus: corev1.ConditionTrue,
 		},
 		"unset default": {
 			spaceSpec: SpaceSpec{
@@ -351,7 +350,7 @@ func TestSpaceStatus_PropagateBuildConfigStatus(t *testing.T) {
 				},
 			},
 			cfg:          config.CreateConfigForTest(config.BuiltinDefaultsConfig()),
-			expectStatus: v1.ConditionTrue,
+			expectStatus: corev1.ConditionTrue,
 		},
 		"default override false": {
 			spaceSpec: SpaceSpec{
@@ -362,7 +361,7 @@ func TestSpaceStatus_PropagateBuildConfigStatus(t *testing.T) {
 			cfg: config.CreateConfigForTest(&config.DefaultsConfig{
 				SpaceDefaultToV3Stack: true,
 			}),
-			expectStatus: v1.ConditionTrue,
+			expectStatus: corev1.ConditionTrue,
 		},
 		"default override true": {
 			spaceSpec: SpaceSpec{
@@ -373,7 +372,7 @@ func TestSpaceStatus_PropagateBuildConfigStatus(t *testing.T) {
 			cfg: config.CreateConfigForTest(&config.DefaultsConfig{
 				SpaceDefaultToV3Stack: false,
 			}),
-			expectStatus: v1.ConditionTrue,
+			expectStatus: corev1.ConditionTrue,
 		},
 		"complete flow": {
 			spaceSpec: SpaceSpec{
@@ -403,7 +402,7 @@ func TestSpaceStatus_PropagateBuildConfigStatus(t *testing.T) {
 				},
 				SpaceDefaultToV3Stack: true,
 			}),
-			expectStatus: v1.ConditionTrue,
+			expectStatus: corev1.ConditionTrue,
 		},
 	}
 
@@ -424,7 +423,7 @@ func TestSpaceStatus_PropagateNetworkConfigStatus(t *testing.T) {
 		cfg             *config.Config
 		ingressGateways []corev1.LoadBalancerIngress
 
-		expectStatus v1.ConditionStatus
+		expectStatus corev1.ConditionStatus
 	}{
 		"full test": {
 			specConfig: SpaceSpecNetworkConfig{
@@ -445,7 +444,7 @@ func TestSpaceStatus_PropagateNetworkConfigStatus(t *testing.T) {
 			ingressGateways: []corev1.LoadBalancerIngress{
 				{IP: "192.168.0.1"},
 			},
-			expectStatus: v1.ConditionTrue,
+			expectStatus: corev1.ConditionTrue,
 		},
 		"blank config": {
 			specConfig: SpaceSpecNetworkConfig{
@@ -460,7 +459,7 @@ func TestSpaceStatus_PropagateNetworkConfigStatus(t *testing.T) {
 			ingressGateways: []corev1.LoadBalancerIngress{
 				{IP: "192.168.0.1"},
 			},
-			expectStatus: v1.ConditionTrue,
+			expectStatus: corev1.ConditionTrue,
 		},
 		"no ingress IP": {
 			specConfig: SpaceSpecNetworkConfig{
@@ -473,7 +472,7 @@ func TestSpaceStatus_PropagateNetworkConfigStatus(t *testing.T) {
 				},
 			}),
 			ingressGateways: []corev1.LoadBalancerIngress{},
-			expectStatus:    v1.ConditionTrue,
+			expectStatus:    corev1.ConditionTrue,
 		},
 		"config not loaded": {
 			specConfig: SpaceSpecNetworkConfig{
@@ -481,7 +480,7 @@ func TestSpaceStatus_PropagateNetworkConfigStatus(t *testing.T) {
 			},
 			cfg:             nil,
 			ingressGateways: nil,
-			expectStatus:    v1.ConditionFalse,
+			expectStatus:    corev1.ConditionFalse,
 		},
 	}
 

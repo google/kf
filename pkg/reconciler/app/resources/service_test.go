@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	kfv1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
@@ -26,7 +25,7 @@ import (
 )
 
 func ExamplePodLabels() {
-	labels := PodLabels(&v1alpha1.App{
+	labels := PodLabels(&kfv1alpha1.App{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-app",
 			Namespace: "my-ns",
@@ -38,7 +37,7 @@ func ExamplePodLabels() {
 }
 
 func ExampleServiceName() {
-	app := &v1alpha1.App{
+	app := &kfv1alpha1.App{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "my-app",
 			Namespace: "my-ns",
@@ -146,7 +145,7 @@ func TestMakeService(t *testing.T) {
 
 func Test_getUserPort(t *testing.T) {
 	type args struct {
-		app *v1alpha1.App
+		app *kfv1alpha1.App
 	}
 	tests := []struct {
 		name string

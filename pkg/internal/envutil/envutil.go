@@ -22,7 +22,6 @@ import (
 
 	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 )
 
 // EnvVarsToMap constructs a map of environment name to value from a slice of
@@ -127,7 +126,7 @@ func GetAppEnvVars(app *v1alpha1.App) []corev1.EnvVar {
 // on app so kf can adapt to future changes.
 func SetAppEnvVars(app *v1alpha1.App, env []corev1.EnvVar) {
 	if len(app.Spec.Template.Spec.Containers) == 0 {
-		app.Spec.Template.Spec.Containers = []v1.Container{{}}
+		app.Spec.Template.Spec.Containers = []corev1.Container{{}}
 	}
 
 	app.Spec.Template.Spec.Containers[0].Env = env

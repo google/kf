@@ -27,7 +27,6 @@ import (
 	"github.com/google/kf/v2/pkg/kf/doctor"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	k8sclient "k8s.io/client-go/kubernetes"
@@ -78,7 +77,7 @@ func debugRuntime(w io.Writer) {
 	})
 }
 
-func debugVersion(w io.Writer, kubernetes k8sclient.Interface, ns *v1.Namespace) {
+func debugVersion(w io.Writer, kubernetes k8sclient.Interface, ns *corev1.Namespace) {
 	describe.SectionWriter(w, "Version", func(w io.Writer) {
 		fmt.Fprintf(w, "Kf Client:\t%s\n", Version)
 

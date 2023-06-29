@@ -17,7 +17,6 @@ package resources
 import (
 	"sort"
 
-	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	kfv1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,7 +25,7 @@ import (
 
 // ServiceAccountName generates a name for the app service account.
 func ServiceAccountName(app *kfv1alpha1.App) string {
-	return v1alpha1.GenerateName("sa", app.Name)
+	return kfv1alpha1.GenerateName("sa", app.Name)
 }
 
 // MakeServiceAccount constructs a K8s service account, which is used by the deployment for the app.
@@ -38,7 +37,7 @@ func MakeServiceAccount(app *kfv1alpha1.App, imagePullSecrets []corev1.LocalObje
 			OwnerReferences: []metav1.OwnerReference{
 				*kmeta.NewControllerRef(app),
 			},
-			Labels: v1alpha1.UnionMaps(app.GetLabels(), app.ComponentLabels("serviceaccount")),
+			Labels: kfv1alpha1.UnionMaps(app.GetLabels(), app.ComponentLabels("serviceaccount")),
 		},
 		ImagePullSecrets: imagePullSecrets,
 	}
@@ -48,7 +47,7 @@ func MakeServiceAccount(app *kfv1alpha1.App, imagePullSecrets []corev1.LocalObje
 func FilterAndSortKfSecrets(secrets []*corev1.Secret) []*corev1.Secret {
 	filteredSecrets := []*corev1.Secret{}
 	for _, s := range secrets {
-		if s.ObjectMeta.Labels[v1alpha1.ManagedByLabel] == "kf" {
+		if s.ObjectMeta.Labels[kfv1alpha1.ManagedByLabel] == "kf" {
 			filteredSecrets = append(filteredSecrets, s)
 		}
 	}

@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/kf/v2/pkg/apis/kf"
 	kfapis "github.com/google/kf/v2/pkg/apis/kf"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	v1validation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
@@ -76,9 +75,9 @@ func (app *Application) Validate(ctx context.Context) (errs *apis.FieldError) {
 	case hasCFHealthChecks && hasK8sHealthChecks:
 		errs = errs.Also(&apis.FieldError{Message: "startupProbe, livenessProbe, and readinessProbe can't be used with CF health check fields"})
 	case hasK8sHealthChecks:
-		errs = errs.Also(kf.ValidateContainerProbe(app.StartupProbe).ViaField("startupProbe"))
-		errs = errs.Also(kf.ValidateContainerProbe(app.LivenessProbe).ViaField("livenessProbe"))
-		errs = errs.Also(kf.ValidateContainerProbe(app.ReadinessProbe).ViaField("readinessProbe"))
+		errs = errs.Also(kfapis.ValidateContainerProbe(app.StartupProbe).ViaField("startupProbe"))
+		errs = errs.Also(kfapis.ValidateContainerProbe(app.LivenessProbe).ViaField("livenessProbe"))
+		errs = errs.Also(kfapis.ValidateContainerProbe(app.ReadinessProbe).ViaField("readinessProbe"))
 	case hasCFHealthChecks:
 		// NOTE: https://docs.cloudfoundry.org/devguide/deploy-apps/healthchecks.html#health_check_timeout
 		// says that officially the max timeout is 180, but checking that would likely be a

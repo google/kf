@@ -27,7 +27,6 @@ import (
 	"github.com/google/kf/v2/pkg/kf/testutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	flag "github.com/spf13/pflag"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -114,7 +113,7 @@ func checkCommandStyle(t *testing.T, cmd *cobra.Command) {
 				t.Skip("Skipping flag test for hidden command")
 			}
 
-			cmd.LocalFlags().VisitAll(func(f *flag.Flag) {
+			cmd.LocalFlags().VisitAll(func(f *pflag.Flag) {
 				t.Run("flag:"+f.Name, func(t *testing.T) {
 					testutil.AssertRegexp(t, "name", "^[a-z][a-z0-9-]+$", f.Name)
 

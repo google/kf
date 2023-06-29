@@ -22,7 +22,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	appsfake "github.com/google/kf/v2/pkg/kf/apps/fake"
-	fakeapp "github.com/google/kf/v2/pkg/kf/apps/fake"
 	"github.com/google/kf/v2/pkg/kf/commands/config"
 	"github.com/google/kf/v2/pkg/kf/commands/routes"
 	fakeroutes "github.com/google/kf/v2/pkg/kf/routes/fake"
@@ -166,7 +165,7 @@ func TestDeleteRoute(t *testing.T) {
 		t.Run(tn, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			fakeRoutes := fakeroutes.NewFakeClient(ctrl)
-			fakeApps := fakeapp.NewFakeClient(ctrl)
+			fakeApps := appsfake.NewFakeClient(ctrl)
 
 			if tc.Setup != nil {
 				tc.Setup(t, fakeRoutes, fakeApps)

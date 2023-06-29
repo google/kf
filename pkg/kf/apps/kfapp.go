@@ -21,7 +21,6 @@ import (
 
 	"github.com/google/kf/v2/pkg/internal/envutil"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -33,7 +32,7 @@ type KfApp v1alpha1.App
 func (k *KfApp) getOrCreateContainer() *corev1.Container {
 	rl := &k.Spec.Template
 	if len(rl.Spec.Containers) == 0 {
-		rl.Spec.Containers = []v1.Container{{}}
+		rl.Spec.Containers = []corev1.Container{{}}
 	}
 
 	return &k.Spec.Template.Spec.Containers[0]
@@ -69,12 +68,12 @@ func (k *KfApp) DeleteEnvVars(names []string) {
 }
 
 // Set a resource request for an app. Request amount can be cleared by passing in nil
-func (k *KfApp) setResourceRequest(r v1.ResourceName, quantity *resource.Quantity) {
+func (k *KfApp) setResourceRequest(r corev1.ResourceName, quantity *resource.Quantity) {
 	container := k.getOrCreateContainer()
 	resourceRequests := container.Resources.Requests
 
 	if resourceRequests == nil {
-		resourceRequests = v1.ResourceList{}
+		resourceRequests = corev1.ResourceList{}
 	}
 
 	if quantity == nil {
@@ -143,8 +142,8 @@ func NewKfApp() KfApp {
 		},
 		Spec: v1alpha1.AppSpec{
 			Template: v1alpha1.AppSpecTemplate{
-				Spec: v1.PodSpec{
-					Containers: []v1.Container{{}},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{}},
 				},
 			},
 		},
