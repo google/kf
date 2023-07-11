@@ -83,7 +83,7 @@ EOF
 sleep 30
 
 # https://cloud.google.com/config-connector/docs/how-to/advanced-install#verifying_your_installation
-kubectl wait -n cnrm-system --for=condition=Ready pod --all --timeout=90s
+retry "kubectl wait -n cnrm-system --for=condition=Ready pod --all --timeout=10s" 20 10
 
 # Workload Identity
 # Link GSA with KCC KSA
