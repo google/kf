@@ -80,7 +80,7 @@ spec:
 EOF
 
 # XXX: Give everything a moment to be created.
-sleep 30
+sleep 180
 
 # https://cloud.google.com/config-connector/docs/how-to/advanced-install#verifying_your_installation
 retry "kubectl wait -n cnrm-system --for=condition=Ready pod --all --timeout=10s" 20 10
