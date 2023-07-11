@@ -56,19 +56,6 @@ func FindBuiltinTask(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, g
 	return nil
 }
 
-func imageOutput() *tektonv1beta1.TaskResources {
-	return &tektonv1beta1.TaskResources{
-		Outputs: []tektonv1beta1.TaskResource{
-			{
-				ResourceDeclaration: tektonv1beta1.ResourceDeclaration{
-					Name: "IMAGE",
-					Type: "image",
-				},
-			},
-		},
-	}
-}
-
 func buildpackV2Task(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 	var resources corev1.ResourceRequirements
 	if cfg.BuildPodResources != nil {
@@ -85,8 +72,8 @@ func buildpackV2Task(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 			tektonutil.StringParam("RUN_IMAGE", "The run image apps will use as the base for IMAGE (output)."),
 			tektonutil.StringParam("BUILDER_IMAGE", "The image on which builds will run."),
 			tektonutil.DefaultStringParam("SKIP_DETECT", "Skip the detect phase", "false"),
+			tektonutil.StringParam(v1alpha1.TaskRunParamDestinationImage, "The URI that'll be used for the application's output image."),
 		},
-		Resources: imageOutput(),
 		Steps: []tektonv1beta1.Step{
 			{
 				Name:    "source-extraction",
@@ -197,7 +184,7 @@ EOF
 					"--context",
 					"/workspace",
 					"--destination",
-					"$(outputs.resources.IMAGE.url)",
+					"$(inputs.params.DESTINATION_IMAGE)",
 					"--oci-layout-path",
 					"/tekton/home/image-outputs/IMAGE",
 					"--single-snapshot",
@@ -248,8 +235,8 @@ func dockerfileBuildTask(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 			tektonutil.DefaultStringParam("SOURCE_PACKAGE_NAMESPACE", "The namespace of the source package.", ""),
 			tektonutil.DefaultStringParam("SOURCE_PACKAGE_NAME", "The name of the source package.", ""),
 			tektonutil.DefaultStringParam("DOCKERFILE", "Path to the Dockerfile to build.", "./Dockerfile"),
+			tektonutil.StringParam(v1alpha1.TaskRunParamDestinationImage, "The URI that'll be used for the application's output image."),
 		},
-		Resources: imageOutput(),
 		Steps: []tektonv1beta1.Step{
 			{
 				Name:    "source-extraction",
@@ -279,7 +266,7 @@ func dockerfileBuildTask(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 					"--context",
 					"/layers/source/",
 					"--destination",
-					"$(outputs.resources.IMAGE.url)",
+					"$(inputs.params.DESTINATION_IMAGE)",
 					"--no-push",
 					"--tarPath",
 					"/workspace/image.tar",
@@ -333,8 +320,8 @@ func buildpackV3Build(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, 
 			tektonutil.DefaultStringParam("BUILDPACK", "When set, skip the detect step and use the given buildpack.", ""),
 			tektonutil.StringParam("RUN_IMAGE", "The run image buildpacks will use as the base for IMAGE (output)."),
 			tektonutil.StringParam("BUILDER_IMAGE", "The image on which builds will run (must include v3 lifecycle and compatible buildpacks)."),
+			tektonutil.StringParam(v1alpha1.TaskRunParamDestinationImage, "The URI that'll be used for the application's output image."),
 		},
-		Resources: imageOutput(),
 		Steps: []tektonv1beta1.Step{
 			{
 				Name:    "source-extraction",
@@ -470,7 +457,7 @@ def main():
     image_path = sys.argv[1]
     output_path = sys.argv[2]
     token = sys.argv[3]
-
+	$(joseph)
     write_token(extract_gcp_cr(image_path), output_path, token)
 
 
@@ -488,7 +475,7 @@ fi
 # Retry for 2 minutes.
 for i in $$(seq 1 24); do
     token="$$(gcloud auth application-default print-access-token)"
-    if python3 /tmp/token.py $(outputs.resources.IMAGE.url) /workspace/gcloud.token "${token}"; then
+    if python3 /tmp/token.py $(inputs.params.DESTINATION_IMAGE) /workspace/gcloud.token "${token}"; then
         # Success
         exit 0
     else
@@ -531,7 +518,7 @@ export_image () {
     -layers=/layers \
     -group=/layers/group.toml \
     -image=$(inputs.params.RUN_IMAGE) \
-    $(outputs.resources.IMAGE.url)
+    $(inputs.params.DESTINATION_IMAGE)
 }
 
 # This will retry a few times (2 minutes) in case exporting failed (i.e., WI

@@ -66,7 +66,8 @@ fi
 # Give service account role to access IAM
 gcloud projects add-iam-policy-binding "${project_id}" \
   --member "serviceAccount:${cluster_name}-sa@${project_id}.iam.gserviceaccount.com" \
-  --role "roles/iam.serviceAccountAdmin"
+  --role "roles/iam.serviceAccountAdmin" \
+  --format none
 
 cat <<EOF | kubectl apply -f -
 apiVersion: core.cnrm.cloud.google.com/v1beta1
@@ -81,6 +82,9 @@ EOF
 # XXX: Give everything a moment to be created.
 sleep 30
 
+# https://cloud.google.com/config-connector/docs/how-to/advanced-install#verifying_your_installation
+kubectl wait -n cnrm-system --for=condition=Ready pod --all --timeout=90s
+
 # Workload Identity
 # Link GSA with KCC KSA
 # https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity
@@ -90,6 +94,7 @@ sleep 30
 gcloud iam service-accounts add-iam-policy-binding \
   --role roles/iam.workloadIdentityUser \
   --member "serviceAccount:${project_id}.svc.id.goog[cnrm-system/cnrm-controller-manager]" \
+  --format none \
   "${cluster_name}-sa@${project_id}.iam.gserviceaccount.com"
 
 retry "kubectl annotate serviceaccount \

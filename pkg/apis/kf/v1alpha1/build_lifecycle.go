@@ -32,12 +32,18 @@ const (
 	// which contains the source code for a build.
 	TaskRunParamSourceImage = "SOURCE_IMAGE"
 
+	// TaskRunResourceURL is the Tekton param name for the desired destination image.
+	TaskRunParamDestinationImage = "DESTINATION_IMAGE"
+
 	// Outputs
 	// TaskRunResourceNameImage is the Tekton Resource for the output container
-	// Image created from a build.
+	// Image created from a build. Outputs were deprecated in Tekton, so
+	// TaskRunParamDestinationImage should be used instead.
 	TaskRunResourceNameImage = "IMAGE"
 
 	// TaskRunResourceURL is the Tekton Resource type for the output resource.
+	// Outputs were deprecated in Tekton, so TaskRunParamDestinationImage should be
+	// used instead.
 	TaskRunResourceURL = "url"
 )
 
@@ -65,6 +71,10 @@ func (status *BuildStatus) PropagateBuildStatus(build *build.TaskRun) {
 	cond := build.Status.GetCondition(apis.ConditionSucceeded)
 	if PropagateCondition(status.manage(), BuildConditionTaskRunReady, cond) {
 		status.Image = GetTaskRunOutputResource(build, TaskRunResourceNameImage, TaskRunResourceURL)
+
+		if status.Image != "" {
+			status.Image = GetTaskRunStringParam(build, TaskRunParamDestinationImage)
+		}
 	}
 }
 
@@ -96,6 +106,15 @@ func GetTaskRunOutputResource(b *build.TaskRun, resourceName, paramName string) 
 			if param.Name == paramName {
 				return param.Value
 			}
+		}
+	}
+	return ""
+}
+
+func GetTaskRunStringParam(b *build.TaskRun, paramName string) string {
+	for _, param := range b.Spec.Params {
+		if param.Name == paramName {
+			return param.Value.StringVal
 		}
 	}
 

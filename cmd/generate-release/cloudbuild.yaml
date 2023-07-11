@@ -389,24 +389,7 @@ steps:
     -v \
     -L \
     -o \
-    /tmp/tekton-temp.yaml
-
-    # Apply transforms to Tekton YAML for compatibility with the versions of 
-    # various components used in Kf CI/CD
-    go run github.com/mikefarah/yq/v4@latest '. | select(.kind != "PodSecurityPolicy") | 
-    with(select(.kind == "HorizontalPodAutoscaler"); 
-      .apiVersion="autoscaling/v2" | .spec.metrics=[
-          {
-              "type": "Resource",
-              "resource": {
-                  "name": "cpu",
-                  "target": {
-                      "type": "Utilization",
-                      "averageUtilization": 100
-                  }
-              }
-          }
-      ])' /tmp/tekton-temp.yaml > /workspace/bin/tekton.yaml
+    /workspace/bin/tekton.yaml
 
 - id: upload kf artifacts
   name: "${_CLOUDSDK_IMAGE}"
