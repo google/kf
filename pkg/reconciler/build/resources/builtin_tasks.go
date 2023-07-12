@@ -20,7 +20,7 @@ import (
 	"github.com/google/kf/v2/pkg/apis/kf/config"
 	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/kf/tektonutil"
-	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	tektonv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -29,7 +29,7 @@ import (
 // The implementation details of these tasks may change because they're not
 // public.
 // If no task matching the given ref is found, then nil is returned.
-func FindBuiltinTask(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, googleServiceAccount string) *tektonv1beta1.TaskSpec {
+func FindBuiltinTask(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, googleServiceAccount string) *tektonv1.TaskSpec {
 	if cfg == nil {
 		return nil
 	}
@@ -56,27 +56,24 @@ func FindBuiltinTask(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, g
 	return nil
 }
 
-func imageOutput() *tektonv1beta1.TaskResources {
-	return &tektonv1beta1.TaskResources{
-		Outputs: []tektonv1beta1.TaskResource{
-			{
-				ResourceDeclaration: tektonv1beta1.ResourceDeclaration{
-					Name: "IMAGE",
-					Type: "image",
-				},
-			},
+func buildTaskResults() []tektonv1.TaskResult {
+	return []tektonv1.TaskResult{
+		{
+			Name:        "Image",
+			Description: "image built by buildpacks",
+			Type:        tektonv1.ResultsTypeString,
 		},
 	}
 }
 
-func buildpackV2Task(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
+func buildpackV2Task(cfg *config.DefaultsConfig) *tektonv1.TaskSpec {
 	var resources corev1.ResourceRequirements
 	if cfg.BuildPodResources != nil {
 		resources = *cfg.BuildPodResources
 	}
 
-	return &tektonv1beta1.TaskSpec{
-		Params: []tektonv1beta1.ParamSpec{
+	return &tektonv1.TaskSpec{
+		Params: []tektonv1.ParamSpec{
 			tektonutil.DefaultStringParam("BUILD_NAME", "The name of the Build to push destination image for.", ""),
 			tektonutil.DefaultStringParam("SOURCE_IMAGE", "The image that contains the app's source code.", ""),
 			tektonutil.DefaultStringParam("SOURCE_PACKAGE_NAMESPACE", "The namespace of the source package.", ""),
@@ -86,12 +83,13 @@ func buildpackV2Task(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 			tektonutil.StringParam("BUILDER_IMAGE", "The image on which builds will run."),
 			tektonutil.DefaultStringParam("SKIP_DETECT", "Skip the detect phase", "false"),
 		},
-		Resources: imageOutput(),
-		Steps: []tektonv1beta1.Step{
+		Results: buildTaskResults(),
+		Steps: []tektonv1.Step{
 			{
-				Name:    "source-extraction",
-				Image:   cfg.BuildHelpersImage,
-				Command: []string{"/ko-app/build-helpers"},
+				Name:             "source-extraction",
+				Image:            cfg.BuildHelpersImage,
+				Command:          []string{"/ko-app/build-helpers"},
+				ComputeResources: resources,
 				Args: []string{
 					"extract",
 					"--output-dir",
@@ -108,9 +106,10 @@ func buildpackV2Task(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 				},
 			},
 			{
-				Name:    "copy-lifecycle",
-				Image:   cfg.BuildpacksV2LifecycleImage,
-				Command: []string{"/ko-app/installer"},
+				Name:             "copy-lifecycle",
+				Image:            cfg.BuildpacksV2LifecycleImage,
+				Command:          []string{"/ko-app/installer"},
+				ComputeResources: resources,
 				VolumeMounts: []corev1.VolumeMount{
 					{Name: "staging-tmp-dir", MountPath: "/staging"},
 				},
@@ -120,7 +119,8 @@ func buildpackV2Task(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 				Image: "$(inputs.params.BUILDER_IMAGE)",
 				// NOTE: this command shouldn't be run as root, instead it should be run as
 				// vcap:vcap
-				Command: []string{"bash"},
+				Command:          []string{"bash"},
+				ComputeResources: resources,
 				// A /tmp directory is necessary because some buildpacks use /tmp
 				// which causes cross-device links to be made because Tekton mounts
 				// the /workspace directory.
@@ -180,7 +180,6 @@ ENTRYPOINT ["/lifecycle/entrypoint.bash"]
 EOF
 `,
 				},
-				Resources: resources,
 				VolumeMounts: []corev1.VolumeMount{
 					{Name: "staging-tmp-dir", MountPath: "/staging"},
 				},
@@ -197,7 +196,7 @@ EOF
 					"--context",
 					"/workspace",
 					"--destination",
-					"$(outputs.resources.IMAGE.url)",
+					"$(results.IMAGE.path)",
 					"--oci-layout-path",
 					"/tekton/home/image-outputs/IMAGE",
 					"--single-snapshot",
@@ -205,7 +204,6 @@ EOF
 					"--tarPath",
 					"/workspace/image.tar",
 				},
-				Resources: resources,
 				VolumeMounts: []corev1.VolumeMount{
 					{Name: "cache-dir", MountPath: "/cache"},
 					{Name: "staging-tmp-dir", MountPath: "/workspace/staging"},
@@ -231,7 +229,7 @@ EOF
 	}
 }
 
-func dockerfileBuildTask(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
+func dockerfileBuildTask(cfg *config.DefaultsConfig) *tektonv1.TaskSpec {
 	var resources corev1.ResourceRequirements
 	if cfg.BuildPodResources != nil {
 		resources = *cfg.BuildPodResources
@@ -241,20 +239,21 @@ func dockerfileBuildTask(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 		{Name: "layers-dir", MountPath: "/layers"},
 	}
 
-	return &tektonv1beta1.TaskSpec{
-		Params: []tektonv1beta1.ParamSpec{
+	return &tektonv1.TaskSpec{
+		Params: []tektonv1.ParamSpec{
 			tektonutil.DefaultStringParam("BUILD_NAME", "The name of the Build to push destination image for.", ""),
 			tektonutil.DefaultStringParam("SOURCE_IMAGE", "The image that contains the app's source code.", ""),
 			tektonutil.DefaultStringParam("SOURCE_PACKAGE_NAMESPACE", "The namespace of the source package.", ""),
 			tektonutil.DefaultStringParam("SOURCE_PACKAGE_NAME", "The name of the source package.", ""),
 			tektonutil.DefaultStringParam("DOCKERFILE", "Path to the Dockerfile to build.", "./Dockerfile"),
 		},
-		Resources: imageOutput(),
-		Steps: []tektonv1beta1.Step{
+		Results: buildTaskResults(),
+		Steps: []tektonv1.Step{
 			{
-				Name:    "source-extraction",
-				Image:   cfg.BuildHelpersImage,
-				Command: []string{"/ko-app/build-helpers"},
+				Name:             "source-extraction",
+				Image:            cfg.BuildHelpersImage,
+				Command:          []string{"/ko-app/build-helpers"},
+				ComputeResources: resources,
 				Args: []string{
 					"extract",
 					"--output-dir",
@@ -269,29 +268,30 @@ func dockerfileBuildTask(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 				VolumeMounts: layers,
 			},
 			{
-				Name:       "build",
-				WorkingDir: "/layers/source",
-				Image:      cfg.BuildKanikoExecutorImage,
-				Command:    []string{"/kaniko/executor"},
+				Name:             "build",
+				WorkingDir:       "/layers/source",
+				Image:            cfg.BuildKanikoExecutorImage,
+				Command:          []string{"/kaniko/executor"},
+				ComputeResources: resources,
 				Args: []string{
 					"--dockerfile",
 					"$(inputs.params.DOCKERFILE)",
 					"--context",
 					"/layers/source/",
 					"--destination",
-					"$(outputs.resources.IMAGE.url)",
+					"$(results.IMAGE.path)",
 					"--no-push",
 					"--tarPath",
 					"/workspace/image.tar",
 				},
-				Resources:    resources,
 				VolumeMounts: layers,
 			},
 			{
-				Name:       "publish",
-				WorkingDir: "/workspace",
-				Command:    []string{"/ko-app/build-helpers"},
-				Image:      cfg.BuildHelpersImage,
+				Name:             "publish",
+				WorkingDir:       "/workspace",
+				Command:          []string{"/ko-app/build-helpers"},
+				ComputeResources: resources,
+				Image:            cfg.BuildHelpersImage,
 				Args: []string{
 					"publish",
 					"/workspace/image.tar",
@@ -307,7 +307,7 @@ func dockerfileBuildTask(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 	}
 }
 
-func buildpackV3Build(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, googleServiceAccount string) *tektonv1beta1.TaskSpec {
+func buildpackV3Build(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, googleServiceAccount string) *tektonv1.TaskSpec {
 	var resources corev1.ResourceRequirements
 	if cfg.BuildPodResources != nil {
 		resources = *cfg.BuildPodResources
@@ -325,8 +325,8 @@ func buildpackV3Build(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, 
 		platformEnvSet.Insert(v.Name)
 	}
 
-	return &tektonv1beta1.TaskSpec{
-		Params: []tektonv1beta1.ParamSpec{
+	return &tektonv1.TaskSpec{
+		Params: []tektonv1.ParamSpec{
 			tektonutil.DefaultStringParam("SOURCE_IMAGE", "The image that contains the app's source code.", ""),
 			tektonutil.DefaultStringParam("SOURCE_PACKAGE_NAMESPACE", "The namespace of the source package.", ""),
 			tektonutil.DefaultStringParam("SOURCE_PACKAGE_NAME", "The name of the source package.", ""),
@@ -334,12 +334,13 @@ func buildpackV3Build(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, 
 			tektonutil.StringParam("RUN_IMAGE", "The run image buildpacks will use as the base for IMAGE (output)."),
 			tektonutil.StringParam("BUILDER_IMAGE", "The image on which builds will run (must include v3 lifecycle and compatible buildpacks)."),
 		},
-		Resources: imageOutput(),
-		Steps: []tektonv1beta1.Step{
+		Results: buildTaskResults(),
+		Steps: []tektonv1.Step{
 			{
-				Name:    "source-extraction",
-				Image:   cfg.BuildHelpersImage,
-				Command: []string{"/ko-app/build-helpers"},
+				Name:             "source-extraction",
+				Image:            cfg.BuildHelpersImage,
+				Command:          []string{"/ko-app/build-helpers"},
+				ComputeResources: resources,
 				Args: []string{
 					"extract",
 					"--output-dir",
@@ -354,14 +355,15 @@ func buildpackV3Build(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, 
 				VolumeMounts: cacheAndLayers,
 			},
 			{
-				Name:    "info",
-				Image:   cfg.BuildInfoImage,
-				Command: []string{"/ko-app/setup-buildpack-build"},
+				Name:             "info",
+				Image:            cfg.BuildInfoImage,
+				Command:          []string{"/ko-app/setup-buildpack-build"},
+				ComputeResources: resources,
 				Args: []string{
 					"--app",
 					"/layers/source",
 					"--image",
-					"$(outputs.resources.IMAGE.url)",
+					"$(results.IMAGE.path)",
 					"--run-image",
 					"$(inputs.params.RUN_IMAGE)",
 					"--builder-image",
@@ -378,9 +380,10 @@ func buildpackV3Build(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, 
 				VolumeMounts: cacheAndLayers,
 			},
 			{
-				Name:    "detect",
-				Image:   "$(inputs.params.BUILDER_IMAGE)",
-				Command: []string{"/bin/bash"},
+				Name:             "detect",
+				Image:            "$(inputs.params.BUILDER_IMAGE)",
+				Command:          []string{"/bin/bash"},
+				ComputeResources: resources,
 				Args: []string{
 					"-c",
 					`
@@ -399,9 +402,10 @@ fi
 				VolumeMounts: cacheAndLayers,
 			},
 			{
-				Name:    "restore",
-				Image:   "$(inputs.params.BUILDER_IMAGE)",
-				Command: []string{"/lifecycle/restorer"},
+				Name:             "restore",
+				Image:            "$(inputs.params.BUILDER_IMAGE)",
+				Command:          []string{"/lifecycle/restorer"},
+				ComputeResources: resources,
 				Args: []string{
 					"-group=/layers/group.toml",
 					"-layers=/layers",
@@ -410,9 +414,10 @@ fi
 				VolumeMounts: cacheAndLayers,
 			},
 			{
-				Name:    "build",
-				Image:   "$(inputs.params.BUILDER_IMAGE)",
-				Command: []string{"/lifecycle/builder"},
+				Name:             "build",
+				Image:            "$(inputs.params.BUILDER_IMAGE)",
+				Command:          []string{"/lifecycle/builder"},
+				ComputeResources: resources,
 				Args: []string{
 					"-app=/layers/source",
 					"-layers=/layers",
@@ -421,12 +426,12 @@ fi
 					"-platform=/platform",
 				},
 				VolumeMounts: cacheAndLayers,
-				Resources:    resources,
 			},
 			{
-				Name:    "download-token",
-				Image:   cfg.BuildTokenDownloadImage,
-				Command: []string{"bash"},
+				Name:             "download-token",
+				Image:            cfg.BuildTokenDownloadImage,
+				Command:          []string{"bash"},
+				ComputeResources: resources,
 				Args: []string{
 					// TODO(b/169582594): This should likely reference a
 					// container that was written in Go that is better
@@ -488,7 +493,7 @@ fi
 # Retry for 2 minutes.
 for i in $$(seq 1 24); do
     token="$$(gcloud auth application-default print-access-token)"
-    if python3 /tmp/token.py $(outputs.resources.IMAGE.url) /workspace/gcloud.token "${token}"; then
+    if python3 /tmp/token.py $(results.IMAGE.path) /workspace/gcloud.token "${token}"; then
         # Success
         exit 0
     else
@@ -507,9 +512,10 @@ exit 1
 				VolumeMounts: cacheAndLayers,
 			},
 			{
-				Name:    "export",
-				Image:   "$(inputs.params.BUILDER_IMAGE)",
-				Command: []string{"bash"},
+				Name:             "export",
+				Image:            "$(inputs.params.BUILDER_IMAGE)",
+				Command:          []string{"bash"},
+				ComputeResources: resources,
 				Args: []string{
 					"-c",
 					`
@@ -531,7 +537,7 @@ export_image () {
     -layers=/layers \
     -group=/layers/group.toml \
     -image=$(inputs.params.RUN_IMAGE) \
-    $(outputs.resources.IMAGE.url)
+    $(results.IMAGE.path)
 }
 
 # This will retry a few times (2 minutes) in case exporting failed (i.e., WI

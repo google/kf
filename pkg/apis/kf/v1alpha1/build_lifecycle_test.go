@@ -19,12 +19,15 @@ import (
 	"time"
 
 	"github.com/google/kf/v2/pkg/kf/testutil"
+	tektonv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	tektonresource "github.com/tektoncd/pipeline/pkg/apis/resource/v1alpha1"
+
+	//tektonresource "github.com/tektoncd/pipeline/pkg/apis/resource/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
 	"knative.dev/pkg/apis/duck"
+	duckv1 "knative.dev/pkg/apis/duck/v1"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 	apitesting "knative.dev/pkg/apis/testing"
 )
@@ -180,38 +183,38 @@ func happySourcePackage() *SourcePackage {
 	return base
 }
 
-func unreconciledTaskRun() *tektonv1beta1.TaskRun {
-	return &tektonv1beta1.TaskRun{
+func unreconciledTaskRun() *tektonv1.TaskRun {
+	return &tektonv1.TaskRun{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "some-build-name",
 		},
-		Spec: tektonv1beta1.TaskRunSpec{
-			Resources: &tektonv1beta1.TaskRunResources{
-				Outputs: []tektonv1beta1.TaskResourceBinding{
-					{
-						PipelineResourceBinding: tektonv1beta1.PipelineResourceBinding{
-							Name: TaskRunResourceNameImage,
-							ResourceSpec: &tektonresource.PipelineResourceSpec{
-								Type: "image",
-								Params: []tektonv1beta1.ResourceParam{
-									{
-										Name:  TaskRunResourceURL,
-										Value: "some-container-image",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
+		Spec: tektonv1.TaskRunSpec{
+			//Resources: &tektonv1.TaskRunResources{
+			//	Outputs: []tektonv1.TaskResourceBinding{
+			//		{
+			//			PipelineResourceBinding: tektonv1beta1.PipelineResourceBinding{
+			//				Name: TaskRunResourceNameImage,
+			//				ResourceSpec: &tektonresource.PipelineResourceSpec{
+			//					Type: "image",
+			//					Params: []tektonv1beta1.ResourceParam{
+			//						{
+			//							Name:  TaskRunResourceURL,
+			//							Value: "some-container-image",
+			//						},
+			//					},
+			//				},
+			//			},
+			//		},
+			//	},
+			//},
 		},
 	}
 }
 
-func pendingTaskRun() *tektonv1beta1.TaskRun {
+func pendingTaskRun() *tektonv1.TaskRun {
 	base := unreconciledTaskRun()
 
-	base.Status.Conditions = duckv1beta1.Conditions{
+	base.Status.Conditions = duckv1.Conditions{
 		{Type: apis.ConditionSucceeded, Status: corev1.ConditionUnknown},
 	}
 
@@ -221,10 +224,10 @@ func pendingTaskRun() *tektonv1beta1.TaskRun {
 	return base
 }
 
-func happyTaskRun() *tektonv1beta1.TaskRun {
+func happyTaskRun() *tektonv1.TaskRun {
 	base := pendingTaskRun()
 
-	base.Status.Conditions = duckv1beta1.Conditions{
+	base.Status.Conditions = duckv1.Conditions{
 		{Type: apis.ConditionSucceeded, Status: corev1.ConditionTrue},
 	}
 
@@ -234,10 +237,10 @@ func happyTaskRun() *tektonv1beta1.TaskRun {
 	return base
 }
 
-func failedTaskRun() *tektonv1beta1.TaskRun {
+func failedTaskRun() *tektonv1.TaskRun {
 	base := pendingTaskRun()
 
-	base.Status.Conditions = duckv1beta1.Conditions{
+	base.Status.Conditions = duckv1.Conditions{
 		{Type: apis.ConditionSucceeded, Status: corev1.ConditionFalse},
 	}
 

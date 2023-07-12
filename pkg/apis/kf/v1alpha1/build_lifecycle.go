@@ -15,7 +15,7 @@
 package v1alpha1
 
 import (
-	build "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	build "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"knative.dev/pkg/apis"
@@ -64,7 +64,7 @@ func (status *BuildStatus) PropagateBuildStatus(build *build.TaskRun) {
 
 	cond := build.Status.GetCondition(apis.ConditionSucceeded)
 	if PropagateCondition(status.manage(), BuildConditionTaskRunReady, cond) {
-		status.Image = GetTaskRunOutputResource(build, TaskRunResourceNameImage, TaskRunResourceURL)
+		status.Image = GetTaskRunOutputResource(build, TaskRunResourceNameImage)
 	}
 }
 
@@ -86,17 +86,13 @@ func (status *BuildStatus) PropagateTerminatingStatus() {
 	status.manage().MarkFalse(BuildConditionSucceeded, "Terminating", "Build is terminating")
 }
 
-func GetTaskRunOutputResource(b *build.TaskRun, resourceName, paramName string) string {
-	for _, resource := range b.Spec.Resources.Outputs {
-		if resource.PipelineResourceBinding.Name != resourceName {
+func GetTaskRunOutputResource(b *build.TaskRun, paramName string) string {
+	for _, result := range b.Status.Results {
+		if result.Name != paramName {
 			continue
 		}
 
-		for _, param := range resource.PipelineResourceBinding.ResourceSpec.Params {
-			if param.Name == paramName {
-				return param.Value
-			}
-		}
+		return result.Value.StringVal
 	}
 
 	return ""

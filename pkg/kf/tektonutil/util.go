@@ -1,22 +1,22 @@
 package tektonutil
 
 import (
-	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	tektonv1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1"
 	corev1 "k8s.io/api/core/v1"
 )
 
-func StringParam(name, description string) tektonv1beta1.ParamSpec {
-	return tektonv1beta1.ParamSpec{
+func StringParam(name, description string) tektonv1.ParamSpec {
+	return tektonv1.ParamSpec{
 		Name:        name,
 		Description: description,
-		Type:        tektonv1beta1.ParamTypeString,
+		Type:        tektonv1.ParamTypeString,
 	}
 }
 
-func DefaultStringParam(name, description, defaultValue string) tektonv1beta1.ParamSpec {
+func DefaultStringParam(name, description, defaultValue string) tektonv1.ParamSpec {
 	out := StringParam(name, description)
-	out.Default = &tektonv1beta1.ArrayOrString{
-		Type:      tektonv1beta1.ParamTypeString,
+	out.Default = &tektonv1.ParamValue{
+		Type:      tektonv1.ParamTypeString,
 		StringVal: defaultValue,
 	}
 
