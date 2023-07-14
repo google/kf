@@ -222,7 +222,7 @@ EOF
 				},
 			},
 			{
-				Name:       "write results",
+				Name:       "write-results",
 				WorkingDir: "/workspace",
 				Command:    []string{"/ko-app/build-helpers"},
 				Image:      cfg.BuildHelpersImage,
@@ -311,7 +311,7 @@ func dockerfileBuildTask(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 				VolumeMounts: layers,
 			},
 			{
-				Name:       "write results",
+				Name:       "write-results",
 				WorkingDir: "/workspace",
 				Command:    []string{"/ko-app/build-helpers"},
 				Image:      cfg.BuildHelpersImage,
@@ -575,7 +575,7 @@ done
 				VolumeMounts: cacheAndLayers,
 			},
 			{
-				Name:       "write results",
+				Name:       "write-results",
 				WorkingDir: "/workspace",
 				Command:    []string{"/ko-app/build-helpers"},
 				Image:      cfg.BuildHelpersImage,
