@@ -4,14 +4,6 @@
 #     creationTimestamp: null
 #     name: some-build-name
 #   spec:
-#     resources:
-#       outputs:
-#       - name: IMAGE
-#         resourceSpec:
-#           params:
-#           - name: url
-#             value: some-container-image
-#           type: image
 #     serviceAccountName: ""
 #   status:
 #     conditions:

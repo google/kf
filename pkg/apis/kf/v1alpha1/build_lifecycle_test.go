@@ -197,7 +197,6 @@ func pendingTaskRun() *tektonv1beta1.TaskRun {
 
 	startTime := metav1.NewTime(time.Unix(0, 0))
 	base.Status.StartTime = &startTime
-
 	return base
 }
 
@@ -210,6 +209,13 @@ func happyTaskRun() *tektonv1beta1.TaskRun {
 
 	endTime := metav1.NewTime(time.Unix(1000, 0))
 	base.Status.CompletionTime = &endTime
+
+	base.Status.TaskRunResults = []tektonv1beta1.TaskRunResult{
+		{
+			Name:  "DESTINATION_IMAGE",
+			Value: *tektonv1beta1.NewArrayOrString("some-container-image"),
+		},
+	}
 
 	return base
 }

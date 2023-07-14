@@ -93,12 +93,21 @@ func exampleCustomTaskBuild() (*v1alpha1.Build, *tektonv1beta1.TaskSpec) {
 func ExampleMakeTaskRun_customTask_taskRun_addedParams() {
 	build, taskSpec := exampleCustomTaskBuild()
 
-	taskSpec.Params = append(taskSpec.Params, tektonv1beta1.ParamSpec{
-		Name:        v1alpha1.TaskRunParamSourceImage,
-		Type:        tektonv1beta1.ParamTypeString,
-		Description: "",
-		Default:     nil,
-	})
+	taskSpec.Params = append(
+		taskSpec.Params,
+		tektonv1beta1.ParamSpec{
+			Name:        v1alpha1.TaskRunParamSourceImage,
+			Type:        tektonv1beta1.ParamTypeString,
+			Description: "",
+			Default:     nil,
+		},
+		tektonv1beta1.ParamSpec{
+			Name:        v1alpha1.TaskRunParamDestinationImage,
+			Type:        tektonv1beta1.ParamTypeString,
+			Description: "",
+			Default:     tektonv1beta1.NewArrayOrString("gcr.io/test"),
+		},
+	)
 
 	nodeSelectorMap := map[string]string{
 		"disktype": "ssd",
@@ -130,8 +139,6 @@ func ExampleMakeTaskRun_customTask_taskRun_addedParams() {
 	fmt.Println("Service Account:", taskRun.Spec.ServiceAccountName)
 	fmt.Println("OwnerReferences Count:", len(taskRun.OwnerReferences))
 	fmt.Println("Input Count:", len(taskRun.Spec.Params))
-	fmt.Println("Output Count:", len(taskRun.Spec.Resources.Outputs))
-	fmt.Println("Output Image:", v1alpha1.GetTaskRunResults(taskRun, v1alpha1.TaskRunParamDestinationImage))
 	fmt.Println("Env Count:", len(taskRun.Spec.TaskSpec.StepTemplate.Env))
 	fmt.Println("Node Selector Count:", len(taskRun.Spec.PodTemplate.NodeSelector))
 
@@ -141,9 +148,7 @@ func ExampleMakeTaskRun_customTask_taskRun_addedParams() {
 	// NetworkPolicy: build
 	// Service Account: some-account
 	// OwnerReferences Count: 1
-	// Input Count: 1
-	// Output Count: 1
-	// Output Image: app_my-namespace_my-build:0d5c53ff-edf1-4d42-8d1a-fdd5b5cf23d3
+	// Input Count: 2
 	// Env Count: 1
 	// Node Selector Count: 3
 }

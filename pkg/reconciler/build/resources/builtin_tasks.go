@@ -59,7 +59,7 @@ func FindBuiltinTask(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, g
 func buildTaskResults() []tektonv1beta1.TaskResult {
 	return []tektonv1beta1.TaskResult{
 		{
-			Name:        "IMAGE",
+			Name:        v1alpha1.TaskRunParamDestinationImage,
 			Description: "image built by buildpacks",
 			Type:        tektonv1beta1.ResultsTypeString,
 		},
@@ -75,6 +75,7 @@ func buildpackV2Task(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 	return &tektonv1beta1.TaskSpec{
 		Params: []tektonv1beta1.ParamSpec{
 			tektonutil.DefaultStringParam("BUILD_NAME", "The name of the Build to push destination image for.", ""),
+			tektonutil.DefaultStringParam(v1alpha1.TaskRunParamDestinationImage, "The URI that'll be used for the application's output image.", ""),
 			tektonutil.DefaultStringParam("SOURCE_IMAGE", "The image that contains the app's source code.", ""),
 			tektonutil.DefaultStringParam("SOURCE_PACKAGE_NAMESPACE", "The namespace of the source package.", ""),
 			tektonutil.DefaultStringParam("SOURCE_PACKAGE_NAME", "The name of the source package.", ""),
@@ -82,7 +83,6 @@ func buildpackV2Task(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 			tektonutil.StringParam("RUN_IMAGE", "The run image apps will use as the base for IMAGE (output)."),
 			tektonutil.StringParam("BUILDER_IMAGE", "The image on which builds will run."),
 			tektonutil.DefaultStringParam("SKIP_DETECT", "Skip the detect phase", "false"),
-			tektonutil.StringParam(v1alpha1.TaskRunParamDestinationImage, "The URI that'll be used for the application's output image."),
 		},
 		Results: buildTaskResults(),
 		Steps: []tektonv1beta1.Step{
@@ -253,11 +253,11 @@ func dockerfileBuildTask(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 	return &tektonv1beta1.TaskSpec{
 		Params: []tektonv1beta1.ParamSpec{
 			tektonutil.DefaultStringParam("BUILD_NAME", "The name of the Build to push destination image for.", ""),
+			tektonutil.DefaultStringParam(v1alpha1.TaskRunParamDestinationImage, "The URI that'll be used for the application's output image.", ""),
 			tektonutil.DefaultStringParam("SOURCE_IMAGE", "The image that contains the app's source code.", ""),
 			tektonutil.DefaultStringParam("SOURCE_PACKAGE_NAMESPACE", "The namespace of the source package.", ""),
 			tektonutil.DefaultStringParam("SOURCE_PACKAGE_NAME", "The name of the source package.", ""),
 			tektonutil.DefaultStringParam("DOCKERFILE", "Path to the Dockerfile to build.", "./Dockerfile"),
-			tektonutil.StringParam(v1alpha1.TaskRunParamDestinationImage, "The URI that'll be used for the application's output image."),
 		},
 		Results: buildTaskResults(),
 		Steps: []tektonv1beta1.Step{
@@ -349,12 +349,12 @@ func buildpackV3Build(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, 
 	return &tektonv1beta1.TaskSpec{
 		Params: []tektonv1beta1.ParamSpec{
 			tektonutil.DefaultStringParam("SOURCE_IMAGE", "The image that contains the app's source code.", ""),
+			tektonutil.DefaultStringParam(v1alpha1.TaskRunParamDestinationImage, "The URI that'll be used for the application's output image.", ""),
 			tektonutil.DefaultStringParam("SOURCE_PACKAGE_NAMESPACE", "The namespace of the source package.", ""),
 			tektonutil.DefaultStringParam("SOURCE_PACKAGE_NAME", "The name of the source package.", ""),
 			tektonutil.DefaultStringParam("BUILDPACK", "When set, skip the detect step and use the given buildpack.", ""),
 			tektonutil.StringParam("RUN_IMAGE", "The run image buildpacks will use as the base for IMAGE (output)."),
 			tektonutil.StringParam("BUILDER_IMAGE", "The image on which builds will run (must include v3 lifecycle and compatible buildpacks)."),
-			tektonutil.StringParam(v1alpha1.TaskRunParamDestinationImage, "The URI that'll be used for the application's output image."),
 		},
 		Results: buildTaskResults(),
 		Steps: []tektonv1beta1.Step{
