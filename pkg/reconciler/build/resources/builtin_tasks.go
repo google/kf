@@ -56,6 +56,16 @@ func FindBuiltinTask(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, g
 	return nil
 }
 
+func buildTaskResults() []tektonv1beta1.TaskResult {
+	return []tektonv1beta1.TaskResult{
+		{
+			Name:        "IMAGE",
+			Description: "image built by buildpacks",
+			Type:        tektonv1beta1.ResultsTypeString,
+		},
+	}
+}
+
 func buildpackV2Task(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 	var resources corev1.ResourceRequirements
 	if cfg.BuildPodResources != nil {
@@ -74,6 +84,7 @@ func buildpackV2Task(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 			tektonutil.DefaultStringParam("SKIP_DETECT", "Skip the detect phase", "false"),
 			tektonutil.StringParam(v1alpha1.TaskRunParamDestinationImage, "The URI that'll be used for the application's output image."),
 		},
+		Results: buildTaskResults(),
 		Steps: []tektonv1beta1.Step{
 			{
 				Name:    "source-extraction",
@@ -210,6 +221,17 @@ EOF
 					"$(inputs.params.BUILD_NAME)",
 				},
 			},
+			{
+				Name:       "write results",
+				WorkingDir: "/workspace",
+				Command:    []string{"/ko-app/build-helpers"},
+				Image:      cfg.BuildHelpersImage,
+				Args: []string{
+					"write-result",
+					"$(inputs.params.DESTINATION_IMAGE)",
+					"$(results.IMAGE.path)",
+				},
+			},
 		},
 		Volumes: []corev1.Volume{
 			tektonutil.EmptyVolume("cache-dir"),
@@ -237,6 +259,7 @@ func dockerfileBuildTask(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 			tektonutil.DefaultStringParam("DOCKERFILE", "Path to the Dockerfile to build.", "./Dockerfile"),
 			tektonutil.StringParam(v1alpha1.TaskRunParamDestinationImage, "The URI that'll be used for the application's output image."),
 		},
+		Results: buildTaskResults(),
 		Steps: []tektonv1beta1.Step{
 			{
 				Name:    "source-extraction",
@@ -287,6 +310,17 @@ func dockerfileBuildTask(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 				},
 				VolumeMounts: layers,
 			},
+			{
+				Name:       "write results",
+				WorkingDir: "/workspace",
+				Command:    []string{"/ko-app/build-helpers"},
+				Image:      cfg.BuildHelpersImage,
+				Args: []string{
+					"write-result",
+					"$(inputs.params.DESTINATION_IMAGE)",
+					"$(results.IMAGE.path)",
+				},
+			},
 		},
 		Volumes: []corev1.Volume{
 			tektonutil.EmptyVolume("layers-dir"),
@@ -322,6 +356,7 @@ func buildpackV3Build(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, 
 			tektonutil.StringParam("BUILDER_IMAGE", "The image on which builds will run (must include v3 lifecycle and compatible buildpacks)."),
 			tektonutil.StringParam(v1alpha1.TaskRunParamDestinationImage, "The URI that'll be used for the application's output image."),
 		},
+		Results: buildTaskResults(),
 		Steps: []tektonv1beta1.Step{
 			{
 				Name:    "source-extraction",
@@ -538,6 +573,17 @@ done
 					googleServiceAccount,
 				},
 				VolumeMounts: cacheAndLayers,
+			},
+			{
+				Name:       "write results",
+				WorkingDir: "/workspace",
+				Command:    []string{"/ko-app/build-helpers"},
+				Image:      cfg.BuildHelpersImage,
+				Args: []string{
+					"write-result",
+					"$(inputs.params.DESTINATION_IMAGE)",
+					"$(results.IMAGE.path)",
+				},
 			},
 		},
 		Volumes: []corev1.Volume{

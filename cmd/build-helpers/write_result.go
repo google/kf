@@ -14,21 +14,23 @@
 
 package main
 
-import "github.com/spf13/cobra"
+import (
+	"os"
 
-func NewRootCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "builder-helpers",
-		Short: "build-helpers is a series of subcommands that are used to build Kf apps",
+	"github.com/spf13/cobra"
+)
+
+// NewWriteResultCommand creates a command that will write the results of built to the file at provided location
+func NewWriteResultCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "write-result RESULT PATH",
+		Short: "write-result file RESULT to file at PATH",
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return cmd.Help()
+			result, path := args[0], args[1]
+			os.WriteFile(path, []byte(result), 0777)
+
+			return nil
 		},
 	}
-
-	cmd.AddCommand(NewExtractCommand())
-	cmd.AddCommand(NewPublishCommand())
-	cmd.AddCommand(NewTarCommand())
-	cmd.AddCommand(NewChownCommand())
-	cmd.AddCommand(NewWriteResultCommand())
-	return cmd
 }

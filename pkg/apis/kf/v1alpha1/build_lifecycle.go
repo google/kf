@@ -34,17 +34,6 @@ const (
 
 	// TaskRunResourceURL is the Tekton param name for the desired destination image.
 	TaskRunParamDestinationImage = "DESTINATION_IMAGE"
-
-	// Outputs
-	// TaskRunResourceNameImage is the Tekton Resource for the output container
-	// Image created from a build. Outputs were deprecated in Tekton, so
-	// TaskRunParamDestinationImage should be used instead.
-	TaskRunResourceNameImage = "IMAGE"
-
-	// TaskRunResourceURL is the Tekton Resource type for the output resource.
-	// Outputs were deprecated in Tekton, so TaskRunParamDestinationImage should be
-	// used instead.
-	TaskRunResourceURL = "url"
 )
 
 // PropagateBuildStatus copies fields from the Build status to Source and
@@ -70,11 +59,7 @@ func (status *BuildStatus) PropagateBuildStatus(build *build.TaskRun) {
 
 	cond := build.Status.GetCondition(apis.ConditionSucceeded)
 	if PropagateCondition(status.manage(), BuildConditionTaskRunReady, cond) {
-		status.Image = GetTaskRunOutputResource(build, TaskRunResourceNameImage, TaskRunResourceURL)
-
-		if status.Image != "" {
-			status.Image = GetTaskRunStringParam(build, TaskRunParamDestinationImage)
-		}
+		status.Image = GetTaskRunResults(build, TaskRunParamDestinationImage)
 	}
 }
 
@@ -96,18 +81,15 @@ func (status *BuildStatus) PropagateTerminatingStatus() {
 	status.manage().MarkFalse(BuildConditionSucceeded, "Terminating", "Build is terminating")
 }
 
-func GetTaskRunOutputResource(b *build.TaskRun, resourceName, paramName string) string {
-	for _, resource := range b.Spec.Resources.Outputs {
-		if resource.PipelineResourceBinding.Name != resourceName {
+func GetTaskRunResults(b *build.TaskRun, paramName string) string {
+	for _, result := range b.Status.TaskRunResults {
+		if result.Name != paramName {
 			continue
 		}
 
-		for _, param := range resource.PipelineResourceBinding.ResourceSpec.Params {
-			if param.Name == paramName {
-				return param.Value
-			}
-		}
+		return result.Value.StringVal
 	}
+
 	return ""
 }
 

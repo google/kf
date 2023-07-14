@@ -131,7 +131,7 @@ func ExampleMakeTaskRun_customTask_taskRun_addedParams() {
 	fmt.Println("OwnerReferences Count:", len(taskRun.OwnerReferences))
 	fmt.Println("Input Count:", len(taskRun.Spec.Params))
 	fmt.Println("Output Count:", len(taskRun.Spec.Resources.Outputs))
-	fmt.Println("Output Image:", v1alpha1.GetTaskRunOutputResource(taskRun, v1alpha1.TaskRunResourceNameImage, v1alpha1.TaskRunResourceURL))
+	fmt.Println("Output Image:", v1alpha1.GetTaskRunResults(taskRun, v1alpha1.TaskRunParamDestinationImage))
 	fmt.Println("Env Count:", len(taskRun.Spec.TaskSpec.StepTemplate.Env))
 	fmt.Println("Node Selector Count:", len(taskRun.Spec.PodTemplate.NodeSelector))
 
