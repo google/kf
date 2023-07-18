@@ -20,7 +20,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewWriteResultCommand creates a command that will write the results of built to the file at provided location
+// NewWriteResultCommand creates a command that will write the results of a build to the file at provided location
 func NewWriteResultCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "write-result RESULT PATH",

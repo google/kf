@@ -80,10 +80,10 @@ spec:
 EOF
 
 # XXX: Give everything a moment to be created.
-sleep 180
+sleep 30
 
 # https://cloud.google.com/config-connector/docs/how-to/advanced-install#verifying_your_installation
-retry "kubectl wait -n cnrm-system --for=condition=Ready pod --all --timeout=10s" 20 10
+retry "kubectl wait -n cnrm-system --for=condition=Ready pod --all --timeout=10s" 40 20
 
 # Workload Identity
 # Link GSA with KCC KSA
@@ -101,4 +101,4 @@ retry "kubectl annotate serviceaccount \
   --namespace cnrm-system \
   --overwrite \
   cnrm-controller-manager \
-  iam.gke.io/gcp-service-account=${cluster_name}-sa@${project_id}.iam.gserviceaccount.com" 5 12
+  iam.gke.io/gcp-service-account=${cluster_name}-sa@${project_id}.iam.gserviceaccount.com" 20 20

@@ -59,7 +59,14 @@ func (status *BuildStatus) PropagateBuildStatus(build *build.TaskRun) {
 
 	cond := build.Status.GetCondition(apis.ConditionSucceeded)
 	if PropagateCondition(status.manage(), BuildConditionTaskRunReady, cond) {
-		status.Image = GetTaskRunResults(build, TaskRunParamDestinationImage)
+		image := GetTaskRunResults(build, TaskRunParamDestinationImage)
+
+		// try fetch from task resources. remove this after Kf v2.11.20.
+		if image == "" {
+			image = GetTaskRunOutputResource(build, "IMAGE", "url")
+		}
+
+		status.Image = image
 	}
 }
 
@@ -93,10 +100,17 @@ func GetTaskRunResults(b *build.TaskRun, paramName string) string {
 	return ""
 }
 
-func GetTaskRunStringParam(b *build.TaskRun, paramName string) string {
-	for _, param := range b.Spec.Params {
-		if param.Name == paramName {
-			return param.Value.StringVal
+// b/291822470 remove after kf v2.11.20
+func GetTaskRunOutputResource(b *build.TaskRun, resourceName, paramName string) string {
+	for _, resource := range b.Spec.Resources.Outputs {
+		if resource.PipelineResourceBinding.Name != resourceName {
+			continue
+		}
+
+		for _, param := range resource.PipelineResourceBinding.ResourceSpec.Params {
+			if param.Name == paramName {
+				return param.Value
+			}
 		}
 	}
 
