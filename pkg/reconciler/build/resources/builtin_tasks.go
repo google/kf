@@ -190,6 +190,7 @@ EOF
 				Command:    []string{"/kaniko/executor"},
 				Image:      cfg.BuildKanikoExecutorImage,
 				Args: []string{
+					"--force",
 					"--dockerfile",
 					"/workspace/Dockerfile",
 					"--context",
@@ -222,14 +223,13 @@ EOF
 				},
 			},
 			{
-				Name:       "write-results",
-				WorkingDir: "/workspace",
-				Command:    []string{"/ko-app/build-helpers"},
-				Image:      cfg.BuildHelpersImage,
+				Name:    "write-results",
+				Command: []string{"/ko-app/build-helpers"},
+				Image:   cfg.BuildHelpersImage,
 				Args: []string{
 					"write-result",
 					"$(inputs.params.DESTINATION_IMAGE)",
-					"$(results.IMAGE.path)",
+					"$(results.DESTINATION_IMAGE.path)",
 				},
 			},
 		},
@@ -245,7 +245,6 @@ func dockerfileBuildTask(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 	if cfg.BuildPodResources != nil {
 		resources = *cfg.BuildPodResources
 	}
-
 	layers := []corev1.VolumeMount{
 		{Name: "layers-dir", MountPath: "/layers"},
 	}
@@ -284,6 +283,7 @@ func dockerfileBuildTask(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 				Image:      cfg.BuildKanikoExecutorImage,
 				Command:    []string{"/kaniko/executor"},
 				Args: []string{
+					"--force",
 					"--dockerfile",
 					"$(inputs.params.DOCKERFILE)",
 					"--context",
@@ -311,14 +311,13 @@ func dockerfileBuildTask(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 				VolumeMounts: layers,
 			},
 			{
-				Name:       "write-results",
-				WorkingDir: "/workspace",
-				Command:    []string{"/ko-app/build-helpers"},
-				Image:      cfg.BuildHelpersImage,
+				Name:    "write-results",
+				Command: []string{"/ko-app/build-helpers"},
+				Image:   cfg.BuildHelpersImage,
 				Args: []string{
 					"write-result",
 					"$(inputs.params.DESTINATION_IMAGE)",
-					"$(results.IMAGE.path)",
+					"$(results.DESTINATION_IMAGE.path)",
 				},
 			},
 		},
@@ -492,7 +491,6 @@ def main():
     image_path = sys.argv[1]
     output_path = sys.argv[2]
     token = sys.argv[3]
-	$(joseph)
     write_token(extract_gcp_cr(image_path), output_path, token)
 
 
@@ -575,14 +573,13 @@ done
 				VolumeMounts: cacheAndLayers,
 			},
 			{
-				Name:       "write-results",
-				WorkingDir: "/workspace",
-				Command:    []string{"/ko-app/build-helpers"},
-				Image:      cfg.BuildHelpersImage,
+				Name:    "write-results",
+				Command: []string{"/ko-app/build-helpers"},
+				Image:   cfg.BuildHelpersImage,
 				Args: []string{
 					"write-result",
 					"$(inputs.params.DESTINATION_IMAGE)",
-					"$(results.IMAGE.path)",
+					"$(results.DESTINATION_IMAGE.path)",
 				},
 			},
 		},
