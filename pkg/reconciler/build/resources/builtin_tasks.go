@@ -60,7 +60,7 @@ func buildTaskResults() []tektonv1beta1.TaskResult {
 	return []tektonv1beta1.TaskResult{
 		{
 			Name:        v1alpha1.TaskRunParamDestinationImage,
-			Description: "image built by buildpacks",
+			Description: "Image built by Tekton",
 			Type:        tektonv1beta1.ResultsTypeString,
 		},
 	}
