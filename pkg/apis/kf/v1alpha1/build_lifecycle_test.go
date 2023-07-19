@@ -20,7 +20,6 @@ import (
 
 	"github.com/google/kf/v2/pkg/kf/testutil"
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	tektonresource "github.com/tektoncd/pipeline/pkg/apis/resource/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
@@ -185,26 +184,7 @@ func unreconciledTaskRun() *tektonv1beta1.TaskRun {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "some-build-name",
 		},
-		Spec: tektonv1beta1.TaskRunSpec{
-			Resources: &tektonv1beta1.TaskRunResources{
-				Outputs: []tektonv1beta1.TaskResourceBinding{
-					{
-						PipelineResourceBinding: tektonv1beta1.PipelineResourceBinding{
-							Name: TaskRunResourceNameImage,
-							ResourceSpec: &tektonresource.PipelineResourceSpec{
-								Type: "image",
-								Params: []tektonv1beta1.ResourceParam{
-									{
-										Name:  TaskRunResourceURL,
-										Value: "some-container-image",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+		Spec: tektonv1beta1.TaskRunSpec{},
 	}
 }
 
@@ -217,7 +197,6 @@ func pendingTaskRun() *tektonv1beta1.TaskRun {
 
 	startTime := metav1.NewTime(time.Unix(0, 0))
 	base.Status.StartTime = &startTime
-
 	return base
 }
 
@@ -230,6 +209,13 @@ func happyTaskRun() *tektonv1beta1.TaskRun {
 
 	endTime := metav1.NewTime(time.Unix(1000, 0))
 	base.Status.CompletionTime = &endTime
+
+	base.Status.TaskRunResults = []tektonv1beta1.TaskRunResult{
+		{
+			Name:  "DESTINATION_IMAGE",
+			Value: *tektonv1beta1.NewArrayOrString("some-container-image"),
+		},
+	}
 
 	return base
 }

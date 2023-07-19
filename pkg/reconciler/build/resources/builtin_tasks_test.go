@@ -15,6 +15,8 @@
 package resources
 
 import (
+	"fmt"
+	"regexp"
 	"testing"
 
 	"github.com/google/kf/v2/pkg/apis/kf/config"
@@ -102,7 +104,7 @@ func TestFindBuiltinTask(t *testing.T) {
 	}
 }
 
-func TestBuiltinTaskSanity(t *testing.T) {
+func TestBuiltinTaskCoherence(t *testing.T) {
 	t.Parallel()
 	cfg := config.BuiltinDefaultsConfig()
 
@@ -143,7 +145,35 @@ func TestBuiltinTaskSanity(t *testing.T) {
 
 	for tn, tc := range cases {
 		t.Run(tn, func(t *testing.T) {
-			testutil.AssertEqual(t, "output image defined", imageOutput(), tc.task.Resources)
+
+			knownParams := make(map[string]bool)
+			for _, param := range tc.task.Params {
+				knownParams[param.Name] = true
+			}
+
+			if _, ok := knownParams[v1alpha1.TaskRunParamDestinationImage]; !ok {
+				t.Errorf("output image parameter %q not defined", v1alpha1.TaskRunParamDestinationImage)
+			}
+
+			for idx, step := range tc.task.Steps {
+				t.Run(fmt.Sprintf("steps[%d]", idx), func(t *testing.T) {
+					t.Run("image", func(t *testing.T) {
+						assertValidTektonParams(t, knownParams, step.Image)
+					})
+
+					for argidx, arg := range step.Args {
+						t.Run(fmt.Sprintf("args[%d]", argidx), func(t *testing.T) {
+							assertValidTektonParams(t, knownParams, arg)
+						})
+					}
+
+					for cmdidx, cmd := range step.Command {
+						t.Run(fmt.Sprintf("args[%d]", cmdidx), func(t *testing.T) {
+							assertValidTektonParams(t, knownParams, cmd)
+						})
+					}
+				})
+			}
 
 			// valdiate all volumes
 			volumeNames := sets.NewString()
@@ -195,5 +225,28 @@ func TestBuiltinTaskSanity(t *testing.T) {
 				})
 			}
 		})
+	}
+}
+
+func assertValidTektonParams(t *testing.T, params map[string]bool, fieldValue string) {
+	t.Helper()
+
+	re, err := regexp.Compile(`\$\(inputs\.params\.(.*?)\)`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	matches := re.FindStringSubmatch(fieldValue)
+
+	if len(matches) == 0 {
+		return
+	}
+	// Trim off the full match.
+	matches = matches[1:]
+
+	for _, paramName := range matches {
+		if _, ok := params[paramName]; !ok {
+			t.Errorf("referenced undefined parameter: %q in %q", paramName, fieldValue)
+		}
 	}
 }

@@ -32,13 +32,8 @@ const (
 	// which contains the source code for a build.
 	TaskRunParamSourceImage = "SOURCE_IMAGE"
 
-	// Outputs
-	// TaskRunResourceNameImage is the Tekton Resource for the output container
-	// Image created from a build.
-	TaskRunResourceNameImage = "IMAGE"
-
-	// TaskRunResourceURL is the Tekton Resource type for the output resource.
-	TaskRunResourceURL = "url"
+	// TaskRunResourceURL is the Tekton param name for the desired destination image.
+	TaskRunParamDestinationImage = "DESTINATION_IMAGE"
 )
 
 // PropagateBuildStatus copies fields from the Build status to Source and
@@ -64,7 +59,14 @@ func (status *BuildStatus) PropagateBuildStatus(build *build.TaskRun) {
 
 	cond := build.Status.GetCondition(apis.ConditionSucceeded)
 	if PropagateCondition(status.manage(), BuildConditionTaskRunReady, cond) {
-		status.Image = GetTaskRunOutputResource(build, TaskRunResourceNameImage, TaskRunResourceURL)
+		image := GetTaskRunResults(build, TaskRunParamDestinationImage)
+
+		// try fetch from task resources. remove this after Kf v2.11.20.
+		if image == "" {
+			image = GetTaskRunOutputResource(build, "IMAGE", "url")
+		}
+
+		status.Image = image
 	}
 }
 
@@ -86,6 +88,19 @@ func (status *BuildStatus) PropagateTerminatingStatus() {
 	status.manage().MarkFalse(BuildConditionSucceeded, "Terminating", "Build is terminating")
 }
 
+func GetTaskRunResults(b *build.TaskRun, paramName string) string {
+	for _, result := range b.Status.TaskRunResults {
+		if result.Name != paramName {
+			continue
+		}
+
+		return result.Value.StringVal
+	}
+
+	return ""
+}
+
+// b/291822470 remove after kf v2.11.20
 func GetTaskRunOutputResource(b *build.TaskRun, resourceName, paramName string) string {
 	for _, resource := range b.Spec.Resources.Outputs {
 		if resource.PipelineResourceBinding.Name != resourceName {

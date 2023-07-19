@@ -298,6 +298,17 @@ func testInstallKf(t *testing.T, steps []*cloudbuild.BuildStep) {
 	}, steps[stepnum])
 	stepnum++
 
+	// Install Tekton
+	testutil.AssertEqual(t, "install Tekton", &cloudbuild.BuildStep{
+		Id:         "install Tekton",
+		Name:       "deployer-image",
+		Entrypoint: "kubectl",
+		Args: []string{
+			"apply", "--filename", "/kf/bin/tekton.yaml",
+		},
+	}, steps[stepnum])
+	stepnum++
+
 	// Install KCC
 	testutil.AssertEqual(t, "install KCC", &cloudbuild.BuildStep{
 		Id:         "install KCC",
@@ -306,17 +317,6 @@ func testInstallKf(t *testing.T, steps []*cloudbuild.BuildStep) {
 		Args: []string{
 			"${PROJECT_ID}",
 			"${_CLOUDSDK_CONTAINER_CLUSTER}",
-		},
-	}, steps[stepnum])
-	stepnum++
-
-	// Install Tekton
-	testutil.AssertEqual(t, "install Tekton", &cloudbuild.BuildStep{
-		Id:         "install Tekton",
-		Name:       "deployer-image",
-		Entrypoint: "kubectl",
-		Args: []string{
-			"apply", "--filename", "/kf/bin/tekton.yaml",
 		},
 	}, steps[stepnum])
 	stepnum++

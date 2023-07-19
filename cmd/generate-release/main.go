@@ -229,19 +229,19 @@ func installKf(deployerImage string) []*cloudbuild.BuildStep {
 				"--zone=${_CLOUDSDK_COMPUTE_ZONE}",
 			},
 		}, {
+			Id:         "install Tekton",
+			Name:       deployerImage,
+			Entrypoint: "kubectl",
+			Args: []string{
+				"apply", "--filename", "/kf/bin/tekton.yaml",
+			},
+		}, {
 			Id:         "install KCC",
 			Name:       deployerImage,
 			Entrypoint: "/builder/setup-kcc.bash",
 			Args: []string{
 				"${PROJECT_ID}",
 				"${_CLOUDSDK_CONTAINER_CLUSTER}",
-			},
-		}, {
-			Id:         "install Tekton",
-			Name:       deployerImage,
-			Entrypoint: "kubectl",
-			Args: []string{
-				"apply", "--filename", "/kf/bin/tekton.yaml",
 			},
 		}, {
 			Id:         "install Kf Operator",

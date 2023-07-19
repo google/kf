@@ -4,14 +4,6 @@
 #     creationTimestamp: null
 #     name: some-build-name
 #   spec:
-#     resources:
-#       outputs:
-#       - name: IMAGE
-#         resourceSpec:
-#           params:
-#           - name: url
-#             value: some-container-image
-#           type: image
 #     serviceAccountName: ""
 #   status:
 #     completionTime: "1970-01-01T00:16:40Z"
@@ -21,6 +13,9 @@
 #       type: Succeeded
 #     podName: ""
 #     startTime: "1970-01-01T00:00:00Z"
+#     taskResults:
+#     - name: DESTINATION_IMAGE
+#       value: some-container-image
 
 {
     "conditions": [

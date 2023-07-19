@@ -25,7 +25,6 @@ import (
 	"github.com/google/kf/v2/pkg/internal/selectorutil"
 	"github.com/google/kf/v2/pkg/reconciler/build/config"
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
-	tektonresource "github.com/tektoncd/pipeline/pkg/apis/resource/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/kmeta"
 )
@@ -76,6 +75,16 @@ func DestinationImageName(source *v1alpha1.Build, space *v1alpha1.Space) string 
 	// cause accidental conflicts.
 
 	return path.Join(registry, fmt.Sprintf("app_%s_%s:%s", source.Namespace, source.Name, source.UID))
+}
+
+func needsStringParam(taskSpec *tektonv1beta1.TaskSpec, paramName string) bool {
+	for _, param := range taskSpec.Params {
+		if param.Name == paramName && param.Type == tektonv1beta1.ParamTypeString {
+			return true
+		}
+	}
+
+	return false
 }
 
 // MakeTaskRun creates a Tekton TaskRun for a Build.
@@ -141,16 +150,23 @@ func MakeTaskRun(
 			})
 	}
 
-	// Add Build-Name task param
-	// TODO: apply it only for V2 and Dockerfile for now until V3 are updated.
-	if build.Spec.BuildTaskRef.Name == v1alpha1.BuildpackV2BuildTaskName || build.Spec.BuildTaskRef.Name == v1alpha1.DockerfileBuildTaskName {
-		taskParams = append(taskParams, tektonv1beta1.Param{
-			Name: v1alpha1.BuildNameParamName,
-			Value: tektonv1beta1.ArrayOrString{
-				Type:      tektonv1beta1.ParamTypeString,
-				StringVal: build.Name,
-			},
-		})
+	// Add optional params required by some tasks.
+	for _, param := range []struct {
+		name  string
+		value string
+	}{
+		{name: v1alpha1.BuildNameParamName, value: build.Name},
+		{name: v1alpha1.TaskRunParamDestinationImage, value: DestinationImageName(build, space)},
+	} {
+		if needsStringParam(taskSpec, param.name) {
+			taskParams = append(taskParams, tektonv1beta1.Param{
+				Name: param.name,
+				Value: tektonv1beta1.ArrayOrString{
+					Type:      tektonv1beta1.ParamTypeString,
+					StringVal: param.value,
+				},
+			})
+		}
 	}
 
 	// The default nodeSelectors is the one specified on the space level.
@@ -185,24 +201,6 @@ func MakeTaskRun(
 			TaskSpec:           spec,
 			Params:             taskParams,
 			PodTemplate:        podSpec,
-			Resources: &tektonv1beta1.TaskRunResources{
-				Outputs: []tektonv1beta1.TaskResourceBinding{
-					{
-						PipelineResourceBinding: tektonv1beta1.PipelineResourceBinding{
-							Name: v1alpha1.TaskRunResourceNameImage,
-							ResourceSpec: &tektonresource.PipelineResourceSpec{
-								Type: "image",
-								Params: []tektonv1beta1.ResourceParam{
-									{
-										Name:  v1alpha1.TaskRunResourceURL,
-										Value: DestinationImageName(build, space),
-									},
-								},
-							},
-						},
-					},
-				},
-			},
 		},
 	}, nil
 }

@@ -40,7 +40,7 @@ gcloud container clusters get-credentials "${CLUSTER_NAME}" \
     --project="${PROJECT_ID}" \
     --zone="${CLUSTER_LOCATION}"
 
-kubectl create namespace asm-gateways
+kubectl create namespace asm-gateways || true
 
 if [ "${ASM_MANAGED:-false}" = "true" ]; then
     ./asmcli install \
