@@ -67,13 +67,5 @@ else
     kubectl label namespace asm-gateways istio-injection- istio.io/rev="$REVISION" --overwrite
 fi
 
-# Not everything in this folder is applicable, some files(HPA) are only for certain versions of K8s
-# so a blanket -f won't work:
 # https://github.com/GoogleCloudPlatform/anthos-service-mesh-packages/tree/release-1.17/samples/gateways/istio-ingressgateway
-kubectl apply -n asm-gateways \
-    -f out/samples/gateways/istio-ingressgateway/deployment.yaml \
-    -f out/samples/gateways/istio-ingressgateway/autoscalingv2/autoscaling-v2.yaml \
-    -f out/samples/gateways/istio-ingressgateway/pdb-v1.yaml \
-    -f out/samples/gateways/istio-ingressgateway/role.yaml \
-    -f out/samples/gateways/istio-ingressgateway/service.yaml \
-    -f out/samples/gateways/istio-ingressgateway/serviceaccount.yaml
+kubectl apply -n asm-gateways -f out/samples/gateways/istio-ingressgateway/
