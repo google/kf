@@ -11,7 +11,7 @@ Best practices for container runtimes differ from Cloud Foundry's application be
 
 ## Best practices
 
-*   **Images should be small**. Images need to be pulled over a network potentially every time the container starts. Lager images cost more to store, transfer, and require bigger disks on the machines you run the image from.
+*   **Images should be small**. Images need to be pulled over a network potentially every time the container starts. Larger images cost more to store, transfer, and require bigger disks on the machines you run the image from.
 *   **Images should have few dependencies.** More dependencies creates larger images and a larger attack surface. A base image like [distroless](https://github.com/GoogleContainerTools/distroless) or [alpine](https://www.alpinelinux.org/) can reduce your size while maintaining critical components like security certificates.
 *   **Rebuild rather than patch images**. Images are built in layers so patching either increases the size of the image by applying the patches to a new layer or replaces lower layers which were used to produce upper layers which is unsafe.
 *   **Images should be built reproducibly.** [Reproducible builds](https://reproducible-builds.org/) not only give confidence in supply chain security, but also reduce storage cost by allowing better deduplication of layers shared between images.
