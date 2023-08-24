@@ -10,6 +10,8 @@ to automatically scale the number of Pods in a App. When autoscaling is enabled
 for an App, an HPA object is created and bound to the App object. It then dynamically
 calculates the target scale and sets it for the App.
 
+Kf Apps are also compatible with HPA policies created outside of Kf.
+
 ## How Kf scaling works
 
 The number of Pods that are deployed for a Kf App is
