@@ -1490,7 +1490,7 @@ Module: github.com/Azure/go-autorest/tracing v0.6.0
 
 
 ===========================================================
-Module: github.com/opencontainers/image-spec v1.0.3-0.20220114050600-8b9d41f48198
+Module: github.com/opencontainers/image-spec v1.1.0-rc3
 
 
 
@@ -4276,8 +4276,8 @@ Note: Other license terms may apply to certain, identified software files contai
 
 
 ===========================================================
-Module: github.com/docker/distribution v2.8.0+incompatible
-Module: github.com/docker/distribution v2.8.0+incompatible
+Module: github.com/docker/distribution v2.8.2+incompatible
+Module: github.com/docker/distribution v2.8.2+incompatible
 
 
 Apache License
