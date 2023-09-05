@@ -29,7 +29,7 @@ import (
 )
 
 func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl {
-	logger := reconciler.NewControllerLogger(ctx, "namespace")
+	logger := reconciler.NewControllerLogger(ctx, "featureflag")
 
 	namespaceInformer := namespaceinformer.Get(ctx)
 
@@ -58,7 +58,9 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 		&config.DefaultsConfig{},
 	}
 	resync := configmap.TypeFilter(configsToResync...)(func(string, interface{}) {
-		impl.GlobalResync(namespaceInformer.Informer())
+		impl.FilteredGlobalResync(
+			controller.FilterWithName(v1alpha1.KfNamespace),
+			namespaceInformer.Informer())
 	})
 	configStore := config.NewStore(logger.Named("kf-config-store"), resync)
 	configStore.WatchConfigs(cmw)
