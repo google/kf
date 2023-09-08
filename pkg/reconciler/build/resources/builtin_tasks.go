@@ -72,6 +72,11 @@ func buildpackV2Task(cfg *config.DefaultsConfig) *tektonv1beta1.TaskSpec {
 		resources = *cfg.BuildPodResources
 	}
 
+	var optionalKanikoFlags []string
+	if !cfg.BuildKanikoRobustSnapshot {
+		optionalKanikoFlags = append(optionalKanikoFlags, "--snapshot-mode=redo")
+	}
+
 	return &tektonv1beta1.TaskSpec{
 		Params: []tektonv1beta1.ParamSpec{
 			tektonutil.DefaultStringParam("BUILD_NAME", "The name of the Build to push destination image for.", ""),
@@ -189,7 +194,7 @@ EOF
 				WorkingDir: "/workspace",
 				Command:    []string{"/kaniko/executor"},
 				Image:      cfg.BuildKanikoExecutorImage,
-				Args: []string{
+				Args: append([]string{
 					"--force",
 					"--dockerfile",
 					"/workspace/Dockerfile",
@@ -203,7 +208,7 @@ EOF
 					"--no-push",
 					"--tarPath",
 					"/workspace/image.tar",
-				},
+				}, optionalKanikoFlags...),
 				Resources: resources,
 				VolumeMounts: []corev1.VolumeMount{
 					{Name: "cache-dir", MountPath: "/cache"},

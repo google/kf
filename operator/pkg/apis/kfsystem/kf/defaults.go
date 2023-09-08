@@ -36,6 +36,7 @@ const (
 	buildDisableIstioSidecarKey        = "buildDisableIstioSidecar"
 	buildPodResourcesKey               = "buildPodResources"
 	buildRetentionCountKey             = "buildRetentionCount"
+	buildKanikoRobustSnapshotKey       = "buildKanikoRobustSnapshot"
 	taskRetentionCountKey              = "taskRetentionCount"
 	buildTimeoutKey                    = "buildTimeout"
 	buildNodeSelectorsKey              = "buildNodeSelectors"
@@ -107,6 +108,11 @@ type DefaultsConfig struct {
 	// BuildDisableIstioSidecar when set to true, will prevent the Istio
 	// sidecar from being attached to the Build pods.
 	BuildDisableIstioSidecar bool `json:"buildDisableIstioSidecar,omitempty"`
+
+	// BuildKanikoRobustSnapshotKey turns off fast snapshotting in Kaniko for v2 buildpacks.
+	// This causes significantly higher disk usage, but reduces the risk
+	// of producing incorrect images. Kf apps shoudln't typically need this on.
+	BuildKanikoRobustSnapshot bool `json:"buildKanikoRobustSnapshot,omitempty"`
 
 	// BuildPodResources sets the Build pod resources field.
 	// NOTE: This is only applicable for built-in Tasks. For V2 builds, this
@@ -281,6 +287,7 @@ func (defaultsConfig *DefaultsConfig) getInterfaceValues(leaveEmpty bool) map[st
 		buildRetentionCountKey:             &defaultsConfig.BuildRetentionCount,
 		taskRetentionCountKey:              &defaultsConfig.TaskRetentionCount,
 		buildNodeSelectorsKey:              &defaultsConfig.BuildNodeSelectors,
+		buildKanikoRobustSnapshotKey:       &defaultsConfig.BuildKanikoRobustSnapshot,
 		appCPUPerGBOfRAMKey:                &defaultsConfig.AppCPUPerGBOfRAM,
 		appCPUMinKey:                       &defaultsConfig.AppCPUMin,
 		appDisableStartCommandLookupKey:    &defaultsConfig.AppDisableStartCommandLookup,

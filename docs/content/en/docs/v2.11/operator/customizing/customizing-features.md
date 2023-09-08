@@ -105,6 +105,30 @@ kfsystem kfsystem \
 
 Read [Kubernetes container resource docs](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)  for more information about container resource management.
 
+## Robust Build Snapshots
+
+Kf uses [Kaniko](https://github.com/GoogleContainerTools/kaniko) to build the final application containers in the v2 buildpack lifecycle.
+To produce image layers, Kaniko needs to take "snapsohts" of the image which requires iterating over all files in the image and checking 
+if they've changed.
+
+The fast mode checks for file attribute changes (like timestamps and size) and the slow mode checks full file hashes to determine if a file changed.
+
+Kf apps aren't expected to overwrite operating system files in their build, so fast mode should be used to reduce disk pressure.
+
+{{< note >}}This value should be set to `false` in Kaniko versions older than v1.15.0.{{< /note >}}
+
+Values for `buildKanikoRobustSnapshot`:
+
+* `false` Will use a fast snapshot mode for v2 builds. (Default)
+* `true` Will use a robust snapshot mode for v2 builds to catch uncommon cases.
+
+<pre>
+kubectl patch \
+kfsystem kfsystem \
+--type='json' \
+-p="[{'op': 'replace', 'path': '/spec/kf/config/buildKanikoRobustSnapshot', 'value': true]"
+</pre>
+
 ## Self Signed Certificates for Service Brokers
 
 If you want to use self signed certificates for TLS (`https` instead of `http`) for the service broker URL, the Kf controller requires the CA certificate. To configure Kf for this scenario, create an immutable Kubernetes secret in the `kf` namespace and update the `kfsystem.spec.kf.config.secrets.controllerCACerts.name` object to point to it.

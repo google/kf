@@ -50,6 +50,7 @@ func TestStoreLoadWithContext(t *testing.T) {
 		buildpacksV2LifecycleImageKey,
 		buildDisableIstioSidecarKey,
 		buildPodResourcesKey,
+		buildKanikoRobustSnapshotKey,
 		featureFlagsKey,
 		nopImageKey,
 		appCPUMinKey,
