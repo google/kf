@@ -24,6 +24,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 
 	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	cv1alpha1 "github.com/google/kf/v2/pkg/client/kf/clientset/versioned/typed/kf/v1alpha1"
@@ -160,7 +161,7 @@ func (p *sourcePackagesClient) UploadSourcePath(
 	// Upload the data.
 	logger := logging.FromContext(ctx).With(zap.Namespace("source upload"))
 	logger.Infof("Uploading directory %s (size=%0.2fKiB)", sourcePath, float64(fi.Size()/1024.0))
-
+	uploadStart := time.Now()
 	requestURI := fmt.Sprintf(
 		"/apis/upload.kf.dev/v1alpha1/proxy/namespaces/%s/%s",
 		app.Namespace,
@@ -173,7 +174,7 @@ func (p *sourcePackagesClient) UploadSourcePath(
 		return fmt.Errorf("failed to upload source directory: %v", err)
 	}
 
-	logger.Info("Successfully uploaded directory")
+	logger.Infof("Successfully uploaded source in %0.2f seconds", time.Since(uploadStart).Seconds())
 
 	// Success!
 	return nil

@@ -177,9 +177,8 @@ func useCachedImage(t *testing.T, dir, acceptanceImage string) map[string]string
 	image, err := remote.Image(imageRef, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 	testutil.AssertNil(t, "remote.Image", err)
 
-	testutil.AssertNil(t, "sourceImage.ExtractImage",
-		sourceimage.ExtractImage(dir, sourceimage.DefaultSourcePath, image),
-	)
+	_, err = sourceimage.ExtractImage(dir, sourceimage.DefaultSourcePath, image)
+	testutil.AssertNil(t, "sourceImage.ExtractImage", err)
 
 	files, err := ioutil.ReadDir(dir)
 	testutil.AssertNil(t, "ioutil.ReadDir", err)
