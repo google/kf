@@ -17,6 +17,7 @@ package featureflag
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/google/kf/v2/pkg/apis/kf/config"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
@@ -24,6 +25,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1listers "k8s.io/client-go/listers/core/v1"
+	"k8s.io/client-go/tools/cache"
 	"knative.dev/pkg/controller"
 )
 
@@ -40,6 +42,11 @@ var _ controller.Reconciler = (*Reconciler)(nil)
 func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 	ctx = r.configStore.ToContext(ctx)
 
+	// Make sure we only reconcile the Kf namespace.
+	if err := validateKfNamespaceName(key); err != nil {
+		return err
+	}
+
 	ns, nsErr := r.namespaceLister.Get(v1alpha1.KfNamespace)
 	if nsErr != nil {
 		return nsErr
@@ -48,6 +55,19 @@ func (r *Reconciler) Reconcile(ctx context.Context, key string) error {
 	if _, err := r.reconcileFeatureFlags(ctx, ns); err != nil {
 		return err
 	}
+	return nil
+}
+
+func validateKfNamespaceName(key string) error {
+	namespace, _, err := cache.SplitMetaNamespaceKey(key)
+
+	switch {
+	case err != nil:
+		return err
+	case namespace != v1alpha1.KfNamespace:
+		return fmt.Errorf("invalid namespace %q queued, expect only %q", namespace, v1alpha1.KfNamespace)
+	}
+
 	return nil
 }
 
