@@ -98,8 +98,9 @@ func TestExtractTar(t *testing.T) {
 	defer os.RemoveAll(temp)
 
 	r := tar.NewReader(tarBytes)
-	tarErr := ExtractTar(temp, "/home", r)
+	count, tarErr := ExtractTar(temp, "/home", r)
 	testutil.AssertNil(t, "tar err", tarErr)
+	testutil.AssertEqual(t, "file count", 8, count)
 
 	AssertFile(t, temp, "foo/readme.txt", 0600, []byte("some-text"))
 	AssertFile(t, temp, "foo/prog", 0700, []byte("ELF"))

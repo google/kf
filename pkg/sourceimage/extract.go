@@ -27,7 +27,7 @@ import (
 
 // ExtractImage extracts the files and directories from the given sourcePath in
 // image to targetPath on the current system.
-func ExtractImage(targetPath, sourcePath string, image v1.Image) error {
+func ExtractImage(targetPath, sourcePath string, image v1.Image) (int, error) {
 	tarReader := mutate.Extract(image)
 	defer tarReader.Close()
 	r := tar.NewReader(tarReader)
@@ -39,19 +39,21 @@ func ExtractImage(targetPath, sourcePath string, image v1.Image) error {
 //
 // Special files are skipped, and all files are converted to their absolute
 // path equivalents to avoid traversal attacks.
-func ExtractTar(targetPath, sourcePath string, tarReader *tar.Reader) error {
+func ExtractTar(targetPath, sourcePath string, tarReader *tar.Reader) (int, error) {
+	fileCount := 0
 	for {
 		header, err := tarReader.Next()
 
 		switch {
 		case err == io.EOF:
-			return nil
+			return fileCount, nil
 		case err != nil:
-			return err
+			return fileCount, err
 		default:
 			if err := extract(targetPath, sourcePath, header, tarReader); err != nil {
-				return err
+				return fileCount, err
 			}
+			fileCount++
 		}
 	}
 }

@@ -146,10 +146,11 @@ func extractSourcePackage(ctx context.Context, sourcePackageNamespace, sourcePac
 	}
 
 	r := tar.NewReader(bytes.NewReader(bs))
-	err = sourceimage.ExtractTar(targetPath, sourcePath, r)
+	count, err := sourceimage.ExtractTar(targetPath, sourcePath, r)
 	if err != nil {
 		return errors.Wrap(err, "failed to extract tar")
 	}
+	log.Printf("Extracted %d files\n", count)
 	return nil
 }
 
@@ -173,7 +174,12 @@ func extractSourceImage(sourceImage, sourcePath, targetPath string) error {
 	}
 
 	log.Printf("Extracting contents from: %s to %s\n", sourcePath, targetPath)
-	return sourceimage.ExtractImage(targetPath, sourcePath, image)
+	count, err := sourceimage.ExtractImage(targetPath, sourcePath, image)
+	if err != nil {
+		return err
+	}
+	log.Printf("Extracted %d files\n", count)
+	return nil
 }
 
 func extractSourceImageWithRetry(retryDuration time.Duration, sourceImage, sourcePath, targetPath string) error {
