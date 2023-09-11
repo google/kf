@@ -43,6 +43,7 @@ func TestPatchConfigMap(t *testing.T) {
 		buildHelpersImageKey,
 		buildpacksV2LifecycleImageKey,
 		buildDisableIstioSidecarKey,
+		buildKanikoRobustSnapshotKey,
 		buildPodResourcesKey,
 		featureFlagsKey,
 		nopImageKey,

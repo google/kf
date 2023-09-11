@@ -36,6 +36,7 @@ const (
 	buildDisableIstioSidecarKey        = "buildDisableIstioSidecar"
 	buildPodResourcesKey               = "buildPodResources"
 	buildRetentionCountKey             = "buildRetentionCount"
+	buildKanikoRobustSnapshotKey       = "buildKanikoRobustSnapshot"
 	taskRetentionCountKey              = "taskRetentionCount"
 	buildTimeoutKey                    = "buildTimeout"
 	buildNodeSelectorsKey              = "buildNodeSelectors"
@@ -118,6 +119,11 @@ type DefaultsConfig struct {
 	// BuildRetentionCount is the number of completed Builds each App will
 	// keep before garbage collecting.
 	BuildRetentionCount *uint `json:"buildRetentionCount,omitempty"`
+
+	// BuildKanikoRobustSnapshotKey turns off fast snapshotting in Kaniko for v2 buildpacks.
+	// This causes significantly higher disk usage, but reduces the risk
+	// of producing incorrect images. Kf apps shoudln't typically need this on.
+	BuildKanikoRobustSnapshot bool `json:"buildKanikoRobustSnapshot,omitempty"`
 
 	// TaskRetentionCount is the number of completed Tasks each App will
 	// keep before garbage collecting.
@@ -281,6 +287,7 @@ func (defaultsConfig *DefaultsConfig) getInterfaceValues(leaveEmpty bool) map[st
 		buildRetentionCountKey:             &defaultsConfig.BuildRetentionCount,
 		taskRetentionCountKey:              &defaultsConfig.TaskRetentionCount,
 		buildNodeSelectorsKey:              &defaultsConfig.BuildNodeSelectors,
+		buildKanikoRobustSnapshotKey:       &defaultsConfig.BuildKanikoRobustSnapshot,
 		appCPUPerGBOfRAMKey:                &defaultsConfig.AppCPUPerGBOfRAM,
 		appCPUMinKey:                       &defaultsConfig.AppCPUMin,
 		appDisableStartCommandLookupKey:    &defaultsConfig.AppDisableStartCommandLookup,

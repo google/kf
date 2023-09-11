@@ -186,6 +186,11 @@ data:
     # system privileges.
     taskDisableVolumeMounts: "true"
 
+    # buildKanikoRobustSnapshot turns off fast snapshotting in Kaniko for v2 buildpacks.
+    # This causes significantly higher disk usage, but reduces the risk
+    # of producing incorrect images. Kf apps shoudln't typically need this on.
+    buildKanikoRobustSnapshot: "false"
+
     # The following images are used to execute builds. They SHOULD NOT be
     # modified except in rare circumstances.
     buildHelpersImage: "ko://github.com/google/kf/v2/cmd/build-helpers"
@@ -237,7 +242,8 @@ data:
       runImage: cloudfoundry/run:full-cnb@sha256:dbe17be507b1cc6ffae1e9edf02806fe0e28ffbbb89a6c7ef41f37b69156c3c2
   spaceDefaultToV3Stack: "false"
   routeServiceProxyImage: "ko://github.com/google/kf/v2/cmd/route-service-proxy"
-  buildKanikoExecutorImage: "gcr.io/kaniko-project/executor:v1.0.0"
+  buildKanikoExecutorImage: "gcr.io/kaniko-project/executor:v1.15.0"
+  buildKanikoRobustSnapshot: "false"
   buildInfoImage: "ko://github.com/google/kf/v2/cmd/setup-buildpack-build"
   buildTokenDownloadImage: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
   buildHelpersImage: "ko://github.com/google/kf/v2/cmd/build-helpers"
