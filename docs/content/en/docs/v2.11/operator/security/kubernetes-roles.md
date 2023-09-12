@@ -18,24 +18,6 @@ using the following command.
 kubectl describe clusterrole space-developer
 ```
 
-The default installation of Kf provides the following
-permissions:
-
-```none
-PolicyRule:
-  Resources                               Non-Resource URLs  Resource Names  Verbs
-  ---------                               -----------------  --------------  -----
-  events                                  []                 []              [*]
-  secrets                                 []                 []              [*]
-  *.kf.dev                                []                 []              [*]
-  networkpolicies.networking.k8s.io       []                 []              [*]
-  pods/exec                               []                 []              [create]
-  *.upload.kf.dev                         []                 []              [create]
-  pods/log                                []                 []              [get list watch]
-  pods                                    []                 []              [get list watch]
-  rolebindings.rbac.authorization.k8s.io  []                 []              [get list watch]
-```
-
 ## Space auditor role {#space-auditor}
 
 The Space auditor role aggregates read-only permissions that auditors and
@@ -49,18 +31,6 @@ using the following command.
 kubectl describe clusterrole space-auditor
 ```
 
-The default installation of Kf provides the following
-permissions:
-
-```none
-PolicyRule:
-  Resources                               Non-Resource URLs  Resource Names  Verbs
-  ---------                               -----------------  --------------  -----
-  events                                  []                 []              [*]
-  apps.kf.dev                             []                 []              [get list watch]
-  rolebindings.rbac.authorization.k8s.io  []                 []              [get list watch]
-```
-
 ## Space manager role {#space-manager}
 
 The Space manager role aggregates permissions that allow delegation of duties to
@@ -71,20 +41,6 @@ using the following command.
 
 ```sh
 kubectl describe clusterrole space-manager
-```
-
-The default installation of Kf provides the following
-permissions:
-
-```none
-PolicyRule:
-  Resources                               Non-Resource URLs  Resource Names     Verbs
-  ---------                               -----------------  --------------     -----
-  clusterroles.rbac.authorization.k8s.io  []                 [space-auditor]    [bind]
-  clusterroles.rbac.authorization.k8s.io  []                 [space-developer]  [bind]
-  clusterroles.rbac.authorization.k8s.io  []                 [space-manager]    [bind]
-  rolebindings.rbac.authorization.k8s.io  []                 []                 [get list update patch watch]
-  apps.kf.dev                             []                 []                 [get list watch]
 ```
 
 {{< note >}} Subjects bound to the `space-manager` ClusterRole within a
@@ -110,16 +66,6 @@ Space on your cluster using the following command.
 kubectl describe clusterrole SPACE_NAME-manager
 ```
 
-The default installation of Kf provides the following
-permissions:
-
-```none
-PolicyRule:
-  Resources      Non-Resource URLs  Resource Names  Verbs
-  ---------      -----------------  --------------  -----
-  spaces.kf.dev  []                 [SPACE_NAME]    [get list watch update patch]
-```
-
 ## Kf cluster reader role {#kf-cluster-reader}
 
 Kf automatically grants the `kf-cluster-reader` role to all users on a
@@ -131,16 +77,4 @@ cluster readers on your cluster using the following command.
 
 ```sh
 kubectl describe clusterrole kf-cluster-reader
-```
-
-The default installation of Kf provides the following
-permissions:
-
-```none
-PolicyRule:
-  Resources                     Non-Resource URLs  Resource Names  Verbs
-  ---------                     -----------------  --------------  -----
-  namespaces                    []                 [kf]            [get list watch]
-  clusterservicebrokers.kf.dev  []                 []              [get list watch]
-  spaces.kf.dev                 []                 []              [get list watch]
 ```
