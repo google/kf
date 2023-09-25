@@ -116,7 +116,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	// Watch for Space changes and enqueue all Apps in the evented Space
 	spaceInformer.Informer().AddEventHandler(&cache.ResourceEventHandlerFuncs{
 		AddFunc:    nil,
-		UpdateFunc: controller.PassNew(reconciler.LogEnqueueError(logger, enqueueAppsOfSpace(impl.Enqueue, appLister))),
+		UpdateFunc: controller.PassNew(reconciler.LogEnqueueError(logger, enqueueAppsOfSpace(impl.EnqueueSlow, appLister))),
 		DeleteFunc: nil,
 	})
 
