@@ -64,7 +64,7 @@ func (m *Module) Source() string {
 
 func (a *Module) IsLessThan(b Module) bool {
 	return a.RealModule() < b.RealModule() ||
-	a.RealModule() == b.RealModule() && a.RealVersion() < b.RealVersion()
+		a.RealModule() == b.RealModule() && a.RealVersion() < b.RealVersion()
 }
 
 func CollectVendoredModules(projectDirectories []string) ([]Module, error) {
