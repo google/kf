@@ -65,6 +65,12 @@ func (c *ClusterDiagnostic) Diagnose(ctx context.Context, d *Diagnostic) {
 		diagnoseKubernetesVersion(ctx, d, c.kubeClient.Discovery())
 	})
 
+	// TODO: check config-defaults
+
+	// TODO: check config-secrets
+
+	// TODO: check operator if installed
+
 	d.Run(ctx, "Controllers", func(ctx context.Context, d *Diagnostic) {
 		diagnoseControllers(ctx, d, c.kubeClient)
 	})
