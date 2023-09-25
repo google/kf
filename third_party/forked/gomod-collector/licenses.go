@@ -174,7 +174,19 @@ func (lc LicenseCollection) GroupedEntries() (string, error) {
 		fmt.Fprintln(w, "===========================================================")
 
 		for _, license := range licenses {
-			fmt.Fprintln(w, "Module:", license.Mod.Description())
+			modText := ""
+			switch {
+			case license.Mod.Module == "":
+				modText = license.Mod.ModuleVersion
+
+			case license.Mod.Replace != "":
+				modText = fmt.Sprintf("%s (imported as %s)", license.Mod.Replace, license.Mod.Module)
+
+			default:
+				modText = license.Mod.Module
+			}
+
+			fmt.Fprintln(w, "Module:", modText)
 		}
 		fmt.Fprintln(w)
 		fmt.Fprintln(w)
