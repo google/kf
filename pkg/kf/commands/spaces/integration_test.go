@@ -292,6 +292,18 @@ func verifyAuditorPermission(ctx context.Context, t *testing.T, namespace string
 		{title: "SpaceAuditor can not update secrets in space", space: namespace, verb: "update", group: "", resource: "secrets", expectedOutput: false},
 		{title: "SpaceAuditor can not patch secrets in space", space: namespace, verb: "patch", group: "", resource: "secrets", expectedOutput: false},
 		{title: "SpaceAuditor can not delete secrets in space", space: namespace, verb: "delete", group: "", resource: "secrets", expectedOutput: false},
+
+		// Auditors shouldn't have any access on exec/attach.
+		// https://github.com/kubernetes/kubernetes/issues/78741
+		// https://kubernetes.io/docs/reference/access-authn-authz/authorization/#determine-the-request-verb
+		{title: "SpaceAuditor can not exec to Pods in space", space: namespace, verb: "create", group: "", resource: "pods/exec", expectedOutput: false},
+		{title: "SpaceAuditor can not exec to Pods in space", space: namespace, verb: "get", group: "", resource: "pods/exec", expectedOutput: false},
+		{title: "SpaceAuditor can not exec to Pods in space", space: namespace, verb: "list", group: "", resource: "pods/exec", expectedOutput: false},
+		{title: "SpaceAuditor can not exec to Pods in space", space: namespace, verb: "watch", group: "", resource: "pods/exec", expectedOutput: false},
+		{title: "SpaceAuditor can not attach to Pods in space", space: namespace, verb: "create", group: "", resource: "pods/attach", expectedOutput: false},
+		{title: "SpaceAuditor can not attach to Pods in space", space: namespace, verb: "get", group: "", resource: "pods/attach", expectedOutput: false},
+		{title: "SpaceAuditor can not attach to Pods in space", space: namespace, verb: "list", group: "", resource: "pods/attach", expectedOutput: false},
+		{title: "SpaceAuditor can not attach to Pods in space", space: namespace, verb: "watch", group: "", resource: "pods/attach", expectedOutput: false},
 	}
 
 	for _, test := range tests {
