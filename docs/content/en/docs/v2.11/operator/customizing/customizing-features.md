@@ -126,7 +126,7 @@ Values for `buildKanikoRobustSnapshot`:
 kubectl patch \
 kfsystem kfsystem \
 --type='json' \
--p="[{'op': 'replace', 'path': '/spec/kf/config/buildKanikoRobustSnapshot', 'value': true]"
+-p="[{'op': 'replace', 'path': '/spec/kf/config/buildKanikoRobustSnapshot', 'value': true}]"
 </pre>
 
 ## Self Signed Certificates for Service Brokers
