@@ -139,10 +139,6 @@
                 }
             },
             {
-                "name": "MEMORY_LIMIT",
-                "value": "$(MEMORY_LIMIT)M"
-            },
-            {
                 "name": "some-env-var",
                 "value": "cool-env-value"
             }

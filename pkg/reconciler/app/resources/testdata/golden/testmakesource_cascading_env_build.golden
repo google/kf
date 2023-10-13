@@ -144,10 +144,6 @@
                 }
             },
             {
-                "name": "MEMORY_LIMIT",
-                "value": "$(MEMORY_LIMIT)M"
-            },
-            {
                 "name": "CASCADE",
                 "value": "build"
             }

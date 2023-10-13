@@ -123,10 +123,6 @@
                         "optional": false
                     }
                 }
-            },
-            {
-                "name": "MEMORY_LIMIT",
-                "value": "$(MEMORY_LIMIT)M"
             }
         ]
     },

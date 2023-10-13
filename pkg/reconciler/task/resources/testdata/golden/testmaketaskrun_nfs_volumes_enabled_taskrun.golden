@@ -170,10 +170,6 @@
                                     "optional": true
                                 }
                             }
-                        },
-                        {
-                            "name": "MEMORY_LIMIT",
-                            "value": "$(MEMORY_LIMIT)M"
                         }
                     ],
                     "resources": {},
