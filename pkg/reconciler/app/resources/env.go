@@ -274,12 +274,6 @@ func getRuntimeEnvVars(runtime EnvRuntime) runtimeEnvVars {
 			compute:     injectedSecretRef(cfutil.DatabaseURLEnvVarName, true),
 			runtime:     CFRunning | CFTask,
 		},
-		{
-			name:        "MEMORY_LIMIT",
-			description: "The maximum amount of memory in MB the App can consume.",
-			compute:     staticValue("$(MEMORY_LIMIT)M"),
-			runtime:     CFRunning | CFStaging | CFTask,
-		},
 	}
 
 	var out []runtimeEnvVar
