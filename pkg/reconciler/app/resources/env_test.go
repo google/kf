@@ -113,7 +113,7 @@ func TestBuildRuntimeEnvVars(t *testing.T) {
 						Optional: ptr.Bool(true),
 					},
 				}},
-                                {Name: "MEMORY_LIMIT", Value: "$(MEMORY_LIMIT_IN_MB)M"},
+				{Name: "MEMORY_LIMIT", Value: "$(MEMORY_LIMIT_IN_MB)M"},
 			},
 		},
 		"staging app": {
@@ -154,7 +154,7 @@ func TestBuildRuntimeEnvVars(t *testing.T) {
 						Optional: ptr.Bool(false),
 					},
 				}},
-                                {Name: "MEMORY_LIMIT", Value: "$(MEMORY_LIMIT_IN_MB)M"},
+				{Name: "MEMORY_LIMIT", Value: "$(MEMORY_LIMIT_IN_MB)M"},
 			},
 		},
 		"task app": {
@@ -211,7 +211,7 @@ func TestBuildRuntimeEnvVars(t *testing.T) {
 						Optional: ptr.Bool(true),
 					},
 				}},
-                                {Name: "MEMORY_LIMIT", Value: "$(MEMORY_LIMIT_IN_MB)M"},
+				{Name: "MEMORY_LIMIT", Value: "$(MEMORY_LIMIT_IN_MB)M"},
 			},
 		},
 	}
