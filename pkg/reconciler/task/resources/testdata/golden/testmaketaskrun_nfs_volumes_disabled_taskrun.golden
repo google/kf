@@ -123,7 +123,7 @@
                             "value": "$(CF_INSTANCE_GUID)"
                         },
                         {
-                            "name": "MEMORY_LIMIT",
+                            "name": "MEMORY_LIMIT_IN_MB",
                             "valueFrom": {
                                 "resourceFieldRef": {
                                     "resource": "limits.memory",
@@ -146,7 +146,7 @@
                         },
                         {
                             "name": "VCAP_APPLICATION",
-                            "value": "{\"application_id\":\"\",\"application_name\":\"\",\"application_uris\":[],\"limits\":{\"disk\":$(DISK_LIMIT),\"mem\":$(MEMORY_LIMIT)},\"name\":\"\",\"process_id\":\"\",\"process_type\":\"web\",\"space_name\":\"\",\"uris\":[]}"
+                            "value": "{\"application_id\":\"\",\"application_name\":\"\",\"application_uris\":[],\"limits\":{\"disk\":$(DISK_LIMIT),\"mem\":$(MEMORY_LIMIT_IN_MB)},\"name\":\"\",\"process_id\":\"\",\"process_type\":\"web\",\"space_name\":\"\",\"uris\":[]}"
                         },
                         {
                             "name": "VCAP_SERVICES",
@@ -167,6 +167,10 @@
                                     "optional": true
                                 }
                             }
+                        },
+                        {
+                            "name": "MEMORY_LIMIT",
+                            "value": "$(MEMORY_LIMIT_IN_MB)M"
                         }
                     ],
                     "resources": {}

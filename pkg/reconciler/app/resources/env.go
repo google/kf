@@ -199,7 +199,7 @@ func getRuntimeEnvVars(runtime EnvRuntime) runtimeEnvVars {
 			runtime:     CFRunning,
 		},
 		{
-			name:        "MEMORY_LIMIT",
+			name:        "MEMORY_LIMIT_IN_MB",
 			description: "The maximum amount of memory in MB the App can consume.",
 			compute: func(app *v1alpha1.App) corev1.EnvVar {
 				return corev1.EnvVar{
@@ -245,7 +245,7 @@ func getRuntimeEnvVars(runtime EnvRuntime) runtimeEnvVars {
 				// add values that can only be computed at runtime
 				appValues["limits"] = limits{
 					Disk:   "$(DISK_LIMIT)",
-					Memory: "$(MEMORY_LIMIT)",
+					Memory: "$(MEMORY_LIMIT_IN_MB)",
 				}
 
 				valueBytes, _ := json.Marshal(appValues)
@@ -254,7 +254,7 @@ func getRuntimeEnvVars(runtime EnvRuntime) runtimeEnvVars {
 				// Replace limit values with unquoted env vars.
 				// This ensures that disk and mem on the "limits" field are correctly represented in the JSON
 				// as ints instead of strings.
-				jsonWithInts := strings.ReplaceAll(jsonStr, `"$(MEMORY_LIMIT)"`, "$(MEMORY_LIMIT)")
+				jsonWithInts := strings.ReplaceAll(jsonStr, `"$(MEMORY_LIMIT_IN_MB)"`, "$(MEMORY_LIMIT_IN_MB)")
 				jsonWithInts = strings.ReplaceAll(jsonWithInts, `"$(DISK_LIMIT)"`, "$(DISK_LIMIT)")
 				return corev1.EnvVar{
 					Value: string(jsonWithInts),
@@ -273,6 +273,12 @@ func getRuntimeEnvVars(runtime EnvRuntime) runtimeEnvVars {
 			description: "The first URI found in a VCAP_SERVICES credential.",
 			compute:     injectedSecretRef(cfutil.DatabaseURLEnvVarName, true),
 			runtime:     CFRunning | CFTask,
+		},
+		{
+			name:        "MEMORY_LIMIT",
+			description: "The maximum amount of memory the App can consume.",
+			compute:     staticValue("$(MEMORY_LIMIT_IN_MB)M"),
+			runtime:     CFRunning | CFStaging | CFTask,
 		},
 	}
 
