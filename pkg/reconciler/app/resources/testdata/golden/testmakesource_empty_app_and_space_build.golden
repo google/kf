@@ -89,7 +89,7 @@
                 "value": "$(CF_INSTANCE_IP):$(CF_INSTANCE_PORT)"
             },
             {
-                "name": "MEMORY_LIMIT",
+                "name": "MEMORY_LIMIT_IN_MB",
                 "valueFrom": {
                     "resourceFieldRef": {
                         "resource": "limits.memory",
@@ -112,7 +112,7 @@
             },
             {
                 "name": "VCAP_APPLICATION",
-                "value": "{\"application_id\":\"\",\"application_name\":\"mybuildpackapp\",\"application_uris\":[],\"limits\":{\"disk\":$(DISK_LIMIT),\"mem\":$(MEMORY_LIMIT)},\"name\":\"mybuildpackapp\",\"process_id\":\"\",\"process_type\":\"web\",\"space_name\":\"myspace\",\"uris\":[]}"
+                "value": "{\"application_id\":\"\",\"application_name\":\"mybuildpackapp\",\"application_uris\":[],\"limits\":{\"disk\":$(DISK_LIMIT),\"mem\":$(MEMORY_LIMIT_IN_MB)},\"name\":\"mybuildpackapp\",\"process_id\":\"\",\"process_type\":\"web\",\"space_name\":\"myspace\",\"uris\":[]}"
             },
             {
                 "name": "VCAP_SERVICES",
@@ -123,6 +123,10 @@
                         "optional": false
                     }
                 }
+            },
+            {
+                "name": "MEMORY_LIMIT",
+                "value": "$(MEMORY_LIMIT_IN_MB)M"
             }
         ]
     },

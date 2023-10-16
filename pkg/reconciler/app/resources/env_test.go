@@ -80,7 +80,7 @@ func TestBuildRuntimeEnvVars(t *testing.T) {
 				{Name: "INSTANCE_GUID", Value: "$(CF_INSTANCE_GUID)"},
 				{Name: "CF_INSTANCE_INDEX", Value: "0"},
 				{Name: "INSTANCE_INDEX", Value: "$(CF_INSTANCE_INDEX)"},
-				{Name: "MEMORY_LIMIT", ValueFrom: &corev1.EnvVarSource{
+				{Name: "MEMORY_LIMIT_IN_MB", ValueFrom: &corev1.EnvVarSource{
 					ResourceFieldRef: &corev1.ResourceFieldSelector{
 						Divisor:  memoryDivisor,
 						Resource: "limits.memory",
@@ -94,7 +94,7 @@ func TestBuildRuntimeEnvVars(t *testing.T) {
 				}},
 				{Name: "LANG", Value: "en_US.UTF-8"},
 				// json.Marshal writes values in sorted key order
-				{Name: "VCAP_APPLICATION", Value: `{"application_id":"12345","application_name":"my-app","application_uris":["my-app.example.com"],"limits":{"disk":$(DISK_LIMIT),"mem":$(MEMORY_LIMIT)},"name":"my-app","process_id":"12345","process_type":"web","space_name":"my-ns","uris":["my-app.example.com"]}`},
+				{Name: "VCAP_APPLICATION", Value: `{"application_id":"12345","application_name":"my-app","application_uris":["my-app.example.com"],"limits":{"disk":$(DISK_LIMIT),"mem":$(MEMORY_LIMIT_IN_MB)},"name":"my-app","process_id":"12345","process_type":"web","space_name":"my-ns","uris":["my-app.example.com"]}`},
 				{Name: "VCAP_SERVICES", ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						Key: "VCAP_SERVICES",
@@ -113,6 +113,7 @@ func TestBuildRuntimeEnvVars(t *testing.T) {
 						Optional: ptr.Bool(true),
 					},
 				}},
+				{Name: "MEMORY_LIMIT", Value: "$(MEMORY_LIMIT_IN_MB)M"},
 			},
 		},
 		"staging app": {
@@ -129,7 +130,7 @@ func TestBuildRuntimeEnvVars(t *testing.T) {
 				{Name: "VCAP_APP_HOST", Value: "$(CF_INSTANCE_IP)"},
 				{Name: "CF_INSTANCE_PORT", Value: "9999"},
 				{Name: "CF_INSTANCE_ADDR", Value: "$(CF_INSTANCE_IP):$(CF_INSTANCE_PORT)"},
-				{Name: "MEMORY_LIMIT", ValueFrom: &corev1.EnvVarSource{
+				{Name: "MEMORY_LIMIT_IN_MB", ValueFrom: &corev1.EnvVarSource{
 					ResourceFieldRef: &corev1.ResourceFieldSelector{
 						Divisor:  memoryDivisor,
 						Resource: "limits.memory",
@@ -143,7 +144,7 @@ func TestBuildRuntimeEnvVars(t *testing.T) {
 				}},
 				{Name: "LANG", Value: "en_US.UTF-8"},
 				// json.Marshal writes values in sorted key order
-				{Name: "VCAP_APPLICATION", Value: `{"application_id":"12345","application_name":"my-app","application_uris":["my-app.example.com"],"limits":{"disk":$(DISK_LIMIT),"mem":$(MEMORY_LIMIT)},"name":"my-app","process_id":"12345","process_type":"web","space_name":"my-ns","uris":["my-app.example.com"]}`},
+				{Name: "VCAP_APPLICATION", Value: `{"application_id":"12345","application_name":"my-app","application_uris":["my-app.example.com"],"limits":{"disk":$(DISK_LIMIT),"mem":$(MEMORY_LIMIT_IN_MB)},"name":"my-app","process_id":"12345","process_type":"web","space_name":"my-ns","uris":["my-app.example.com"]}`},
 				{Name: "VCAP_SERVICES", ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						Key: "VCAP_SERVICES",
@@ -153,6 +154,7 @@ func TestBuildRuntimeEnvVars(t *testing.T) {
 						Optional: ptr.Bool(false),
 					},
 				}},
+				{Name: "MEMORY_LIMIT", Value: "$(MEMORY_LIMIT_IN_MB)M"},
 			},
 		},
 		"task app": {
@@ -176,7 +178,7 @@ func TestBuildRuntimeEnvVars(t *testing.T) {
 					},
 				}},
 				{Name: "INSTANCE_GUID", Value: "$(CF_INSTANCE_GUID)"},
-				{Name: "MEMORY_LIMIT", ValueFrom: &corev1.EnvVarSource{
+				{Name: "MEMORY_LIMIT_IN_MB", ValueFrom: &corev1.EnvVarSource{
 					ResourceFieldRef: &corev1.ResourceFieldSelector{
 						Divisor:  memoryDivisor,
 						Resource: "limits.memory",
@@ -190,7 +192,7 @@ func TestBuildRuntimeEnvVars(t *testing.T) {
 				}},
 				{Name: "LANG", Value: "en_US.UTF-8"},
 				// json.Marshal writes values in sorted key order
-				{Name: "VCAP_APPLICATION", Value: `{"application_id":"12345","application_name":"my-app","application_uris":["my-app.example.com"],"limits":{"disk":$(DISK_LIMIT),"mem":$(MEMORY_LIMIT)},"name":"my-app","process_id":"12345","process_type":"web","space_name":"my-ns","uris":["my-app.example.com"]}`},
+				{Name: "VCAP_APPLICATION", Value: `{"application_id":"12345","application_name":"my-app","application_uris":["my-app.example.com"],"limits":{"disk":$(DISK_LIMIT),"mem":$(MEMORY_LIMIT_IN_MB)},"name":"my-app","process_id":"12345","process_type":"web","space_name":"my-ns","uris":["my-app.example.com"]}`},
 				{Name: "VCAP_SERVICES", ValueFrom: &corev1.EnvVarSource{
 					SecretKeyRef: &corev1.SecretKeySelector{
 						Key: "VCAP_SERVICES",
@@ -209,6 +211,7 @@ func TestBuildRuntimeEnvVars(t *testing.T) {
 						Optional: ptr.Bool(true),
 					},
 				}},
+				{Name: "MEMORY_LIMIT", Value: "$(MEMORY_LIMIT_IN_MB)M"},
 			},
 		},
 	}
