@@ -231,6 +231,12 @@ steps:
   - |
     set -eux
 
+    cleanup() {
+      echo $? > /workspace/${BUILD_ID}/_CREATE_GKE_CLUSTER
+      exit 0
+    }
+    trap cleanup EXIT
+
     if [ -z "${_FULL_RELEASE_BUCKET}" ]; then
       echo "_FULL_RELEASE_BUCKET is not set. Skipping GKE cluster creation..."
       exit 0
@@ -266,6 +272,12 @@ steps:
   - '-c'
   - |
     set -euxo pipefail
+
+    cleanup() {
+      echo $? > /workspace/${BUILD_ID}/_DEPLOY_CERTS
+      exit 0
+    }
+    trap cleanup EXIT
 
     export CLOUDSDK_COMPUTE_ZONE=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_COMPUTE_ZONE)
     export CLOUDSDK_CONTAINER_CLUSTER=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_CONTAINER_CLUSTER)
@@ -306,6 +318,12 @@ steps:
   - '-c'
   - |
     set -eux
+
+    cleanup() {
+      echo $? > /workspace/${BUILD_ID}/_STRESS_TESTS
+      exit 0
+    }
+    trap cleanup EXIT
 
     if [ "${_STRESS_TEST_BASELOAD_FACTOR}" -le "0" ]; then
       echo "_STRESS_TEST_BASELOAD_FACTOR is set to ${_STRESS_TEST_BASELOAD_FACTOR}. Skipping..."
@@ -424,6 +442,12 @@ steps:
   - '-c'
   - |
     set -eu
+
+    cleanup() {
+      echo $? > /workspace/${BUILD_ID}/_ACCEPTANCE_TESTS
+      exit 0
+    }
+    trap cleanup EXIT
 
     if [ "${_SKIP_ACCEPTANCE_TESTS}" == "true" ]; then
       echo "Skipping acceptance tests..."
@@ -589,6 +613,10 @@ steps:
         fi
     }
 
+    check /workspace/${BUILD_ID}/_CREATE_GKE_CLUSTER "Create GKE cluster"
+    check /workspace/${BUILD_ID}/_DEPLOY_CERTS "Deploy certs"
+    check /workspace/${BUILD_ID}/_STRESS_TESTS "Stress test"
+    check /workspace/${BUILD_ID}/_ACCEPTANCE_TESTS "Acceptance tests"
     check /workspace/${BUILD_ID}/_INTEGRATION_EXIT_CODE "Integration tests"
     check /workspace/${BUILD_ID}/_DELETE_CLUSTER_EXIT_CODE "Delete GKE cluster"
 
