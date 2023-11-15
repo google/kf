@@ -17,7 +17,6 @@ package apps
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
@@ -65,7 +64,7 @@ func NewSetEnvCommand(p *config.KfParams, client apps.Client) *cobra.Command {
 			value := args[2]
 
 			toSet := []corev1.EnvVar{
-				{Name: strings.ToUpper(name), Value: value},
+				{Name: name, Value: value},
 			}
 
 			app, err := client.Transform(cmd.Context(), p.Space, appName, func(app *v1alpha1.App) error {
