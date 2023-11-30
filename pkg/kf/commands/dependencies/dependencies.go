@@ -108,7 +108,7 @@ func newDependencies() []dependency {
 			// dep matrix right now is fairly impossible. To ensure we still
 			// testing against the right version though, we are going to hard
 			// code this.
-			ResolveVersion: staticVersionResolver("v0.47.1"),
+			ResolveVersion: staticVersionResolver("v0.53.2"),
 			ResolveURL: func(version string) (string, error) {
 				const URL = "https://github.com/tektoncd/pipeline/releases/download/%s/release.yaml"
 				return fmt.Sprintf(URL, version), nil
@@ -120,7 +120,7 @@ func newDependencies() []dependency {
 			InfoURL:    "https://cloud.google.com/service-mesh/docs/gke-install-overview",
 			// This version is fetched from the asmcli script. It needs to be
 			// updated by hand until we have a programtic way to fetch it.
-			ResolveVersion: staticVersionResolver("1.17.4-asm.2+config1"),
+			ResolveVersion: staticVersionResolver("1.19.3-asm.4+config1"),
 			ResolveURL: func(version string) (string, error) {
 				const URL = "https://github.com/GoogleCloudPlatform/anthos-service-mesh-packages/releases/tag/%s"
 				return fmt.Sprintf(URL, version), nil
@@ -132,7 +132,7 @@ func newDependencies() []dependency {
 			InfoURL:    "https://cloud.google.com//config-connector/docs/how-to/advanced-install",
 			// This version needs to be updated by hand until we have a
 			// programtic way to fetch it.
-			ResolveVersion: staticVersionResolver("1.105.0"),
+			ResolveVersion: staticVersionResolver("1.111.0"),
 			ResolveURL: func(version string) (string, error) {
 				const URL = "gs://configconnector-operator/%s/release-bundle.tar.gz"
 				return fmt.Sprintf(URL, version), nil
