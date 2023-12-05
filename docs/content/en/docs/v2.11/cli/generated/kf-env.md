@@ -39,7 +39,8 @@ Kf provides the following runtime environment variables:
 * DATABASE_URL: The first URI found in a VCAP_SERVICES credential.
 * DISK_LIMIT: The maximum amount of disk storage in MB the App can use.
 * LANG: Required by buildpacks to ensure consistent script load order.
-* MEMORY_LIMIT: The maximum amount of memory in MB the App can consume.
+* MEMORY_LIMIT: The maximum amount of memory the App can consume.
+* MEMORY_LIMIT_IN_MB: The maximum amount of memory in MB the App can consume.
 * PORT: The port the App should listen on for requests.
 * VCAP_APP_PORT: Alias of PORT
 * VCAP_APPLICATION: A JSON structure containing app metadata.
