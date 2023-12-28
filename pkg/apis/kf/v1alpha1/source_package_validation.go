@@ -23,7 +23,7 @@ import (
 
 const (
 	minUploadSizeBytes = 1
-	maxUploadSizeBytes = 1 * 1024 * 1024 * 1024
+	maxUploadSizeBytes = 3 * 1024 * 1024 * 1024
 )
 
 // Validate checks for errors in the SourcePackage's spec or status fields.
