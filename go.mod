@@ -37,7 +37,7 @@ require (
 	golang.org/x/sys v0.5.0
 	google.golang.org/api v0.70.0
 	google.golang.org/genproto v0.0.0-20220303160752-862486edd9cc
-	google.golang.org/protobuf v1.28.0
+	google.golang.org/protobuf v1.33.0
 	istio.io/api v0.0.0-20220602172134-34645c49f9d9
 	k8s.io/api v0.23.5
 	k8s.io/apimachinery v0.23.5
