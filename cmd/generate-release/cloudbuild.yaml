@@ -31,7 +31,7 @@ substitutions:
   _RELEASE_BUCKET: '' # Required
   _RELEASE_FOLDER: '' # Defaults to _VERSION
   _CLOUDSDK_IMAGE: 'gcr.io/google.com/cloudsdktool/cloud-sdk:alpine'
-  _GOLANG_IMAGE: 'golang:1.20'
+  _GOLANG_IMAGE: 'golang:1.22'
   _BUILDPACK_WRAPPER_GOLANG_IMAGE: 'golang:1.15'
   _KO_VERSION: 'github.com/google/ko@latest'
 
