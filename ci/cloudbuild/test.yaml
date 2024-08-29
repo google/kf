@@ -465,7 +465,7 @@ steps:
 
     # Authenticate
     /builder/kubectl.bash
-
+    gcloud components update --quiet
     ./hack/acceptance-test.sh
 
 - id: integration tests
@@ -509,7 +509,7 @@ steps:
     (curl -sSL "https://github.com/buildpacks/pack/releases/download/v0.22.0/pack-v0.22.0-linux.tgz" | tar -C /usr/local/bin/ --no-same-owner -xzv pack)
     apt-get update
     apt-get install zip -y
-
+    gcloud components update --quiet
     # Authenticate
     /builder/kubectl.bash
 
