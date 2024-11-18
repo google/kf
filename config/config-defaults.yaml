@@ -219,7 +219,7 @@ data:
     - name: python_buildpack
       url: https://github.com/cloudfoundry/python-buildpack
     - name: php_buildpack
-      url: https://github.com/cloudfoundry/php-buildpack
+      url: https://github.com/cloudfoundry/php-buildpack/#v4.6.23
     - name: binary_buildpack
       url: https://github.com/cloudfoundry/binary-buildpack
     - name: nginx_buildpack
