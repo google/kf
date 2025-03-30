@@ -226,7 +226,7 @@ data:
       url: https://github.com/cloudfoundry/nginx-buildpack
   spaceStacksV2: |
     - name: cflinuxfs3
-      image: cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5
+      image: cloudfoundry/cflinuxfs3@sha256:da1da4e020d6d988a265b5f90ca15fcae9e1b726ce6a2710747b1a603181ac3c
   spaceStacksV3: |
     - name: kf-v2-to-v3-shim
       description: A V3 stack that wraps the V2 buildpacks.
@@ -238,8 +238,8 @@ data:
       runImage: gcr.io/buildpacks/gcp/run:v1
     - name: org.cloudfoundry.stacks.cflinuxfs3
       description: A large Cloud Foundry stack based on Ubuntu 18.04
-      buildImage: cloudfoundry/cnb:cflinuxfs3@sha256:f96b6e3528185368dd6af1d9657527437cefdaa5fa135338462f68f9c9db3022
-      runImage: cloudfoundry/run:full-cnb@sha256:dbe17be507b1cc6ffae1e9edf02806fe0e28ffbbb89a6c7ef41f37b69156c3c2
+      buildImage: cloudfoundry/cnb:cflinuxfs3@sha256:11068838eeb5cb3a34bb34f56de5e9a5c40c1eb31995046e3076ebde7b499c9f
+      runImage: cloudfoundry/run:full-cnb@sha256:7b7ed1bfa6d85d7432c77fe3ff43ee4d839cccb51c7287143a63c8041604d476
   spaceDefaultToV3Stack: "false"
   routeServiceProxyImage: "ko://github.com/google/kf/v2/cmd/route-service-proxy"
   buildKanikoExecutorImage: "gcr.io/kaniko-project/executor:v1.15.0"
