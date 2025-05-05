@@ -1,7 +1,7 @@
 FROM debian:buster-slim
 
 # Install golang from official image
-COPY --from=golang:1.23 /usr/local/go/ /usr/local/go/
+COPY --from=golang:1.24 /usr/local/go/ /usr/local/go/
 ENV PATH="$PATH:/usr/local/go/bin:/root/go/bin"
 RUN echo "export PATH=$PATH:/usr/local/go/bin:/root/go/bin" >> ~/.bashrc
 
