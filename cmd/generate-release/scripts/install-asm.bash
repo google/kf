@@ -33,7 +33,7 @@ else
     echo "gcloud CLI is already available, skipping installation"
 fi
 
-curl https://storage.googleapis.com/csm-artifacts/asm/asmcli_1.23 >asmcli
+curl https://storage.googleapis.com/csm-artifacts/asm/asmcli_1.25 >asmcli
 chmod +x asmcli
 
 gcloud container clusters get-credentials "${CLUSTER_NAME}" \
@@ -67,5 +67,5 @@ else
     kubectl label namespace asm-gateways istio-injection- istio.io/rev="$REVISION" --overwrite
 fi
 
-# https://github.com/GoogleCloudPlatform/anthos-service-mesh-packages/tree/release-1.23/samples/gateways/istio-ingressgateway
+# https://github.com/GoogleCloudPlatform/anthos-service-mesh-packages/tree/release-1.25/samples/gateways/istio-ingressgateway
 kubectl apply -n asm-gateways -f out/samples/gateways/istio-ingressgateway/
