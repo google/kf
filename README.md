@@ -76,7 +76,7 @@ registry, and apply the resulting configuration to the current cluster.
 
 ***Kf CLI***
 
-Kf CLI can be downlowed from [official releases](https://cloud.google.com/migrate/kf/docs/2.11/downloads) or build locally. 
+Kf CLI can be downloaded from [official releases](https://cloud.google.com/migrate/kf/docs/2.11/downloads) or built locally. 
 
 To build Kf CLI locally, run `hack/build.sh`. A executable `kf` will be generated under `bin`.
 
