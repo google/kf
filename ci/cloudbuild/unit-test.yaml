@@ -24,7 +24,7 @@ timeout: 7200s
 options:
   machineType: "E2_HIGHCPU_8"
 substitutions:
-  _GOLANG_IMAGE: "golang:1.25"
+  _GOLANG_IMAGE: "golang:1.24"
 
 steps:
   - id: verify build

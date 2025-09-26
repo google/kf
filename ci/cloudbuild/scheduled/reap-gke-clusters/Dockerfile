@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM gcr.io/google.com/cloudsdktool/cloud-sdk:528.0.0-alpine
+FROM gcr.io/google.com/cloudsdktool/cloud-sdk:alpine
 WORKDIR /scripts
 COPY . .
