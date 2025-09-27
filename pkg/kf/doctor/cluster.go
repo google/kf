@@ -118,7 +118,7 @@ func diagnoseKfComponents(ctx context.Context, d *Diagnostic, vc discovery.Serve
 		},
 		"Tekton": {
 			groupVersion:      "tekton.dev/v1beta1",
-			expectedResources: []string{"taskruns", "tasks", "clustertasks"},
+			expectedResources: []string{"taskruns", "tasks"},
 		},
 	}
 
