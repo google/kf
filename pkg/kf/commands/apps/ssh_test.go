@@ -81,7 +81,7 @@ func TestNewSSHCommand(t *testing.T) {
 			wantExec:  true,
 			wantSpace: "my-space",
 			wantSelector: metav1.ListOptions{
-				LabelSelector: "app.kubernetes.io/component=app-server,app.kubernetes.io/managed-by=kf,app.kubernetes.io/name=my-app",
+				LabelSelector: "app.kubernetes.io/component=app-server,app.kubernetes.io/managed-by in (kf,tekton-pipelines),app.kubernetes.io/name=my-app",
 			},
 			wantExecOpts: corev1.PodExecOptions{
 				Command:   []string{"/bin/bash"},

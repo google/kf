@@ -27,7 +27,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/remotecommand"
 )
 
@@ -85,8 +84,7 @@ func NewSSHCommand(p *config.KfParams) *cobra.Command {
 				podName := strings.TrimPrefix(appName, podPrefix)
 				podSelector.FieldSelector = fields.OneTermEqualSelector("metadata.name", podName).String()
 			} else {
-				appLabels := v1alpha1.AppComponentLabels(appName, "app-server")
-				podSelector.LabelSelector = labels.SelectorFromSet(appLabels).String()
+				podSelector.LabelSelector = metav1.FormatLabelSelector(labelSelectorForAppPods(appName, "app-server"))
 			}
 
 			execOpts := corev1.PodExecOptions{
@@ -152,4 +150,17 @@ func NewSSHCommand(p *config.KfParams) *cobra.Command {
 	)
 
 	return cmd
+}
+
+func labelSelectorForAppPods(appName, component string) *metav1.LabelSelector {
+	appLabels := v1alpha1.AppComponentLabels(appName, component)
+	delete(appLabels, v1alpha1.ManagedByLabel)
+	labelSelector := metav1.SetAsLabelSelector(appLabels)
+	// Due to https://github.com/tektoncd/pipeline/issues/8827 Kf pods wil have
+	// managed by label value hardcoded to "tekton-pipelines". Previous
+	// value "kf" left for backward compatibility
+	managedByRequirement := metav1.LabelSelectorRequirement{Key: v1alpha1.ManagedByLabel,
+		Operator: metav1.LabelSelectorOpIn, Values: []string{v1alpha1.ManagedByKfValue, v1alpha1.ManagedByTektonValue}}
+	labelSelector.MatchExpressions = []metav1.LabelSelectorRequirement{managedByRequirement}
+	return labelSelector
 }

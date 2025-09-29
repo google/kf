@@ -34,6 +34,10 @@ const (
 	NameLabel = "app.kubernetes.io/name"
 	// ManagedByLabel holds the standard label key for Kubernetes app managers.
 	ManagedByLabel = "app.kubernetes.io/managed-by"
+	// Value set on Pods by legacy Tekton versions
+	ManagedByKfValue = "kf"
+	// Value set on Pods by current GA Tekton versions
+	ManagedByTektonValue = "tekton-pipelines"
 	// ComponentLabel holds the standard label key for Kubernetes app component
 	// types.
 	ComponentLabel = "app.kubernetes.io/component"
