@@ -92,14 +92,25 @@ func (t *tailer) Tail(ctx context.Context, appName string, out io.Writer, opts .
 	return nil
 }
 
-func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, writer *LineWriter, opts corev1.PodLogOptions, cfg tailConfig) error {
-
+func (t *tailer) labelSelectorForPodLogs(appName string, cfg tailConfig) *metav1.LabelSelector {
 	appLabels := v1alpha1.AppComponentLabels(appName, cfg.ComponentName)
 
 	selectors := v1alpha1.UnionMaps(appLabels, cfg.Labels)
+	delete(selectors, v1alpha1.ManagedByLabel)
+	labelSelectors := metav1.SetAsLabelSelector(selectors)
+	// Due to https://github.com/tektoncd/pipeline/issues/8827 Kf pods wil have
+	// managed by label value hardcoded to "tekton-pipelines". Previous
+	// value "kf" left for backward compatibility
+	managedByRequirement := metav1.LabelSelectorRequirement{Key: v1alpha1.ManagedByLabel,
+		Operator: metav1.LabelSelectorOpIn, Values: []string{v1alpha1.ManagedByKfValue, v1alpha1.ManagedByTektonValue}}
+	labelSelectors.MatchExpressions = []metav1.LabelSelectorRequirement{managedByRequirement}
+	return labelSelectors
+}
 
+func (t *tailer) watchForPods(ctx context.Context, namespace, appName string, writer *LineWriter, opts corev1.PodLogOptions, cfg tailConfig) error {
+	labelSelector := t.labelSelectorForPodLogs(appName, cfg)
 	w, err := t.client.CoreV1().Pods(namespace).Watch(ctx, metav1.ListOptions{
-		LabelSelector: metav1.FormatLabelSelector(metav1.SetAsLabelSelector(selectors)),
+		LabelSelector: metav1.FormatLabelSelector(labelSelector),
 	})
 	if err != nil {
 		return err

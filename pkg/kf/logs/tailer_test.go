@@ -21,7 +21,6 @@ import (
 	"testing"
 	time "time"
 
-	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/kf/logs"
 	"github.com/google/kf/v2/pkg/kf/testutil"
 	corev1 "k8s.io/api/core/v1"
@@ -146,7 +145,7 @@ func TestTailer_Tail(t *testing.T) {
 				logs.WithTailComponentName("app-server"),
 			},
 			setup: func(t *testing.T, cs *fake.Clientset) context.Context {
-				expectedSelector := labels.SelectorFromSet(v1alpha1.AppComponentLabels(defaultAppName, "app-server"))
+				expectedSelector, _ := labels.Parse("app.kubernetes.io/component=app-server,app.kubernetes.io/managed-by in (kf,tekton-pipelines),app.kubernetes.io/name=some-app")
 				cs.PrependWatchReactor("pods", labelSelectorWatchReactor(t, expectedSelector))
 				return context.Background()
 			},
