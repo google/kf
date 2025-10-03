@@ -206,9 +206,9 @@ func deleteCluster(deployerImage string) []*cloudbuild.BuildStep {
 		{
 			Id:         "delete GKE cluster",
 			Name:       deployerImage,
-			Entrypoint: "gcloud",
+			Entrypoint: "/builder/delete-cluster.bash",
 			Args: []string{
-				"deployment-manager", "--quiet", "deployments", "delete", "${_CLOUDSDK_CONTAINER_CLUSTER}",
+				"${_CLOUDSDK_CONTAINER_CLUSTER}",
 			},
 		},
 	}

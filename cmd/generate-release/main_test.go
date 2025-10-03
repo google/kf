@@ -243,9 +243,9 @@ func TestDeleteCluster(t *testing.T) {
 	testutil.AssertEqual(t, "delete GKE cluster", &cloudbuild.BuildStep{
 		Id:         "delete GKE cluster",
 		Name:       "deployer-image",
-		Entrypoint: "gcloud",
+		Entrypoint: "/builder/delete-cluster.bash",
 		Args: []string{
-			"deployment-manager", "--quiet", "deployments", "delete", "${_CLOUDSDK_CONTAINER_CLUSTER}",
+			"${_CLOUDSDK_CONTAINER_CLUSTER}",
 		},
 	}, b.Steps[1])
 }
