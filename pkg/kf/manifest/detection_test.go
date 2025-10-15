@@ -21,6 +21,7 @@ import (
 	"github.com/google/kf/v2/pkg/apis/kf/config"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/kf/testutil"
+	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
 )
 
 func defaultV2Stack() config.StackV2Definition {
@@ -218,7 +219,7 @@ func TestDetectBuildType(t *testing.T) {
 					Build: &v1alpha1.BuildSpec{
 						BuildTaskRef: v1alpha1.BuildTaskRef{
 							Name:       "custom-task",
-							Kind:       "ClusterTask",
+							Kind:       string(tektonv1beta1.NamespacedTaskKind),
 							APIVersion: "tekton.dev/v1beta1",
 						},
 					},
@@ -229,7 +230,7 @@ func TestDetectBuildType(t *testing.T) {
 			expectedBuildSpec: &v1alpha1.BuildSpec{
 				BuildTaskRef: v1alpha1.BuildTaskRef{
 					Name:       "custom-task",
-					Kind:       "ClusterTask",
+					Kind:       string(tektonv1beta1.NamespacedTaskKind),
 					APIVersion: "tekton.dev/v1beta1",
 				},
 				Params: []v1alpha1.BuildParam{

@@ -79,7 +79,7 @@ rules:
     resources: ["*", "*/status", "*/finalizers"]
     verbs: ["get", "list", "create", "update", "delete", "deletecollection", "patch", "watch"]
   - apiGroups: ["tekton.dev"]
-    resources: ["taskruns", "clustertasks", "tasks", "pipelineruns"]
+    resources: ["taskruns", "tasks", "pipelineruns"]
     verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
   - apiGroups: [""]
     resources: ["pods/log"]

@@ -184,12 +184,6 @@ func (r *Reconciler) ApplyChanges(ctx context.Context, build *v1alpha1.Build) er
 
 	var taskSpec *tektonv1beta1.TaskSpec
 	switch build.Spec.Kind {
-	case string(tektonv1beta1.ClusterTaskKind):
-		task, err := r.tektonClient.ClusterTasks().Get(ctx, build.Spec.Name, metav1.GetOptions{})
-		if err != nil {
-			return buildCondition.MarkReconciliationError(fmt.Sprintf("getting %s", tektonv1beta1.ClusterTaskKind), err)
-		}
-		taskSpec = &task.Spec
 	case string(tektonv1beta1.NamespacedTaskKind):
 		task, err := r.tektonClient.Tasks(build.Namespace).Get(ctx, build.Spec.Name, metav1.GetOptions{})
 		if err != nil {
