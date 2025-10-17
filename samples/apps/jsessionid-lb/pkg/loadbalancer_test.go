@@ -17,10 +17,12 @@ package pkg
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/http/httputil"
 	"testing"
 )
 
@@ -238,6 +240,39 @@ func TestLoadBalancer_ServeHTTP(t *testing.T) {
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				AssertResponseCode(t, http.StatusOK, recorder)
 				AssertCookie(t, "SESSION", "http://1.1.1.1:8080", recorder)
+			},
+		},
+		"SSE Event stream flushed immediately": {
+			loadBalancer: func() *LoadBalancer {
+				backend := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.Header().Set("Content-Type", "text/event-stream")
+					if flusher, ok := w.(http.Flusher); ok {
+						fmt.Fprintf(w, "data: 1\n\n")
+						flusher.Flush()
+					}
+				}))
+				lb := &LoadBalancer{
+					LookupIP: lookupOneIP,
+					ReverseProxy: &httputil.ReverseProxy{
+						Director: func(req *http.Request) {
+							req.URL.Scheme = "http"
+							req.URL.Host = backend.Listener.Addr().String()
+						},
+					},
+				}
+				defaultValues(nil, lb)
+				return lb
+			}(),
+			request: func() *http.Request {
+				req := defaultRequest()
+				req.Header.Set("Accept", "text/event-stream")
+				return req
+			}(),
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				if !recorder.Flushed {
+					t.Errorf("Expected response to be flushed for SSE")
+				}
+				AssertResponseCode(t, http.StatusOK, recorder)
 			},
 		},
 	} {
