@@ -160,7 +160,7 @@ func TestApp_Validate(t *testing.T) {
 					},
 				},
 			},
-			want: ErrInvalidEnumValue("a-terrible-kind", "spec.build.spec.kind", []string{"Task", BuiltinTaskKind, "ClusterTask"}),
+			want: ErrInvalidEnumValue("a-terrible-kind", "spec.build.spec.kind", []string{"Task", BuiltinTaskKind}),
 		},
 		"build image and buildRef": {
 			spec: App{
@@ -282,7 +282,7 @@ func TestAppSpec_ValidateBuildSpec(t *testing.T) {
 					},
 				},
 			},
-			want: ErrInvalidEnumValue("a-terrible-kind", "spec.kind", []string{"Task", BuiltinTaskKind, "ClusterTask"}),
+			want: ErrInvalidEnumValue("a-terrible-kind", "spec.kind", []string{"Task", BuiltinTaskKind}),
 		},
 		"build changed incorrectly": {
 			old: &AppSpec{
@@ -336,31 +336,6 @@ func TestAppSpec_ValidateBuildSpec(t *testing.T) {
 					},
 				},
 			},
-		},
-		"Custom Builds Disabled, in update": {
-			old: &AppSpec{
-				Build: AppSpecBuild{
-					UpdateRequests: 3,
-					Spec: &BuildSpec{
-						BuildTaskRef: BuildTaskRef{
-							Name: "a-custom-name",
-							Kind: string(tektonv1beta1.ClusterTaskKind),
-						},
-					},
-				},
-			},
-			current: AppSpec{
-				Build: AppSpecBuild{
-					UpdateRequests: 4,
-					Spec: &BuildSpec{
-						BuildTaskRef: BuildTaskRef{
-							Name: "a-different-name",
-							Kind: string(tektonv1beta1.ClusterTaskKind),
-						},
-					},
-				},
-			},
-			customBuildsDisabled: true,
 		},
 		"Custom Builds Disabled, in create": {
 			current: AppSpec{

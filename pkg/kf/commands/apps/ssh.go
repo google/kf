@@ -17,12 +17,12 @@ package apps
 import (
 	"strings"
 
-	dockerterm "github.com/docker/docker/pkg/term"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/kf/commands/completion"
 	"github.com/google/kf/v2/pkg/kf/commands/config"
 	"github.com/google/kf/v2/pkg/kf/injection/clients/execstreamer"
 	"github.com/google/kf/v2/third_party/k8s.io/kubectl/pkg/util/term"
+	dockerterm "github.com/moby/term"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

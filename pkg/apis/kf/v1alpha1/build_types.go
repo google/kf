@@ -209,18 +209,18 @@ func StringParam(key, value string) BuildParam {
 	}
 }
 
-// buildpackV3BuildTaskRef returns a BuildTaskRef for the buildpack ClusterTask.
+// buildpackV3BuildTaskRef returns a BuildTaskRef for the buildpack builtin task.
 func buildpackV3BuildTaskRef() BuildTaskRef {
 	return builtinTaskRef(BuildpackV3BuildTaskName)
 }
 
-// dockerfileBuildTaskRef returns a BuildTaskRef for the Dockerfile ClusterTask.
+// dockerfileBuildTaskRef returns a BuildTaskRef for the Dockerfile builtin task.
 func dockerfileBuildTaskRef() BuildTaskRef {
 	return builtinTaskRef(DockerfileBuildTaskName)
 }
 
 // buildpackV2BuildTaskRef returns a TaskRef for the Cloud Foundry Buildpacks
-// ClusterTask.
+// builtin task.
 func buildpackV2BuildTaskRef() BuildTaskRef {
 	return builtinTaskRef(BuildpackV2BuildTaskName)
 }

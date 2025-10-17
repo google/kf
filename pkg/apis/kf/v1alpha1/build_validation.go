@@ -48,7 +48,6 @@ func (spec *BuildSpec) Validate(ctx context.Context) (errs *apis.FieldError) {
 
 	validKinds := sets.NewString(
 		string(tektonv1beta1.NamespacedTaskKind),
-		string(tektonv1beta1.ClusterTaskKind),
 		BuiltinTaskKind,
 	)
 
