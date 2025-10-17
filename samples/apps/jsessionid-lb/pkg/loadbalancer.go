@@ -37,6 +37,11 @@ type responseAdapter struct {
 	stickyCookie  string
 }
 
+// Unwrap implements http.ResponseWriter to allow the immediate flushing for HTTP Streaming events
+func (a *responseAdapter) Unwrap() http.ResponseWriter {
+	return a.ResponseWriter
+}
+
 func (a *responseAdapter) WriteHeader(statusCode int) {
 	// Append the sticky cookie the response has a session cookie set.
 
