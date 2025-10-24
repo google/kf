@@ -72,7 +72,6 @@ func TestBuild_Validate(t *testing.T) {
 			want: ErrInvalidEnumValue("a-terrible-kind", "spec.kind", []string{
 				string(tektonv1beta1.NamespacedTaskKind),
 				BuiltinTaskKind,
-				string(tektonv1beta1.ClusterTaskKind),
 			}),
 		},
 		"missing name": {
@@ -83,7 +82,7 @@ func TestBuild_Validate(t *testing.T) {
 				Spec: BuildSpec{
 					BuildTaskRef: BuildTaskRef{
 						Name: "",
-						Kind: "ClusterTask",
+						Kind: string(tektonv1beta1.NamespacedTaskKind),
 					},
 				},
 			},
@@ -103,7 +102,6 @@ func TestBuild_Validate(t *testing.T) {
 			want: ErrInvalidEnumValue("", "spec.kind", []string{
 				string(tektonv1beta1.NamespacedTaskKind),
 				BuiltinTaskKind,
-				string(tektonv1beta1.ClusterTaskKind),
 			}),
 		},
 		"has both SOURCE_IMAGE and SourcePackage": {
@@ -144,16 +142,6 @@ func TestBuildWithDisableCustomBuildsFlag_Validate(t *testing.T) {
 		disableCustomBuilds bool
 		want                *apis.FieldError
 	}{
-		"custom builds disabled, Cluster Task": {
-			spec:                basicBuild(string(tektonv1beta1.ClusterTaskKind)),
-			inCreate:            true,
-			disableCustomBuilds: true,
-			want: apis.ErrGeneric(
-				fmt.Sprintf("Custom Builds are disabled, kind must be %q but was %q",
-					BuiltinTaskKind,
-					string(tektonv1beta1.ClusterTaskKind)),
-				"spec.kind"),
-		},
 		"custom builds disabled, Namespaced Task": {
 			spec:                basicBuild(string(tektonv1beta1.NamespacedTaskKind)),
 			inCreate:            true,
@@ -168,11 +156,6 @@ func TestBuildWithDisableCustomBuildsFlag_Validate(t *testing.T) {
 			spec:                basicBuild(BuiltinTaskKind),
 			inCreate:            true,
 			disableCustomBuilds: true,
-		},
-		"custom builds enabled, ClusterTaskKind": {
-			spec:                basicBuild(string(tektonv1beta1.ClusterTaskKind)),
-			inCreate:            true,
-			disableCustomBuilds: false,
 		},
 		"custom builds disabled, not in create, NamespacedTaskKind": {
 			spec:                basicBuild(string(tektonv1beta1.NamespacedTaskKind)),
@@ -253,8 +236,8 @@ func TestBuildWithDockerfileBuildsFlag_Validate(t *testing.T) {
 			inCreate:                true,
 			dockerfileBuildsEnabled: false,
 		},
-		"docker builds disabled, Cluster Task": {
-			spec:                    basicBuildSpec("name", string(tektonv1beta1.ClusterTaskKind)),
+		"docker builds disabled, Namespaced Task": {
+			spec:                    basicBuildSpec("name", string(tektonv1beta1.NamespacedTaskKind)),
 			inCreate:                true,
 			dockerfileBuildsEnabled: false,
 		},
@@ -284,8 +267,8 @@ func TestBuildWithDockerfileBuildsFlag_Validate(t *testing.T) {
 			inCreate:                true,
 			dockerfileBuildsEnabled: true,
 		},
-		"docker builds enabled, Cluster Task": {
-			spec:                    basicBuildSpec("name", string(tektonv1beta1.ClusterTaskKind)),
+		"docker builds enabled, Namespaced Task": {
+			spec:                    basicBuildSpec("name", string(tektonv1beta1.NamespacedTaskKind)),
 			inCreate:                true,
 			dockerfileBuildsEnabled: true,
 		},
@@ -331,7 +314,7 @@ func TestBuildWithCustomBuildpacksAndStacksFlag_Validate(t *testing.T) {
 	v3BuildCustomStack := BuildpackV3Build("some/source/image", basicStackV3("stack"), []string{})
 	v3BuildInvalidParams := basicBuildSpec(BuildpackV3BuildTaskName, BuiltinTaskKind)
 	docker := DockerfileBuild("some/source/image", "path/to/dockerfile")
-	cluster := basicBuildSpec("name", string(tektonv1beta1.ClusterTaskKind))
+	namespacedTask := basicBuildSpec("name", string(tektonv1beta1.NamespacedTaskKind))
 
 	cases := map[string]struct {
 		spec                    BuildSpec
@@ -491,18 +474,18 @@ func TestBuildWithCustomBuildpacksAndStacksFlag_Validate(t *testing.T) {
 			customBuildpacksEnabled: true,
 			customStacksEnabled:     false,
 		},
-		"Cluster Task, default": {
-			spec:                    cluster,
+		"Namespaced Task, default": {
+			spec:                    namespacedTask,
 			customBuildpacksEnabled: false,
 			customStacksEnabled:     true,
 		},
-		"Cluster Task, custom Buildpacks disabled": {
-			spec:                    cluster,
+		"Namespaced Task, custom Buildpacks disabled": {
+			spec:                    namespacedTask,
 			customBuildpacksEnabled: false,
 			customStacksEnabled:     true,
 		},
-		"Cluster Task, custom Stacks disabled": {
-			spec:                    cluster,
+		"Namespaced Task, custom Stacks disabled": {
+			spec:                    namespacedTask,
 			customBuildpacksEnabled: true,
 			customStacksEnabled:     false,
 		},

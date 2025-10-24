@@ -68,7 +68,7 @@ func exampleCustomTaskBuild() (*v1alpha1.Build, *tektonv1beta1.TaskSpec) {
 	build.UID = "0d5c53ff-edf1-4d42-8d1a-fdd5b5cf23d3"
 	build.Namespace = "my-namespace"
 	build.Spec.Name = "buildpack"
-	build.Spec.Kind = "ClusterTask"
+	build.Spec.Kind = string(tektonv1beta1.NamespacedTaskKind)
 
 	build.Spec.Params = []v1alpha1.BuildParam{
 		{
