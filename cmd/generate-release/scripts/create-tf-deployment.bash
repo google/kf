@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+set -eux
 
 # XXX: In general, accepting so many flags is a bad design. However this
 # script will only be called by automation.
@@ -41,30 +41,41 @@ then
   exit 1
 fi
 
-# Create/Update the deployment
-retry_count=3
-n=0
-until [ "$n" -ge ${retry_count} ]; do
-    terraform init -upgrade && \
-    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-    terraform init -upgrade -chdir="${script_dir}" && \
-    terraform apply -chdir="${script_dir}" \
-      -var="project_id=${project_id}" \
-      -var="deployment_name=${cluster}" \
-      -var="zone=${zone}" \
-      -var="network=${network}" \
-      -var="initial_node_count=${node_count}" \
-      -var="machine_type=${machine_type}" \
-      -var="image_type=${image_type}" \
-      -var="release_channel=${release_channel}" \
-      -auto-approve && \
-      break
+function retry() {
+    local retries=$1
+    local wait=$2
 
-  n=$((n + 1))
-  echo -e "import random\n\nimport time\ntime.sleep(random.randint(30,90))" | python3
-done
+    # Remove the first two arguments (retries and wait) to isolate the command
+    shift 2 
 
-if [ ${n} = ${retry_count} ]; then
-  echo "create deployment failed too many times (${retry_count})"
-  exit 1
-fi
+    local count=0
+    until "$@"; do
+        exit_code=$?
+        count=$((count + 1))
+        if [ $count -ge $retries ]; then
+            echo "Command \"$1\" failed after $retries attempts."
+            return $exit_code
+        fi
+        echo "Command failed. Retrying in $wait seconds... (Attempt $count/$retries)"
+        sleep $wait
+    done
+    return 0
+}
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+
+echo "Initializing Terraform..."
+terraform -chdir="${script_dir}" init -upgrade
+
+echo "Applying Terraform configuration..."
+retry 15 60 terraform -chdir="${script_dir}" apply \
+        -var="project_id=${project_id}" \
+        -var="deployment_name=${cluster}" \
+        -var="zone=${zone}" \
+        -var="network=${network}" \
+        -var="initial_node_count=${node_count}" \
+        -var="machine_type=${machine_type}" \
+        -var="image_type=${image_type}" \
+        -var="release_channel=${release_channel}" \
+        -auto-approve
+echo "Terraform apply completed successfully."

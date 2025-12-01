@@ -157,8 +157,6 @@ func checkSubstitutions(deployerImage string, substitions map[string]string) []*
 }
 
 func freshCluster(deployerImage string) []*cloudbuild.BuildStep {
-	// XXX: This uses bash instead of gcloud directly so we can use the right
-	// subcommand (create vs update).
 	return append([]*cloudbuild.BuildStep{
 		{
 			Id:         "create GKE cluster",

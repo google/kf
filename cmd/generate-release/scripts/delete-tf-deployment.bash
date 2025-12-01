@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # This has been added to work around spurious problems with deleting GKE cluster
-# at the end of integration tests (usualy due to "operation in progress")
+# at the end of integration tests (usually due to "operation in progress")
 
 set -eux
 
@@ -27,39 +27,33 @@ then
   exit 1
 fi
 
-# retry will run the command, if it fails, it will sleep and then try again:
-# args:
-# 1: command: The command to run. (required)
-# 2: retry_count: The number of times to attempt the command. (defaults to 3)
-# 3: sleep_seconds: The number of seconds to sleep after a failure. (defaults to 1)
+# Usage: retry <retries> <wait_seconds> <command> [args...]
 function retry() {
-    command=${1:-x}
-    retry_count=${2:-3}
-    sleep_seconds=${3:-1}
+    local retries=$1
+    local wait=$2
+    shift 2 # Remove the first two arguments (retries and wait) to isolate the command
 
-    if [ "${command}" = "x" ]; then
-        echo "command missing"
-        exit 1
-    fi
-
-    n=0
-    until [ "$n" -ge ${retry_count} ]
-    do
-       ${command} && break
-       echo "failed..."
-       n=$((n+1))
-       sleep ${sleep_seconds}
+    local count=0
+    until "$@"; do
+        exit_code=$?
+        count=$((count + 1))
+        if [ $count -ge $retries ]; then
+            echo "Command \"$1\" failed after $retries attempts."
+            return $exit_code
+        fi
+        echo "Command failed. Retrying in $wait seconds... (Attempt $count/$retries)"
+        sleep $wait
     done
-
-    if [ ${n} = ${retry_count} ];then
-        echo "\"${command}\" failed too many times: (${retry_count})"
-        exit 1
-    fi
+    return 0
 }
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
-retry "terraform apply -chdir="${script_dir}" \
+echo "Initializing Terraform..."
+terraform -chdir="${script_dir}" init -upgrade
+
+echo "Destroying Terraform configuration..."
+retry 15 60 terraform -chdir="${script_dir}" destroy \
         -var="project_id=${project_id}" \
         -var="deployment_name=${cluster}" \
         -var="zone=${zone}" \
@@ -68,5 +62,4 @@ retry "terraform apply -chdir="${script_dir}" \
         -var="machine_type=${machine_type}" \
         -var="image_type=${image_type}" \
         -var="release_channel=${release_channel}" \
-        -auto-approve" 15 60
-    
+        -auto-approve
