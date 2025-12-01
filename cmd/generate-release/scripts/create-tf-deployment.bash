@@ -41,29 +41,25 @@ then
   exit 1
 fi
 
-# Ensure the DM service account is a project owner. More information can
-# be found here:
-# https://cloud.google.com/deployment-manager/docs/configuration/set-access-control-resources#granting_permission_to_set_iam_policies
-python3 /builder/setup_dm_service_account.py "${project_id}"
-
 # Create/Update the deployment
 retry_count=3
 n=0
 until [ "$n" -ge ${retry_count} ]; do
-  # Determine the command: update or create
-  if [ ! "$(gcloud deployment-manager deployments list --filter "name<=${cluster} AND name>=${cluster}")" ]; then
-    echo "deployment ${cluster} does not exists, will create deployment"
-    command="create"
-  else
-    echo "deployment ${cluster} already exists, will update existing deployment"
-    command="update"
-  fi
+    terraform init -upgrade && \
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+    terraform init -upgrade -chdir="${script_dir}" && \
+    terraform apply -chdir="${script_dir}" \
+      -var="project_id=${project_id}" \
+      -var="deployment_name=${cluster}" \
+      -var="zone=${zone}" \
+      -var="network=${network}" \
+      -var="initial_node_count=${node_count}" \
+      -var="machine_type=${machine_type}" \
+      -var="image_type=${image_type}" \
+      -var="release_channel=${release_channel}" \
+      -auto-approve && \
+      break
 
-  gcloud deployment-manager deployments "${command}" \
-    "${cluster}" \
-    --properties "zone:${zone},initialNodeCount:${node_count},machineType:${machine_type},imageType:${image_type},network:${network},releaseChannel:${release_channel}" \
-    --template /kf/bin/deployment-manager/cluster.py &&
-    break
   n=$((n + 1))
   echo -e "import random\n\nimport time\ntime.sleep(random.randint(30,90))" | python3
 done

@@ -163,7 +163,7 @@ func freshCluster(deployerImage string) []*cloudbuild.BuildStep {
 		{
 			Id:         "create GKE cluster",
 			Name:       deployerImage,
-			Entrypoint: "/builder/create_dm_deployment.bash",
+			Entrypoint: "/builder/create-dm-deployment.bash",
 			Args: []string{
 				"${PROJECT_ID}",
 				"${_CLOUDSDK_CONTAINER_CLUSTER}",
@@ -206,9 +206,15 @@ func deleteCluster(deployerImage string) []*cloudbuild.BuildStep {
 		{
 			Id:         "delete GKE cluster",
 			Name:       deployerImage,
-			Entrypoint: "/builder/delete-cluster.bash",
+			Entrypoint: "/builder/delete-tf-deployment.bash",
 			Args: []string{
+				"${PROJECT_ID}",
 				"${_CLOUDSDK_CONTAINER_CLUSTER}",
+				"${_CLOUDSDK_COMPUTE_ZONE}",
+				"${_NODE_COUNT}",
+				"${_MACHINE_TYPE}",
+				"${_NETWORK}",
+				"${_RELEASE_CHANNEL}",
 			},
 		},
 	}
