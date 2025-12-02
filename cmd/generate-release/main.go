@@ -209,10 +209,6 @@ func deleteCluster(deployerImage string) []*cloudbuild.BuildStep {
 				"${PROJECT_ID}",
 				"${_CLOUDSDK_CONTAINER_CLUSTER}",
 				"${_CLOUDSDK_COMPUTE_ZONE}",
-				"${_NODE_COUNT}",
-				"${_MACHINE_TYPE}",
-				"${_NETWORK}",
-				"${_RELEASE_CHANNEL}",
 			},
 		},
 	}

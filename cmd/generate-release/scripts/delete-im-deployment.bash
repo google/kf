@@ -8,22 +8,13 @@ set -eux
 project_id=$1
 cluster=$2
 zone=$3
-node_count=$4
-machine_type=$5
-network=$6
-release_channel=$7
-image_type="cos_containerd"
 
 if
   [ -z "${project_id}" ] ||
     [ -z "${cluster}" ] ||
-    [ -z "${zone}" ] ||
-    [ -z "${node_count}" ] ||
-    [ -z "${machine_type}" ] ||
-    [ -z "${network}" ] ||
-    [ -z "${release_channel}" ]
+    [ -z "${zone}" ]
 then
-  echo "usage: $0 [PROJECT_ID] [CLOUDSDK_CONTAINER_CLUSTER] [CLOUDSDK_COMPUTE_ZONE] [NODE_COUNT] [MACHINE_TYPE] [NETWORK] [RELEASE_CHANNEL]"
+  echo "usage: $0 [PROJECT_ID] [CLOUDSDK_CONTAINER_CLUSTER] [CLOUDSDK_COMPUTE_ZONE]"
   exit 1
 fi
 
