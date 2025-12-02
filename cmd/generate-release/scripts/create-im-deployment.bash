@@ -42,7 +42,7 @@ then
 fi
 
 REPO_URL="https://github.com/google/kf"
-REPO_BRANCH="jakweg_migrate-dm-to-tf" # TODO: change to main before merged
+REPO_BRANCH="main"
 TERRAFORM_DIR="cmd/generate-release/scripts/"
 DEPLOYMENT_ZONE="us-central1"
 SERVICE_ACCOUNT="infra-manager-sa@${project_id}.iam.gserviceaccount.com"
