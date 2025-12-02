@@ -187,7 +187,7 @@ func TestFreshCluster(t *testing.T) {
 	testutil.AssertEqual(t, "create GKE cluster", &cloudbuild.BuildStep{
 		Id:         "create GKE cluster",
 		Name:       "deployer-image",
-		Entrypoint: "/builder/create_dm_deployment.bash",
+		Entrypoint: "/builder/create-im-deployment.bash",
 		Args: []string{
 			"${PROJECT_ID}",
 			"${_CLOUDSDK_CONTAINER_CLUSTER}",
@@ -243,9 +243,15 @@ func TestDeleteCluster(t *testing.T) {
 	testutil.AssertEqual(t, "delete GKE cluster", &cloudbuild.BuildStep{
 		Id:         "delete GKE cluster",
 		Name:       "deployer-image",
-		Entrypoint: "/builder/delete-cluster.bash",
+		Entrypoint: "/builder/delete-im-deployment.bash",
 		Args: []string{
+			"${PROJECT_ID}",
 			"${_CLOUDSDK_CONTAINER_CLUSTER}",
+			"${_CLOUDSDK_COMPUTE_ZONE}",
+			"${_NODE_COUNT}",
+			"${_MACHINE_TYPE}",
+			"${_NETWORK}",
+			"${_RELEASE_CHANNEL}",
 		},
 	}, b.Steps[1])
 }

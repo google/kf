@@ -41,41 +41,21 @@ then
   exit 1
 fi
 
-function retry() {
-    local retries=$1
-    local wait=$2
+REPO_URL="https://github.com/google/kf"
+REPO_BRANCH="jakweg/migrate-dm-to-tf" # TODO: change to main before merged
+TERRAFORM_DIR="cmd/generate-release/scripts/"
+DEPLOYMENT_ZONE="us-central1"
+SERVICE_ACCOUNT="infra-manager-sa@${project_id}.iam.gserviceaccount.com"
 
-    # Remove the first two arguments (retries and wait) to isolate the command
-    shift 2 
+echo "Creating IM deployment..."
+gcloud infra-manager deployments apply "projects/${project_id}/locations/${DEPLOYMENT_ZONE}/deployments/${cluster}" \
+    --service-account="projects/${project_id}/serviceAccounts/${SERVICE_ACCOUNT}" \
+    --git-source-repo="${REPO_URL}" \
+    --git-source-directory=${TERRAFORM_DIR} \
+    --git-source-ref=${REPO_BRANCH} \
+    --inputs=project_id=${project_id},deployment_name=${cluster},zone=${zone},network=${network},initial_node_count=${node_count},machine_type=${machine_type},image_type=${image_type},release_channel=${release_channel}
 
-    local count=0
-    until "$@"; do
-        exit_code=$?
-        count=$((count + 1))
-        if [ $count -ge $retries ]; then
-            echo "Command \"$1\" failed after $retries attempts."
-            return $exit_code
-        fi
-        echo "Command failed. Retrying in $wait seconds... (Attempt $count/$retries)"
-        sleep $wait
-    done
-    return 0
-}
+echo "Waiting for IM deployment to be created..."
+gcloud infra-manager deployments wait projects/${project_id}/locations/${DEPLOYMENT_ZONE}/deployments/${cluster}
 
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-
-echo "Initializing Terraform..."
-terraform -chdir="${script_dir}" init -upgrade
-
-echo "Applying Terraform configuration..."
-retry 15 60 terraform -chdir="${script_dir}" apply \
-        -var="project_id=${project_id}" \
-        -var="deployment_name=${cluster}" \
-        -var="zone=${zone}" \
-        -var="network=${network}" \
-        -var="initial_node_count=${node_count}" \
-        -var="machine_type=${machine_type}" \
-        -var="image_type=${image_type}" \
-        -var="release_channel=${release_channel}" \
-        -auto-approve
-echo "Terraform apply completed successfully."
+echo "IM deployment created."
