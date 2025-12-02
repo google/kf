@@ -26,6 +26,7 @@ node_count=$4
 machine_type=$5
 network=$6
 release_channel=$7
+repo_ref=$8
 image_type="cos_containerd"
 
 if
@@ -35,14 +36,14 @@ if
     [ -z "${node_count}" ] ||
     [ -z "${machine_type}" ] ||
     [ -z "${network}" ] ||
-    [ -z "${release_channel}" ]
+    [ -z "${release_channel}" ] ||
+    [ -z "${repo_ref}" ]
 then
-  echo "usage: $0 [PROJECT_ID] [CLOUDSDK_CONTAINER_CLUSTER] [CLOUDSDK_COMPUTE_ZONE] [NODE_COUNT] [MACHINE_TYPE] [NETWORK] [RELEASE_CHANNEL]"
+  echo "usage: $0 [PROJECT_ID] [CLOUDSDK_CONTAINER_CLUSTER] [CLOUDSDK_COMPUTE_ZONE] [NODE_COUNT] [MACHINE_TYPE] [NETWORK] [RELEASE_CHANNEL] [REPO_REF]"
   exit 1
 fi
 
 REPO_URL="https://github.com/google/kf"
-REPO_BRANCH="main"
 TERRAFORM_DIR="cmd/generate-release/scripts/"
 DEPLOYMENT_ZONE="us-central1"
 SERVICE_ACCOUNT="infra-manager-sa@${project_id}.iam.gserviceaccount.com"
@@ -51,7 +52,7 @@ gcloud infra-manager deployments apply "projects/${project_id}/locations/${DEPLO
     --service-account="projects/${project_id}/serviceAccounts/${SERVICE_ACCOUNT}" \
     --git-source-repo="${REPO_URL}" \
     --git-source-directory=${TERRAFORM_DIR} \
-    --git-source-ref=${REPO_BRANCH} \
+    --git-source-ref=${repo_ref} \
     --input-values=project_id=${project_id},deployment_name=${cluster},zone=${zone},network=${network},initial_node_count=${node_count},machine_type=${machine_type},image_type=${image_type},release_channel=${release_channel}
 
 echo "IM deployment created."

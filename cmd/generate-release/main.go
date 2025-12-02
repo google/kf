@@ -170,6 +170,7 @@ func freshCluster(deployerImage string) []*cloudbuild.BuildStep {
 				"${_MACHINE_TYPE}",
 				"${_NETWORK}",
 				"${_RELEASE_CHANNEL}",
+				"${REF_NAME}",
 			},
 		},
 		{

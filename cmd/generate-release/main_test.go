@@ -196,6 +196,7 @@ func TestFreshCluster(t *testing.T) {
 			"${_MACHINE_TYPE}",
 			"${_NETWORK}",
 			"${_RELEASE_CHANNEL}",
+			"${REF_NAME}",
 		},
 	}, b.Steps[1])
 
