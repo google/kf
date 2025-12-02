@@ -53,7 +53,7 @@ gcloud infra-manager deployments apply "projects/${project_id}/locations/${DEPLO
     --git-source-repo="${REPO_URL}" \
     --git-source-directory=${TERRAFORM_DIR} \
     --git-source-ref=${REPO_BRANCH} \
-    --inputs=project_id=${project_id},deployment_name=${cluster},zone=${zone},network=${network},initial_node_count=${node_count},machine_type=${machine_type},image_type=${image_type},release_channel=${release_channel}
+    --input-values=project_id=${project_id},deployment_name=${cluster},zone=${zone},network=${network},initial_node_count=${node_count},machine_type=${machine_type},image_type=${image_type},release_channel=${release_channel}
 
 echo "Waiting for IM deployment to be created..."
 gcloud infra-manager deployments wait projects/${project_id}/locations/${DEPLOYMENT_ZONE}/deployments/${cluster}
