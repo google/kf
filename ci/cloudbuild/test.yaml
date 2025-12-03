@@ -101,6 +101,9 @@ substitutions:
   # both 'broker'.
   _SELF_SIGNED_CERTS_BROKER_URL: ''
 
+  # _REF_NAME is the branch name used by create GKE cluster step
+  _REF_NAME: "main"
+
   _KO_IMAGE: 'gcr.io/kf-releases/ko:latest'
   _CLOUDSDK_IMAGE: "gcr.io/google.com/cloudsdktool/cloud-sdk:528.0.0-alpine"
   _GOLANG_IMAGE: 'golang:1.25'
@@ -254,10 +257,10 @@ steps:
       echo -e "import random\n\nimport time\ntime.sleep(random.randint(30,90))" | python3
     done
 
-    gcloud builds submit \
-        --no-source \
-        --config=/workspace/${BUILD_ID}/fresh-cluster.yaml \
-        --substitutions=_CLOUDSDK_COMPUTE_ZONE=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_COMPUTE_ZONE),_CLOUDSDK_CONTAINER_CLUSTER=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_CONTAINER_CLUSTER),_NODE_COUNT=${_NODE_COUNT},_MACHINE_TYPE=${_MACHINE_TYPE},_RELEASE_CHANNEL=${_RELEASE_CHANNEL},_ASM_MANAGED=${_ASM_MANAGED}
+        gcloud builds submit \
+            --no-source \
+            --config=/workspace/${BUILD_ID}/fresh-cluster.yaml \
+            --substitutions=_CLOUDSDK_COMPUTE_ZONE=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_COMPUTE_ZONE),_CLOUDSDK_CONTAINER_CLUSTER=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_CONTAINER_CLUSTER),_NODE_COUNT=${_NODE_COUNT},_MACHINE_TYPE=${_MACHINE_TYPE},_RELEASE_CHANNEL=${_RELEASE_CHANNEL},_REF_NAME=${_REF_NAME},_ASM_MANAGED=${_ASM_MANAGED}
 
     if [ ! -z "${_EXTRA_CERTS_URL}" ]; then
       gsutil cp "${_EXTRA_CERTS_URL}" /workspace/certs.pem
