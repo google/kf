@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-# This has been added to work around spurious problems with deleting GKE cluster
-# at the end of integration tests (usually due to "operation in progress")
-
 set -eux
 
 project_id=$1

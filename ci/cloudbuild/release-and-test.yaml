@@ -67,7 +67,7 @@ steps:
     args: ["./hack/prow/e2e-test.sh"]
     env:
       - "GCP_PROJECT_ID=$PROJECT_ID"
-      - "REF_NAME=${REF_NAME}"
+      - "REF_NAME=$REF_NAME"
       - "BUILD_ID=$BUILD_ID"
       - "RELEASE_BUCKET=$_RELEASE_BUCKET"
       - "EXPORT_BUCKET=$_EXPORT_BUCKET"

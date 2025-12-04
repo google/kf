@@ -209,7 +209,7 @@ resource "google_container_node_pool" "primary_nodes" {
 }
 
 # ------------------------------------------------------------------------------
-# 5. Legacy Service Account Permissions (Migrated from Python script)
+# 5. Legacy Service Account Permissions
 #    This ensures the 'Google APIs Service Agent' has Owner permissions.
 # ------------------------------------------------------------------------------
 data "google_project" "current" {
