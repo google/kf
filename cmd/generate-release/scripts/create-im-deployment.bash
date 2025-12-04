@@ -48,6 +48,11 @@ TERRAFORM_DIR="cmd/generate-release/scripts/"
 DEPLOYMENT_ZONE="us-central1"
 SERVICE_ACCOUNT="infra-manager-sa@${project_id}.iam.gserviceaccount.com"
 
+if ! gcloud iam service-accounts describe "${SERVICE_ACCOUNT}" --project="${project_id}" > /dev/null 2>&1; then
+    echo "Service Account ${SERVICE_ACCOUNT} does not exist. Run [ scripts/create-im-sa.bash ${project_id} ]"
+    exit 1
+fi
+
 gcloud infra-manager deployments apply "projects/${project_id}/locations/${DEPLOYMENT_ZONE}/deployments/${cluster}" \
     --service-account="projects/${project_id}/serviceAccounts/${SERVICE_ACCOUNT}" \
     --git-source-repo="${REPO_URL}" \
