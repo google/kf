@@ -393,7 +393,6 @@ steps:
   - generate Kf Release
   - generate kf Operator Release
   - package third_party
-  - package deployment-manager templates
   - download Tekton
   entrypoint: bash
   args:
@@ -410,7 +409,6 @@ steps:
   - build CLIs
   - package third_party
   - download Tekton
-  - package deployment-manager templates
   name: "${_CLOUDSDK_IMAGE}"
   dir: /workspace
   entrypoint: bash
