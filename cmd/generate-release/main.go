@@ -157,13 +157,11 @@ func checkSubstitutions(deployerImage string, substitions map[string]string) []*
 }
 
 func freshCluster(deployerImage string) []*cloudbuild.BuildStep {
-	// XXX: This uses bash instead of gcloud directly so we can use the right
-	// subcommand (create vs update).
 	return append([]*cloudbuild.BuildStep{
 		{
 			Id:         "create GKE cluster",
 			Name:       deployerImage,
-			Entrypoint: "/builder/create_dm_deployment.bash",
+			Entrypoint: "/builder/create-im-deployment.bash",
 			Args: []string{
 				"${PROJECT_ID}",
 				"${_CLOUDSDK_CONTAINER_CLUSTER}",
@@ -172,6 +170,7 @@ func freshCluster(deployerImage string) []*cloudbuild.BuildStep {
 				"${_MACHINE_TYPE}",
 				"${_NETWORK}",
 				"${_RELEASE_CHANNEL}",
+				"${_REF_NAME}",
 			},
 		},
 		{
@@ -206,9 +205,11 @@ func deleteCluster(deployerImage string) []*cloudbuild.BuildStep {
 		{
 			Id:         "delete GKE cluster",
 			Name:       deployerImage,
-			Entrypoint: "/builder/delete-cluster.bash",
+			Entrypoint: "/builder/delete-im-deployment.bash",
 			Args: []string{
+				"${PROJECT_ID}",
 				"${_CLOUDSDK_CONTAINER_CLUSTER}",
+				"${_CLOUDSDK_COMPUTE_ZONE}",
 			},
 		},
 	}

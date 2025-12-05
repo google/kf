@@ -19,7 +19,7 @@ _GCP_PROJECT_ID="${GCP_PROJECT_ID}"
 
 cd ci/cloudbuild/scheduled/reap-gke-clusters
 
-python3 delete_dm_deployments.py ${_GCP_PROJECT_ID}
+python3 delete_im_deployments.py ${_GCP_PROJECT_ID}
 python3 delete_gke_clusters.py ${_GCP_PROJECT_ID}
 python3 cleanup_load_balancers.py ${_GCP_PROJECT_ID}
 python3 cleanup_firewall_rules.py ${_GCP_PROJECT_ID}

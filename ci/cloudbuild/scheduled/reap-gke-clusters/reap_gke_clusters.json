@@ -2,11 +2,11 @@
     "timeout": "18000s",
     "steps": [
         {
-            "id": "deployment-manager deployments",
+            "id": "infrastructure-manager deployments",
             "name": "CONTAINER_NAME_PLACEHOLDER",
             "timeout":"3600s",
             "entrypoint": "python3",
-            "args": ["/scripts/delete_dm_deployments.py", "${PROJECT_ID}"]
+            "args": ["/scripts/delete_im_deployments.py", "${PROJECT_ID}"]
         },
         {
             "id": "GKE clusters",

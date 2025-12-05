@@ -363,14 +363,6 @@ steps:
   waitFor: ['setup workspace', 'go mod vendor', "operator go mod vendor"]
   entrypoint: tar
   args: ["-czf", "/workspace/bin/third_party.tgz", "./third_party/", "./vendor/"]
-
-- id: package deployment-manager templates
-  name: "${_CLOUDSDK_IMAGE}"
-  dir: /workspace
-  waitFor: ['setup workspace']
-  entrypoint: cp
-  args: ["-r", "./samples/deployment-manager/", "/workspace/bin"]
-
 - id: download Tekton
   waitFor: ['setup workspace', 'go mod vendor', "operator go mod vendor"]
   name: "${_GOLANG_IMAGE}"
@@ -401,7 +393,6 @@ steps:
   - generate Kf Release
   - generate kf Operator Release
   - package third_party
-  - package deployment-manager templates
   - download Tekton
   entrypoint: bash
   args:
@@ -418,7 +409,6 @@ steps:
   - build CLIs
   - package third_party
   - download Tekton
-  - package deployment-manager templates
   name: "${_CLOUDSDK_IMAGE}"
   dir: /workspace
   entrypoint: bash

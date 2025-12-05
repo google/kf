@@ -20,11 +20,11 @@ timeout: 7200s
 options:
   machineType: "N1_HIGHCPU_8"
 steps:
-  - id: reap deployment-manager deployments
+  - id: reap infrastructure-manager deployments
     name: "gcr.io/${PROJECT_ID}/reap-gke-clusters"
     timeout: 3600s
     entrypoint: python3
-    args: ["/scripts/delete_dm_deployments.py", "${PROJECT_ID}"]
+    args: ["/scripts/delete_im_deployments.py", "${PROJECT_ID}"]
 
   - id: reap GKE clusters
     name: "gcr.io/${PROJECT_ID}/reap-gke-clusters"
