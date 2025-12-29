@@ -19,6 +19,8 @@ _GCP_PROJECT_ID="${GCP_PROJECT_ID}"
 
 cd ci/cloudbuild/scheduled/reap-gke-clusters
 
+# Make sure to rebuild reap image after any modifications in following files, see build-image.yaml
+
 python3 delete_im_deployments.py ${_GCP_PROJECT_ID}
 python3 delete_gke_clusters.py ${_GCP_PROJECT_ID}
 python3 cleanup_load_balancers.py ${_GCP_PROJECT_ID}

@@ -17,7 +17,7 @@
 #
 # ```sh
 # gcloud builds submit ./ci/cloudbuild/scheduled \
-# --config=./ci/cloudbuild/scheduled/reap-gke-clusters/cloudbuild.yaml
+# --config=./ci/cloudbuild/scheduled/reap-gke-clusters/build-image.yaml
 # ```
 
 images: ["gcr.io/${PROJECT_ID}/reap-gke-clusters"]
