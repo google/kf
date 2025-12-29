@@ -25,7 +25,6 @@ _ASM_MANAGED="${ASM_MANAGED:-false}"
 _RELEASE_CHANNEL="${RELEASE_CHANNEL:-REGULAR}"
 _SKIP_UNIT_TESTS="${SKIP_UNIT_TESTS:-true}"
 _EXTRA_CERTS_URL="${_EXTRA_CERTS_URL:-}"
-_REF_NAME="${REF_NAME:-}"
 
 if ! [ -x "$(command -v jq)" ]; then
   apk add --update --no-cache jq
@@ -80,7 +79,7 @@ trap finish EXIT
 gcloud builds submit . \
     --project ${_GCP_PROJECT_ID} \
     --config=cmd/generate-release/cloudbuild.yaml \
-    --substitutions=_RELEASE_BUCKET=${_RELEASE_BUCKET},_GIT_SHA=${git_sha},_VERSION=${release_id} \
+    --substitutions=_RELEASE_BUCKET=${_RELEASE_BUCKET},_GIT_SHA=${git_sha},_VERSION=${release_id},_CLOUDSDK_IMAGE=${_CLOUDSDK_IMAGE} \
     | tee -a ./build-log.txt
 
 # Run integration tests.
@@ -90,7 +89,7 @@ full_release_bucket=gs://${_RELEASE_BUCKET}/${release_id}
 gcloud builds submit . \
     --project ${_GCP_PROJECT_ID} \
     --config=ci/cloudbuild/test.yaml \
-    --substitutions="_CLOUDSDK_COMPUTE_ZONE=random,_CLOUDSDK_CONTAINER_CLUSTER=${cluster_name},_NODE_COUNT=6,_FULL_RELEASE_BUCKET=${full_release_bucket},_DELETE_CLUSTER=${_DELETE_CLUSTER},_MACHINE_TYPE=n1-highmem-4,_RELEASE_CHANNEL=${_RELEASE_CHANNEL},_REF_NAME=${_REF_NAME},_SKIP_UNIT_TESTS=${_SKIP_UNIT_TESTS},_ASM_MANAGED=${_ASM_MANAGED}",_EXTRA_CERTS_URL=${_EXTRA_CERTS_URL} \
+    --substitutions="_CLOUDSDK_COMPUTE_ZONE=random,_CLOUDSDK_CONTAINER_CLUSTER=${cluster_name},_NODE_COUNT=6,_FULL_RELEASE_BUCKET=${full_release_bucket},_DELETE_CLUSTER=${_DELETE_CLUSTER},_MACHINE_TYPE=n1-highmem-4,_RELEASE_CHANNEL=${_RELEASE_CHANNEL},_REF_NAME=${git_sha},_SKIP_UNIT_TESTS=${_SKIP_UNIT_TESTS},_ASM_MANAGED=${_ASM_MANAGED},_CLOUDSDK_IMAGE=${_CLOUDSDK_IMAGE}",_EXTRA_CERTS_URL=${_EXTRA_CERTS_URL} \
     | tee -a ./build-log.txt
 
 # Update result to success if we reach the end, elsewise we'll report a failure

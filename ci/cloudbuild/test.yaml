@@ -257,10 +257,31 @@ steps:
       echo -e "import random\n\nimport time\ntime.sleep(random.randint(30,90))" | python3
     done
 
-        gcloud builds submit \
-            --no-source \
-            --config=/workspace/${BUILD_ID}/fresh-cluster.yaml \
-            --substitutions=_CLOUDSDK_COMPUTE_ZONE=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_COMPUTE_ZONE),_CLOUDSDK_CONTAINER_CLUSTER=$(cat /workspace/${BUILD_ID}/_CLOUDSDK_CONTAINER_CLUSTER),_NODE_COUNT=${_NODE_COUNT},_MACHINE_TYPE=${_MACHINE_TYPE},_RELEASE_CHANNEL=${_RELEASE_CHANNEL},_REF_NAME=${_REF_NAME},_ASM_MANAGED=${_ASM_MANAGED}
+    CONFIG_FILE="/workspace/${BUILD_ID}/fresh-cluster.yaml"
+
+    ZONE=$(cat "/workspace/${BUILD_ID}/_CLOUDSDK_COMPUTE_ZONE")
+    CLUSTER=$(cat "/workspace/${BUILD_ID}/_CLOUDSDK_CONTAINER_CLUSTER")
+
+    VARS="_CLOUDSDK_COMPUTE_ZONE=$${ZONE}"
+    VARS="$${VARS},_CLOUDSDK_CONTAINER_CLUSTER=$${CLUSTER}"
+    VARS="$${VARS},_NODE_COUNT=${_NODE_COUNT}"
+    VARS="$${VARS},_MACHINE_TYPE=${_MACHINE_TYPE}"
+    VARS="$${VARS},_RELEASE_CHANNEL=${_RELEASE_CHANNEL}"
+    VARS="$${VARS},_ASM_MANAGED=${_ASM_MANAGED}"
+
+    # Older versions of kf don't use _REF_NAME, therefore check if it exists in the config file before adding it
+    # This is related to https://github.com/google/kf/pull/1092
+    # The if statement below can be safely removed after two versions following v2.11.29.
+    # The reason is that we run tests for previous releases as well. Newer versions will always have _REF_NAME.
+    if grep -q "_REF_NAME" "$$CONFIG_FILE"; then
+        echo "Found _REF_NAME in config, adding to substitutions..."
+        VARS="$${VARS},_REF_NAME=${_REF_NAME}"
+    fi
+
+    gcloud builds submit \
+        --no-source \
+        --config="$$CONFIG_FILE" \
+        --substitutions="$$VARS"
 
     if [ ! -z "${_EXTRA_CERTS_URL}" ]; then
       gsutil cp "${_EXTRA_CERTS_URL}" /workspace/certs.pem
