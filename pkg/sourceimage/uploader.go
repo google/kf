@@ -74,7 +74,6 @@ func (u *Uploader) Upload(
 		return nil, fmt.Errorf("failed to find Space: %v", err)
 	}
 
-
 	// Fetch the SourcePackage to lookup the spec, retry on error with exponential backoff.
 	var sleepDuration = 10 * time.Millisecond
 	var sourcePackage *v1alpha1.SourcePackage
@@ -86,16 +85,15 @@ func (u *Uploader) Upload(
 		if err == nil {
 			break
 		} else {
-			if (i == maxRetriesForGetSourcePackage) {
+			if i == maxRetriesForGetSourcePackage {
 				return nil, fmt.Errorf("failed to find SourcePackage, retries exhausted: %v", err)
 			} else {
 				logger.Warnf("failed to find SourcePackage: %s, retrying %dth time. Error: %v", sourcePackageName, i+1, err)
 				time.Sleep(sleepDuration)
-    			sleepDuration *= 2
+				sleepDuration *= 2
 			}
 		}
 	}
-	
 
 	// Ensure the sourcePackage is still pending. Otherwise, it is considered
 	// immutable.
