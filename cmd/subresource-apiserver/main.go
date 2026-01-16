@@ -165,7 +165,9 @@ func (h *handler) post(req *restful.Request, resp *restful.Response) {
 			})
 		},
 	)
-	if _, err := u.Upload(ctx, ns, sr, req.Request.Body); err != nil {
+	// Retrying 13 times should take around 2.73 minutes.
+	const maxRetriesForGetSourcePackage = 13
+	if _, err := u.Upload(ctx, ns, sr, maxRetriesForGetSourcePackage, req.Request.Body); err != nil {
 		h.logger.Warnf("failed to save image %s/%s: %v", ns, sr, err)
 		resp.WriteErrorString(http.StatusInternalServerError, "failed to save image")
 		return

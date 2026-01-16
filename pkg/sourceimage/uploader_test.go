@@ -82,20 +82,22 @@ func TestUploader(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name              string
-		spaceName         string
-		sourcePackageName string
-		data              io.Reader
-		setup             func(t *testing.T, f fakes)
-		assert            func(t *testing.T, o output)
+		name                          string
+		spaceName                     string
+		sourcePackageName             string
+		maxRetriesForGetSourcePackage int
+		data                          io.Reader
+		setup                         func(t *testing.T, f fakes)
+		assert                        func(t *testing.T, o output)
 
 		imagePusher   func(t *testing.T, path, imageName string) (name.Reference, error)
 		statusUpdater func(t *testing.T, s *v1alpha1.SourcePackage) error
 	}{
 		{
-			name:              "pushes the correct image",
-			spaceName:         "some-space",
-			sourcePackageName: "some-name",
+			name:                          "pushes the correct image",
+			spaceName:                     "some-space",
+			sourcePackageName:             "some-name",
+			maxRetriesForGetSourcePackage: 0,
 			setup: func(t *testing.T, f fakes) {
 				setupNormal(f, "some-space", "some-name")
 			},
@@ -126,8 +128,9 @@ func TestUploader(t *testing.T) {
 			},
 		},
 		{
-			name:      "getting Space fails",
-			spaceName: "some-space",
+			name:                          "getting Space fails",
+			spaceName:                     "some-space",
+			maxRetriesForGetSourcePackage: 0,
 			setup: func(t *testing.T, f fakes) {
 				f.fs.EXPECT().
 					Get("some-space").
@@ -138,28 +141,30 @@ func TestUploader(t *testing.T) {
 			},
 		},
 		{
-			name:              "getting SourcePackage fails",
-			spaceName:         "some-space",
-			sourcePackageName: "some-name",
+			name:                          "getting SourcePackage fails",
+			spaceName:                     "some-space",
+			sourcePackageName:             "some-name",
+			maxRetriesForGetSourcePackage: 4,
 			setup: func(t *testing.T, f fakes) {
 				f.fs.EXPECT().Get("some-space")
 
 				f.fp.EXPECT().
 					SourcePackages("some-space").
-					Return(f.fnp)
+					Return(f.fnp).Times(5) // One initial attempt and then 4 retries.
 
 				f.fnp.EXPECT().
 					Get("some-name").
-					Return(nil, errors.New("some-error"))
+					Return(nil, errors.New("some-error")).Times(5) // One initial attempt and then 4 retries.
 			},
 			assert: func(t *testing.T, o output) {
-				testutil.AssertErrorsEqual(t, errors.New("failed to find SourcePackage: some-error"), o.err)
+				testutil.AssertErrorsEqual(t, errors.New("failed to find SourcePackage, retries exhausted: some-error"), o.err)
 			},
 		},
 		{
-			name:              "SourcePackage is not pending",
-			spaceName:         "some-space",
-			sourcePackageName: "some-name",
+			name:                          "SourcePackage is not pending",
+			spaceName:                     "some-space",
+			sourcePackageName:             "some-name",
+			maxRetriesForGetSourcePackage: 0,
 			setup: func(t *testing.T, f fakes) {
 				f.fs.EXPECT().Get("some-space")
 
@@ -191,10 +196,11 @@ func TestUploader(t *testing.T) {
 			},
 		},
 		{
-			name:              "building and pushing image fails",
-			spaceName:         "some-space",
-			sourcePackageName: "some-name",
-			data:              strings.NewReader(normalData),
+			name:                          "building and pushing image fails",
+			spaceName:                     "some-space",
+			sourcePackageName:             "some-name",
+			maxRetriesForGetSourcePackage: 0,
+			data:                          strings.NewReader(normalData),
 			setup: func(t *testing.T, f fakes) {
 				setupNormal(f, "some-space", "some-name")
 			},
@@ -206,10 +212,11 @@ func TestUploader(t *testing.T) {
 			},
 		},
 		{
-			name:              "updating status fails",
-			spaceName:         "some-space",
-			sourcePackageName: "some-name",
-			data:              strings.NewReader(normalData),
+			name:                          "updating status fails",
+			spaceName:                     "some-space",
+			sourcePackageName:             "some-name",
+			maxRetriesForGetSourcePackage: 0,
+			data:                          strings.NewReader(normalData),
 			setup: func(t *testing.T, f fakes) {
 				setupNormal(f, "some-space", "some-name")
 			},
@@ -221,10 +228,11 @@ func TestUploader(t *testing.T) {
 			},
 		},
 		{
-			name:              "saving data fails",
-			spaceName:         "some-space",
-			sourcePackageName: "some-name",
-			data:              &errReader{err: errors.New("some-error")},
+			name:                          "saving data fails",
+			spaceName:                     "some-space",
+			sourcePackageName:             "some-name",
+			maxRetriesForGetSourcePackage: 0,
+			data:                          &errReader{err: errors.New("some-error")},
 			setup: func(t *testing.T, f fakes) {
 				setupNormal(f, "some-space", "some-name")
 			},
@@ -233,9 +241,10 @@ func TestUploader(t *testing.T) {
 			},
 		},
 		{
-			name:              "checksum doesn't match",
-			spaceName:         "some-space",
-			sourcePackageName: "some-name",
+			name:                          "checksum doesn't match",
+			spaceName:                     "some-space",
+			sourcePackageName:             "some-name",
+			maxRetriesForGetSourcePackage: 0,
 
 			// NOTE: the variable normalData is associated with
 			// normalChecksumValue which is set by the setupNormal function.
@@ -248,10 +257,11 @@ func TestUploader(t *testing.T) {
 			},
 		},
 		{
-			name:              "size doesn't match spec",
-			spaceName:         "some-space",
-			sourcePackageName: "some-name",
-			data:              strings.NewReader(normalData),
+			name:                          "size doesn't match spec",
+			spaceName:                     "some-space",
+			sourcePackageName:             "some-name",
+			maxRetriesForGetSourcePackage: 0,
+			data:                          strings.NewReader(normalData),
 			setup: func(t *testing.T, f fakes) {
 				setupWithSize(f, "some-space", "some-name", uint64(len(normalData)+1))
 			},
@@ -260,10 +270,11 @@ func TestUploader(t *testing.T) {
 			},
 		},
 		{
-			name:              "unknown checksum type",
-			spaceName:         "some-space",
-			sourcePackageName: "some-name",
-			data:              strings.NewReader(normalData),
+			name:                          "unknown checksum type",
+			spaceName:                     "some-space",
+			sourcePackageName:             "some-name",
+			maxRetriesForGetSourcePackage: 0,
+			data:                          strings.NewReader(normalData),
 			setup: func(t *testing.T, f fakes) {
 				setup(f, "some-space", "some-name", "invalid", uint64(len(normalData)))
 			},
@@ -272,9 +283,10 @@ func TestUploader(t *testing.T) {
 			},
 		},
 		{
-			name:              "limits how much it reads",
-			spaceName:         "some-space",
-			sourcePackageName: "some-name",
+			name:                          "limits how much it reads",
+			spaceName:                     "some-space",
+			sourcePackageName:             "some-name",
+			maxRetriesForGetSourcePackage: 0,
 			// This reader will never stop feeding the test data. Unless it
 			// has properly guarded itself by limiting how much data it reads,
 			// it will timeout.
@@ -336,6 +348,7 @@ func TestUploader(t *testing.T) {
 				context.Background(),
 				tc.spaceName,
 				tc.sourcePackageName,
+				tc.maxRetriesForGetSourcePackage,
 				tc.data,
 			)
 

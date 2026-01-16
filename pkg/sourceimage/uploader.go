@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"time"
 
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
@@ -62,21 +63,36 @@ func (u *Uploader) Upload(
 	ctx context.Context,
 	spaceName string,
 	sourcePackageName string,
+	maxRetriesForGetSourcePackage int,
 	r io.Reader,
 ) (name.Reference, error) {
+	logger := logging.FromContext(ctx)
+
 	// Fetch the Space to read the configured container registry.
 	space, err := u.spaceLister.Get(spaceName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find Space: %v", err)
 	}
 
-	// Fetch the SourcePackage to lookup the spec.
-	sourcePackage, err := u.
-		sourcePackageLister.
-		SourcePackages(spaceName).
-		Get(sourcePackageName)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find SourcePackage: %v", err)
+	// Fetch the SourcePackage to lookup the spec, retry on error with exponential backoff.
+	var sleepDuration = 10 * time.Millisecond
+	var sourcePackage *v1alpha1.SourcePackage
+	for i := 0; i <= maxRetriesForGetSourcePackage; i++ {
+		sourcePackage, err = u.
+			sourcePackageLister.
+			SourcePackages(spaceName).
+			Get(sourcePackageName)
+		if err == nil {
+			break
+		} else {
+			if i == maxRetriesForGetSourcePackage {
+				return nil, fmt.Errorf("failed to find SourcePackage, retries exhausted: %v", err)
+			} else {
+				logger.Warnf("failed to find SourcePackage: %s, retrying %dth time. Error: %v", sourcePackageName, i+1, err)
+				time.Sleep(sleepDuration)
+				sleepDuration *= 2
+			}
+		}
 	}
 
 	// Ensure the sourcePackage is still pending. Otherwise, it is considered
