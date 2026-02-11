@@ -46,9 +46,9 @@ func ExecuteTerminalCommand(command string, arguments ...string) string {
 	return string(output)
 }
 
-// RunGsCpUtil - Run gsutil command with given arguments
+// RunGsCpUtil - Run gcloud storage cp command with given arguments
 func RunGsCpUtil(arguments ...string) string {
 	// Invoke ko resolve command
-	args := append([]string{"cp"}, arguments...)
-	return ExecuteTerminalCommand("gsutil", args...)
+	args := append([]string{"storage", "cp"}, arguments...)
+	return ExecuteTerminalCommand("gcloud", args...)
 }
