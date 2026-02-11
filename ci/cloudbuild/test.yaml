@@ -193,12 +193,12 @@ steps:
       echo "_SKIP_DOWNLOAD_KF_CLI is set to true. Not downloading CLI..."
     else
       echo "Downloading Kf CLI..."
-      gsutil cp ${_FULL_RELEASE_BUCKET}/kf-linux /workspace/${BUILD_ID}/kf
+      gcloud storage cp ${_FULL_RELEASE_BUCKET}/kf-linux /workspace/${BUILD_ID}/kf
       chmod +x /workspace/${BUILD_ID}/kf
     fi
 
-    gsutil cp ${_FULL_RELEASE_BUCKET}/cloud-build/fresh-cluster.yaml /workspace/${BUILD_ID}/fresh-cluster.yaml
-    gsutil cp ${_FULL_RELEASE_BUCKET}/cloud-build/delete-cluster.yaml /workspace/${BUILD_ID}/delete-cluster.yaml
+    gcloud storage cp ${_FULL_RELEASE_BUCKET}/cloud-build/fresh-cluster.yaml /workspace/${BUILD_ID}/fresh-cluster.yaml
+    gcloud storage cp ${_FULL_RELEASE_BUCKET}/cloud-build/delete-cluster.yaml /workspace/${BUILD_ID}/delete-cluster.yaml
 
 - id: unit tests
   waitFor: ['-']
@@ -284,7 +284,7 @@ steps:
         --substitutions="$$VARS"
 
     if [ ! -z "${_EXTRA_CERTS_URL}" ]; then
-      gsutil cp "${_EXTRA_CERTS_URL}" /workspace/certs.pem
+      gcloud storage cp "${_EXTRA_CERTS_URL}" /workspace/certs.pem
     fi
 
 - id: deploy certs

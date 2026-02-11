@@ -29,7 +29,7 @@ if [[ -z ${EXTRA_TAG+x} ]]; then
   EXTRA_TAG=""
 fi
 
-if ! gsutil ls "gs://${bucket}/${VERSION}" > /dev/null 2>&1; then
+if ! gcloud storage ls "gs://${bucket}/${VERSION}" > /dev/null 2>&1; then
   >&2 gcloud builds submit . \
     "--project=${project_id}" \
     --config=cmd/generate-release/cloudbuild.yaml \

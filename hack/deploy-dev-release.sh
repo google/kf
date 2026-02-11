@@ -33,7 +33,7 @@ git submodule update --init --recursive
 
 gcloud builds submit \
   --no-source \
-  --config=<(gsutil cat "gs://${release}/cloud-build/fresh-cluster.yaml") \
+  --config=<(gcloud storage cat "gs://${release}/cloud-build/fresh-cluster.yaml") \
   --substitutions="_CLOUDSDK_COMPUTE_ZONE=${zone},_CLOUDSDK_CONTAINER_CLUSTER=${cluster_name},_MACHINE_TYPE=${machine},_ASM_MANAGED=${asm_managed}"
 
 gcloud container clusters get-credentials "${cluster_name}" --zone "${zone}"

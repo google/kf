@@ -400,7 +400,7 @@ steps:
   - |
     FOLDER="$(</workspace/substitutions/release_folder)"
     BUCKET="$(</workspace/substitutions/release_bucket)"
-    gsutil -m cp -r * gs://$${BUCKET}/$${FOLDER}/
+    gcloud storage cp --recursive * gs://$${BUCKET}/$${FOLDER}/
 
 - id: build deployer image
   waitFor:
