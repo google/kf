@@ -41,7 +41,7 @@ release_id="$(date +%s)-$(git rev-parse --short $git_sha)"
 
 # Determine the path to export results to and store the latest release ID
 export_path=gs://${_EXPORT_BUCKET}/logs/${_EXPORT_JOB_NAME}/$release_id
-[ ! -z "${_EXPORT_BUCKET}" ] && echo $release_id | gsutil cp - gs://${_EXPORT_BUCKET}/logs/${_EXPORT_JOB_NAME}/latest-build.txt
+[ ! -z "${_EXPORT_BUCKET}" ] && echo $release_id | gcloud storage cp - gs://${_EXPORT_BUCKET}/logs/${_EXPORT_JOB_NAME}/latest-build.txt
 
 # Write 'started.json' to report start of job to testgrid
 [ ! -z "${_EXPORT_BUCKET}" ] && jq -n \
@@ -51,7 +51,7 @@ export_path=gs://${_EXPORT_BUCKET}/logs/${_EXPORT_JOB_NAME}/$release_id
             --arg "${_EXPORT_REPO}" $git_sha \
             '$ARGS.named' \
     )" \
-    '$ARGS.named' | gsutil cp - ${export_path}/started.json
+    '$ARGS.named' | gcloud storage cp - ${export_path}/started.json
 
 # Install exit hook to write 'finished.json' to report results to testgrid
 RESULT="FAILURE"
@@ -69,8 +69,8 @@ function finish {
                       --arg "Build" "$BUILD_ID" \
                       '$ARGS.named' \
               )" \
-              '$ARGS.named' | gsutil cp - ${export_path}/finished.json
-        gsutil cp ./build-log.txt ${export_path}/build-log.txt
+              '$ARGS.named' | gcloud storage cp - ${export_path}/finished.json
+        gcloud storage cp ./build-log.txt ${export_path}/build-log.txt
     fi
 }
 trap finish EXIT
