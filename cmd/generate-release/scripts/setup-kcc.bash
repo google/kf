@@ -48,7 +48,7 @@ trap 'rm -fr $tempdir' EXIT
 
 cd ${tempdir}
 kcc_url=$(kf dependencies url 'Config Connector')
-gsutil cp ${kcc_url} release-bundle.tar.gz
+gcloud storage cp ${kcc_url} release-bundle.tar.gz
 tar zxvf release-bundle.tar.gz
 kubectl apply -f operator-system/configconnector-operator.yaml
 
