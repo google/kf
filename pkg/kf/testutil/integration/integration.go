@@ -109,7 +109,7 @@ const (
 
 	PinnedBuildPackName = "go_buildpack_v47"
 
-	PinnedBuildPackURL = "https://github.com/cloudfoundry/go-buildpack.git#v1.9.47"
+	PinnedBuildPackURL = "https://github.com/cloudfoundry/go-buildpack.git/#v1.9.47"
 )
 
 // ShouldSkipIntegration returns true if integration tests are being skipped.
