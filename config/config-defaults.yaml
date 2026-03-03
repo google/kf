@@ -215,7 +215,7 @@ data:
     - name: nodejs_buildpack
       url: https://github.com/cloudfoundry/nodejs-buildpack
     - name: go_buildpack
-      url: https://github.com/cloudfoundry/go-buildpack
+      url: https://github.com/cloudfoundry/go-buildpack/#v1.10.42
     - name: python_buildpack
       url: https://github.com/cloudfoundry/python-buildpack
     - name: php_buildpack
