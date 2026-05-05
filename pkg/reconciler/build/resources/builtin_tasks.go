@@ -350,6 +350,13 @@ func buildpackV3Build(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, 
 		platformEnvSet.Insert(v.Name)
 	}
 
+	cbnPlatformApiEnv := []corev1.EnvVar{
+		{
+			Name:  "CNB_PLATFORM_API",
+			Value: "0.15",
+		},
+	}
+
 	return &tektonv1beta1.TaskSpec{
 		Params: []tektonv1beta1.ParamSpec{
 			tektonutil.DefaultStringParam("SOURCE_IMAGE", "The image that contains the app's source code.", ""),
@@ -422,32 +429,8 @@ else
 fi
 						`,
 				},
+				Env:          cbnPlatformApiEnv,
 				VolumeMounts: cacheAndLayers,
-			},
-			{
-				Name:    "restore",
-				Image:   "$(inputs.params.BUILDER_IMAGE)",
-				Command: []string{"/lifecycle/restorer"},
-				Args: []string{
-					"-group=/layers/group.toml",
-					"-layers=/layers",
-					"-cache-dir=/cache",
-				},
-				VolumeMounts: cacheAndLayers,
-			},
-			{
-				Name:    "build",
-				Image:   "$(inputs.params.BUILDER_IMAGE)",
-				Command: []string{"/lifecycle/builder"},
-				Args: []string{
-					"-app=/layers/source",
-					"-layers=/layers",
-					"-group=/layers/group.toml",
-					"-plan=/layers/plan.toml",
-					"-platform=/platform",
-				},
-				VolumeMounts: cacheAndLayers,
-				Resources:    resources,
 			},
 			{
 				Name:    "download-token",
@@ -532,6 +515,56 @@ exit 1
 				VolumeMounts: cacheAndLayers,
 			},
 			{
+				Name:    "analyze",
+				Image:   "$(inputs.params.BUILDER_IMAGE)",
+				Command: []string{"bash"},
+				Args: []string{
+					"-euc",
+					`
+googleServiceAccount=$1
+if [ "$googleServiceAccount" != "" ] && [ -f /workspace/gcloud.token ]; then
+  export CNB_REGISTRY_AUTH=$(cat /workspace/gcloud.token)
+fi
+
+/lifecycle/analyzer \
+  -layers=/layers \
+  -analyzed=/layers/analyzed.toml \
+  "$(inputs.params.DESTINATION_IMAGE)"
+`,
+					"_",
+					googleServiceAccount,
+				},
+				Env:          cbnPlatformApiEnv,
+				VolumeMounts: cacheAndLayers,
+			},
+			{
+				Name:    "restore",
+				Image:   "$(inputs.params.BUILDER_IMAGE)",
+				Command: []string{"/lifecycle/restorer"},
+				Args: []string{
+					"-group=/layers/group.toml",
+					"-layers=/layers",
+					"-cache-dir=/cache",
+				},
+				Env:          cbnPlatformApiEnv,
+				VolumeMounts: cacheAndLayers,
+			},
+			{
+				Name:    "build",
+				Image:   "$(inputs.params.BUILDER_IMAGE)",
+				Command: []string{"/lifecycle/builder"},
+				Args: []string{
+					"-app=/layers/source",
+					"-layers=/layers",
+					"-group=/layers/group.toml",
+					"-plan=/layers/plan.toml",
+					"-platform=/platform",
+				},
+				Env:          cbnPlatformApiEnv,
+				VolumeMounts: cacheAndLayers,
+				Resources:    resources,
+			},
+			{
 				Name:    "export",
 				Image:   "$(inputs.params.BUILDER_IMAGE)",
 				Command: []string{"bash"},
@@ -558,23 +591,37 @@ export_image () {
     -image=$(inputs.params.RUN_IMAGE) \
     $(inputs.params.DESTINATION_IMAGE)
 }
+export_image_new () {
+	chmod -R a+rx /layers/source
+  /lifecycle/exporter \
+    -app=/layers/source \
+    -layers=/layers \
+    -group=/layers/group.toml \
+    -analyzed=/layers/analyzed.toml \
+    -run=$(inputs.params.RUN_IMAGE) \
+    $(inputs.params.DESTINATION_IMAGE)
+}
 
 # This will retry a few times (2 minutes) in case exporting failed (i.e., WI
 # token hasn't had time to propagate).
 for i in $$(seq 1 24); do
 	if export_image; then
-        # Success
-        exit 0
-    else
-        # Failure
-        echo "failed to export image. Retrying..."
-        sleep 5
-    fi
+    # Success
+    exit 0
+	elif export_image_new; then
+    # Success
+    exit 0
+	else
+    # Failure
+    echo "failed to export image. Retrying..."
+    sleep 5
+	fi
 done
 `,
 					"_",
 					googleServiceAccount,
 				},
+				Env:          cbnPlatformApiEnv,
 				VolumeMounts: cacheAndLayers,
 			},
 			{

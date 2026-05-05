@@ -34,7 +34,7 @@ Music](https://github.com/cloudfoundry-samples/spring-music) reference App using
     cd spring-music
     ```
 
-1. Edit `manifest.yml`, and replace `path: build/libs/spring-music-1.0.jar` with `stack: org.cloudfoundry.stacks.cflinuxfs3`. This instructs Kf to build from source using [cloud native buildpacks](https://cloud.google.com/blog/products/containers-kubernetes/google-cloud-now-supports-buildpacks) so you don't have to compile locally.
+1. Edit `manifest.yml`, and replace `path: build/libs/spring-music-1.0.jar` with `stack: org.cloudfoundry.stacks.cflinuxfs5`. This instructs Kf to build from source using [cloud native buildpacks](https://cloud.google.com/blog/products/containers-kubernetes/google-cloud-now-supports-buildpacks) so you don't have to compile locally.
 
     ```sh
     ---

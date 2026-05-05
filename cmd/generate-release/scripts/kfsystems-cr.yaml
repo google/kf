@@ -106,8 +106,8 @@ spec:
         #
         # Use images tagged with SHAs to improve build caching.
         spaceStacksV2:
-          - name:  cflinuxfs3
-            image: cloudfoundry/cflinuxfs3
+          - name:  cflinuxfs5
+            image: cloudfoundry/cflinuxfs5
 
         # spaceStacksV3 contains list of default stacks to be used for cloud native
         # buildpack builds. The value must be a valid JSON or YAML string.

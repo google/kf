@@ -96,8 +96,8 @@ func TestStoreLoadWithContext(t *testing.T) {
 
 	testutil.AssertEqual(t, "SpaceStacksV2", StackV2List{
 		{
-			Name:  "cflinuxfs3",
-			Image: "cloudfoundry/cflinuxfs3",
+			Name:  "cflinuxfs5",
+			Image: "cloudfoundry/cflinuxfs5",
 		},
 	}, configDefaults.SpaceStacksV2)
 

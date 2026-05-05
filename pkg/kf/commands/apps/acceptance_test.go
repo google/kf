@@ -80,7 +80,7 @@ func setupSpringMusic() acceptance.SourceCode {
 			man.Applications[0].Path = ""
 			delete(man.Applications[0].Env, "JBP_CONFIG_SPRING_AUTO_RECONFIGURATION")
 			man.Applications[0].Env["BP_AUTO_RECONFIGURATION_ENABLED"] = "false"
-			man.Applications[0].Stack = "org.cloudfoundry.stacks.cflinuxfs3"
+			man.Applications[0].Stack = "org.cloudfoundry.stacks.cflinuxfs5"
 
 			yamlData, err := yaml.Marshal(man)
 			testutil.AssertNil(t, "yaml.Marshal", err)

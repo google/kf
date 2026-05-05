@@ -1081,14 +1081,14 @@ var sourceCache = newAppCache()
 // cached version. This is incompatible with additional arguments that might
 // change the semantics of push. It returns true if the cache was used.
 func (k *Kf) CachePushV2(ctx context.Context, appName, source string, args ...string) bool {
-	return k.cachePush(ctx, appName, source, "cflinuxfs3", args...)
+	return k.cachePush(ctx, appName, source, "cflinuxfs5", args...)
 }
 
 // CachePush pushes an App with V3 buildpack and caches the source or uses a
 // cached version. This is incompatible with additional arguments that might
 // change the semantics of push. It returns true if the cache was used.
 func (k *Kf) CachePush(ctx context.Context, appName, source string, args ...string) bool {
-	return k.cachePush(ctx, appName, source, "org.cloudfoundry.stacks.cflinuxfs3", args...)
+	return k.cachePush(ctx, appName, source, "org.cloudfoundry.stacks.cflinuxfs5", args...)
 }
 
 func (k *Kf) cachePush(ctx context.Context, appName, source, stack string, args ...string) bool {

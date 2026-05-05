@@ -201,14 +201,14 @@ func TestIntegration_BuildWithResources(t *testing.T) {
 				{
 					name: "v2 buildpack",
 					push: func(ctx context.Context, appName string) {
-						kf.Push(ctx, appName, "--stack=cflinuxfs3")
+						kf.Push(ctx, appName, "--stack=cflinuxfs5")
 					},
 					containersWithResources: []string{"step-run-lifecycle", "step-build"},
 				},
 				{
 					name: "v3 buildpack",
 					push: func(ctx context.Context, appName string) {
-						kf.Push(ctx, appName, "--stack=org.cloudfoundry.stacks.cflinuxfs3")
+						kf.Push(ctx, appName, "--stack=org.cloudfoundry.stacks.cflinuxfs5")
 					},
 					containersWithResources: []string{"step-build"},
 				},
