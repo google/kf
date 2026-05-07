@@ -28,49 +28,50 @@ func TestIntegration_Autoscaling(t *testing.T) {
 	appName := fmt.Sprintf("integration-autoscaling-app-%d", time.Now().UnixNano())
 	appPath := "./samples/apps/echo"
 	integration.RunKfTest(context.Background(), t, func(ctx context.Context, t *testing.T, kf *integration.Kf) {
-		integration.WithApp(ctx, t, kf, appName, appPath, false, func(ctx context.Context) {
-			// Create autoscaling rule.
-			kf.RunCommand(ctx, "create-autoscaling-rule", appName, "cpu", "10", "80")
+		integration.WithAppArgs(ctx, t, kf, appName, appPath, false,
+			[]string{"--buildpack", "paketo-buildpacks/go", "--task"}, func(ctx context.Context) {
+				// Create autoscaling rule.
+				kf.RunCommand(ctx, "create-autoscaling-rule", appName, "cpu", "10", "80")
 
-			// Update autoscaling limits to scale up App instances.
-			kf.RunCommand(ctx, "update-autoscaling-limits", appName, "3", "5")
-			app, ok := kf.Apps(ctx)[appName]
-			testutil.AssertEqual(t, "app presence", true, ok)
-			testutil.AssertEqual(t, "app instances", "1", app.Instances)
+				// Update autoscaling limits to scale up App instances.
+				kf.RunCommand(ctx, "update-autoscaling-limits", appName, "3", "5")
+				app, ok := kf.Apps(ctx)[appName]
+				testutil.AssertEqual(t, "app presence", true, ok)
+				testutil.AssertEqual(t, "app instances", "1", app.Instances)
 
-			// Enable autoscaling for a deployment/App.
-			kf.RunCommand(ctx, "enable-autoscaling", appName)
-			integration.Logf(t, "ensuring App is scaled up")
-			app, ok = kf.Apps(ctx)[appName]
-			testutil.AssertEqual(t, "app presence", true, ok)
-			// Only checking autoscaling status, instances may not be scaled up yet
-			testutil.AssertContainsAll(t, app.Instances, []string{"autoscaled 3 to 5"})
-			integration.Logf(t, "done ensuring App is scaled up")
+				// Enable autoscaling for a deployment/App.
+				kf.RunCommand(ctx, "enable-autoscaling", appName)
+				integration.Logf(t, "ensuring App is scaled up")
+				app, ok = kf.Apps(ctx)[appName]
+				testutil.AssertEqual(t, "app presence", true, ok)
+				// Only checking autoscaling status, instances may not be scaled up yet
+				testutil.AssertContainsAll(t, app.Instances, []string{"autoscaled 3 to 5"})
+				integration.Logf(t, "done ensuring App is scaled up")
 
-			// Update autoscaling limits to scale down App instances.
-			kf.RunCommand(ctx, "update-autoscaling-limits", appName, "1", "1")
-			integration.Logf(t, "ensuring App is scaled down")
-			app, ok = kf.Apps(ctx)[appName]
-			testutil.AssertEqual(t, "app presence", true, ok)
-			testutil.AssertContainsAll(t, app.Instances, []string{"autoscaled 1 to 1"})
-			integration.Logf(t, "done ensuring App is scaled down")
+				// Update autoscaling limits to scale down App instances.
+				kf.RunCommand(ctx, "update-autoscaling-limits", appName, "1", "1")
+				integration.Logf(t, "ensuring App is scaled down")
+				app, ok = kf.Apps(ctx)[appName]
+				testutil.AssertEqual(t, "app presence", true, ok)
+				testutil.AssertContainsAll(t, app.Instances, []string{"autoscaled 1 to 1"})
+				integration.Logf(t, "done ensuring App is scaled down")
 
-			// Disable autoscaling.
-			kf.RunCommand(ctx, "disable-autoscaling", appName)
-			// Make sure autoscaling is turned off
-			integration.Logf(t, "ensuring autoscaling is turned off")
-			app, ok = kf.Apps(ctx)[appName]
-			testutil.AssertEqual(t, "app presence", true, ok)
-			testutil.AssertEqual(t, "app instances", "1", app.Instances)
-			integration.Logf(t, "done ensuring App with autoscaling is turned off")
+				// Disable autoscaling.
+				kf.RunCommand(ctx, "disable-autoscaling", appName)
+				// Make sure autoscaling is turned off
+				integration.Logf(t, "ensuring autoscaling is turned off")
+				app, ok = kf.Apps(ctx)[appName]
+				testutil.AssertEqual(t, "app presence", true, ok)
+				testutil.AssertEqual(t, "app instances", "1", app.Instances)
+				integration.Logf(t, "done ensuring App with autoscaling is turned off")
 
-			// Updating autoscaling limits will not scale App after autoscaling is disabled
-			kf.RunCommand(ctx, "update-autoscaling-limits", appName, "3", "5")
-			integration.Logf(t, "ensuring App is not scaled up")
-			app, ok = kf.Apps(ctx)[appName]
-			testutil.AssertEqual(t, "app presence", true, ok)
-			testutil.AssertEqual(t, "app instances", "1", app.Instances)
-			integration.Logf(t, "done ensuring App is not scaled up")
-		})
+				// Updating autoscaling limits will not scale App after autoscaling is disabled
+				kf.RunCommand(ctx, "update-autoscaling-limits", appName, "3", "5")
+				integration.Logf(t, "ensuring App is not scaled up")
+				app, ok = kf.Apps(ctx)[appName]
+				testutil.AssertEqual(t, "app presence", true, ok)
+				testutil.AssertEqual(t, "app instances", "1", app.Instances)
+				integration.Logf(t, "done ensuring App is not scaled up")
+			})
 	})
 }

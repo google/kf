@@ -32,6 +32,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -1104,6 +1105,14 @@ func (k *Kf) cachePush(ctx context.Context, appName, source, stack string, args 
 	// building.
 	if ok {
 		Logf(k.t, "Using cached image %s instead of rebuilding %s", containerImage, source)
+		// Since --docker-image is incompatible with --buildpack, remove --buildpack flag if present
+		for index, arg := range args {
+			if arg == "--buildpack" {
+				args = slices.Delete(args, index, index+2)
+				break
+			}
+		}
+
 		args = append(args, "--docker-image", containerImage)
 		k.Push(ctx, appName, args...)
 		return true
