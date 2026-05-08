@@ -7849,8 +7849,12 @@ data:
     - name: nginx_buildpack
       url: https://github.com/cloudfoundry/nginx-buildpack
   spaceStacksV2: |
+    - name: cflinuxfs4
+      image: cloudfoundry/cflinuxfs4@sha256:118249de04f4f7543bc8118a9943c86d1c30504e687f468c4342d22b1e3d713b
     - name: cflinuxfs5
       image: cloudfoundry/cflinuxfs5@sha256:206c68c5753abd24beb85565e9ed525d1f1be24bdab252193793b49b44d4b69e
+    - name:  cflinuxfs3
+      image: cloudfoundry/cflinuxfs3
   spaceStacksV3: |
     - name: kf-v2-to-v3-shim
       description: A V3 stack that wraps the V2 buildpacks.
@@ -7860,10 +7864,18 @@ data:
       description: Google buildpacks (https://github.com/GoogleCloudPlatform/buildpacks)
       buildImage: gcr.io/buildpacks/builder:v1
       runImage: gcr.io/buildpacks/gcp/run:v1
+    - name: org.cloudfoundry.stacks.cflinuxfs4
+      description: A large Cloud Foundry stack based on Ubuntu 22.04 (Jammy Jellyfish)
+      buildImage: paketobuildpacks/builder-jammy-full@sha256:25efe93f3afa866e058f1bf6f72b5734dbd270a4b60e344a0df2d613bc19074c
+      runImage: paketobuildpacks/run-jammy-full@sha256:43f13c88b7ed100a34520e907fba396c2879605efd14012aa9a696caeff43f9d
     - name: org.cloudfoundry.stacks.cflinuxfs5
       description: A large Cloud Foundry stack based on Ubuntu 24.04 (Noble)
       buildImage: paketobuildpacks/ubuntu-noble-builder@sha256:fc86fdc15593f47178073b682c75c4991f27b4a2a62d78417fdf505307bb92ae
       runImage: paketobuildpacks/ubuntu-noble-run@sha256:013d949ebb61d4771a77f44511eb0de723d092ef4904a83ffa1fee0bdb703275
+    - name: org.cloudfoundry.stacks.cflinuxfs3
+      description: (Legacy) A large Cloud Foundry stack based on Ubuntu 18.04
+      buildImage: cloudfoundry/cnb:cflinuxfs3@sha256:f96b6e3528185368dd6af1d9657527437cefdaa5fa135338462f68f9c9db3022
+      runImage: cloudfoundry/run:full-cnb@sha256:dbe17be507b1cc6ffae1e9edf02806fe0e28ffbbb89a6c7ef41f37b69156c3c2
   spaceDefaultToV3Stack: "false"
   routeServiceProxyImage: "gcr.io/kf-releases/route-service-proxy-c1f6176cf95d0f3fa2d57301546cd9ba@sha256:f9d9836d0dfdae7c371f4aac1adb8ebbb8669a13384c629ec4e4ea30bb524222"
   buildKanikoExecutorImage: "gcr.io/kaniko-project/executor:v1.0.0"

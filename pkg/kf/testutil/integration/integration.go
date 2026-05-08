@@ -32,7 +32,6 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
-	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -1082,14 +1081,14 @@ var sourceCache = newAppCache()
 // cached version. This is incompatible with additional arguments that might
 // change the semantics of push. It returns true if the cache was used.
 func (k *Kf) CachePushV2(ctx context.Context, appName, source string, args ...string) bool {
-	return k.cachePush(ctx, appName, source, "cflinuxfs5", args...)
+	return k.cachePush(ctx, appName, source, "cflinuxfs4", args...)
 }
 
 // CachePush pushes an App with V3 buildpack and caches the source or uses a
 // cached version. This is incompatible with additional arguments that might
 // change the semantics of push. It returns true if the cache was used.
 func (k *Kf) CachePush(ctx context.Context, appName, source string, args ...string) bool {
-	return k.cachePush(ctx, appName, source, "org.cloudfoundry.stacks.cflinuxfs5", args...)
+	return k.cachePush(ctx, appName, source, "org.cloudfoundry.stacks.cflinuxfs4", args...)
 }
 
 func (k *Kf) cachePush(ctx context.Context, appName, source, stack string, args ...string) bool {
@@ -1105,14 +1104,6 @@ func (k *Kf) cachePush(ctx context.Context, appName, source, stack string, args 
 	// building.
 	if ok {
 		Logf(k.t, "Using cached image %s instead of rebuilding %s", containerImage, source)
-		// Since --docker-image is incompatible with --buildpack, remove --buildpack flag if present
-		for index, arg := range args {
-			if arg == "--buildpack" {
-				args = slices.Delete(args, index, index+2)
-				break
-			}
-		}
-
 		args = append(args, "--docker-image", containerImage)
 		k.Push(ctx, appName, args...)
 		return true

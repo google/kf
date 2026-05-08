@@ -505,15 +505,6 @@ func diagnoseNodes(ctx context.Context, d *Diagnostic, kubernetes kubernetes.Int
 									cond.Message,
 								)
 							}
-						case cond.Type == "SysctlChanged":
-							if cond.Status != corev1.ConditionFalse {
-								d.Warnf(
-									"Condition %s is not healthy, but ignoring it. Current status is %q with message %q",
-									cond.Type,
-									cond.Status,
-									cond.Message,
-								)
-							}
 						default:
 							// Other conditions on the node should be false (unless known issue)
 							// because they indicate specific failure conditions when set to true.

@@ -66,9 +66,9 @@ func setupSimpleChineseApp() acceptance.SourceCode {
 	}
 }
 
-func setupSpringMusic() acceptance.SourceCode {
+func setupSpringMusic(cflinuxfsVersion string) acceptance.SourceCode {
 	return acceptance.SourceCode{
-		Name: "spring-music",
+		Name: "spring-music-" + cflinuxfsVersion,
 		Repo: "http://github.com/cloudfoundry-samples/spring-music",
 		Setup: func(t *testing.T) {
 			man, err := manifest.NewFromFile(context.Background(), "manifest.yml", nil)
@@ -80,7 +80,7 @@ func setupSpringMusic() acceptance.SourceCode {
 			man.Applications[0].Path = ""
 			delete(man.Applications[0].Env, "JBP_CONFIG_SPRING_AUTO_RECONFIGURATION")
 			man.Applications[0].Env["BP_AUTO_RECONFIGURATION_ENABLED"] = "false"
-			man.Applications[0].Stack = "org.cloudfoundry.stacks.cflinuxfs5"
+			man.Applications[0].Stack = "org.cloudfoundry.stacks." + cflinuxfsVersion
 
 			yamlData, err := yaml.Marshal(man)
 			testutil.AssertNil(t, "yaml.Marshal", err)
@@ -104,7 +104,9 @@ func TestAcceptance_Get200(t *testing.T) {
 			setupCfPhpInfo(),
 			setupDotnetCoreHelloWorld(),
 			setupSimpleChineseApp(),
-			setupSpringMusic(),
+			setupSpringMusic("cflinuxfs3"),
+			setupSpringMusic("cflinuxfs4"),
+			setupSpringMusic("cflinuxfs5"),
 			setupTestApp(),
 		},
 		func(ctx context.Context, t *testing.T, kf *integration.Kf, appPath string) {

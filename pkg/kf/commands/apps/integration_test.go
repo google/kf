@@ -17,7 +17,10 @@ package apps
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -48,7 +51,6 @@ func TestIntegration_Push(t *testing.T) {
 		// For the purposes of this test the results SHOULD NOT be cached.
 		kf.CachePush(ctx, appName,
 			filepath.Join(integration.RootDir(ctx, t), "./samples/apps/echo"),
-			"--buildpack", "paketo-buildpacks/go",
 		)
 		integration.CheckEchoApp(ctx, t, kf, appName, integration.ExpectedAddr(appName, ""))
 	})
@@ -67,7 +69,7 @@ func TestIntegration_Push_update(t *testing.T) {
 		// Push an App and then clean it up. This pushes the echo App which
 		// replies with the same body that was posted.
 		echoPath := filepath.Join(integration.RootDir(ctx, t), "./samples/apps/echo")
-		kf.CachePush(ctx, appName, echoPath, "--buildpack", "paketo-buildpacks/go")
+		kf.CachePush(ctx, appName, echoPath)
 		integration.CheckEchoApp(ctx, t, kf, appName, integration.ExpectedAddr(appName, ""))
 
 		helloPath := filepath.Join(integration.RootDir(ctx, t), "./samples/apps/helloworld")
@@ -122,7 +124,7 @@ func TestIntegration_SSH(t *testing.T) {
 		// Push an App and then clean it up. This pushes the echo App which
 		// replies with the same body that was posted.
 		echoPath := filepath.Join(integration.RootDir(ctx, t), "./samples/apps/echo")
-		kf.CachePush(ctx, appName, echoPath, "--buildpack", "paketo-buildpacks/go")
+		kf.CachePush(ctx, appName, echoPath)
 
 		helloWorld := "hello, world!"
 		lines := kf.SSH(ctx, appName, "-c", "/bin/echo", "-c", helloWorld, "-T")
@@ -142,7 +144,7 @@ func TestIntegration_StopStart(t *testing.T) {
 		// Push an App and then clean it up. This pushes the echo App which
 		// replies with the same body that was posted.
 		echoPath := filepath.Join(integration.RootDir(ctx, t), "./samples/apps/echo")
-		kf.CachePush(ctx, appName, echoPath, "--buildpack", "paketo-buildpacks/go")
+		kf.CachePush(ctx, appName, echoPath)
 
 		// Hit the App via the proxy. This makes sure the App is handling
 		// traffic as expected and ensures the proxy works. We use the proxy
@@ -212,7 +214,7 @@ func TestIntegration_Delete(t *testing.T) {
 
 		// Push an App and then clean it up. This pushes the echo App which
 		// simplies replies with the same body that was posted.
-		kf.CachePush(ctx, appName, filepath.Join(integration.RootDir(ctx, t), "./samples/apps/echo"), "--buildpack", "paketo-buildpacks/go")
+		kf.CachePush(ctx, appName, filepath.Join(integration.RootDir(ctx, t), "./samples/apps/echo"))
 
 		// List the apps and make sure we can find the App.
 		integration.Logf(t, "ensuring App is there...")
@@ -289,7 +291,7 @@ func TestIntegration_NodeSelector(t *testing.T) {
 
 				// Push an App and then clean it up. This pushes the echo App which
 				// simplies replies with the same body that was posted.
-				kf.CachePush(ctx, appName, filepath.Join(integration.RootDir(ctx, t), "./samples/apps/echo"), "--buildpack", "paketo-buildpacks/go")
+				kf.CachePush(ctx, appName, filepath.Join(integration.RootDir(ctx, t), "./samples/apps/echo"))
 
 				// Verify the application and then check the podSpec to make sure nodeSelector was correctly set.
 				checkNodeSelector(ctx, t, kf, appName, integration.SpaceFromContext(ctx), k8s, nodeName, map[string]string{labelName: labelValue}, integration.ExpectedAddr(appName, ""))
@@ -307,7 +309,7 @@ func TestIntegration_Logs(t *testing.T) {
 
 		// Push an App and then clean it up. This pushes the echo App which
 		// replies with the same body that was posted.
-		kf.CachePush(ctx, appName, filepath.Join(integration.RootDir(ctx, t), "./samples/apps/echo"), "--buildpack", "paketo-buildpacks/go")
+		kf.CachePush(ctx, appName, filepath.Join(integration.RootDir(ctx, t), "./samples/apps/echo"))
 
 		logOutput, errs := kf.Logs(ctx, appName, "-n=30")
 		expectedLogLine := fmt.Sprintf("testing-%d", time.Now().UnixNano())
@@ -416,18 +418,49 @@ func TestIntegration_Push_SigtermV2Buildpack(t *testing.T) {
 // and then posts to it. It finally deletes the App.
 func TestIntegration_Push_binaryBuildpack(t *testing.T) {
 	// This test needs more time because pushes with V2 buildpacks.
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
 	defer cancel()
+
 	integration.RunKfTest(ctx, t, func(ctx context.Context, t *testing.T, kf *integration.Kf) {
 		appName := v1alpha1.GenerateName("integration-push-bin", fmt.Sprint(time.Now().UnixNano()))
 
-		// Push an App and then clean it up. This pushes the echo App which
-		// replies with the same body that was posted.
-		// For the purposes of this test the results SHOULD NOT be cached.
+		// Create a temporary directory for the binary test application
+		tempDir, err := ioutil.TempDir("", "binary-test")
+		if err != nil {
+			t.Fatalf("create temp dir: %v", err)
+		}
+		defer os.RemoveAll(tempDir)
+
+		// Write a minimal Go web server
+		mainFile := filepath.Join(tempDir, "main.go")
+		code := `package main
+import (
+	"net/http"
+	"os"
+)
+func main() {
+	http.ListenAndServe(":"+os.Getenv("PORT"), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+}`
+		if err := ioutil.WriteFile(mainFile, []byte(code), 0644); err != nil {
+			t.Fatalf("failed to write main.go: %v", err)
+		}
+
+		// Compile the binary statically for the target container environment
+		binPath := filepath.Join(tempDir, "server")
+		cmd := exec.Command("go", "build", "-o", binPath, mainFile)
+		cmd.Env = append(os.Environ(), "GOOS=linux", "GOARCH=amd64", "CGO_ENABLED=0")
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("failed to compile test binary: %v", err)
+		}
+
 		kf.Push(ctx, appName,
 			"--buildpack", "binary_buildpack",
-			"--command", "python -m SimpleHTTPServer $PORT",
+			"--path", tempDir,
+			"--command", "./server",
 		)
+
 		integration.CheckApp(ctx, t, kf, appName, []string{integration.ExpectedAddr(appName, "")},
 			func(ctx context.Context, t *testing.T, addr string) {
 				// Just check to ensure we got a 200
@@ -469,7 +502,7 @@ func TestIntegration_PushTaskWithRouteSetting(t *testing.T) {
 		// replies with the same body that was posted.
 		// For the purposes of this test the results SHOULD NOT be cached.
 		kf.CachePush(ctx, appName,
-			filepath.Join(integration.RootDir(ctx, t), "./samples/apps/echo", "--buildpack", "paketo-buildpacks/go"),
+			filepath.Join(integration.RootDir(ctx, t), "./samples/apps/echo"),
 			"--task",
 			"--random-route",
 		)

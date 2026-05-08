@@ -422,10 +422,23 @@ if [[ -z "$(inputs.params.BUILDPACK)" ]]; then
     -app=/layers/source \
     -group=/layers/group.toml \
     -plan=/layers/plan.toml \
-    -platform=/platform
+    -platform=/platform || \
+	CNB_PLATFORM_API= /lifecycle/detector \
+    -app=/layers/source \
+    -group=/layers/group.toml \
+    -plan=/layers/plan.toml \
+    -platform=/platform 
 else
-  touch /layers/plan.toml
-  echo -e "[[buildpacks]]\nid = \"$(inputs.params.BUILDPACK)\"\nversion = \"latest\"\n" > /layers/group.toml
+  cat <<EOF > /tmp/custom-order.toml
+[[order]]
+[[order.group]]
+id = "$(inputs.params.BUILDPACK)"
+EOF
+
+	/lifecycle/detector \
+		-app=/layers/source \
+		-platform=/platform \
+		-order=/tmp/custom-order.toml
 fi
 						`,
 				},

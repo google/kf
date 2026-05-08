@@ -56,9 +56,9 @@ func TestStacks(t *testing.T) {
 					BuildConfig: v1alpha1.SpaceStatusBuildConfig{
 						StacksV2: kfconfig.StackV2List{
 							{
-								Name:        "cflinuxfs5",
+								Name:        "cflinuxfs4",
 								Description: "A CF Compatible Stack",
-								Image:       "cloudfoundry/cflinuxfs5:latest",
+								Image:       "cloudfoundry/cflinuxfs4:latest",
 							},
 						},
 						StacksV3: kfconfig.StackV3List{
@@ -83,7 +83,7 @@ func TestStacks(t *testing.T) {
 							{
 								Name:        "cflinuxfs5",
 								Description: "A CF Compatible Stack",
-								Image:       "cloudfoundry/cflinuxfs5:latest",
+								Image:       "cloudfoundry/cflinuxfs4:latest",
 							},
 						},
 						StacksV3: kfconfig.StackV3List{
