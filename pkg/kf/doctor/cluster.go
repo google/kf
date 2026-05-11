@@ -422,6 +422,11 @@ func diagnoseDaemonSets(ctx context.Context, d *Diagnostic, kubernetes kubernete
 	}
 }
 
+func conditionShouldBeIgnored(condition corev1.NodeCondition) bool {
+	shouldIgnore := condition.Type == "SysctlChanged" && condition.Status != corev1.ConditionFalse && condition.Message == "{\"unmanaged\": {\"kernel.cad_pid\": \"1\"}}"
+	return shouldIgnore
+}
+
 func diagnoseNodes(ctx context.Context, d *Diagnostic, kubernetes kubernetes.Interface) {
 	nodesList, err := kubernetes.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	switch {
@@ -501,9 +506,9 @@ func diagnoseNodes(ctx context.Context, d *Diagnostic, kubernetes kubernetes.Int
 								)
 							}
 						default:
-							// Other conditions on the node should be false because they
-							// indicate specific failure conditions when set to true.
-							if cond.Status != corev1.ConditionFalse {
+							// Other conditions on the node should be false (unless known issue)
+							// because they indicate specific failure conditions when set to true.
+							if cond.Status != corev1.ConditionFalse && !conditionShouldBeIgnored(cond) {
 								d.Errorf(
 									"Condition %s is not healthy, current status is %q with message %q",
 									cond.Type,
