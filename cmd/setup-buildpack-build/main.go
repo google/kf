@@ -139,7 +139,7 @@ func getBuildUser(builderImage string) (uid, gid int, err error) {
 		return 0, 0, err
 	}
 
-	image, err := remote.Image(imageRef, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+	image, err := remote.Image(imageRef, remote.WithAuthFromKeychain(authn.DefaultKeychain), dockerutil.SafeRemoteTransport())
 	if err != nil {
 		return 0, 0, err
 	}
