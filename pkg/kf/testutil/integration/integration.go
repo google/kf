@@ -1102,12 +1102,13 @@ func (k *Kf) cachePush(ctx context.Context, appName, source, stack string, args 
 
 	// If there's a cached image, re-use that cached built image rather than
 	// building.
-	if ok {
-		Logf(k.t, "Using cached image %s instead of rebuilding %s", containerImage, source)
-		args = append(args, "--docker-image", containerImage)
-		k.Push(ctx, appName, args...)
-		return true
-	}
+	// TODO DO NOT SUBMIT IT COMMENTED
+	// if ok {
+	// 	Logf(k.t, "Using cached image %s instead of rebuilding %s", containerImage, source)
+	// 	args = append(args, "--docker-image", containerImage)
+	// 	k.Push(ctx, appName, args...)
+	// 	return true
+	// }
 
 	// Otherwise, push the App and wait for it to become ready. Once ready, pull
 	// the image off the App and store it in the cache.
@@ -2337,6 +2338,10 @@ func (k *Kf) RunCommand(ctx context.Context, cmd string, extraArgs ...string) {
 	args := []string{
 		cmd,
 		"--space", SpaceFromContext(ctx),
+	}
+	if cmd == "--help" {
+		// DO NOT SUBMIT
+		args = []string{cmd}
 	}
 
 	output, errs := k.kf(ctx, k.t, KfTestConfig{

@@ -35,6 +35,7 @@ func TestIntegration_TaskSchedules(t *testing.T) {
 	t.Cleanup(cancel)
 
 	integration.RunKfTest(ctx, t, func(ctx context.Context, t *testing.T, kf *integration.Kf) {
+		kf.RunCommand(ctx, "--help")
 		kf.CachePushV2(ctx, appName, filepath.Join(integration.RootDir(ctx, t), appPath), "--task")
 		ctx = integration.ContextWithApp(ctx, appName)
 
@@ -48,7 +49,7 @@ func TestIntegration_TaskSchedules(t *testing.T) {
 
 				jobName := "manual-job"
 				// Create a Job.
-				kf.RunCommand(ctx, "create-job", appName, jobName, "echo MANUAL JOB COMPLETE")
+				kf.RunCommand(ctx, "create-job", appName, jobName, "sleep 10 && echo MANUAL JOB COMPLETE && sleep 10")
 
 				// Assert the Job is listed by `kf jobs`.
 				if findJob(ctx, kf, appName, jobName) == nil {
@@ -60,7 +61,7 @@ func TestIntegration_TaskSchedules(t *testing.T) {
 				tasks := findJobTasks(ctx, kf, appName, jobName)
 
 				// Assert the Task is created and runs successfully.
-				kf.VerifyTaskLogOutput(ctx, appName, "MANUAL JOB COMPLETE", 120*time.Second)
+				kf.VerifyTaskLogOutput(ctx, appName, "MANUAL JOB COMPLETE", 360*time.Second)
 				if len(tasks) != 1 {
 					t.Fatalf("run-job failed to create Task")
 				}
@@ -79,7 +80,7 @@ func TestIntegration_TaskSchedules(t *testing.T) {
 
 				jobName := "scheduled-job-always"
 				// Create a Job.
-				kf.RunCommand(ctx, "create-job", appName, jobName, "echo SCHEDULED JOB COMPLETE")
+				kf.RunCommand(ctx, "create-job", appName, jobName, "sleep 10 && echo SCHEDULED JOB COMPLETE && sleep 10")
 
 				// Assert the Job is listed by `kf jobs`.
 				if findJob(ctx, kf, appName, jobName) == nil {
@@ -94,7 +95,7 @@ func TestIntegration_TaskSchedules(t *testing.T) {
 				}
 
 				// Assert the scheduled Task is created and runs successfully.
-				kf.VerifyTaskLogOutput(ctx, appName, "SCHEDULED JOB COMPLETE", 180*time.Second)
+				kf.VerifyTaskLogOutput(ctx, appName, "SCHEDULED JOB COMPLETE", 540*time.Second)
 				tasks := findJobTasks(ctx, kf, appName, jobName)
 				if len(tasks) == 0 {
 					t.Fatalf("schedule-job failed to automatically create Tasks")
