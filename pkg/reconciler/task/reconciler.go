@@ -302,7 +302,7 @@ func (r *Reconciler) fetchContainerCommand(app *v1alpha1.App) ([]string, error) 
 		return nil, err
 	}
 
-	img, err := remote.Image(imageRef, dockerutil.GetAuthKeyChain())
+	img, err := remote.Image(imageRef, dockerutil.GetAuthKeyChain(), dockerutil.SafeRemoteTransport())
 	if err != nil {
 		return nil, err
 	}
