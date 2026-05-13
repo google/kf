@@ -25,10 +25,6 @@ import (
 )
 
 func main() {
-	if len(os.Args) > 1 {
-		fmt.Printf("ECHO: %v", os.Args[1:])
-		return
-	}
 	port := hostPort()
 	fmt.Printf("Starting echo HTTP server at port %d\n", port)
 	log.Fatal(http.ListenAndServe(port, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

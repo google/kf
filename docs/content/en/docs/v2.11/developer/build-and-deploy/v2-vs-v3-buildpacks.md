@@ -80,10 +80,10 @@ The output shows both V2 and V3 Stacks:
 ```
 Getting stacks in Space: myspace
 Version  Name                                Build Image                                                                                          Run Image
-V2       cflinuxfs5                          cloudfoundry/cflinuxfs5@sha256:206c68c5753abd24beb85565e9ed525d1f1be24bdab252193793b49b44d4b69e      cloudfoundry/cflinuxfs5@sha256:206c68c5753abd24beb85565e9ed525d1f1be24bdab252193793b49b44d4b69e
+V2       cflinuxfs5                          cloudfoundry/cflinuxfs5      cloudfoundry/cflinuxfs5
 V3       kf-v2-to-v3-shim                    gcr.io/kf-releases/v2-to-v3:v2.7.0                                                                   gcr.io/buildpacks/gcp/run:v1                                                                       This is a stack added by the integration tests to assert that v2->v3 shim works
 V3       google                              gcr.io/buildpacks/builder:v1                                                                         gcr.io/buildpacks/gcp/run:v1                                                                       Google buildpacks (https://github.com/GoogleCloudPlatform/buildpacks)
-V3       org.cloudfoundry.stacks.cflinuxfs5  cloudfoundry/cflinuxfs5@sha256:206c68c5753abd24beb85565e9ed525d1f1be24bdab252193793b49b44d4b69e  A large Cloud Foundry stack based on Ubuntu 24.04
+V3       org.cloudfoundry.stacks.cflinuxfs5  cloudfoundry/cflinuxfs5  A large Cloud Foundry stack based on Ubuntu 24.04
 ```
 
 

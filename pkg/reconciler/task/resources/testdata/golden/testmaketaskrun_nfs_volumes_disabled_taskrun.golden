@@ -80,7 +80,11 @@
             "steps": [
                 {
                     "name": "user-container",
+                    "command": [
+                        "bash"
+                    ],
                     "args": [
+                        "-c",
                         "sleep 1000"
                     ],
                     "env": [

@@ -424,7 +424,7 @@ func TestIntegration_Push_binaryBuildpack(t *testing.T) {
 	integration.RunKfTest(ctx, t, func(ctx context.Context, t *testing.T, kf *integration.Kf) {
 		appName := v1alpha1.GenerateName("integration-push-bin", fmt.Sprint(time.Now().UnixNano()))
 
-		// Create a temporary directory for the binary test application
+		// The goal is to create a simple HTTP server, compile it and run as a static binary
 		tempDir, err := ioutil.TempDir("", "binary-test")
 		if err != nil {
 			t.Fatalf("create temp dir: %v", err)

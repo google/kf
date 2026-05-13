@@ -489,7 +489,7 @@ func getBuildSpec() (*v1alpha1.BuildSpec, error) {
 		},
 		StacksV2: kfconfig.StackV2List{
 			{
-				Image: "cloudfoundry/cflinuxfs4@sha256:118249de04f4f7543bc8118a9943c86d1c30504e687f468c4342d22b1e3d713b",
+				Image: "cloudfoundry/cflinuxfs4",
 				Name:  "cflinuxfs4",
 			},
 		},

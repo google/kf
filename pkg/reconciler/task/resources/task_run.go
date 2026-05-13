@@ -237,6 +237,7 @@ func overrideResourceRequests(container *corev1.Container, task *v1alpha1.Task) 
 func overrideContainerArgs(container *corev1.Container, task *v1alpha1.Task) {
 	// args precedence: Task command > App's container args (set by `--command` or `--args` flag in `kf push`).
 	if len(task.Spec.Command) > 0 {
-		container.Args = []string{task.Spec.Command}
+		container.Command = []string{"bash"}
+		container.Args = []string{"-c", task.Spec.Command}
 	}
 }

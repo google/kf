@@ -244,9 +244,9 @@ spec:
   - name: push
     params:
     - name: RUN_IMAGE
-      value: cloudfoundry/cflinuxfs4@sha256:118249de04f4f7543bc8118a9943c86d1c30504e687f468c4342d22b1e3d713b
+      value: cloudfoundry/cflinuxfs4
     - name: BUILDER_IMAGE
-      value: cloudfoundry/cflinuxfs4@sha256:118249de04f4f7543bc8118a9943c86d1c30504e687f468c4342d22b1e3d713b
+      value: cloudfoundry/cflinuxfs4
     - name: SKIP_DETECT
       value: "false"
     - name: IMAGE_DESTINATION
@@ -398,9 +398,9 @@ spec:
     - name: push
       params:
       - name: RUN_IMAGE
-        value: cloudfoundry/cflinuxfs4@sha256:118249de04f4f7543bc8118a9943c86d1c30504e687f468c4342d22b1e3d713b
+        value: cloudfoundry/cflinuxfs4
       - name: BUILDER_IMAGE
-        value: cloudfoundry/cflinuxfs4@sha256:118249de04f4f7543bc8118a9943c86d1c30504e687f468c4342d22b1e3d713b
+        value: cloudfoundry/cflinuxfs4
       - name: SKIP_DETECT
         value: "false"
       - name: IMAGE_DESTINATION

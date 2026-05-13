@@ -84,7 +84,7 @@
                     ],
                     "args": [
                         "-c",
-                        "mapfs -uid 2000 -gid 2000 /nfs/volume1 /.kfmounts/nfs/volume1 \u0026 'sleep 1000'"
+                        "mapfs -uid 2000 -gid 2000 /nfs/volume1 /.kfmounts/nfs/volume1 \u0026 bash -c 'sleep 1000'"
                     ],
                     "env": [
                         {

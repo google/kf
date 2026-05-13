@@ -344,16 +344,22 @@ func buildpackV3Build(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, 
 		{Name: "platform-dir", MountPath: "/platform"},
 	}
 
+	cbnPlatformApiKey := "CNB_PLATFORM_API"
+	cbnPlatformApiVersion := "0.15"
+
 	platformEnvSet := sets.NewString()
 
 	for _, v := range buildSpec.Env {
 		platformEnvSet.Insert(v.Name)
+		if v.Name == cbnPlatformApiKey {
+			cbnPlatformApiVersion = v.Value
+		}
 	}
 
 	cbnPlatformApiEnv := []corev1.EnvVar{
 		{
-			Name:  "CNB_PLATFORM_API",
-			Value: "0.15",
+			Name:  cbnPlatformApiKey,
+			Value: cbnPlatformApiVersion,
 		},
 	}
 
@@ -596,15 +602,16 @@ fi
 
 # TODO: If https://github.com/buildpacks/lifecycle/issues/423 is resolved, then
 # this can be replaced with /ko-app/build-helpers publish
-export_image () {
+export_image_with_legacy_exporter () {
   /lifecycle/exporter \
     -app=/layers/source \
     -layers=/layers \
     -group=/layers/group.toml \
     -image=$(inputs.params.RUN_IMAGE) \
-    $(inputs.params.DESTINATION_IMAGE)
+    $(inputs.params.DESTINATION_IMAGE) || \
+	echo "^ If failed due to invalid -image argument then it was expected"
 }
-export_image_new () {
+export_image_with_new_exporter () {
 	chmod -R a+rx /layers/source
   /lifecycle/exporter \
     -app=/layers/source \
@@ -618,11 +625,15 @@ export_image_new () {
 # This will retry a few times (2 minutes) in case exporting failed (i.e., WI
 # token hasn't had time to propagate).
 for i in $$(seq 1 24); do
-	if export_image; then
-    # Success
+	# First try to export the image with the legacy exporter that accepts -image argument
+	# That might be a case if using older buildpacks
+	# -image flags was removed in July 2021 github.com/buildpacks/spec/commit/7108faef199713cb3f15c3815a549239ebe7e680
+	# If failed, then repeat with -run argument instead of -image
+	if export_image_with_legacy_exporter; then
+    # Success (legacy exporter)
     exit 0
-	elif export_image_new; then
-    # Success
+	elif export_image_with_new_exporter; then
+    # Success (modern exporter)
     exit 0
 	else
     # Failure
