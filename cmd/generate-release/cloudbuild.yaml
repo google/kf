@@ -138,6 +138,8 @@ steps:
     for TAG in "$${TAGS[@]}"; do
       IMAGES+=("-t" "gcr.io/${PROJECT_ID}/kf-thirdparty:$${TAG}")
     done
+    
+    echo "third_party/forked/v2-buildpack-lifecycle/installer/kodata" > .dockerignore
     docker build \
       -f ./cmd/generate-release/scripts/Dockerfile.thirdparty \
       "$${IMAGES[@]}" .
