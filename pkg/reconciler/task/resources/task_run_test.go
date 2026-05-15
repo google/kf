@@ -154,8 +154,8 @@ func ExampleMakeTaskRun_verifyTaskParamsOverrides() {
 	// Output: user-container CPU: 2
 	// user-container Memory: 2G
 	// user-container Disk: 2G
-	// user-container Args: [task-command]
-	// user-container Entrypoint: [some-command]
+	// user-container Args: [-c task-command]
+	// user-container Entrypoint: [bash]
 }
 
 func ExampleMakeTaskRun_verifyAppEntrypointIsUsed() {

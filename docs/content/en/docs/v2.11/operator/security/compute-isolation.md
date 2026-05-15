@@ -75,10 +75,10 @@ To configure the `nodeSelector` on a stack:
    .....
    .....
    spaceStacksV2: |
-   - name:  cflinuxfs3
-           image: cloudfoundry/cflinuxfs3
+   - name:  cflinuxfs5
+           image: cloudfoundry/cflinuxfs5
            nodeSelector:
-                 OS_KERNEL: LINUX_4.4.1 
+                 OS_KERNEL: LINUX_6.12.68
    .....
    .....
    ```

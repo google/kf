@@ -15,7 +15,7 @@
 ---
 applications:
 - name: multiple-ports
-  stack: org.cloudfoundry.stacks.cflinuxfs3
+  stack: org.cloudfoundry.stacks.cflinuxfs4
   ports:
   - port: 8080
     protocol: http

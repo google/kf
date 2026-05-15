@@ -344,10 +344,23 @@ func buildpackV3Build(cfg *config.DefaultsConfig, buildSpec v1alpha1.BuildSpec, 
 		{Name: "platform-dir", MountPath: "/platform"},
 	}
 
+	cbnPlatformApiKey := "CNB_PLATFORM_API"
+	cbnPlatformApiVersion := "0.15"
+
 	platformEnvSet := sets.NewString()
 
 	for _, v := range buildSpec.Env {
 		platformEnvSet.Insert(v.Name)
+		if v.Name == cbnPlatformApiKey {
+			cbnPlatformApiVersion = v.Value
+		}
+	}
+
+	cbnPlatformApiEnv := []corev1.EnvVar{
+		{
+			Name:  cbnPlatformApiKey,
+			Value: cbnPlatformApiVersion,
+		},
 	}
 
 	return &tektonv1beta1.TaskSpec{
@@ -415,39 +428,28 @@ if [[ -z "$(inputs.params.BUILDPACK)" ]]; then
     -app=/layers/source \
     -group=/layers/group.toml \
     -plan=/layers/plan.toml \
-    -platform=/platform
+    -platform=/platform || \
+	CNB_PLATFORM_API= /lifecycle/detector \
+    -app=/layers/source \
+    -group=/layers/group.toml \
+    -plan=/layers/plan.toml \
+    -platform=/platform 
 else
-  touch /layers/plan.toml
-  echo -e "[[buildpacks]]\nid = \"$(inputs.params.BUILDPACK)\"\nversion = \"latest\"\n" > /layers/group.toml
+  cat <<EOF > /tmp/custom-order.toml
+[[order]]
+[[order.group]]
+id = "$(inputs.params.BUILDPACK)"
+EOF
+
+	/lifecycle/detector \
+		-app=/layers/source \
+		-platform=/platform \
+		-order=/tmp/custom-order.toml
 fi
 						`,
 				},
+				Env:          cbnPlatformApiEnv,
 				VolumeMounts: cacheAndLayers,
-			},
-			{
-				Name:    "restore",
-				Image:   "$(inputs.params.BUILDER_IMAGE)",
-				Command: []string{"/lifecycle/restorer"},
-				Args: []string{
-					"-group=/layers/group.toml",
-					"-layers=/layers",
-					"-cache-dir=/cache",
-				},
-				VolumeMounts: cacheAndLayers,
-			},
-			{
-				Name:    "build",
-				Image:   "$(inputs.params.BUILDER_IMAGE)",
-				Command: []string{"/lifecycle/builder"},
-				Args: []string{
-					"-app=/layers/source",
-					"-layers=/layers",
-					"-group=/layers/group.toml",
-					"-plan=/layers/plan.toml",
-					"-platform=/platform",
-				},
-				VolumeMounts: cacheAndLayers,
-				Resources:    resources,
 			},
 			{
 				Name:    "download-token",
@@ -532,6 +534,56 @@ exit 1
 				VolumeMounts: cacheAndLayers,
 			},
 			{
+				Name:    "analyze",
+				Image:   "$(inputs.params.BUILDER_IMAGE)",
+				Command: []string{"bash"},
+				Args: []string{
+					"-euc",
+					`
+googleServiceAccount=$1
+if [ "$googleServiceAccount" != "" ] && [ -f /workspace/gcloud.token ]; then
+  export CNB_REGISTRY_AUTH=$(cat /workspace/gcloud.token)
+fi
+
+/lifecycle/analyzer \
+  -layers=/layers \
+  -analyzed=/layers/analyzed.toml \
+  "$(inputs.params.DESTINATION_IMAGE)"
+`,
+					"_",
+					googleServiceAccount,
+				},
+				Env:          cbnPlatformApiEnv,
+				VolumeMounts: cacheAndLayers,
+			},
+			{
+				Name:    "restore",
+				Image:   "$(inputs.params.BUILDER_IMAGE)",
+				Command: []string{"/lifecycle/restorer"},
+				Args: []string{
+					"-group=/layers/group.toml",
+					"-layers=/layers",
+					"-cache-dir=/cache",
+				},
+				Env:          cbnPlatformApiEnv,
+				VolumeMounts: cacheAndLayers,
+			},
+			{
+				Name:    "build",
+				Image:   "$(inputs.params.BUILDER_IMAGE)",
+				Command: []string{"/lifecycle/builder"},
+				Args: []string{
+					"-app=/layers/source",
+					"-layers=/layers",
+					"-group=/layers/group.toml",
+					"-plan=/layers/plan.toml",
+					"-platform=/platform",
+				},
+				Env:          cbnPlatformApiEnv,
+				VolumeMounts: cacheAndLayers,
+				Resources:    resources,
+			},
+			{
 				Name:    "export",
 				Image:   "$(inputs.params.BUILDER_IMAGE)",
 				Command: []string{"bash"},
@@ -550,31 +602,50 @@ fi
 
 # TODO: If https://github.com/buildpacks/lifecycle/issues/423 is resolved, then
 # this can be replaced with /ko-app/build-helpers publish
-export_image () {
+export_image_with_legacy_exporter () {
   /lifecycle/exporter \
     -app=/layers/source \
     -layers=/layers \
     -group=/layers/group.toml \
     -image=$(inputs.params.RUN_IMAGE) \
+    $(inputs.params.DESTINATION_IMAGE) || \
+	echo "^ If failed due to invalid -image argument then it was expected"
+}
+export_image_with_new_exporter () {
+	chmod -R a+rx /layers/source
+  /lifecycle/exporter \
+    -app=/layers/source \
+    -layers=/layers \
+    -group=/layers/group.toml \
+    -analyzed=/layers/analyzed.toml \
+    -run=$(inputs.params.RUN_IMAGE) \
     $(inputs.params.DESTINATION_IMAGE)
 }
 
 # This will retry a few times (2 minutes) in case exporting failed (i.e., WI
 # token hasn't had time to propagate).
 for i in $$(seq 1 24); do
-	if export_image; then
-        # Success
-        exit 0
-    else
-        # Failure
-        echo "failed to export image. Retrying..."
-        sleep 5
-    fi
+	# First try to export the image with the legacy exporter that accepts -image argument
+	# That might be a case if using older buildpacks
+	# -image flags was removed in July 2021 github.com/buildpacks/spec/commit/7108faef199713cb3f15c3815a549239ebe7e680
+	# If failed, then repeat with -run argument instead of -image
+	if export_image_with_legacy_exporter; then
+    # Success (legacy exporter)
+    exit 0
+	elif export_image_with_new_exporter; then
+    # Success (modern exporter)
+    exit 0
+	else
+    # Failure
+    echo "failed to export image. Retrying..."
+    sleep 5
+	fi
 done
 `,
 					"_",
 					googleServiceAccount,
 				},
+				Env:          cbnPlatformApiEnv,
 				VolumeMounts: cacheAndLayers,
 			},
 			{

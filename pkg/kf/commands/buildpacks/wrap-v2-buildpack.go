@@ -404,7 +404,7 @@ cp -r . /tmp/app/
 cd /tmp/app
 
 # Many of the V2 buildpacks expect this environment variable to be set...
-export CF_STACK=cflinuxfs3
+export CF_STACK=cflinuxfs4
 
 ${script_path}/v2-lifecycle/builder \
   -buildDir=/tmp/app \

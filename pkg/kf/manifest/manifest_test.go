@@ -56,7 +56,7 @@ applications:
 			fileContent: `---
 applications:
 - name: MY-APP
-  stack: cflinuxfs3
+  stack: cflinuxfs5
   buildpacks:
   - java
   - node
@@ -67,7 +67,7 @@ applications:
 				Applications: []manifest.Application{
 					{
 						Name:       "MY-APP",
-						Stack:      "cflinuxfs3",
+						Stack:      "cflinuxfs5",
 						Buildpacks: []string{"java", "node"},
 					},
 				},
@@ -109,7 +109,7 @@ applications:
 			fileContent: `---
 applications:
 - name: MY-APP
-  stack: cflinuxfs3
+  stack: cflinuxfs5
   buildpack: java
 `,
 			expected: &manifest.Manifest{
@@ -118,7 +118,7 @@ applications:
 				Applications: []manifest.Application{
 					{
 						Name:            "MY-APP",
-						Stack:           "cflinuxfs3",
+						Stack:           "cflinuxfs5",
 						LegacyBuildpack: "java",
 					},
 				},

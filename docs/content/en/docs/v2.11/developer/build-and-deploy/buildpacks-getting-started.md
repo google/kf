@@ -31,7 +31,7 @@ kf push java-v2 --path target/helloworld-0.0.1-SNAPSHOT.jar
 Use [spring initializr](https://start.spring.io/) to create a Java 8 maven project with a spring web dependency and JAR packaging. Download it, extract it, and once extracted, push to Kf with the cloud native buildpack.
 
 ```sh
-kf push java-v3 --stack org.cloudfoundry.stacks.cflinuxfs3
+kf push java-v3 --stack org.cloudfoundry.stacks.cflinuxfs5
 ```
 
 ## Python (v2) buildpack
@@ -85,7 +85,7 @@ kf push python --buildpack python\_buildpack
 Push the Python flask app using cloud native buildpacks.
 
 ```sh
-kf push pythonv3 --stack org.cloudfoundry.stacks.cflinuxfs3
+kf push pythonv3 --stack org.cloudfoundry.stacks.cflinuxfs5
 ```
 
 ## Staticfile (v2) buildpack

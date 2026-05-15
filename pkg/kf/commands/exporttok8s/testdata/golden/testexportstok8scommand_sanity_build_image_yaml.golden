@@ -244,9 +244,9 @@ spec:
   - name: push
     params:
     - name: RUN_IMAGE
-      value: cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5
+      value: cloudfoundry/cflinuxfs4
     - name: BUILDER_IMAGE
-      value: cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5
+      value: cloudfoundry/cflinuxfs4
     - name: SKIP_DETECT
       value: "false"
     - name: IMAGE_DESTINATION
@@ -289,7 +289,7 @@ spec:
         - |2
 
           echo "/staging/app /tmp/app" | xargs -n 1 cp -r /workspace/output/
-          CF_STACK=cflinuxfs3 /workspace/builder \
+          CF_STACK=cflinuxfs4 /workspace/builder \
             -buildArtifactsCacheDir=/tmp/cache \
             -buildDir=/tmp/app \
             -buildpacksDir=/tmp/buildpacks \
@@ -398,9 +398,9 @@ spec:
     - name: push
       params:
       - name: RUN_IMAGE
-        value: cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5
+        value: cloudfoundry/cflinuxfs4
       - name: BUILDER_IMAGE
-        value: cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5
+        value: cloudfoundry/cflinuxfs4
       - name: SKIP_DETECT
         value: "false"
       - name: IMAGE_DESTINATION
@@ -443,7 +443,7 @@ spec:
           - |2
 
             echo "/staging/app /tmp/app" | xargs -n 1 cp -r /workspace/output/
-            CF_STACK=cflinuxfs3 /workspace/builder \
+            CF_STACK=cflinuxfs4 /workspace/builder \
               -buildArtifactsCacheDir=/tmp/cache \
               -buildDir=/tmp/app \
               -buildpacksDir=/tmp/buildpacks \

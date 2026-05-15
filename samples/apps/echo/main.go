@@ -25,7 +25,9 @@ import (
 )
 
 func main() {
-	log.Fatal(http.ListenAndServe(hostPort(), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	port := hostPort()
+	fmt.Printf("Starting echo HTTP server at port %d\n", port)
+	log.Fatal(http.ListenAndServe(port, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		data, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			log.Printf("failed to read body: %s", err)

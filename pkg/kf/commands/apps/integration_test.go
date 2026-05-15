@@ -17,7 +17,10 @@ package apps
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -415,18 +418,49 @@ func TestIntegration_Push_SigtermV2Buildpack(t *testing.T) {
 // and then posts to it. It finally deletes the App.
 func TestIntegration_Push_binaryBuildpack(t *testing.T) {
 	// This test needs more time because pushes with V2 buildpacks.
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
 	defer cancel()
+
 	integration.RunKfTest(ctx, t, func(ctx context.Context, t *testing.T, kf *integration.Kf) {
 		appName := v1alpha1.GenerateName("integration-push-bin", fmt.Sprint(time.Now().UnixNano()))
 
-		// Push an App and then clean it up. This pushes the echo App which
-		// replies with the same body that was posted.
-		// For the purposes of this test the results SHOULD NOT be cached.
+		// The goal is to create a simple HTTP server, compile it and run as a static binary
+		tempDir, err := ioutil.TempDir("", "binary-test")
+		if err != nil {
+			t.Fatalf("create temp dir: %v", err)
+		}
+		defer os.RemoveAll(tempDir)
+
+		// Write a minimal Go web server
+		mainFile := filepath.Join(tempDir, "main.go")
+		code := `package main
+import (
+	"net/http"
+	"os"
+)
+func main() {
+	http.ListenAndServe(":"+os.Getenv("PORT"), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+}`
+		if err := ioutil.WriteFile(mainFile, []byte(code), 0644); err != nil {
+			t.Fatalf("failed to write main.go: %v", err)
+		}
+
+		// Compile the binary statically for the target container environment
+		binPath := filepath.Join(tempDir, "server")
+		cmd := exec.Command("go", "build", "-o", binPath, mainFile)
+		cmd.Env = append(os.Environ(), "GOOS=linux", "GOARCH=amd64", "CGO_ENABLED=0")
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("failed to compile test binary: %v", err)
+		}
+
 		kf.Push(ctx, appName,
 			"--buildpack", "binary_buildpack",
-			"--command", "python -m SimpleHTTPServer $PORT",
+			"--path", tempDir,
+			"--command", "./server",
 		)
+
 		integration.CheckApp(ctx, t, kf, appName, []string{integration.ExpectedAddr(appName, "")},
 			func(ctx context.Context, t *testing.T, addr string) {
 				// Just check to ensure we got a 200

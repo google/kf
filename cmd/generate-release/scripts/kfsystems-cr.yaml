@@ -88,7 +88,7 @@ spec:
         # used for CF compatible builds. The value must be a valid JSON or YAML
         # string.
         #
-        # Each entry in the list must be an object with `name` and `url` propreties
+        # Each entry in the list must be an object with `name` and `url` properties
         # indicating the human readable name of the buildpack and the URL to
         # fetch it from at runtime. An additional `disabled` property can be used
         # to disable a single buildpack.
@@ -101,13 +101,13 @@ spec:
         # builds. The value must be a valid JSON or YAML string.
         #
         # Each entry in the list must be an object with `name` and `image`
-        # propreties indicating the human readable name of the stack and the docker
+        # properties indicating the human readable name of the stack and the docker
         # image that will be used by the apps/buildpacks that run on it.
         #
         # Use images tagged with SHAs to improve build caching.
         spaceStacksV2:
-          - name:  cflinuxfs3
-            image: cloudfoundry/cflinuxfs3
+          - name:  cflinuxfs5
+            image: cloudfoundry/cflinuxfs5
 
         # spaceStacksV3 contains list of default stacks to be used for cloud native
         # buildpack builds. The value must be a valid JSON or YAML string.
