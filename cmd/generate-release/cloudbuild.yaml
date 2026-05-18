@@ -98,6 +98,8 @@ steps:
 
     GIT_SHA="$(</workspace/substitutions/git_sha)"
 
+    echo "Cleaning workspace..."
+    git clean -fd -e "substitutions/" -e "build-log.txt"
     echo "Checking out $${GIT_SHA}..."
     git checkout "$${GIT_SHA}"
 
