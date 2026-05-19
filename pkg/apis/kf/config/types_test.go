@@ -90,15 +90,15 @@ func TestStackV2List_Validate(t *testing.T) {
 		"happy path": {
 			Context: context.Background(),
 			Input: StackV2List{
-				{Name: "some-stack", Image: "cloudfoundry/cflinuxfs3"},
+				{Name: "some-stack", Image: "cloudfoundry/cflinuxfs5"},
 			},
 			Want: nil,
 		},
 		"duplicate name": {
 			Context: context.Background(),
 			Input: StackV2List{
-				{Name: "some-stack", Image: "cloudfoundry/cflinuxfs3"},
-				{Name: "some-stack", Image: "cloudfoundry/cflinuxfs3"},
+				{Name: "some-stack", Image: "cloudfoundry/cflinuxfs5"},
+				{Name: "some-stack", Image: "cloudfoundry/cflinuxfs5"},
 			},
 			Want: &apis.FieldError{
 				Message: "duplicate name",
@@ -124,7 +124,7 @@ func TestStackV2_Validate(t *testing.T) {
 			Context: context.Background(),
 			Input: &StackV2Definition{
 				Name:  "some-stack",
-				Image: "cloudfoundry/cflinuxfs3",
+				Image: "cloudfoundry/cflinuxfs5",
 			},
 			Want: nil,
 		},
@@ -138,7 +138,7 @@ func TestStackV2_Validate(t *testing.T) {
 		"missing name": {
 			Context: context.Background(),
 			Input: &StackV2Definition{
-				Image: "cloudfoundry/cflinuxfs3",
+				Image: "cloudfoundry/cflinuxfs5",
 			},
 			Want: apis.ErrMissingField("name"),
 		},
@@ -171,7 +171,7 @@ func TestStackV3List_Validate(t *testing.T) {
 		"recurses to children": {
 			Context: context.Background(),
 			Input: StackV3List{
-				{Name: "some-stack", RunImage: "cloudfoundry/cflinuxfs3:run"},
+				{Name: "some-stack", RunImage: "cloudfoundry/cflinuxfs5:run"},
 			},
 			Want: apis.ErrMissingField("[0].buildImage"),
 		},
@@ -186,8 +186,8 @@ func TestStackV3_Validate(t *testing.T) {
 			Context: context.Background(),
 			Input: &StackV3Definition{
 				Name:       "some-stack",
-				BuildImage: "cloudfoundry/cflinuxfs3:build",
-				RunImage:   "cloudfoundry/cflinuxfs3:run",
+				BuildImage: "cloudfoundry/cflinuxfs5:build",
+				RunImage:   "cloudfoundry/cflinuxfs5:run",
 			},
 			Want: nil,
 		},
@@ -195,7 +195,7 @@ func TestStackV3_Validate(t *testing.T) {
 			Context: context.Background(),
 			Input: &StackV3Definition{
 				Name:     "some-stack",
-				RunImage: "cloudfoundry/cflinuxfs3:run",
+				RunImage: "cloudfoundry/cflinuxfs5:run",
 			},
 			Want: apis.ErrMissingField("buildImage"),
 		},
@@ -203,15 +203,15 @@ func TestStackV3_Validate(t *testing.T) {
 			Context: context.Background(),
 			Input: &StackV3Definition{
 				Name:       "some-stack",
-				BuildImage: "cloudfoundry/cflinuxfs3:build",
+				BuildImage: "cloudfoundry/cflinuxfs5:build",
 			},
 			Want: apis.ErrMissingField("runImage"),
 		},
 		"missing name": {
 			Context: context.Background(),
 			Input: &StackV3Definition{
-				BuildImage: "cloudfoundry/cflinuxfs3:build",
-				RunImage:   "cloudfoundry/cflinuxfs3:run",
+				BuildImage: "cloudfoundry/cflinuxfs5:build",
+				RunImage:   "cloudfoundry/cflinuxfs5:run",
 			},
 			Want: apis.ErrMissingField("name"),
 		},
@@ -223,16 +223,16 @@ func TestStackV3_Validate(t *testing.T) {
 func ExampleStackV2List_FindStackByName() {
 	list := StackV2List{
 		{
-			Name:  "cflinuxfs3",
-			Image: "cloudfoundry/cflinuxfs3",
+			Name:  "cflinuxfs5",
+			Image: "cloudfoundry/cflinuxfs5",
 		},
 	}
 
 	fmt.Println("doesn't exist:", list.FindStackByName("does-not-exist"))
-	fmt.Println("exists image:", list.FindStackByName("cflinuxfs3").Image)
+	fmt.Println("exists image:", list.FindStackByName("cflinuxfs5").Image)
 
 	// Output: doesn't exist: <nil>
-	// exists image: cloudfoundry/cflinuxfs3
+	// exists image: cloudfoundry/cflinuxfs5
 }
 
 func ExampleBuildpackV2List_WithoutDisabled() {

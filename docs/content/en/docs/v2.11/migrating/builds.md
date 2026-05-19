@@ -23,13 +23,13 @@ Best practices for container runtimes differ from Cloud Foundry's application be
 
 In Cloud Foundry and Kf it's common to `push` in every environment which produces a separate build and image. This is a common source of errors if an application development team hasn't pinned the dependencies for their application correctly.
 
-In Cloud Foundry and Kf this pushing provides an additional purpose, a platform operations team can change buildpacks or base images in an environment to patch applications on the fly. This has always been risky, but large base images like `cflinuxfs3`, come with many security vulnerabilities.
+In Cloud Foundry and Kf this pushing provides an additional purpose, a platform operations team can change buildpacks or base images in an environment to patch applications on the fly. This has always been risky, but large base images like `cflinuxfs*`, come with many security vulnerabilities.
 
 **Things to consider:**
 
 *   Applications should be built with the dependencies they need for all environments. They shouldn't depend on the environment like the [Spring Autoreconfiguration buildpack](https://github.com/cloudfoundry/java-buildpack-auto-reconfiguration).
 *   Teams should be able to patch and promote an image quickly up through environments as the preferred method of patching.
-*   Building on smaller base images than `cflinuxfs3` may leave teams without tools they expect to use when using `ssh` to debug containers or may expose hidden dependencies.
+*   Building on smaller base images than `cflinuxfs*` may leave teams without tools they expect to use when using `ssh` to debug containers or may expose hidden dependencies.
 *   Cloud Foundry and Kf add a [launcher process](https://github.com/cloudfoundry/buildpackapplifecycle/tree/main/launcher) responsible for reading Procfiles and certain environment variables. Applications will need to stop using these, or you should create a drop-in replacement launcher.
 *   Operations teams should monitor deployed images for vulnerabilities.
 

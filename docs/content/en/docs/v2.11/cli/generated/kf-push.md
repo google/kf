@@ -17,7 +17,7 @@ description: "Create a new App or apply updates to an existing one."
 kf push myapp
 kf push myapp --buildpack my.special.buildpack # Discover via kf buildpacks
 kf push myapp --env FOO=bar --env BAZ=foo
-kf push myapp --stack cloudfoundry/cflinuxfs3 # Use a cflinuxfs3 runtime
+kf push myapp --stack cloudfoundry/cflinuxfs5 # Use a cflinuxfs5 runtime
 kf push myapp --health-check-http-endpoint /myhealthcheck # Specify a healthCheck for the app
 </pre>
 

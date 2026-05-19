@@ -199,7 +199,7 @@ func makePipelineSpec(url string, params []tektonv1beta1.Param) *tektonv1beta1.P
 									"-euc",
 									`
 echo "/staging/app /tmp/app" | xargs -n 1 cp -r /workspace/output/
-CF_STACK=cflinuxfs3 /workspace/builder \
+CF_STACK=cflinuxfs4 /workspace/builder \
   -buildArtifactsCacheDir=/tmp/cache \
   -buildDir=/tmp/app \
   -buildpacksDir=/tmp/buildpacks \
@@ -489,8 +489,8 @@ func getBuildSpec() (*v1alpha1.BuildSpec, error) {
 		},
 		StacksV2: kfconfig.StackV2List{
 			{
-				Image: "cloudfoundry/cflinuxfs3@sha256:5219e9e30000e43e5da17906581127b38fa6417f297f522e332a801e737928f5",
-				Name:  "cflinuxfs3",
+				Image: "cloudfoundry/cflinuxfs4",
+				Name:  "cflinuxfs4",
 			},
 		},
 	})

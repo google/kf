@@ -72,9 +72,9 @@ func TestPushCommand(t *testing.T) {
 		Image: "some/stack:latest",
 	}
 
-	cflinuxfs3Stack := kfconfig.StackV2Definition{
-		Name:  "cflinuxfs3",
-		Image: "cflinuxfs3:latest",
+	cflinuxfs5Stack := kfconfig.StackV2Definition{
+		Name:  "cflinuxfs5",
+		Image: "cflinuxfs5:latest",
 	}
 
 	v3Stack := kfconfig.StackV3Definition{
@@ -85,14 +85,14 @@ func TestPushCommand(t *testing.T) {
 		ContainerRegistry: "some-registry",
 		StacksV2: kfconfig.StackV2List{
 			defaultV2Stack,
-			cflinuxfs3Stack,
+			cflinuxfs5Stack,
 		},
 		StacksV3: kfconfig.StackV3List{
 			v3Stack,
 		},
 	}
 
-	buildpackWithParams := v1alpha1.BuildpackV2Build("some-image", cflinuxfs3Stack, []string{"some-buildpack"}, true)
+	buildpackWithParams := v1alpha1.BuildpackV2Build("some-image", cflinuxfs5Stack, []string{"some-buildpack"}, true)
 	buildpackWithoutSourceOption := apps.WithPushBuild(bldPtr(buildpackWithoutSource(v1alpha1.BuildpackV2Build("some-image", defaultV2Stack, nil, false))))
 	buildpackOption := apps.WithPushBuild(bldPtr(v1alpha1.BuildpackV2Build("some-image", defaultV2Stack, nil, false)))
 	buildpackV3WithoutSourceOption := apps.WithPushBuild(bldPtr(buildpackWithoutSource(v1alpha1.BuildpackV3Build("some-image", v3Stack, nil))))
@@ -133,7 +133,7 @@ func TestPushCommand(t *testing.T) {
 				"--no-start",
 				"-u", "http",
 				"-t", "28",
-				"-s", "cflinuxfs3",
+				"-s", "cflinuxfs5",
 				"--entrypoint", "start-web.sh",
 				"--args", "a",
 				"--args", "b",
