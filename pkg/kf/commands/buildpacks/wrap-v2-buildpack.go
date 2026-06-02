@@ -454,15 +454,15 @@ EOF
 	return nil
 }
 
-// goGetRepos does a `go get` on each of the given repo. It then moves the
+// goGetRepos does a `go install {repo}@latest` on each of the given repo. It then moves the
 // contents to the output directory where the compiled artifacts will be
 // included in the OCI container.
 func goGetRepos(ctx context.Context, outputDir, buildpackName string, repos ...string) error {
 	logger := logging.FromContext(ctx)
 	for _, repo := range repos {
 		logger.Infof("Downloading repo (%s) to %s", repo, outputDir)
-		if out, err := goCommand(ctx, outputDir, "get", repo); err != nil {
-			return fmt.Errorf("failed to download repo: %v\n%s", err, out)
+		if out, err := goCommand(ctx, outputDir, "install", repo+"@latest"); err != nil {
+			return fmt.Errorf("failed to install repo: %v\n%s", err, out)
 		}
 	}
 
@@ -650,6 +650,7 @@ func goCommand(ctx context.Context, outputDir string, args ...string) (string, e
 		"GOOS=linux",
 		"GOCACHE=" + filepath.Join(outputDir, "gocache"),
 		"GOPATH=" + outputDir,
+		"GOBIN=" + outputDir,
 	}
 	out, err := cmd.CombinedOutput()
 	return string(out), err
