@@ -650,7 +650,7 @@ func goCommand(ctx context.Context, outputDir string, args ...string) (string, e
 		"GOOS=linux",
 		"GOCACHE=" + filepath.Join(outputDir, "gocache"),
 		"GOPATH=" + outputDir,
-		"GOBIN=" + outputDir,
+		"GOBIN=" + filepath.Join(outputDir, "bin"),
 	}
 	out, err := cmd.CombinedOutput()
 	return string(out), err
