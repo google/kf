@@ -157,7 +157,7 @@ func NewXargsCommand(t Type, p *config.KfParams, spacesClient spaces.Client, opt
 
 			if flags.dryRun && !flags.generateScript {
 				fmt.Fprintf(
-					cmd.OutOrStdout(), color.New(color.FgHiYellow).Sprint("# Run with --dry-run=false to apply."))
+					cmd.OutOrStdout(), "%s", color.New(color.FgHiYellow).Sprint("# Run with --dry-run=false to apply."))
 				fmt.Fprintln(cmd.OutOrStdout())
 			}
 
@@ -251,8 +251,8 @@ func doSpace(
 			}
 
 			if err := p.Wait(); err != nil {
-				fmt.Fprintf(w, color.New(color.FgHiRed).Sprintf("Command '%v' failed: %v", shellescape.QuoteCommand(c), err))
-				fmt.Fprintf(w, color.New(color.Reset).Sprintln())
+				fmt.Fprintf(w, "%s", color.New(color.FgHiRed).Sprintf("Command '%v' failed: %v", shellescape.QuoteCommand(c), err))
+				fmt.Fprintf(w, "%s", color.New(color.Reset).Sprintln())
 				return err
 			}
 			return nil
