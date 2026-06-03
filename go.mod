@@ -13,7 +13,7 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/gofrs/flock v0.8.1
 	github.com/golang/mock v1.6.0
-	github.com/google/go-cmp v0.5.7
+	github.com/google/go-cmp v0.6.0
 	github.com/google/go-containerregistry v0.8.1-0.20220216220642-00c59d91847c
 	github.com/google/k8s-stateless-subresource v0.0.0-00010101000000-000000000000
 	github.com/google/licenseclassifier v0.0.0-20190926221455-842c0d70d702
@@ -33,8 +33,8 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/tektoncd/pipeline v0.36.0
 	go.uber.org/zap v1.19.1
-	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
-	golang.org/x/sys v0.5.0
+	golang.org/x/sync v0.20.0
+	golang.org/x/sys v0.45.0
 	google.golang.org/api v0.70.0
 	google.golang.org/genproto v0.0.0-20220303160752-862486edd9cc
 	google.golang.org/protobuf v1.28.0
@@ -55,12 +55,6 @@ require (
 
 require (
 	cloud.google.com/go v0.100.2 // indirect
-	code.cloudfoundry.org/archiver v0.0.0-20210922154202-074be9d9bcda // indirect
-	code.cloudfoundry.org/bytefmt v0.0.0-20210608160410-67692ebc98de // indirect
-	code.cloudfoundry.org/cacheddownloader v0.0.0-20201214151716-97cc1d934c0e // indirect
-	code.cloudfoundry.org/credhub-cli v0.0.0-20210922204850-e4696d9a0b35 // indirect
-	code.cloudfoundry.org/goshims v0.6.0 // indirect
-	code.cloudfoundry.org/lager v2.0.0+incompatible // indirect
 	contrib.go.opencensus.io/exporter/ocagent v0.7.1-0.20200907061046-05415f1de66d // indirect
 	contrib.go.opencensus.io/exporter/prometheus v0.4.0 // indirect
 	github.com/Azure/azure-sdk-for-go v63.3.0+incompatible // indirect
@@ -96,13 +90,10 @@ require (
 	github.com/census-instrumentation/opencensus-proto v0.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/chrismellard/docker-credential-acr-env v0.0.0-20220119192733-fe33c00cee21 // indirect
-	github.com/cloudfoundry/go-socks5 v0.0.0-20180221174514-54f73bdb8a8e // indirect
-	github.com/cloudfoundry/socks5-proxy v0.2.14 // indirect
 	github.com/containerd/containerd v1.5.18 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.11.0 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
-	github.com/cyphar/filepath-securejoin v0.2.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
@@ -144,6 +135,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0 // indirect
 	github.com/klauspost/compress v1.14.4 // indirect
+	github.com/kr/pretty v0.2.1 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.11 // indirect
@@ -160,7 +152,6 @@ require (
 	github.com/opencontainers/image-spec v1.1.0-rc3 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/poy/buildpackapplifecycle v0.0.0-20210923125402-941f63023a5e // indirect
 	github.com/prometheus/client_golang v1.11.1 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.32.1 // indirect
@@ -168,7 +159,7 @@ require (
 	github.com/prometheus/statsd_exporter v0.21.0 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
-	github.com/stretchr/testify v1.7.0 // indirect
+	github.com/stretchr/testify v1.11.1 // indirect
 	github.com/vbatts/tar-split v0.11.2 // indirect
 	github.com/xlab/treeprint v0.0.0-20181112141820-a009c3971eca // indirect
 	go.etcd.io/etcd/api/v3 v3.5.0 // indirect
@@ -190,14 +181,15 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/automaxprocs v1.4.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
-	golang.org/x/crypto v0.1.0 // indirect
-	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
-	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/crypto v0.52.0 // indirect
+	golang.org/x/mod v0.35.0 // indirect
+	golang.org/x/net v0.55.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b // indirect
-	golang.org/x/term v0.5.0 // indirect
-	golang.org/x/text v0.7.0 // indirect
+	golang.org/x/term v0.43.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65 // indirect
-	golang.org/x/tools v0.1.12 // indirect
+	golang.org/x/tools v0.44.0 // indirect
+	golang.org/x/tools/go/packages/packagestest v0.1.1-deprecated // indirect
 	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/grpc v1.44.0 // indirect
@@ -226,7 +218,7 @@ replace (
 // Uploads API server
 replace github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.5
 
-go 1.20
+go 1.25.0
 
 replace knative.dev/pkg => knative.dev/pkg v0.0.0-20220524202603-19adf798efb8
 
