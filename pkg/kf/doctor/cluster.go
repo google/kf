@@ -105,7 +105,7 @@ func diagnoseKubernetesVersion(ctx context.Context, d *Diagnostic, vc discovery.
 
 	testutil.AssertNil(d, "server version error", err)
 	testutil.AssertEqual(d, "major version", "1", k8sVersion.Major)
-	testutil.AssertEqual(d, "platform", "linux/amd64", k8sVersion.Platform)
+	testutil.AssertRegexp(d, "platform", "^linux/(amd64|arm64)$", k8sVersion.Platform)
 }
 
 // diagnoseComponents checks that the Kubernetes instance has all
