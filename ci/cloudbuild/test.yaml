@@ -106,7 +106,7 @@ substitutions:
 
   _KO_IMAGE: 'gcr.io/kf-releases/ko:latest'
   _CLOUDSDK_IMAGE: "gcr.io/google.com/cloudsdktool/cloud-sdk:528.0.0-alpine"
-  _GOLANG_IMAGE: 'golang:1.25'
+  _GOLANG_IMAGE: 'golang:1.26'
 
 steps:
 - id: check substitutions
