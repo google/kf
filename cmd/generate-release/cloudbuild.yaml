@@ -31,8 +31,7 @@ substitutions:
   _RELEASE_BUCKET: '' # Required
   _RELEASE_FOLDER: '' # Defaults to _VERSION
   _CLOUDSDK_IMAGE: 'gcr.io/google.com/cloudsdktool/cloud-sdk:528.0.0-alpine'
-  _GOLANG_IMAGE: 'golang:1.25'
-  _BUILDPACK_WRAPPER_GOLANG_IMAGE: 'golang:1.17'
+  _GOLANG_IMAGE: 'golang:1.26'
   _KO_VERSION: 'github.com/google/ko@v0.18.1'
 
 timeout: '1800s'
@@ -339,7 +338,7 @@ steps:
 
     done
 - id: generate v2 wrapper buildpacks
-  name: "${_BUILDPACK_WRAPPER_GOLANG_IMAGE}"
+  name: "${_GOLANG_IMAGE}"
   dir: /workspace
   waitFor: ['build CLIs']
   entrypoint: bash

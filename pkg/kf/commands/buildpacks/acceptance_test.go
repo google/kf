@@ -61,7 +61,7 @@ func setupJavaSpringMusic() acceptance.SourceCode {
 			cmd := exec.CommandContext(context.Background(), "./gradlew", "clean", "assemble")
 			out, err := cmd.CombinedOutput()
 			testutil.AssertNil(t, "./gradlew clean assemble", err)
-			integration.Logf(t, string(out))
+			integration.Logf(t, "%s", string(out))
 		},
 	}
 }
@@ -84,12 +84,12 @@ func setupBinaryApp() acceptance.SourceCode {
 			cmd := exec.CommandContext(context.Background(), "go", "build", "main.go")
 			out, err := cmd.CombinedOutput()
 			testutil.AssertNil(t, "go build main.go", err)
-			integration.Logf(t, string(out))
+			integration.Logf(t, "%s", string(out))
 
 			cmd = exec.CommandContext(context.Background(), "mv", "main", "bin/main")
 			out, err = cmd.CombinedOutput()
 			testutil.AssertNil(t, "mv main bin/main", err)
-			integration.Logf(t, string(out))
+			integration.Logf(t, "%s", string(out))
 
 			man, err := manifest.New("binary-app")
 			man.Applications[0].Command = "./main"

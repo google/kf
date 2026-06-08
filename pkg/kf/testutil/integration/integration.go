@@ -822,7 +822,7 @@ func CombineOutput(ctx context.Context, t *testing.T, out KfTestOutput) <-chan s
 			case <-ctx.Done():
 				return
 			case lines <- s.Text():
-				Logf(t, s.Text())
+				Logf(t, "%s", s.Text())
 			}
 		}
 	}
@@ -850,7 +850,7 @@ func Logf(t *testing.T, format string, i ...interface{}) {
 		return
 	}
 
-	t.Logf(lineWithPrefix)
+	t.Logf("%s", lineWithPrefix)
 }
 
 // StreamOutput writes the output of KfTestOutput to the testing.Log if
@@ -866,7 +866,7 @@ func StreamOutput(ctx context.Context, t *testing.T, out KfTestOutput, errs <-ch
 			return
 		case line, ok := <-lines:
 			if ok {
-				Logf(t, line)
+				Logf(t, "%s", line)
 			}
 		case err := <-errs:
 			if err != nil {

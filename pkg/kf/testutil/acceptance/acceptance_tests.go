@@ -151,7 +151,7 @@ func fetchApps(ctx context.Context, t *testing.T, apps []SourceCode) map[string]
 		cmd := exec.CommandContext(ctx, "git", "clone", app.Repo, appDir)
 		out, err := cmd.CombinedOutput()
 		testutil.AssertNil(t, "git clone", err)
-		integration.Logf(t, string(out))
+		integration.Logf(t, "%s", string(out))
 
 		// Setup the app directory
 		if app.Setup != nil {

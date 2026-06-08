@@ -90,7 +90,7 @@ func NewFixOrphanedBindingsCommand(
 					// Case: App has been deleted, remove binding.
 					fmt.Fprintf(out, "Deleting binding %q which refers to a missing app %q\n", b.Name, appRef.Name)
 					deletedBindingsCount++
-					fmt.Fprintf(out, cmdColor.Sprintf("  kubectl delete serviceinstancebindings -n %q %q", p.Space, b.Name))
+					fmt.Fprintf(out, "%s", cmdColor.Sprintf("  kubectl delete serviceinstancebindings -n %q %q", p.Space, b.Name))
 					fmt.Fprintln(out)
 
 					if !dryRun {
@@ -116,7 +116,7 @@ func NewFixOrphanedBindingsCommand(
 					return err
 				}
 
-				fmt.Fprintf(out, cmdColor.Sprintf(
+				fmt.Fprintf(out, "%s", cmdColor.Sprintf(
 					`  kubectl patch serviceinstancebinding -n %q %q --type=json -p='[{"op":"add", "path":"/metadata/ownerReferences", "value":[%s] }]'`,
 					p.Space,
 					b.Name,
@@ -142,7 +142,7 @@ func NewFixOrphanedBindingsCommand(
 			)
 			if dryRun {
 				fmt.Fprintf(
-					out, color.New(color.FgHiYellow).Sprint("Run with --dry-run=false to apply."))
+					out, "%s", color.New(color.FgHiYellow).Sprint("Run with --dry-run=false to apply."))
 				fmt.Fprintln(out)
 			}
 
