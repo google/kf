@@ -216,7 +216,7 @@ steps:
 
     go install "${_KO_VERSION}"
 
-    ko resolve --filename config | sed "s/VERSION_PLACEHOLDER/$${VERSION}/" > /workspace/bin/kf.yaml
+    ko resolve --filename config --tags "$${VERSION}" | sed "s/VERSION_PLACEHOLDER/$${VERSION}/" > /workspace/bin/kf.yaml
 
     if [ -n "$${REGISTRY_OVERRIDE}" ]; then
       sed -i "s|gcr.io/${PROJECT_ID}/|gcr.io/$${REGISTRY_OVERRIDE}/|g" /workspace/bin/kf.yaml
@@ -284,7 +284,7 @@ steps:
 
     go install "${_KO_VERSION}"
 
-    ko resolve --filename config > /workspace/bin/operator.yaml
+    ko resolve --filename config --tags "$${VERSION}" > /workspace/bin/operator.yaml
 
     if [ -n "$${REGISTRY_OVERRIDE}" ]; then
       sed -i "s|gcr.io/${PROJECT_ID}/|gcr.io/$${REGISTRY_OVERRIDE}/|g" /workspace/bin/operator.yaml
