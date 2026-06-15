@@ -30,6 +30,7 @@ substitutions:
   _EXTRA_TAG: ''      # Defaults to _VERSION
   _RELEASE_BUCKET: '' # Required
   _RELEASE_FOLDER: '' # Defaults to _VERSION
+  _REGISTRY_OVERRIDE: '' # Optional override for image registry in manifests
   _CLOUDSDK_IMAGE: 'gcr.io/google.com/cloudsdktool/cloud-sdk:528.0.0-alpine'
   _GOLANG_IMAGE: 'golang:1.26'
   _KO_VERSION: 'github.com/google/ko@v0.18.1'
@@ -69,6 +70,8 @@ steps:
       TAGS+=("${_EXTRA_TAG}")
     fi
 
+    REGISTRY_OVERRIDE="${_REGISTRY_OVERRIDE}"
+
     mkdir -p /workspace/substitutions
     rm -fr /workspace/substitutions/*
 
@@ -79,12 +82,14 @@ steps:
     done
     echo "${_RELEASE_BUCKET}" > /workspace/substitutions/release_bucket
     echo "$${FOLDER}" > /workspace/substitutions/release_folder
+    echo "$${REGISTRY_OVERRIDE}" > /workspace/substitutions/registry_override
 
     echo '_VERSION="${_VERSION}"'
     echo '_GIT_SHA="${_GIT_SHA}"'
     echo "_TAGS=\"$${TAGS[*]}\""
     echo "_RELEASE_FOLDER=\"$${FOLDER}\""
     echo '_RELEASE_BUCKET="${_RELEASE_BUCKET}"'
+    echo "_REGISTRY_OVERRIDE=\"$${REGISTRY_OVERRIDE}\""
 
 - id: setup workspace
   name: "${_CLOUDSDK_IMAGE}"
@@ -198,6 +203,7 @@ steps:
   - '-euxc'
   - |
     VERSION="$(</workspace/substitutions/version)"
+    REGISTRY_OVERRIDE="$(</workspace/substitutions/registry_override)"
 
     export CLOUDSDK_CORE_PROJECT=${PROJECT_ID}
     export KO_DOCKER_REPO=gcr.io/${PROJECT_ID}
@@ -211,6 +217,10 @@ steps:
     go install "${_KO_VERSION}"
 
     ko resolve --filename config | sed "s/VERSION_PLACEHOLDER/$${VERSION}/" > /workspace/bin/kf.yaml
+
+    if [ -n "$${REGISTRY_OVERRIDE}" ]; then
+      sed -i "s|gcr.io/${PROJECT_ID}/|gcr.io/$${REGISTRY_OVERRIDE}/|g" /workspace/bin/kf.yaml
+    fi
 
     # Append empty config-secrets to kf release.
     # The Operator need this to exist so the configmap transformers can do their work.
@@ -240,6 +250,7 @@ steps:
   - '-euxc'
   - |
     VERSION="$(</workspace/substitutions/version)"
+    REGISTRY_OVERRIDE="$(</workspace/substitutions/registry_override)"
 
     export CLOUDSDK_CORE_PROJECT=${PROJECT_ID}
     export KO_DOCKER_REPO=gcr.io/${PROJECT_ID}
@@ -274,6 +285,10 @@ steps:
     go install "${_KO_VERSION}"
 
     ko resolve --filename config > /workspace/bin/operator.yaml
+
+    if [ -n "$${REGISTRY_OVERRIDE}" ]; then
+      sed -i "s|gcr.io/${PROJECT_ID}/|gcr.io/$${REGISTRY_OVERRIDE}/|g" /workspace/bin/operator.yaml
+    fi
 
     cp /workspace/cmd/generate-release/scripts/kfsystems-cr.yaml /workspace/bin/kfsystem.yaml
 
