@@ -1,6 +1,6 @@
 module kf-operator
 
-go 1.25
+go 1.25.0
 
 require (
 	cloud.google.com/go/compute v1.5.0
