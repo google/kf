@@ -27,7 +27,7 @@ source "${REPO_ROOT_DIR}/hack/library.sh"
 cd ${REPO_ROOT_DIR}
 
 # Used to pin floating deps to a release version.
-VERSION="$(cat hack/VERSION)"
+VERSION="$(cat operator/hack/VERSION)"
 # The list of dependencies that we track at HEAD and periodically
 # float forward in this repository.
 FLOATING_DEPS=(
