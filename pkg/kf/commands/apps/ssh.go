@@ -17,7 +17,6 @@ package apps
 import (
 	"strings"
 
-	dockerterm "github.com/moby/term"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/kf/commands/completion"
 	"github.com/google/kf/v2/pkg/kf/commands/config"
