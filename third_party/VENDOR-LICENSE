@@ -182,6 +182,7 @@ Module: github.com/aws/smithy-go
 
 ===========================================================
 Module: k8s.io/gengo
+Module: k8s.io/gengo
 
 
 
@@ -663,6 +664,7 @@ Module: k8s.io/cli-runtime
 Module: k8s.io/client-go (imported as k8s.io/client-go)
 Module: k8s.io/client-go (imported as k8s.io/client-go)
 Module: k8s.io/client-go
+Module: k8s.io/code-generator
 Module: k8s.io/code-generator
 Module: k8s.io/component-base (imported as k8s.io/component-base)
 Module: k8s.io/component-base (imported as k8s.io/component-base)
@@ -5068,13 +5070,7 @@ THE SOFTWARE.
 
 ===========================================================
 Module: github.com/liggitt/tabwriter
-Module: golang.org/x/mod
-Module: golang.org/x/net
 Module: golang.org/x/oauth2
-Module: golang.org/x/sync
-Module: golang.org/x/sys
-Module: golang.org/x/term
-Module: golang.org/x/text
 Module: golang.org/x/time
 
 
@@ -6409,39 +6405,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 ===========================================================
-Module: golang.org/x/xerrors
-
-
-Copyright (c) 2019 The Go Authors. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of Google Inc. nor the names of its
-contributors may be used to endorse or promote products derived from
-this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
-===========================================================
 Module: github.com/mattn/go-isatty
 
 
@@ -6459,13 +6422,20 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 ===========================================================
 Module: golang.org/x/crypto
 Module: golang.org/x/mod
+Module: golang.org/x/mod
+Module: golang.org/x/net
 Module: golang.org/x/net
 Module: golang.org/x/oauth2
 Module: golang.org/x/sync
+Module: golang.org/x/sync
+Module: golang.org/x/sys
 Module: golang.org/x/sys
 Module: golang.org/x/term
+Module: golang.org/x/term
+Module: golang.org/x/text
 Module: golang.org/x/text
 Module: golang.org/x/time
+Module: golang.org/x/tools
 Module: golang.org/x/tools
 
 
