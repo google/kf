@@ -48,7 +48,7 @@ def zone_to_region(zone):
 def get_free_quota(region):
     result = json.loads(execute(f"gcloud compute regions describe {region} --format=json"))
     quotas = result["quotas"]
-    quotas = {q["metric"]: q for q in quotas}
+    quotas = {q["metric"]: q for q in quotas if "metric" in q}
 
     # needs to have at least 4 available addresses
     if quotas["IN_USE_ADDRESSES"]["limit"] - quotas["IN_USE_ADDRESSES"]["usage"] < 4:
