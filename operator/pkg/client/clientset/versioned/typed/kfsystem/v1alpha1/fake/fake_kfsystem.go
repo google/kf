@@ -94,7 +94,7 @@ func (c *FakeKfSystems) UpdateStatus(ctx context.Context, kfSystem *v1alpha1.KfS
 // Delete takes name of the kfSystem and deletes it. Returns an error if one occurs.
 func (c *FakeKfSystems) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteAction(kfsystemsResource, name), &v1alpha1.KfSystem{})
+		Invokes(testing.NewRootDeleteActionWithOptions(kfsystemsResource, name, opts), &v1alpha1.KfSystem{})
 	return err
 }
 

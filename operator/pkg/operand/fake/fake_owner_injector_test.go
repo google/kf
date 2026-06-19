@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -55,8 +56,8 @@ func TestFake(t *testing.T) {
 		Live:           []v1alpha1.LiveRef{liveref},
 		Ctx:            ctx,
 	}
-	if !cmp.Equal(want, fake.GetInvocations()[0]) {
-		t.Fatalf("Live ref differed (-want +got) \n %s", cmp.Diff(want, fake.GetInvocations()[0]))
+	if !cmp.Equal(want, fake.GetInvocations()[0], cmpopts.IgnoreFields(Invocation{}, "Ctx")) {
+		t.Fatalf("Live ref differed (-want +got) \n %s", cmp.Diff(want, fake.GetInvocations()[0], cmpopts.IgnoreFields(Invocation{}, "Ctx")))
 	}
 
 	fake.SetError(fmt.Errorf("Test %s", "test"))
@@ -70,7 +71,7 @@ func TestFake(t *testing.T) {
 	if len(fake.GetInvocations()) != 2 {
 		t.Fatalf("Wanted 1 invocation got %+v", fake.GetInvocations())
 	}
-	if !cmp.Equal(want, fake.GetInvocations()[1]) {
-		t.Fatalf("Live ref differed (-want +got) \n %s", cmp.Diff(want, fake.GetInvocations()[0]))
+	if !cmp.Equal(want, fake.GetInvocations()[1], cmpopts.IgnoreFields(Invocation{}, "Ctx")) {
+		t.Fatalf("Live ref differed (-want +got) \n %s", cmp.Diff(want, fake.GetInvocations()[0], cmpopts.IgnoreFields(Invocation{}, "Ctx")))
 	}
 }

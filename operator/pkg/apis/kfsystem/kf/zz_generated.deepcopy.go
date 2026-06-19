@@ -104,6 +104,11 @@ func (in *DefaultsConfig) DeepCopyInto(out *DefaultsConfig) {
 		*out = new(uint)
 		**out = **in
 	}
+	if in.TaskRetentionCount != nil {
+		in, out := &in.TaskRetentionCount, &out.TaskRetentionCount
+		*out = new(uint)
+		**out = **in
+	}
 	if in.BuildNodeSelectors != nil {
 		in, out := &in.BuildNodeSelectors, &out.BuildNodeSelectors
 		*out = make(BuildNodeSelectors, len(*in))
@@ -117,6 +122,31 @@ func (in *DefaultsConfig) DeepCopyInto(out *DefaultsConfig) {
 		for key, val := range *in {
 			(*out)[key] = val
 		}
+	}
+	if in.AppCPUPerGBOfRAM != nil {
+		in, out := &in.AppCPUPerGBOfRAM, &out.AppCPUPerGBOfRAM
+		x := (*in).DeepCopy()
+		*out = &x
+	}
+	if in.AppCPUMin != nil {
+		in, out := &in.AppCPUMin, &out.AppCPUMin
+		x := (*in).DeepCopy()
+		*out = &x
+	}
+	if in.ProgressDeadlineSeconds != nil {
+		in, out := &in.ProgressDeadlineSeconds, &out.ProgressDeadlineSeconds
+		*out = new(int32)
+		**out = **in
+	}
+	if in.TerminationGracePeriodSeconds != nil {
+		in, out := &in.TerminationGracePeriodSeconds, &out.TerminationGracePeriodSeconds
+		*out = new(int64)
+		**out = **in
+	}
+	if in.TaskDefaultTimeoutMinutes != nil {
+		in, out := &in.TaskDefaultTimeoutMinutes, &out.TaskDefaultTimeoutMinutes
+		*out = new(int32)
+		**out = **in
 	}
 	return
 }

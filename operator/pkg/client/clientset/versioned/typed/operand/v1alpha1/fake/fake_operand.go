@@ -94,7 +94,7 @@ func (c *FakeOperands) UpdateStatus(ctx context.Context, operand *v1alpha1.Opera
 // Delete takes name of the operand and deletes it. Returns an error if one occurs.
 func (c *FakeOperands) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteAction(operandsResource, name), &v1alpha1.Operand{})
+		Invokes(testing.NewRootDeleteActionWithOptions(operandsResource, name, opts), &v1alpha1.Operand{})
 	return err
 }
 

@@ -16,7 +16,16 @@
 
 set -euo pipefail
 
-OPERATOR_PACKAGE=kf-operator/
+OPERATOR_PACKAGE=kf-operator
+
+KNATIVE_HACK_DIR=$(go list -mod=readonly -m -f '{{.Dir}}' knative.dev/hack@main)
+chmod -R +w vendor/knative.dev/hack 2>/dev/null || true
+rm -rf vendor/knative.dev/hack
+mkdir -p vendor/knative.dev/hack
+cp -r "${KNATIVE_HACK_DIR}"/* vendor/knative.dev/hack/
+
+CODEGEN_PKG=$(go list -mod=readonly -m -f '{{.Dir}}' k8s.io/code-generator)
+KNATIVE_CODEGEN_PKG=$(go list -mod=readonly -m -f '{{.Dir}}' knative.dev/pkg)
 
 
 # Set up fake GOPATH
@@ -27,7 +36,7 @@ FAKE_REPOPATH="${FAKE_GOPATH}/src/${OPERATOR_PACKAGE}"
 mkdir -p "$(dirname "${FAKE_REPOPATH}")" && ln -s "$PWD" "${FAKE_REPOPATH}"
 
 # Cleanup on exit
-trap 'rm -rf ${FAKE_GOPATH}' EXIT
+trap 'chmod -R +w ${FAKE_GOPATH} && rm -rf ${FAKE_GOPATH}' EXIT
 
 GOPATH=${FAKE_GOPATH}
 
@@ -37,9 +46,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../vendor/knative.dev/hack/library.sh"
 readonly OPERATOR_REPO_DIR="${REPO_ROOT_DIR}/operator"
 source "${OPERATOR_REPO_DIR}/hack/library.sh"
 
-CODEGEN_PKG=${CODEGEN_PKG:-$(cd ${OPERATOR_REPO_DIR}; ls -d -1 ./vendor/k8s.io/code-generator 2>/dev/null || echo ../code-generator)}
-
-KNATIVE_CODEGEN_PKG=${KNATIVE_CODEGEN_PKG:-$(cd ${OPERATOR_REPO_DIR}; ls -d -1 ./vendor/knative.dev/pkg 2>/dev/null || echo ../pkg)}
+# CODEGEN_PKG and KNATIVE_CODEGEN_PKG resolved at the top of the file
 
 # generate the code with:
 # --output-base    because this script should also be able to run inside the vendor dir of

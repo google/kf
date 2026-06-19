@@ -94,7 +94,7 @@ func (c *FakeClusterActiveOperands) UpdateStatus(ctx context.Context, clusterAct
 // Delete takes name of the clusterActiveOperand and deletes it. Returns an error if one occurs.
 func (c *FakeClusterActiveOperands) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteAction(clusteractiveoperandsResource, name), &v1alpha1.ClusterActiveOperand{})
+		Invokes(testing.NewRootDeleteActionWithOptions(clusteractiveoperandsResource, name, opts), &v1alpha1.ClusterActiveOperand{})
 	return err
 }
 
