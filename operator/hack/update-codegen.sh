@@ -23,6 +23,7 @@ chmod -R +w vendor/knative.dev/hack 2>/dev/null || true
 rm -rf vendor/knative.dev/hack
 mkdir -p vendor/knative.dev/hack
 cp -r "${KNATIVE_HACK_DIR}"/* vendor/knative.dev/hack/
+chmod -R +w vendor/knative.dev/hack/
 
 CODEGEN_PKG=$(go list -mod=readonly -m -f '{{.Dir}}' k8s.io/code-generator)
 KNATIVE_CODEGEN_PKG=$(go list -mod=readonly -m -f '{{.Dir}}' knative.dev/pkg)
