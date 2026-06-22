@@ -127,6 +127,12 @@ func (c *Config) server(
 	}
 
 	serverConfig := genericapiserver.NewConfig(codecs)
+	serverConfig.EffectiveVersion = basecompatibility.NewEffectiveVersion(
+    version.MustParse("1.36.0"),
+    false,
+    version.MajorMinor(1, 34),
+    version.MajorMinor(1, 27),
+)
 	serverConfig.LongRunningFunc = c.LongRunningFunc
 
 	// Apply SecureServing config.
