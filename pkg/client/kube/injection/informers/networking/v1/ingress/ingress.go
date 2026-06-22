@@ -19,15 +19,8 @@ package ingress
 import (
 	context "context"
 
-	versioned "github.com/google/kf/v2/pkg/client/kube/clientset/versioned"
 	v1 "github.com/google/kf/v2/pkg/client/kube/informers/externalversions/networking/v1"
-	client "github.com/google/kf/v2/pkg/client/kube/injection/client"
 	factory "github.com/google/kf/v2/pkg/client/kube/injection/informers/factory"
-	networkingv1 "github.com/google/kf/v2/pkg/client/kube/listers/networking/v1"
-	apinetworkingv1 "k8s.io/api/networking/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	cache "k8s.io/client-go/tools/cache"
 	controller "knative.dev/pkg/controller"
 	injection "knative.dev/pkg/injection"
 	logging "knative.dev/pkg/logging"
@@ -35,7 +28,6 @@ import (
 
 func init() {
 	injection.Default.RegisterInformer(withInformer)
-	injection.Dynamic.RegisterDynamicInformer(withDynamicInformer)
 }
 
 // Key is used for associating the Informer inside the context.Context.
@@ -47,11 +39,6 @@ func withInformer(ctx context.Context) (context.Context, controller.Informer) {
 	return context.WithValue(ctx, Key{}, inf), inf.Informer()
 }
 
-func withDynamicInformer(ctx context.Context) context.Context {
-	inf := &wrapper{client: client.Get(ctx), resourceVersion: injection.GetResourceVersion(ctx)}
-	return context.WithValue(ctx, Key{}, inf)
-}
-
 // Get extracts the typed informer from the context.
 func Get(ctx context.Context) v1.IngressInformer {
 	untyped := ctx.Value(Key{})
@@ -60,55 +47,4 @@ func Get(ctx context.Context) v1.IngressInformer {
 			"Unable to fetch github.com/google/kf/v2/pkg/client/kube/informers/externalversions/networking/v1.IngressInformer from context.")
 	}
 	return untyped.(v1.IngressInformer)
-}
-
-type wrapper struct {
-	client versioned.Interface
-
-	namespace string
-
-	resourceVersion string
-}
-
-var _ v1.IngressInformer = (*wrapper)(nil)
-var _ networkingv1.IngressLister = (*wrapper)(nil)
-
-func (w *wrapper) Informer() cache.SharedIndexInformer {
-	return cache.NewSharedIndexInformer(nil, &apinetworkingv1.Ingress{}, 0, nil)
-}
-
-func (w *wrapper) Lister() networkingv1.IngressLister {
-	return w
-}
-
-func (w *wrapper) Ingresses(namespace string) networkingv1.IngressNamespaceLister {
-	return &wrapper{client: w.client, namespace: namespace, resourceVersion: w.resourceVersion}
-}
-
-// SetResourceVersion allows consumers to adjust the minimum resourceVersion
-// used by the underlying client.  It is not accessible via the standard
-// lister interface, but can be accessed through a user-defined interface and
-// an implementation check e.g. rvs, ok := foo.(ResourceVersionSetter)
-func (w *wrapper) SetResourceVersion(resourceVersion string) {
-	w.resourceVersion = resourceVersion
-}
-
-func (w *wrapper) List(selector labels.Selector) (ret []*apinetworkingv1.Ingress, err error) {
-	lo, err := w.client.NetworkingV1().Ingresses(w.namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector:   selector.String(),
-		ResourceVersion: w.resourceVersion,
-	})
-	if err != nil {
-		return nil, err
-	}
-	for idx := range lo.Items {
-		ret = append(ret, &lo.Items[idx])
-	}
-	return ret, nil
-}
-
-func (w *wrapper) Get(name string) (*apinetworkingv1.Ingress, error) {
-	return w.client.NetworkingV1().Ingresses(w.namespace).Get(context.TODO(), name, metav1.GetOptions{
-		ResourceVersion: w.resourceVersion,
-	})
 }

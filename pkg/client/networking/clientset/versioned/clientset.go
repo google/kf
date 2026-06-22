@@ -17,8 +17,8 @@
 package versioned
 
 import (
-	"fmt"
-	"net/http"
+	fmt "fmt"
+	http "net/http"
 
 	networkingv1alpha3 "github.com/google/kf/v2/pkg/client/networking/clientset/versioned/typed/networking/v1alpha3"
 	discovery "k8s.io/client-go/discovery"
@@ -31,8 +31,7 @@ type Interface interface {
 	NetworkingV1alpha3() networkingv1alpha3.NetworkingV1alpha3Interface
 }
 
-// Clientset contains the clients for groups. Each group has exactly one
-// version included in a Clientset.
+// Clientset contains the clients for groups.
 type Clientset struct {
 	*discovery.DiscoveryClient
 	networkingV1alpha3 *networkingv1alpha3.NetworkingV1alpha3Client
@@ -58,6 +57,10 @@ func (c *Clientset) Discovery() discovery.DiscoveryInterface {
 // where httpClient was generated with rest.HTTPClientFor(c).
 func NewForConfig(c *rest.Config) (*Clientset, error) {
 	configShallowCopy := *c
+
+	if configShallowCopy.UserAgent == "" {
+		configShallowCopy.UserAgent = rest.DefaultKubernetesUserAgent()
+	}
 
 	// share the transport between all clients
 	httpClient, err := rest.HTTPClientFor(&configShallowCopy)

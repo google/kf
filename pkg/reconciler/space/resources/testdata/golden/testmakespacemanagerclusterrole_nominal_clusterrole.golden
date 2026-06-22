@@ -1,7 +1,6 @@
 # Test:	TestMakeSpaceManagerClusterRole/nominal
 # space:
 #   metadata:
-#     creationTimestamp: null
 #     name: test
 #   spec:
 #     buildConfig:
@@ -20,7 +19,6 @@
 {
     "metadata": {
         "name": "test-manager",
-        "creationTimestamp": null,
         "labels": {
             "app.kubernetes.io/managed-by": "kf"
         },

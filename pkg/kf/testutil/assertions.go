@@ -43,7 +43,7 @@ type Failable interface {
 func Assert(t Failable, m gomock.Matcher, actual interface{}) {
 	t.Helper()
 	if !m.Matches(actual) {
-		t.Fatalf(m.String())
+		t.Fatalf("%s", m.String())
 	}
 }
 

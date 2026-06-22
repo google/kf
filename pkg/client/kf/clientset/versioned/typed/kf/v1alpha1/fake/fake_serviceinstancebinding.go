@@ -17,124 +17,34 @@
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	kfv1alpha1 "github.com/google/kf/v2/pkg/client/kf/clientset/versioned/typed/kf/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeServiceInstanceBindings implements ServiceInstanceBindingInterface
-type FakeServiceInstanceBindings struct {
+// fakeServiceInstanceBindings implements ServiceInstanceBindingInterface
+type fakeServiceInstanceBindings struct {
+	*gentype.FakeClientWithList[*v1alpha1.ServiceInstanceBinding, *v1alpha1.ServiceInstanceBindingList]
 	Fake *FakeKfV1alpha1
-	ns   string
 }
 
-var serviceinstancebindingsResource = schema.GroupVersionResource{Group: "kf.dev", Version: "v1alpha1", Resource: "serviceinstancebindings"}
-
-var serviceinstancebindingsKind = schema.GroupVersionKind{Group: "kf.dev", Version: "v1alpha1", Kind: "ServiceInstanceBinding"}
-
-// Get takes name of the serviceInstanceBinding, and returns the corresponding serviceInstanceBinding object, and an error if there is any.
-func (c *FakeServiceInstanceBindings) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.ServiceInstanceBinding, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(serviceinstancebindingsResource, c.ns, name), &v1alpha1.ServiceInstanceBinding{})
-
-	if obj == nil {
-		return nil, err
+func newFakeServiceInstanceBindings(fake *FakeKfV1alpha1, namespace string) kfv1alpha1.ServiceInstanceBindingInterface {
+	return &fakeServiceInstanceBindings{
+		gentype.NewFakeClientWithList[*v1alpha1.ServiceInstanceBinding, *v1alpha1.ServiceInstanceBindingList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("serviceinstancebindings"),
+			v1alpha1.SchemeGroupVersion.WithKind("ServiceInstanceBinding"),
+			func() *v1alpha1.ServiceInstanceBinding { return &v1alpha1.ServiceInstanceBinding{} },
+			func() *v1alpha1.ServiceInstanceBindingList { return &v1alpha1.ServiceInstanceBindingList{} },
+			func(dst, src *v1alpha1.ServiceInstanceBindingList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.ServiceInstanceBindingList) []*v1alpha1.ServiceInstanceBinding {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.ServiceInstanceBindingList, items []*v1alpha1.ServiceInstanceBinding) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.ServiceInstanceBinding), err
-}
-
-// List takes label and field selectors, and returns the list of ServiceInstanceBindings that match those selectors.
-func (c *FakeServiceInstanceBindings) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.ServiceInstanceBindingList, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewListAction(serviceinstancebindingsResource, serviceinstancebindingsKind, c.ns, opts), &v1alpha1.ServiceInstanceBindingList{})
-
-	if obj == nil {
-		return nil, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.ServiceInstanceBindingList{ListMeta: obj.(*v1alpha1.ServiceInstanceBindingList).ListMeta}
-	for _, item := range obj.(*v1alpha1.ServiceInstanceBindingList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested serviceInstanceBindings.
-func (c *FakeServiceInstanceBindings) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(serviceinstancebindingsResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a serviceInstanceBinding and creates it.  Returns the server's representation of the serviceInstanceBinding, and an error, if there is any.
-func (c *FakeServiceInstanceBindings) Create(ctx context.Context, serviceInstanceBinding *v1alpha1.ServiceInstanceBinding, opts v1.CreateOptions) (result *v1alpha1.ServiceInstanceBinding, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(serviceinstancebindingsResource, c.ns, serviceInstanceBinding), &v1alpha1.ServiceInstanceBinding{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.ServiceInstanceBinding), err
-}
-
-// Update takes the representation of a serviceInstanceBinding and updates it. Returns the server's representation of the serviceInstanceBinding, and an error, if there is any.
-func (c *FakeServiceInstanceBindings) Update(ctx context.Context, serviceInstanceBinding *v1alpha1.ServiceInstanceBinding, opts v1.UpdateOptions) (result *v1alpha1.ServiceInstanceBinding, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(serviceinstancebindingsResource, c.ns, serviceInstanceBinding), &v1alpha1.ServiceInstanceBinding{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.ServiceInstanceBinding), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeServiceInstanceBindings) UpdateStatus(ctx context.Context, serviceInstanceBinding *v1alpha1.ServiceInstanceBinding, opts v1.UpdateOptions) (*v1alpha1.ServiceInstanceBinding, error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(serviceinstancebindingsResource, "status", c.ns, serviceInstanceBinding), &v1alpha1.ServiceInstanceBinding{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.ServiceInstanceBinding), err
-}
-
-// Delete takes name of the serviceInstanceBinding and deletes it. Returns an error if one occurs.
-func (c *FakeServiceInstanceBindings) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(serviceinstancebindingsResource, c.ns, name, opts), &v1alpha1.ServiceInstanceBinding{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeServiceInstanceBindings) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(serviceinstancebindingsResource, c.ns, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.ServiceInstanceBindingList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched serviceInstanceBinding.
-func (c *FakeServiceInstanceBindings) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ServiceInstanceBinding, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(serviceinstancebindingsResource, c.ns, name, pt, data, subresources...), &v1alpha1.ServiceInstanceBinding{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.ServiceInstanceBinding), err
 }

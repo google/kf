@@ -1,7 +1,6 @@
 # Test:	TestMakeTaskRun/NFS_volumes_enabled_start_command
 # app:
-#   metadata:
-#     creationTimestamp: null
+#   metadata: {}
 #   spec:
 #     build: {}
 #     instances:
@@ -27,8 +26,7 @@
 # containerCommand:
 # - /launcher/lifecycle
 # space:
-#   metadata:
-#     creationTimestamp: null
+#   metadata: {}
 #   spec:
 #     buildConfig:
 #       defaultToV3Stack: null
@@ -43,8 +41,7 @@
 #     networkConfig: {}
 #     runtimeConfig: {}
 # task:
-#   metadata:
-#     creationTimestamp: null
+#   metadata: {}
 #   spec:
 #     appRef: {}
 #     command: sleep 1000
@@ -52,7 +49,6 @@
 
 {
     "metadata": {
-        "creationTimestamp": null,
         "labels": {
             "app.kubernetes.io/component": "task",
             "app.kubernetes.io/managed-by": "kf",

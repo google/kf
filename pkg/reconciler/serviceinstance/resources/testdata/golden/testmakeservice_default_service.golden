@@ -1,7 +1,6 @@
 # Test:	TestMakeService/default
 # serviceInstance:
 #   metadata:
-#     creationTimestamp: null
 #     name: my-route-svc
 #   spec:
 #     parametersFrom: {}
@@ -15,7 +14,6 @@
 {
     "metadata": {
         "name": "my-route-svc-proxy",
-        "creationTimestamp": null,
         "ownerReferences": [
             {
                 "apiVersion": "kf.dev/v1alpha1",

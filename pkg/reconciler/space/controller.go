@@ -105,7 +105,6 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	impl := controller.NewContext(ctx, c, controller.ControllerOptions{
 		WorkQueueName: "Spaces",
 		Logger:        logger,
-		Reporter:      &reconcilerutil.StructuredStatsReporter{Logger: logger},
 	})
 
 	logger.Info("Setting up event handlers")
@@ -230,7 +229,7 @@ type pickASpaceHandler struct {
 }
 
 // OnAdd implements ResourceEventHandler.
-func (h *pickASpaceHandler) OnAdd(_ interface{}) {
+func (h *pickASpaceHandler) OnAdd(_ interface{}, _ bool) {
 	// Given each Space uses a single IAM policy, we want to enqueue all the
 	// Spaces so each Space can get its Status updated.
 	spaces, err := h.spaceLister.List(labels.Everything())
@@ -246,10 +245,10 @@ func (h *pickASpaceHandler) OnAdd(_ interface{}) {
 
 // OnUpdate implements ResourceEventHandler.
 func (h *pickASpaceHandler) OnUpdate(_, _ interface{}) {
-	h.OnAdd(nil)
+	h.OnAdd(nil, false)
 }
 
 // OnDelete implements ResourceEventHandler.
 func (h *pickASpaceHandler) OnDelete(_ interface{}) {
-	h.OnAdd(nil)
+	h.OnAdd(nil, false)
 }

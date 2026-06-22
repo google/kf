@@ -24,6 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/apis"
 	"knative.dev/pkg/apis/duck"
+	duckv1 "knative.dev/pkg/apis/duck/v1"
 	duckv1beta1 "knative.dev/pkg/apis/duck/v1beta1"
 	apitesting "knative.dev/pkg/apis/testing"
 )
@@ -191,7 +192,7 @@ func unreconciledTaskRun() *tektonv1beta1.TaskRun {
 func pendingTaskRun() *tektonv1beta1.TaskRun {
 	base := unreconciledTaskRun()
 
-	base.Status.Conditions = duckv1beta1.Conditions{
+	base.Status.Conditions = duckv1.Conditions{
 		{Type: apis.ConditionSucceeded, Status: corev1.ConditionUnknown},
 	}
 
@@ -203,7 +204,7 @@ func pendingTaskRun() *tektonv1beta1.TaskRun {
 func happyTaskRun() *tektonv1beta1.TaskRun {
 	base := pendingTaskRun()
 
-	base.Status.Conditions = duckv1beta1.Conditions{
+	base.Status.Conditions = duckv1.Conditions{
 		{Type: apis.ConditionSucceeded, Status: corev1.ConditionTrue},
 	}
 
@@ -223,7 +224,7 @@ func happyTaskRun() *tektonv1beta1.TaskRun {
 func failedTaskRun() *tektonv1beta1.TaskRun {
 	base := pendingTaskRun()
 
-	base.Status.Conditions = duckv1beta1.Conditions{
+	base.Status.Conditions = duckv1.Conditions{
 		{Type: apis.ConditionSucceeded, Status: corev1.ConditionFalse},
 	}
 

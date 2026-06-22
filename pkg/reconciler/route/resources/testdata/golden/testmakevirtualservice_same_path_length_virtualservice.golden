@@ -19,7 +19,6 @@
 # routeServiceBindings: null
 # routes:
 # - metadata:
-#     creationTimestamp: null
 #     name: fake-route-some-host-example-co2fd2ce2fb0543e068dd390adcccb2253
 #     namespace: some-namespace
 #   spec:
@@ -30,7 +29,6 @@
 #     routeService: {}
 #     virtualservice: {}
 # - metadata:
-#     creationTimestamp: null
 #     name: fake-route-some-host-example-coef8109951b806c4f24e6c7a8444904d0
 #     namespace: some-namespace
 #   spec:
@@ -50,7 +48,6 @@
     "metadata": {
         "name": "example-com617a9471507f0eb608f3858291adb70f",
         "namespace": "some-namespace",
-        "creationTimestamp": null,
         "labels": {
             "app.kubernetes.io/component": "virtualservice",
             "app.kubernetes.io/managed-by": "kf"

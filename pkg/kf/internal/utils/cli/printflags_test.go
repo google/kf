@@ -60,7 +60,7 @@ func ExampleNewKfPrintFlags() {
 	// XXX: Kf expects determinstic output for these flags.
 
 	// Output: allow-missing-template-keys   If true, ignore any errors in templates when a field or map key is missing in the template. Only applies to golang and jsonpath output formats.
-	// output   Output format. One of: go-template|go-template-file|json|jsonpath|jsonpath-as-json|jsonpath-file|name|template|templatefile|yaml.
+	// output   Output format. One of: go-template|go-template-file|json|jsonpath|jsonpath-as-json|jsonpath-file|kyaml|name|template|templatefile|yaml.
 	// show-managed-fields   If true, keep the managedFields when printing objects in JSON or YAML format.
 	// template   Template string or path to template file to use when -o=go-template, -o=go-template-file. The template format is [golang templates](http://golang.org/pkg/text/template/#pkg-overview).
 }

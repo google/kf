@@ -17,15 +17,16 @@
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	kfv1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	apiskfv1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	versioned "github.com/google/kf/v2/pkg/client/kf/clientset/versioned"
 	internalinterfaces "github.com/google/kf/v2/pkg/client/kf/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/google/kf/v2/pkg/client/kf/listers/kf/v1alpha1"
+	kfv1alpha1 "github.com/google/kf/v2/pkg/client/kf/listers/kf/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	watch "k8s.io/apimachinery/pkg/watch"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -34,7 +35,7 @@ import (
 // Routes.
 type RouteInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.RouteLister
+	Lister() kfv1alpha1.RouteLister
 }
 
 type routeInformer struct {
@@ -47,42 +48,67 @@ type routeInformer struct {
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
 func NewRouteInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredRouteInformer(client, namespace, resyncPeriod, indexers, nil)
+	return NewRouteInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers})
 }
 
 // NewFilteredRouteInformer constructs a new informer for Route type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
 func NewFilteredRouteInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
-	return cache.NewSharedIndexInformer(
-		&cache.ListWatch{
-			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+	return NewRouteInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+}
+
+// NewRouteInformerWithOptions constructs a new informer for Route type with additional options.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewRouteInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) cache.SharedIndexInformer {
+	gvr := schema.GroupVersionResource{Group: "kf.dev", Version: "v1alpha1", Resource: "routes"}
+	identifier := options.InformerName.WithResource(gvr)
+	tweakListOptions := options.TweakListOptions
+	return cache.NewSharedIndexInformerWithOptions(
+		cache.ToListWatcherWithWatchListSemantics(&cache.ListWatch{
+			ListFunc: func(opts v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
-					tweakListOptions(&options)
+					tweakListOptions(&opts)
 				}
-				return client.KfV1alpha1().Routes(namespace).List(context.TODO(), options)
+				return client.KfV1alpha1().Routes(namespace).List(context.Background(), opts)
 			},
-			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+			WatchFunc: func(opts v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
-					tweakListOptions(&options)
+					tweakListOptions(&opts)
 				}
-				return client.KfV1alpha1().Routes(namespace).Watch(context.TODO(), options)
+				return client.KfV1alpha1().Routes(namespace).Watch(context.Background(), opts)
 			},
+			ListWithContextFunc: func(ctx context.Context, opts v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&opts)
+				}
+				return client.KfV1alpha1().Routes(namespace).List(ctx, opts)
+			},
+			WatchFuncWithContext: func(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&opts)
+				}
+				return client.KfV1alpha1().Routes(namespace).Watch(ctx, opts)
+			},
+		}, client),
+		&apiskfv1alpha1.Route{},
+		cache.SharedIndexInformerOptions{
+			ResyncPeriod: options.ResyncPeriod,
+			Indexers:     options.Indexers,
+			Identifier:   identifier,
 		},
-		&kfv1alpha1.Route{},
-		resyncPeriod,
-		indexers,
 	)
 }
 
 func (f *routeInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredRouteInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+	return NewRouteInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
 }
 
 func (f *routeInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&kfv1alpha1.Route{}, f.defaultInformer)
+	return f.factory.InformerFor(&apiskfv1alpha1.Route{}, f.defaultInformer)
 }
 
-func (f *routeInformer) Lister() v1alpha1.RouteLister {
-	return v1alpha1.NewRouteLister(f.Informer().GetIndexer())
+func (f *routeInformer) Lister() kfv1alpha1.RouteLister {
+	return kfv1alpha1.NewRouteLister(f.Informer().GetIndexer())
 }

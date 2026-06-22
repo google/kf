@@ -1,7 +1,6 @@
 # Test:	TestMakeTaskRun/empty
 # app:
-#   metadata:
-#     creationTimestamp: null
+#   metadata: {}
 #   spec:
 #     build: {}
 #     instances:
@@ -22,8 +21,7 @@
 #   appCPUPerGBOfRAM: 100m
 # containerCommand: null
 # space:
-#   metadata:
-#     creationTimestamp: null
+#   metadata: {}
 #   spec:
 #     buildConfig:
 #       defaultToV3Stack: null
@@ -38,15 +36,13 @@
 #     networkConfig: {}
 #     runtimeConfig: {}
 # task:
-#   metadata:
-#     creationTimestamp: null
+#   metadata: {}
 #   spec:
 #     appRef: {}
 #   status: {}
 
 {
     "metadata": {
-        "creationTimestamp": null,
         "labels": {
             "app.kubernetes.io/component": "task",
             "app.kubernetes.io/managed-by": "kf",

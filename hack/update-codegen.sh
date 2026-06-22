@@ -51,8 +51,9 @@ function codegen::join() { local IFS="$1"; shift; echo "$*"; }
 code-generator-gen() {
   GENS="$1"
   OUTPUT_PKG="$2"
-  APIS_PKG="$3"
-  GROUPS_WITH_VERSIONS="$4"
+  OUTPUT_DIR="$3"
+  APIS_PKG="$4"
+  GROUPS_WITH_VERSIONS="$5"
 
   echo "Kubernetes code gen for $APIS_PKG at $GROUPS_WITH_VERSIONS -> $OUTPUT_PKG"
 
@@ -73,10 +74,9 @@ code-generator-gen() {
   if [ "${GENS}" = "all" ] || grep -qw "deepcopy" <<<"${GENS}"; then
     echo "Generating deepcopy funcs"
     gopath-run "${GENCMD}/deepcopy-gen" \
-      --input-dirs "${INPUT_DIRS}" \
-      -O zz_generated.deepcopy \
-      --bounding-dirs "${APIS_PKG}" \
-      --go-header-file="${HEADER_FILE}"
+      --output-file zz_generated.deepcopy \
+      --go-header-file="${HEADER_FILE}" \
+      "${FQ_APIS}"
   fi
 
   if [ "${GENS}" = "all" ] || grep -qw "client" <<<"${GENS}"; then
@@ -85,26 +85,29 @@ code-generator-gen() {
       --clientset-name "versioned" \
       --input-base="" \
       --input "${INPUT_DIRS}" \
-      --output-package "${OUTPUT_PKG}/clientset" \
+      --output-pkg "${OUTPUT_PKG}/clientset" \
+      --output-dir "${OUTPUT_DIR}/clientset" \
       --go-header-file="${HEADER_FILE}"
   fi
 
   if [ "${GENS}" = "all" ] || grep -qw "lister" <<<"${GENS}"; then
     echo "Generating listers for ${GROUPS_WITH_VERSIONS} at ${OUTPUT_PKG}/listers"
     gopath-run "${GENCMD}/lister-gen" \
-      --input-dirs "${INPUT_DIRS}" \
-      --output-package "${OUTPUT_PKG}/listers" \
-      --go-header-file="${HEADER_FILE}"
+      --output-pkg "${OUTPUT_PKG}/listers" \
+      --output-dir "${OUTPUT_DIR}/listers" \
+      --go-header-file="${HEADER_FILE}" \
+      "${FQ_APIS}"
   fi
 
   if [ "${GENS}" = "all" ] || grep -qw "informer" <<<"${GENS}"; then
     echo "Generating informers for ${GROUPS_WITH_VERSIONS} at ${OUTPUT_PKG}/informers"
     gopath-run "${GENCMD}/informer-gen" \
-     --input-dirs "${INPUT_DIRS}" \
      --versioned-clientset-package "${OUTPUT_PKG}/clientset/versioned" \
      --listers-package "${OUTPUT_PKG}/listers" \
-     --output-package "${OUTPUT_PKG}/informers" \
-     --go-header-file="${HEADER_FILE}"
+     --output-pkg "${OUTPUT_PKG}/informers" \
+     --output-dir "${OUTPUT_DIR}/informers" \
+     --go-header-file="${HEADER_FILE}" \
+     "${FQ_APIS}"
   fi
 
   if [ "${GENS}" = "all" ] || grep -qw "injection" <<<"${GENS}"; then
@@ -115,6 +118,7 @@ code-generator-gen() {
       --external-versions-informers-package "${OUTPUT_PKG}/informers/externalversions" \
       --listers-package "${OUTPUT_PKG}/listers" \
       --output-package "${OUTPUT_PKG}/injection" \
+      --output-dir "${OUTPUT_DIR}/injection" \
       --go-header-file="${HEADER_FILE}"
   fi
 }
@@ -126,30 +130,35 @@ pushd "${FAKE_REPOPATH}"
   code-generator-gen \
     all \
     "$KF_PACKAGE/pkg/client/kf" \
+    "pkg/client/kf" \
     "$KF_PACKAGE/pkg/apis" \
     "kf:v1alpha1"
 
   code-generator-gen \
     "deepcopy" \
     "$KF_PACKAGE/pkg/client/kf" \
+    "pkg/client/kf" \
     "$KF_PACKAGE/pkg/apis" \
     "kf:config"
 
   code-generator-gen \
     all \
     "$KF_PACKAGE/pkg/client/networking" \
+    "pkg/client/networking" \
     "$KF_PACKAGE/pkg/apis" \
     "networking:v1alpha3"
 
   code-generator-gen \
     all \
     "$KF_PACKAGE/pkg/client/kube" \
+    "pkg/client/kube" \
     "k8s.io/api" \
     "networking:v1"
 
   code-generator-gen \
     all \
     "$KF_PACKAGE/pkg/client/kube-aggregator" \
+    "pkg/client/kube-aggregator" \
     "k8s.io/kube-aggregator/pkg/apis" \
     "apiregistration:v1"
 popd

@@ -2,7 +2,6 @@
 # operationKey: some-long-running-operation-key
 # serviceInstance:
 #   metadata:
-#     creationTimestamp: null
 #     name: mydb
 #     namespace: test-ns
 #     uid: 00000000-0000-0000-0000-000008675309

@@ -17,10 +17,10 @@
 package v1alpha3
 
 import (
-	v1alpha3 "github.com/google/kf/v2/pkg/apis/networking/v1alpha3"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	networkingv1alpha3 "github.com/google/kf/v2/pkg/apis/networking/v1alpha3"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // VirtualServiceLister helps list VirtualServices.
@@ -28,7 +28,7 @@ import (
 type VirtualServiceLister interface {
 	// List lists all VirtualServices in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha3.VirtualService, err error)
+	List(selector labels.Selector) (ret []*networkingv1alpha3.VirtualService, err error)
 	// VirtualServices returns an object that can list and get VirtualServices.
 	VirtualServices(namespace string) VirtualServiceNamespaceLister
 	VirtualServiceListerExpansion
@@ -36,25 +36,17 @@ type VirtualServiceLister interface {
 
 // virtualServiceLister implements the VirtualServiceLister interface.
 type virtualServiceLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*networkingv1alpha3.VirtualService]
 }
 
 // NewVirtualServiceLister returns a new VirtualServiceLister.
 func NewVirtualServiceLister(indexer cache.Indexer) VirtualServiceLister {
-	return &virtualServiceLister{indexer: indexer}
-}
-
-// List lists all VirtualServices in the indexer.
-func (s *virtualServiceLister) List(selector labels.Selector) (ret []*v1alpha3.VirtualService, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha3.VirtualService))
-	})
-	return ret, err
+	return &virtualServiceLister{listers.New[*networkingv1alpha3.VirtualService](indexer, networkingv1alpha3.Resource("virtualservice"))}
 }
 
 // VirtualServices returns an object that can list and get VirtualServices.
 func (s *virtualServiceLister) VirtualServices(namespace string) VirtualServiceNamespaceLister {
-	return virtualServiceNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return virtualServiceNamespaceLister{listers.NewNamespaced[*networkingv1alpha3.VirtualService](s.ResourceIndexer, namespace)}
 }
 
 // VirtualServiceNamespaceLister helps list and get VirtualServices.
@@ -62,36 +54,15 @@ func (s *virtualServiceLister) VirtualServices(namespace string) VirtualServiceN
 type VirtualServiceNamespaceLister interface {
 	// List lists all VirtualServices in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha3.VirtualService, err error)
+	List(selector labels.Selector) (ret []*networkingv1alpha3.VirtualService, err error)
 	// Get retrieves the VirtualService from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha3.VirtualService, error)
+	Get(name string) (*networkingv1alpha3.VirtualService, error)
 	VirtualServiceNamespaceListerExpansion
 }
 
 // virtualServiceNamespaceLister implements the VirtualServiceNamespaceLister
 // interface.
 type virtualServiceNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all VirtualServices in the indexer for a given namespace.
-func (s virtualServiceNamespaceLister) List(selector labels.Selector) (ret []*v1alpha3.VirtualService, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha3.VirtualService))
-	})
-	return ret, err
-}
-
-// Get retrieves the VirtualService from the indexer for a given namespace and name.
-func (s virtualServiceNamespaceLister) Get(name string) (*v1alpha3.VirtualService, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha3.Resource("virtualservice"), name)
-	}
-	return obj.(*v1alpha3.VirtualService), nil
+	listers.ResourceIndexer[*networkingv1alpha3.VirtualService]
 }

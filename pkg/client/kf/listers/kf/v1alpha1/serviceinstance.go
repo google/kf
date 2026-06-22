@@ -17,10 +17,10 @@
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	kfv1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // ServiceInstanceLister helps list ServiceInstances.
@@ -28,7 +28,7 @@ import (
 type ServiceInstanceLister interface {
 	// List lists all ServiceInstances in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.ServiceInstance, err error)
+	List(selector labels.Selector) (ret []*kfv1alpha1.ServiceInstance, err error)
 	// ServiceInstances returns an object that can list and get ServiceInstances.
 	ServiceInstances(namespace string) ServiceInstanceNamespaceLister
 	ServiceInstanceListerExpansion
@@ -36,25 +36,17 @@ type ServiceInstanceLister interface {
 
 // serviceInstanceLister implements the ServiceInstanceLister interface.
 type serviceInstanceLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*kfv1alpha1.ServiceInstance]
 }
 
 // NewServiceInstanceLister returns a new ServiceInstanceLister.
 func NewServiceInstanceLister(indexer cache.Indexer) ServiceInstanceLister {
-	return &serviceInstanceLister{indexer: indexer}
-}
-
-// List lists all ServiceInstances in the indexer.
-func (s *serviceInstanceLister) List(selector labels.Selector) (ret []*v1alpha1.ServiceInstance, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.ServiceInstance))
-	})
-	return ret, err
+	return &serviceInstanceLister{listers.New[*kfv1alpha1.ServiceInstance](indexer, kfv1alpha1.Resource("serviceinstance"))}
 }
 
 // ServiceInstances returns an object that can list and get ServiceInstances.
 func (s *serviceInstanceLister) ServiceInstances(namespace string) ServiceInstanceNamespaceLister {
-	return serviceInstanceNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return serviceInstanceNamespaceLister{listers.NewNamespaced[*kfv1alpha1.ServiceInstance](s.ResourceIndexer, namespace)}
 }
 
 // ServiceInstanceNamespaceLister helps list and get ServiceInstances.
@@ -62,36 +54,15 @@ func (s *serviceInstanceLister) ServiceInstances(namespace string) ServiceInstan
 type ServiceInstanceNamespaceLister interface {
 	// List lists all ServiceInstances in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.ServiceInstance, err error)
+	List(selector labels.Selector) (ret []*kfv1alpha1.ServiceInstance, err error)
 	// Get retrieves the ServiceInstance from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.ServiceInstance, error)
+	Get(name string) (*kfv1alpha1.ServiceInstance, error)
 	ServiceInstanceNamespaceListerExpansion
 }
 
 // serviceInstanceNamespaceLister implements the ServiceInstanceNamespaceLister
 // interface.
 type serviceInstanceNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all ServiceInstances in the indexer for a given namespace.
-func (s serviceInstanceNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.ServiceInstance, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.ServiceInstance))
-	})
-	return ret, err
-}
-
-// Get retrieves the ServiceInstance from the indexer for a given namespace and name.
-func (s serviceInstanceNamespaceLister) Get(name string) (*v1alpha1.ServiceInstance, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("serviceinstance"), name)
-	}
-	return obj.(*v1alpha1.ServiceInstance), nil
+	listers.ResourceIndexer[*kfv1alpha1.ServiceInstance]
 }

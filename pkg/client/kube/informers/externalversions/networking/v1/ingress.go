@@ -17,15 +17,16 @@
 package v1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
 	versioned "github.com/google/kf/v2/pkg/client/kube/clientset/versioned"
 	internalinterfaces "github.com/google/kf/v2/pkg/client/kube/informers/externalversions/internalinterfaces"
-	v1 "github.com/google/kf/v2/pkg/client/kube/listers/networking/v1"
-	networkingv1 "k8s.io/api/networking/v1"
+	networkingv1 "github.com/google/kf/v2/pkg/client/kube/listers/networking/v1"
+	apinetworkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	watch "k8s.io/apimachinery/pkg/watch"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -34,7 +35,7 @@ import (
 // Ingresses.
 type IngressInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1.IngressLister
+	Lister() networkingv1.IngressLister
 }
 
 type ingressInformer struct {
@@ -47,42 +48,67 @@ type ingressInformer struct {
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
 func NewIngressInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredIngressInformer(client, namespace, resyncPeriod, indexers, nil)
+	return NewIngressInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers})
 }
 
 // NewFilteredIngressInformer constructs a new informer for Ingress type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
 func NewFilteredIngressInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
-	return cache.NewSharedIndexInformer(
-		&cache.ListWatch{
-			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
+	return NewIngressInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+}
+
+// NewIngressInformerWithOptions constructs a new informer for Ingress type with additional options.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewIngressInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) cache.SharedIndexInformer {
+	gvr := schema.GroupVersionResource{Group: "networking.k8s.io", Version: "v1", Resource: "ingresss"}
+	identifier := options.InformerName.WithResource(gvr)
+	tweakListOptions := options.TweakListOptions
+	return cache.NewSharedIndexInformerWithOptions(
+		cache.ToListWatcherWithWatchListSemantics(&cache.ListWatch{
+			ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
-					tweakListOptions(&options)
+					tweakListOptions(&opts)
 				}
-				return client.NetworkingV1().Ingresses(namespace).List(context.TODO(), options)
+				return client.NetworkingV1().Ingresses(namespace).List(context.Background(), opts)
 			},
-			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
+			WatchFunc: func(opts metav1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
-					tweakListOptions(&options)
+					tweakListOptions(&opts)
 				}
-				return client.NetworkingV1().Ingresses(namespace).Watch(context.TODO(), options)
+				return client.NetworkingV1().Ingresses(namespace).Watch(context.Background(), opts)
 			},
+			ListWithContextFunc: func(ctx context.Context, opts metav1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&opts)
+				}
+				return client.NetworkingV1().Ingresses(namespace).List(ctx, opts)
+			},
+			WatchFuncWithContext: func(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&opts)
+				}
+				return client.NetworkingV1().Ingresses(namespace).Watch(ctx, opts)
+			},
+		}, client),
+		&apinetworkingv1.Ingress{},
+		cache.SharedIndexInformerOptions{
+			ResyncPeriod: options.ResyncPeriod,
+			Indexers:     options.Indexers,
+			Identifier:   identifier,
 		},
-		&networkingv1.Ingress{},
-		resyncPeriod,
-		indexers,
 	)
 }
 
 func (f *ingressInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredIngressInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+	return NewIngressInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
 }
 
 func (f *ingressInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&networkingv1.Ingress{}, f.defaultInformer)
+	return f.factory.InformerFor(&apinetworkingv1.Ingress{}, f.defaultInformer)
 }
 
-func (f *ingressInformer) Lister() v1.IngressLister {
-	return v1.NewIngressLister(f.Informer().GetIndexer())
+func (f *ingressInformer) Lister() networkingv1.IngressLister {
+	return networkingv1.NewIngressLister(f.Informer().GetIndexer())
 }

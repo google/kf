@@ -17,10 +17,10 @@
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	kfv1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // ScaleLister helps list Scales.
@@ -28,7 +28,7 @@ import (
 type ScaleLister interface {
 	// List lists all Scales in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.Scale, err error)
+	List(selector labels.Selector) (ret []*kfv1alpha1.Scale, err error)
 	// Scales returns an object that can list and get Scales.
 	Scales(namespace string) ScaleNamespaceLister
 	ScaleListerExpansion
@@ -36,25 +36,17 @@ type ScaleLister interface {
 
 // scaleLister implements the ScaleLister interface.
 type scaleLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*kfv1alpha1.Scale]
 }
 
 // NewScaleLister returns a new ScaleLister.
 func NewScaleLister(indexer cache.Indexer) ScaleLister {
-	return &scaleLister{indexer: indexer}
-}
-
-// List lists all Scales in the indexer.
-func (s *scaleLister) List(selector labels.Selector) (ret []*v1alpha1.Scale, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Scale))
-	})
-	return ret, err
+	return &scaleLister{listers.New[*kfv1alpha1.Scale](indexer, kfv1alpha1.Resource("scale"))}
 }
 
 // Scales returns an object that can list and get Scales.
 func (s *scaleLister) Scales(namespace string) ScaleNamespaceLister {
-	return scaleNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return scaleNamespaceLister{listers.NewNamespaced[*kfv1alpha1.Scale](s.ResourceIndexer, namespace)}
 }
 
 // ScaleNamespaceLister helps list and get Scales.
@@ -62,36 +54,15 @@ func (s *scaleLister) Scales(namespace string) ScaleNamespaceLister {
 type ScaleNamespaceLister interface {
 	// List lists all Scales in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.Scale, err error)
+	List(selector labels.Selector) (ret []*kfv1alpha1.Scale, err error)
 	// Get retrieves the Scale from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.Scale, error)
+	Get(name string) (*kfv1alpha1.Scale, error)
 	ScaleNamespaceListerExpansion
 }
 
 // scaleNamespaceLister implements the ScaleNamespaceLister
 // interface.
 type scaleNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all Scales in the indexer for a given namespace.
-func (s scaleNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.Scale, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Scale))
-	})
-	return ret, err
-}
-
-// Get retrieves the Scale from the indexer for a given namespace and name.
-func (s scaleNamespaceLister) Get(name string) (*v1alpha1.Scale, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("scale"), name)
-	}
-	return obj.(*v1alpha1.Scale), nil
+	listers.ResourceIndexer[*kfv1alpha1.Scale]
 }

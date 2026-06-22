@@ -1,7 +1,6 @@
 # Test:	TestMakeOSBBindingLastOperationRequest/nil_key
 # binding:
 #   metadata:
-#     creationTimestamp: null
 #     name: mydb-binding
 #     namespace: test-ns
 #     uid: 22222222-2222-2222-2222-222222222222
@@ -15,7 +14,6 @@
 # operationKey: null
 # serviceInstance:
 #   metadata:
-#     creationTimestamp: null
 #     name: mydb
 #     namespace: test-ns
 #     uid: 00000000-0000-0000-0000-000008675309

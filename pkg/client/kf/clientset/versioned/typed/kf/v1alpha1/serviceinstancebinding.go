@@ -17,15 +17,14 @@
 package v1alpha1
 
 import (
-	"context"
-	"time"
+	context "context"
 
-	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	kfv1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	scheme "github.com/google/kf/v2/pkg/client/kf/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
-	rest "k8s.io/client-go/rest"
+	gentype "k8s.io/client-go/gentype"
 )
 
 // ServiceInstanceBindingsGetter has a method to return a ServiceInstanceBindingInterface.
@@ -36,158 +35,34 @@ type ServiceInstanceBindingsGetter interface {
 
 // ServiceInstanceBindingInterface has methods to work with ServiceInstanceBinding resources.
 type ServiceInstanceBindingInterface interface {
-	Create(ctx context.Context, serviceInstanceBinding *v1alpha1.ServiceInstanceBinding, opts v1.CreateOptions) (*v1alpha1.ServiceInstanceBinding, error)
-	Update(ctx context.Context, serviceInstanceBinding *v1alpha1.ServiceInstanceBinding, opts v1.UpdateOptions) (*v1alpha1.ServiceInstanceBinding, error)
-	UpdateStatus(ctx context.Context, serviceInstanceBinding *v1alpha1.ServiceInstanceBinding, opts v1.UpdateOptions) (*v1alpha1.ServiceInstanceBinding, error)
+	Create(ctx context.Context, serviceInstanceBinding *kfv1alpha1.ServiceInstanceBinding, opts v1.CreateOptions) (*kfv1alpha1.ServiceInstanceBinding, error)
+	Update(ctx context.Context, serviceInstanceBinding *kfv1alpha1.ServiceInstanceBinding, opts v1.UpdateOptions) (*kfv1alpha1.ServiceInstanceBinding, error)
+	// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
+	UpdateStatus(ctx context.Context, serviceInstanceBinding *kfv1alpha1.ServiceInstanceBinding, opts v1.UpdateOptions) (*kfv1alpha1.ServiceInstanceBinding, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
-	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.ServiceInstanceBinding, error)
-	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.ServiceInstanceBindingList, error)
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*kfv1alpha1.ServiceInstanceBinding, error)
+	List(ctx context.Context, opts v1.ListOptions) (*kfv1alpha1.ServiceInstanceBindingList, error)
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
-	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ServiceInstanceBinding, err error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *kfv1alpha1.ServiceInstanceBinding, err error)
 	ServiceInstanceBindingExpansion
 }
 
 // serviceInstanceBindings implements ServiceInstanceBindingInterface
 type serviceInstanceBindings struct {
-	client rest.Interface
-	ns     string
+	*gentype.ClientWithList[*kfv1alpha1.ServiceInstanceBinding, *kfv1alpha1.ServiceInstanceBindingList]
 }
 
 // newServiceInstanceBindings returns a ServiceInstanceBindings
 func newServiceInstanceBindings(c *KfV1alpha1Client, namespace string) *serviceInstanceBindings {
 	return &serviceInstanceBindings{
-		client: c.RESTClient(),
-		ns:     namespace,
+		gentype.NewClientWithList[*kfv1alpha1.ServiceInstanceBinding, *kfv1alpha1.ServiceInstanceBindingList](
+			"serviceinstancebindings",
+			c.RESTClient(),
+			scheme.ParameterCodec,
+			namespace,
+			func() *kfv1alpha1.ServiceInstanceBinding { return &kfv1alpha1.ServiceInstanceBinding{} },
+			func() *kfv1alpha1.ServiceInstanceBindingList { return &kfv1alpha1.ServiceInstanceBindingList{} },
+		),
 	}
-}
-
-// Get takes name of the serviceInstanceBinding, and returns the corresponding serviceInstanceBinding object, and an error if there is any.
-func (c *serviceInstanceBindings) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.ServiceInstanceBinding, err error) {
-	result = &v1alpha1.ServiceInstanceBinding{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("serviceinstancebindings").
-		Name(name).
-		VersionedParams(&options, scheme.ParameterCodec).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// List takes label and field selectors, and returns the list of ServiceInstanceBindings that match those selectors.
-func (c *serviceInstanceBindings) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.ServiceInstanceBindingList, err error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	result = &v1alpha1.ServiceInstanceBindingList{}
-	err = c.client.Get().
-		Namespace(c.ns).
-		Resource("serviceinstancebindings").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Watch returns a watch.Interface that watches the requested serviceInstanceBindings.
-func (c *serviceInstanceBindings) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	var timeout time.Duration
-	if opts.TimeoutSeconds != nil {
-		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
-	}
-	opts.Watch = true
-	return c.client.Get().
-		Namespace(c.ns).
-		Resource("serviceinstancebindings").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Watch(ctx)
-}
-
-// Create takes the representation of a serviceInstanceBinding and creates it.  Returns the server's representation of the serviceInstanceBinding, and an error, if there is any.
-func (c *serviceInstanceBindings) Create(ctx context.Context, serviceInstanceBinding *v1alpha1.ServiceInstanceBinding, opts v1.CreateOptions) (result *v1alpha1.ServiceInstanceBinding, err error) {
-	result = &v1alpha1.ServiceInstanceBinding{}
-	err = c.client.Post().
-		Namespace(c.ns).
-		Resource("serviceinstancebindings").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(serviceInstanceBinding).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Update takes the representation of a serviceInstanceBinding and updates it. Returns the server's representation of the serviceInstanceBinding, and an error, if there is any.
-func (c *serviceInstanceBindings) Update(ctx context.Context, serviceInstanceBinding *v1alpha1.ServiceInstanceBinding, opts v1.UpdateOptions) (result *v1alpha1.ServiceInstanceBinding, err error) {
-	result = &v1alpha1.ServiceInstanceBinding{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("serviceinstancebindings").
-		Name(serviceInstanceBinding.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(serviceInstanceBinding).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *serviceInstanceBindings) UpdateStatus(ctx context.Context, serviceInstanceBinding *v1alpha1.ServiceInstanceBinding, opts v1.UpdateOptions) (result *v1alpha1.ServiceInstanceBinding, err error) {
-	result = &v1alpha1.ServiceInstanceBinding{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("serviceinstancebindings").
-		Name(serviceInstanceBinding.Name).
-		SubResource("status").
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(serviceInstanceBinding).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// Delete takes name of the serviceInstanceBinding and deletes it. Returns an error if one occurs.
-func (c *serviceInstanceBindings) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("serviceinstancebindings").
-		Name(name).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *serviceInstanceBindings) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	var timeout time.Duration
-	if listOpts.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
-	}
-	return c.client.Delete().
-		Namespace(c.ns).
-		Resource("serviceinstancebindings").
-		VersionedParams(&listOpts, scheme.ParameterCodec).
-		Timeout(timeout).
-		Body(&opts).
-		Do(ctx).
-		Error()
-}
-
-// Patch applies the patch and returns the patched serviceInstanceBinding.
-func (c *serviceInstanceBindings) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.ServiceInstanceBinding, err error) {
-	result = &v1alpha1.ServiceInstanceBinding{}
-	err = c.client.Patch(pt).
-		Namespace(c.ns).
-		Resource("serviceinstancebindings").
-		Name(name).
-		SubResource(subresources...).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
 }

@@ -2,7 +2,6 @@
 # config.defaults: {}
 # serviceInstance:
 #   metadata:
-#     creationTimestamp: null
 #     name: my-route-svc
 #   spec:
 #     parametersFrom: {}

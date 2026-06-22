@@ -27,11 +27,11 @@ type FakeNetworkingV1alpha3 struct {
 }
 
 func (c *FakeNetworkingV1alpha3) ServiceEntries(namespace string) v1alpha3.ServiceEntryInterface {
-	return &FakeServiceEntries{c, namespace}
+	return newFakeServiceEntries(c, namespace)
 }
 
 func (c *FakeNetworkingV1alpha3) VirtualServices(namespace string) v1alpha3.VirtualServiceInterface {
-	return &FakeVirtualServices{c, namespace}
+	return newFakeVirtualServices(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

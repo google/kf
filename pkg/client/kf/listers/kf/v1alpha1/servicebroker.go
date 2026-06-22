@@ -17,10 +17,10 @@
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	kfv1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // ServiceBrokerLister helps list ServiceBrokers.
@@ -28,7 +28,7 @@ import (
 type ServiceBrokerLister interface {
 	// List lists all ServiceBrokers in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.ServiceBroker, err error)
+	List(selector labels.Selector) (ret []*kfv1alpha1.ServiceBroker, err error)
 	// ServiceBrokers returns an object that can list and get ServiceBrokers.
 	ServiceBrokers(namespace string) ServiceBrokerNamespaceLister
 	ServiceBrokerListerExpansion
@@ -36,25 +36,17 @@ type ServiceBrokerLister interface {
 
 // serviceBrokerLister implements the ServiceBrokerLister interface.
 type serviceBrokerLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*kfv1alpha1.ServiceBroker]
 }
 
 // NewServiceBrokerLister returns a new ServiceBrokerLister.
 func NewServiceBrokerLister(indexer cache.Indexer) ServiceBrokerLister {
-	return &serviceBrokerLister{indexer: indexer}
-}
-
-// List lists all ServiceBrokers in the indexer.
-func (s *serviceBrokerLister) List(selector labels.Selector) (ret []*v1alpha1.ServiceBroker, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.ServiceBroker))
-	})
-	return ret, err
+	return &serviceBrokerLister{listers.New[*kfv1alpha1.ServiceBroker](indexer, kfv1alpha1.Resource("servicebroker"))}
 }
 
 // ServiceBrokers returns an object that can list and get ServiceBrokers.
 func (s *serviceBrokerLister) ServiceBrokers(namespace string) ServiceBrokerNamespaceLister {
-	return serviceBrokerNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return serviceBrokerNamespaceLister{listers.NewNamespaced[*kfv1alpha1.ServiceBroker](s.ResourceIndexer, namespace)}
 }
 
 // ServiceBrokerNamespaceLister helps list and get ServiceBrokers.
@@ -62,36 +54,15 @@ func (s *serviceBrokerLister) ServiceBrokers(namespace string) ServiceBrokerName
 type ServiceBrokerNamespaceLister interface {
 	// List lists all ServiceBrokers in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.ServiceBroker, err error)
+	List(selector labels.Selector) (ret []*kfv1alpha1.ServiceBroker, err error)
 	// Get retrieves the ServiceBroker from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.ServiceBroker, error)
+	Get(name string) (*kfv1alpha1.ServiceBroker, error)
 	ServiceBrokerNamespaceListerExpansion
 }
 
 // serviceBrokerNamespaceLister implements the ServiceBrokerNamespaceLister
 // interface.
 type serviceBrokerNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all ServiceBrokers in the indexer for a given namespace.
-func (s serviceBrokerNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.ServiceBroker, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.ServiceBroker))
-	})
-	return ret, err
-}
-
-// Get retrieves the ServiceBroker from the indexer for a given namespace and name.
-func (s serviceBrokerNamespaceLister) Get(name string) (*v1alpha1.ServiceBroker, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("servicebroker"), name)
-	}
-	return obj.(*v1alpha1.ServiceBroker), nil
+	listers.ResourceIndexer[*kfv1alpha1.ServiceBroker]
 }

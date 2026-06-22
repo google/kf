@@ -17,10 +17,10 @@
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	kfv1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // ClusterServiceBrokerLister helps list ClusterServiceBrokers.
@@ -28,39 +28,19 @@ import (
 type ClusterServiceBrokerLister interface {
 	// List lists all ClusterServiceBrokers in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.ClusterServiceBroker, err error)
+	List(selector labels.Selector) (ret []*kfv1alpha1.ClusterServiceBroker, err error)
 	// Get retrieves the ClusterServiceBroker from the index for a given name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.ClusterServiceBroker, error)
+	Get(name string) (*kfv1alpha1.ClusterServiceBroker, error)
 	ClusterServiceBrokerListerExpansion
 }
 
 // clusterServiceBrokerLister implements the ClusterServiceBrokerLister interface.
 type clusterServiceBrokerLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*kfv1alpha1.ClusterServiceBroker]
 }
 
 // NewClusterServiceBrokerLister returns a new ClusterServiceBrokerLister.
 func NewClusterServiceBrokerLister(indexer cache.Indexer) ClusterServiceBrokerLister {
-	return &clusterServiceBrokerLister{indexer: indexer}
-}
-
-// List lists all ClusterServiceBrokers in the indexer.
-func (s *clusterServiceBrokerLister) List(selector labels.Selector) (ret []*v1alpha1.ClusterServiceBroker, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.ClusterServiceBroker))
-	})
-	return ret, err
-}
-
-// Get retrieves the ClusterServiceBroker from the index for a given name.
-func (s *clusterServiceBrokerLister) Get(name string) (*v1alpha1.ClusterServiceBroker, error) {
-	obj, exists, err := s.indexer.GetByKey(name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("clusterservicebroker"), name)
-	}
-	return obj.(*v1alpha1.ClusterServiceBroker), nil
+	return &clusterServiceBrokerLister{listers.New[*kfv1alpha1.ClusterServiceBroker](indexer, kfv1alpha1.Resource("clusterservicebroker"))}
 }

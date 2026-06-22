@@ -17,10 +17,10 @@
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	kfv1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // TaskLister helps list Tasks.
@@ -28,7 +28,7 @@ import (
 type TaskLister interface {
 	// List lists all Tasks in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.Task, err error)
+	List(selector labels.Selector) (ret []*kfv1alpha1.Task, err error)
 	// Tasks returns an object that can list and get Tasks.
 	Tasks(namespace string) TaskNamespaceLister
 	TaskListerExpansion
@@ -36,25 +36,17 @@ type TaskLister interface {
 
 // taskLister implements the TaskLister interface.
 type taskLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*kfv1alpha1.Task]
 }
 
 // NewTaskLister returns a new TaskLister.
 func NewTaskLister(indexer cache.Indexer) TaskLister {
-	return &taskLister{indexer: indexer}
-}
-
-// List lists all Tasks in the indexer.
-func (s *taskLister) List(selector labels.Selector) (ret []*v1alpha1.Task, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Task))
-	})
-	return ret, err
+	return &taskLister{listers.New[*kfv1alpha1.Task](indexer, kfv1alpha1.Resource("task"))}
 }
 
 // Tasks returns an object that can list and get Tasks.
 func (s *taskLister) Tasks(namespace string) TaskNamespaceLister {
-	return taskNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return taskNamespaceLister{listers.NewNamespaced[*kfv1alpha1.Task](s.ResourceIndexer, namespace)}
 }
 
 // TaskNamespaceLister helps list and get Tasks.
@@ -62,36 +54,15 @@ func (s *taskLister) Tasks(namespace string) TaskNamespaceLister {
 type TaskNamespaceLister interface {
 	// List lists all Tasks in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.Task, err error)
+	List(selector labels.Selector) (ret []*kfv1alpha1.Task, err error)
 	// Get retrieves the Task from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.Task, error)
+	Get(name string) (*kfv1alpha1.Task, error)
 	TaskNamespaceListerExpansion
 }
 
 // taskNamespaceLister implements the TaskNamespaceLister
 // interface.
 type taskNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all Tasks in the indexer for a given namespace.
-func (s taskNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.Task, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Task))
-	})
-	return ret, err
-}
-
-// Get retrieves the Task from the indexer for a given namespace and name.
-func (s taskNamespaceLister) Get(name string) (*v1alpha1.Task, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("task"), name)
-	}
-	return obj.(*v1alpha1.Task), nil
+	listers.ResourceIndexer[*kfv1alpha1.Task]
 }

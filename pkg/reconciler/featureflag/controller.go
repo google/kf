@@ -21,7 +21,6 @@ import (
 	"github.com/google/kf/v2/pkg/apis/kf/config"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/reconciler"
-	"github.com/google/kf/v2/pkg/reconciler/reconcilerutil"
 	"k8s.io/client-go/tools/cache"
 	namespaceinformer "knative.dev/pkg/client/injection/kube/informers/core/v1/namespace"
 	"knative.dev/pkg/configmap"
@@ -44,7 +43,6 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	impl := controller.NewContext(ctx, c, controller.ControllerOptions{
 		WorkQueueName: "FeatureFlag",
 		Logger:        logger,
-		Reporter:      &reconcilerutil.StructuredStatsReporter{Logger: logger},
 	})
 
 	// Run the reconciler every 5 minutes to update the status of feature flags (e.g., route services).

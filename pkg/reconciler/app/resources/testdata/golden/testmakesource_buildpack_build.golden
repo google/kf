@@ -1,7 +1,6 @@
 # Test:	TestMakeSource/buildpack
 # app:
 #   metadata:
-#     creationTimestamp: null
 #     name: mybuildpackapp
 #     namespace: myspace
 #   spec:
@@ -31,8 +30,7 @@
 #     tasks:
 #       updateRequests: 0
 # space:
-#   metadata:
-#     creationTimestamp: null
+#   metadata: {}
 #   spec:
 #     buildConfig:
 #       defaultToV3Stack: null
@@ -51,7 +49,6 @@
     "metadata": {
         "name": "mybuildpackapp-37",
         "namespace": "myspace",
-        "creationTimestamp": null,
         "labels": {
             "app.kubernetes.io/component": "build",
             "app.kubernetes.io/managed-by": "kf",
