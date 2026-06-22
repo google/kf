@@ -14,15 +14,15 @@ type FakeOperandV1alpha1 struct {
 }
 
 func (c *FakeOperandV1alpha1) ActiveOperands(namespace string) v1alpha1.ActiveOperandInterface {
-	return &FakeActiveOperands{c, namespace}
+	return newFakeActiveOperands(c, namespace)
 }
 
 func (c *FakeOperandV1alpha1) ClusterActiveOperands() v1alpha1.ClusterActiveOperandInterface {
-	return &FakeClusterActiveOperands{c}
+	return newFakeClusterActiveOperands(c)
 }
 
 func (c *FakeOperandV1alpha1) Operands() v1alpha1.OperandInterface {
-	return &FakeOperands{c}
+	return newFakeOperands(c)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

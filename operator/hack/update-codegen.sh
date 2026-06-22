@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -euo pipefail
+set -euxo pipefail
 
 OPERATOR_PACKAGE=kf-operator
 
@@ -48,26 +48,24 @@ source "${OPERATOR_REPO_DIR}/hack/library.sh"
 
 # CODEGEN_PKG and KNATIVE_CODEGEN_PKG resolved at the top of the file
 
+source "${CODEGEN_PKG}/kube_codegen.sh"
+
 # generate the code with:
-# --output-base    because this script should also be able to run inside the vendor dir of
-#                  k8s.io/kubernetes. The output-base is needed for the generators to output into the vendor dir
-#                  instead of the $GOPATH directly. For normal projects this can be dropped.
-bash ${CODEGEN_PKG}/generate-groups.sh "deepcopy,client,informer,lister" \
-  kf-operator/pkg/client kf-operator/pkg/apis \
-  "operand:v1alpha1 kfsystem:v1alpha1" \
-  --go-header-file ${OPERATOR_REPO_DIR}/hack/boilerplate/boilerplate.go.txt
+kube::codegen::gen_helpers \
+  --boilerplate "${OPERATOR_REPO_DIR}/hack/boilerplate/boilerplate.go.txt" \
+  "${OPERATOR_REPO_DIR}/pkg/apis"
+
+kube::codegen::gen_client \
+  --boilerplate "${OPERATOR_REPO_DIR}/hack/boilerplate/boilerplate.go.txt" \
+  --output-dir "${OPERATOR_REPO_DIR}/pkg/client" \
+  --output-pkg "kf-operator/pkg/client" \
+  --with-watch \
+  "${OPERATOR_REPO_DIR}/pkg/apis"
 
 bash ${KNATIVE_CODEGEN_PKG}/hack/generate-knative.sh "injection" \
   kf-operator/pkg/client kf-operator/pkg/apis \
   "operand:v1alpha1 kfsystem:v1alpha1" \
   --go-header-file ${OPERATOR_REPO_DIR}/hack/boilerplate/boilerplate.go.txt
-
-# Depends on generate-groups.sh to install bin/deepcopy-gen
-${GOPATH}/bin/deepcopy-gen \
-  -O zz_generated.deepcopy \
-  --go-header-file ${OPERATOR_REPO_DIR}/hack/boilerplate/boilerplate.go.txt \
-  -i kf-operator/pkg/apis/kfsystem/kf \
-  -i kf-operator/pkg/apis/kfsystem/v1alpha1 \
 
 # Generate the mock interfaces
 echo "Generating mock interfaces"

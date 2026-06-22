@@ -113,6 +113,7 @@ require (
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260319004828-5883c5ee87b9 // indirect
 	knative.dev/caching v0.0.0-20260422140616-453ad996bbe2 // indirect
+	knative.dev/hack v0.0.0-20260428014158-b2a37f1b6e7b // indirect
 	sigs.k8s.io/cluster-inventory-api v0.1.0 // indirect
 	sigs.k8s.io/controller-runtime v0.23.3 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect

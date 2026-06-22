@@ -3,10 +3,10 @@
 package versioned
 
 import (
-	"fmt"
+	fmt "fmt"
 	kfv1alpha1 "kf-operator/pkg/client/clientset/versioned/typed/kfsystem/v1alpha1"
 	operandv1alpha1 "kf-operator/pkg/client/clientset/versioned/typed/operand/v1alpha1"
-	"net/http"
+	http "net/http"
 
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
@@ -19,8 +19,7 @@ type Interface interface {
 	OperandV1alpha1() operandv1alpha1.OperandV1alpha1Interface
 }
 
-// Clientset contains the clients for groups. Each group has exactly one
-// version included in a Clientset.
+// Clientset contains the clients for groups.
 type Clientset struct {
 	*discovery.DiscoveryClient
 	kfV1alpha1      *kfv1alpha1.KfV1alpha1Client
