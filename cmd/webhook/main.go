@@ -145,10 +145,10 @@ func newConfigValidationController(ctx context.Context, cmw configmap.Watcher) *
 
 		// The configmaps to validate.
 		configmap.Constructors{
-			apiconfig.DefaultsConfigName:    apiconfig.NewDefaultsConfigFromConfigMap,
-			buildconfig.SecretsConfigName:   buildconfig.NewSecretsConfigFromConfigMap,
-			observabilityconfigmap.Name():   observabilityconfigmap.Parse,
-			logging.ConfigMapName():         logging.NewConfigFromConfigMap,
+			apiconfig.DefaultsConfigName:  apiconfig.NewDefaultsConfigFromConfigMap,
+			buildconfig.SecretsConfigName: buildconfig.NewSecretsConfigFromConfigMap,
+			observabilityconfigmap.Name(): observabilityconfigmap.Parse,
+			logging.ConfigMapName():       logging.NewConfigFromConfigMap,
 		},
 	)
 }

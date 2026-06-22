@@ -8,7 +8,7 @@ require (
 	github.com/alessio/shellescape v1.4.1
 	github.com/aws/smithy-go v1.25.1
 	github.com/docker/cli v29.4.3+incompatible
-	github.com/emicklei/go-restful v2.16.0+incompatible
+	github.com/emicklei/go-restful/v3 v3.13.0
 	github.com/fatih/color v1.15.0
 	github.com/gofrs/flock v0.8.1
 	github.com/golang/mock v1.7.0-rc.1
@@ -93,7 +93,6 @@ require (
 	github.com/coreos/go-systemd/v22 v22.7.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/docker/docker-credential-helpers v0.9.5 // indirect
-	github.com/emicklei/go-restful/v3 v3.13.0 // indirect
 	github.com/evanphx/json-patch v5.9.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.9.11 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect

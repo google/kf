@@ -43,7 +43,7 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 
 	impl := controller.NewContext(ctx, c, controller.ControllerOptions{
 		WorkQueueName: "taskschedules",
-		Logger:        logger,		
+		Logger:        logger,
 	})
 
 	// Enqueue all TaskSchedules every 10 seconds to check cron intervals and
