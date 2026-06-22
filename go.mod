@@ -109,6 +109,8 @@ require (
 	github.com/go-openapi/swag v0.23.1 // indirect
 	github.com/gobuffalo/flect v1.0.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
+	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
@@ -241,4 +243,4 @@ replace github.com/spf13/cobra => ./third_party/forked/cobra
 
 replace code.cloudfoundry.org/buildpackapplifecycle => ./third_party/forked/v2-buildpack-lifecycle
 
-replace github.com/containerd/containerd => github.com/containerd/containerd v1.7.29
+replace github.com/containerd/containerd => github.com/containerd/containerd v1.7.32
