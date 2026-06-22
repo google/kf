@@ -15,9 +15,8 @@
 package apiserver
 
 import (
-	"github.com/emicklei/go-restful"
+	restful "github.com/emicklei/go-restful/v3"
 	"github.com/google/k8s-stateless-subresource/pkg/internal/apiserver/installer"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -75,7 +74,6 @@ func (s *Server) apiGV(
 			Convertor:       groupInfo.Scheme,
 			UnsafeConvertor: runtime.UnsafeObjectConvertor(groupInfo.Scheme),
 			Typer:           groupInfo.Scheme,
-			Linker:          runtime.SelfLinker(meta.NewAccessor()),
 		},
 
 		ResourceLister: discovery.APIResourceListerFunc(func() []metav1.APIResource {

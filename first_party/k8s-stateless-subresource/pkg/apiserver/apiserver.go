@@ -22,7 +22,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/emicklei/go-restful"
+	restful "github.com/emicklei/go-restful/v3"
 	"github.com/google/k8s-stateless-subresource/pkg/internal/apiserver"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"

@@ -25,6 +25,7 @@ import (
 	"github.com/google/kf/v2/pkg/internal/selectorutil"
 	"github.com/google/kf/v2/pkg/reconciler/build/config"
 	tektonv1beta1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1"
+	tektonpod "github.com/tektoncd/pipeline/pkg/apis/pipeline/pod"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"knative.dev/pkg/kmeta"
 )
@@ -177,7 +178,7 @@ func MakeTaskRun(
 	if defaultsConfig != nil && len(defaultsConfig.BuildNodeSelectors) > 0 {
 		nodeSelector = defaultsConfig.BuildNodeSelectors
 	}
-	podSpec := &tektonv1beta1.PodTemplate{
+	podSpec := &tektonpod.PodTemplate{
 		NodeSelector: nodeSelector,
 	}
 

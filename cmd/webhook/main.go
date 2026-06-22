@@ -32,7 +32,7 @@ import (
 	"knative.dev/pkg/controller"
 	"knative.dev/pkg/injection/sharedmain"
 	"knative.dev/pkg/logging"
-	"knative.dev/pkg/metrics"
+	"knative.dev/pkg/observability/metrics"
 	"knative.dev/pkg/signals"
 	"knative.dev/pkg/webhook"
 	"knative.dev/pkg/webhook/certificates"

@@ -21,7 +21,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/kubernetes/scheme"
-	osstype "knative.dev/operator/pkg/apis/operator/v1alpha1"
+	osstype "knative.dev/operator/pkg/apis/operator/base"
 	osscommon "knative.dev/operator/pkg/reconciler/common"
 	"knative.dev/pkg/logging"
 
