@@ -128,12 +128,16 @@ func (c *Config) server(
 		return nil, fmt.Errorf("failed to create self-signed certificates: %v", err)
 	}
 
+	var binaryVersion = version.MustParse("1.36.0")
+	var emulatedVersionFloor = version.MajorMinor(1, 27)
+	var minSupportedK8sVersion = version.MajorMinor(1, 27)
+
 	serverConfig := genericapiserver.NewConfig(codecs)
 	serverConfig.EffectiveVersion = basecompatibility.NewEffectiveVersion(
-    version.MustParse("1.36.0"),
+    binaryVersion,
     false,
-    version.MajorMinor(1, 34),
-    version.MajorMinor(1, 27),
+    emulatedVersionFloor,
+    minSupportedK8sVersion,
 )
 	serverConfig.LongRunningFunc = c.LongRunningFunc
 
