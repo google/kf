@@ -215,7 +215,6 @@ require (
 )
 
 replace (
-	github.com/docker/docker => github.com/docker/docker v28.5.2+incompatible
 	github.com/google/go-cmp => github.com/google/go-cmp v0.3.0
 	k8s.io/api => k8s.io/api v0.36.2
 	k8s.io/apimachinery => k8s.io/apimachinery v0.36.2
@@ -242,4 +241,4 @@ replace github.com/spf13/cobra => ./third_party/forked/cobra
 
 replace code.cloudfoundry.org/buildpackapplifecycle => ./third_party/forked/v2-buildpack-lifecycle
 
-replace github.com/containerd/containerd => github.com/containerd/containerd v1.7.29
+replace github.com/containerd/containerd => github.com/containerd/containerd v1.7.32
