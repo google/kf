@@ -1,7 +1,6 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  creationTimestamp: null
   name: test
   namespace: default
 spec:
@@ -12,7 +11,6 @@ spec:
   strategy: {}
   template:
     metadata:
-      creationTimestamp: null
       labels:
         app: test
     spec:

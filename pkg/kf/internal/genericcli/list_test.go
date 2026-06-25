@@ -443,7 +443,7 @@ func TestNewAddLabelFilter(t *testing.T) {
 		"bad value": {
 			key:     "good-key",
 			value:   strings.Repeat("z", 64),
-			wantErr: errors.New(`values[0][good-key]: Invalid value: "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz": must be no more than 63 characters`),
+			wantErr: errors.New(`values[0][good-key]: Invalid value: "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz": must be no more than 63 bytes`),
 		},
 		"bad parse": {
 			key:   "good-key",
@@ -452,7 +452,7 @@ func TestNewAddLabelFilter(t *testing.T) {
 				LabelSelector: "a/b/c ?=? def",
 			},
 			wantSelector: "a/b/c ?=? def",
-			wantErr:      errors.New(`unable to parse requirement: <nil>: Invalid value: "a/b/c": a qualified name must consist of alphanumeric characters, '-', '_' or '.', and must start and end with an alphanumeric character (e.g. 'MyName',  or 'my.name',  or '123-abc', regex used for validation is '([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]') with an optional DNS subdomain prefix and '/' (e.g. 'example.com/MyName')`),
+			wantErr:      errors.New(`unable to parse requirement: <nil>: Invalid value: "a/b/c": a valid label key must consist of alphanumeric characters, '-', '_' or '.', and must start and end with an alphanumeric character (e.g. 'MyName',  or 'my.name',  or '123-abc', regex used for validation is '([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]') with an optional DNS subdomain prefix and '/' (e.g. 'example.com/MyName')`),
 		},
 		"good parse": {
 			key:   "new-key",

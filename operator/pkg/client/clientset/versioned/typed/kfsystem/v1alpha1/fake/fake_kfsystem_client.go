@@ -14,7 +14,7 @@ type FakeKfV1alpha1 struct {
 }
 
 func (c *FakeKfV1alpha1) KfSystems() v1alpha1.KfSystemInterface {
-	return &FakeKfSystems{c}
+	return newFakeKfSystems(c)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

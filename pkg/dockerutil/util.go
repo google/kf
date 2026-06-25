@@ -54,14 +54,13 @@ func DescribeConfig(w io.Writer, cfg *configfile.ConfigFile) {
 			}
 			sort.Strings(registries)
 
-			fmt.Fprintln(w, "Registry\tUsername\tEmail")
+			fmt.Fprintln(w, "Registry\tUsername")
 			for _, registry := range registries {
 				authConfig := cfg.AuthConfigs[registry]
 
-				fmt.Fprintf(w, "%s\t%s\t%s\n",
+				fmt.Fprintf(w, "%s\t%s\n",
 					registry,
 					authConfig.Username,
-					authConfig.Email,
 				)
 			}
 		})

@@ -60,8 +60,8 @@ func ExampleDescribeConfig_customAuth() {
 
 	// Output: Docker config:
 	//   Auth:
-	//     Registry        Username   Email
-	//     https://gcr.io  _json_key  not@val.id
+	//     Registry        Username
+	//     https://gcr.io  _json_key
 	//   Credential helpers:
 	//     <none>
 }

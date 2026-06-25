@@ -19,7 +19,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/emicklei/go-restful"
+	restful "github.com/emicklei/go-restful/v3"
 	"github.com/google/k8s-stateless-subresource/pkg/internal/apiserver"
 	nodev1 "k8s.io/api/node/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

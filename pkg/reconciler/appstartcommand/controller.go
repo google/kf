@@ -20,7 +20,6 @@ import (
 	kfconfig "github.com/google/kf/v2/pkg/apis/kf/config"
 	appinformer "github.com/google/kf/v2/pkg/client/kf/injection/informers/kf/v1alpha1/app"
 	"github.com/google/kf/v2/pkg/reconciler"
-	"github.com/google/kf/v2/pkg/reconciler/reconcilerutil"
 	"knative.dev/pkg/configmap"
 	"knative.dev/pkg/controller"
 )
@@ -46,7 +45,6 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	impl := controller.NewContext(ctx, c, controller.ControllerOptions{
 		WorkQueueName: "AppStartCommand",
 		Logger:        logger,
-		Reporter:      &reconcilerutil.StructuredStatsReporter{Logger: logger},
 		Concurrency:   10,
 	})
 

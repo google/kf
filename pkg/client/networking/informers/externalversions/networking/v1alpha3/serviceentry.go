@@ -17,15 +17,16 @@
 package v1alpha3
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	networkingv1alpha3 "github.com/google/kf/v2/pkg/apis/networking/v1alpha3"
+	apisnetworkingv1alpha3 "github.com/google/kf/v2/pkg/apis/networking/v1alpha3"
 	versioned "github.com/google/kf/v2/pkg/client/networking/clientset/versioned"
 	internalinterfaces "github.com/google/kf/v2/pkg/client/networking/informers/externalversions/internalinterfaces"
-	v1alpha3 "github.com/google/kf/v2/pkg/client/networking/listers/networking/v1alpha3"
+	networkingv1alpha3 "github.com/google/kf/v2/pkg/client/networking/listers/networking/v1alpha3"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	watch "k8s.io/apimachinery/pkg/watch"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -34,7 +35,7 @@ import (
 // ServiceEntries.
 type ServiceEntryInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha3.ServiceEntryLister
+	Lister() networkingv1alpha3.ServiceEntryLister
 }
 
 type serviceEntryInformer struct {
@@ -47,42 +48,67 @@ type serviceEntryInformer struct {
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
 func NewServiceEntryInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredServiceEntryInformer(client, namespace, resyncPeriod, indexers, nil)
+	return NewServiceEntryInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers})
 }
 
 // NewFilteredServiceEntryInformer constructs a new informer for ServiceEntry type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
 func NewFilteredServiceEntryInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
-	return cache.NewSharedIndexInformer(
-		&cache.ListWatch{
-			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+	return NewServiceEntryInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+}
+
+// NewServiceEntryInformerWithOptions constructs a new informer for ServiceEntry type with additional options.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewServiceEntryInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) cache.SharedIndexInformer {
+	gvr := schema.GroupVersionResource{Group: "networking.istio.io", Version: "v1alpha3", Resource: "serviceentrys"}
+	identifier := options.InformerName.WithResource(gvr)
+	tweakListOptions := options.TweakListOptions
+	return cache.NewSharedIndexInformerWithOptions(
+		cache.ToListWatcherWithWatchListSemantics(&cache.ListWatch{
+			ListFunc: func(opts v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
-					tweakListOptions(&options)
+					tweakListOptions(&opts)
 				}
-				return client.NetworkingV1alpha3().ServiceEntries(namespace).List(context.TODO(), options)
+				return client.NetworkingV1alpha3().ServiceEntries(namespace).List(context.Background(), opts)
 			},
-			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+			WatchFunc: func(opts v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
-					tweakListOptions(&options)
+					tweakListOptions(&opts)
 				}
-				return client.NetworkingV1alpha3().ServiceEntries(namespace).Watch(context.TODO(), options)
+				return client.NetworkingV1alpha3().ServiceEntries(namespace).Watch(context.Background(), opts)
 			},
+			ListWithContextFunc: func(ctx context.Context, opts v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&opts)
+				}
+				return client.NetworkingV1alpha3().ServiceEntries(namespace).List(ctx, opts)
+			},
+			WatchFuncWithContext: func(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&opts)
+				}
+				return client.NetworkingV1alpha3().ServiceEntries(namespace).Watch(ctx, opts)
+			},
+		}, client),
+		&apisnetworkingv1alpha3.ServiceEntry{},
+		cache.SharedIndexInformerOptions{
+			ResyncPeriod: options.ResyncPeriod,
+			Indexers:     options.Indexers,
+			Identifier:   identifier,
 		},
-		&networkingv1alpha3.ServiceEntry{},
-		resyncPeriod,
-		indexers,
 	)
 }
 
 func (f *serviceEntryInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredServiceEntryInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+	return NewServiceEntryInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
 }
 
 func (f *serviceEntryInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&networkingv1alpha3.ServiceEntry{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisnetworkingv1alpha3.ServiceEntry{}, f.defaultInformer)
 }
 
-func (f *serviceEntryInformer) Lister() v1alpha3.ServiceEntryLister {
-	return v1alpha3.NewServiceEntryLister(f.Informer().GetIndexer())
+func (f *serviceEntryInformer) Lister() networkingv1alpha3.ServiceEntryLister {
+	return networkingv1alpha3.NewServiceEntryLister(f.Informer().GetIndexer())
 }

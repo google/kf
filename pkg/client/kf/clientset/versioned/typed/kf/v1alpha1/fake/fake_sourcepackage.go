@@ -17,124 +17,34 @@
 package fake
 
 import (
-	"context"
-
 	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	kfv1alpha1 "github.com/google/kf/v2/pkg/client/kf/clientset/versioned/typed/kf/v1alpha1"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeSourcePackages implements SourcePackageInterface
-type FakeSourcePackages struct {
+// fakeSourcePackages implements SourcePackageInterface
+type fakeSourcePackages struct {
+	*gentype.FakeClientWithList[*v1alpha1.SourcePackage, *v1alpha1.SourcePackageList]
 	Fake *FakeKfV1alpha1
-	ns   string
 }
 
-var sourcepackagesResource = schema.GroupVersionResource{Group: "kf.dev", Version: "v1alpha1", Resource: "sourcepackages"}
-
-var sourcepackagesKind = schema.GroupVersionKind{Group: "kf.dev", Version: "v1alpha1", Kind: "SourcePackage"}
-
-// Get takes name of the sourcePackage, and returns the corresponding sourcePackage object, and an error if there is any.
-func (c *FakeSourcePackages) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.SourcePackage, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(sourcepackagesResource, c.ns, name), &v1alpha1.SourcePackage{})
-
-	if obj == nil {
-		return nil, err
+func newFakeSourcePackages(fake *FakeKfV1alpha1, namespace string) kfv1alpha1.SourcePackageInterface {
+	return &fakeSourcePackages{
+		gentype.NewFakeClientWithList[*v1alpha1.SourcePackage, *v1alpha1.SourcePackageList](
+			fake.Fake,
+			namespace,
+			v1alpha1.SchemeGroupVersion.WithResource("sourcepackages"),
+			v1alpha1.SchemeGroupVersion.WithKind("SourcePackage"),
+			func() *v1alpha1.SourcePackage { return &v1alpha1.SourcePackage{} },
+			func() *v1alpha1.SourcePackageList { return &v1alpha1.SourcePackageList{} },
+			func(dst, src *v1alpha1.SourcePackageList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.SourcePackageList) []*v1alpha1.SourcePackage {
+				return gentype.ToPointerSlice(list.Items)
+			},
+			func(list *v1alpha1.SourcePackageList, items []*v1alpha1.SourcePackage) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.SourcePackage), err
-}
-
-// List takes label and field selectors, and returns the list of SourcePackages that match those selectors.
-func (c *FakeSourcePackages) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.SourcePackageList, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewListAction(sourcepackagesResource, sourcepackagesKind, c.ns, opts), &v1alpha1.SourcePackageList{})
-
-	if obj == nil {
-		return nil, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.SourcePackageList{ListMeta: obj.(*v1alpha1.SourcePackageList).ListMeta}
-	for _, item := range obj.(*v1alpha1.SourcePackageList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested sourcePackages.
-func (c *FakeSourcePackages) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewWatchAction(sourcepackagesResource, c.ns, opts))
-
-}
-
-// Create takes the representation of a sourcePackage and creates it.  Returns the server's representation of the sourcePackage, and an error, if there is any.
-func (c *FakeSourcePackages) Create(ctx context.Context, sourcePackage *v1alpha1.SourcePackage, opts v1.CreateOptions) (result *v1alpha1.SourcePackage, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(sourcepackagesResource, c.ns, sourcePackage), &v1alpha1.SourcePackage{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.SourcePackage), err
-}
-
-// Update takes the representation of a sourcePackage and updates it. Returns the server's representation of the sourcePackage, and an error, if there is any.
-func (c *FakeSourcePackages) Update(ctx context.Context, sourcePackage *v1alpha1.SourcePackage, opts v1.UpdateOptions) (result *v1alpha1.SourcePackage, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(sourcepackagesResource, c.ns, sourcePackage), &v1alpha1.SourcePackage{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.SourcePackage), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeSourcePackages) UpdateStatus(ctx context.Context, sourcePackage *v1alpha1.SourcePackage, opts v1.UpdateOptions) (*v1alpha1.SourcePackage, error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewUpdateSubresourceAction(sourcepackagesResource, "status", c.ns, sourcePackage), &v1alpha1.SourcePackage{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.SourcePackage), err
-}
-
-// Delete takes name of the sourcePackage and deletes it. Returns an error if one occurs.
-func (c *FakeSourcePackages) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewDeleteActionWithOptions(sourcepackagesResource, c.ns, name, opts), &v1alpha1.SourcePackage{})
-
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeSourcePackages) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(sourcepackagesResource, c.ns, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.SourcePackageList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched sourcePackage.
-func (c *FakeSourcePackages) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.SourcePackage, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(sourcepackagesResource, c.ns, name, pt, data, subresources...), &v1alpha1.SourcePackage{})
-
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.SourcePackage), err
 }

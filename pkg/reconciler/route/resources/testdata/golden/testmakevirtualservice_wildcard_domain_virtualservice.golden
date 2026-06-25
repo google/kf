@@ -10,7 +10,6 @@
 # routeServiceBindings: null
 # routes:
 # - metadata:
-#     creationTimestamp: null
 #     name: fake-route---example-com7a52c5604bdcf9d85deee339b1b9bf96
 #     namespace: some-namespace
 #   spec:
@@ -29,7 +28,6 @@
     "metadata": {
         "name": "example-com5ababd603b22780302dd8d83498e5172",
         "namespace": "some-namespace",
-        "creationTimestamp": null,
         "labels": {
             "app.kubernetes.io/component": "virtualservice",
             "app.kubernetes.io/managed-by": "kf"

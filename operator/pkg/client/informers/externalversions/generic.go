@@ -3,7 +3,7 @@
 package externalversions
 
 import (
-	"fmt"
+	fmt "fmt"
 	v1alpha1 "kf-operator/pkg/apis/kfsystem/v1alpha1"
 	operandv1alpha1 "kf-operator/pkg/apis/operand/v1alpha1"
 

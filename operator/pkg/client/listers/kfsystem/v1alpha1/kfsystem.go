@@ -3,11 +3,11 @@
 package v1alpha1
 
 import (
-	v1alpha1 "kf-operator/pkg/apis/kfsystem/v1alpha1"
+	kfsystemv1alpha1 "kf-operator/pkg/apis/kfsystem/v1alpha1"
 
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // KfSystemLister helps list KfSystems.
@@ -15,39 +15,19 @@ import (
 type KfSystemLister interface {
 	// List lists all KfSystems in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.KfSystem, err error)
+	List(selector labels.Selector) (ret []*kfsystemv1alpha1.KfSystem, err error)
 	// Get retrieves the KfSystem from the index for a given name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.KfSystem, error)
+	Get(name string) (*kfsystemv1alpha1.KfSystem, error)
 	KfSystemListerExpansion
 }
 
 // kfSystemLister implements the KfSystemLister interface.
 type kfSystemLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*kfsystemv1alpha1.KfSystem]
 }
 
 // NewKfSystemLister returns a new KfSystemLister.
 func NewKfSystemLister(indexer cache.Indexer) KfSystemLister {
-	return &kfSystemLister{indexer: indexer}
-}
-
-// List lists all KfSystems in the indexer.
-func (s *kfSystemLister) List(selector labels.Selector) (ret []*v1alpha1.KfSystem, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.KfSystem))
-	})
-	return ret, err
-}
-
-// Get retrieves the KfSystem from the index for a given name.
-func (s *kfSystemLister) Get(name string) (*v1alpha1.KfSystem, error) {
-	obj, exists, err := s.indexer.GetByKey(name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("kfsystem"), name)
-	}
-	return obj.(*v1alpha1.KfSystem), nil
+	return &kfSystemLister{listers.New[*kfsystemv1alpha1.KfSystem](indexer, kfsystemv1alpha1.Resource("kfsystem"))}
 }

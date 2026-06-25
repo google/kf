@@ -1,7 +1,6 @@
 # Test:	TestBuildStatus_PropagateBuildStatus/ongoing
 # TaskRun:
 #   metadata:
-#     creationTimestamp: null
 #     name: some-build-name
 #   spec:
 #     serviceAccountName: ""

@@ -17,10 +17,10 @@
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	kfv1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // RouteLister helps list Routes.
@@ -28,7 +28,7 @@ import (
 type RouteLister interface {
 	// List lists all Routes in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.Route, err error)
+	List(selector labels.Selector) (ret []*kfv1alpha1.Route, err error)
 	// Routes returns an object that can list and get Routes.
 	Routes(namespace string) RouteNamespaceLister
 	RouteListerExpansion
@@ -36,25 +36,17 @@ type RouteLister interface {
 
 // routeLister implements the RouteLister interface.
 type routeLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*kfv1alpha1.Route]
 }
 
 // NewRouteLister returns a new RouteLister.
 func NewRouteLister(indexer cache.Indexer) RouteLister {
-	return &routeLister{indexer: indexer}
-}
-
-// List lists all Routes in the indexer.
-func (s *routeLister) List(selector labels.Selector) (ret []*v1alpha1.Route, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Route))
-	})
-	return ret, err
+	return &routeLister{listers.New[*kfv1alpha1.Route](indexer, kfv1alpha1.Resource("route"))}
 }
 
 // Routes returns an object that can list and get Routes.
 func (s *routeLister) Routes(namespace string) RouteNamespaceLister {
-	return routeNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return routeNamespaceLister{listers.NewNamespaced[*kfv1alpha1.Route](s.ResourceIndexer, namespace)}
 }
 
 // RouteNamespaceLister helps list and get Routes.
@@ -62,36 +54,15 @@ func (s *routeLister) Routes(namespace string) RouteNamespaceLister {
 type RouteNamespaceLister interface {
 	// List lists all Routes in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.Route, err error)
+	List(selector labels.Selector) (ret []*kfv1alpha1.Route, err error)
 	// Get retrieves the Route from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.Route, error)
+	Get(name string) (*kfv1alpha1.Route, error)
 	RouteNamespaceListerExpansion
 }
 
 // routeNamespaceLister implements the RouteNamespaceLister
 // interface.
 type routeNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all Routes in the indexer for a given namespace.
-func (s routeNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.Route, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Route))
-	})
-	return ret, err
-}
-
-// Get retrieves the Route from the indexer for a given namespace and name.
-func (s routeNamespaceLister) Get(name string) (*v1alpha1.Route, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("route"), name)
-	}
-	return obj.(*v1alpha1.Route), nil
+	listers.ResourceIndexer[*kfv1alpha1.Route]
 }

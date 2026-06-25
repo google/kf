@@ -3,15 +3,16 @@
 package v1alpha1
 
 import (
-	"context"
-	operandv1alpha1 "kf-operator/pkg/apis/operand/v1alpha1"
+	context "context"
+	apisoperandv1alpha1 "kf-operator/pkg/apis/operand/v1alpha1"
 	versioned "kf-operator/pkg/client/clientset/versioned"
 	internalinterfaces "kf-operator/pkg/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "kf-operator/pkg/client/listers/operand/v1alpha1"
+	operandv1alpha1 "kf-operator/pkg/client/listers/operand/v1alpha1"
 	time "time"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
+	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	watch "k8s.io/apimachinery/pkg/watch"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -20,7 +21,7 @@ import (
 // ClusterActiveOperands.
 type ClusterActiveOperandInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.ClusterActiveOperandLister
+	Lister() operandv1alpha1.ClusterActiveOperandLister
 }
 
 type clusterActiveOperandInformer struct {
@@ -32,42 +33,67 @@ type clusterActiveOperandInformer struct {
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
 func NewClusterActiveOperandInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredClusterActiveOperandInformer(client, resyncPeriod, indexers, nil)
+	return NewClusterActiveOperandInformerWithOptions(client, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers})
 }
 
 // NewFilteredClusterActiveOperandInformer constructs a new informer for ClusterActiveOperand type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
 func NewFilteredClusterActiveOperandInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
-	return cache.NewSharedIndexInformer(
-		&cache.ListWatch{
-			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
+	return NewClusterActiveOperandInformerWithOptions(client, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+}
+
+// NewClusterActiveOperandInformerWithOptions constructs a new informer for ClusterActiveOperand type with additional options.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewClusterActiveOperandInformerWithOptions(client versioned.Interface, options internalinterfaces.InformerOptions) cache.SharedIndexInformer {
+	gvr := schema.GroupVersionResource{Group: "operand.run.cloud.google.com", Version: "v1alpha1", Resource: "clusteractiveoperands"}
+	identifier := options.InformerName.WithResource(gvr)
+	tweakListOptions := options.TweakListOptions
+	return cache.NewSharedIndexInformerWithOptions(
+		cache.ToListWatcherWithWatchListSemantics(&cache.ListWatch{
+			ListFunc: func(opts v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
-					tweakListOptions(&options)
+					tweakListOptions(&opts)
 				}
-				return client.OperandV1alpha1().ClusterActiveOperands().List(context.TODO(), options)
+				return client.OperandV1alpha1().ClusterActiveOperands().List(context.Background(), opts)
 			},
-			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
+			WatchFunc: func(opts v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
-					tweakListOptions(&options)
+					tweakListOptions(&opts)
 				}
-				return client.OperandV1alpha1().ClusterActiveOperands().Watch(context.TODO(), options)
+				return client.OperandV1alpha1().ClusterActiveOperands().Watch(context.Background(), opts)
 			},
+			ListWithContextFunc: func(ctx context.Context, opts v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&opts)
+				}
+				return client.OperandV1alpha1().ClusterActiveOperands().List(ctx, opts)
+			},
+			WatchFuncWithContext: func(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&opts)
+				}
+				return client.OperandV1alpha1().ClusterActiveOperands().Watch(ctx, opts)
+			},
+		}, client),
+		&apisoperandv1alpha1.ClusterActiveOperand{},
+		cache.SharedIndexInformerOptions{
+			ResyncPeriod: options.ResyncPeriod,
+			Indexers:     options.Indexers,
+			Identifier:   identifier,
 		},
-		&operandv1alpha1.ClusterActiveOperand{},
-		resyncPeriod,
-		indexers,
 	)
 }
 
 func (f *clusterActiveOperandInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredClusterActiveOperandInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+	return NewClusterActiveOperandInformerWithOptions(client, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
 }
 
 func (f *clusterActiveOperandInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&operandv1alpha1.ClusterActiveOperand{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisoperandv1alpha1.ClusterActiveOperand{}, f.defaultInformer)
 }
 
-func (f *clusterActiveOperandInformer) Lister() v1alpha1.ClusterActiveOperandLister {
-	return v1alpha1.NewClusterActiveOperandLister(f.Informer().GetIndexer())
+func (f *clusterActiveOperandInformer) Lister() operandv1alpha1.ClusterActiveOperandLister {
+	return operandv1alpha1.NewClusterActiveOperandLister(f.Informer().GetIndexer())
 }

@@ -27,51 +27,51 @@ type FakeKfV1alpha1 struct {
 }
 
 func (c *FakeKfV1alpha1) Apps(namespace string) v1alpha1.AppInterface {
-	return &FakeApps{c, namespace}
+	return newFakeApps(c, namespace)
 }
 
 func (c *FakeKfV1alpha1) Builds(namespace string) v1alpha1.BuildInterface {
-	return &FakeBuilds{c, namespace}
+	return newFakeBuilds(c, namespace)
 }
 
 func (c *FakeKfV1alpha1) ClusterServiceBrokers() v1alpha1.ClusterServiceBrokerInterface {
-	return &FakeClusterServiceBrokers{c}
+	return newFakeClusterServiceBrokers(c)
 }
 
 func (c *FakeKfV1alpha1) Routes(namespace string) v1alpha1.RouteInterface {
-	return &FakeRoutes{c, namespace}
+	return newFakeRoutes(c, namespace)
 }
 
 func (c *FakeKfV1alpha1) Scales(namespace string) v1alpha1.ScaleInterface {
-	return &FakeScales{c, namespace}
+	return newFakeScales(c, namespace)
 }
 
 func (c *FakeKfV1alpha1) ServiceBrokers(namespace string) v1alpha1.ServiceBrokerInterface {
-	return &FakeServiceBrokers{c, namespace}
+	return newFakeServiceBrokers(c, namespace)
 }
 
 func (c *FakeKfV1alpha1) ServiceInstances(namespace string) v1alpha1.ServiceInstanceInterface {
-	return &FakeServiceInstances{c, namespace}
+	return newFakeServiceInstances(c, namespace)
 }
 
 func (c *FakeKfV1alpha1) ServiceInstanceBindings(namespace string) v1alpha1.ServiceInstanceBindingInterface {
-	return &FakeServiceInstanceBindings{c, namespace}
+	return newFakeServiceInstanceBindings(c, namespace)
 }
 
 func (c *FakeKfV1alpha1) SourcePackages(namespace string) v1alpha1.SourcePackageInterface {
-	return &FakeSourcePackages{c, namespace}
+	return newFakeSourcePackages(c, namespace)
 }
 
 func (c *FakeKfV1alpha1) Spaces() v1alpha1.SpaceInterface {
-	return &FakeSpaces{c}
+	return newFakeSpaces(c)
 }
 
 func (c *FakeKfV1alpha1) Tasks(namespace string) v1alpha1.TaskInterface {
-	return &FakeTasks{c, namespace}
+	return newFakeTasks(c, namespace)
 }
 
 func (c *FakeKfV1alpha1) TaskSchedules(namespace string) v1alpha1.TaskScheduleInterface {
-	return &FakeTaskSchedules{c, namespace}
+	return newFakeTaskSchedules(c, namespace)
 }
 
 // RESTClient returns a RESTClient that is used to communicate

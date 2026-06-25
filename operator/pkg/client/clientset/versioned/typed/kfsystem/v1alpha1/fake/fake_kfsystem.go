@@ -3,115 +3,33 @@
 package fake
 
 import (
-	"context"
 	v1alpha1 "kf-operator/pkg/apis/kfsystem/v1alpha1"
+	kfsystemv1alpha1 "kf-operator/pkg/client/clientset/versioned/typed/kfsystem/v1alpha1"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	schema "k8s.io/apimachinery/pkg/runtime/schema"
-	types "k8s.io/apimachinery/pkg/types"
-	watch "k8s.io/apimachinery/pkg/watch"
-	testing "k8s.io/client-go/testing"
+	gentype "k8s.io/client-go/gentype"
 )
 
-// FakeKfSystems implements KfSystemInterface
-type FakeKfSystems struct {
+// fakeKfSystems implements KfSystemInterface
+type fakeKfSystems struct {
+	*gentype.FakeClientWithList[*v1alpha1.KfSystem, *v1alpha1.KfSystemList]
 	Fake *FakeKfV1alpha1
 }
 
-var kfsystemsResource = schema.GroupVersionResource{Group: "kf.dev", Version: "v1alpha1", Resource: "kfsystems"}
-
-var kfsystemsKind = schema.GroupVersionKind{Group: "kf.dev", Version: "v1alpha1", Kind: "KfSystem"}
-
-// Get takes name of the kfSystem, and returns the corresponding kfSystem object, and an error if there is any.
-func (c *FakeKfSystems) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.KfSystem, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewRootGetAction(kfsystemsResource, name), &v1alpha1.KfSystem{})
-	if obj == nil {
-		return nil, err
+func newFakeKfSystems(fake *FakeKfV1alpha1) kfsystemv1alpha1.KfSystemInterface {
+	return &fakeKfSystems{
+		gentype.NewFakeClientWithList[*v1alpha1.KfSystem, *v1alpha1.KfSystemList](
+			fake.Fake,
+			"",
+			v1alpha1.SchemeGroupVersion.WithResource("kfsystems"),
+			v1alpha1.SchemeGroupVersion.WithKind("KfSystem"),
+			func() *v1alpha1.KfSystem { return &v1alpha1.KfSystem{} },
+			func() *v1alpha1.KfSystemList { return &v1alpha1.KfSystemList{} },
+			func(dst, src *v1alpha1.KfSystemList) { dst.ListMeta = src.ListMeta },
+			func(list *v1alpha1.KfSystemList) []*v1alpha1.KfSystem { return gentype.ToPointerSlice(list.Items) },
+			func(list *v1alpha1.KfSystemList, items []*v1alpha1.KfSystem) {
+				list.Items = gentype.FromPointerSlice(items)
+			},
+		),
+		fake,
 	}
-	return obj.(*v1alpha1.KfSystem), err
-}
-
-// List takes label and field selectors, and returns the list of KfSystems that match those selectors.
-func (c *FakeKfSystems) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.KfSystemList, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewRootListAction(kfsystemsResource, kfsystemsKind, opts), &v1alpha1.KfSystemList{})
-	if obj == nil {
-		return nil, err
-	}
-
-	label, _, _ := testing.ExtractFromListOptions(opts)
-	if label == nil {
-		label = labels.Everything()
-	}
-	list := &v1alpha1.KfSystemList{ListMeta: obj.(*v1alpha1.KfSystemList).ListMeta}
-	for _, item := range obj.(*v1alpha1.KfSystemList).Items {
-		if label.Matches(labels.Set(item.Labels)) {
-			list.Items = append(list.Items, item)
-		}
-	}
-	return list, err
-}
-
-// Watch returns a watch.Interface that watches the requested kfSystems.
-func (c *FakeKfSystems) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
-	return c.Fake.
-		InvokesWatch(testing.NewRootWatchAction(kfsystemsResource, opts))
-}
-
-// Create takes the representation of a kfSystem and creates it.  Returns the server's representation of the kfSystem, and an error, if there is any.
-func (c *FakeKfSystems) Create(ctx context.Context, kfSystem *v1alpha1.KfSystem, opts v1.CreateOptions) (result *v1alpha1.KfSystem, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewRootCreateAction(kfsystemsResource, kfSystem), &v1alpha1.KfSystem{})
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.KfSystem), err
-}
-
-// Update takes the representation of a kfSystem and updates it. Returns the server's representation of the kfSystem, and an error, if there is any.
-func (c *FakeKfSystems) Update(ctx context.Context, kfSystem *v1alpha1.KfSystem, opts v1.UpdateOptions) (result *v1alpha1.KfSystem, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateAction(kfsystemsResource, kfSystem), &v1alpha1.KfSystem{})
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.KfSystem), err
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeKfSystems) UpdateStatus(ctx context.Context, kfSystem *v1alpha1.KfSystem, opts v1.UpdateOptions) (*v1alpha1.KfSystem, error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewRootUpdateSubresourceAction(kfsystemsResource, "status", kfSystem), &v1alpha1.KfSystem{})
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.KfSystem), err
-}
-
-// Delete takes name of the kfSystem and deletes it. Returns an error if one occurs.
-func (c *FakeKfSystems) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
-	_, err := c.Fake.
-		Invokes(testing.NewRootDeleteActionWithOptions(kfsystemsResource, name, opts), &v1alpha1.KfSystem{})
-	return err
-}
-
-// DeleteCollection deletes a collection of objects.
-func (c *FakeKfSystems) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(kfsystemsResource, listOpts)
-
-	_, err := c.Fake.Invokes(action, &v1alpha1.KfSystemList{})
-	return err
-}
-
-// Patch applies the patch and returns the patched kfSystem.
-func (c *FakeKfSystems) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.KfSystem, err error) {
-	obj, err := c.Fake.
-		Invokes(testing.NewRootPatchSubresourceAction(kfsystemsResource, name, pt, data, subresources...), &v1alpha1.KfSystem{})
-	if obj == nil {
-		return nil, err
-	}
-	return obj.(*v1alpha1.KfSystem), err
 }

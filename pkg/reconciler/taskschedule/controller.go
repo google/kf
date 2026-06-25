@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/google/kf/v2/pkg/reconciler"
-	"github.com/google/kf/v2/pkg/reconciler/reconcilerutil"
 	"knative.dev/pkg/configmap"
 	"knative.dev/pkg/controller"
 
@@ -45,7 +44,6 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	impl := controller.NewContext(ctx, c, controller.ControllerOptions{
 		WorkQueueName: "taskschedules",
 		Logger:        logger,
-		Reporter:      &reconcilerutil.StructuredStatsReporter{Logger: logger},
 	})
 
 	// Enqueue all TaskSchedules every 10 seconds to check cron intervals and

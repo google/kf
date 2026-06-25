@@ -19,15 +19,8 @@ package filtered
 import (
 	context "context"
 
-	versioned "github.com/google/kf/v2/pkg/client/kube-aggregator/clientset/versioned"
 	v1 "github.com/google/kf/v2/pkg/client/kube-aggregator/informers/externalversions/apiregistration/v1"
-	client "github.com/google/kf/v2/pkg/client/kube-aggregator/injection/client"
 	filtered "github.com/google/kf/v2/pkg/client/kube-aggregator/injection/informers/factory/filtered"
-	apiregistrationv1 "github.com/google/kf/v2/pkg/client/kube-aggregator/listers/apiregistration/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	labels "k8s.io/apimachinery/pkg/labels"
-	cache "k8s.io/client-go/tools/cache"
-	apisapiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	controller "knative.dev/pkg/controller"
 	injection "knative.dev/pkg/injection"
 	logging "knative.dev/pkg/logging"
@@ -35,7 +28,6 @@ import (
 
 func init() {
 	injection.Default.RegisterFilteredInformers(withInformer)
-	injection.Dynamic.RegisterDynamicInformer(withDynamicInformer)
 }
 
 // Key is used for associating the Informer inside the context.Context.
@@ -60,20 +52,6 @@ func withInformer(ctx context.Context) (context.Context, []controller.Informer) 
 	return ctx, infs
 }
 
-func withDynamicInformer(ctx context.Context) context.Context {
-	untyped := ctx.Value(filtered.LabelKey{})
-	if untyped == nil {
-		logging.FromContext(ctx).Panic(
-			"Unable to fetch labelkey from context.")
-	}
-	labelSelectors := untyped.([]string)
-	for _, selector := range labelSelectors {
-		inf := &wrapper{client: client.Get(ctx), selector: selector}
-		ctx = context.WithValue(ctx, Key{Selector: selector}, inf)
-	}
-	return ctx
-}
-
 // Get extracts the typed informer from the context.
 func Get(ctx context.Context, selector string) v1.APIServiceInformer {
 	untyped := ctx.Value(Key{Selector: selector})
@@ -82,47 +60,4 @@ func Get(ctx context.Context, selector string) v1.APIServiceInformer {
 			"Unable to fetch github.com/google/kf/v2/pkg/client/kube-aggregator/informers/externalversions/apiregistration/v1.APIServiceInformer with selector %s from context.", selector)
 	}
 	return untyped.(v1.APIServiceInformer)
-}
-
-type wrapper struct {
-	client versioned.Interface
-
-	selector string
-}
-
-var _ v1.APIServiceInformer = (*wrapper)(nil)
-var _ apiregistrationv1.APIServiceLister = (*wrapper)(nil)
-
-func (w *wrapper) Informer() cache.SharedIndexInformer {
-	return cache.NewSharedIndexInformer(nil, &apisapiregistrationv1.APIService{}, 0, nil)
-}
-
-func (w *wrapper) Lister() apiregistrationv1.APIServiceLister {
-	return w
-}
-
-func (w *wrapper) List(selector labels.Selector) (ret []*apisapiregistrationv1.APIService, err error) {
-	reqs, err := labels.ParseToRequirements(w.selector)
-	if err != nil {
-		return nil, err
-	}
-	selector = selector.Add(reqs...)
-	lo, err := w.client.ApiregistrationV1().APIServices().List(context.TODO(), metav1.ListOptions{
-		LabelSelector: selector.String(),
-		// TODO(mattmoor): Incorporate resourceVersion bounds based on staleness criteria.
-	})
-	if err != nil {
-		return nil, err
-	}
-	for idx := range lo.Items {
-		ret = append(ret, &lo.Items[idx])
-	}
-	return ret, nil
-}
-
-func (w *wrapper) Get(name string) (*apisapiregistrationv1.APIService, error) {
-	// TODO(mattmoor): Check that the fetched object matches the selector.
-	return w.client.ApiregistrationV1().APIServices().Get(context.TODO(), name, metav1.GetOptions{
-		// TODO(mattmoor): Incorporate resourceVersion bounds based on staleness criteria.
-	})
 }

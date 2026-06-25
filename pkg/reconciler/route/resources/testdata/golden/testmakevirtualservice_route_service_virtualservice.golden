@@ -20,7 +20,6 @@
 #     path: /some-path
 # routes:
 # - metadata:
-#     creationTimestamp: null
 #     name: fake-route-some-host-example-coade3bfc08c73862f46464527a489d109
 #     namespace: some-namespace
 #   spec:
@@ -30,7 +29,6 @@
 #     routeService: {}
 #     virtualservice: {}
 # - metadata:
-#     creationTimestamp: null
 #     name: fake-route-some-host-example-co98ab99cdf188e05a65dad35fa162c013
 #     namespace: some-namespace
 #   spec:
@@ -50,7 +48,6 @@
     "metadata": {
         "name": "example-com5ababd603b22780302dd8d83498e5172",
         "namespace": "some-namespace",
-        "creationTimestamp": null,
         "labels": {
             "app.kubernetes.io/component": "virtualservice",
             "app.kubernetes.io/managed-by": "kf"

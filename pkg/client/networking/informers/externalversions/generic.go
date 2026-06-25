@@ -17,7 +17,7 @@
 package externalversions
 
 import (
-	"fmt"
+	fmt "fmt"
 
 	v1alpha3 "github.com/google/kf/v2/pkg/apis/networking/v1alpha3"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

@@ -1,7 +1,6 @@
 # Test:	TestMakeOSBProvisionRequest/good
 # namespace:
 #   metadata:
-#     creationTimestamp: null
 #     name: some-ns
 #     uid: 11111111-1111-1111-1111-111111111111
 #   spec: {}
@@ -9,11 +8,9 @@
 # paramsSecret:
 #   data:
 #     params: eyJmb28iOiJiYXIifQ==
-#   metadata:
-#     creationTimestamp: null
+#   metadata: {}
 # serviceInstance:
 #   metadata:
-#     creationTimestamp: null
 #     name: mydb
 #     namespace: test-ns
 #     uid: 00000000-0000-0000-0000-000008675309

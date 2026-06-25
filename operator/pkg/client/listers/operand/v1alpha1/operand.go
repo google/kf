@@ -3,11 +3,11 @@
 package v1alpha1
 
 import (
-	v1alpha1 "kf-operator/pkg/apis/operand/v1alpha1"
+	operandv1alpha1 "kf-operator/pkg/apis/operand/v1alpha1"
 
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // OperandLister helps list Operands.
@@ -15,39 +15,19 @@ import (
 type OperandLister interface {
 	// List lists all Operands in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.Operand, err error)
+	List(selector labels.Selector) (ret []*operandv1alpha1.Operand, err error)
 	// Get retrieves the Operand from the index for a given name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.Operand, error)
+	Get(name string) (*operandv1alpha1.Operand, error)
 	OperandListerExpansion
 }
 
 // operandLister implements the OperandLister interface.
 type operandLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*operandv1alpha1.Operand]
 }
 
 // NewOperandLister returns a new OperandLister.
 func NewOperandLister(indexer cache.Indexer) OperandLister {
-	return &operandLister{indexer: indexer}
-}
-
-// List lists all Operands in the indexer.
-func (s *operandLister) List(selector labels.Selector) (ret []*v1alpha1.Operand, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.Operand))
-	})
-	return ret, err
-}
-
-// Get retrieves the Operand from the index for a given name.
-func (s *operandLister) Get(name string) (*v1alpha1.Operand, error) {
-	obj, exists, err := s.indexer.GetByKey(name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("operand"), name)
-	}
-	return obj.(*v1alpha1.Operand), nil
+	return &operandLister{listers.New[*operandv1alpha1.Operand](indexer, operandv1alpha1.Resource("operand"))}
 }

@@ -17,7 +17,7 @@
 package externalversions
 
 import (
-	"fmt"
+	fmt "fmt"
 
 	v1 "k8s.io/api/networking/v1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -51,12 +51,16 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=networking.k8s.io, Version=v1
+	case v1.SchemeGroupVersion.WithResource("ipaddresses"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Networking().V1().IPAddresses().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("ingresses"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Networking().V1().Ingresses().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("ingressclasses"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Networking().V1().IngressClasses().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("networkpolicies"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Networking().V1().NetworkPolicies().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("servicecidrs"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Networking().V1().ServiceCIDRs().Informer()}, nil
 
 	}
 

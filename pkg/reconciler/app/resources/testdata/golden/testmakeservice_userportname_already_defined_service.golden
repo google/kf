@@ -1,7 +1,6 @@
 # Test:	TestMakeService/UserPortName_already_defined
 # app:
 #   metadata:
-#     creationTimestamp: null
 #     name: test
 #     namespace: my-ns
 #   spec:
@@ -29,7 +28,6 @@
     "metadata": {
         "name": "test",
         "namespace": "my-ns",
-        "creationTimestamp": null,
         "labels": {
             "app.kubernetes.io/component": "service",
             "app.kubernetes.io/managed-by": "kf",

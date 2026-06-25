@@ -16,6 +16,10 @@
 
 package v1
 
+// IPAddressListerExpansion allows custom methods to be added to
+// IPAddressLister.
+type IPAddressListerExpansion interface{}
+
 // IngressListerExpansion allows custom methods to be added to
 // IngressLister.
 type IngressListerExpansion interface{}
@@ -35,3 +39,7 @@ type NetworkPolicyListerExpansion interface{}
 // NetworkPolicyNamespaceListerExpansion allows custom methods to be added to
 // NetworkPolicyNamespaceLister.
 type NetworkPolicyNamespaceListerExpansion interface{}
+
+// ServiceCIDRListerExpansion allows custom methods to be added to
+// ServiceCIDRLister.
+type ServiceCIDRListerExpansion interface{}

@@ -17,10 +17,10 @@
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/tools/cache"
+	kfv1alpha1 "github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
+	labels "k8s.io/apimachinery/pkg/labels"
+	listers "k8s.io/client-go/listers"
+	cache "k8s.io/client-go/tools/cache"
 )
 
 // ServiceInstanceBindingLister helps list ServiceInstanceBindings.
@@ -28,7 +28,7 @@ import (
 type ServiceInstanceBindingLister interface {
 	// List lists all ServiceInstanceBindings in the indexer.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.ServiceInstanceBinding, err error)
+	List(selector labels.Selector) (ret []*kfv1alpha1.ServiceInstanceBinding, err error)
 	// ServiceInstanceBindings returns an object that can list and get ServiceInstanceBindings.
 	ServiceInstanceBindings(namespace string) ServiceInstanceBindingNamespaceLister
 	ServiceInstanceBindingListerExpansion
@@ -36,25 +36,17 @@ type ServiceInstanceBindingLister interface {
 
 // serviceInstanceBindingLister implements the ServiceInstanceBindingLister interface.
 type serviceInstanceBindingLister struct {
-	indexer cache.Indexer
+	listers.ResourceIndexer[*kfv1alpha1.ServiceInstanceBinding]
 }
 
 // NewServiceInstanceBindingLister returns a new ServiceInstanceBindingLister.
 func NewServiceInstanceBindingLister(indexer cache.Indexer) ServiceInstanceBindingLister {
-	return &serviceInstanceBindingLister{indexer: indexer}
-}
-
-// List lists all ServiceInstanceBindings in the indexer.
-func (s *serviceInstanceBindingLister) List(selector labels.Selector) (ret []*v1alpha1.ServiceInstanceBinding, err error) {
-	err = cache.ListAll(s.indexer, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.ServiceInstanceBinding))
-	})
-	return ret, err
+	return &serviceInstanceBindingLister{listers.New[*kfv1alpha1.ServiceInstanceBinding](indexer, kfv1alpha1.Resource("serviceinstancebinding"))}
 }
 
 // ServiceInstanceBindings returns an object that can list and get ServiceInstanceBindings.
 func (s *serviceInstanceBindingLister) ServiceInstanceBindings(namespace string) ServiceInstanceBindingNamespaceLister {
-	return serviceInstanceBindingNamespaceLister{indexer: s.indexer, namespace: namespace}
+	return serviceInstanceBindingNamespaceLister{listers.NewNamespaced[*kfv1alpha1.ServiceInstanceBinding](s.ResourceIndexer, namespace)}
 }
 
 // ServiceInstanceBindingNamespaceLister helps list and get ServiceInstanceBindings.
@@ -62,36 +54,15 @@ func (s *serviceInstanceBindingLister) ServiceInstanceBindings(namespace string)
 type ServiceInstanceBindingNamespaceLister interface {
 	// List lists all ServiceInstanceBindings in the indexer for a given namespace.
 	// Objects returned here must be treated as read-only.
-	List(selector labels.Selector) (ret []*v1alpha1.ServiceInstanceBinding, err error)
+	List(selector labels.Selector) (ret []*kfv1alpha1.ServiceInstanceBinding, err error)
 	// Get retrieves the ServiceInstanceBinding from the indexer for a given namespace and name.
 	// Objects returned here must be treated as read-only.
-	Get(name string) (*v1alpha1.ServiceInstanceBinding, error)
+	Get(name string) (*kfv1alpha1.ServiceInstanceBinding, error)
 	ServiceInstanceBindingNamespaceListerExpansion
 }
 
 // serviceInstanceBindingNamespaceLister implements the ServiceInstanceBindingNamespaceLister
 // interface.
 type serviceInstanceBindingNamespaceLister struct {
-	indexer   cache.Indexer
-	namespace string
-}
-
-// List lists all ServiceInstanceBindings in the indexer for a given namespace.
-func (s serviceInstanceBindingNamespaceLister) List(selector labels.Selector) (ret []*v1alpha1.ServiceInstanceBinding, err error) {
-	err = cache.ListAllByNamespace(s.indexer, s.namespace, selector, func(m interface{}) {
-		ret = append(ret, m.(*v1alpha1.ServiceInstanceBinding))
-	})
-	return ret, err
-}
-
-// Get retrieves the ServiceInstanceBinding from the indexer for a given namespace and name.
-func (s serviceInstanceBindingNamespaceLister) Get(name string) (*v1alpha1.ServiceInstanceBinding, error) {
-	obj, exists, err := s.indexer.GetByKey(s.namespace + "/" + name)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, errors.NewNotFound(v1alpha1.Resource("serviceinstancebinding"), name)
-	}
-	return obj.(*v1alpha1.ServiceInstanceBinding), nil
+	listers.ResourceIndexer[*kfv1alpha1.ServiceInstanceBinding]
 }

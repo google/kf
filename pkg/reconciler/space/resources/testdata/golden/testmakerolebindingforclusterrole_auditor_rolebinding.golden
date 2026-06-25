@@ -2,7 +2,6 @@
 # roleName: space-auditor
 # space:
 #   metadata:
-#     creationTimestamp: null
 #     name: test
 #   spec:
 #     buildConfig:
@@ -22,7 +21,6 @@
     "metadata": {
         "name": "test-space-auditor",
         "namespace": "test",
-        "creationTimestamp": null,
         "labels": {
             "app.kubernetes.io/managed-by": "kf"
         },

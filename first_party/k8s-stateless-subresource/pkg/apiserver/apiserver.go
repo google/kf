@@ -22,7 +22,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/emicklei/go-restful"
+	restful "github.com/emicklei/go-restful/v3"
 	"github.com/google/k8s-stateless-subresource/pkg/internal/apiserver"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
@@ -30,11 +30,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/apimachinery/pkg/util/version"
 	apirequest "k8s.io/apiserver/pkg/endpoints/request"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	"k8s.io/apiserver/pkg/server/options"
 	"k8s.io/client-go/rest"
 	kubeclient "knative.dev/pkg/client/injection/kube/client"
+	basecompatibility "k8s.io/component-base/compatibility"
 	cminformer "knative.dev/pkg/configmap/informer"
 	"knative.dev/pkg/controller"
 	"knative.dev/pkg/injection"
@@ -44,7 +46,7 @@ import (
 	"knative.dev/pkg/logging/logkey"
 	"knative.dev/pkg/signals"
 	"knative.dev/pkg/system"
-	"knative.dev/pkg/version"
+	knativeversion "knative.dev/pkg/version"
 )
 
 // Config has configuration for the API server.
@@ -126,7 +128,17 @@ func (c *Config) server(
 		return nil, fmt.Errorf("failed to create self-signed certificates: %v", err)
 	}
 
+	var binaryVersion = version.MustParse("1.36.0")
+	var emulatedVersionFloor = version.MajorMinor(1, 27)
+	var minSupportedK8sVersion = version.MajorMinor(1, 27)
+
 	serverConfig := genericapiserver.NewConfig(codecs)
+	serverConfig.EffectiveVersion = basecompatibility.NewEffectiveVersion(
+    binaryVersion,
+    false,
+    emulatedVersionFloor,
+    minSupportedK8sVersion,
+)
 	serverConfig.LongRunningFunc = c.LongRunningFunc
 
 	// Apply SecureServing config.
@@ -295,7 +307,7 @@ func MainWithConfig(
 func checkK8sClientMinimumVersion(ctx context.Context, logger *zap.SugaredLogger) {
 	for ctx.Err() == nil {
 		kc := kubeclient.Get(ctx)
-		if err := version.CheckMinimumVersion(kc.Discovery()); err != nil {
+		if err := knativeversion.CheckMinimumVersion(kc.Discovery()); err != nil {
 			logger.Warnw("Version check failed... retrying...", zap.Error(err))
 
 			// Retry...

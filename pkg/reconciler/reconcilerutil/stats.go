@@ -6,7 +6,6 @@ import (
 
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/types"
-	"knative.dev/pkg/controller"
 )
 
 var (
@@ -34,8 +33,6 @@ type StructuredStatsReporter struct {
 	unknownReconciliations    atomic.Uint64
 	reconciliationTimeMS      atomic.Int64
 }
-
-var _ controller.StatsReporter = (*StructuredStatsReporter)(nil)
 
 // now uses the system clock or the overridden clock
 func (s *StructuredStatsReporter) now() time.Time {

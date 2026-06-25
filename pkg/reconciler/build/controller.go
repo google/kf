@@ -28,7 +28,6 @@ import (
 	kflisters "github.com/google/kf/v2/pkg/client/kf/listers/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/reconciler"
 	"github.com/google/kf/v2/pkg/reconciler/build/config"
-	"github.com/google/kf/v2/pkg/reconciler/reconcilerutil"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/injection/client"
 	taskruninformer "github.com/tektoncd/pipeline/pkg/client/injection/informers/pipeline/v1beta1/taskrun"
 	"k8s.io/apimachinery/pkg/labels"
@@ -63,7 +62,6 @@ func NewController(ctx context.Context, cmw configmap.Watcher) *controller.Impl 
 	impl := controller.NewContext(ctx, c, controller.ControllerOptions{
 		WorkQueueName: "Builds",
 		Logger:        logger,
-		Reporter:      &reconcilerutil.StructuredStatsReporter{Logger: logger},
 
 		// Assume 10k apps, which each control one build that needs
 		// an update on average every 10 minutes.

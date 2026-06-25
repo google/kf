@@ -228,7 +228,6 @@ spec:
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  creationTimestamp: null
   name: build-and-publish
 spec:
   tasks:
@@ -381,7 +380,6 @@ spec:
 apiVersion: tekton.dev/v1beta1
 kind: pipelinerun
 metadata:
-  creationTimestamp: null
   name: build-and-publish-run
 spec:
   pipelineSpec:
@@ -534,8 +532,7 @@ spec:
   workspaces:
   - name: output
     volumeClaimTemplate:
-      metadata:
-        creationTimestamp: null
+      metadata: {}
       spec:
         accessModes:
         - ReadWriteOnce
