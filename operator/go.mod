@@ -1,6 +1,6 @@
 module kf-operator
 
-go 1.26.0
+go 1.26.5
 
 require (
 	cloud.google.com/go/compute/metadata v0.9.0
