@@ -1,6 +1,6 @@
 module github.com/google/k8s-stateless-subresource
 
-go 1.26.0
+go 1.26.5
 
 require (
 	github.com/emicklei/go-restful v2.16.0+incompatible
