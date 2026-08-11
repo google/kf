@@ -168,7 +168,7 @@ func extractSourceImage(sourceImage, sourcePath, targetPath string) error {
 		return err
 	}
 
-	image, err := remote.Image(imageRef, dockerutil.GetAuthKeyChain())
+	image, err := remote.Image(imageRef, dockerutil.GetAuthKeyChain(), dockerutil.SafeRemoteTransport())
 	if err != nil {
 		return err
 	}
