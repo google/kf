@@ -115,7 +115,7 @@ func MakeTaskRun(
 	if secretConfig != nil && secretConfig.GoogleServiceAccount != "" && buildPipelineType == v1alpha1.BuildpackV3BuildTaskName {
 		initStep := tektonv1beta1.Step{
 			Name:    "wait-for-wi",
-			Image:   "gcr.io/google.com/cloudsdktool/cloud-sdk:326.0.0-alpine",
+			Image:   "gcr.io/google.com/cloudsdktool/cloud-sdk:alpine",
 			Command: []string{"bash"},
 			Args: []string{
 				"-c",
