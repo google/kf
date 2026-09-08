@@ -32,11 +32,39 @@ import (
 )
 
 // ScaleInformer provides access to a shared informer and lister for
-// Scales.
+// Scales. Prefer using the type-safe variant (see [TypedScaleInformer]).
 type ScaleInformer interface {
 	Informer() cache.SharedIndexInformer
 	Lister() kfv1alpha1.ScaleLister
 }
+
+// TypedScaleInformer provides access to a shared informer and lister for
+// Scales, including the type-safe TypedInformer variant.
+// It is a superset of ScaleInformer.
+type TypedScaleInformer interface {
+	Informer() cache.SharedIndexInformer
+	TypedInformer() ScaleIndexInformer
+	Lister() kfv1alpha1.ScaleLister
+}
+
+// ScaleIndexInformer is a wrapper around the underlying [cache.SharedIndexInformer]
+// with type-safe variants of several methods.
+type ScaleIndexInformer cache.TypedSharedIndexInformer[*apiskfv1alpha1.Scale]
+
+// ScaleHandlerFuncs is a specialization of [cache.TypedResourceEventHandlerFuncs] for Scale.
+type ScaleHandlerFuncs = cache.TypedResourceEventHandlerFuncs[*apiskfv1alpha1.Scale]
+
+// ScaleDetailedHandlerFuncs is a specialization of [cache.TypedResourceEventHandlerDetailedFuncs] for Scale.
+type ScaleDetailedHandlerFuncs = cache.TypedResourceEventHandlerDetailedFuncs[*apiskfv1alpha1.Scale]
+
+// ScaleFilteringHandler is a specialization of [cache.TypedFilteringResourceEventHandler] for Scale.
+type ScaleFilteringHandler = cache.TypedFilteringResourceEventHandler[*apiskfv1alpha1.Scale]
+
+// ScaleIndexers is a specialization of [cache.TypedIndexers] for Scale.
+type ScaleIndexers = cache.TypedIndexers[*apiskfv1alpha1.Scale]
+
+// DeletedScale is a specialization of [cache.DeletedObject] for Scale.
+type DeletedScale = cache.DeletedObject[*apiskfv1alpha1.Scale]
 
 type scaleInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
@@ -47,25 +75,49 @@ type scaleInformer struct {
 // NewScaleInformer constructs a new informer for Scale type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedScaleInformer]).
 func NewScaleInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
 	return NewScaleInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers})
+}
+
+// NewTypedScaleInformer constructs a new informer for Scale type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedScaleInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers ScaleIndexers) ScaleIndexInformer {
+	return NewTypedScaleInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.TypedIndexersToIndexers(indexers)})
 }
 
 // NewFilteredScaleInformer constructs a new informer for Scale type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedFilteredScaleInformer]).
 func NewFilteredScaleInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
-	return NewScaleInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+	return NewTypedScaleInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+}
+
+// NewTypedFilteredScaleInformer constructs a new informer for Scale type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedFilteredScaleInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers ScaleIndexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) ScaleIndexInformer {
+	return NewTypedScaleInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.TypedIndexersToIndexers(indexers), TweakListOptions: tweakListOptions})
 }
 
 // NewScaleInformerWithOptions constructs a new informer for Scale type with additional options.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedScaleInformerWithOptions]).
 func NewScaleInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) cache.SharedIndexInformer {
+	return NewTypedScaleInformerWithOptions(client, namespace, options)
+}
+
+// NewTypedScaleInformerWithOptions constructs a new informer for Scale type with additional options.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedScaleInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) ScaleIndexInformer {
 	gvr := schema.GroupVersionResource{Group: "kf.dev", Version: "v1alpha1", Resource: "scales"}
 	identifier := options.InformerName.WithResource(gvr)
 	tweakListOptions := options.TweakListOptions
-	return cache.NewSharedIndexInformerWithOptions(
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.Scale](cache.NewSharedIndexInformerWithOptions(
 		cache.ToListWatcherWithWatchListSemantics(&cache.ListWatch{
 			ListFunc: func(opts v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
@@ -98,17 +150,57 @@ func NewScaleInformerWithOptions(client versioned.Interface, namespace string, o
 			Indexers:     options.Indexers,
 			Identifier:   identifier,
 		},
-	)
+	))
 }
 
 func (f *scaleInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewScaleInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
+	return NewTypedScaleInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
 }
 
 func (f *scaleInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&apiskfv1alpha1.Scale{}, f.defaultInformer)
+	return f.TypedInformer()
+}
+
+func (f *scaleInformer) TypedInformer() ScaleIndexInformer {
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.Scale](f.factory.InformerFor(&apiskfv1alpha1.Scale{}, f.defaultInformer))
 }
 
 func (f *scaleInformer) Lister() kfv1alpha1.ScaleLister {
 	return kfv1alpha1.NewScaleLister(f.Informer().GetIndexer())
+}
+
+// ToTypedScaleInformer converts an untyped informer into a TypedScaleInformer.
+//
+// WARNING: this conversion is only safe if the informer handles objects of type
+// *Scale. If that is not the case, calling type-safe methods of the returned
+// TypedScaleInformer leads to runtime panics. A safer alternative is to pass
+// around a TypedScaleInformer instances that was obtained from a
+// SharedInformerFactory.
+func ToTypedScaleInformer(informer ScaleInformer) TypedScaleInformer {
+	if informer, ok := informer.(TypedScaleInformer); ok {
+		return informer
+	}
+	return &scaleTypedInformerAdapter{informer}
+}
+
+type scaleTypedInformerAdapter struct {
+	ScaleInformer
+}
+
+func (a *scaleTypedInformerAdapter) TypedInformer() ScaleIndexInformer {
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.Scale](a.Informer())
+}
+
+// ToScaleIndexInformer converts an untyped informer into a ScaleIndexInformer.
+//
+// WARNING: this conversion is only safe if the informer handles objects of type
+// *Scale. If that is not the case, calling type-safe methods of the returned
+// ScaleIndexInformer leads to runtime panics. A safer alternative is to pass
+// around a ScaleIndexInformer instances that was obtained from a
+// SharedInformerFactory.
+func ToScaleIndexInformer(informer cache.SharedIndexInformer) ScaleIndexInformer {
+	if informer, ok := informer.(ScaleIndexInformer); ok {
+		return informer
+	}
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.Scale](informer)
 }

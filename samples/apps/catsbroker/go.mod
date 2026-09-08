@@ -1,6 +1,6 @@
 module github.com/google/kf/v2/samples/apps/catsbroker
 
-go 1.15
+go 1.26.6
 
 require (
 	github.com/gorilla/handlers v1.5.1

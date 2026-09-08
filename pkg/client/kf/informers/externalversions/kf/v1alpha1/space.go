@@ -32,11 +32,39 @@ import (
 )
 
 // SpaceInformer provides access to a shared informer and lister for
-// Spaces.
+// Spaces. Prefer using the type-safe variant (see [TypedSpaceInformer]).
 type SpaceInformer interface {
 	Informer() cache.SharedIndexInformer
 	Lister() kfv1alpha1.SpaceLister
 }
+
+// TypedSpaceInformer provides access to a shared informer and lister for
+// Spaces, including the type-safe TypedInformer variant.
+// It is a superset of SpaceInformer.
+type TypedSpaceInformer interface {
+	Informer() cache.SharedIndexInformer
+	TypedInformer() SpaceIndexInformer
+	Lister() kfv1alpha1.SpaceLister
+}
+
+// SpaceIndexInformer is a wrapper around the underlying [cache.SharedIndexInformer]
+// with type-safe variants of several methods.
+type SpaceIndexInformer cache.TypedSharedIndexInformer[*apiskfv1alpha1.Space]
+
+// SpaceHandlerFuncs is a specialization of [cache.TypedResourceEventHandlerFuncs] for Space.
+type SpaceHandlerFuncs = cache.TypedResourceEventHandlerFuncs[*apiskfv1alpha1.Space]
+
+// SpaceDetailedHandlerFuncs is a specialization of [cache.TypedResourceEventHandlerDetailedFuncs] for Space.
+type SpaceDetailedHandlerFuncs = cache.TypedResourceEventHandlerDetailedFuncs[*apiskfv1alpha1.Space]
+
+// SpaceFilteringHandler is a specialization of [cache.TypedFilteringResourceEventHandler] for Space.
+type SpaceFilteringHandler = cache.TypedFilteringResourceEventHandler[*apiskfv1alpha1.Space]
+
+// SpaceIndexers is a specialization of [cache.TypedIndexers] for Space.
+type SpaceIndexers = cache.TypedIndexers[*apiskfv1alpha1.Space]
+
+// DeletedSpace is a specialization of [cache.DeletedObject] for Space.
+type DeletedSpace = cache.DeletedObject[*apiskfv1alpha1.Space]
 
 type spaceInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
@@ -46,25 +74,49 @@ type spaceInformer struct {
 // NewSpaceInformer constructs a new informer for Space type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedSpaceInformer]).
 func NewSpaceInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
 	return NewSpaceInformerWithOptions(client, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers})
+}
+
+// NewTypedSpaceInformer constructs a new informer for Space type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedSpaceInformer(client versioned.Interface, resyncPeriod time.Duration, indexers SpaceIndexers) SpaceIndexInformer {
+	return NewTypedSpaceInformerWithOptions(client, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.TypedIndexersToIndexers(indexers)})
 }
 
 // NewFilteredSpaceInformer constructs a new informer for Space type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedFilteredSpaceInformer]).
 func NewFilteredSpaceInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
-	return NewSpaceInformerWithOptions(client, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+	return NewTypedSpaceInformerWithOptions(client, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+}
+
+// NewTypedFilteredSpaceInformer constructs a new informer for Space type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedFilteredSpaceInformer(client versioned.Interface, resyncPeriod time.Duration, indexers SpaceIndexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) SpaceIndexInformer {
+	return NewTypedSpaceInformerWithOptions(client, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.TypedIndexersToIndexers(indexers), TweakListOptions: tweakListOptions})
 }
 
 // NewSpaceInformerWithOptions constructs a new informer for Space type with additional options.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedSpaceInformerWithOptions]).
 func NewSpaceInformerWithOptions(client versioned.Interface, options internalinterfaces.InformerOptions) cache.SharedIndexInformer {
+	return NewTypedSpaceInformerWithOptions(client, options)
+}
+
+// NewTypedSpaceInformerWithOptions constructs a new informer for Space type with additional options.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedSpaceInformerWithOptions(client versioned.Interface, options internalinterfaces.InformerOptions) SpaceIndexInformer {
 	gvr := schema.GroupVersionResource{Group: "kf.dev", Version: "v1alpha1", Resource: "spaces"}
 	identifier := options.InformerName.WithResource(gvr)
 	tweakListOptions := options.TweakListOptions
-	return cache.NewSharedIndexInformerWithOptions(
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.Space](cache.NewSharedIndexInformerWithOptions(
 		cache.ToListWatcherWithWatchListSemantics(&cache.ListWatch{
 			ListFunc: func(opts v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
@@ -97,17 +149,57 @@ func NewSpaceInformerWithOptions(client versioned.Interface, options internalint
 			Indexers:     options.Indexers,
 			Identifier:   identifier,
 		},
-	)
+	))
 }
 
 func (f *spaceInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewSpaceInformerWithOptions(client, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
+	return NewTypedSpaceInformerWithOptions(client, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
 }
 
 func (f *spaceInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&apiskfv1alpha1.Space{}, f.defaultInformer)
+	return f.TypedInformer()
+}
+
+func (f *spaceInformer) TypedInformer() SpaceIndexInformer {
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.Space](f.factory.InformerFor(&apiskfv1alpha1.Space{}, f.defaultInformer))
 }
 
 func (f *spaceInformer) Lister() kfv1alpha1.SpaceLister {
 	return kfv1alpha1.NewSpaceLister(f.Informer().GetIndexer())
+}
+
+// ToTypedSpaceInformer converts an untyped informer into a TypedSpaceInformer.
+//
+// WARNING: this conversion is only safe if the informer handles objects of type
+// *Space. If that is not the case, calling type-safe methods of the returned
+// TypedSpaceInformer leads to runtime panics. A safer alternative is to pass
+// around a TypedSpaceInformer instances that was obtained from a
+// SharedInformerFactory.
+func ToTypedSpaceInformer(informer SpaceInformer) TypedSpaceInformer {
+	if informer, ok := informer.(TypedSpaceInformer); ok {
+		return informer
+	}
+	return &spaceTypedInformerAdapter{informer}
+}
+
+type spaceTypedInformerAdapter struct {
+	SpaceInformer
+}
+
+func (a *spaceTypedInformerAdapter) TypedInformer() SpaceIndexInformer {
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.Space](a.Informer())
+}
+
+// ToSpaceIndexInformer converts an untyped informer into a SpaceIndexInformer.
+//
+// WARNING: this conversion is only safe if the informer handles objects of type
+// *Space. If that is not the case, calling type-safe methods of the returned
+// SpaceIndexInformer leads to runtime panics. A safer alternative is to pass
+// around a SpaceIndexInformer instances that was obtained from a
+// SharedInformerFactory.
+func ToSpaceIndexInformer(informer cache.SharedIndexInformer) SpaceIndexInformer {
+	if informer, ok := informer.(SpaceIndexInformer); ok {
+		return informer
+	}
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.Space](informer)
 }

@@ -32,11 +32,39 @@ import (
 )
 
 // SourcePackageInformer provides access to a shared informer and lister for
-// SourcePackages.
+// SourcePackages. Prefer using the type-safe variant (see [TypedSourcePackageInformer]).
 type SourcePackageInformer interface {
 	Informer() cache.SharedIndexInformer
 	Lister() kfv1alpha1.SourcePackageLister
 }
+
+// TypedSourcePackageInformer provides access to a shared informer and lister for
+// SourcePackages, including the type-safe TypedInformer variant.
+// It is a superset of SourcePackageInformer.
+type TypedSourcePackageInformer interface {
+	Informer() cache.SharedIndexInformer
+	TypedInformer() SourcePackageIndexInformer
+	Lister() kfv1alpha1.SourcePackageLister
+}
+
+// SourcePackageIndexInformer is a wrapper around the underlying [cache.SharedIndexInformer]
+// with type-safe variants of several methods.
+type SourcePackageIndexInformer cache.TypedSharedIndexInformer[*apiskfv1alpha1.SourcePackage]
+
+// SourcePackageHandlerFuncs is a specialization of [cache.TypedResourceEventHandlerFuncs] for SourcePackage.
+type SourcePackageHandlerFuncs = cache.TypedResourceEventHandlerFuncs[*apiskfv1alpha1.SourcePackage]
+
+// SourcePackageDetailedHandlerFuncs is a specialization of [cache.TypedResourceEventHandlerDetailedFuncs] for SourcePackage.
+type SourcePackageDetailedHandlerFuncs = cache.TypedResourceEventHandlerDetailedFuncs[*apiskfv1alpha1.SourcePackage]
+
+// SourcePackageFilteringHandler is a specialization of [cache.TypedFilteringResourceEventHandler] for SourcePackage.
+type SourcePackageFilteringHandler = cache.TypedFilteringResourceEventHandler[*apiskfv1alpha1.SourcePackage]
+
+// SourcePackageIndexers is a specialization of [cache.TypedIndexers] for SourcePackage.
+type SourcePackageIndexers = cache.TypedIndexers[*apiskfv1alpha1.SourcePackage]
+
+// DeletedSourcePackage is a specialization of [cache.DeletedObject] for SourcePackage.
+type DeletedSourcePackage = cache.DeletedObject[*apiskfv1alpha1.SourcePackage]
 
 type sourcePackageInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
@@ -47,25 +75,49 @@ type sourcePackageInformer struct {
 // NewSourcePackageInformer constructs a new informer for SourcePackage type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedSourcePackageInformer]).
 func NewSourcePackageInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
 	return NewSourcePackageInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers})
+}
+
+// NewTypedSourcePackageInformer constructs a new informer for SourcePackage type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedSourcePackageInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers SourcePackageIndexers) SourcePackageIndexInformer {
+	return NewTypedSourcePackageInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.TypedIndexersToIndexers(indexers)})
 }
 
 // NewFilteredSourcePackageInformer constructs a new informer for SourcePackage type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedFilteredSourcePackageInformer]).
 func NewFilteredSourcePackageInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
-	return NewSourcePackageInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+	return NewTypedSourcePackageInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+}
+
+// NewTypedFilteredSourcePackageInformer constructs a new informer for SourcePackage type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedFilteredSourcePackageInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers SourcePackageIndexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) SourcePackageIndexInformer {
+	return NewTypedSourcePackageInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.TypedIndexersToIndexers(indexers), TweakListOptions: tweakListOptions})
 }
 
 // NewSourcePackageInformerWithOptions constructs a new informer for SourcePackage type with additional options.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedSourcePackageInformerWithOptions]).
 func NewSourcePackageInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) cache.SharedIndexInformer {
+	return NewTypedSourcePackageInformerWithOptions(client, namespace, options)
+}
+
+// NewTypedSourcePackageInformerWithOptions constructs a new informer for SourcePackage type with additional options.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedSourcePackageInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) SourcePackageIndexInformer {
 	gvr := schema.GroupVersionResource{Group: "kf.dev", Version: "v1alpha1", Resource: "sourcepackages"}
 	identifier := options.InformerName.WithResource(gvr)
 	tweakListOptions := options.TweakListOptions
-	return cache.NewSharedIndexInformerWithOptions(
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.SourcePackage](cache.NewSharedIndexInformerWithOptions(
 		cache.ToListWatcherWithWatchListSemantics(&cache.ListWatch{
 			ListFunc: func(opts v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
@@ -98,17 +150,57 @@ func NewSourcePackageInformerWithOptions(client versioned.Interface, namespace s
 			Indexers:     options.Indexers,
 			Identifier:   identifier,
 		},
-	)
+	))
 }
 
 func (f *sourcePackageInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewSourcePackageInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
+	return NewTypedSourcePackageInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
 }
 
 func (f *sourcePackageInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&apiskfv1alpha1.SourcePackage{}, f.defaultInformer)
+	return f.TypedInformer()
+}
+
+func (f *sourcePackageInformer) TypedInformer() SourcePackageIndexInformer {
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.SourcePackage](f.factory.InformerFor(&apiskfv1alpha1.SourcePackage{}, f.defaultInformer))
 }
 
 func (f *sourcePackageInformer) Lister() kfv1alpha1.SourcePackageLister {
 	return kfv1alpha1.NewSourcePackageLister(f.Informer().GetIndexer())
+}
+
+// ToTypedSourcePackageInformer converts an untyped informer into a TypedSourcePackageInformer.
+//
+// WARNING: this conversion is only safe if the informer handles objects of type
+// *SourcePackage. If that is not the case, calling type-safe methods of the returned
+// TypedSourcePackageInformer leads to runtime panics. A safer alternative is to pass
+// around a TypedSourcePackageInformer instances that was obtained from a
+// SharedInformerFactory.
+func ToTypedSourcePackageInformer(informer SourcePackageInformer) TypedSourcePackageInformer {
+	if informer, ok := informer.(TypedSourcePackageInformer); ok {
+		return informer
+	}
+	return &sourcePackageTypedInformerAdapter{informer}
+}
+
+type sourcePackageTypedInformerAdapter struct {
+	SourcePackageInformer
+}
+
+func (a *sourcePackageTypedInformerAdapter) TypedInformer() SourcePackageIndexInformer {
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.SourcePackage](a.Informer())
+}
+
+// ToSourcePackageIndexInformer converts an untyped informer into a SourcePackageIndexInformer.
+//
+// WARNING: this conversion is only safe if the informer handles objects of type
+// *SourcePackage. If that is not the case, calling type-safe methods of the returned
+// SourcePackageIndexInformer leads to runtime panics. A safer alternative is to pass
+// around a SourcePackageIndexInformer instances that was obtained from a
+// SharedInformerFactory.
+func ToSourcePackageIndexInformer(informer cache.SharedIndexInformer) SourcePackageIndexInformer {
+	if informer, ok := informer.(SourcePackageIndexInformer); ok {
+		return informer
+	}
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.SourcePackage](informer)
 }

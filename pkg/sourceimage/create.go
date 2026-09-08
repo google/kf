@@ -311,10 +311,7 @@ func BuildIgnoreFilter(srcPath string) (FileFilter, error) {
 	}
 
 	if gitignore == nil {
-		gitignore, err = ignore.CompileIgnoreLines(defaultIgnoreLines...)
-		if err != nil {
-			return nil, err
-		}
+		gitignore = ignore.CompileIgnoreLines(defaultIgnoreLines...)
 	}
 
 	return func(path string) bool {

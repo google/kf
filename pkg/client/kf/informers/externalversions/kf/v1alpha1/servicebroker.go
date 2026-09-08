@@ -32,11 +32,39 @@ import (
 )
 
 // ServiceBrokerInformer provides access to a shared informer and lister for
-// ServiceBrokers.
+// ServiceBrokers. Prefer using the type-safe variant (see [TypedServiceBrokerInformer]).
 type ServiceBrokerInformer interface {
 	Informer() cache.SharedIndexInformer
 	Lister() kfv1alpha1.ServiceBrokerLister
 }
+
+// TypedServiceBrokerInformer provides access to a shared informer and lister for
+// ServiceBrokers, including the type-safe TypedInformer variant.
+// It is a superset of ServiceBrokerInformer.
+type TypedServiceBrokerInformer interface {
+	Informer() cache.SharedIndexInformer
+	TypedInformer() ServiceBrokerIndexInformer
+	Lister() kfv1alpha1.ServiceBrokerLister
+}
+
+// ServiceBrokerIndexInformer is a wrapper around the underlying [cache.SharedIndexInformer]
+// with type-safe variants of several methods.
+type ServiceBrokerIndexInformer cache.TypedSharedIndexInformer[*apiskfv1alpha1.ServiceBroker]
+
+// ServiceBrokerHandlerFuncs is a specialization of [cache.TypedResourceEventHandlerFuncs] for ServiceBroker.
+type ServiceBrokerHandlerFuncs = cache.TypedResourceEventHandlerFuncs[*apiskfv1alpha1.ServiceBroker]
+
+// ServiceBrokerDetailedHandlerFuncs is a specialization of [cache.TypedResourceEventHandlerDetailedFuncs] for ServiceBroker.
+type ServiceBrokerDetailedHandlerFuncs = cache.TypedResourceEventHandlerDetailedFuncs[*apiskfv1alpha1.ServiceBroker]
+
+// ServiceBrokerFilteringHandler is a specialization of [cache.TypedFilteringResourceEventHandler] for ServiceBroker.
+type ServiceBrokerFilteringHandler = cache.TypedFilteringResourceEventHandler[*apiskfv1alpha1.ServiceBroker]
+
+// ServiceBrokerIndexers is a specialization of [cache.TypedIndexers] for ServiceBroker.
+type ServiceBrokerIndexers = cache.TypedIndexers[*apiskfv1alpha1.ServiceBroker]
+
+// DeletedServiceBroker is a specialization of [cache.DeletedObject] for ServiceBroker.
+type DeletedServiceBroker = cache.DeletedObject[*apiskfv1alpha1.ServiceBroker]
 
 type serviceBrokerInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
@@ -47,25 +75,49 @@ type serviceBrokerInformer struct {
 // NewServiceBrokerInformer constructs a new informer for ServiceBroker type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedServiceBrokerInformer]).
 func NewServiceBrokerInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
 	return NewServiceBrokerInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers})
+}
+
+// NewTypedServiceBrokerInformer constructs a new informer for ServiceBroker type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedServiceBrokerInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers ServiceBrokerIndexers) ServiceBrokerIndexInformer {
+	return NewTypedServiceBrokerInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.TypedIndexersToIndexers(indexers)})
 }
 
 // NewFilteredServiceBrokerInformer constructs a new informer for ServiceBroker type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedFilteredServiceBrokerInformer]).
 func NewFilteredServiceBrokerInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
-	return NewServiceBrokerInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+	return NewTypedServiceBrokerInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+}
+
+// NewTypedFilteredServiceBrokerInformer constructs a new informer for ServiceBroker type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedFilteredServiceBrokerInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers ServiceBrokerIndexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) ServiceBrokerIndexInformer {
+	return NewTypedServiceBrokerInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.TypedIndexersToIndexers(indexers), TweakListOptions: tweakListOptions})
 }
 
 // NewServiceBrokerInformerWithOptions constructs a new informer for ServiceBroker type with additional options.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedServiceBrokerInformerWithOptions]).
 func NewServiceBrokerInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) cache.SharedIndexInformer {
+	return NewTypedServiceBrokerInformerWithOptions(client, namespace, options)
+}
+
+// NewTypedServiceBrokerInformerWithOptions constructs a new informer for ServiceBroker type with additional options.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedServiceBrokerInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) ServiceBrokerIndexInformer {
 	gvr := schema.GroupVersionResource{Group: "kf.dev", Version: "v1alpha1", Resource: "servicebrokers"}
 	identifier := options.InformerName.WithResource(gvr)
 	tweakListOptions := options.TweakListOptions
-	return cache.NewSharedIndexInformerWithOptions(
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.ServiceBroker](cache.NewSharedIndexInformerWithOptions(
 		cache.ToListWatcherWithWatchListSemantics(&cache.ListWatch{
 			ListFunc: func(opts v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
@@ -98,17 +150,57 @@ func NewServiceBrokerInformerWithOptions(client versioned.Interface, namespace s
 			Indexers:     options.Indexers,
 			Identifier:   identifier,
 		},
-	)
+	))
 }
 
 func (f *serviceBrokerInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewServiceBrokerInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
+	return NewTypedServiceBrokerInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
 }
 
 func (f *serviceBrokerInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&apiskfv1alpha1.ServiceBroker{}, f.defaultInformer)
+	return f.TypedInformer()
+}
+
+func (f *serviceBrokerInformer) TypedInformer() ServiceBrokerIndexInformer {
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.ServiceBroker](f.factory.InformerFor(&apiskfv1alpha1.ServiceBroker{}, f.defaultInformer))
 }
 
 func (f *serviceBrokerInformer) Lister() kfv1alpha1.ServiceBrokerLister {
 	return kfv1alpha1.NewServiceBrokerLister(f.Informer().GetIndexer())
+}
+
+// ToTypedServiceBrokerInformer converts an untyped informer into a TypedServiceBrokerInformer.
+//
+// WARNING: this conversion is only safe if the informer handles objects of type
+// *ServiceBroker. If that is not the case, calling type-safe methods of the returned
+// TypedServiceBrokerInformer leads to runtime panics. A safer alternative is to pass
+// around a TypedServiceBrokerInformer instances that was obtained from a
+// SharedInformerFactory.
+func ToTypedServiceBrokerInformer(informer ServiceBrokerInformer) TypedServiceBrokerInformer {
+	if informer, ok := informer.(TypedServiceBrokerInformer); ok {
+		return informer
+	}
+	return &serviceBrokerTypedInformerAdapter{informer}
+}
+
+type serviceBrokerTypedInformerAdapter struct {
+	ServiceBrokerInformer
+}
+
+func (a *serviceBrokerTypedInformerAdapter) TypedInformer() ServiceBrokerIndexInformer {
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.ServiceBroker](a.Informer())
+}
+
+// ToServiceBrokerIndexInformer converts an untyped informer into a ServiceBrokerIndexInformer.
+//
+// WARNING: this conversion is only safe if the informer handles objects of type
+// *ServiceBroker. If that is not the case, calling type-safe methods of the returned
+// ServiceBrokerIndexInformer leads to runtime panics. A safer alternative is to pass
+// around a ServiceBrokerIndexInformer instances that was obtained from a
+// SharedInformerFactory.
+func ToServiceBrokerIndexInformer(informer cache.SharedIndexInformer) ServiceBrokerIndexInformer {
+	if informer, ok := informer.(ServiceBrokerIndexInformer); ok {
+		return informer
+	}
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.ServiceBroker](informer)
 }

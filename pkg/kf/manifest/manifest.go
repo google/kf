@@ -25,9 +25,9 @@ import (
 	"sort"
 	"strings"
 
+	"dario.cat/mergo"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/internal/envutil"
-	"github.com/imdario/mergo"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"knative.dev/pkg/kmp"

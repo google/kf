@@ -32,11 +32,39 @@ import (
 )
 
 // ServiceInstanceBindingInformer provides access to a shared informer and lister for
-// ServiceInstanceBindings.
+// ServiceInstanceBindings. Prefer using the type-safe variant (see [TypedServiceInstanceBindingInformer]).
 type ServiceInstanceBindingInformer interface {
 	Informer() cache.SharedIndexInformer
 	Lister() kfv1alpha1.ServiceInstanceBindingLister
 }
+
+// TypedServiceInstanceBindingInformer provides access to a shared informer and lister for
+// ServiceInstanceBindings, including the type-safe TypedInformer variant.
+// It is a superset of ServiceInstanceBindingInformer.
+type TypedServiceInstanceBindingInformer interface {
+	Informer() cache.SharedIndexInformer
+	TypedInformer() ServiceInstanceBindingIndexInformer
+	Lister() kfv1alpha1.ServiceInstanceBindingLister
+}
+
+// ServiceInstanceBindingIndexInformer is a wrapper around the underlying [cache.SharedIndexInformer]
+// with type-safe variants of several methods.
+type ServiceInstanceBindingIndexInformer cache.TypedSharedIndexInformer[*apiskfv1alpha1.ServiceInstanceBinding]
+
+// ServiceInstanceBindingHandlerFuncs is a specialization of [cache.TypedResourceEventHandlerFuncs] for ServiceInstanceBinding.
+type ServiceInstanceBindingHandlerFuncs = cache.TypedResourceEventHandlerFuncs[*apiskfv1alpha1.ServiceInstanceBinding]
+
+// ServiceInstanceBindingDetailedHandlerFuncs is a specialization of [cache.TypedResourceEventHandlerDetailedFuncs] for ServiceInstanceBinding.
+type ServiceInstanceBindingDetailedHandlerFuncs = cache.TypedResourceEventHandlerDetailedFuncs[*apiskfv1alpha1.ServiceInstanceBinding]
+
+// ServiceInstanceBindingFilteringHandler is a specialization of [cache.TypedFilteringResourceEventHandler] for ServiceInstanceBinding.
+type ServiceInstanceBindingFilteringHandler = cache.TypedFilteringResourceEventHandler[*apiskfv1alpha1.ServiceInstanceBinding]
+
+// ServiceInstanceBindingIndexers is a specialization of [cache.TypedIndexers] for ServiceInstanceBinding.
+type ServiceInstanceBindingIndexers = cache.TypedIndexers[*apiskfv1alpha1.ServiceInstanceBinding]
+
+// DeletedServiceInstanceBinding is a specialization of [cache.DeletedObject] for ServiceInstanceBinding.
+type DeletedServiceInstanceBinding = cache.DeletedObject[*apiskfv1alpha1.ServiceInstanceBinding]
 
 type serviceInstanceBindingInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
@@ -47,25 +75,49 @@ type serviceInstanceBindingInformer struct {
 // NewServiceInstanceBindingInformer constructs a new informer for ServiceInstanceBinding type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedServiceInstanceBindingInformer]).
 func NewServiceInstanceBindingInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
 	return NewServiceInstanceBindingInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers})
+}
+
+// NewTypedServiceInstanceBindingInformer constructs a new informer for ServiceInstanceBinding type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedServiceInstanceBindingInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers ServiceInstanceBindingIndexers) ServiceInstanceBindingIndexInformer {
+	return NewTypedServiceInstanceBindingInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.TypedIndexersToIndexers(indexers)})
 }
 
 // NewFilteredServiceInstanceBindingInformer constructs a new informer for ServiceInstanceBinding type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedFilteredServiceInstanceBindingInformer]).
 func NewFilteredServiceInstanceBindingInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
-	return NewServiceInstanceBindingInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+	return NewTypedServiceInstanceBindingInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+}
+
+// NewTypedFilteredServiceInstanceBindingInformer constructs a new informer for ServiceInstanceBinding type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedFilteredServiceInstanceBindingInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers ServiceInstanceBindingIndexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) ServiceInstanceBindingIndexInformer {
+	return NewTypedServiceInstanceBindingInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.TypedIndexersToIndexers(indexers), TweakListOptions: tweakListOptions})
 }
 
 // NewServiceInstanceBindingInformerWithOptions constructs a new informer for ServiceInstanceBinding type with additional options.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedServiceInstanceBindingInformerWithOptions]).
 func NewServiceInstanceBindingInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) cache.SharedIndexInformer {
+	return NewTypedServiceInstanceBindingInformerWithOptions(client, namespace, options)
+}
+
+// NewTypedServiceInstanceBindingInformerWithOptions constructs a new informer for ServiceInstanceBinding type with additional options.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedServiceInstanceBindingInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) ServiceInstanceBindingIndexInformer {
 	gvr := schema.GroupVersionResource{Group: "kf.dev", Version: "v1alpha1", Resource: "serviceinstancebindings"}
 	identifier := options.InformerName.WithResource(gvr)
 	tweakListOptions := options.TweakListOptions
-	return cache.NewSharedIndexInformerWithOptions(
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.ServiceInstanceBinding](cache.NewSharedIndexInformerWithOptions(
 		cache.ToListWatcherWithWatchListSemantics(&cache.ListWatch{
 			ListFunc: func(opts v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
@@ -98,17 +150,57 @@ func NewServiceInstanceBindingInformerWithOptions(client versioned.Interface, na
 			Indexers:     options.Indexers,
 			Identifier:   identifier,
 		},
-	)
+	))
 }
 
 func (f *serviceInstanceBindingInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewServiceInstanceBindingInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
+	return NewTypedServiceInstanceBindingInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
 }
 
 func (f *serviceInstanceBindingInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&apiskfv1alpha1.ServiceInstanceBinding{}, f.defaultInformer)
+	return f.TypedInformer()
+}
+
+func (f *serviceInstanceBindingInformer) TypedInformer() ServiceInstanceBindingIndexInformer {
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.ServiceInstanceBinding](f.factory.InformerFor(&apiskfv1alpha1.ServiceInstanceBinding{}, f.defaultInformer))
 }
 
 func (f *serviceInstanceBindingInformer) Lister() kfv1alpha1.ServiceInstanceBindingLister {
 	return kfv1alpha1.NewServiceInstanceBindingLister(f.Informer().GetIndexer())
+}
+
+// ToTypedServiceInstanceBindingInformer converts an untyped informer into a TypedServiceInstanceBindingInformer.
+//
+// WARNING: this conversion is only safe if the informer handles objects of type
+// *ServiceInstanceBinding. If that is not the case, calling type-safe methods of the returned
+// TypedServiceInstanceBindingInformer leads to runtime panics. A safer alternative is to pass
+// around a TypedServiceInstanceBindingInformer instances that was obtained from a
+// SharedInformerFactory.
+func ToTypedServiceInstanceBindingInformer(informer ServiceInstanceBindingInformer) TypedServiceInstanceBindingInformer {
+	if informer, ok := informer.(TypedServiceInstanceBindingInformer); ok {
+		return informer
+	}
+	return &serviceInstanceBindingTypedInformerAdapter{informer}
+}
+
+type serviceInstanceBindingTypedInformerAdapter struct {
+	ServiceInstanceBindingInformer
+}
+
+func (a *serviceInstanceBindingTypedInformerAdapter) TypedInformer() ServiceInstanceBindingIndexInformer {
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.ServiceInstanceBinding](a.Informer())
+}
+
+// ToServiceInstanceBindingIndexInformer converts an untyped informer into a ServiceInstanceBindingIndexInformer.
+//
+// WARNING: this conversion is only safe if the informer handles objects of type
+// *ServiceInstanceBinding. If that is not the case, calling type-safe methods of the returned
+// ServiceInstanceBindingIndexInformer leads to runtime panics. A safer alternative is to pass
+// around a ServiceInstanceBindingIndexInformer instances that was obtained from a
+// SharedInformerFactory.
+func ToServiceInstanceBindingIndexInformer(informer cache.SharedIndexInformer) ServiceInstanceBindingIndexInformer {
+	if informer, ok := informer.(ServiceInstanceBindingIndexInformer); ok {
+		return informer
+	}
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.ServiceInstanceBinding](informer)
 }

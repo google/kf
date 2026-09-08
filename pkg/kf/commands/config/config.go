@@ -26,12 +26,12 @@ import (
 	"path"
 	"sync"
 
+	"dario.cat/mergo"
 	kfconfig "github.com/google/kf/v2/pkg/apis/kf/config"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	kf "github.com/google/kf/v2/pkg/client/kf/clientset/versioned/typed/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/kf/injection"
 	utils "github.com/google/kf/v2/pkg/kf/internal/utils/cli"
-	"github.com/imdario/mergo"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"

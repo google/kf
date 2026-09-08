@@ -1,6 +1,6 @@
 module github.com/google/docsy-example
 
-go 1.12
+go 1.26.6
 
 require (
 	github.com/FortAwesome/Font-Awesome v0.0.0-20210804190922-7d3d774145ac // indirect

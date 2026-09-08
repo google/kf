@@ -20,6 +20,7 @@ import (
 	"runtime"
 	"sync"
 
+	"dario.cat/mergo"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/kf/commands/completion"
 	"github.com/google/kf/v2/pkg/kf/commands/config"
@@ -31,7 +32,6 @@ import (
 	"github.com/google/kf/v2/pkg/kf/doctor/troubleshooter"
 	utils "github.com/google/kf/v2/pkg/kf/internal/utils/cli"
 	"github.com/google/kf/v2/third_party/k8s.io/kubectl/pkg/util/templates"
-	"github.com/imdario/mergo"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

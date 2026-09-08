@@ -23,9 +23,9 @@ import (
 // Interface provides access to all the informers in this group version.
 type Interface interface {
 	// ServiceEntries returns a ServiceEntryInformer.
-	ServiceEntries() ServiceEntryInformer
+	ServiceEntries() TypedServiceEntryInformer
 	// VirtualServices returns a VirtualServiceInformer.
-	VirtualServices() VirtualServiceInformer
+	VirtualServices() TypedVirtualServiceInformer
 }
 
 type version struct {
@@ -39,12 +39,12 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
-// ServiceEntries returns a ServiceEntryInformer.
-func (v *version) ServiceEntries() ServiceEntryInformer {
+// ServiceEntries returns a TypedServiceEntryInformer.
+func (v *version) ServiceEntries() TypedServiceEntryInformer {
 	return &serviceEntryInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// VirtualServices returns a VirtualServiceInformer.
-func (v *version) VirtualServices() VirtualServiceInformer {
+// VirtualServices returns a TypedVirtualServiceInformer.
+func (v *version) VirtualServices() TypedVirtualServiceInformer {
 	return &virtualServiceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

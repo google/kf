@@ -1,6 +1,6 @@
 module code.cloudfoundry.org/buildpackapplifecycle
 
-go 1.25.0
+go 1.26.6
 
 require (
 	code.cloudfoundry.org/archiver v0.0.0-20210922154202-074be9d9bcda
@@ -9,7 +9,7 @@ require (
 	code.cloudfoundry.org/credhub-cli v0.0.0-20210922204850-e4696d9a0b35
 	code.cloudfoundry.org/goshims v0.6.0
 	code.cloudfoundry.org/lager v2.0.0+incompatible
-	golang.org/x/sys v0.45.0
+	golang.org/x/sys v0.47.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -19,6 +19,6 @@ require (
 	github.com/cloudfoundry/socks5-proxy v0.2.14 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.1 // indirect
 	github.com/hashicorp/go-version v1.3.0 // indirect
-	golang.org/x/crypto v0.52.0 // indirect
-	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/crypto v0.55.0 // indirect
+	golang.org/x/net v0.58.0 // indirect
 )

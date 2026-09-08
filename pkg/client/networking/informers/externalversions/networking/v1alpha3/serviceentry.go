@@ -32,11 +32,39 @@ import (
 )
 
 // ServiceEntryInformer provides access to a shared informer and lister for
-// ServiceEntries.
+// ServiceEntries. Prefer using the type-safe variant (see [TypedServiceEntryInformer]).
 type ServiceEntryInformer interface {
 	Informer() cache.SharedIndexInformer
 	Lister() networkingv1alpha3.ServiceEntryLister
 }
+
+// TypedServiceEntryInformer provides access to a shared informer and lister for
+// ServiceEntries, including the type-safe TypedInformer variant.
+// It is a superset of ServiceEntryInformer.
+type TypedServiceEntryInformer interface {
+	Informer() cache.SharedIndexInformer
+	TypedInformer() ServiceEntryIndexInformer
+	Lister() networkingv1alpha3.ServiceEntryLister
+}
+
+// ServiceEntryIndexInformer is a wrapper around the underlying [cache.SharedIndexInformer]
+// with type-safe variants of several methods.
+type ServiceEntryIndexInformer cache.TypedSharedIndexInformer[*apisnetworkingv1alpha3.ServiceEntry]
+
+// ServiceEntryHandlerFuncs is a specialization of [cache.TypedResourceEventHandlerFuncs] for ServiceEntry.
+type ServiceEntryHandlerFuncs = cache.TypedResourceEventHandlerFuncs[*apisnetworkingv1alpha3.ServiceEntry]
+
+// ServiceEntryDetailedHandlerFuncs is a specialization of [cache.TypedResourceEventHandlerDetailedFuncs] for ServiceEntry.
+type ServiceEntryDetailedHandlerFuncs = cache.TypedResourceEventHandlerDetailedFuncs[*apisnetworkingv1alpha3.ServiceEntry]
+
+// ServiceEntryFilteringHandler is a specialization of [cache.TypedFilteringResourceEventHandler] for ServiceEntry.
+type ServiceEntryFilteringHandler = cache.TypedFilteringResourceEventHandler[*apisnetworkingv1alpha3.ServiceEntry]
+
+// ServiceEntryIndexers is a specialization of [cache.TypedIndexers] for ServiceEntry.
+type ServiceEntryIndexers = cache.TypedIndexers[*apisnetworkingv1alpha3.ServiceEntry]
+
+// DeletedServiceEntry is a specialization of [cache.DeletedObject] for ServiceEntry.
+type DeletedServiceEntry = cache.DeletedObject[*apisnetworkingv1alpha3.ServiceEntry]
 
 type serviceEntryInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
@@ -47,25 +75,49 @@ type serviceEntryInformer struct {
 // NewServiceEntryInformer constructs a new informer for ServiceEntry type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedServiceEntryInformer]).
 func NewServiceEntryInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
 	return NewServiceEntryInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers})
+}
+
+// NewTypedServiceEntryInformer constructs a new informer for ServiceEntry type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedServiceEntryInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers ServiceEntryIndexers) ServiceEntryIndexInformer {
+	return NewTypedServiceEntryInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.TypedIndexersToIndexers(indexers)})
 }
 
 // NewFilteredServiceEntryInformer constructs a new informer for ServiceEntry type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedFilteredServiceEntryInformer]).
 func NewFilteredServiceEntryInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
-	return NewServiceEntryInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+	return NewTypedServiceEntryInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+}
+
+// NewTypedFilteredServiceEntryInformer constructs a new informer for ServiceEntry type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedFilteredServiceEntryInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers ServiceEntryIndexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) ServiceEntryIndexInformer {
+	return NewTypedServiceEntryInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.TypedIndexersToIndexers(indexers), TweakListOptions: tweakListOptions})
 }
 
 // NewServiceEntryInformerWithOptions constructs a new informer for ServiceEntry type with additional options.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedServiceEntryInformerWithOptions]).
 func NewServiceEntryInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) cache.SharedIndexInformer {
+	return NewTypedServiceEntryInformerWithOptions(client, namespace, options)
+}
+
+// NewTypedServiceEntryInformerWithOptions constructs a new informer for ServiceEntry type with additional options.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedServiceEntryInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) ServiceEntryIndexInformer {
 	gvr := schema.GroupVersionResource{Group: "networking.istio.io", Version: "v1alpha3", Resource: "serviceentrys"}
 	identifier := options.InformerName.WithResource(gvr)
 	tweakListOptions := options.TweakListOptions
-	return cache.NewSharedIndexInformerWithOptions(
+	return cache.NewTypedSharedIndexInformer[*apisnetworkingv1alpha3.ServiceEntry](cache.NewSharedIndexInformerWithOptions(
 		cache.ToListWatcherWithWatchListSemantics(&cache.ListWatch{
 			ListFunc: func(opts v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
@@ -98,17 +150,57 @@ func NewServiceEntryInformerWithOptions(client versioned.Interface, namespace st
 			Indexers:     options.Indexers,
 			Identifier:   identifier,
 		},
-	)
+	))
 }
 
 func (f *serviceEntryInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewServiceEntryInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
+	return NewTypedServiceEntryInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
 }
 
 func (f *serviceEntryInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&apisnetworkingv1alpha3.ServiceEntry{}, f.defaultInformer)
+	return f.TypedInformer()
+}
+
+func (f *serviceEntryInformer) TypedInformer() ServiceEntryIndexInformer {
+	return cache.NewTypedSharedIndexInformer[*apisnetworkingv1alpha3.ServiceEntry](f.factory.InformerFor(&apisnetworkingv1alpha3.ServiceEntry{}, f.defaultInformer))
 }
 
 func (f *serviceEntryInformer) Lister() networkingv1alpha3.ServiceEntryLister {
 	return networkingv1alpha3.NewServiceEntryLister(f.Informer().GetIndexer())
+}
+
+// ToTypedServiceEntryInformer converts an untyped informer into a TypedServiceEntryInformer.
+//
+// WARNING: this conversion is only safe if the informer handles objects of type
+// *ServiceEntry. If that is not the case, calling type-safe methods of the returned
+// TypedServiceEntryInformer leads to runtime panics. A safer alternative is to pass
+// around a TypedServiceEntryInformer instances that was obtained from a
+// SharedInformerFactory.
+func ToTypedServiceEntryInformer(informer ServiceEntryInformer) TypedServiceEntryInformer {
+	if informer, ok := informer.(TypedServiceEntryInformer); ok {
+		return informer
+	}
+	return &serviceEntryTypedInformerAdapter{informer}
+}
+
+type serviceEntryTypedInformerAdapter struct {
+	ServiceEntryInformer
+}
+
+func (a *serviceEntryTypedInformerAdapter) TypedInformer() ServiceEntryIndexInformer {
+	return cache.NewTypedSharedIndexInformer[*apisnetworkingv1alpha3.ServiceEntry](a.Informer())
+}
+
+// ToServiceEntryIndexInformer converts an untyped informer into a ServiceEntryIndexInformer.
+//
+// WARNING: this conversion is only safe if the informer handles objects of type
+// *ServiceEntry. If that is not the case, calling type-safe methods of the returned
+// ServiceEntryIndexInformer leads to runtime panics. A safer alternative is to pass
+// around a ServiceEntryIndexInformer instances that was obtained from a
+// SharedInformerFactory.
+func ToServiceEntryIndexInformer(informer cache.SharedIndexInformer) ServiceEntryIndexInformer {
+	if informer, ok := informer.(ServiceEntryIndexInformer); ok {
+		return informer
+	}
+	return cache.NewTypedSharedIndexInformer[*apisnetworkingv1alpha3.ServiceEntry](informer)
 }

@@ -18,7 +18,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alessio/shellescape"
+	"al.essio.dev/pkg/shellescape"
 	"github.com/google/kf/v2/pkg/apis/kf/config"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	appresources "github.com/google/kf/v2/pkg/reconciler/app/resources"

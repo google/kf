@@ -32,11 +32,39 @@ import (
 )
 
 // TaskInformer provides access to a shared informer and lister for
-// Tasks.
+// Tasks. Prefer using the type-safe variant (see [TypedTaskInformer]).
 type TaskInformer interface {
 	Informer() cache.SharedIndexInformer
 	Lister() kfv1alpha1.TaskLister
 }
+
+// TypedTaskInformer provides access to a shared informer and lister for
+// Tasks, including the type-safe TypedInformer variant.
+// It is a superset of TaskInformer.
+type TypedTaskInformer interface {
+	Informer() cache.SharedIndexInformer
+	TypedInformer() TaskIndexInformer
+	Lister() kfv1alpha1.TaskLister
+}
+
+// TaskIndexInformer is a wrapper around the underlying [cache.SharedIndexInformer]
+// with type-safe variants of several methods.
+type TaskIndexInformer cache.TypedSharedIndexInformer[*apiskfv1alpha1.Task]
+
+// TaskHandlerFuncs is a specialization of [cache.TypedResourceEventHandlerFuncs] for Task.
+type TaskHandlerFuncs = cache.TypedResourceEventHandlerFuncs[*apiskfv1alpha1.Task]
+
+// TaskDetailedHandlerFuncs is a specialization of [cache.TypedResourceEventHandlerDetailedFuncs] for Task.
+type TaskDetailedHandlerFuncs = cache.TypedResourceEventHandlerDetailedFuncs[*apiskfv1alpha1.Task]
+
+// TaskFilteringHandler is a specialization of [cache.TypedFilteringResourceEventHandler] for Task.
+type TaskFilteringHandler = cache.TypedFilteringResourceEventHandler[*apiskfv1alpha1.Task]
+
+// TaskIndexers is a specialization of [cache.TypedIndexers] for Task.
+type TaskIndexers = cache.TypedIndexers[*apiskfv1alpha1.Task]
+
+// DeletedTask is a specialization of [cache.DeletedObject] for Task.
+type DeletedTask = cache.DeletedObject[*apiskfv1alpha1.Task]
 
 type taskInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
@@ -47,25 +75,49 @@ type taskInformer struct {
 // NewTaskInformer constructs a new informer for Task type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedTaskInformer]).
 func NewTaskInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
 	return NewTaskInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers})
+}
+
+// NewTypedTaskInformer constructs a new informer for Task type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedTaskInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers TaskIndexers) TaskIndexInformer {
+	return NewTypedTaskInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.TypedIndexersToIndexers(indexers)})
 }
 
 // NewFilteredTaskInformer constructs a new informer for Task type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedFilteredTaskInformer]).
 func NewFilteredTaskInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
-	return NewTaskInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+	return NewTypedTaskInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+}
+
+// NewTypedFilteredTaskInformer constructs a new informer for Task type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedFilteredTaskInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers TaskIndexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) TaskIndexInformer {
+	return NewTypedTaskInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.TypedIndexersToIndexers(indexers), TweakListOptions: tweakListOptions})
 }
 
 // NewTaskInformerWithOptions constructs a new informer for Task type with additional options.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedTaskInformerWithOptions]).
 func NewTaskInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) cache.SharedIndexInformer {
+	return NewTypedTaskInformerWithOptions(client, namespace, options)
+}
+
+// NewTypedTaskInformerWithOptions constructs a new informer for Task type with additional options.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedTaskInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) TaskIndexInformer {
 	gvr := schema.GroupVersionResource{Group: "kf.dev", Version: "v1alpha1", Resource: "tasks"}
 	identifier := options.InformerName.WithResource(gvr)
 	tweakListOptions := options.TweakListOptions
-	return cache.NewSharedIndexInformerWithOptions(
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.Task](cache.NewSharedIndexInformerWithOptions(
 		cache.ToListWatcherWithWatchListSemantics(&cache.ListWatch{
 			ListFunc: func(opts v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
@@ -98,17 +150,57 @@ func NewTaskInformerWithOptions(client versioned.Interface, namespace string, op
 			Indexers:     options.Indexers,
 			Identifier:   identifier,
 		},
-	)
+	))
 }
 
 func (f *taskInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewTaskInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
+	return NewTypedTaskInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
 }
 
 func (f *taskInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&apiskfv1alpha1.Task{}, f.defaultInformer)
+	return f.TypedInformer()
+}
+
+func (f *taskInformer) TypedInformer() TaskIndexInformer {
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.Task](f.factory.InformerFor(&apiskfv1alpha1.Task{}, f.defaultInformer))
 }
 
 func (f *taskInformer) Lister() kfv1alpha1.TaskLister {
 	return kfv1alpha1.NewTaskLister(f.Informer().GetIndexer())
+}
+
+// ToTypedTaskInformer converts an untyped informer into a TypedTaskInformer.
+//
+// WARNING: this conversion is only safe if the informer handles objects of type
+// *Task. If that is not the case, calling type-safe methods of the returned
+// TypedTaskInformer leads to runtime panics. A safer alternative is to pass
+// around a TypedTaskInformer instances that was obtained from a
+// SharedInformerFactory.
+func ToTypedTaskInformer(informer TaskInformer) TypedTaskInformer {
+	if informer, ok := informer.(TypedTaskInformer); ok {
+		return informer
+	}
+	return &taskTypedInformerAdapter{informer}
+}
+
+type taskTypedInformerAdapter struct {
+	TaskInformer
+}
+
+func (a *taskTypedInformerAdapter) TypedInformer() TaskIndexInformer {
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.Task](a.Informer())
+}
+
+// ToTaskIndexInformer converts an untyped informer into a TaskIndexInformer.
+//
+// WARNING: this conversion is only safe if the informer handles objects of type
+// *Task. If that is not the case, calling type-safe methods of the returned
+// TaskIndexInformer leads to runtime panics. A safer alternative is to pass
+// around a TaskIndexInformer instances that was obtained from a
+// SharedInformerFactory.
+func ToTaskIndexInformer(informer cache.SharedIndexInformer) TaskIndexInformer {
+	if informer, ok := informer.(TaskIndexInformer); ok {
+		return informer
+	}
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.Task](informer)
 }

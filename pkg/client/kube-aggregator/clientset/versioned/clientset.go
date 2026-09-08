@@ -27,7 +27,7 @@ import (
 )
 
 type Interface interface {
-	Discovery() discovery.DiscoveryInterface
+	Discovery() discovery.DiscoveryInterfaces
 	ApiregistrationV1() apiregistrationv1.ApiregistrationV1Interface
 }
 
@@ -43,7 +43,7 @@ func (c *Clientset) ApiregistrationV1() apiregistrationv1.ApiregistrationV1Inter
 }
 
 // Discovery retrieves the DiscoveryClient
-func (c *Clientset) Discovery() discovery.DiscoveryInterface {
+func (c *Clientset) Discovery() discovery.DiscoveryInterfaces {
 	if c == nil {
 		return nil
 	}

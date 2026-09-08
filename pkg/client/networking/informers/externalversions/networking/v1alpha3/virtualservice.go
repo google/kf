@@ -32,11 +32,39 @@ import (
 )
 
 // VirtualServiceInformer provides access to a shared informer and lister for
-// VirtualServices.
+// VirtualServices. Prefer using the type-safe variant (see [TypedVirtualServiceInformer]).
 type VirtualServiceInformer interface {
 	Informer() cache.SharedIndexInformer
 	Lister() networkingv1alpha3.VirtualServiceLister
 }
+
+// TypedVirtualServiceInformer provides access to a shared informer and lister for
+// VirtualServices, including the type-safe TypedInformer variant.
+// It is a superset of VirtualServiceInformer.
+type TypedVirtualServiceInformer interface {
+	Informer() cache.SharedIndexInformer
+	TypedInformer() VirtualServiceIndexInformer
+	Lister() networkingv1alpha3.VirtualServiceLister
+}
+
+// VirtualServiceIndexInformer is a wrapper around the underlying [cache.SharedIndexInformer]
+// with type-safe variants of several methods.
+type VirtualServiceIndexInformer cache.TypedSharedIndexInformer[*apisnetworkingv1alpha3.VirtualService]
+
+// VirtualServiceHandlerFuncs is a specialization of [cache.TypedResourceEventHandlerFuncs] for VirtualService.
+type VirtualServiceHandlerFuncs = cache.TypedResourceEventHandlerFuncs[*apisnetworkingv1alpha3.VirtualService]
+
+// VirtualServiceDetailedHandlerFuncs is a specialization of [cache.TypedResourceEventHandlerDetailedFuncs] for VirtualService.
+type VirtualServiceDetailedHandlerFuncs = cache.TypedResourceEventHandlerDetailedFuncs[*apisnetworkingv1alpha3.VirtualService]
+
+// VirtualServiceFilteringHandler is a specialization of [cache.TypedFilteringResourceEventHandler] for VirtualService.
+type VirtualServiceFilteringHandler = cache.TypedFilteringResourceEventHandler[*apisnetworkingv1alpha3.VirtualService]
+
+// VirtualServiceIndexers is a specialization of [cache.TypedIndexers] for VirtualService.
+type VirtualServiceIndexers = cache.TypedIndexers[*apisnetworkingv1alpha3.VirtualService]
+
+// DeletedVirtualService is a specialization of [cache.DeletedObject] for VirtualService.
+type DeletedVirtualService = cache.DeletedObject[*apisnetworkingv1alpha3.VirtualService]
 
 type virtualServiceInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
@@ -47,25 +75,49 @@ type virtualServiceInformer struct {
 // NewVirtualServiceInformer constructs a new informer for VirtualService type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedVirtualServiceInformer]).
 func NewVirtualServiceInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
 	return NewVirtualServiceInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers})
+}
+
+// NewTypedVirtualServiceInformer constructs a new informer for VirtualService type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedVirtualServiceInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers VirtualServiceIndexers) VirtualServiceIndexInformer {
+	return NewTypedVirtualServiceInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.TypedIndexersToIndexers(indexers)})
 }
 
 // NewFilteredVirtualServiceInformer constructs a new informer for VirtualService type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedFilteredVirtualServiceInformer]).
 func NewFilteredVirtualServiceInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
-	return NewVirtualServiceInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+	return NewTypedVirtualServiceInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+}
+
+// NewTypedFilteredVirtualServiceInformer constructs a new informer for VirtualService type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedFilteredVirtualServiceInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers VirtualServiceIndexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) VirtualServiceIndexInformer {
+	return NewTypedVirtualServiceInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.TypedIndexersToIndexers(indexers), TweakListOptions: tweakListOptions})
 }
 
 // NewVirtualServiceInformerWithOptions constructs a new informer for VirtualService type with additional options.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedVirtualServiceInformerWithOptions]).
 func NewVirtualServiceInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) cache.SharedIndexInformer {
+	return NewTypedVirtualServiceInformerWithOptions(client, namespace, options)
+}
+
+// NewTypedVirtualServiceInformerWithOptions constructs a new informer for VirtualService type with additional options.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedVirtualServiceInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) VirtualServiceIndexInformer {
 	gvr := schema.GroupVersionResource{Group: "networking.istio.io", Version: "v1alpha3", Resource: "virtualservices"}
 	identifier := options.InformerName.WithResource(gvr)
 	tweakListOptions := options.TweakListOptions
-	return cache.NewSharedIndexInformerWithOptions(
+	return cache.NewTypedSharedIndexInformer[*apisnetworkingv1alpha3.VirtualService](cache.NewSharedIndexInformerWithOptions(
 		cache.ToListWatcherWithWatchListSemantics(&cache.ListWatch{
 			ListFunc: func(opts v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
@@ -98,17 +150,57 @@ func NewVirtualServiceInformerWithOptions(client versioned.Interface, namespace 
 			Indexers:     options.Indexers,
 			Identifier:   identifier,
 		},
-	)
+	))
 }
 
 func (f *virtualServiceInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewVirtualServiceInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
+	return NewTypedVirtualServiceInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
 }
 
 func (f *virtualServiceInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&apisnetworkingv1alpha3.VirtualService{}, f.defaultInformer)
+	return f.TypedInformer()
+}
+
+func (f *virtualServiceInformer) TypedInformer() VirtualServiceIndexInformer {
+	return cache.NewTypedSharedIndexInformer[*apisnetworkingv1alpha3.VirtualService](f.factory.InformerFor(&apisnetworkingv1alpha3.VirtualService{}, f.defaultInformer))
 }
 
 func (f *virtualServiceInformer) Lister() networkingv1alpha3.VirtualServiceLister {
 	return networkingv1alpha3.NewVirtualServiceLister(f.Informer().GetIndexer())
+}
+
+// ToTypedVirtualServiceInformer converts an untyped informer into a TypedVirtualServiceInformer.
+//
+// WARNING: this conversion is only safe if the informer handles objects of type
+// *VirtualService. If that is not the case, calling type-safe methods of the returned
+// TypedVirtualServiceInformer leads to runtime panics. A safer alternative is to pass
+// around a TypedVirtualServiceInformer instances that was obtained from a
+// SharedInformerFactory.
+func ToTypedVirtualServiceInformer(informer VirtualServiceInformer) TypedVirtualServiceInformer {
+	if informer, ok := informer.(TypedVirtualServiceInformer); ok {
+		return informer
+	}
+	return &virtualServiceTypedInformerAdapter{informer}
+}
+
+type virtualServiceTypedInformerAdapter struct {
+	VirtualServiceInformer
+}
+
+func (a *virtualServiceTypedInformerAdapter) TypedInformer() VirtualServiceIndexInformer {
+	return cache.NewTypedSharedIndexInformer[*apisnetworkingv1alpha3.VirtualService](a.Informer())
+}
+
+// ToVirtualServiceIndexInformer converts an untyped informer into a VirtualServiceIndexInformer.
+//
+// WARNING: this conversion is only safe if the informer handles objects of type
+// *VirtualService. If that is not the case, calling type-safe methods of the returned
+// VirtualServiceIndexInformer leads to runtime panics. A safer alternative is to pass
+// around a VirtualServiceIndexInformer instances that was obtained from a
+// SharedInformerFactory.
+func ToVirtualServiceIndexInformer(informer cache.SharedIndexInformer) VirtualServiceIndexInformer {
+	if informer, ok := informer.(VirtualServiceIndexInformer); ok {
+		return informer
+	}
+	return cache.NewTypedSharedIndexInformer[*apisnetworkingv1alpha3.VirtualService](informer)
 }

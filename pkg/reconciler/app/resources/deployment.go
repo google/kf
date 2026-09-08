@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/alessio/shellescape"
+	"al.essio.dev/pkg/shellescape"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	"github.com/google/kf/v2/pkg/internal/selectorutil"
 	appsv1 "k8s.io/api/apps/v1"

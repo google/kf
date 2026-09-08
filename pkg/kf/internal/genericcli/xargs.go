@@ -24,7 +24,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/alessio/shellescape"
+	"al.essio.dev/pkg/shellescape"
 	"github.com/fatih/color"
 	"github.com/google/kf/v2/pkg/kf/commands/config"
 	"github.com/google/kf/v2/pkg/kf/spaces"

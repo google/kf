@@ -32,11 +32,39 @@ import (
 )
 
 // ServiceInstanceInformer provides access to a shared informer and lister for
-// ServiceInstances.
+// ServiceInstances. Prefer using the type-safe variant (see [TypedServiceInstanceInformer]).
 type ServiceInstanceInformer interface {
 	Informer() cache.SharedIndexInformer
 	Lister() kfv1alpha1.ServiceInstanceLister
 }
+
+// TypedServiceInstanceInformer provides access to a shared informer and lister for
+// ServiceInstances, including the type-safe TypedInformer variant.
+// It is a superset of ServiceInstanceInformer.
+type TypedServiceInstanceInformer interface {
+	Informer() cache.SharedIndexInformer
+	TypedInformer() ServiceInstanceIndexInformer
+	Lister() kfv1alpha1.ServiceInstanceLister
+}
+
+// ServiceInstanceIndexInformer is a wrapper around the underlying [cache.SharedIndexInformer]
+// with type-safe variants of several methods.
+type ServiceInstanceIndexInformer cache.TypedSharedIndexInformer[*apiskfv1alpha1.ServiceInstance]
+
+// ServiceInstanceHandlerFuncs is a specialization of [cache.TypedResourceEventHandlerFuncs] for ServiceInstance.
+type ServiceInstanceHandlerFuncs = cache.TypedResourceEventHandlerFuncs[*apiskfv1alpha1.ServiceInstance]
+
+// ServiceInstanceDetailedHandlerFuncs is a specialization of [cache.TypedResourceEventHandlerDetailedFuncs] for ServiceInstance.
+type ServiceInstanceDetailedHandlerFuncs = cache.TypedResourceEventHandlerDetailedFuncs[*apiskfv1alpha1.ServiceInstance]
+
+// ServiceInstanceFilteringHandler is a specialization of [cache.TypedFilteringResourceEventHandler] for ServiceInstance.
+type ServiceInstanceFilteringHandler = cache.TypedFilteringResourceEventHandler[*apiskfv1alpha1.ServiceInstance]
+
+// ServiceInstanceIndexers is a specialization of [cache.TypedIndexers] for ServiceInstance.
+type ServiceInstanceIndexers = cache.TypedIndexers[*apiskfv1alpha1.ServiceInstance]
+
+// DeletedServiceInstance is a specialization of [cache.DeletedObject] for ServiceInstance.
+type DeletedServiceInstance = cache.DeletedObject[*apiskfv1alpha1.ServiceInstance]
 
 type serviceInstanceInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
@@ -47,25 +75,49 @@ type serviceInstanceInformer struct {
 // NewServiceInstanceInformer constructs a new informer for ServiceInstance type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedServiceInstanceInformer]).
 func NewServiceInstanceInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
 	return NewServiceInstanceInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers})
+}
+
+// NewTypedServiceInstanceInformer constructs a new informer for ServiceInstance type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedServiceInstanceInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers ServiceInstanceIndexers) ServiceInstanceIndexInformer {
+	return NewTypedServiceInstanceInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.TypedIndexersToIndexers(indexers)})
 }
 
 // NewFilteredServiceInstanceInformer constructs a new informer for ServiceInstance type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedFilteredServiceInstanceInformer]).
 func NewFilteredServiceInstanceInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
-	return NewServiceInstanceInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+	return NewTypedServiceInstanceInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+}
+
+// NewTypedFilteredServiceInstanceInformer constructs a new informer for ServiceInstance type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedFilteredServiceInstanceInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers ServiceInstanceIndexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) ServiceInstanceIndexInformer {
+	return NewTypedServiceInstanceInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.TypedIndexersToIndexers(indexers), TweakListOptions: tweakListOptions})
 }
 
 // NewServiceInstanceInformerWithOptions constructs a new informer for ServiceInstance type with additional options.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedServiceInstanceInformerWithOptions]).
 func NewServiceInstanceInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) cache.SharedIndexInformer {
+	return NewTypedServiceInstanceInformerWithOptions(client, namespace, options)
+}
+
+// NewTypedServiceInstanceInformerWithOptions constructs a new informer for ServiceInstance type with additional options.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedServiceInstanceInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) ServiceInstanceIndexInformer {
 	gvr := schema.GroupVersionResource{Group: "kf.dev", Version: "v1alpha1", Resource: "serviceinstances"}
 	identifier := options.InformerName.WithResource(gvr)
 	tweakListOptions := options.TweakListOptions
-	return cache.NewSharedIndexInformerWithOptions(
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.ServiceInstance](cache.NewSharedIndexInformerWithOptions(
 		cache.ToListWatcherWithWatchListSemantics(&cache.ListWatch{
 			ListFunc: func(opts v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
@@ -98,17 +150,57 @@ func NewServiceInstanceInformerWithOptions(client versioned.Interface, namespace
 			Indexers:     options.Indexers,
 			Identifier:   identifier,
 		},
-	)
+	))
 }
 
 func (f *serviceInstanceInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewServiceInstanceInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
+	return NewTypedServiceInstanceInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
 }
 
 func (f *serviceInstanceInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&apiskfv1alpha1.ServiceInstance{}, f.defaultInformer)
+	return f.TypedInformer()
+}
+
+func (f *serviceInstanceInformer) TypedInformer() ServiceInstanceIndexInformer {
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.ServiceInstance](f.factory.InformerFor(&apiskfv1alpha1.ServiceInstance{}, f.defaultInformer))
 }
 
 func (f *serviceInstanceInformer) Lister() kfv1alpha1.ServiceInstanceLister {
 	return kfv1alpha1.NewServiceInstanceLister(f.Informer().GetIndexer())
+}
+
+// ToTypedServiceInstanceInformer converts an untyped informer into a TypedServiceInstanceInformer.
+//
+// WARNING: this conversion is only safe if the informer handles objects of type
+// *ServiceInstance. If that is not the case, calling type-safe methods of the returned
+// TypedServiceInstanceInformer leads to runtime panics. A safer alternative is to pass
+// around a TypedServiceInstanceInformer instances that was obtained from a
+// SharedInformerFactory.
+func ToTypedServiceInstanceInformer(informer ServiceInstanceInformer) TypedServiceInstanceInformer {
+	if informer, ok := informer.(TypedServiceInstanceInformer); ok {
+		return informer
+	}
+	return &serviceInstanceTypedInformerAdapter{informer}
+}
+
+type serviceInstanceTypedInformerAdapter struct {
+	ServiceInstanceInformer
+}
+
+func (a *serviceInstanceTypedInformerAdapter) TypedInformer() ServiceInstanceIndexInformer {
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.ServiceInstance](a.Informer())
+}
+
+// ToServiceInstanceIndexInformer converts an untyped informer into a ServiceInstanceIndexInformer.
+//
+// WARNING: this conversion is only safe if the informer handles objects of type
+// *ServiceInstance. If that is not the case, calling type-safe methods of the returned
+// ServiceInstanceIndexInformer leads to runtime panics. A safer alternative is to pass
+// around a ServiceInstanceIndexInformer instances that was obtained from a
+// SharedInformerFactory.
+func ToServiceInstanceIndexInformer(informer cache.SharedIndexInformer) ServiceInstanceIndexInformer {
+	if informer, ok := informer.(ServiceInstanceIndexInformer); ok {
+		return informer
+	}
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.ServiceInstance](informer)
 }

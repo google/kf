@@ -32,11 +32,39 @@ import (
 )
 
 // AppInformer provides access to a shared informer and lister for
-// Apps.
+// Apps. Prefer using the type-safe variant (see [TypedAppInformer]).
 type AppInformer interface {
 	Informer() cache.SharedIndexInformer
 	Lister() kfv1alpha1.AppLister
 }
+
+// TypedAppInformer provides access to a shared informer and lister for
+// Apps, including the type-safe TypedInformer variant.
+// It is a superset of AppInformer.
+type TypedAppInformer interface {
+	Informer() cache.SharedIndexInformer
+	TypedInformer() AppIndexInformer
+	Lister() kfv1alpha1.AppLister
+}
+
+// AppIndexInformer is a wrapper around the underlying [cache.SharedIndexInformer]
+// with type-safe variants of several methods.
+type AppIndexInformer cache.TypedSharedIndexInformer[*apiskfv1alpha1.App]
+
+// AppHandlerFuncs is a specialization of [cache.TypedResourceEventHandlerFuncs] for App.
+type AppHandlerFuncs = cache.TypedResourceEventHandlerFuncs[*apiskfv1alpha1.App]
+
+// AppDetailedHandlerFuncs is a specialization of [cache.TypedResourceEventHandlerDetailedFuncs] for App.
+type AppDetailedHandlerFuncs = cache.TypedResourceEventHandlerDetailedFuncs[*apiskfv1alpha1.App]
+
+// AppFilteringHandler is a specialization of [cache.TypedFilteringResourceEventHandler] for App.
+type AppFilteringHandler = cache.TypedFilteringResourceEventHandler[*apiskfv1alpha1.App]
+
+// AppIndexers is a specialization of [cache.TypedIndexers] for App.
+type AppIndexers = cache.TypedIndexers[*apiskfv1alpha1.App]
+
+// DeletedApp is a specialization of [cache.DeletedObject] for App.
+type DeletedApp = cache.DeletedObject[*apiskfv1alpha1.App]
 
 type appInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
@@ -47,25 +75,49 @@ type appInformer struct {
 // NewAppInformer constructs a new informer for App type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedAppInformer]).
 func NewAppInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
 	return NewAppInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers})
+}
+
+// NewTypedAppInformer constructs a new informer for App type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedAppInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers AppIndexers) AppIndexInformer {
+	return NewTypedAppInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.TypedIndexersToIndexers(indexers)})
 }
 
 // NewFilteredAppInformer constructs a new informer for App type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedFilteredAppInformer]).
 func NewFilteredAppInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
-	return NewAppInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+	return NewTypedAppInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: indexers, TweakListOptions: tweakListOptions})
+}
+
+// NewTypedFilteredAppInformer constructs a new informer for App type.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedFilteredAppInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers AppIndexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) AppIndexInformer {
+	return NewTypedAppInformerWithOptions(client, namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.TypedIndexersToIndexers(indexers), TweakListOptions: tweakListOptions})
 }
 
 // NewAppInformerWithOptions constructs a new informer for App type with additional options.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
+// If you really need an independent one, prefer using the type-safe variant (see [NewTypedAppInformerWithOptions]).
 func NewAppInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) cache.SharedIndexInformer {
+	return NewTypedAppInformerWithOptions(client, namespace, options)
+}
+
+// NewTypedAppInformerWithOptions constructs a new informer for App type with additional options.
+// Always prefer using an informer factory to get a shared informer instead of getting an independent
+// one. This reduces memory footprint and number of connections to the server.
+func NewTypedAppInformerWithOptions(client versioned.Interface, namespace string, options internalinterfaces.InformerOptions) AppIndexInformer {
 	gvr := schema.GroupVersionResource{Group: "kf.dev", Version: "v1alpha1", Resource: "apps"}
 	identifier := options.InformerName.WithResource(gvr)
 	tweakListOptions := options.TweakListOptions
-	return cache.NewSharedIndexInformerWithOptions(
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.App](cache.NewSharedIndexInformerWithOptions(
 		cache.ToListWatcherWithWatchListSemantics(&cache.ListWatch{
 			ListFunc: func(opts v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
@@ -98,17 +150,57 @@ func NewAppInformerWithOptions(client versioned.Interface, namespace string, opt
 			Indexers:     options.Indexers,
 			Identifier:   identifier,
 		},
-	)
+	))
 }
 
 func (f *appInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewAppInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
+	return NewTypedAppInformerWithOptions(client, f.namespace, internalinterfaces.InformerOptions{ResyncPeriod: resyncPeriod, Indexers: cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, InformerName: f.factory.InformerName(), TweakListOptions: f.tweakListOptions})
 }
 
 func (f *appInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&apiskfv1alpha1.App{}, f.defaultInformer)
+	return f.TypedInformer()
+}
+
+func (f *appInformer) TypedInformer() AppIndexInformer {
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.App](f.factory.InformerFor(&apiskfv1alpha1.App{}, f.defaultInformer))
 }
 
 func (f *appInformer) Lister() kfv1alpha1.AppLister {
 	return kfv1alpha1.NewAppLister(f.Informer().GetIndexer())
+}
+
+// ToTypedAppInformer converts an untyped informer into a TypedAppInformer.
+//
+// WARNING: this conversion is only safe if the informer handles objects of type
+// *App. If that is not the case, calling type-safe methods of the returned
+// TypedAppInformer leads to runtime panics. A safer alternative is to pass
+// around a TypedAppInformer instances that was obtained from a
+// SharedInformerFactory.
+func ToTypedAppInformer(informer AppInformer) TypedAppInformer {
+	if informer, ok := informer.(TypedAppInformer); ok {
+		return informer
+	}
+	return &appTypedInformerAdapter{informer}
+}
+
+type appTypedInformerAdapter struct {
+	AppInformer
+}
+
+func (a *appTypedInformerAdapter) TypedInformer() AppIndexInformer {
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.App](a.Informer())
+}
+
+// ToAppIndexInformer converts an untyped informer into a AppIndexInformer.
+//
+// WARNING: this conversion is only safe if the informer handles objects of type
+// *App. If that is not the case, calling type-safe methods of the returned
+// AppIndexInformer leads to runtime panics. A safer alternative is to pass
+// around a AppIndexInformer instances that was obtained from a
+// SharedInformerFactory.
+func ToAppIndexInformer(informer cache.SharedIndexInformer) AppIndexInformer {
+	if informer, ok := informer.(AppIndexInformer); ok {
+		return informer
+	}
+	return cache.NewTypedSharedIndexInformer[*apiskfv1alpha1.App](informer)
 }

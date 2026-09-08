@@ -23,29 +23,29 @@ import (
 // Interface provides access to all the informers in this group version.
 type Interface interface {
 	// Apps returns a AppInformer.
-	Apps() AppInformer
+	Apps() TypedAppInformer
 	// Builds returns a BuildInformer.
-	Builds() BuildInformer
+	Builds() TypedBuildInformer
 	// ClusterServiceBrokers returns a ClusterServiceBrokerInformer.
-	ClusterServiceBrokers() ClusterServiceBrokerInformer
+	ClusterServiceBrokers() TypedClusterServiceBrokerInformer
 	// Routes returns a RouteInformer.
-	Routes() RouteInformer
+	Routes() TypedRouteInformer
 	// Scales returns a ScaleInformer.
-	Scales() ScaleInformer
+	Scales() TypedScaleInformer
 	// ServiceBrokers returns a ServiceBrokerInformer.
-	ServiceBrokers() ServiceBrokerInformer
+	ServiceBrokers() TypedServiceBrokerInformer
 	// ServiceInstances returns a ServiceInstanceInformer.
-	ServiceInstances() ServiceInstanceInformer
+	ServiceInstances() TypedServiceInstanceInformer
 	// ServiceInstanceBindings returns a ServiceInstanceBindingInformer.
-	ServiceInstanceBindings() ServiceInstanceBindingInformer
+	ServiceInstanceBindings() TypedServiceInstanceBindingInformer
 	// SourcePackages returns a SourcePackageInformer.
-	SourcePackages() SourcePackageInformer
+	SourcePackages() TypedSourcePackageInformer
 	// Spaces returns a SpaceInformer.
-	Spaces() SpaceInformer
+	Spaces() TypedSpaceInformer
 	// Tasks returns a TaskInformer.
-	Tasks() TaskInformer
+	Tasks() TypedTaskInformer
 	// TaskSchedules returns a TaskScheduleInformer.
-	TaskSchedules() TaskScheduleInformer
+	TaskSchedules() TypedTaskScheduleInformer
 }
 
 type version struct {
@@ -59,62 +59,62 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
-// Apps returns a AppInformer.
-func (v *version) Apps() AppInformer {
+// Apps returns a TypedAppInformer.
+func (v *version) Apps() TypedAppInformer {
 	return &appInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// Builds returns a BuildInformer.
-func (v *version) Builds() BuildInformer {
+// Builds returns a TypedBuildInformer.
+func (v *version) Builds() TypedBuildInformer {
 	return &buildInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// ClusterServiceBrokers returns a ClusterServiceBrokerInformer.
-func (v *version) ClusterServiceBrokers() ClusterServiceBrokerInformer {
+// ClusterServiceBrokers returns a TypedClusterServiceBrokerInformer.
+func (v *version) ClusterServiceBrokers() TypedClusterServiceBrokerInformer {
 	return &clusterServiceBrokerInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
-// Routes returns a RouteInformer.
-func (v *version) Routes() RouteInformer {
+// Routes returns a TypedRouteInformer.
+func (v *version) Routes() TypedRouteInformer {
 	return &routeInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// Scales returns a ScaleInformer.
-func (v *version) Scales() ScaleInformer {
+// Scales returns a TypedScaleInformer.
+func (v *version) Scales() TypedScaleInformer {
 	return &scaleInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// ServiceBrokers returns a ServiceBrokerInformer.
-func (v *version) ServiceBrokers() ServiceBrokerInformer {
+// ServiceBrokers returns a TypedServiceBrokerInformer.
+func (v *version) ServiceBrokers() TypedServiceBrokerInformer {
 	return &serviceBrokerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// ServiceInstances returns a ServiceInstanceInformer.
-func (v *version) ServiceInstances() ServiceInstanceInformer {
+// ServiceInstances returns a TypedServiceInstanceInformer.
+func (v *version) ServiceInstances() TypedServiceInstanceInformer {
 	return &serviceInstanceInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// ServiceInstanceBindings returns a ServiceInstanceBindingInformer.
-func (v *version) ServiceInstanceBindings() ServiceInstanceBindingInformer {
+// ServiceInstanceBindings returns a TypedServiceInstanceBindingInformer.
+func (v *version) ServiceInstanceBindings() TypedServiceInstanceBindingInformer {
 	return &serviceInstanceBindingInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// SourcePackages returns a SourcePackageInformer.
-func (v *version) SourcePackages() SourcePackageInformer {
+// SourcePackages returns a TypedSourcePackageInformer.
+func (v *version) SourcePackages() TypedSourcePackageInformer {
 	return &sourcePackageInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// Spaces returns a SpaceInformer.
-func (v *version) Spaces() SpaceInformer {
+// Spaces returns a TypedSpaceInformer.
+func (v *version) Spaces() TypedSpaceInformer {
 	return &spaceInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
-// Tasks returns a TaskInformer.
-func (v *version) Tasks() TaskInformer {
+// Tasks returns a TypedTaskInformer.
+func (v *version) Tasks() TypedTaskInformer {
 	return &taskInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// TaskSchedules returns a TaskScheduleInformer.
-func (v *version) TaskSchedules() TaskScheduleInformer {
+// TaskSchedules returns a TypedTaskScheduleInformer.
+func (v *version) TaskSchedules() TypedTaskScheduleInformer {
 	return &taskScheduleInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }

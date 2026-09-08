@@ -51,10 +51,10 @@ func (m *FakeNetworkingClient) EXPECT() *FakeNetworkingClientMockRecorder {
 }
 
 // Discovery mocks base method.
-func (m *FakeNetworkingClient) Discovery() discovery.DiscoveryInterface {
+func (m *FakeNetworkingClient) Discovery() discovery.DiscoveryInterfaces {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Discovery")
-	ret0, _ := ret[0].(discovery.DiscoveryInterface)
+	ret0, _ := ret[0].(discovery.DiscoveryInterfaces)
 	return ret0
 }
 
