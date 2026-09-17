@@ -5,7 +5,7 @@ There are just a few small guidelines you need to follow.
 
 ## Scope
 
-Kf is a tool to migrate Cloud Foundry workloads to Kuberntes by
+Kf is a tool to migrate Cloud Foundry workloads to Kubernetes by
 preserving te developer experience while updating the platform operator
 experience to a modern platform.
 
