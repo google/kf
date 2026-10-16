@@ -38,7 +38,7 @@ substitutions:
 steps:
 - id: run test scenarios
   timeout: 7200s
-  entrypoint: python3
+  entrypoint: /google-cloud-sdk/platform/bundledpythonunixmusl/bin/python3
   name: gcr.io/google.com/cloudsdktool/cloud-sdk:alpine
   args:
   - ci/cloudbuild/scripts/run_tests.py

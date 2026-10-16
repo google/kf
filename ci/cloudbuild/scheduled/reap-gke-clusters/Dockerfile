@@ -13,5 +13,6 @@
 # limitations under the License.
 
 FROM gcr.io/google.com/cloudsdktool/cloud-sdk:alpine
+ENV PATH="${PATH}:/google-cloud-sdk/platform/bundledpythonunixmusl/bin"
 WORKDIR /scripts
 COPY . .
