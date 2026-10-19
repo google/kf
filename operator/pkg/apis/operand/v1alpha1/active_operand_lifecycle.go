@@ -15,7 +15,6 @@
 package v1alpha1
 
 import (
-	"fmt"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"knative.dev/pkg/apis"
 	duckv1 "knative.dev/pkg/apis/duck/v1"
@@ -48,7 +47,7 @@ func (aos *ActiveOperandStatus) MarkOwnerRefsInjected() {
 // MarkOwnerRefsInjectedFailed shows that the live references failed to have
 // an owner reference injected, this may be transient or permanent.
 func (aos *ActiveOperandStatus) MarkOwnerRefsInjectedFailed(msg string) {
-	activeOperandConditions.Manage(aos).MarkFalse(OwnerRefsInjected, "Error", fmt.Sprintf("Failed to inject ownerrefs: %s", msg))
+	activeOperandConditions.Manage(aos).MarkFalse(OwnerRefsInjected, "Error", "Failed to inject ownerrefs: %s", msg)
 }
 
 // IsReady returns if the status is ready.

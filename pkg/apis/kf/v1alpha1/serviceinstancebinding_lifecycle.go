@@ -75,7 +75,7 @@ func (status *ServiceInstanceBindingStatus) PropagateVolumeStatus(serviceInstanc
 
 	params := BindingVolumeParams{}
 	if err := json.Unmarshal(paramsJSON, &params); err != nil {
-		status.VolumeParamsPopulatedCondition().MarkFalse("failed to unmarshal params from Secret: %v", err.Error())
+		status.VolumeParamsPopulatedCondition().MarkFalse("failed to unmarshal params from Secret: %v", "%s", err.Error())
 		return
 	}
 
@@ -237,6 +237,7 @@ func (status *ServiceInstanceBindingStatus) PropagateUnbindLastOperationStatus(
 	case osbclient.StateInProgress == response.State:
 		condition.MarkUnknown(
 			"UnbindingAsync",
+			"%s",
 			formatOperationMessage(response),
 		)
 		// No update is necessary to OSBStatus, it should already
@@ -332,6 +333,7 @@ func (status *ServiceInstanceBindingStatus) PropagateBindLastOperationStatus(
 	case osbclient.StateInProgress == response.State:
 		condition.MarkUnknown(
 			reasonBindingAsync,
+			"%s",
 			formatOperationMessage(response),
 		)
 		// No update is necessary to OSBStatus, it should already

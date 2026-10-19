@@ -55,11 +55,11 @@ func PropagateCondition(manager apis.ConditionManager, destination apis.Conditio
 		manager.MarkUnknown(destination, Unknown, "status not yet reconciled")
 		return false
 	case source.IsFalse():
-		manager.MarkFalse(destination, source.Reason, source.Message)
+		manager.MarkFalse(destination, source.Reason, "%s", source.Message)
 	case source.IsTrue():
 		manager.MarkTrue(destination)
 	case source.IsUnknown():
-		manager.MarkUnknown(destination, source.Reason, source.Message)
+		manager.MarkUnknown(destination, source.Reason, "%s", source.Message)
 	}
 
 	return source.IsTrue()
@@ -132,7 +132,7 @@ var _ SingleConditionManager = (*conditionImpl)(nil)
 func (ci *conditionImpl) MarkChildNotOwned(childName string) error {
 	msg := fmt.Sprintf("There is an existing %s %q that we do not own.", ci.childType, childName)
 
-	ci.manager.MarkFalse(ci.destination, NotOwned, msg)
+	ci.manager.MarkFalse(ci.destination, NotOwned, "%s", msg)
 
 	return errors.New(msg)
 }
@@ -141,7 +141,7 @@ func (ci *conditionImpl) MarkChildNotOwned(childName string) error {
 func (ci *conditionImpl) MarkTemplateError(err error) error {
 	msg := fmt.Sprintf("Couldn't populate the %s template: %s", ci.childType, err)
 
-	ci.manager.MarkFalse(ci.destination, TemplateError, msg)
+	ci.manager.MarkFalse(ci.destination, TemplateError, "%s", msg)
 
 	return errors.New(msg)
 }
@@ -155,13 +155,13 @@ func (ci *conditionImpl) MarkReconciliationError(action string, err error) error
 	case apierrs.IsConflict(err) || apierrs.IsAlreadyExists(err):
 		// Both of these are 409 errors returned by different implementations of
 		// Kubernetes controllers.
-		ci.manager.MarkUnknown(ci.destination, CacheOutdated, msg)
+		ci.manager.MarkUnknown(ci.destination, CacheOutdated, "%s", msg)
 
 		// In the future, additional retryable errors can be added here if
 		// Kubernetes starts returning other failures.
 
 	default:
-		ci.manager.MarkFalse(ci.destination, ReconciliationError, msg)
+		ci.manager.MarkFalse(ci.destination, ReconciliationError, "%s", msg)
 	}
 
 	return errors.New(msg)

@@ -22,11 +22,11 @@ func (status *TaskScheduleStatus) MarkSpaceHealthy() {
 
 // MarkSpaceUnhealthy notes that the Space was could not be retrieved.
 func (status *TaskScheduleStatus) MarkSpaceUnhealthy(reason, message string) {
-	status.SpaceCondition().MarkFalse(reason, message)
+	status.SpaceCondition().MarkFalse(reason, "%s", message)
 }
 
 // MarkScheduleError notes that the TaskSchedule is not Ready due to an error
 // with the cron schedule.
 func (status *TaskScheduleStatus) MarkScheduleError(err error) {
-	status.manage().MarkFalse(TaskScheduleConditionReady, "ScheduleError", err.Error())
+	status.manage().MarkFalse(TaskScheduleConditionReady, "ScheduleError", "%s", err.Error())
 }

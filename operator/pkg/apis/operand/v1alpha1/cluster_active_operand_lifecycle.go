@@ -15,7 +15,6 @@
 package v1alpha1
 
 import (
-	"fmt"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"knative.dev/pkg/apis"
 	duckv1 "knative.dev/pkg/apis/duck/v1"
@@ -58,7 +57,7 @@ func (aos *ClusterActiveOperandStatus) SetDelegates(delegate ...DelegateRef) {
 // MarkOwnerRefsInjectedFailed shows that the live references failed to have
 // an owner reference injected, this may be transient or permanent.
 func (aos *ClusterActiveOperandStatus) MarkOwnerRefsInjectedFailed(msg string) {
-	clusterActiveOperandConditions.Manage(aos).MarkFalse(OwnerRefsInjected, "Error", fmt.Sprintf("Failed to inject ownerrefs: %s", msg))
+	clusterActiveOperandConditions.Manage(aos).MarkFalse(OwnerRefsInjected, "Error", "Failed to inject ownerrefs: %s", msg)
 }
 
 // MarkNamespaceDelegatesReady shows that the namespace delegates are all ready.
@@ -73,7 +72,7 @@ func (aos *ClusterActiveOperandStatus) IsNamespaceDelegatesReady() bool {
 
 // MarkNamespaceDelegatesReadyFailed surfaces errors from delegates that have failed.
 func (aos *ClusterActiveOperandStatus) MarkNamespaceDelegatesReadyFailed(msg string) {
-	clusterActiveOperandConditions.Manage(aos).MarkFalse(NamespaceDelegatesReady, "Error", fmt.Sprintf("Failed to add ownerrefs to namespaces: %s", msg))
+	clusterActiveOperandConditions.Manage(aos).MarkFalse(NamespaceDelegatesReady, "Error", "Failed to add ownerrefs to namespaces: %s", msg)
 }
 
 // IsReady returns if the status is ready.

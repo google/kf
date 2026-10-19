@@ -127,7 +127,7 @@ func (status *AppStatus) PropagateDeploymentStatus(deployment *appsv1.Deployment
 		// ReplicaFailure is added in a deployment when one of its pods fails to be created
 		// or deleted.
 		if cond.Type == appsv1.DeploymentReplicaFailure && cond.Status == corev1.ConditionTrue {
-			status.DeploymentCondition().MarkFalse(cond.Reason, cond.Message)
+			status.DeploymentCondition().MarkFalse(cond.Reason, "%s", cond.Message)
 			return
 		}
 	}
@@ -348,9 +348,9 @@ func (status *AppStatus) PropagateServiceInstanceBindingsStatus(bindings []Servi
 			case v1.ConditionTrue:
 				manager.MarkTrue(conditionType)
 			case v1.ConditionFalse:
-				manager.MarkFalse(conditionType, cond.Reason, cond.Message)
+				manager.MarkFalse(conditionType, cond.Reason, "%s", cond.Message)
 			case v1.ConditionUnknown:
-				manager.MarkUnknown(conditionType, cond.Reason, cond.Message)
+				manager.MarkUnknown(conditionType, cond.Reason, "%s", cond.Message)
 			}
 		}
 	}
@@ -373,7 +373,7 @@ func (status *AppStatus) MarkSpaceHealthy() {
 
 // MarkSpaceUnhealthy notes that the space was could not be retrieved.
 func (status *AppStatus) MarkSpaceUnhealthy(reason, message string) {
-	status.SpaceCondition().MarkFalse(reason, message)
+	status.SpaceCondition().MarkFalse(reason, "%s", message)
 }
 
 // serviceBindingConditionType creates a Conditiontype for a ServiceBinding.
