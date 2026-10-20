@@ -125,5 +125,5 @@ func (status *BuildStatus) MarkSpaceHealthy() {
 
 // MarkSpaceUnhealthy notes that the Space was could not be retrieved.
 func (status *BuildStatus) MarkSpaceUnhealthy(reason, message string) {
-	status.SpaceCondition().MarkFalse(reason, message)
+	status.SpaceCondition().MarkFalse(reason, "%s", message)
 }

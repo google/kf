@@ -115,33 +115,33 @@ func (status *ServiceInstanceStatus) PropagateDeploymentStatus(deployment *appsv
 		// ReplicaFailure is added in a deployment when one of its pods fails to be created
 		// or deleted.
 		if cond.Type == appsv1.DeploymentReplicaFailure && cond.Status == corev1.ConditionTrue {
-			status.manage().MarkFalse(ServiceInstanceConditionBackingResourceReady, cond.Reason, cond.Message)
+			status.manage().MarkFalse(ServiceInstanceConditionBackingResourceReady, cond.Reason, "%s", cond.Message)
 			return
 		}
 	}
 
 	if deployment.Generation > deployment.Status.ObservedGeneration {
-		status.manage().MarkUnknown(ServiceInstanceConditionBackingResourceReady, "GenerationOutOfDate", fmt.Sprintf("waiting for deployment spec update to be observed"))
+		status.manage().MarkUnknown(ServiceInstanceConditionBackingResourceReady, "GenerationOutOfDate", "waiting for deployment spec update to be observed")
 		return
 	}
 
 	for _, cond := range deployment.Status.Conditions {
 		if cond.Type == appsv1.DeploymentProgressing && cond.Reason == "ProgressDeadlineExceeded" {
-			status.manage().MarkFalse(ServiceInstanceConditionBackingResourceReady, "DeadlineExceeded", fmt.Sprintf("deployment %q exceeded its progress deadline", deployment.Name))
+			status.manage().MarkFalse(ServiceInstanceConditionBackingResourceReady, "DeadlineExceeded", "deployment %q exceeded its progress deadline", deployment.Name)
 			return
 		}
 	}
 
 	if deployment.Spec.Replicas != nil && deployment.Status.UpdatedReplicas < *deployment.Spec.Replicas {
-		status.manage().MarkUnknown(ServiceInstanceConditionBackingResourceReady, "UpdatingReplicas", fmt.Sprintf("waiting for deployment %q rollout to finish: %d out of %d new replicas have been updated", deployment.Name, deployment.Status.UpdatedReplicas, *deployment.Spec.Replicas))
+		status.manage().MarkUnknown(ServiceInstanceConditionBackingResourceReady, "UpdatingReplicas", "waiting for deployment %q rollout to finish: %d out of %d new replicas have been updated", deployment.Name, deployment.Status.UpdatedReplicas, *deployment.Spec.Replicas)
 		return
 	}
 	if deployment.Status.Replicas > deployment.Status.UpdatedReplicas {
-		status.manage().MarkUnknown(ServiceInstanceConditionBackingResourceReady, "TerminatingOldReplicas", fmt.Sprintf("waiting for deployment %q rollout to finish: %d old replicas are pending termination", deployment.Name, deployment.Status.Replicas-deployment.Status.UpdatedReplicas))
+		status.manage().MarkUnknown(ServiceInstanceConditionBackingResourceReady, "TerminatingOldReplicas", "waiting for deployment %q rollout to finish: %d old replicas are pending termination", deployment.Name, deployment.Status.Replicas-deployment.Status.UpdatedReplicas)
 		return
 	}
 	if deployment.Status.AvailableReplicas < deployment.Status.UpdatedReplicas {
-		status.manage().MarkUnknown(ServiceInstanceConditionBackingResourceReady, "InitializingPods", fmt.Sprintf("waiting for deployment %q rollout to finish: %d of %d updated replicas are available", deployment.Name, deployment.Status.AvailableReplicas, deployment.Status.UpdatedReplicas))
+		status.manage().MarkUnknown(ServiceInstanceConditionBackingResourceReady, "InitializingPods", "waiting for deployment %q rollout to finish: %d of %d updated replicas are available", deployment.Name, deployment.Status.AvailableReplicas, deployment.Status.UpdatedReplicas)
 		return
 	}
 
@@ -162,7 +162,7 @@ func (status *ServiceInstanceStatus) MarkSpaceHealthy() {
 
 // MarkSpaceUnhealthy notes that the space was could not be retrieved.
 func (status *ServiceInstanceStatus) MarkSpaceUnhealthy(reason, message string) {
-	status.manage().MarkFalse(ServiceInstanceConditionSpaceReady, reason, message)
+	status.manage().MarkFalse(ServiceInstanceConditionSpaceReady, reason, "%s", message)
 }
 
 // MarkBackingResourceReady notes that the backing resource is ready.
@@ -249,6 +249,7 @@ func (status *ServiceInstanceStatus) PropagateDeprovisionAsyncStatus(
 	case osbclient.StateInProgress == response.State:
 		condition.MarkUnknown(
 			"DeprovisioningInstance",
+			"%s",
 			formatOperationMessage(response),
 		)
 		// No update is necessary to OSBStatus, it should already
@@ -344,6 +345,7 @@ func (status *ServiceInstanceStatus) PropagateProvisionAsyncStatus(
 	case osbclient.StateInProgress == response.State:
 		condition.MarkUnknown(
 			"ProvisioningInstance",
+			"%s",
 			formatOperationMessage(response),
 		)
 		// No update is necessary to OSBStatus, it should already

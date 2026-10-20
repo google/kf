@@ -159,6 +159,8 @@ steps:
     # anything else stored in /workspace (e.g., the source code).
     mkdir -p /workspace/${BUILD_ID}/
 
+    export PATH="$${PATH}:/google-cloud-sdk/platform/bundledpythonunixmusl/bin"
+
     # _CLOUDSDK_COMPUTE_ZONE
     if [ "${_CLOUDSDK_COMPUTE_ZONE}" == "random" ]; then
       python3 ./ci/cloudbuild/scripts/find_zone.py "${_MACHINE_TYPE}" | tee /workspace/${BUILD_ID}/_CLOUDSDK_COMPUTE_ZONE
@@ -244,6 +246,8 @@ steps:
       echo "_FULL_RELEASE_BUCKET is not set. Skipping GKE cluster creation..."
       exit 0
     fi
+
+    export PATH="$${PATH}:/google-cloud-sdk/platform/bundledpythonunixmusl/bin"
 
     # Spin wait for other create GKE cluster operations, only one cluster 
     # can safely be created at a time.
