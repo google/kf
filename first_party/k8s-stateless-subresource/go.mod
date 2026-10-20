@@ -1,6 +1,6 @@
 module github.com/google/k8s-stateless-subresource
 
-go 1.26.9
+go 1.26.10
 
 require (
 	github.com/emicklei/go-restful/v3 v3.13.0

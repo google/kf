@@ -1,6 +1,6 @@
 module code.cloudfoundry.org/buildpackapplifecycle
 
-go 1.26.9
+go 1.26.10
 
 require (
 	code.cloudfoundry.org/archiver v0.0.0-20210922154202-074be9d9bcda
