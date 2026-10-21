@@ -23,6 +23,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/kf/v2/pkg/apis/kf/v1alpha1"
 	v1alpha1lister "github.com/google/kf/v2/pkg/client/kf/listers/kf/v1alpha1"
+	"github.com/google/kf/v2/pkg/dockerutil"
 	"github.com/pkg/errors"
 )
 
@@ -43,7 +44,7 @@ func Download(sourcePackageLister v1alpha1lister.SourcePackageLister, namespace,
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("failed to parse image ref %q", imageName))
 	}
-	image, err := remote.Image(imageRef, remote.WithAuthFromKeychain(Keychain()))
+	image, err := remote.Image(imageRef, remote.WithAuthFromKeychain(Keychain()), dockerutil.SafeRemoteTransport())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get image")
 	}
