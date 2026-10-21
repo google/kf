@@ -227,7 +227,7 @@ replace (
 // Uploads API server
 replace github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.5.5
 
-go 1.26.9
+go 1.26.10
 
 replace knative.dev/pkg => knative.dev/pkg v0.0.0-20261013193643-0795cb87d2bd
 
