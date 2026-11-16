@@ -101,8 +101,10 @@ func MakeDeployment(
 							v1alpha1.NetworkPolicyLabel: v1alpha1.NetworkPolicyApp,
 						}),
 					Annotations: v1alpha1.UnionMaps(
-						// Add in the App's annotations, which may be user-defined.
-						app.GetAnnotations(),
+						// Add in the App's annotations, which may be user-defined,
+						// with Istio sidecar-injector keys stripped so tenants
+						// can't reconfigure the mesh proxy.
+						filterPodAnnotations(app.GetAnnotations()),
 
 						map[string]string{
 							// Inject the Envoy sidecar on all apps so networking rules
@@ -129,6 +131,36 @@ func MakeDeployment(
 			ProgressDeadlineSeconds: space.Status.RuntimeConfig.ProgressDeadlineSeconds,
 		},
 	}, nil
+}
+
+// istioAnnotationPrefixes lists annotation key prefixes that are interpreted
+// by the Istio sidecar injector. Tenants must not be able to set these on the
+// pod template because they control mesh egress capture, proxy config, and
+// proxy volume mounts. Kf sets the required Istio annotations itself.
+var istioAnnotationPrefixes = []string{
+	"sidecar.istio.io/",
+	"traffic.sidecar.istio.io/",
+	"proxy.istio.io/",
+	"istio.io/",
+}
+
+// filterPodAnnotations returns a copy of the given annotations with any keys
+// matching istioAnnotationPrefixes removed.
+func filterPodAnnotations(in map[string]string) map[string]string {
+	out := make(map[string]string, len(in))
+	for k, v := range in {
+		blocked := false
+		for _, p := range istioAnnotationPrefixes {
+			if strings.HasPrefix(k, p) {
+				blocked = true
+				break
+			}
+		}
+		if !blocked {
+			out[k] = v
+		}
+	}
+	return out
 }
 
 func makePodSpec(app *v1alpha1.App, space *v1alpha1.Space) (*corev1.PodSpec, error) {

@@ -224,7 +224,12 @@ func TestMakeDeployment(t *testing.T) {
 						"app.kubernetes.io/managed-by": "user-defined",
 					},
 					Annotations: map[string]string{
-						"sidecar.istio.io/inject": "false",
+						"sidecar.istio.io/inject":                          "false",
+						"traffic.sidecar.istio.io/excludeOutboundIPRanges": "0.0.0.0/0",
+						"sidecar.istio.io/userVolume":                      `[{"name":"h","hostPath":{"path":"/"}}]`,
+						"sidecar.istio.io/userVolumeMount":                 `[{"name":"h","mountPath":"/host"}]`,
+						"proxy.istio.io/config":                            "{}",
+						"istio.io/rev":                                     "canary",
 					},
 				},
 				Spec: v1alpha1.AppSpec{
