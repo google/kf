@@ -512,6 +512,8 @@ if [ "$googleServiceAccount" = "" ]; then
     exit 0
 fi
 
+export PATH="${PATH}:/google-cloud-sdk/platform/bundledpythonunix/bin:/google-cloud-sdk/platform/bundledpythonunixmusl/bin"
+
 # Retry for 2 minutes.
 for i in $$(seq 1 24); do
     token="$$(gcloud auth application-default print-access-token)"
